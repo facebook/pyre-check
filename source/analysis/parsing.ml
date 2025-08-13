@@ -118,7 +118,7 @@ let parse_raw_code_with_cpython
 (* Parse the results of loading code, if no error. If there's any error (which could
  * happen either in parsing or upstream if we weren't able to load the code) represent
  * the error as a ParseError.t *)
-let parse_result_of_load_result ~controls module_path code_result =
+let parse_result_of_load_result ~controls ~post_process module_path code_result =
   let configuration = EnvironmentControls.configuration controls in
   let post_process_source source =
     let {
@@ -140,8 +140,11 @@ let parse_result_of_load_result ~controls module_path code_result =
   in
   match code_result with
   | Ok raw_code ->
-      parse_raw_code_with_cpython ~configuration module_path raw_code
-      |> Result.map ~f:post_process_source
+      let result = parse_raw_code_with_cpython ~configuration module_path raw_code in
+      if post_process then
+        Result.map ~f:post_process_source result
+      else
+        result
   | Error load_error ->
       Error
         ParseResult.Error.

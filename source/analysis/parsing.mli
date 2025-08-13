@@ -41,6 +41,7 @@ val create_source
 
 val parse_result_of_load_result
   :  controls:EnvironmentControls.t ->
+  post_process:bool ->
   Ast.ModulePath.t ->
   LoadResult.t ->
   ParseResult.t

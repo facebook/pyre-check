@@ -302,6 +302,7 @@ let test_fully_qualified_names _ =
         parent;
         local_class_id = PyreflyApi.LocalClassId.from_int 0;
         bases = [];
+        is_synthesized = false;
       }
   in
   let class_parent ~line = ModuleInfoFile.ParentScope.Class (location_at_line line) in

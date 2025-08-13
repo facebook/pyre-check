@@ -103,7 +103,7 @@ module FromReadOnlyUpstream = struct
     match
       let controls = ModuleTracker.ReadOnly.controls module_tracker in
       ModuleTracker.ReadOnly.code_of_module_path module_tracker module_path
-      |> Parsing.parse_result_of_load_result ~controls module_path
+      |> Parsing.parse_result_of_load_result ~controls ~post_process:true module_path
     with
     | Ok source -> RawSources.add_parsed_source raw_sources source
     | Error

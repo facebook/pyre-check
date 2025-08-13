@@ -111,7 +111,7 @@ module ReadOnly = struct
 
   let source_of_qualifier = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.source_of_qualifier pyre_api
-    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.source_of_qualifier pyrefly_api
+    | Pyrefly _ -> failwith "unimplemented: ReadOnly.source_of_qualifier"
 
 
   let get_class_names_for_qualifier = function

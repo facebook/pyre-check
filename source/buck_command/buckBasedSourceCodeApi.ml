@@ -114,7 +114,7 @@ let create
     let open Option.Monad_infix in
     Map.find merged_index qualifier
     >>| fun (ModulePath.{ raw = { Raw.relative; _ }; _ } as module_path) ->
-    load relative |> Parsing.parse_result_of_load_result ~controls module_path
+    load relative |> Parsing.parse_result_of_load_result ~controls ~post_process:true module_path
   in
   let source_code_api =
     SourceCodeApi.create ~controls ~look_up_qualifier ~parse_result_of_qualifier

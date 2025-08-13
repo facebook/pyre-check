@@ -36,7 +36,8 @@ exception
 
 module CallableMetadata : sig
   type t = {
-    location: Ast.Location.t;
+    module_qualifier: Ast.Reference.t;
+    name_location: Ast.Location.t;
     is_overload: bool;
     is_staticmethod: bool;
     is_classmethod: bool;
@@ -77,8 +78,6 @@ module ReadOnly : sig
 
   val absolute_source_path_of_qualifier : t -> Ast.Reference.t -> string option
 
-  val source_of_qualifier : t -> Ast.Reference.t -> Ast.Source.t option
-
   val get_class_names_for_qualifier
     :  t ->
     exclude_test_modules:bool ->
@@ -97,6 +96,8 @@ module ReadOnly : sig
 
   (* Is this a stub module, i.e a `.pyi` file. *)
   val is_stub_qualifier : t -> Ast.Reference.t -> bool
+
+  val get_define_opt : t -> Ast.Reference.t -> Ast.Statement.Define.t Ast.Node.t option
 end
 
 (* Exposed for testing purposes *)
@@ -183,6 +184,7 @@ module ModuleInfoFile : sig
       parent: ParentScope.t;
       local_class_id: LocalClassId.t;
       bases: GlobalClassId.t list;
+      is_synthesized: bool;
     }
     [@@deriving equal, show]
   end
@@ -227,7 +229,7 @@ module Testing : sig
       qualified_name: FullyQualifiedName.t;
       local_name: Ast.Reference.t; (* a non-unique name, more user-friendly. *)
       definition: Definition.t; (* class or def *)
-      location: Ast.Location.t;
+      name_location: Ast.Location.t;
     }
   end
 

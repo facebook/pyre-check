@@ -253,30 +253,31 @@ end = struct
        It doesn't really make a lot of sense though, because the path might have dots. For instance:
        'a/b.py:a.b' will be stored as ['a/b', 'py:a', 'b']. *)
     type t = Reference.t [@@deriving compare, equal, sexp, hash, show]
-
-    let create ~path module_name =
-      let () =
-        (* Sanity check our naming scheme *)
-        if
-          List.exists (Reference.as_list module_name) ~f:(fun s ->
-              String.contains s ':'
-              || String.contains s '#'
-              || String.contains s '$'
-              || String.contains s '@')
-        then
-          failwith "unexpected: module name contains an invalid character (`:#$@`)"
-      in
-      match path with
-      | None -> module_name
-      | Some path -> Format.sprintf "%s:%s" path (Reference.show module_name) |> Reference.create
-
-
-    let to_reference = Fn.id
-
-    let from_reference_unchecked = Fn.id
   end
 
   include T
+
+  let create ~path module_name =
+    let () =
+      (* Sanity check our naming scheme *)
+      if
+        List.exists (Reference.as_list module_name) ~f:(fun s ->
+            String.contains s ':'
+            || String.contains s '#'
+            || String.contains s '$'
+            || String.contains s '@')
+      then
+        failwith "unexpected: module name contains an invalid character (`:#$@`)"
+    in
+    match path with
+    | None -> module_name
+    | Some path -> Format.sprintf "%s:%s" path (Reference.show module_name) |> Reference.create
+
+
+  let to_reference = Fn.id
+
+  let from_reference_unchecked = Fn.id
+
   module Map = Map.Make (T)
 end
 
@@ -485,10 +486,10 @@ module ModuleInfoFile = struct
       }
 
 
-    let create_class_toplevel ~location =
+    let create_class_toplevel ~name_location =
       {
         name = Ast.Statement.class_toplevel_define_name;
-        parent = ParentScope.Class location;
+        parent = ParentScope.Class name_location;
         is_overload = false;
         is_staticmethod = false;
         is_classmethod = false;
@@ -506,6 +507,7 @@ module ModuleInfoFile = struct
       parent: ParentScope.t;
       local_class_id: LocalClassId.t;
       bases: GlobalClassId.t list;
+      is_synthesized: bool;
     }
     [@@deriving equal, show]
 
@@ -520,7 +522,10 @@ module ModuleInfoFile = struct
       JsonUtil.get_list_member json "bases"
       >>| List.map ~f:GlobalClassId.from_json
       >>= Result.all
-      >>| fun bases -> { name; parent; local_class_id = LocalClassId.from_int class_id; bases }
+      >>= fun bases ->
+      JsonUtil.get_optional_bool_member ~default:false json "is_synthesized"
+      >>| fun is_synthesized ->
+      { name; parent; local_class_id = LocalClassId.from_int class_id; bases; is_synthesized }
   end
 
   type t = {
@@ -674,25 +679,6 @@ module TypeOfExpressionsSharedMemory = struct
       end)
 end
 
-module OptionalSource = struct
-  type 'a t =
-    | Some of 'a
-    | TestFile (* Module marked with is_test = true *)
-    | NoSource (* Module with source_path = None *)
-end
-
-(* Abstract Syntax Tree of a module, stored in shared memory. *)
-module AstsSharedMemory =
-  Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
-    (ModuleQualifierSharedMemoryKey)
-    (struct
-      type t = Analysis.Parsing.ParseResult.t OptionalSource.t
-
-      let prefix = Hack_parallel.Std.Prefix.make ()
-
-      let description = "pyrefly asts"
-    end)
-
 (* Unique identifier for a class or define (e.g, `def foo(): ..`) in a module.
  *
  * - In most cases, this will be a dotted path such as `my.module.MyClass.foo`.
@@ -722,10 +708,20 @@ module FullyQualifiedName : sig
   (* This is marked `unchecked` because it doesn't actually validate that the reference is a valid
      fully qualifide name. *)
   val from_reference_unchecked : Reference.t -> t
+
+  val last : t -> string
+
+  val prefix : t -> t option
+
+  module Map : Map.S with type Key.t = t
 end = struct
-  (* Same as ModuleQualifier, it is stored as a reference, but it doesn't really make sense
-     either. *)
-  type t = Reference.t [@@deriving compare, equal, sexp, hash, show]
+  module T = struct
+    (* Same as ModuleQualifier, it is stored as a reference, but it doesn't really make sense
+       either. *)
+    type t = Reference.t [@@deriving compare, equal, sexp, hash, show]
+  end
+
+  include T
 
   let create ~module_qualifier ~local_name ~add_module_separator =
     let () =
@@ -761,6 +757,12 @@ end = struct
   let to_reference = Fn.id
 
   let from_reference_unchecked = Fn.id
+
+  let last = Reference.last
+
+  let prefix = Reference.prefix
+
+  module Map = Map.Make (T)
 end
 
 module FullyQualifiedNameSharedMemoryKey = struct
@@ -778,7 +780,13 @@ end
 
 module CallableMetadata = struct
   type t = {
-    location: Location.t;
+    (* TODO(T225700656): This should be ModuleQualifier.t, but it is a Reference.t because it is
+       exposed publicly. *)
+    module_qualifier: Reference.t;
+    (* Location of the name AST node, i.e location of `foo` in `def foo():` *)
+    (* This will be `Location.any` for the top level define. *)
+    (* This is the location of the class name for the class top level define. *)
+    name_location: Location.t;
     is_overload: bool;
     is_staticmethod: bool;
     is_classmethod: bool;
@@ -808,8 +816,13 @@ end
 module ClassMetadataSharedMemory = struct
   module Metadata = struct
     type t = {
-      location: Location.t;
+      module_qualifier: ModuleQualifier.t;
+      (* Location of the name AST node, i.e location of `Foo` in `class Foo():` *)
+      name_location: Location.t;
       local_class_id: LocalClassId.t;
+      (* True if this class was synthesized (e.g., from namedtuple), false if from actual `class X:`
+         statement *)
+      is_synthesized: bool;
     }
     [@@deriving show]
   end
@@ -872,6 +885,24 @@ module ClassImmediateParentsSharedMemory =
       let description = "pyrefly class immediate parents"
     end)
 
+module CallableAst = struct
+  type t =
+    | Some of Statement.Define.t Node.t
+    | ParseError (* callable in a module that failed to parse *)
+    | TestFile (* Callable in a module marked with is_test = true *)
+end
+
+module CallableAstSharedMemory =
+  Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+    (FullyQualifiedNameSharedMemoryKey)
+    (struct
+      type t = CallableAst.t
+
+      let prefix = Hack_parallel.Std.Prefix.make ()
+
+      let description = "pyrefly ast of callables"
+    end)
+
 (* API handle stored in the main process. The type `t` should not be sent to workers, since it's
    expensive to copy. *)
 module ReadWrite = struct
@@ -912,7 +943,6 @@ module ReadWrite = struct
     qualifier_to_module_map: Module.t ModuleQualifier.Map.t;
     module_infos_shared_memory: ModuleInfosSharedMemory.t;
     qualifiers_with_source_shared_memory: QualifiersWithSourceSharedMemory.t;
-    asts_shared_memory: AstsSharedMemory.t;
     type_of_expressions_shared_memory: TypeOfExpressionsSharedMemory.t;
     callable_metadata_shared_memory: CallableMetadataSharedMemory.t;
     class_metadata_shared_memory: ClassMetadataSharedMemory.t;
@@ -921,6 +951,7 @@ module ReadWrite = struct
     (* TODO(T225700656): this can be removed from shared memory after initialization. *)
     class_id_to_qualified_name_shared_memory: ClassIdToQualifiedNameSharedMemory.t;
     class_immediate_parents_shared_memory: ClassImmediateParentsSharedMemory.t;
+    callable_ast_shared_memory: CallableAstSharedMemory.t;
     object_class: FullyQualifiedName.t;
   }
 
@@ -1010,7 +1041,7 @@ module ReadWrite = struct
     =
     let timer = Timer.start () in
     let () = Log.info "Parsing type of expressions from pyrefly..." in
-    let handle = TypeOfExpressionsSharedMemory.create () in
+    let type_of_expressions_shared_memory = TypeOfExpressionsSharedMemory.create () in
     let scheduler_policy =
       Scheduler.Policy.from_configuration_or_default
         scheduler_policies
@@ -1036,7 +1067,7 @@ module ReadWrite = struct
       in
       Map.iteri type_of_expression ~f:(fun ~key:location ~data:ty ->
           TypeOfExpressionsSharedMemory.add
-            handle
+            type_of_expressions_shared_memory
             { TypeOfExpressionsSharedMemory.Key.module_qualifier; location }
             ty)
     in
@@ -1065,7 +1096,7 @@ module ReadWrite = struct
       ~command:"analyze"
       ~timer
       ();
-    handle
+    type_of_expressions_shared_memory
 
 
   let write_module_infos_to_shared_memory ~qualifier_to_module_map =
@@ -1090,66 +1121,224 @@ module ReadWrite = struct
       ~configuration
       ~module_infos_shared_memory
       ~qualifier_to_module_map
+      ~module_callables_shared_memory
+      ~callable_metadata_shared_memory
+      ~class_metadata_shared_memory
     =
     let timer = Timer.start () in
     let () = Log.info "Parsing source files..." in
-    let handle = AstsSharedMemory.create () in
+    let callable_ast_shared_memory = CallableAstSharedMemory.create () in
     let controls =
       Analysis.EnvironmentControls.create
         ~populate_call_graph:false
         ~string_annotation_preserve_location:false
         configuration
     in
-    let parse_module qualifier =
-      let parse_result =
-        match ModuleInfosSharedMemory.get module_infos_shared_memory qualifier with
-        | None -> failwith "unexpected: missing module info for qualifier"
-        | Some { ModuleInfosSharedMemory.Module.source_path = None; _ } -> OptionalSource.NoSource
-        | Some { ModuleInfosSharedMemory.Module.is_test = true; _ } -> OptionalSource.TestFile
-        | Some { ModuleInfosSharedMemory.Module.source_path = Some source_path; is_test = false; _ }
-          ->
-            let load_result =
-              try Ok (ArtifactPath.raw source_path |> File.create |> File.content_exn) with
-              | Sys_error error ->
-                  Error
-                    (Format.asprintf
-                       "Cannot open file `%a` due to: %s"
-                       ArtifactPath.pp
-                       source_path
-                       error)
-            in
-            let pyre1_module_path =
-              Ast.ModulePath.create
-                ~should_type_check:true
-                {
-                  Ast.ModulePath.Raw.relative = source_path |> ArtifactPath.raw |> PyrePath.absolute;
-                  priority = 0;
-                }
-            in
-            let parse_result =
-              Analysis.Parsing.parse_result_of_load_result ~controls pyre1_module_path load_result
-            in
-            let parse_result =
-              match parse_result with
-              | Ok ({ Ast.Source.module_path; _ } as source) ->
-                  (* Remove the qualifier created by pyre, it is wrong *)
-                  let module_path = { module_path with qualifier = Reference.empty } in
-                  Ok { source with module_path }
-              | Error { Analysis.Parsing.ParseResult.Error.location; message; _ } ->
-                  let () =
-                    Log.error
-                      "%a:%a: %s"
-                      PyrePath.pp
-                      (source_path |> ArtifactPath.raw)
-                      Location.pp
-                      location
-                      message
-                  in
-                  parse_result
-            in
-            OptionalSource.Some parse_result
+    let store_callable_asts callables ast_result =
+      List.iter callables ~f:(fun callable ->
+          CallableAstSharedMemory.add callable_ast_shared_memory callable ast_result)
+    in
+    let collect_callable_asts_from_source ~qualifier ~callables ~source =
+      let location_to_callable =
+        callables
+        |> List.map ~f:(fun callable ->
+               CallableMetadataSharedMemory.get callable_metadata_shared_memory callable
+               |> Option.value_exn ~message:"missing callable metadata for callable"
+               |> fun { CallableMetadata.name_location; _ } -> name_location, callable)
+        |> Location.Map.of_alist_exn
       in
-      AstsSharedMemory.add handle qualifier parse_result
+      let defines =
+        Preprocessing.defines
+          ~include_stubs:true
+          ~include_nested:true
+          ~include_toplevels:true
+          ~include_methods:true
+          source
+      in
+      let strip_invalid_locations =
+        List.filter ~f:(fun { Node.location; _ } -> not (Location.equal Location.any location))
+      in
+      (* For a given `def ..` statement, we need to find the matching definition provided by
+         Pyrefly. *)
+      let find_define_callable
+          (location_to_callable, callable_to_define)
+          ({
+             Node.value = { Statement.Define.signature = { name; parameters; _ }; body; _ };
+             location = { Location.start = define_start; stop = define_stop } as define_location;
+           } as define)
+        =
+        let search_result =
+          if Reference.equal name (Reference.create_from_list [Statement.toplevel_define_name]) then
+            Map.find location_to_callable Location.any
+            >>| (fun callable -> [Location.any, callable])
+            |> Option.value ~default:[]
+          else
+            (* Pyrefly gives us the location of the name AST node, i.e the location of 'foo' in `def
+               foo(): ...`, but the Pyre AST does not give us the location of the name, only the
+               location of the whole `def foo(): ...` statement. Since we can't match on the exact
+               location, we try to find a definition whose location is between the `def` keyword and
+               the first parameter or first statement. *)
+            let first_parameter_or_statement_position =
+              match strip_invalid_locations parameters, strip_invalid_locations body with
+              | { Node.location = { Location.start; _ }; _ } :: _, _ -> start
+              | _, { Node.location = { Location.start; _ }; _ } :: _ -> start
+              | _ -> define_stop
+            in
+            Map.binary_search_subrange
+              location_to_callable
+              ~compare:(fun ~key:{ Location.start = location; stop = _ } ~data:_ bound ->
+                Location.compare_position location bound)
+              ~lower_bound:(Maybe_bound.Excl define_start)
+              ~upper_bound:(Maybe_bound.Incl first_parameter_or_statement_position)
+            |> Map.to_alist
+            |> List.filter ~f:(fun ({ Location.start = name_start; stop = name_stop }, _) ->
+                   Location.compare_position define_start name_start < 0
+                   && Location.compare_position name_stop first_parameter_or_statement_position <= 0)
+        in
+        match search_result with
+        | [] ->
+            (* This definition is not visible by pyrefly. It might be guarded by a `if
+               TYPE_CHECKING` or `if sys.version`. *)
+            location_to_callable, callable_to_define
+        | [(location, callable)] ->
+            let location_to_callable = Map.remove location_to_callable location in
+            let define = Preprocessing.drop_nested_body define in
+            let callable_to_define = Map.add_exn callable_to_define ~key:callable ~data:define in
+            location_to_callable, callable_to_define
+        | _ ->
+            Format.asprintf
+              "Found multiple definitions matching with define `%a` at location %a of module `%a`"
+              Reference.pp
+              name
+              Location.pp
+              define_location
+              ModuleQualifier.pp
+              qualifier
+            |> failwith
+      in
+      (* We create an implicit function containing all statements in the body of each class, called
+         the "class top level define". However, some classes are synthesized out of thin air (for
+         instance, `X = namedtuple('X')` creates a class `X`). Those won't have a top level define
+         in the source. Let's create a dummy definition for those. *)
+      let add_toplevel_define_for_synthesized_class
+          (location_to_callable, callable_to_define)
+          (location, callable)
+        =
+        if String.equal (FullyQualifiedName.last callable) Statement.class_toplevel_define_name then
+          let class_name = Option.value_exn (FullyQualifiedName.prefix callable) in
+          let { ClassMetadataSharedMemory.Metadata.is_synthesized; _ } =
+            ClassMetadataSharedMemory.get class_metadata_shared_memory class_name
+            |> Option.value_exn
+                 ~message:"unexpected: class toplevel define on a class that has no metadata info"
+          in
+          if is_synthesized then
+            let location_to_callable = Map.remove location_to_callable location in
+            let callable_to_define =
+              Map.add_exn
+                callable_to_define
+                ~key:callable
+                ~data:
+                  (Statement.Define.create_class_toplevel
+                     ~unbound_names:[]
+                     ~module_name:Reference.empty
+                     ~local_context:(NestingContext.create_toplevel ())
+                     ~statements:[]
+                  |> Node.create ~location)
+            in
+            location_to_callable, callable_to_define
+          else
+            location_to_callable, callable_to_define
+        else
+          location_to_callable, callable_to_define
+      in
+      let remaining_callables, callable_to_define =
+        List.fold
+          ~init:(location_to_callable, FullyQualifiedName.Map.empty)
+          ~f:find_define_callable
+          defines
+      in
+      let remaining_callables, callable_to_define =
+        List.fold
+          ~init:(remaining_callables, callable_to_define)
+          ~f:add_toplevel_define_for_synthesized_class
+          (Map.to_alist remaining_callables)
+      in
+      if not (Map.is_empty remaining_callables) then
+        let location, callable = Map.min_elt_exn remaining_callables in
+        Format.asprintf
+          "Could not find AST of function `%a` at location %a in module `%a`"
+          FullyQualifiedName.pp
+          callable
+          Location.pp
+          location
+          ModuleQualifier.pp
+          qualifier
+        |> failwith
+      else
+        Map.iteri
+          ~f:(fun ~key:callable ~data:define ->
+            CallableAstSharedMemory.add
+              callable_ast_shared_memory
+              callable
+              (CallableAst.Some define))
+          callable_to_define
+    in
+    let parse_module qualifier =
+      let module_info =
+        ModuleInfosSharedMemory.get module_infos_shared_memory qualifier
+        |> Option.value_exn ~message:"missing module info for qualifier"
+      in
+      let callables = ModuleCallablesSharedMemory.get module_callables_shared_memory qualifier in
+      match module_info, callables with
+      | _, None -> ()
+      | { ModuleInfosSharedMemory.Module.source_path = None; _ }, Some _ ->
+          failwith "unexpected: no source path for module with callables"
+      | { ModuleInfosSharedMemory.Module.is_test = true; _ }, Some callables ->
+          store_callable_asts callables CallableAst.TestFile
+      | ( { ModuleInfosSharedMemory.Module.source_path = Some source_path; is_test = false; _ },
+          Some callables ) -> (
+          let load_result =
+            try Ok (ArtifactPath.raw source_path |> File.create |> File.content_exn) with
+            | Sys_error error ->
+                Error
+                  (Format.asprintf
+                     "Cannot open file `%a` due to: %s"
+                     ArtifactPath.pp
+                     source_path
+                     error)
+          in
+          let pyre1_module_path =
+            Ast.ModulePath.create
+              ~should_type_check:true
+              {
+                Ast.ModulePath.Raw.relative = source_path |> ArtifactPath.raw |> PyrePath.absolute;
+                priority = 0;
+              }
+          in
+          let parse_result =
+            Analysis.Parsing.parse_result_of_load_result
+              ~controls
+              ~post_process:false
+              pyre1_module_path
+              load_result
+          in
+          match parse_result with
+          | Ok ({ Source.module_path; _ } as source) ->
+              (* Remove the qualifier created by pyre, it is wrong *)
+              let module_path = { module_path with qualifier = Reference.empty } in
+              let source = { source with module_path } in
+              collect_callable_asts_from_source ~qualifier ~callables ~source
+          | Error { Analysis.Parsing.ParseResult.Error.location; message; _ } ->
+              let () =
+                Log.error
+                  "%a:%a: %s"
+                  PyrePath.pp
+                  (source_path |> ArtifactPath.raw)
+                  Location.pp
+                  location
+                  message
+              in
+              store_callable_asts callables CallableAst.ParseError)
     in
     let scheduler_policy =
       Scheduler.Policy.from_configuration_or_default
@@ -1179,7 +1368,7 @@ module ReadWrite = struct
       ~command:"analyze"
       ~timer
       ();
-    handle
+    callable_ast_shared_memory
 
 
   (* Logic to assign fully qualified names to classes and defines. *)
@@ -1200,7 +1389,7 @@ module ReadWrite = struct
         qualified_name: FullyQualifiedName.t;
         local_name: Reference.t; (* a non-unique name, more user-friendly. *)
         definition: Definition.t;
-        location: Location.t;
+        name_location: Location.t;
       }
     end
 
@@ -1452,7 +1641,7 @@ module ReadWrite = struct
                   ~add_module_separator:name_overlaps_module;
               local_name = Reference.create_from_list (List.rev (symbol_name :: parent_local_name));
               definition;
-              location;
+              name_location = location;
             }
             :: sofar
           in
@@ -1474,7 +1663,7 @@ module ReadWrite = struct
     let add_toplevel_defines ~module_qualifier definitions =
       let add_toplevel
           sofar
-          ({ QualifiedDefinition.definition; qualified_name; local_name; location; _ } as
+          ({ QualifiedDefinition.definition; qualified_name; local_name; name_location; _ } as
           qualified_definition)
         =
         let sofar = qualified_definition :: sofar in
@@ -1483,13 +1672,13 @@ module ReadWrite = struct
             {
               QualifiedDefinition.definition =
                 Definition.Function
-                  (ModuleInfoFile.FunctionDefinition.create_class_toplevel ~location);
+                  (ModuleInfoFile.FunctionDefinition.create_class_toplevel ~name_location);
               qualified_name = FullyQualifiedName.create_class_toplevel qualified_name;
               local_name =
                 Reference.combine
                   local_name
                   (Reference.create_from_list [Ast.Statement.class_toplevel_define_name]);
-              location;
+              name_location;
             }
             :: sofar
         | _ -> sofar
@@ -1501,7 +1690,7 @@ module ReadWrite = struct
           Definition.Function (ModuleInfoFile.FunctionDefinition.create_module_toplevel ());
         qualified_name = FullyQualifiedName.create_module_toplevel ~module_qualifier;
         local_name = Reference.create_from_list [Ast.Statement.toplevel_define_name];
-        location = Location.any;
+        name_location = Location.any;
       }
       :: definitions
   end
@@ -1555,7 +1744,7 @@ module ReadWrite = struct
       in
       let store_definition
           (callables, classes)
-          { DefinitionCollector.QualifiedDefinition.qualified_name; definition; location; _ }
+          { DefinitionCollector.QualifiedDefinition.qualified_name; definition; name_location; _ }
         =
         match definition with
         | Function
@@ -1575,7 +1764,8 @@ module ReadWrite = struct
               callable_metadata_shared_memory
               qualified_name
               {
-                CallableMetadata.location;
+                CallableMetadata.module_qualifier = ModuleQualifier.to_reference module_qualifier;
+                name_location;
                 is_overload;
                 is_staticmethod;
                 is_classmethod;
@@ -1590,11 +1780,16 @@ module ReadWrite = struct
                   | _ -> false);
               };
             qualified_name :: callables, classes
-        | Class { local_class_id; _ } ->
+        | Class { local_class_id; is_synthesized; _ } ->
             ClassMetadataSharedMemory.add
               class_metadata_shared_memory
               qualified_name
-              { ClassMetadataSharedMemory.Metadata.location; local_class_id };
+              {
+                ClassMetadataSharedMemory.Metadata.module_qualifier;
+                name_location;
+                local_class_id;
+                is_synthesized;
+              };
             ClassIdToQualifiedNameSharedMemory.add
               class_id_to_qualified_name_shared_memory
               { GlobalClassId.module_id; local_class_id }
@@ -1725,15 +1920,6 @@ module ReadWrite = struct
       handle
     in
 
-    let asts_shared_memory =
-      parse_source_files
-        ~scheduler
-        ~scheduler_policies
-        ~configuration
-        ~module_infos_shared_memory
-        ~qualifier_to_module_map
-    in
-
     let ( callable_metadata_shared_memory,
           class_metadata_shared_memory,
           module_callables_shared_memory,
@@ -1747,6 +1933,18 @@ module ReadWrite = struct
         ~pyrefly_directory
         ~qualifier_to_module_map
         ~module_infos_shared_memory
+    in
+
+    let callable_ast_shared_memory =
+      parse_source_files
+        ~scheduler
+        ~scheduler_policies
+        ~configuration
+        ~module_infos_shared_memory
+        ~qualifier_to_module_map
+        ~module_callables_shared_memory
+        ~callable_metadata_shared_memory
+        ~class_metadata_shared_memory
     in
 
     let object_class =
@@ -1768,7 +1966,6 @@ module ReadWrite = struct
       qualifier_to_module_map;
       module_infos_shared_memory;
       qualifiers_with_source_shared_memory;
-      asts_shared_memory;
       type_of_expressions_shared_memory;
       callable_metadata_shared_memory;
       class_metadata_shared_memory;
@@ -1776,6 +1973,7 @@ module ReadWrite = struct
       module_classes_shared_memory;
       class_id_to_qualified_name_shared_memory;
       class_immediate_parents_shared_memory;
+      callable_ast_shared_memory;
       object_class;
     }
 
@@ -1817,11 +2015,11 @@ module ReadOnly = struct
   type t = {
     module_infos_shared_memory: ModuleInfosSharedMemory.t;
     qualifiers_with_source_shared_memory: QualifiersWithSourceSharedMemory.t;
-    asts_shared_memory: AstsSharedMemory.t;
     callable_metadata_shared_memory: CallableMetadataSharedMemory.t;
     module_callables_shared_memory: ModuleCallablesSharedMemory.t;
     module_classes_shared_memory: ModuleClassesSharedMemory.t;
     class_immediate_parents_shared_memory: ClassImmediateParentsSharedMemory.t;
+    callable_ast_shared_memory: CallableAstSharedMemory.t;
     object_class: FullyQualifiedName.t;
   }
 
@@ -1829,11 +2027,11 @@ module ReadOnly = struct
       {
         ReadWrite.module_infos_shared_memory;
         qualifiers_with_source_shared_memory;
-        asts_shared_memory;
         callable_metadata_shared_memory;
         module_callables_shared_memory;
         module_classes_shared_memory;
         class_immediate_parents_shared_memory;
+        callable_ast_shared_memory;
         object_class;
         _;
       }
@@ -1841,11 +2039,11 @@ module ReadOnly = struct
     {
       module_infos_shared_memory;
       qualifiers_with_source_shared_memory;
-      asts_shared_memory;
       callable_metadata_shared_memory;
       module_callables_shared_memory;
       module_classes_shared_memory;
       class_immediate_parents_shared_memory;
+      callable_ast_shared_memory;
       object_class;
     }
 
@@ -1925,16 +2123,6 @@ module ReadOnly = struct
       |> List.map ~f:FullyQualifiedName.to_reference
 
 
-  let source_of_qualifier { asts_shared_memory; _ } qualifier =
-    AstsSharedMemory.get asts_shared_memory (ModuleQualifier.from_reference_unchecked qualifier)
-    |> assert_shared_memory_key_exists "missing source for qualifier"
-    |> function
-    | OptionalSource.Some (Result.Ok source) -> Some source
-    | OptionalSource.Some (Result.Error _) -> None
-    | OptionalSource.NoSource -> None
-    | OptionalSource.TestFile -> failwith "cannot fetch source of test module"
-
-
   let class_immediate_parents { class_immediate_parents_shared_memory; object_class; _ } class_name =
     (* TOOD(T225700656): Update the API to take a reference and return a reference. *)
     let class_name = FullyQualifiedName.from_reference_unchecked (Reference.create class_name) in
@@ -1952,6 +2140,17 @@ module ReadOnly = struct
       callable_metadata_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
     |> assert_shared_memory_key_exists "missing callable metadata"
+
+
+  let get_define_opt { callable_ast_shared_memory; _ } define_name =
+    CallableAstSharedMemory.get
+      callable_ast_shared_memory
+      (FullyQualifiedName.from_reference_unchecked define_name)
+    |> assert_shared_memory_key_exists "missing callable ast"
+    |> function
+    | CallableAst.Some define -> Some define
+    | CallableAst.ParseError -> None
+    | CallableAst.TestFile -> None
 end
 
 (* Exposed for testing purposes *)
