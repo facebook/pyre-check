@@ -15,6 +15,7 @@ import json
 import logging
 import os
 import subprocess
+import time
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Sequence
 
@@ -441,6 +442,10 @@ def _run_analyze_command(
                 env=environment,
             )
             return_code = result.returncode
+
+            # Give time for the log file to be flushed.
+            # Without this, we sometimes miss the last few lines of the log.
+            time.sleep(0.01)
 
             # Interpretation of the return code needs to be kept in sync with
             # `command/analyzeCommand.ml`.
