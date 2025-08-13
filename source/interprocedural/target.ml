@@ -621,18 +621,6 @@ let get_definitions ~pyre1_api ~warn_multiple_definitions define_name =
   }
 
 
-let get_module_and_definition ~pyre_api callable =
-  match pyre_api with
-  | PyrePysaApi.ReadOnly.Pyrefly _ -> failwith "unimplemented: Target.get_module_and_definition"
-  | PyrePysaApi.ReadOnly.Pyre1 pyre1_api ->
-      define_name_exn callable
-      |> get_definitions ~pyre1_api ~warn_multiple_definitions:false
-      >>= fun { qualifier; callables; _ } ->
-      Map.find_opt callable callables >>| fun define -> qualifier, define
-
-
-let get_module_and_definition_for_test = get_module_and_definition
-
 let resolve_method ~pyre_api ~class_type ~method_name =
   let callable_implementation =
     Type.split class_type
@@ -690,51 +678,111 @@ let class_method_decorators = ["classmethod"; "abstractclassmethod"; "abc.abstra
 
 let static_method_decorators = ["staticmethod"; "abstractstaticmethod"; "abc.abstractstaticmethod"]
 
-module CallablesSharedMemory = struct
+module CallableSignature = struct
   type target = t
 
-  module Signature = struct
-    type t = {
-      qualifier: Reference.t;
-      location: Location.t;
-      define_name: Reference.t;
-      parameters: Expression.Parameter.t list;
-      return_annotation: Expression.t option;
-      decorators: Expression.t list;
-      captures: Define.Capture.t list;
-      method_kind: MethodKind.t option;
-      is_stub: bool;
+  type t = {
+    qualifier: Reference.t;
+    location: Location.t;
+    define_name: Reference.t;
+    parameters: Expression.Parameter.t list;
+    return_annotation: Expression.t option;
+    decorators: Expression.t list;
+    captures: Define.Capture.t list;
+    method_kind: MethodKind.t option;
+    is_stub: bool;
+  }
+
+  let from_define_for_pyre1 ~target ~qualifier define =
+    let method_kind =
+      match get_regular target with
+      | Regular.Method { method_name = "__new__"; _ } -> Some MethodKind.Static
+      | Regular.Method _ ->
+          let define = Node.value define in
+          if List.exists class_method_decorators ~f:(Ast.Statement.Define.has_decorator define) then
+            Some MethodKind.Class
+          else if
+            List.exists static_method_decorators ~f:(Ast.Statement.Define.has_decorator define)
+          then
+            Some MethodKind.Static
+          else
+            Some MethodKind.Instance
+      | _ -> None
+    in
+    {
+      qualifier;
+      location = define.Node.location;
+      define_name = define.Node.value.signature.name;
+      parameters = define.Node.value.signature.parameters;
+      return_annotation = define.Node.value.signature.return_annotation;
+      decorators = define.Node.value.signature.decorators;
+      captures = define.Node.value.captures;
+      method_kind;
+      is_stub = Define.is_stub define.Node.value;
     }
 
-    let from_define ~target ~qualifier define =
-      let method_kind =
-        match get_regular target with
-        | Regular.Method { method_name = "__new__"; _ } -> Some MethodKind.Static
-        | Regular.Method _ ->
-            let define = Node.value define in
-            if List.exists class_method_decorators ~f:(Ast.Statement.Define.has_decorator define)
-            then
-              Some MethodKind.Class
-            else if
-              List.exists static_method_decorators ~f:(Ast.Statement.Define.has_decorator define)
-            then
-              Some MethodKind.Static
-            else
-              Some MethodKind.Instance
-        | _ -> None
-      in
+
+  let from_define_for_pyrefly
+      ~define_name
+      ~metadata:
+        {
+          PyreflyApi.CallableMetadata.module_qualifier;
+          is_classmethod;
+          is_staticmethod;
+          is_stub;
+          parent_is_class;
+          _;
+        }
       {
-        qualifier;
-        location = define.Node.location;
-        define_name = define.Node.value.signature.name;
-        parameters = define.Node.value.signature.parameters;
-        return_annotation = define.Node.value.signature.return_annotation;
-        decorators = define.Node.value.signature.decorators;
-        captures = define.Node.value.captures;
-        method_kind;
-        is_stub = Define.is_stub define.Node.value;
+        Node.value = { Define.signature = { parameters; return_annotation; decorators; _ }; _ };
+        location;
       }
-  end
+    =
+    let method_kind =
+      if is_staticmethod then
+        Some MethodKind.Static
+      else if is_classmethod then
+        Some MethodKind.Class
+      else if parent_is_class then
+        Some MethodKind.Instance
+      else
+        None
+    in
+    {
+      qualifier = module_qualifier;
+      location;
+      define_name;
+      parameters;
+      return_annotation;
+      decorators;
+      captures = [];
+      method_kind;
+      is_stub;
+    }
+end
+
+let get_signature_and_definition ~pyre_api callable =
+  let define_name = define_name_exn callable in
+  match pyre_api with
+  | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->
+      PyreflyApi.ReadOnly.get_define_opt pyrefly_api define_name
+      >>| fun define ->
+      let metadata = PyreflyApi.ReadOnly.get_callable_metadata pyrefly_api define_name in
+      let signature = CallableSignature.from_define_for_pyrefly ~define_name ~metadata define in
+      signature, define
+  | PyrePysaApi.ReadOnly.Pyre1 pyre1_api ->
+      get_definitions ~pyre1_api ~warn_multiple_definitions:false define_name
+      >>= fun { qualifier; callables; _ } ->
+      Map.find_opt callable callables
+      >>| fun define ->
+      let signature = CallableSignature.from_define_for_pyre1 ~target:callable ~qualifier define in
+      signature, define
+
+
+let get_signature_and_definition_for_test = get_signature_and_definition
+
+module CallablesSharedMemory = struct
+  type target = t
 
   module DefineAndQualifier = struct
     type t = {
@@ -758,7 +806,7 @@ module CallablesSharedMemory = struct
     Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
       (SharedMemoryKey)
       (struct
-        type t = Signature.t
+        type t = CallableSignature.t
 
         let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -782,7 +830,7 @@ module CallablesSharedMemory = struct
       target
       |> strip_parameters
       |> SignaturesSharedMemory.get signatures
-      >>| fun { Signature.qualifier; location; _ } ->
+      >>| fun { CallableSignature.qualifier; location; _ } ->
       Location.with_module ~module_reference:qualifier location
 
 
@@ -790,7 +838,7 @@ module CallablesSharedMemory = struct
 
     let get_qualifier { signatures; _ } target =
       match SignaturesSharedMemory.get signatures target with
-      | Some { Signature.qualifier; _ } -> Some qualifier
+      | Some { CallableSignature.qualifier; _ } -> Some qualifier
       | None -> None
 
 
@@ -802,7 +850,7 @@ module CallablesSharedMemory = struct
         method_target
         |> from_regular
         |> SignaturesSharedMemory.get signatures
-        >>= fun { Signature.method_kind; _ } -> method_kind
+        >>= fun { CallableSignature.method_kind; _ } -> method_kind
       in
       match method_kind, method_target with
       | _, Regular.Method { method_name = "__new__"; _ } -> false, true
@@ -814,13 +862,13 @@ module CallablesSharedMemory = struct
 
     let is_stub { signatures; _ } target =
       match SignaturesSharedMemory.get signatures target with
-      | Some { Signature.is_stub; _ } -> Some is_stub
+      | Some { CallableSignature.is_stub; _ } -> Some is_stub
       | None -> None
 
 
     let get_captures { signatures; _ } target =
       match SignaturesSharedMemory.get signatures target with
-      | Some { Signature.captures; _ } -> Some captures
+      | Some { CallableSignature.captures; _ } -> Some captures
       | None -> None
 
 
@@ -865,12 +913,13 @@ module CallablesSharedMemory = struct
     in
     let map =
       List.fold ~init:define_empty_shared_memory ~f:(fun define_shared_memory target ->
-          match get_module_and_definition ~pyre_api target with
-          | Some (qualifier, define) ->
-              SignaturesSharedMemory.add
-                signature_shared_memory
-                target
-                (Signature.from_define ~target ~qualifier define);
+          (* TODO(T225700656): When using pyrefly, this leads to copying ASTs from the
+             PyreflyApi.ReadOnly.t handle to the DefinesSharedMemory.t handle. We could save
+             performance by avoiding the copy, and directly use
+             `PyreflyApi.ReadOnly.get_define_opt`. *)
+          match get_signature_and_definition ~pyre_api target with
+          | Some (({ CallableSignature.qualifier; _ } as signature), define) ->
+              SignaturesSharedMemory.add signature_shared_memory target signature;
               DefinesSharedMemory.AddOnly.add
                 define_shared_memory
                 target
@@ -895,13 +944,15 @@ module CallablesSharedMemory = struct
 
 
   let add_alist_sequential { defines; signatures } entries =
-    let defines = DefinesSharedMemory.add_alist_sequential defines entries in
     let () =
-      List.iter entries ~f:(fun (target, { DefineAndQualifier.qualifier; define }) ->
-          SignaturesSharedMemory.add
-            signatures
-            target
-            (Signature.from_define ~target ~qualifier define))
+      List.iter entries ~f:(fun (target, signature, _) ->
+          SignaturesSharedMemory.add signatures target signature)
+    in
+    let defines =
+      entries
+      |> List.map ~f:(fun (target, { CallableSignature.qualifier; _ }, define) ->
+             target, { DefineAndQualifier.qualifier; define })
+      |> DefinesSharedMemory.add_alist_sequential defines
     in
     { defines; signatures }
 end

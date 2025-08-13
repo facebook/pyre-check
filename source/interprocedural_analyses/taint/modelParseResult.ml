@@ -886,7 +886,7 @@ module Modelable = struct
   type t =
     | Callable of {
         target: Target.t;
-        signature: Target.CallablesSharedMemory.Signature.t Lazy.t;
+        signature: Target.CallableSignature.t Lazy.t;
         decorators: CallableDecorator.t list Lazy.t;
       }
     | Attribute of {
@@ -916,7 +916,7 @@ module Modelable = struct
       lazy
         (signature
         |> Lazy.force
-        |> (fun { Target.CallablesSharedMemory.Signature.define_name; decorators; _ } ->
+        |> (fun { Target.CallableSignature.define_name; decorators; _ } ->
              PyrePysaLogic.DecoratorPreprocessing.original_decorators_from_preprocessed_signature
                ~define_name
                ~decorators)
@@ -997,9 +997,7 @@ module Modelable = struct
 
   let return_annotation = function
     | Callable { signature; _ } ->
-        let { Target.CallablesSharedMemory.Signature.return_annotation; _ } =
-          Lazy.force signature
-        in
+        let { Target.CallableSignature.return_annotation; _ } = Lazy.force signature in
         return_annotation
     | Attribute _
     | Global _ ->
@@ -1008,7 +1006,7 @@ module Modelable = struct
 
   let parameters = function
     | Callable { signature; _ } ->
-        let { Target.CallablesSharedMemory.Signature.parameters; _ } = Lazy.force signature in
+        let { Target.CallableSignature.parameters; _ } = Lazy.force signature in
         parameters
     | Attribute _
     | Global _ ->
@@ -1017,7 +1015,7 @@ module Modelable = struct
 
   let decorator_expressions_after_inlining = function
     | Callable { signature; _ } ->
-        let { Target.CallablesSharedMemory.Signature.decorators; _ } = Lazy.force signature in
+        let { Target.CallableSignature.decorators; _ } = Lazy.force signature in
         decorators
     | Attribute _
     | Global _ ->
@@ -1041,11 +1039,7 @@ module Modelable = struct
   let is_instance_method = function
     | Callable { signature; _ } -> (
         match Lazy.force signature with
-        | {
-         Target.CallablesSharedMemory.Signature.method_kind = Some Target.MethodKind.Instance;
-         _;
-        } ->
-            true
+        | { Target.CallableSignature.method_kind = Some Target.MethodKind.Instance; _ } -> true
         | _ -> false)
     | Attribute _
     | Global _ ->

@@ -244,7 +244,7 @@ module CallableToDecoratorsMap = struct
   let collect_decorators ~callables_to_definitions_map callable =
     callable
     |> Target.CallablesSharedMemory.ReadOnly.get_signature callables_to_definitions_map
-    >>= fun { Target.CallablesSharedMemory.Signature.decorators; location = define_location; _ } ->
+    >>= fun { Target.CallableSignature.decorators; location = define_location; _ } ->
     let decorators = decorators |> List.filter ~f:filter_decorator |> List.rev in
     if List.is_empty decorators then
       None
@@ -4227,7 +4227,7 @@ let resolve_callees
                 Target.CallablesSharedMemory.ReadOnly.get_signature
                   callables_to_definitions_map
                   callee.target
-                >>| (fun { Target.CallablesSharedMemory.Signature.parameters; is_stub; _ } ->
+                >>| (fun { Target.CallableSignature.parameters; is_stub; _ } ->
                       is_stub
                       || not (List.exists parameters ~f:(parameter_has_annotation callable_class)))
                 |> Option.value ~default:true
@@ -5462,7 +5462,7 @@ module HigherOrderCallGraph = struct
           | None ->
               log "Cannot find define for callable `%a`" Target.pp_pretty_with_kind target;
               None
-          | Some { Target.CallablesSharedMemory.Signature.is_stub; parameters; _ } ->
+          | Some { Target.CallableSignature.is_stub; parameters; _ } ->
               if is_stub then
                 let () = log "Callable `%a` is a stub" Target.pp_pretty_with_kind target in
                 None
@@ -6921,12 +6921,13 @@ module DecoratorResolution = struct
       decorator_resolution
       |> Target.Map.to_alist
       |> List.map ~f:(fun (callable, { DecoratorDefine.define; _ }) ->
+             let define = Node.create_with_default_location define in
              ( callable,
-               {
-                 Target.CallablesSharedMemory.DefineAndQualifier.qualifier =
-                   artificial_decorator_defines;
-                 define = Node.create_with_default_location define;
-               } ))
+               Target.CallableSignature.from_define_for_pyre1
+                 ~target:callable
+                 ~qualifier:artificial_decorator_defines
+                 define,
+               define ))
       |> Target.CallablesSharedMemory.add_alist_sequential callables_to_definitions_map
 
 

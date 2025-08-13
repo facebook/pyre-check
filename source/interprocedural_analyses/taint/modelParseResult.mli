@@ -479,7 +479,7 @@ module Modelable : sig
 
   val resolved_original_decorators : t -> CallableDecorator.t list
 
-  val signature : t -> Interprocedural.Target.CallablesSharedMemory.Signature.t
+  val signature : t -> Interprocedural.Target.CallableSignature.t
 
   val class_name : t -> string option
 

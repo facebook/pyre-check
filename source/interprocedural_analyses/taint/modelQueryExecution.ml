@@ -854,9 +854,7 @@ let find_base_methods
     match
       Target.CallablesSharedMemory.ReadOnly.get_signature callables_to_definitions_map base_method
     with
-    | Some
-        { Target.CallablesSharedMemory.Signature.method_kind = Some Target.MethodKind.Instance; _ }
-      ->
+    | Some { Target.CallableSignature.method_kind = Some Target.MethodKind.Instance; _ } ->
         Some base_method
     | _ -> None
   in
@@ -2023,7 +2021,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       | ModelQuery.Model.Global _ -> failwith "impossible case"
       | ModelQuery.Model.WriteToCache _ -> failwith "impossible case"
     in
-    let { Target.CallablesSharedMemory.Signature.parameters; return_annotation; captures; _ } =
+    let { Target.CallableSignature.parameters; return_annotation; captures; _ } =
       Modelable.signature modelable
     in
     let normalized_parameters = AccessPath.normalize_parameters parameters in

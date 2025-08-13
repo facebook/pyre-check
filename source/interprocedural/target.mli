@@ -215,12 +215,6 @@ val get_definitions
   Reference.t ->
   definitions_result option
 
-(* Exposed for testing purposes only. *)
-val get_module_and_definition_for_test
-  :  pyre_api:PyrePysaApi.ReadOnly.t ->
-  t ->
-  (Reference.t * Define.t Node.t) option
-
 val resolve_method
   :  pyre_api:PyrePysaApi.ReadOnly.t ->
   class_type:Type.t ->
@@ -282,24 +276,34 @@ module MethodKind : sig
     | Instance
 end
 
+module CallableSignature : sig
+  type target = t
+
+  type t = {
+    qualifier: Reference.t;
+    location: Location.t;
+    define_name: Reference.t;
+    parameters: Expression.Parameter.t list;
+    return_annotation: Expression.t option;
+    decorators: Expression.t list;
+    captures: Define.Capture.t list;
+    method_kind: MethodKind.t option;
+    is_stub: bool;
+  }
+
+  val from_define_for_pyre1 : target:target -> qualifier:Reference.t -> Define.t Node.t -> t
+end
+
+(* Exposed for testing purposes only. *)
+val get_signature_and_definition_for_test
+  :  pyre_api:PyrePysaApi.ReadOnly.t ->
+  t ->
+  (CallableSignature.t * Define.t Node.t) option
+
 module CallablesSharedMemory : sig
   type target = t
 
   type t
-
-  module Signature : sig
-    type t = {
-      qualifier: Reference.t;
-      location: Location.t;
-      define_name: Reference.t;
-      parameters: Expression.Parameter.t list;
-      return_annotation: Expression.t option;
-      decorators: Expression.t list;
-      captures: Define.Capture.t list;
-      method_kind: MethodKind.t option;
-      is_stub: bool;
-    }
-  end
 
   module DefineAndQualifier : sig
     type t = {
@@ -315,7 +319,7 @@ module CallablesSharedMemory : sig
 
     val get_location : t -> target -> Ast.Location.WithModule.t option
 
-    val get_signature : t -> target -> Signature.t option
+    val get_signature : t -> target -> CallableSignature.t option
 
     val get_qualifier : t -> target -> Reference.t option
 
@@ -343,7 +347,7 @@ module CallablesSharedMemory : sig
 
   val cleanup : t -> unit
 
-  val add_alist_sequential : t -> (target * DefineAndQualifier.t) list -> t
+  val add_alist_sequential : t -> (target * CallableSignature.t * Define.t Node.t) list -> t
 end
 
 val class_method_decorators : string list

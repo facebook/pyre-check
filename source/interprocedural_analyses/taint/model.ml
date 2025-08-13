@@ -595,7 +595,7 @@ let add_obscure_sink ~callables_to_definitions_map ~call_target model =
       | None ->
           let () = Log.warning "Found no definition for %a" Target.pp_pretty real_target in
           model
-      | Some { Target.CallablesSharedMemory.Signature.parameters; _ } ->
+      | Some { Target.CallableSignature.parameters; _ } ->
           let open Domains in
           let sink =
             BackwardTaint.singleton CallInfo.declaration (Sinks.NamedSink "Obscure") Frame.initial
