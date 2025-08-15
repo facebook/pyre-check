@@ -119,6 +119,7 @@ type kind =
       module_name: string;
       symbol_name: string;
     }
+  | MissingClass of { class_name: string }
   | ModelingClassAsDefine of string
   | ModelingModuleAsDefine of string
   | ModelingAttributeAsDefine of string
@@ -387,6 +388,7 @@ let description error =
       Format.sprintf "Class `%s` has no attribute `%s`." class_name attribute_name
   | MissingSymbol { module_name; symbol_name } ->
       Format.sprintf "Module `%s` does not define `%s`." module_name symbol_name
+  | MissingClass { class_name } -> Format.sprintf "Class `%s` does not exist." class_name
   | ModelingClassAsDefine class_name ->
       Format.sprintf
         "The class `%s` is not a valid define - did you mean to model `%s.__init__()`?"
@@ -617,6 +619,7 @@ let code { kind; _ } =
   | InvalidCrossRepositoryTaintAnchorFormatString _ -> 72
   | UnmatchedPartialSinkKind _ -> 73
   | UnsupportedFullyQualifiedCalleeInClassConstraint -> 74
+  | MissingClass _ -> 75
 
 
 let display { kind = error; path; location } =

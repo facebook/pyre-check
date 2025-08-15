@@ -105,6 +105,7 @@ type kind =
       module_name: string;
       symbol_name: string;
     }
+  | MissingClass of { class_name: string }
   | ModelingClassAsDefine of string
   | ModelingModuleAsDefine of string
   | ModelingAttributeAsDefine of string
