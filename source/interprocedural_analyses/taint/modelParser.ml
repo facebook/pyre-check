@@ -2965,7 +2965,7 @@ let parse_return_taint
 
 module ParsedStatement : sig
   type parsed_signature = private {
-    call_target: Target.t;
+    callable_name: Reference.t;
     parameters: Ast.Expression.Parameter.t list;
     return_annotation: Ast.Expression.t option;
     taint_decorators: Decorator.t list;
@@ -2975,7 +2975,7 @@ module ParsedStatement : sig
   }
 
   type parsed_attribute = private {
-    call_target: Target.t;
+    attribute_name: Reference.t;
     annotations: TaintAnnotation.t list;
     decorators: Decorator.t list;
     location: Location.t;
@@ -2997,13 +2997,10 @@ module ParsedStatement : sig
     | ParsedClass of parsed_class
     | ParsedQuery of ModelQuery.t
 
-  val mangle_top_level_name : Reference.t -> Reference.t
-
   val partition_taint_decorators : Expression.t list -> Decorator.t list * Expression.t list
 
   val create_parsed_signature_from_name
-    :  pyre_api:PyrePysaApi.ReadOnly.t ->
-    parameters:Ast.Expression.Parameter.t list ->
+    :  parameters:Ast.Expression.Parameter.t list ->
     return_annotation:Ast.Expression.t option ->
     decorators:Ast.Expression.t list ->
     location:Location.t ->
@@ -3023,7 +3020,7 @@ module ParsedStatement : sig
     :  annotations:TaintAnnotation.t list ->
     decorators:Decorator.t list ->
     location:Location.t ->
-    call_target:Target.t ->
+    Reference.t ->
     parsed_attribute
 
   val create_parsed_class
@@ -3035,7 +3032,7 @@ module ParsedStatement : sig
     parsed_class
 end = struct
   type parsed_signature = {
-    call_target: Target.t;
+    callable_name: Reference.t;
     parameters: Ast.Expression.Parameter.t list;
     return_annotation: Ast.Expression.t option;
     taint_decorators: Decorator.t list;
@@ -3045,7 +3042,7 @@ end = struct
   }
 
   type parsed_attribute = {
-    call_target: Target.t;
+    attribute_name: Reference.t;
     annotations: TaintAnnotation.t list;
     decorators: Decorator.t list;
     location: Location.t;
@@ -3096,30 +3093,7 @@ end = struct
     List.partition_map decorators ~f:get_taint_decorator
 
 
-  let mangle_top_level_name =
-    Reference.map_last ~f:(function
-        | "__top_level__" -> Ast.Statement.toplevel_define_name
-        | "__class_top_level__" -> Ast.Statement.class_toplevel_define_name
-        | identifier -> identifier)
-
-
-  let create_parsed_signature_from_name
-      ~pyre_api
-      ~parameters
-      ~return_annotation
-      ~decorators
-      ~location
-      name
-    =
-    let open Option.Monad_infix in
-    let name = mangle_top_level_name name in
-    let class_candidate =
-      Reference.prefix name
-      >>| PyrePysaApi.ReadOnly.parse_reference pyre_api
-      >>= fun parsed ->
-      let parent, _ = Type.split parsed in
-      Type.primitive_name parent >>| PyrePysaApi.ReadOnly.get_class_summary pyre_api
-    in
+  let create_parsed_signature_from_name ~parameters ~return_annotation ~decorators ~location name =
     let taint_decorators, define_decorators = partition_taint_decorators decorators in
     (* To ensure that the start/stop lines can be used for commenting out models,
      * we include the earliest decorator location. *)
@@ -3131,17 +3105,8 @@ end = struct
       in
       { location with start }
     in
-    let call_target =
-      match class_candidate with
-      | Some _
-        when Define.Signature.is_property_setter
-               (create_dummy_signature ~decorators:define_decorators name) ->
-          Target.create_method_from_reference ~kind:Target.Pyre1PropertySetter name
-      | Some _ -> Target.create_method_from_reference name
-      | None -> Target.create_function name
-    in
     {
-      call_target;
+      callable_name = name;
       parameters;
       taint_decorators;
       define_decorators;
@@ -3162,7 +3127,7 @@ end = struct
     let call_target = Target.from_define ~define_name ~define in
     let taint_decorators, _ = partition_taint_decorators decorators in
     {
-      call_target;
+      callable_name = Target.define_name_exn call_target;
       parameters;
       taint_decorators;
       define_decorators = define.signature.decorators;
@@ -3172,8 +3137,8 @@ end = struct
     }
 
 
-  let create_parsed_attribute ~annotations ~decorators ~location ~call_target =
-    { annotations; decorators; location; call_target }
+  let create_parsed_attribute ~annotations ~decorators ~location name =
+    { attribute_name = name; annotations; decorators; location }
 
 
   let create_parsed_class ~class_name ~source_annotations ~sink_annotations ~decorators ~location =
@@ -3194,21 +3159,28 @@ type models_or_query =
   | Models of Model.WithTarget.t list
   | Query of ModelQuery.t
 
-let resolve_global_callable ~path ~location ~verify_decorators ~pyre_api ~decorators callable =
+let mangle_top_level_name =
+  Reference.map_last ~f:(function
+      | "__top_level__" -> Ast.Statement.toplevel_define_name
+      | "__class_top_level__" -> Ast.Statement.class_toplevel_define_name
+      | identifier -> identifier)
+
+
+let resolve_global_callable ~path ~location ~verify_decorators ~pyre_api ~decorators name =
+  let name = mangle_top_level_name name in
   (* Since properties and setters share the same undecorated name, we need to special-case them. *)
-  let define_name = Target.define_name_exn callable in
-  let signature = create_dummy_signature ~decorators define_name in
-  if signature_is_property signature then
-    PyrePysaApi.ModelQueries.find_method_definitions pyre_api ~predicate:is_property define_name
+  let dummy_signature = create_dummy_signature ~decorators name in
+  if signature_is_property dummy_signature then
+    PyrePysaApi.ModelQueries.find_method_definitions pyre_api ~predicate:is_property name
     |> List.hd
     >>| Type.Callable.create_from_implementation
     >>| (fun callable -> PyrePysaApi.ModelQueries.Global.Attribute callable)
     |> Core.Result.return
-  else if Define.Signature.is_property_setter signature then
+  else if Define.Signature.is_property_setter dummy_signature then
     PyrePysaApi.ModelQueries.find_method_definitions
       pyre_api
       ~predicate:Define.is_property_setter
-      define_name
+      name
     |> List.hd
     >>| Type.Callable.create_from_implementation
     >>| (fun callable -> PyrePysaApi.ModelQueries.Global.Attribute callable)
@@ -3221,9 +3193,27 @@ let resolve_global_callable ~path ~location ~verify_decorators ~pyre_api ~decora
       (model_verification_error
          ~path
          ~location
-         (UnexpectedDecorators { name = define_name; unexpected_decorators = decorators }))
+         (UnexpectedDecorators { name; unexpected_decorators = decorators }))
   else
-    Ok (PyrePysaApi.ModelQueries.resolve_qualified_name_to_global pyre_api define_name)
+    Ok (PyrePysaApi.ModelQueries.resolve_qualified_name_to_global pyre_api name)
+
+
+let reference_to_target ~pyre_api ~define_decorators name =
+  let name = mangle_top_level_name name in
+  let class_candidate =
+    Reference.prefix name
+    >>| PyrePysaApi.ReadOnly.parse_reference pyre_api
+    >>= fun parsed ->
+    let parent, _ = Type.split parsed in
+    Type.primitive_name parent >>| PyrePysaApi.ReadOnly.get_class_summary pyre_api
+  in
+  match class_candidate with
+  | Some _
+    when Define.Signature.is_property_setter
+           (create_dummy_signature ~decorators:define_decorators name) ->
+      Target.create_method_from_reference ~kind:Target.Pyre1PropertySetter name
+  | Some _ -> Target.create_method_from_reference name
+  | None -> Target.create_function name
 
 
 let parse_decorator_annotations
@@ -3468,7 +3458,7 @@ let create_model_from_signature
     ~source_sink_filter
     ~is_obscure
     {
-      call_target;
+      callable_name;
       parameters;
       return_annotation;
       taint_decorators;
@@ -3478,9 +3468,8 @@ let create_model_from_signature
     }
   =
   let open Core.Result in
-  (* Make sure we know about what we model. *)
   let model_verification_error kind = Error { ModelVerificationError.kind; path; location } in
-  let callable_name = Target.define_name_exn call_target in
+  (* Make sure we know about what we model. *)
   let callable_annotation =
     resolve_global_callable
       ~path
@@ -3488,7 +3477,7 @@ let create_model_from_signature
       ~verify_decorators:user_provided_define_decorators
       ~pyre_api
       ~decorators:define_decorators
-      call_target
+      callable_name
     >>= function
     | None -> (
         let module_name = Reference.first callable_name in
@@ -3746,13 +3735,14 @@ let create_model_from_signature
     ~origin:DefineDecoratorCapturedVariables
     ~top_level_decorators:taint_decorators
   >>= fun captured_variables_annotations ->
-  let default_model = if is_obscure then Model.obscure_model else Model.empty_model in
+  let callable = reference_to_target ~pyre_api ~define_decorators callable_name in
+  let default_model = if is_obscure callable then Model.obscure_model else Model.empty_model in
   let all_annotations =
     return_annotations
     |> List.rev_append (List.concat parameters_annotations)
     |> List.rev_append captured_variables_annotations
     |> List.rev_append decorator_annotations
-    |> fix_constructors_and_property_setters_annotations ~callable:call_target ~source_sink_filter
+    |> fix_constructors_and_property_setters_annotations ~callable ~source_sink_filter
   in
   List.fold_result
     all_annotations
@@ -3765,7 +3755,7 @@ let create_model_from_signature
          ~pyre_api
          ~callable_annotation
          ~source_sink_filter)
-  >>| fun model -> { Model.WithTarget.model; target = call_target }
+  >>| fun model -> { Model.WithTarget.model; target = callable }
 
 
 let create_model_from_attribute
@@ -3773,10 +3763,10 @@ let create_model_from_attribute
     ~path
     ~taint_configuration
     ~source_sink_filter
-    { annotations; decorators; location; call_target }
+    { annotations; decorators; location; attribute_name }
   =
   let open Core.Result in
-  ModelVerifier.verify_global ~path ~location ~pyre_api ~name:(Target.object_name call_target)
+  ModelVerifier.verify_global ~path ~location ~pyre_api ~name:attribute_name
   >>= fun () ->
   let model_annotations =
     List.map annotations ~f:(fun annotation ->
@@ -3803,11 +3793,11 @@ let create_model_from_attribute
       (add_taint_annotation_to_model
          ~path
          ~location
-         ~model_name:(call_target |> Target.object_name |> Reference.show)
+         ~model_name:(Reference.show attribute_name)
          ~pyre_api
          ~callable_annotation:None
          ~source_sink_filter)
-  >>| fun model -> { Model.WithTarget.model; target = call_target }
+  >>| fun model -> { Model.WithTarget.model; target = Target.create_object attribute_name }
 
 
 let create_models_from_class
@@ -3815,6 +3805,7 @@ let create_models_from_class
     ~path
     ~taint_configuration
     ~source_sink_filter
+    ~is_obscure
     {
       class_name;
       source_annotations;
@@ -3868,7 +3859,7 @@ let create_models_from_class
                    ~path
                    ~taint_configuration
                    ~source_sink_filter
-                   ~is_obscure:(Define.is_stub method_define)
+                   ~is_obscure
             in
             let sources =
               List.map source_annotations ~f:(fun source_annotation ->
@@ -3918,15 +3909,13 @@ let is_obscure ~definitions ~stubs call_target =
 
 let parse_models ~pyre_api ~taint_configuration ~source_sink_filter ~definitions ~stubs models =
   let open Core.Result in
-  List.map
-    models
-    ~f:(fun ((({ call_target; _ } : parsed_signature) as parsed_signature), model_source) ->
+  List.map models ~f:(fun (parsed_signature, model_source) ->
       create_model_from_signature
         ~pyre_api
         ~path:None
         ~taint_configuration
         ~source_sink_filter
-        ~is_obscure:(is_obscure ~definitions ~stubs call_target)
+        ~is_obscure:(is_obscure ~definitions ~stubs)
         parsed_signature
       >>| fun { Model.WithTarget.target; model } ->
       { ModelQuery.ExpectedModel.model; target; model_source })
@@ -4044,7 +4033,6 @@ let rec parse_statement
         Ok
           (ParsedStatement.ParsedSignature
              (ParsedStatement.create_parsed_signature_from_name
-                ~pyre_api
                 ~parameters
                 ~return_annotation
                 ~decorators
@@ -4177,7 +4165,7 @@ let rec parse_statement
                   ~annotations:[]
                   ~decorators:[decorator]
                   ~location
-                  ~call_target:(Target.create_object name)));
+                  name));
         ]
       else if
         String.equal annotation_string "ViaTypeOf"
@@ -4199,11 +4187,7 @@ let rec parse_statement
           annotation
         >>| (fun annotations ->
               ParsedStatement.ParsedAttribute
-                (ParsedStatement.create_parsed_attribute
-                   ~annotations
-                   ~decorators:[]
-                   ~location
-                   ~call_target:(Target.create_object name)))
+                (ParsedStatement.create_parsed_attribute ~annotations ~decorators:[] ~location name))
         |> fun result -> [result]
       else
         [
@@ -4498,13 +4482,13 @@ let create
         [], [model_verification_error ~path ~location ParseError]
   in
   let create_model_or_query = function
-    | ParsedSignature ({ call_target; _ } as parsed_signature) ->
+    | ParsedSignature parsed_signature ->
         create_model_from_signature
           ~pyre_api
           ~path
           ~taint_configuration
           ~source_sink_filter
-          ~is_obscure:(is_obscure ~definitions ~stubs call_target)
+          ~is_obscure:(is_obscure ~definitions ~stubs)
           parsed_signature
         >>| fun model -> Models [model]
     | ParsedAttribute parsed_attribute ->
@@ -4521,6 +4505,7 @@ let create
           ~path
           ~taint_configuration
           ~source_sink_filter
+          ~is_obscure:(is_obscure ~definitions ~stubs)
           parsed_class
         >>| fun models -> Models models
     | ParsedQuery query -> Ok (Query query)
@@ -4552,7 +4537,7 @@ let parse_model_modes ~path ~source =
   let parse_statement modes = function
     | { Node.value = Statement.Define { signature = { name = define_name; decorators; _ }; _ }; _ }
       ->
-        let define_name = ParsedStatement.mangle_top_level_name define_name in
+        let define_name = mangle_top_level_name define_name in
         let taint_decorators, _ = ParsedStatement.partition_taint_decorators decorators in
         let get_mode modes { Decorator.name = { Node.value = mode_name; _ }; _ } =
           match Model.Mode.from_string (Reference.show mode_name) with
@@ -4657,7 +4642,7 @@ let create_callable_model_from_annotations
     ~pyre_api
     ~verify_decorators:false
     ~decorators
-    target
+    (Target.define_name_exn target)
   >>| (function
         | Some (PyrePysaApi.ModelQueries.Global.Attribute (Type.Callable t))
         | Some
