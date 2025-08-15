@@ -469,7 +469,9 @@ module ModelQueries = struct
     type t =
       | Class
       | Module
-      | Attribute of Type.t
+      | Function of Type.Callable.t (* function or method *)
+      | Attribute (* non-callable attribute. *)
+      | UnknownAttribute (* attribute exists, but type is unknown. *)
     [@@deriving show]
   end
 
@@ -568,12 +570,17 @@ module ModelQueries = struct
      internals so we need to extract it if we want to be able to work toward a well-defined
      interface. *)
   let resolve_qualified_name_to_global read_only name =
+    let get_callable_type = function
+      | Type.Callable t -> t
+      | _ -> failwith "expected callable type"
+    in
     let toplevel_define_type =
       Type.Callable.create
         ~overloads:[]
         ~parameters:(Type.Callable.Defined [])
         ~annotation:Type.NoneType
         ()
+      |> get_callable_type
     in
     let name_end = Ast.Reference.last name in
     if Ast.Identifier.equal name_end Ast.Statement.toplevel_define_name then
@@ -583,7 +590,7 @@ module ModelQueries = struct
         >>| ReadOnly.module_exists read_only
         |> Option.value ~default:false
       then
-        Some (Global.Attribute toplevel_define_type)
+        Some (Global.Function toplevel_define_type)
       else
         None
     else if Ast.Identifier.equal name_end Ast.Statement.class_toplevel_define_name then
@@ -594,7 +601,7 @@ module ModelQueries = struct
         >>| ReadOnly.class_exists read_only
         |> Option.value ~default:false
       then
-        Some (Global.Attribute toplevel_define_type)
+        Some (Global.Function toplevel_define_type)
       else
         None
     else (* Resolve undecorated functions. *)
@@ -624,22 +631,25 @@ module ModelQueries = struct
                    signature)
       in
       match maybe_signature_of_function with
-      | Some signature -> Some (Global.Attribute (Type.Callable signature))
+      | Some signature -> Some (Global.Function signature)
       | None -> (
           (* Resolve undecorated methods. *)
           match find_method_definitions read_only name with
           | [callable] ->
-              Some (Global.Attribute (Type.Callable.create_from_implementation callable))
+              Some
+                (Global.Function
+                   (Type.Callable.create_from_implementation callable |> get_callable_type))
           | first :: _ :: _ as overloads ->
               (* Note that we use the first overload as the base implementation, which might be
                  unsound. *)
               Some
-                (Global.Attribute
+                (Global.Function
                    (Type.Callable.create
                       ~overloads
                       ~parameters:first.parameters
                       ~annotation:first.annotation
-                      ()))
+                      ()
+                   |> get_callable_type))
           | [] -> (
               (* Fall back for anything else. *)
               let annotation =
@@ -659,7 +669,14 @@ module ModelQueries = struct
                      resolve to mutable annotation, while existing ones resolve to immutable
                      annotation. This is fragile! *)
                   None
-              | annotation -> Some (Global.Attribute annotation)))
+              | Type.Parametric
+                  { name = "BoundMethod"; arguments = [Type.Argument.Single (Type.Callable t); _] }
+                ->
+                  Some (Global.Function t)
+              | Type.Callable t -> Some (Global.Function t)
+              | Type.Top -> Some Global.UnknownAttribute
+              | Type.Any -> Some Global.UnknownAttribute
+              | _ -> Some Global.Attribute))
 
 
   let invalidate_cache = ClassDefinitionsCache.invalidate

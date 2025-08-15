@@ -223,17 +223,14 @@ let verify_global ~path ~location ~pyre_api ~name =
   | Some PyrePysaApi.ModelQueries.Global.Module ->
       Error
         (model_verification_error ~path ~location (ModelingModuleAsAttribute (Reference.show name)))
-  | Some (PyrePysaApi.ModelQueries.Global.Attribute (Type.Callable _))
-  | Some
-      (PyrePysaApi.ModelQueries.Global.Attribute
-        (Type.Parametric
-          { name = "BoundMethod"; arguments = [Type.Argument.Single (Type.Callable _); _] })) ->
+  | Some (PyrePysaApi.ModelQueries.Global.Function _) ->
       Error
         (model_verification_error
            ~path
            ~location
            (ModelingCallableAsAttribute (Reference.show name)))
-  | Some (PyrePysaApi.ModelQueries.Global.Attribute _)
+  | Some PyrePysaApi.ModelQueries.Global.Attribute
+  | Some PyrePysaApi.ModelQueries.Global.UnknownAttribute
   | None -> (
       let class_summary =
         Reference.prefix name

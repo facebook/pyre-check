@@ -222,7 +222,9 @@ module ModelQueries : sig
     type t =
       | Class
       | Module
-      | Attribute of Type.t
+      | Function of Type.Callable.t (* function or method *)
+      | Attribute (* non-callable attribute. *)
+      | UnknownAttribute (* attribute exists, but type is unknown. *)
     [@@deriving show]
   end
 

@@ -3170,11 +3170,16 @@ let resolve_global_callable ~path ~location ~verify_decorators ~pyre_api ~decora
   let name = mangle_top_level_name name in
   (* Since properties and setters share the same undecorated name, we need to special-case them. *)
   let dummy_signature = create_dummy_signature ~decorators name in
+  let get_callable_type = function
+    | Type.Callable t -> t
+    | _ -> failwith "expected callable type"
+  in
   if signature_is_property dummy_signature then
     PyrePysaApi.ModelQueries.find_method_definitions pyre_api ~predicate:is_property name
     |> List.hd
     >>| Type.Callable.create_from_implementation
-    >>| (fun callable -> PyrePysaApi.ModelQueries.Global.Attribute callable)
+    >>| get_callable_type
+    >>| (fun callable -> PyrePysaApi.ModelQueries.Global.Function callable)
     |> Core.Result.return
   else if Define.Signature.is_property_setter dummy_signature then
     PyrePysaApi.ModelQueries.find_method_definitions
@@ -3183,7 +3188,8 @@ let resolve_global_callable ~path ~location ~verify_decorators ~pyre_api ~decora
       name
     |> List.hd
     >>| Type.Callable.create_from_implementation
-    >>| (fun callable -> PyrePysaApi.ModelQueries.Global.Attribute callable)
+    >>| get_callable_type
+    >>| (fun callable -> PyrePysaApi.ModelQueries.Global.Function callable)
     |> Core.Result.return
   else if verify_decorators && not (List.is_empty decorators) then
     (* Ensure that models don't declare decorators that our taint analyses doesn't understand. We
@@ -3497,15 +3503,9 @@ let create_model_from_signature
         model_verification_error (ModelingClassAsDefine (Reference.show callable_name))
     | Some PyrePysaApi.ModelQueries.Global.Module ->
         model_verification_error (ModelingModuleAsDefine (Reference.show callable_name))
-    | Some (PyrePysaApi.ModelQueries.Global.Attribute (Type.Callable t))
-    | Some
-        (PyrePysaApi.ModelQueries.Global.Attribute
-          (Type.Parametric
-            { name = "BoundMethod"; arguments = [Type.Argument.Single (Type.Callable t); _] })) ->
-        Ok (Some t)
-    | Some (PyrePysaApi.ModelQueries.Global.Attribute Type.Any) -> Ok None
-    | Some (PyrePysaApi.ModelQueries.Global.Attribute Type.Top) -> Ok None
-    | Some (PyrePysaApi.ModelQueries.Global.Attribute _) ->
+    | Some (PyrePysaApi.ModelQueries.Global.Function t) -> Ok (Some t)
+    | Some PyrePysaApi.ModelQueries.Global.UnknownAttribute -> Ok None
+    | Some PyrePysaApi.ModelQueries.Global.Attribute ->
         model_verification_error (ModelingAttributeAsDefine (Reference.show callable_name))
   in
   (* Check model matches callables primary signature. *)
@@ -4644,13 +4644,7 @@ let create_callable_model_from_annotations
     ~decorators
     (Target.define_name_exn target)
   >>| (function
-        | Some (PyrePysaApi.ModelQueries.Global.Attribute (Type.Callable t))
-        | Some
-            (PyrePysaApi.ModelQueries.Global.Attribute
-              (Type.Parametric
-                { name = "BoundMethod"; arguments = [Type.Argument.Single (Type.Callable t); _] }))
-          ->
-            Some t
+        | Some (PyrePysaApi.ModelQueries.Global.Function t) -> Some t
         | _ -> None)
   >>= fun callable_annotation ->
   let default_model = if is_obscure then Model.obscure_model else Model.empty_model in
