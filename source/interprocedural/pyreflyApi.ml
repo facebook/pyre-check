@@ -172,12 +172,20 @@ module ModuleId : sig
   val from_int : int -> t
 
   val to_int : t -> int
+
+  val max : t -> t -> t
+
+  val increment : t -> t
 end = struct
   type t = int [@@deriving compare, equal, sexp, hash, show]
 
   let from_int = Fn.id
 
   let to_int = Fn.id
+
+  let max = Int.max
+
+  let increment id = id + 1
 end
 
 (* Unique identifier for a class within a module, assigned by pyrefly. *)
@@ -625,7 +633,7 @@ module ModuleInfosSharedMemory = struct
     type t = {
       source_path: ArtifactPath.t option (* The path of source code as seen by the analyzer. *);
       is_test: bool; (* Is this a test file? *)
-      is_stub: bool;
+      is_stub: bool; (* Is this a stub file (e.g, `a.pyi`)? *)
     }
   end
 
@@ -915,7 +923,7 @@ module ReadWrite = struct
       is_test: bool;
       is_stub: bool;
     }
-    [@@deriving show]
+    [@@deriving compare, equal, show]
 
     let from_project
         ~pyrefly_directory
@@ -956,10 +964,14 @@ module ReadWrite = struct
   }
 
   (* Build a mapping from unique module qualifiers (module name + path prefix) to module. *)
-  let create_module_qualifiers modules =
-    let make_unique_qualifiers (module_name, modules) =
+  let create_module_qualifiers ~pyrefly_directory ~add_toplevel_modules modules =
+    let make_unique_qualifiers ~key:module_name ~data:modules =
       match modules with
-      | [module_info] -> [ModuleQualifier.create ~path:None module_name, module_info]
+      | [module_info] ->
+          [
+            ( ModuleQualifier.create ~path:None module_name,
+              Module.from_project ~pyrefly_directory module_info );
+          ]
       | _ ->
           (* From a list of modules with the same module name, make unique qualifiers for each
              module, using the path as a prefix *)
@@ -994,17 +1006,63 @@ module ReadWrite = struct
                  List.rev (module_path_elements module_path), module_info)
           |> find_shortest_unique_prefix ~prefix_length:1
           |> List.map ~f:(fun (path, module_info) ->
-                 ModuleQualifier.create ~path:(Some path) module_name, module_info)
+                 ( ModuleQualifier.create ~path:(Some path) module_name,
+                   Module.from_project ~pyrefly_directory module_info ))
     in
     let add_to_module_name_mapping sofar ({ ProjectFile.Module.module_name; _ } as module_info) =
       Map.update sofar module_name ~f:(function
           | None -> [module_info]
           | Some existing -> module_info :: existing)
     in
+    (* For every module `a.b.c`, make sure that the module `a` exists. If not, then create an
+       implicit empty module `a`. *)
+    let add_implicit_top_level_modules qualifier_to_module_map =
+      let last_module_id =
+        qualifier_to_module_map
+        |> Map.data
+        |> List.concat
+        |> List.fold ~init:(ModuleId.from_int 0) ~f:(fun sofar (_, { Module.module_id; _ }) ->
+               ModuleId.max sofar module_id)
+      in
+      let add_implicit_module ((qualifier_to_module_map, last_module_id) as sofar) module_name =
+        if Reference.length module_name >= 2 then
+          let module_head = Option.value_exn (Reference.head module_name) in
+          if not (Map.mem qualifier_to_module_map module_head) then
+            let last_module_id = ModuleId.increment last_module_id in
+            let qualifier_to_module_map =
+              Map.add_exn
+                qualifier_to_module_map
+                ~key:module_head
+                ~data:
+                  [
+                    ( ModuleQualifier.create ~path:None module_head,
+                      {
+                        Module.module_id = last_module_id;
+                        module_name = module_head;
+                        source_path = None;
+                        pyrefly_info_path = None;
+                        is_test = false;
+                        is_stub = false;
+                      } );
+                  ]
+            in
+            qualifier_to_module_map, last_module_id
+          else
+            sofar
+        else
+          sofar
+      in
+      List.fold
+        ~init:(qualifier_to_module_map, last_module_id)
+        ~f:add_implicit_module
+        (Map.keys qualifier_to_module_map)
+      |> fst
+    in
     modules
     |> List.fold ~init:Reference.Map.empty ~f:add_to_module_name_mapping
-    |> Map.to_alist
-    |> List.map ~f:make_unique_qualifiers
+    |> Map.mapi ~f:make_unique_qualifiers
+    |> (if add_toplevel_modules then add_implicit_top_level_modules else Fn.id)
+    |> Map.data
     |> List.concat
     |> ModuleQualifier.Map.of_alist_exn
 
@@ -1016,8 +1074,7 @@ module ReadWrite = struct
       ProjectFile.from_path_exn (PyrePath.append pyrefly_directory ~element:"pyrefly.pysa.json")
     in
     let qualifier_to_module_map =
-      create_module_qualifiers (Map.data modules)
-      |> ModuleQualifier.Map.map ~f:(Module.from_project ~pyrefly_directory)
+      create_module_qualifiers ~pyrefly_directory ~add_toplevel_modules:true (Map.data modules)
     in
     let object_class_id =
       { GlobalClassId.module_id = builtin_module_id; local_class_id = object_class_id }
@@ -2155,6 +2212,8 @@ end
 
 (* Exposed for testing purposes *)
 module Testing = struct
+  module Module = ReadWrite.Module
+
   let create_module_qualifiers = ReadWrite.create_module_qualifiers
 
   module Definition = ReadWrite.DefinitionCollector.Definition

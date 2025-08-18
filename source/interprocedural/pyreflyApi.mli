@@ -212,10 +212,24 @@ end
 
 (* Exposed for testing purposes *)
 module Testing : sig
+  module Module : sig
+    type t = {
+      module_id: ModuleId.t;
+      module_name: Ast.Reference.t;
+      source_path: ArtifactPath.t option;
+      pyrefly_info_path: ModuleInfoPath.t option;
+      is_test: bool;
+      is_stub: bool;
+    }
+    [@@deriving compare, equal, show]
+  end
+
   (* Build a mapping from unique module qualifiers (module name + path prefix) to module. *)
   val create_module_qualifiers
-    :  ProjectFile.Module.t list ->
-    ProjectFile.Module.t ModuleQualifier.Map.t
+    :  pyrefly_directory:PyrePath.t ->
+    add_toplevel_modules:bool ->
+    ProjectFile.Module.t list ->
+    Module.t ModuleQualifier.Map.t
 
   module Definition : sig
     type t =

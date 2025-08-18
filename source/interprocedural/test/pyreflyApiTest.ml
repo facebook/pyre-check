@@ -15,11 +15,20 @@ module ModuleQualifier = PyreflyApi.ModuleQualifier
 module ModuleInfoFile = PyreflyApi.ModuleInfoFile
 module FullyQualifiedName = PyreflyApi.FullyQualifiedName
 
-module ModuleQualifierTest = struct
+module ModuleQualifierInput = struct
   type t = {
     module_name: string;
     path: ModulePath.t;
-    expected_qualifier: string;
+    id: int;
+  }
+end
+
+module ModuleQualifierExpected = struct
+  type t = {
+    qualifier: string;
+    module_name: string;
+    source_path: string option;
+    id: int;
   }
   [@@deriving show]
 end
@@ -29,10 +38,12 @@ let filesystem_module_path path =
 
 
 let test_module_qualifiers _ =
-  let assert_module_qualifiers test () =
-    let make_pyrefly_module { ModuleQualifierTest.module_name; path; _ } =
+  let open Option.Monad_infix in
+  let assert_module_qualifiers ?(add_toplevel_modules = false) ~inputs ~expected () =
+    let pyrefly_directory = PyrePath.create_absolute "/pyrefly" in
+    let make_pyrefly_module { ModuleQualifierInput.module_name; path; id } =
       {
-        PyreflyApi.ProjectFile.Module.module_id = ModuleId.from_int 0;
+        PyreflyApi.ProjectFile.Module.module_id = ModuleId.from_int id;
         module_name = Reference.create module_name;
         module_path = path;
         info_path = None;
@@ -41,194 +52,420 @@ let test_module_qualifiers _ =
         is_init = false;
       }
     in
-    let to_string map =
-      map
-      |> Map.to_alist
-      |> List.map
-           ~f:(fun (module_qualifier, { PyreflyApi.ProjectFile.Module.module_name; module_path; _ })
-              ->
-             {
-               ModuleQualifierTest.expected_qualifier = ModuleQualifier.show module_qualifier;
-               module_name = Reference.show module_name;
-               path = module_path;
-             })
-      |> [%show: ModuleQualifierTest.t list]
+    let make_testing_module { ModuleQualifierExpected.module_name; source_path; id; qualifier = _ } =
+      {
+        PyreflyApi.Testing.Module.module_id = ModuleId.from_int id;
+        module_name = Reference.create module_name;
+        source_path = source_path >>| PyrePath.create_absolute >>| ArtifactPath.create;
+        pyrefly_info_path = None;
+        is_test = false;
+        is_stub = false;
+      }
     in
-    let inputs = List.map ~f:make_pyrefly_module test in
+    let to_string map =
+      map |> Map.to_alist |> [%show: (ModuleQualifier.t * PyreflyApi.Testing.Module.t) list]
+    in
+    let inputs = List.map ~f:make_pyrefly_module inputs in
     let expected =
-      test
-      |> List.map ~f:(fun ({ ModuleQualifierTest.expected_qualifier; _ } as test_module) ->
-             ( ModuleQualifier.from_reference_unchecked (Reference.create expected_qualifier),
-               make_pyrefly_module test_module ))
+      expected
+      |> List.map ~f:(fun ({ ModuleQualifierExpected.qualifier; _ } as test_module) ->
+             ( ModuleQualifier.from_reference_unchecked (Reference.create qualifier),
+               make_testing_module test_module ))
       |> PyreflyApi.ModuleQualifier.Map.of_alist_exn
     in
-    let actual = PyreflyApi.Testing.create_module_qualifiers inputs in
+    let actual =
+      PyreflyApi.Testing.create_module_qualifiers ~pyrefly_directory ~add_toplevel_modules inputs
+    in
     assert_equal
-      ~cmp:(ModuleQualifier.Map.equal PyreflyApi.ProjectFile.Module.equal)
+      ~cmp:(ModuleQualifier.Map.equal PyreflyApi.Testing.Module.equal)
       ~printer:to_string
       expected
       actual
   in
   assert_module_qualifiers
-    [
-      { module_name = "a"; path = filesystem_module_path "/root/a.py"; expected_qualifier = "a" };
-      { module_name = "b"; path = filesystem_module_path "/root/b.py"; expected_qualifier = "b" };
-      { module_name = "c"; path = filesystem_module_path "/root/c.py"; expected_qualifier = "c" };
-    ]
+    ~inputs:
+      [
+        {
+          ModuleQualifierInput.module_name = "a";
+          path = filesystem_module_path "/root/a.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierInput.module_name = "b";
+          path = filesystem_module_path "/root/b.py";
+          id = 1;
+        };
+        {
+          ModuleQualifierInput.module_name = "c";
+          path = filesystem_module_path "/root/c.py";
+          id = 2;
+        };
+      ]
+    ~expected:
+      [
+        {
+          ModuleQualifierExpected.qualifier = "a";
+          module_name = "a";
+          source_path = Some "/root/a.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierExpected.qualifier = "b";
+          module_name = "b";
+          source_path = Some "/root/b.py";
+          id = 1;
+        };
+        {
+          ModuleQualifierExpected.qualifier = "c";
+          module_name = "c";
+          source_path = Some "/root/c.py";
+          id = 2;
+        };
+      ]
     ();
   assert_module_qualifiers
-    [
-      {
-        module_name = "a";
-        path = filesystem_module_path "/root/a/__init__.py";
-        expected_qualifier = "a";
-      };
-      {
-        module_name = "a.b";
-        path = filesystem_module_path "/root/a/b/__init__.py";
-        expected_qualifier = "a.b";
-      };
-      {
-        module_name = "a.b.c";
-        path = filesystem_module_path "/root/a/b/c.py";
-        expected_qualifier = "a.b.c";
-      };
-    ]
+    ~inputs:
+      [
+        {
+          ModuleQualifierInput.module_name = "a";
+          path = filesystem_module_path "/root/a/__init__.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierInput.module_name = "a.b";
+          path = filesystem_module_path "/root/a/b/__init__.py";
+          id = 1;
+        };
+        {
+          ModuleQualifierInput.module_name = "a.b.c";
+          path = filesystem_module_path "/root/a/b/c.py";
+          id = 2;
+        };
+      ]
+    ~expected:
+      [
+        {
+          ModuleQualifierExpected.qualifier = "a";
+          module_name = "a";
+          source_path = Some "/root/a/__init__.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierExpected.qualifier = "a.b";
+          module_name = "a.b";
+          source_path = Some "/root/a/b/__init__.py";
+          id = 1;
+        };
+        {
+          ModuleQualifierExpected.qualifier = "a.b.c";
+          module_name = "a.b.c";
+          source_path = Some "/root/a/b/c.py";
+          id = 2;
+        };
+      ]
     ();
   (* Conflicting module name due to multiple roots *)
   assert_module_qualifiers
-    [
-      {
-        module_name = "a.b";
-        path = filesystem_module_path "/first_root/a/b.py";
-        expected_qualifier = "first_root/a/b.py:a.b";
-      };
-      {
-        module_name = "a.b";
-        path = filesystem_module_path "/second_root/a/b.py";
-        expected_qualifier = "second_root/a/b.py:a.b";
-      };
-    ]
+    ~inputs:
+      [
+        {
+          ModuleQualifierInput.module_name = "a.b";
+          path = filesystem_module_path "/first_root/a/b.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierInput.module_name = "a.b";
+          path = filesystem_module_path "/second_root/a/b.py";
+          id = 1;
+        };
+      ]
+    ~expected:
+      [
+        {
+          ModuleQualifierExpected.qualifier = "first_root/a/b.py:a.b";
+          module_name = "a.b";
+          source_path = Some "/first_root/a/b.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierExpected.qualifier = "second_root/a/b.py:a.b";
+          module_name = "a.b";
+          source_path = Some "/second_root/a/b.py";
+          id = 1;
+        };
+      ]
     ();
   (* Conflicting module name due to stub files *)
   assert_module_qualifiers
-    [
-      {
-        module_name = "a.b";
-        path = filesystem_module_path "/root/a/b.py";
-        expected_qualifier = "b.py:a.b";
-      };
-      {
-        module_name = "a.b";
-        path = filesystem_module_path "/root/a/b.pyi";
-        expected_qualifier = "b.pyi:a.b";
-      };
-    ]
+    ~inputs:
+      [
+        {
+          ModuleQualifierInput.module_name = "a.b";
+          path = filesystem_module_path "/root/a/b.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierInput.module_name = "a.b";
+          path = filesystem_module_path "/root/a/b.pyi";
+          id = 1;
+        };
+      ]
+    ~expected:
+      [
+        {
+          ModuleQualifierExpected.qualifier = "b.py:a.b";
+          module_name = "a.b";
+          source_path = Some "/root/a/b.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierExpected.qualifier = "b.pyi:a.b";
+          module_name = "a.b";
+          source_path = Some "/root/a/b.pyi";
+          id = 1;
+        };
+      ]
     ();
   (* Multiple modules with conflicts *)
   assert_module_qualifiers
-    [
-      {
-        module_name = "a.b";
-        path = filesystem_module_path "/root/a/b.py";
-        expected_qualifier = "b.py:a.b";
-      };
-      {
-        module_name = "a.b";
-        path = filesystem_module_path "/root/a/b.pyi";
-        expected_qualifier = "b.pyi:a.b";
-      };
-      {
-        module_name = "a.c";
-        path = filesystem_module_path "/root/a/c.py";
-        expected_qualifier = "c.py:a.c";
-      };
-      {
-        module_name = "a.c";
-        path = filesystem_module_path "/root/a/c.pyi";
-        expected_qualifier = "c.pyi:a.c";
-      };
-    ]
+    ~inputs:
+      [
+        {
+          ModuleQualifierInput.module_name = "a.b";
+          path = filesystem_module_path "/root/a/b.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierInput.module_name = "a.b";
+          path = filesystem_module_path "/root/a/b.pyi";
+          id = 1;
+        };
+        {
+          ModuleQualifierInput.module_name = "a.c";
+          path = filesystem_module_path "/root/a/c.py";
+          id = 2;
+        };
+        {
+          ModuleQualifierInput.module_name = "a.c";
+          path = filesystem_module_path "/root/a/c.pyi";
+          id = 3;
+        };
+      ]
+    ~expected:
+      [
+        {
+          ModuleQualifierExpected.qualifier = "b.py:a.b";
+          module_name = "a.b";
+          source_path = Some "/root/a/b.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierExpected.qualifier = "b.pyi:a.b";
+          module_name = "a.b";
+          source_path = Some "/root/a/b.pyi";
+          id = 1;
+        };
+        {
+          ModuleQualifierExpected.qualifier = "c.py:a.c";
+          module_name = "a.c";
+          source_path = Some "/root/a/c.py";
+          id = 2;
+        };
+        {
+          ModuleQualifierExpected.qualifier = "c.pyi:a.c";
+          module_name = "a.c";
+          source_path = Some "/root/a/c.pyi";
+          id = 3;
+        };
+      ]
     ();
   (* __init__.py vs module.py *)
   assert_module_qualifiers
-    [
-      {
-        module_name = "a.b";
-        path = filesystem_module_path "/first_root/a/b.py";
-        expected_qualifier = "b.py:a.b";
-      };
-      {
-        module_name = "a.b";
-        path = filesystem_module_path "/second_root/a/b/__init__.py";
-        expected_qualifier = "__init__.py:a.b";
-      };
-    ]
+    ~inputs:
+      [
+        {
+          ModuleQualifierInput.module_name = "a.b";
+          path = filesystem_module_path "/first_root/a/b.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierInput.module_name = "a.b";
+          path = filesystem_module_path "/second_root/a/b/__init__.py";
+          id = 1;
+        };
+      ]
+    ~expected:
+      [
+        {
+          ModuleQualifierExpected.qualifier = "b.py:a.b";
+          module_name = "a.b";
+          source_path = Some "/first_root/a/b.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierExpected.qualifier = "__init__.py:a.b";
+          module_name = "a.b";
+          source_path = Some "/second_root/a/b/__init__.py";
+          id = 1;
+        };
+      ]
     ();
   (* 3 conflicts *)
   assert_module_qualifiers
-    [
-      {
-        module_name = "a.b";
-        path = filesystem_module_path "/first_root/a/b.py";
-        expected_qualifier = "first_root/a/b.py:a.b";
-      };
-      {
-        module_name = "a.b";
-        path = filesystem_module_path "/second_root/a/b/__init__.py";
-        expected_qualifier = "a/b/__init__.py:a.b";
-      };
-      {
-        module_name = "a.b";
-        path = filesystem_module_path "/third_root/a/b.py";
-        expected_qualifier = "third_root/a/b.py:a.b";
-      };
-    ]
+    ~inputs:
+      [
+        {
+          ModuleQualifierInput.module_name = "a.b";
+          path = filesystem_module_path "/first_root/a/b.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierInput.module_name = "a.b";
+          path = filesystem_module_path "/second_root/a/b/__init__.py";
+          id = 1;
+        };
+        {
+          ModuleQualifierInput.module_name = "a.b";
+          path = filesystem_module_path "/third_root/a/b.py";
+          id = 2;
+        };
+      ]
+    ~expected:
+      [
+        {
+          ModuleQualifierExpected.qualifier = "first_root/a/b.py:a.b";
+          module_name = "a.b";
+          source_path = Some "/first_root/a/b.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierExpected.qualifier = "a/b/__init__.py:a.b";
+          module_name = "a.b";
+          source_path = Some "/second_root/a/b/__init__.py";
+          id = 1;
+        };
+        {
+          ModuleQualifierExpected.qualifier = "third_root/a/b.py:a.b";
+          module_name = "a.b";
+          source_path = Some "/third_root/a/b.py";
+          id = 2;
+        };
+      ]
     ();
   (* filesystem vs typeshed *)
   assert_module_qualifiers
-    [
-      {
-        module_name = "typing";
-        path = filesystem_module_path "/root/stdlib/typing.py";
-        expected_qualifier = "stdlib/typing.py:typing";
-      };
-      {
-        module_name = "typing";
-        path = ModulePath.BundledTypeshed (PyrePath.create_absolute "typing.py");
-        expected_qualifier = "typeshed://typing.py:typing";
-      };
-    ]
+    ~inputs:
+      [
+        {
+          ModuleQualifierInput.module_name = "typing";
+          path = filesystem_module_path "/root/stdlib/typing.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierInput.module_name = "typing";
+          path = ModulePath.BundledTypeshed (PyrePath.create_absolute "typing.py");
+          id = 1;
+        };
+      ]
+    ~expected:
+      [
+        {
+          ModuleQualifierExpected.qualifier = "stdlib/typing.py:typing";
+          module_name = "typing";
+          source_path = Some "/root/stdlib/typing.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierExpected.qualifier = "typeshed://typing.py:typing";
+          module_name = "typing";
+          source_path = Some "/pyrefly/typeshed/typing.py";
+          id = 1;
+        };
+      ]
     ();
   (* filesystem vs namespace *)
   assert_module_qualifiers
-    [
-      {
-        module_name = "a";
-        path = filesystem_module_path "/root/a.py";
-        expected_qualifier = "root/a.py:a";
-      };
-      {
-        module_name = "a";
-        path = ModulePath.Namespace (PyrePath.create_absolute "a.py");
-        expected_qualifier = "namespace://a.py:a";
-      };
-    ]
+    ~inputs:
+      [
+        {
+          ModuleQualifierInput.module_name = "a";
+          path = filesystem_module_path "/root/a.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierInput.module_name = "a";
+          path = ModulePath.Namespace (PyrePath.create_absolute "a.py");
+          id = 1;
+        };
+      ]
+    ~expected:
+      [
+        {
+          ModuleQualifierExpected.qualifier = "root/a.py:a";
+          module_name = "a";
+          source_path = Some "/root/a.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierExpected.qualifier = "namespace://a.py:a";
+          module_name = "a";
+          source_path = None;
+          id = 1;
+        };
+      ]
     ();
   (* filesystem vs memory *)
   assert_module_qualifiers
-    [
-      {
-        module_name = "a";
-        path = filesystem_module_path "/root/a.py";
-        expected_qualifier = "root/a.py:a";
-      };
-      {
-        module_name = "a";
-        path = ModulePath.Memory (PyrePath.create_absolute "a.py");
-        expected_qualifier = "memory://a.py:a";
-      };
-    ]
+    ~inputs:
+      [
+        {
+          ModuleQualifierInput.module_name = "a";
+          path = filesystem_module_path "/root/a.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierInput.module_name = "a";
+          path = ModulePath.Memory (PyrePath.create_absolute "a.py");
+          id = 1;
+        };
+      ]
+    ~expected:
+      [
+        {
+          ModuleQualifierExpected.qualifier = "root/a.py:a";
+          module_name = "a";
+          source_path = Some "/root/a.py";
+          id = 0;
+        };
+        {
+          ModuleQualifierExpected.qualifier = "memory://a.py:a";
+          module_name = "a";
+          source_path = None;
+          id = 1;
+        };
+      ]
+    ();
+  (* add implicit toplevel modules *)
+  assert_module_qualifiers
+    ~add_toplevel_modules:true
+    ~inputs:
+      [
+        {
+          ModuleQualifierInput.module_name = "a.b";
+          path = filesystem_module_path "/root/a/b.py";
+          id = 0;
+        };
+      ]
+    ~expected:
+      [
+        { ModuleQualifierExpected.qualifier = "a"; module_name = "a"; source_path = None; id = 1 };
+        {
+          ModuleQualifierExpected.qualifier = "a.b";
+          module_name = "a.b";
+          source_path = Some "/root/a/b.py";
+          id = 0;
+        };
+      ]
     ();
   ()
 
