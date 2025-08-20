@@ -49,17 +49,6 @@ let create_parameters_requirements ~type_parameters =
   List.fold_left type_parameters ~f:get_parameters_requirements ~init
 
 
-let demangle_class_attribute name =
-  if String.is_substring ~substring:"__class__" name then
-    String.split name ~on:'.'
-    |> List.rev
-    |> function
-    | attribute :: "__class__" :: rest -> List.rev (attribute :: rest) |> String.concat ~sep:"."
-    | _ -> name
-  else
-    name
-
-
 let model_verification_error ~path ~location kind = { ModelVerificationError.kind; path; location }
 
 let verify_model_syntax ~path ~location ~callable_name ~normalized_model_parameters =
@@ -213,24 +202,30 @@ let verify_signature
   | _ -> Ok ()
 
 
-let verify_global ~path ~location ~pyre_api ~name =
-  let name = demangle_class_attribute (Reference.show name) |> Reference.create in
-  let global = PyrePysaApi.ModelQueries.resolve_qualified_name_to_global pyre_api name in
+let verify_global_attribute ~path ~location ~pyre_api ~name =
+  let module Global = PyrePysaApi.ModelQueries.Global in
+  let global =
+    PyrePysaApi.ModelQueries.resolve_qualified_name_to_global
+      pyre_api
+      ~is_property_getter:false
+      ~is_property_setter:false
+      name
+  in
   match global with
-  | Some PyrePysaApi.ModelQueries.Global.Class ->
+  | Some (Global.Class _) ->
       Error
         (model_verification_error ~path ~location (ModelingClassAsAttribute (Reference.show name)))
-  | Some PyrePysaApi.ModelQueries.Global.Module ->
+  | Some Global.Module ->
       Error
         (model_verification_error ~path ~location (ModelingModuleAsAttribute (Reference.show name)))
-  | Some (PyrePysaApi.ModelQueries.Global.Function _) ->
+  | Some (Global.Function _) ->
       Error
         (model_verification_error
            ~path
            ~location
            (ModelingCallableAsAttribute (Reference.show name)))
-  | Some PyrePysaApi.ModelQueries.Global.Attribute
-  | Some PyrePysaApi.ModelQueries.Global.UnknownAttribute
+  | Some (Global.Attribute _)
+  | Some (Global.UnknownAttribute _)
   | None -> (
       let class_summary =
         Reference.prefix name
@@ -265,6 +260,8 @@ let verify_global ~path ~location ~pyre_api ~name =
           let module_resolved =
             PyrePysaApi.ModelQueries.resolve_qualified_name_to_global
               pyre_api
+              ~is_property_getter:false
+              ~is_property_setter:false
               (Reference.create module_name)
           in
           match module_resolved with

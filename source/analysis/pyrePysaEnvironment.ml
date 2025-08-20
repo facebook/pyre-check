@@ -465,13 +465,33 @@ module InContext = struct
 end
 
 module ModelQueries = struct
+  module Function = struct
+    type t = {
+      define_name: Ast.Reference.t;
+      annotation: Type.Callable.t option;
+      is_property_getter: bool;
+      is_property_setter: bool;
+      is_method: bool;
+    }
+    [@@deriving show]
+  end
+
   module Global = struct
     type t =
-      | Class
+      | Class of { class_name: string }
       | Module
-      | Function of Type.Callable.t (* function or method *)
-      | Attribute (* non-callable attribute. *)
-      | UnknownAttribute (* attribute exists, but type is unknown. *)
+      (* function or method *)
+      | Function of Function.t
+      (* non-callable module attribute. *)
+      | Attribute of {
+          name: Ast.Reference.t;
+          parent_is_class: bool;
+        }
+      (* module attribute exists, but type is unknown. *)
+      | UnknownAttribute of {
+          name: Ast.Reference.t;
+          parent_is_class: bool;
+        }
     [@@deriving show]
   end
 
@@ -560,6 +580,10 @@ module ModelQueries = struct
     |> Option.value ~default:[]
 
 
+  let property_decorators =
+    Set.union Recognized.property_decorators Recognized.classproperty_decorators
+
+
   (* This is a very specific Pysa API used for dealing with model verification: it - determines what
      a fully qualified name means, where qualification handles not only module name prepending but
      nesting of classes, functions, and methods/attributes - if the meaning is not a class or
@@ -569,12 +593,12 @@ module ModelQueries = struct
      This logic used to live inside of `modelVerifier`, but it is extremely invasive to Pyre
      internals so we need to extract it if we want to be able to work toward a well-defined
      interface. *)
-  let resolve_qualified_name_to_global read_only name =
+  let resolve_qualified_name_to_global read_only ~is_property_getter ~is_property_setter name =
     let get_callable_type = function
       | Type.Callable t -> t
       | _ -> failwith "expected callable type"
     in
-    let toplevel_define_type =
+    let toplevel_define_type () =
       Type.Callable.create
         ~overloads:[]
         ~parameters:(Type.Callable.Defined [])
@@ -590,7 +614,15 @@ module ModelQueries = struct
         >>| ReadOnly.module_exists read_only
         |> Option.value ~default:false
       then
-        Some (Global.Function toplevel_define_type)
+        Some
+          (Global.Function
+             {
+               Function.define_name = name;
+               annotation = Some (toplevel_define_type ());
+               is_property_getter = false;
+               is_property_setter = false;
+               is_method = false;
+             })
       else
         None
     else if Ast.Identifier.equal name_end Ast.Statement.class_toplevel_define_name then
@@ -601,10 +633,57 @@ module ModelQueries = struct
         >>| ReadOnly.class_exists read_only
         |> Option.value ~default:false
       then
-        Some (Global.Function toplevel_define_type)
+        Some
+          (Global.Function
+             {
+               Function.define_name = name;
+               annotation = Some (toplevel_define_type ());
+               is_property_getter = false;
+               is_property_setter = false;
+               is_method = true;
+             })
       else
         None
+    else if is_property_getter then
+      let predicate define =
+        Set.exists property_decorators ~f:(Ast.Statement.Define.has_decorator define)
+      in
+      find_method_definitions read_only ~predicate name
+      |> List.hd
+      >>| Type.Callable.create_from_implementation
+      >>| get_callable_type
+      >>| fun callable ->
+      Global.Function
+        {
+          Function.define_name = name;
+          annotation = Some callable;
+          is_property_setter;
+          is_property_getter;
+          is_method = true;
+        }
+    else if is_property_setter then
+      find_method_definitions read_only ~predicate:Ast.Statement.Define.is_property_setter name
+      |> List.hd
+      >>| Type.Callable.create_from_implementation
+      >>| get_callable_type
+      >>| fun callable ->
+      Global.Function
+        {
+          Function.define_name = name;
+          annotation = Some callable;
+          is_property_getter;
+          is_property_setter;
+          is_method = true;
+        }
     else (* Resolve undecorated functions. *)
+      let class_summary =
+        Ast.Reference.prefix name
+        >>| ReadOnly.parse_reference read_only
+        >>| Type.split
+        >>| fst
+        >>= Type.primitive_name
+        >>= ReadOnly.get_class_summary read_only
+      in
       let maybe_signature_of_function =
         match ReadOnly.global read_only name with
         | Some { AttributeResolution.Global.undecorated_signature = Some signature; _ } ->
@@ -631,25 +710,49 @@ module ModelQueries = struct
                    signature)
       in
       match maybe_signature_of_function with
-      | Some signature -> Some (Global.Function signature)
+      | Some signature ->
+          Some
+            (Global.Function
+               {
+                 Function.define_name = name;
+                 annotation = Some signature;
+                 is_property_getter = false;
+                 is_property_setter = false;
+                 is_method = Option.is_some class_summary;
+               })
       | None -> (
           (* Resolve undecorated methods. *)
           match find_method_definitions read_only name with
           | [callable] ->
               Some
                 (Global.Function
-                   (Type.Callable.create_from_implementation callable |> get_callable_type))
+                   {
+                     define_name = name;
+                     annotation =
+                       Some (Type.Callable.create_from_implementation callable |> get_callable_type);
+                     is_property_getter = false;
+                     is_property_setter = false;
+                     is_method = Option.is_some class_summary;
+                   })
           | first :: _ :: _ as overloads ->
               (* Note that we use the first overload as the base implementation, which might be
                  unsound. *)
               Some
                 (Global.Function
-                   (Type.Callable.create
-                      ~overloads
-                      ~parameters:first.parameters
-                      ~annotation:first.annotation
-                      ()
-                   |> get_callable_type))
+                   {
+                     define_name = name;
+                     annotation =
+                       Some
+                         (Type.Callable.create
+                            ~overloads
+                            ~parameters:first.parameters
+                            ~annotation:first.annotation
+                            ()
+                         |> get_callable_type);
+                     is_property_getter = false;
+                     is_property_setter = false;
+                     is_method = Option.is_some class_summary;
+                   })
           | [] -> (
               (* Fall back for anything else. *)
               let annotation =
@@ -662,7 +765,7 @@ module ModelQueries = struct
               match TypeInfo.Unit.annotation annotation with
               | Type.Parametric { name = "type"; _ }
                 when ReadOnly.class_exists read_only (Ast.Reference.show name) ->
-                  Some Global.Class
+                  Some (Global.Class { class_name = Ast.Reference.show name })
               | Type.Top when ReadOnly.module_exists read_only name -> Some Global.Module
               | Type.Top when not (TypeInfo.Unit.is_immutable annotation) ->
                   (* FIXME: We are relying on the fact that nonexistent functions & attributes
@@ -672,11 +775,35 @@ module ModelQueries = struct
               | Type.Parametric
                   { name = "BoundMethod"; arguments = [Type.Argument.Single (Type.Callable t); _] }
                 ->
-                  Some (Global.Function t)
-              | Type.Callable t -> Some (Global.Function t)
-              | Type.Top -> Some Global.UnknownAttribute
-              | Type.Any -> Some Global.UnknownAttribute
-              | _ -> Some Global.Attribute))
+                  Some
+                    (Global.Function
+                       {
+                         define_name = name;
+                         annotation = Some t;
+                         is_property_getter = false;
+                         is_property_setter = false;
+                         is_method = Option.is_some class_summary;
+                       })
+              | Type.Callable t ->
+                  Some
+                    (Global.Function
+                       {
+                         define_name = name;
+                         annotation = Some t;
+                         is_property_getter = false;
+                         is_property_setter = false;
+                         is_method = Option.is_some class_summary;
+                       })
+              | Type.Top ->
+                  Some
+                    (Global.UnknownAttribute
+                       { name; parent_is_class = Option.is_some class_summary })
+              | Type.Any ->
+                  Some
+                    (Global.UnknownAttribute
+                       { name; parent_is_class = Option.is_some class_summary })
+              | _ ->
+                  Some (Global.Attribute { name; parent_is_class = Option.is_some class_summary })))
 
 
   let invalidate_cache = ClassDefinitionsCache.invalidate

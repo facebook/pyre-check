@@ -69,28 +69,6 @@ let attribute_symbolic_parameter =
   AccessPath.Root.PositionalParameter { name = "$global"; position = 0; positional_only = false }
 
 
-let decorators = Set.union Recognized.property_decorators Recognized.classproperty_decorators
-
-let is_property define = Set.exists decorators ~f:(Define.has_decorator define)
-
-let create_dummy_signature ~decorators name =
-  {
-    Define.Signature.name;
-    parameters = [];
-    decorators;
-    return_annotation = None;
-    async = false;
-    generator = false;
-    parent = NestingContext.create_toplevel ();
-    legacy_parent = None;
-    type_params = [];
-  }
-
-
-let signature_is_property signature =
-  Set.exists decorators ~f:(Define.Signature.has_decorator signature)
-
-
 let parse_access_path ~path ~location expression =
   let module TreeLabel = Abstract.TreeDomain.Label in
   let module ModelLabel = TaintPath.Label in
@@ -3159,67 +3137,61 @@ type models_or_query =
   | Models of Model.WithTarget.t list
   | Query of ModelQuery.t
 
-let mangle_top_level_name =
-  Reference.map_last ~f:(function
+let mangle_top_level_name name =
+  Ast.Reference.map_last
+    ~f:(function
       | "__top_level__" -> Ast.Statement.toplevel_define_name
       | "__class_top_level__" -> Ast.Statement.class_toplevel_define_name
       | identifier -> identifier)
+    name
 
 
-let resolve_global_callable ~path ~location ~verify_decorators ~pyre_api ~decorators name =
-  let name = mangle_top_level_name name in
-  (* Since properties and setters share the same undecorated name, we need to special-case them. *)
-  let dummy_signature = create_dummy_signature ~decorators name in
-  let get_callable_type = function
-    | Type.Callable t -> t
-    | _ -> failwith "expected callable type"
-  in
-  if signature_is_property dummy_signature then
-    PyrePysaApi.ModelQueries.find_method_definitions pyre_api ~predicate:is_property name
-    |> List.hd
-    >>| Type.Callable.create_from_implementation
-    >>| get_callable_type
-    >>| (fun callable -> PyrePysaApi.ModelQueries.Global.Function callable)
-    |> Core.Result.return
-  else if Define.Signature.is_property_setter dummy_signature then
-    PyrePysaApi.ModelQueries.find_method_definitions
-      pyre_api
-      ~predicate:Define.is_property_setter
-      name
-    |> List.hd
-    >>| Type.Callable.create_from_implementation
-    >>| get_callable_type
-    >>| (fun callable -> PyrePysaApi.ModelQueries.Global.Function callable)
-    |> Core.Result.return
-  else if verify_decorators && not (List.is_empty decorators) then
-    (* Ensure that models don't declare decorators that our taint analyses doesn't understand. We
-       check for the verify_decorators flag, as defines originating from
-       `create_model_from_annotation` are not user-specified models that we're parsing. *)
+let demangle_class_attribute name =
+  if List.exists (Ast.Reference.as_list name) ~f:(String.equal "__class__") then
+    name
+    |> Ast.Reference.as_list
+    |> List.rev
+    |> function
+    | attribute :: "__class__" :: rest ->
+        List.rev (attribute :: rest) |> Ast.Reference.create_from_list
+    | _ -> name
+  else
+    name
+
+
+let check_decorators
+    ~path
+    ~location
+    ~verify_decorators
+    ~is_property_getter
+    ~is_property_setter
+    ~decorators
+    name
+  =
+  if
+    verify_decorators
+    && (not is_property_getter)
+    && (not is_property_setter)
+    && not (List.is_empty decorators)
+  then
     Error
       (model_verification_error
          ~path
          ~location
          (UnexpectedDecorators { name; unexpected_decorators = decorators }))
   else
-    Ok (PyrePysaApi.ModelQueries.resolve_qualified_name_to_global pyre_api name)
+    Ok ()
 
 
-let reference_to_target ~pyre_api ~define_decorators name =
-  let name = mangle_top_level_name name in
-  let class_candidate =
-    Reference.prefix name
-    >>| PyrePysaApi.ReadOnly.parse_reference pyre_api
-    >>= fun parsed ->
-    let parent, _ = Type.split parsed in
-    Type.primitive_name parent >>| PyrePysaApi.ReadOnly.get_class_summary pyre_api
-  in
-  match class_candidate with
-  | Some _
-    when Define.Signature.is_property_setter
-           (create_dummy_signature ~decorators:define_decorators name) ->
-      Target.create_method_from_reference ~kind:Target.Pyre1PropertySetter name
-  | Some _ -> Target.create_method_from_reference name
-  | None -> Target.create_function name
+let resolved_callable_target
+    { PyrePysaApi.ModelQueries.Function.define_name; is_property_setter; is_method; _ }
+  =
+  if is_property_setter then
+    Target.create_method_from_reference ~kind:Target.Pyre1PropertySetter define_name
+  else if is_method then
+    Target.create_method_from_reference define_name
+  else
+    Target.create_function define_name
 
 
 let parse_decorator_annotations
@@ -3457,6 +3429,29 @@ let parse_decorator_annotations
   top_level_decorators |> List.map ~f:parse_decorator_annotation |> all >>| List.concat
 
 
+let is_property_getter_setter ~decorators ~define_name =
+  let define_signature =
+    {
+      Define.Signature.name = define_name;
+      parameters = [];
+      decorators;
+      return_annotation = None;
+      async = false;
+      generator = false;
+      parent = NestingContext.create_toplevel ();
+      legacy_parent = None;
+      type_params = [];
+    }
+  in
+  let is_property_getter =
+    Set.exists
+      PyrePysaApi.ModelQueries.property_decorators
+      ~f:(Define.Signature.has_decorator define_signature)
+  in
+  let is_property_setter = Define.Signature.is_property_setter define_signature in
+  is_property_getter, is_property_setter
+
+
 let create_model_from_signature
     ~pyre_api
     ~path
@@ -3474,22 +3469,28 @@ let create_model_from_signature
     }
   =
   let open Core.Result in
+  let module Global = PyrePysaApi.ModelQueries.Global in
+  let module Function = PyrePysaApi.ModelQueries.Function in
   let model_verification_error kind = Error { ModelVerificationError.kind; path; location } in
   (* Make sure we know about what we model. *)
-  let callable_annotation =
-    resolve_global_callable
-      ~path
-      ~location
-      ~verify_decorators:user_provided_define_decorators
-      ~pyre_api
-      ~decorators:define_decorators
-      callable_name
-    >>= function
+  let is_property_getter, is_property_setter =
+    is_property_getter_setter ~decorators:define_decorators ~define_name:callable_name
+  in
+  let resolved_callable =
+    match
+      PyrePysaApi.ModelQueries.resolve_qualified_name_to_global
+        pyre_api
+        ~is_property_getter
+        ~is_property_setter
+        (mangle_top_level_name callable_name)
+    with
     | None -> (
         let module_name = Reference.first callable_name in
         let module_resolved =
           PyrePysaApi.ModelQueries.resolve_qualified_name_to_global
             pyre_api
+            ~is_property_getter:false
+            ~is_property_setter:false
             (Reference.create module_name)
         in
         match module_resolved with
@@ -3499,20 +3500,29 @@ let create_model_from_signature
         | None ->
             model_verification_error
               (NotInEnvironment { module_name; name = Reference.show callable_name }))
-    | Some PyrePysaApi.ModelQueries.Global.Class ->
+    | Some (Global.Class _) ->
         model_verification_error (ModelingClassAsDefine (Reference.show callable_name))
-    | Some PyrePysaApi.ModelQueries.Global.Module ->
+    | Some Global.Module ->
         model_verification_error (ModelingModuleAsDefine (Reference.show callable_name))
-    | Some (PyrePysaApi.ModelQueries.Global.Function t) -> Ok (Some t)
-    | Some PyrePysaApi.ModelQueries.Global.UnknownAttribute -> Ok None
-    | Some PyrePysaApi.ModelQueries.Global.Attribute ->
+    | Some (Global.Function resolved_callable) -> Ok resolved_callable
+    | Some (Global.UnknownAttribute { name; parent_is_class }) ->
+        (* We just assume this is a valid model *)
+        Ok
+          {
+            Function.define_name = name;
+            annotation = None;
+            is_property_getter;
+            is_property_setter;
+            is_method = parent_is_class;
+          }
+    | Some (Global.Attribute _) ->
         model_verification_error (ModelingAttributeAsDefine (Reference.show callable_name))
   in
   (* Check model matches callables primary signature. *)
   let callable_parameter_names_to_roots =
     (* TODO(T180849788): Consolidate `callable_annotation` accesses into an API *)
-    match callable_annotation with
-    | Ok (Some callable_annotation) ->
+    match resolved_callable with
+    | Ok { PyrePysaApi.ModelQueries.Function.annotation = Some callable_annotation; _ } ->
         let add_into_map map name root =
           Map.update map name ~f:(function
               | None -> [root]
@@ -3551,7 +3561,10 @@ let create_model_from_signature
               IncompatibleModelError
                 {
                   name = Reference.show callable_name;
-                  callable_type = Option.value_exn (Stdlib.Result.get_ok callable_annotation);
+                  callable_type =
+                    (resolved_callable
+                    |> Stdlib.Result.get_ok
+                    |> fun { Function.annotation; _ } -> Option.value_exn annotation);
                   errors =
                     [ModelVerificationError.IncompatibleModelError.{ reason; overload = None }];
                 };
@@ -3681,8 +3694,17 @@ let create_model_from_signature
         annotation_error "`@CapturedVariables(...)` needs one Taint Annotation as argument." None
     | None -> Ok []
   in
-  callable_annotation
-  >>= fun callable_annotation ->
+  resolved_callable
+  >>= fun ({ Function.annotation = callable_annotation; _ } as resolved_callable) ->
+  check_decorators
+    ~path
+    ~location
+    ~verify_decorators:user_provided_define_decorators
+    ~is_property_getter
+    ~is_property_setter
+    ~decorators:define_decorators
+    callable_name
+  >>= fun () ->
   normalized_model_parameters
   >>= fun normalized_model_parameters ->
   ModelVerifier.verify_signature
@@ -3735,7 +3757,7 @@ let create_model_from_signature
     ~origin:DefineDecoratorCapturedVariables
     ~top_level_decorators:taint_decorators
   >>= fun captured_variables_annotations ->
-  let callable = reference_to_target ~pyre_api ~define_decorators callable_name in
+  let callable = resolved_callable_target resolved_callable in
   let default_model = if is_obscure callable then Model.obscure_model else Model.empty_model in
   let all_annotations =
     return_annotations
@@ -3766,7 +3788,11 @@ let create_model_from_attribute
     { annotations; decorators; location; attribute_name }
   =
   let open Core.Result in
-  ModelVerifier.verify_global ~path ~location ~pyre_api ~name:attribute_name
+  ModelVerifier.verify_global_attribute
+    ~path
+    ~location
+    ~pyre_api
+    ~name:(demangle_class_attribute attribute_name)
   >>= fun () ->
   let model_annotations =
     List.map annotations ~f:(fun annotation ->
@@ -4633,20 +4659,24 @@ let create_callable_model_from_annotations
     ~is_obscure
     annotations
   =
-  let open Core.Result in
   let target = Modelable.target modelable in
+  let define_name = Target.define_name_exn target in
   let decorators = Modelable.decorator_expressions_after_inlining modelable in
-  resolve_global_callable
-    ~path:None
-    ~location:Location.any
-    ~pyre_api
-    ~verify_decorators:false
-    ~decorators
-    (Target.define_name_exn target)
-  >>| (function
-        | Some (PyrePysaApi.ModelQueries.Global.Function t) -> Some t
-        | _ -> None)
-  >>= fun callable_annotation ->
+  let is_property_getter, is_property_setter = is_property_getter_setter ~decorators ~define_name in
+  let callable_annotation =
+    match
+      PyrePysaApi.ModelQueries.resolve_qualified_name_to_global
+        pyre_api
+        ~is_property_getter
+        ~is_property_setter
+        define_name
+    with
+    | Some
+        (PyrePysaApi.ModelQueries.Global.Function
+          { PyrePysaApi.ModelQueries.Function.annotation = Some annotation; _ }) ->
+        Some annotation
+    | _ -> None
+  in
   let default_model = if is_obscure then Model.obscure_model else Model.empty_model in
   let annotations =
     fix_constructors_and_property_setters_annotations

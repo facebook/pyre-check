@@ -344,6 +344,9 @@ module InContext = struct
 end
 
 module ModelQueries = struct
+  let property_decorators = Pyre1Api.ModelQueries.property_decorators
+
+  module Function = Pyre1Api.ModelQueries.Function
   module Global = Pyre1Api.ModelQueries.Global
 
   let resolve_qualified_name_to_global = function
@@ -354,11 +357,6 @@ module ModelQueries = struct
   let class_summaries = function
     | ReadOnly.Pyre1 pyre_api -> Pyre1Api.ModelQueries.class_summaries pyre_api
     | ReadOnly.Pyrefly _ -> failwith "unimplemented: ModelQueries.class_summaries"
-
-
-  let find_method_definitions = function
-    | ReadOnly.Pyre1 pyre_api -> Pyre1Api.ModelQueries.find_method_definitions pyre_api
-    | ReadOnly.Pyrefly _ -> failwith "unimplemented: ModelQueries.find_method_definitions"
 
 
   let invalidate_cache = function

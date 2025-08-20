@@ -52,6 +52,9 @@ val decorator_actions_from_modes
   :  Model.ModeSet.t Ast.Reference.SerializableMap.t ->
   PyrePysaLogic.DecoratorPreprocessing.Action.t Ast.Reference.SerializableMap.t
 
+(* Exposed for testing purpose *)
+val demangle_class_attribute : Ast.Reference.t -> Ast.Reference.t
+
 (* Exposed for model queries. *)
 val create_callable_model_from_annotations
   :  pyre_api:Interprocedural.PyrePysaApi.ReadOnly.t ->

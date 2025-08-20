@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Core
+
 (* PyrePysaApi is a wrapper around a type checker API, which exposes source code, ASTs and type
    information about the code to analyze. Right now, this wraps either the old Pyre 1 API provided
    by `Analysis.PyrePysaEnvironment` or the Pyrefly API provided by `Interprocedural.Pyrefly`. *)
@@ -218,28 +220,22 @@ module InContext : sig
 end
 
 module ModelQueries : sig
-  module Global : sig
-    type t =
-      | Class
-      | Module
-      | Function of Type.Callable.t (* function or method *)
-      | Attribute (* non-callable attribute. *)
-      | UnknownAttribute (* attribute exists, but type is unknown. *)
-    [@@deriving show]
-  end
+  val property_decorators : String.Set.t
 
-  val resolve_qualified_name_to_global : ReadOnly.t -> Ast.Reference.t -> Global.t option
+  module Function = Analysis.PyrePysaEnvironment.ModelQueries.Function
+  module Global = Analysis.PyrePysaEnvironment.ModelQueries.Global
+
+  val resolve_qualified_name_to_global
+    :  ReadOnly.t ->
+    is_property_getter:bool ->
+    is_property_setter:bool ->
+    Ast.Reference.t ->
+    Global.t option
 
   val class_summaries
     :  ReadOnly.t ->
     Ast.Reference.t ->
     Ast.Statement.Class.t Ast.Node.t list option
-
-  val find_method_definitions
-    :  ReadOnly.t ->
-    ?predicate:(Ast.Statement.Define.t -> bool) ->
-    Ast.Reference.t ->
-    Type.type_t Type.Callable.overload list
 
   val invalidate_cache : ReadOnly.t -> unit
 end

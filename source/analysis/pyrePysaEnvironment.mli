@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Core
+
 module ReadWrite : sig
   type t
 
@@ -199,28 +201,49 @@ module InContext : sig
 end
 
 module ModelQueries : sig
-  module Global : sig
-    type t =
-      | Class
-      | Module
-      | Function of Type.Callable.t (* function or method *)
-      | Attribute (* non-callable attribute. *)
-      | UnknownAttribute (* attribute exists, but type is unknown. *)
+  val property_decorators : String.Set.t
+
+  module Function : sig
+    type t = {
+      define_name: Ast.Reference.t;
+      annotation: Type.Callable.t option;
+      is_property_getter: bool;
+      is_property_setter: bool;
+      is_method: bool;
+    }
     [@@deriving show]
   end
 
-  val resolve_qualified_name_to_global : ReadOnly.t -> Ast.Reference.t -> Global.t option
+  module Global : sig
+    type t =
+      | Class of { class_name: string }
+      | Module
+      (* function or method *)
+      | Function of Function.t
+      (* non-callable module attribute. *)
+      | Attribute of {
+          name: Ast.Reference.t;
+          parent_is_class: bool;
+        }
+      (* module attribute exists, but type is unknown. *)
+      | UnknownAttribute of {
+          name: Ast.Reference.t;
+          parent_is_class: bool;
+        }
+    [@@deriving show]
+  end
+
+  val resolve_qualified_name_to_global
+    :  ReadOnly.t ->
+    is_property_getter:bool ->
+    is_property_setter:bool ->
+    Ast.Reference.t ->
+    Global.t option
 
   val class_summaries
     :  ReadOnly.t ->
     Ast.Reference.t ->
     Ast.Statement.Class.t Ast.Node.t list option
-
-  val find_method_definitions
-    :  ReadOnly.t ->
-    ?predicate:(Ast.Statement.Define.t -> bool) ->
-    Ast.Reference.t ->
-    Type.type_t Type.Callable.overload list
 
   val invalidate_cache : unit -> unit
 end

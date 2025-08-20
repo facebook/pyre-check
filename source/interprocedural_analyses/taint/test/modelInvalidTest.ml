@@ -792,14 +792,17 @@ let test_invalid_models =
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
+           ~source:{|
+      def accidental_decorator_passed_in(): ...
+      |}
            ~model_source:
              {|
       @decorated
-      def accidental_decorator_passed_in() -> TaintSource[Test]: ...
+      def test.accidental_decorator_passed_in() -> TaintSource[Test]: ...
     |}
            ~expect:
-             "Unexpected decorators found when parsing model for `accidental_decorator_passed_in`: \
-              `decorated`.";
+             "Unexpected decorators found when parsing model for \
+              `test.accidental_decorator_passed_in`: `decorated`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~source:
@@ -819,15 +822,18 @@ let test_invalid_models =
              "Unexpected decorators found when parsing model for `test.C.foo`: `wrong_name.setter`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
+           ~source:{|
+      def accidental_decorator_passed_in(): ...
+      |}
            ~model_source:
              {|
       @custom_property
-      def accidental_decorator_passed_in() -> TaintSource[Test]: ...
+      def test.accidental_decorator_passed_in() -> TaintSource[Test]: ...
     |}
            ~expect:
-             "Unexpected decorators found when parsing model for `accidental_decorator_passed_in`: \
-              `custom_property`. If you're looking to model a custom property decorator, use the \
-              @property decorator.";
+             "Unexpected decorators found when parsing model for \
+              `test.accidental_decorator_passed_in`: `custom_property`. If you're looking to model \
+              a custom property decorator, use the @property decorator.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model
            ~source:

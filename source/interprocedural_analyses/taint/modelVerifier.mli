@@ -8,9 +8,6 @@
 open Core
 open Ast
 
-(* Exposed for testing. *)
-val demangle_class_attribute : string -> string
-
 val verify_signature
   :  path:PyrePath.t option ->
   location:Location.t ->
@@ -19,7 +16,7 @@ val verify_signature
   Type.Callable.t option ->
   (unit, ModelVerificationError.t) result
 
-val verify_global
+val verify_global_attribute
   :  path:PyrePath.t option ->
   location:Location.t ->
   pyre_api:Interprocedural.PyrePysaApi.ReadOnly.t ->
