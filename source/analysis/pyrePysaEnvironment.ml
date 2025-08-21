@@ -495,23 +495,6 @@ module ModelQueries = struct
     [@@deriving show]
   end
 
-  module DefinitionsCache (Type : sig
-    type t
-  end) =
-  struct
-    let cache : Type.t Ast.Reference.Table.t = Ast.Reference.Table.create ()
-
-    let set key value = Hashtbl.set cache ~key ~data:value
-
-    let get = Hashtbl.find cache
-
-    let invalidate () = Hashtbl.clear cache
-  end
-
-  module ClassDefinitionsCache = DefinitionsCache (struct
-    type t = Ast.Statement.Class.t Ast.Node.t list option
-  end)
-
   let containing_source read_only reference =
     let rec qualifier ~found ~lead ~tail =
       match tail with
@@ -530,11 +513,41 @@ module ModelQueries = struct
     |> ReadOnly.source_of_qualifier read_only
 
 
-  let class_summaries read_only reference =
-    match ClassDefinitionsCache.get reference with
+  module ReferenceTableCache (Type : sig
+    type t
+  end) =
+  struct
+    let cache : Type.t Ast.Reference.Table.t = Ast.Reference.Table.create ()
+
+    let set key value = Hashtbl.set cache ~key ~data:value
+
+    let get = Hashtbl.find cache
+
+    let invalidate () = Hashtbl.clear cache
+  end
+
+  module ClassMethodSignatureCache = ReferenceTableCache (struct
+    type t = (Ast.Reference.t * Ast.Statement.Define.Signature.t) list option
+  end)
+
+  let class_method_signatures read_only reference =
+    (* The current implementation relies on iterating through the AST, which means it doesn't handle
+       synthesized methods. If possible, this shouldn't be used. *)
+    match ClassMethodSignatureCache.get reference with
     | Some result -> result
     | None ->
         let open Option in
+        let get_method_signature = function
+          | {
+              Ast.Node.value =
+                Ast.Statement.Statement.Define { signature = { name; _ } as signature; _ };
+              _;
+            } ->
+              (* TODO(T199841372) Pysa should not be assuming that a Define name in the raw AST is
+                 fully qualified. *)
+              Some (name, signature)
+          | _ -> None
+        in
         let result =
           containing_source read_only reference
           >>| Preprocessing.classes
@@ -542,40 +555,31 @@ module ModelQueries = struct
                   Ast.Reference.equal reference name)
           (* Prefer earlier definitions. *)
           >>| List.rev
+          >>= List.hd
+          >>| (fun { Ast.Node.value = { Ast.Statement.Class.body = statements; _ }; _ } ->
+                statements)
+          >>| List.filter_map ~f:get_method_signature
         in
-        ClassDefinitionsCache.set reference result;
+        ClassMethodSignatureCache.set reference result;
         result
 
 
   (* Find a method definition matching the given predicate. *)
   let find_method_definitions read_only ?(predicate = fun _ -> true) name =
-    let open Ast.Statement in
-    (* TODO(T199841372) Pysa should not be assuming that a Define name in the raw AST is fully
-       qualified. The `Reference.equal` here is relying on this. *)
-    let get_matching_define = function
-      | {
-          Ast.Node.value =
-            Statement.Define ({ signature = { name = define_name; _ } as signature; _ } as define);
-          _;
-        } ->
-          if Ast.Reference.equal define_name name && predicate define then
-            let parser = ReadOnly.annotation_parser read_only in
-            let generic_parameters_as_variables =
-              ReadOnly.generic_parameters_as_variables read_only
-            in
-            AnnotatedDefine.Callable.create_overload_without_applying_decorators
-              ~parser
-              ~generic_parameters_as_variables
-              signature
-            |> Option.some
-          else
-            None
-      | _ -> None
+    let get_matching_define (define_name, signature) =
+      if Ast.Reference.equal define_name name && predicate signature then
+        let parser = ReadOnly.annotation_parser read_only in
+        let generic_parameters_as_variables = ReadOnly.generic_parameters_as_variables read_only in
+        AnnotatedDefine.Callable.create_overload_without_applying_decorators
+          ~parser
+          ~generic_parameters_as_variables
+          signature
+        |> Option.some
+      else
+        None
     in
     Ast.Reference.prefix name
-    >>= class_summaries read_only
-    >>= List.hd
-    >>| (fun definition -> definition.Ast.Node.value.Class.body)
+    >>= class_method_signatures read_only
     >>| List.filter_map ~f:get_matching_define
     |> Option.value ~default:[]
 
@@ -646,7 +650,7 @@ module ModelQueries = struct
         None
     else if is_property_getter then
       let predicate define =
-        Set.exists property_decorators ~f:(Ast.Statement.Define.has_decorator define)
+        Set.exists property_decorators ~f:(Ast.Statement.Define.Signature.has_decorator define)
       in
       find_method_definitions read_only ~predicate name
       |> List.hd
@@ -662,7 +666,10 @@ module ModelQueries = struct
           is_method = true;
         }
     else if is_property_setter then
-      find_method_definitions read_only ~predicate:Ast.Statement.Define.is_property_setter name
+      find_method_definitions
+        read_only
+        ~predicate:Ast.Statement.Define.Signature.is_property_setter
+        name
       |> List.hd
       >>| Type.Callable.create_from_implementation
       >>| get_callable_type
@@ -806,5 +813,5 @@ module ModelQueries = struct
                   Some (Global.Attribute { name; parent_is_class = Option.is_some class_summary })))
 
 
-  let invalidate_cache = ClassDefinitionsCache.invalidate
+  let invalidate_cache = ClassMethodSignatureCache.invalidate
 end

@@ -355,9 +355,9 @@ module ModelQueries = struct
         PyreflyApi.ModelQueries.resolve_qualified_name_to_global pyrefly_api
 
 
-  let class_summaries = function
-    | ReadOnly.Pyre1 pyre_api -> Pyre1Api.ModelQueries.class_summaries pyre_api
-    | ReadOnly.Pyrefly _ -> failwith "unimplemented: ModelQueries.class_summaries"
+  let class_method_signatures = function
+    | ReadOnly.Pyre1 pyre_api -> Pyre1Api.ModelQueries.class_method_signatures pyre_api
+    | ReadOnly.Pyrefly _ -> failwith "unimplemented: ModelQueries.class_method_signatures"
 
 
   let invalidate_cache = function

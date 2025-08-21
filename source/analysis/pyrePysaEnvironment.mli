@@ -240,10 +240,10 @@ module ModelQueries : sig
     Ast.Reference.t ->
     Global.t option
 
-  val class_summaries
+  val class_method_signatures
     :  ReadOnly.t ->
     Ast.Reference.t ->
-    Ast.Statement.Class.t Ast.Node.t list option
+    (Ast.Reference.t * Ast.Statement.Define.Signature.t) list option
 
   val invalidate_cache : unit -> unit
 end
