@@ -895,8 +895,8 @@ module ClassImmediateParentsSharedMemory =
     end)
 
 module CallableAst = struct
-  type t =
-    | Some of Statement.Define.t Node.t
+  type 'a t =
+    | Some of 'a Node.t
     | ParseError (* callable in a module that failed to parse *)
     | TestFile (* Callable in a module marked with is_test = true *)
 end
@@ -905,11 +905,22 @@ module CallableAstSharedMemory =
   Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
     (FullyQualifiedNameSharedMemoryKey)
     (struct
-      type t = CallableAst.t
+      type t = Statement.Define.t CallableAst.t
 
       let prefix = Hack_parallel.Std.Prefix.make ()
 
       let description = "pyrefly ast of callables"
+    end)
+
+module CallableSignatureSharedMemory =
+  Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+    (FullyQualifiedNameSharedMemoryKey)
+    (struct
+      type t = Statement.Define.Signature.t CallableAst.t
+
+      let prefix = Hack_parallel.Std.Prefix.make ()
+
+      let description = "pyrefly signature of callables"
     end)
 
 (* API handle stored in the main process. The type `t` should not be sent to workers, since it's
@@ -961,6 +972,7 @@ module ReadWrite = struct
     class_id_to_qualified_name_shared_memory: ClassIdToQualifiedNameSharedMemory.t;
     class_immediate_parents_shared_memory: ClassImmediateParentsSharedMemory.t;
     callable_ast_shared_memory: CallableAstSharedMemory.t;
+    callable_signature_shared_memory: CallableSignatureSharedMemory.t;
     object_class: FullyQualifiedName.t;
   }
 
@@ -1186,15 +1198,28 @@ module ReadWrite = struct
     let timer = Timer.start () in
     let () = Log.info "Parsing source files..." in
     let callable_ast_shared_memory = CallableAstSharedMemory.create () in
+    let callable_signature_shared_memory = CallableSignatureSharedMemory.create () in
     let controls =
       Analysis.EnvironmentControls.create
         ~populate_call_graph:false
         ~string_annotation_preserve_location:false
         configuration
     in
-    let store_callable_asts callables ast_result =
+    let store_callable_asts callables define_result =
       List.iter callables ~f:(fun callable ->
-          CallableAstSharedMemory.add callable_ast_shared_memory callable ast_result)
+          CallableAstSharedMemory.add callable_ast_shared_memory callable define_result;
+          let signature_result =
+            match define_result with
+            | CallableAst.Some { Node.value = { Statement.Define.signature; _ }; location } ->
+                CallableAst.Some { Node.value = signature; location }
+            | ParseError -> ParseError
+            | TestFile -> TestFile
+          in
+          CallableSignatureSharedMemory.add
+            callable_signature_shared_memory
+            callable
+            signature_result;
+          ())
     in
     let collect_callable_asts_from_source ~qualifier ~callables ~source =
       let location_to_callable =
@@ -1334,11 +1359,18 @@ module ReadWrite = struct
         |> failwith
       else
         Map.iteri
-          ~f:(fun ~key:callable ~data:define ->
+          ~f:
+            (fun ~key:callable
+                 ~data:({ Node.value = { Statement.Define.signature; _ }; location } as define) ->
             CallableAstSharedMemory.add
               callable_ast_shared_memory
               callable
-              (CallableAst.Some define))
+              (CallableAst.Some define);
+            CallableSignatureSharedMemory.add
+              callable_signature_shared_memory
+              callable
+              (CallableAst.Some { Node.value = signature; location });
+            ())
           callable_to_define
     in
     let parse_module qualifier =
@@ -1426,7 +1458,7 @@ module ReadWrite = struct
       ~command:"analyze"
       ~timer
       ();
-    callable_ast_shared_memory
+    callable_ast_shared_memory, callable_signature_shared_memory
 
 
   (* Logic to assign fully qualified names to classes and defines. *)
@@ -1993,7 +2025,7 @@ module ReadWrite = struct
         ~module_infos_shared_memory
     in
 
-    let callable_ast_shared_memory =
+    let callable_ast_shared_memory, callable_signature_shared_memory =
       parse_source_files
         ~scheduler
         ~scheduler_policies
@@ -2032,6 +2064,7 @@ module ReadWrite = struct
       class_id_to_qualified_name_shared_memory;
       class_immediate_parents_shared_memory;
       callable_ast_shared_memory;
+      callable_signature_shared_memory;
       object_class;
     }
 
@@ -2079,6 +2112,7 @@ module ReadOnly = struct
     module_classes_shared_memory: ModuleClassesSharedMemory.t;
     class_immediate_parents_shared_memory: ClassImmediateParentsSharedMemory.t;
     callable_ast_shared_memory: CallableAstSharedMemory.t;
+    callable_signature_shared_memory: CallableSignatureSharedMemory.t;
     object_class: FullyQualifiedName.t;
   }
 
@@ -2092,6 +2126,7 @@ module ReadOnly = struct
         module_classes_shared_memory;
         class_immediate_parents_shared_memory;
         callable_ast_shared_memory;
+        callable_signature_shared_memory;
         object_class;
         _;
       }
@@ -2105,6 +2140,7 @@ module ReadOnly = struct
       module_classes_shared_memory;
       class_immediate_parents_shared_memory;
       callable_ast_shared_memory;
+      callable_signature_shared_memory;
       object_class;
     }
 
@@ -2223,7 +2259,7 @@ module ModelQueries = struct
         ReadOnly.module_infos_shared_memory;
         callable_metadata_shared_memory;
         class_metadata_shared_memory;
-        callable_ast_shared_memory;
+        callable_signature_shared_memory;
         _;
       }
       ~is_property_getter:_
@@ -2253,14 +2289,13 @@ module ModelQueries = struct
           (FullyQualifiedName.from_reference_unchecked name)
       with
       | Some { CallableMetadata.is_property_getter; is_property_setter; parent_is_class; _ } ->
-          (* TODO(T225700656): We only need to load the parameters instead of the full AST. *)
           let annotation =
-            CallableAstSharedMemory.get
-              callable_ast_shared_memory
+            CallableSignatureSharedMemory.get
+              callable_signature_shared_memory
               (FullyQualifiedName.from_reference_unchecked name)
             |> ReadOnly.assert_shared_memory_key_exists "missing ast for callable"
             |> function
-            | CallableAst.Some { Node.value = { Statement.Define.signature; _ }; _ } ->
+            | CallableAst.Some { Node.value = signature; _ } ->
                 let dummy_parser =
                   {
                     Analysis.AnnotatedCallable.parse_annotation =
