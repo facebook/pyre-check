@@ -527,7 +527,7 @@ module ModelQueries = struct
   end
 
   module ClassMethodSignatureCache = ReferenceTableCache (struct
-    type t = (Ast.Reference.t * Ast.Statement.Define.Signature.t) list option
+    type t = (Ast.Reference.t * Ast.Statement.Define.Signature.t option) list option
   end)
 
   let class_method_signatures read_only reference =
@@ -545,7 +545,7 @@ module ModelQueries = struct
             } ->
               (* TODO(T199841372) Pysa should not be assuming that a Define name in the raw AST is
                  fully qualified. *)
-              Some (name, signature)
+              Some (name, Some signature)
           | _ -> None
         in
         let result =
@@ -566,17 +566,19 @@ module ModelQueries = struct
 
   (* Find a method definition matching the given predicate. *)
   let find_method_definitions read_only ?(predicate = fun _ -> true) name =
-    let get_matching_define (define_name, signature) =
-      if Ast.Reference.equal define_name name && predicate signature then
-        let parser = ReadOnly.annotation_parser read_only in
-        let generic_parameters_as_variables = ReadOnly.generic_parameters_as_variables read_only in
-        AnnotatedDefine.Callable.create_overload_without_applying_decorators
-          ~parser
-          ~generic_parameters_as_variables
-          signature
-        |> Option.some
-      else
-        None
+    let get_matching_define = function
+      | define_name, Some signature when Ast.Reference.equal define_name name && predicate signature
+        ->
+          let parser = ReadOnly.annotation_parser read_only in
+          let generic_parameters_as_variables =
+            ReadOnly.generic_parameters_as_variables read_only
+          in
+          AnnotatedDefine.Callable.create_overload_without_applying_decorators
+            ~parser
+            ~generic_parameters_as_variables
+            signature
+          |> Option.some
+      | _ -> None
     in
     Ast.Reference.prefix name
     >>= class_method_signatures read_only

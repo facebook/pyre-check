@@ -110,6 +110,11 @@ module ModelQueries : sig
     is_property_setter:bool ->
     Ast.Reference.t ->
     Global.t option
+
+  val class_method_signatures
+    :  ReadOnly.t ->
+    Ast.Reference.t ->
+    (Ast.Reference.t * Ast.Statement.Define.Signature.t option) list option
 end
 
 (* Exposed for testing purposes *)

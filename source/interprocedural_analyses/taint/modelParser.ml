@@ -3842,63 +3842,70 @@ let create_models_from_class
   =
   match PyrePysaApi.ModelQueries.class_method_signatures pyre_api class_name with
   | Some method_signatures ->
-      let create_model_for_method
-          ( raw_method_name,
-            { Define.Signature.parameters = method_parameters; decorators = define_decorators; _ }
-          )
-        =
-        let signature ~decorators ~source_annotation ~sink_annotation =
-          let parameters =
-            let sink_parameter parameter =
-              let update_annotation { Parameter.name; value; _ } =
-                let value =
-                  match value with
-                  | None -> None
-                  | Some _ ->
-                      Some
-                        (Node.create_with_default_location (Expression.Constant Constant.Ellipsis))
+      let create_model_for_method = function
+        | ( raw_method_name,
+            Some
+              { Define.Signature.parameters = method_parameters; decorators = define_decorators; _ }
+          ) ->
+            let signature ~decorators ~source_annotation ~sink_annotation =
+              let parameters =
+                let sink_parameter parameter =
+                  let update_annotation { Parameter.name; value; _ } =
+                    let value =
+                      match value with
+                      | None -> None
+                      | Some _ ->
+                          Some
+                            (Node.create_with_default_location
+                               (Expression.Constant Constant.Ellipsis))
+                    in
+                    { Parameter.name; annotation = sink_annotation; value }
+                  in
+                  Node.map parameter ~f:update_annotation
                 in
-                { Parameter.name; annotation = sink_annotation; value }
+                List.map method_parameters ~f:sink_parameter
               in
-              Node.map parameter ~f:update_annotation
+              ParsedStatement.create_parsed_signature_for_define
+                ~parameters
+                ~return_annotation:source_annotation
+                ~decorators:(List.map ~f:Decorator.to_expression decorators)
+                ~location
+                ~define_name:raw_method_name
+                ~define_decorators
+              |> create_model_from_signature
+                   ~pyre_api
+                   ~path
+                   ~taint_configuration
+                   ~source_sink_filter
+                   ~is_obscure
             in
-            List.map method_parameters ~f:sink_parameter
-          in
-          ParsedStatement.create_parsed_signature_for_define
-            ~parameters
-            ~return_annotation:source_annotation
-            ~decorators:(List.map ~f:Decorator.to_expression decorators)
-            ~location
-            ~define_name:raw_method_name
-            ~define_decorators
-          |> create_model_from_signature
-               ~pyre_api
-               ~path
-               ~taint_configuration
-               ~source_sink_filter
-               ~is_obscure
-        in
-        let sources =
-          List.map source_annotations ~f:(fun source_annotation ->
-              signature
-                ~decorators:[]
-                ~source_annotation:(Some source_annotation)
-                ~sink_annotation:None)
-        in
-        let sinks =
-          List.map sink_annotations ~f:(fun sink_annotation ->
-              signature
-                ~decorators:[]
-                ~source_annotation:None
-                ~sink_annotation:(Some sink_annotation))
-        in
-        let skip_analysis_or_overrides_defines =
-          if not (List.is_empty taint_decorators) then
-            [signature ~decorators:taint_decorators ~source_annotation:None ~sink_annotation:None]
-          else
-            []
-        in
-        skip_analysis_or_overrides_defines @ sources @ sinks
+            let sources =
+              List.map source_annotations ~f:(fun source_annotation ->
+                  signature
+                    ~decorators:[]
+                    ~source_annotation:(Some source_annotation)
+                    ~sink_annotation:None)
+            in
+            let sinks =
+              List.map sink_annotations ~f:(fun sink_annotation ->
+                  signature
+                    ~decorators:[]
+                    ~source_annotation:None
+                    ~sink_annotation:(Some sink_annotation))
+            in
+            let skip_analysis_or_overrides_defines =
+              if not (List.is_empty taint_decorators) then
+                [
+                  signature
+                    ~decorators:taint_decorators
+                    ~source_annotation:None
+                    ~sink_annotation:None;
+                ]
+              else
+                []
+            in
+            skip_analysis_or_overrides_defines @ sources @ sinks
+        | _ -> []
       in
       method_signatures |> List.map ~f:create_model_for_method |> List.concat |> Result.all
   | _ ->

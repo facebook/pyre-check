@@ -899,6 +899,11 @@ module CallableAst = struct
     | Some of 'a Node.t
     | ParseError (* callable in a module that failed to parse *)
     | TestFile (* Callable in a module marked with is_test = true *)
+
+  let to_option = function
+    | ParseError -> None
+    | TestFile -> None
+    | Some ast -> Some ast
 end
 
 module CallableAstSharedMemory =
@@ -2338,6 +2343,50 @@ module ModelQueries = struct
           with
           | Some _ -> Some (Global.Class { class_name = Reference.show name })
           | None -> None)
+
+
+  let class_method_signatures
+      {
+        ReadOnly.class_metadata_shared_memory;
+        module_callables_shared_memory;
+        callable_signature_shared_memory;
+        _;
+      }
+      class_name
+    =
+    match
+      ClassMetadataSharedMemory.get
+        class_metadata_shared_memory
+        (FullyQualifiedName.from_reference_unchecked class_name)
+    with
+    | Some { ClassMetadataSharedMemory.Metadata.module_qualifier; _ } ->
+        let is_method_for_class callable_name =
+          Reference.equal
+            (callable_name
+            |> FullyQualifiedName.to_reference
+            |> Reference.prefix
+            |> Option.value ~default:Reference.empty)
+            class_name
+          && not
+               (String.equal
+                  (FullyQualifiedName.last callable_name)
+                  Statement.class_toplevel_define_name)
+        in
+        let add_signature callable_name =
+          let signature =
+            CallableSignatureSharedMemory.get callable_signature_shared_memory callable_name
+            |> ReadOnly.assert_shared_memory_key_exists "missing signature for callable"
+            |> CallableAst.to_option
+            >>| Node.value
+          in
+          FullyQualifiedName.to_reference callable_name, signature
+        in
+        ModuleCallablesSharedMemory.get module_callables_shared_memory module_qualifier
+        |> ReadOnly.assert_shared_memory_key_exists "missing module callables for qualifier"
+        |> List.filter ~f:is_method_for_class
+        |> List.map ~f:add_signature
+        |> Option.some
+    | None -> None
 end
 
 (* Exposed for testing purposes *)

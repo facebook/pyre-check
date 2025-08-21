@@ -243,7 +243,7 @@ module ModelQueries : sig
   val class_method_signatures
     :  ReadOnly.t ->
     Ast.Reference.t ->
-    (Ast.Reference.t * Ast.Statement.Define.Signature.t) list option
+    (Ast.Reference.t * Ast.Statement.Define.Signature.t option) list option
 
   val invalidate_cache : unit -> unit
 end

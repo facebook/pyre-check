@@ -357,10 +357,10 @@ module ModelQueries = struct
 
   let class_method_signatures = function
     | ReadOnly.Pyre1 pyre_api -> Pyre1Api.ModelQueries.class_method_signatures pyre_api
-    | ReadOnly.Pyrefly _ -> failwith "unimplemented: ModelQueries.class_method_signatures"
+    | ReadOnly.Pyrefly pyrefly_api -> PyreflyApi.ModelQueries.class_method_signatures pyrefly_api
 
 
   let invalidate_cache = function
     | ReadOnly.Pyre1 _ -> Pyre1Api.ModelQueries.invalidate_cache ()
-    | ReadOnly.Pyrefly _ -> failwith "unimplemented: ModelQueries.invalidate_cache"
+    | ReadOnly.Pyrefly _ -> ()
 end
