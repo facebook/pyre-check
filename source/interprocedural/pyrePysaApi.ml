@@ -351,7 +351,8 @@ module ModelQueries = struct
 
   let resolve_qualified_name_to_global = function
     | ReadOnly.Pyre1 pyre_api -> Pyre1Api.ModelQueries.resolve_qualified_name_to_global pyre_api
-    | ReadOnly.Pyrefly _ -> failwith "unimplemented: ModelQueries.resolve_qualified_name_to_global"
+    | ReadOnly.Pyrefly pyrefly_api ->
+        PyreflyApi.ModelQueries.resolve_qualified_name_to_global pyrefly_api
 
 
   let class_summaries = function

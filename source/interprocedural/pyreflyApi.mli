@@ -100,6 +100,18 @@ module ReadOnly : sig
   val get_define_opt : t -> Ast.Reference.t -> Ast.Statement.Define.t Ast.Node.t option
 end
 
+module ModelQueries : sig
+  module Function = Analysis.PyrePysaEnvironment.ModelQueries.Function
+  module Global = Analysis.PyrePysaEnvironment.ModelQueries.Global
+
+  val resolve_qualified_name_to_global
+    :  ReadOnly.t ->
+    is_property_getter:bool ->
+    is_property_setter:bool ->
+    Ast.Reference.t ->
+    Global.t option
+end
+
 (* Exposed for testing purposes *)
 module ModuleId : sig
   type t [@@deriving compare, equal, show]

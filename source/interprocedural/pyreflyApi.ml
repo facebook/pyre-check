@@ -12,6 +12,7 @@ open Core
 open Pyre
 open Data_structures
 open Ast
+module Pyre1Api = Analysis.PyrePysaEnvironment
 
 module FormatError = struct
   type t =
@@ -2073,6 +2074,7 @@ module ReadOnly = struct
     module_infos_shared_memory: ModuleInfosSharedMemory.t;
     qualifiers_with_source_shared_memory: QualifiersWithSourceSharedMemory.t;
     callable_metadata_shared_memory: CallableMetadataSharedMemory.t;
+    class_metadata_shared_memory: ClassMetadataSharedMemory.t;
     module_callables_shared_memory: ModuleCallablesSharedMemory.t;
     module_classes_shared_memory: ModuleClassesSharedMemory.t;
     class_immediate_parents_shared_memory: ClassImmediateParentsSharedMemory.t;
@@ -2085,6 +2087,7 @@ module ReadOnly = struct
         ReadWrite.module_infos_shared_memory;
         qualifiers_with_source_shared_memory;
         callable_metadata_shared_memory;
+        class_metadata_shared_memory;
         module_callables_shared_memory;
         module_classes_shared_memory;
         class_immediate_parents_shared_memory;
@@ -2097,6 +2100,7 @@ module ReadOnly = struct
       module_infos_shared_memory;
       qualifiers_with_source_shared_memory;
       callable_metadata_shared_memory;
+      class_metadata_shared_memory;
       module_callables_shared_memory;
       module_classes_shared_memory;
       class_immediate_parents_shared_memory;
@@ -2208,6 +2212,97 @@ module ReadOnly = struct
     | CallableAst.Some define -> Some define
     | CallableAst.ParseError -> None
     | CallableAst.TestFile -> None
+end
+
+module ModelQueries = struct
+  module Function = Pyre1Api.ModelQueries.Function
+  module Global = Pyre1Api.ModelQueries.Global
+
+  let resolve_qualified_name_to_global
+      {
+        ReadOnly.module_infos_shared_memory;
+        callable_metadata_shared_memory;
+        class_metadata_shared_memory;
+        callable_ast_shared_memory;
+        _;
+      }
+      ~is_property_getter:_
+      ~is_property_setter
+      name
+    =
+    (* TODO(T225700656): For now, we only support looking up symbols in module names that are unique
+       (i.e, the module qualifier is not prefixed by the path) *)
+    let is_module_qualifier name =
+      ModuleInfosSharedMemory.get
+        module_infos_shared_memory
+        (ModuleQualifier.from_reference_unchecked name)
+      |> Option.is_some
+    in
+    let name =
+      if is_property_setter then
+        Reference.create (Format.asprintf "%a@setter" Reference.pp name)
+      else
+        name
+    in
+    if is_module_qualifier name then
+      Some Global.Module
+    else
+      match
+        CallableMetadataSharedMemory.get
+          callable_metadata_shared_memory
+          (FullyQualifiedName.from_reference_unchecked name)
+      with
+      | Some { CallableMetadata.is_property_getter; is_property_setter; parent_is_class; _ } ->
+          (* TODO(T225700656): We only need to load the parameters instead of the full AST. *)
+          let annotation =
+            CallableAstSharedMemory.get
+              callable_ast_shared_memory
+              (FullyQualifiedName.from_reference_unchecked name)
+            |> ReadOnly.assert_shared_memory_key_exists "missing ast for callable"
+            |> function
+            | CallableAst.Some { Node.value = { Statement.Define.signature; _ }; _ } ->
+                let dummy_parser =
+                  {
+                    Analysis.AnnotatedCallable.parse_annotation =
+                      Type.create
+                        ~variables:(fun _ -> None)
+                        ~aliases:(fun ?replace_unbound_parameters_with_any:_ _ -> None);
+                    param_spec_from_vararg_annotations =
+                      (fun ~args_annotation:_ ~kwargs_annotation:_ -> None);
+                  }
+                in
+                (* This API allows us to create a `Type.Callable.t` from a `def ..` statement. The
+                   type might not be exactly right because we ignore type aliases, type variables
+                   and so on. This shouldn't matter because we only use the type to add via:scalar
+                   breadcrumbs during model parsing. *)
+                Analysis.AnnotatedCallable.create_overload_without_applying_decorators
+                  ~parser:dummy_parser
+                  ~generic_parameters_as_variables:(fun _ -> None)
+                  signature
+                |> Type.Callable.create_from_implementation
+                |> (function
+                     | Type.Callable t -> t
+                     | _ -> failwith "unexpected")
+                |> Option.some
+            | _ -> None
+          in
+          Some
+            (Global.Function
+               {
+                 Function.define_name = name;
+                 annotation;
+                 is_property_getter;
+                 is_property_setter;
+                 is_method = parent_is_class;
+               })
+      | None -> (
+          match
+            ClassMetadataSharedMemory.get
+              class_metadata_shared_memory
+              (FullyQualifiedName.from_reference_unchecked name)
+          with
+          | Some _ -> Some (Global.Class { class_name = Reference.show name })
+          | None -> None)
 end
 
 (* Exposed for testing purposes *)
