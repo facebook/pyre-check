@@ -2412,8 +2412,8 @@ module CalleeKind = struct
             let is_class () =
               let primitive, _ = Type.split parent_type in
               Type.primitive_name primitive
-              >>= PyrePysaApi.ReadOnly.get_class_summary pyre_api
-              |> Option.is_some
+              >>| PyrePysaApi.ReadOnly.class_exists pyre_api
+              |> Option.value ~default:false
             in
             if Type.is_class_type parent_type then
               Method { is_direct_call = true }

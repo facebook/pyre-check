@@ -134,6 +134,11 @@ module ReadOnly = struct
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.get_class_summary"
 
 
+  let get_class_attributes = function
+    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.get_class_attributes pyre_api
+    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.get_class_attributes pyrefly_api
+
+
   let source_is_unit_test = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.source_is_unit_test pyre_api
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.source_is_unit_test"

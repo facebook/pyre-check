@@ -973,25 +973,11 @@ let rec class_names_from_annotation = function
 let get_class_attributes ~pyre_api = function
   | "object" -> Some []
   | class_name ->
-      PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
-      >>| Node.value
-      >>| fun class_summary ->
-      let attributes =
-        PyrePysaLogic.ClassSummary.attributes ~include_generated_attributes:false class_summary
-      in
-      let constructor_attributes =
-        PyrePysaLogic.ClassSummary.constructor_attributes class_summary
-      in
-      let all_attributes =
-        Identifier.SerializableMap.union (fun _ x _ -> Some x) attributes constructor_attributes
-      in
-      let get_attribute attribute_name attribute accumulator =
-        match Node.value attribute with
-        | { PyrePysaLogic.ClassSummary.Attribute.kind = Simple _; _ } ->
-            attribute_name :: accumulator
-        | _ -> accumulator
-      in
-      Identifier.SerializableMap.fold get_attribute all_attributes []
+      PyrePysaApi.ReadOnly.get_class_attributes
+        pyre_api
+        ~include_generated_attributes:false
+        ~only_simple_assignments:true
+        class_name
 
 
 let get_class_attributes_transitive ~pyre_api class_name =

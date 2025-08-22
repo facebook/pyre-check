@@ -98,6 +98,13 @@ module ReadOnly : sig
   val is_stub_qualifier : t -> Ast.Reference.t -> bool
 
   val get_define_opt : t -> Ast.Reference.t -> Ast.Statement.Define.t Ast.Node.t option
+
+  val get_class_attributes
+    :  t ->
+    include_generated_attributes:bool ->
+    only_simple_assignments:bool ->
+    string ->
+    string list option
 end
 
 module ModelQueries : sig
@@ -202,6 +209,7 @@ module ModuleInfoFile : sig
       local_class_id: LocalClassId.t;
       bases: GlobalClassId.t list;
       is_synthesized: bool;
+      fields: string list;
     }
     [@@deriving equal, show]
   end

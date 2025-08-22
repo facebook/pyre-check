@@ -232,6 +232,34 @@ module ReadOnly = struct
 
   let get_class_summary api = global_resolution api |> GlobalResolution.get_class_summary
 
+  let get_class_attributes api ~include_generated_attributes ~only_simple_assignments class_name =
+    match get_class_summary api class_name with
+    | Some { Ast.Node.value = class_summary; _ } ->
+        let attributes =
+          PyrePysaLogic.ClassSummary.attributes ~include_generated_attributes class_summary
+        in
+        let constructor_attributes =
+          PyrePysaLogic.ClassSummary.constructor_attributes class_summary
+        in
+        let all_attributes =
+          Ast.Identifier.SerializableMap.union
+            (fun _ x _ -> Some x)
+            attributes
+            constructor_attributes
+        in
+        let get_attribute attribute_name attribute accumulator =
+          if not only_simple_assignments then
+            attribute_name :: accumulator
+          else
+            match Ast.Node.value attribute with
+            | { PyrePysaLogic.ClassSummary.Attribute.kind = Simple _; _ } ->
+                attribute_name :: accumulator
+            | _ -> accumulator
+        in
+        Some (Ast.Identifier.SerializableMap.fold get_attribute all_attributes [])
+    | None -> None
+
+
   let class_immediate_parents api = global_resolution api |> GlobalResolution.immediate_parents
 
   let get_define_names_for_qualifier api =

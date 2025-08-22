@@ -517,6 +517,7 @@ module ModuleInfoFile = struct
       local_class_id: LocalClassId.t;
       bases: GlobalClassId.t list;
       is_synthesized: bool;
+      fields: string list;
     }
     [@@deriving equal, show]
 
@@ -533,8 +534,19 @@ module ModuleInfoFile = struct
       >>= Result.all
       >>= fun bases ->
       JsonUtil.get_optional_bool_member ~default:false json "is_synthesized"
-      >>| fun is_synthesized ->
-      { name; parent; local_class_id = LocalClassId.from_int class_id; bases; is_synthesized }
+      >>= fun is_synthesized ->
+      JsonUtil.get_list_member json "fields"
+      >>| List.map ~f:JsonUtil.as_string
+      >>= Result.all
+      >>| fun fields ->
+      {
+        name;
+        parent;
+        local_class_id = LocalClassId.from_int class_id;
+        bases;
+        is_synthesized;
+        fields;
+      }
   end
 
   type t = {
@@ -894,6 +906,17 @@ module ClassImmediateParentsSharedMemory =
       let description = "pyrefly class immediate parents"
     end)
 
+module ClassFieldsSharedMemory =
+  Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+    (FullyQualifiedNameSharedMemoryKey)
+    (struct
+      type t = string list
+
+      let prefix = Hack_parallel.Std.Prefix.make ()
+
+      let description = "pyrefly class fields"
+    end)
+
 module CallableAst = struct
   type 'a t =
     | Some of 'a Node.t
@@ -976,6 +999,7 @@ module ReadWrite = struct
     (* TODO(T225700656): this can be removed from shared memory after initialization. *)
     class_id_to_qualified_name_shared_memory: ClassIdToQualifiedNameSharedMemory.t;
     class_immediate_parents_shared_memory: ClassImmediateParentsSharedMemory.t;
+    class_fields_shared_memory: ClassFieldsSharedMemory.t;
     callable_ast_shared_memory: CallableAstSharedMemory.t;
     callable_signature_shared_memory: CallableSignatureSharedMemory.t;
     object_class: FullyQualifiedName.t;
@@ -1818,6 +1842,7 @@ module ReadWrite = struct
     let timer = Timer.start () in
     let callable_metadata_shared_memory = CallableMetadataSharedMemory.create () in
     let class_metadata_shared_memory = ClassMetadataSharedMemory.create () in
+    let class_fields_shared_memory = ClassFieldsSharedMemory.create () in
     let module_callables_shared_memory = ModuleCallablesSharedMemory.create () in
     let module_classes_shared_memory = ModuleClassesSharedMemory.create () in
     let class_id_to_qualified_name_shared_memory = ClassIdToQualifiedNameSharedMemory.create () in
@@ -1875,7 +1900,7 @@ module ReadWrite = struct
                   | _ -> false);
               };
             qualified_name :: callables, classes
-        | Class { local_class_id; is_synthesized; _ } ->
+        | Class { local_class_id; is_synthesized; fields; _ } ->
             ClassMetadataSharedMemory.add
               class_metadata_shared_memory
               qualified_name
@@ -1885,6 +1910,7 @@ module ReadWrite = struct
                 local_class_id;
                 is_synthesized;
               };
+            ClassFieldsSharedMemory.add class_fields_shared_memory qualified_name fields;
             ClassIdToQualifiedNameSharedMemory.add
               class_id_to_qualified_name_shared_memory
               { GlobalClassId.module_id; local_class_id }
@@ -1986,6 +2012,7 @@ module ReadWrite = struct
       ();
     ( callable_metadata_shared_memory,
       class_metadata_shared_memory,
+      class_fields_shared_memory,
       module_callables_shared_memory,
       module_classes_shared_memory,
       class_id_to_qualified_name_shared_memory,
@@ -2017,6 +2044,7 @@ module ReadWrite = struct
 
     let ( callable_metadata_shared_memory,
           class_metadata_shared_memory,
+          class_fields_shared_memory,
           module_callables_shared_memory,
           module_classes_shared_memory,
           class_id_to_qualified_name_shared_memory,
@@ -2064,6 +2092,7 @@ module ReadWrite = struct
       type_of_expressions_shared_memory;
       callable_metadata_shared_memory;
       class_metadata_shared_memory;
+      class_fields_shared_memory;
       module_callables_shared_memory;
       module_classes_shared_memory;
       class_id_to_qualified_name_shared_memory;
@@ -2113,6 +2142,7 @@ module ReadOnly = struct
     qualifiers_with_source_shared_memory: QualifiersWithSourceSharedMemory.t;
     callable_metadata_shared_memory: CallableMetadataSharedMemory.t;
     class_metadata_shared_memory: ClassMetadataSharedMemory.t;
+    class_fields_shared_memory: ClassFieldsSharedMemory.t;
     module_callables_shared_memory: ModuleCallablesSharedMemory.t;
     module_classes_shared_memory: ModuleClassesSharedMemory.t;
     class_immediate_parents_shared_memory: ClassImmediateParentsSharedMemory.t;
@@ -2127,6 +2157,7 @@ module ReadOnly = struct
         qualifiers_with_source_shared_memory;
         callable_metadata_shared_memory;
         class_metadata_shared_memory;
+        class_fields_shared_memory;
         module_callables_shared_memory;
         module_classes_shared_memory;
         class_immediate_parents_shared_memory;
@@ -2141,6 +2172,7 @@ module ReadOnly = struct
       qualifiers_with_source_shared_memory;
       callable_metadata_shared_memory;
       class_metadata_shared_memory;
+      class_fields_shared_memory;
       module_callables_shared_memory;
       module_classes_shared_memory;
       class_immediate_parents_shared_memory;
@@ -2253,6 +2285,19 @@ module ReadOnly = struct
     | CallableAst.Some define -> Some define
     | CallableAst.ParseError -> None
     | CallableAst.TestFile -> None
+
+
+  let get_class_attributes
+      { class_fields_shared_memory; _ }
+      ~include_generated_attributes:_
+      ~only_simple_assignments:_
+      class_name
+    =
+    (* TODO(T225700656): Support include_generated_attributes and only_simple_assignments
+       options. *)
+    ClassFieldsSharedMemory.get
+      class_fields_shared_memory
+      (FullyQualifiedName.from_reference_unchecked (Reference.create class_name))
 end
 
 module ModelQueries = struct

@@ -220,6 +220,8 @@ let infer ~scheduler ~scheduler_policies ~pyre_api ~user_models =
      field names. *)
   let compute_named_tuple_models class_name =
     (* If a user-specified __new__ exist, don't override it. *)
+    (* TODO(T225700656): This is not doing the right check when using pyrefly, since
+       `get_class_attributes` doesn't return functions. *)
     if has_attribute class_name "__new__" then
       []
     else

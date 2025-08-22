@@ -18,7 +18,6 @@ open Ast
 open Interprocedural
 open ModelParseResult
 module PyrePysaApi = Interprocedural.PyrePysaApi
-module PyrePysaLogic = Analysis.PyrePysaLogic
 
 (* Represents results from model queries, stored in the ocaml heap. *)
 module ModelQueryResultMap = struct
@@ -2048,27 +2047,15 @@ module AttributeQueryExecutor = struct
   let get_attributes ~scheduler ~pyre_api =
     let () = Log.info "Fetching all attributes..." in
     let get_class_attributes class_name =
-      let class_summary =
-        PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name >>| Node.value
-      in
-      match class_summary with
-      | None -> []
-      | Some ({ name = class_name_reference; _ } as class_summary) ->
-          let attributes, constructor_attributes =
-            ( PyrePysaLogic.ClassSummary.attributes ~include_generated_attributes:false class_summary,
-              PyrePysaLogic.ClassSummary.constructor_attributes class_summary )
-          in
-          let all_attributes =
-            Identifier.SerializableMap.union (fun _ x _ -> Some x) attributes constructor_attributes
-          in
-          let get_target_from_attributes attribute_name attribute accumulator =
-            match Node.value attribute with
-            | { PyrePysaLogic.ClassSummary.Attribute.kind = Simple _; _ } ->
-                Target.create_object (Reference.create ~prefix:class_name_reference attribute_name)
-                :: accumulator
-            | _ -> accumulator
-          in
-          Identifier.SerializableMap.fold get_target_from_attributes all_attributes []
+      let class_name_reference = Reference.create class_name in
+      PyrePysaApi.ReadOnly.get_class_attributes
+        pyre_api
+        ~include_generated_attributes:false
+        ~only_simple_assignments:true
+        class_name
+      |> Option.value ~default:[]
+      |> List.map ~f:(fun attribute_name ->
+             Target.create_object (Reference.create ~prefix:class_name_reference attribute_name))
     in
     let all_classes = PyrePysaApi.ReadOnly.all_classes pyre_api ~scheduler in
     let scheduler_policy =

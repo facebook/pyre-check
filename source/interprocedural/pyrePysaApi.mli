@@ -95,6 +95,13 @@ module ReadOnly : sig
 
   val get_class_summary : t -> string -> Analysis.ClassSummary.t Ast.Node.t option
 
+  val get_class_attributes
+    :  t ->
+    include_generated_attributes:bool ->
+    only_simple_assignments:bool ->
+    string ->
+    string list option
+
   val source_is_unit_test : t -> source:Ast.Source.t -> bool
 
   val class_immediate_parents : t -> string -> string list

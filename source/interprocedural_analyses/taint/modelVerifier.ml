@@ -8,11 +8,9 @@
 (* ModelVerifier: implements additional validation for model files. *)
 
 open Core
-open Pyre
 open Ast
 open Expression
 module PyrePysaApi = Interprocedural.PyrePysaApi
-module PyrePysaLogic = Analysis.PyrePysaLogic
 module AccessPath = Interprocedural.AccessPath
 
 type parameter_requirements = {
@@ -227,25 +225,18 @@ let verify_global_attribute ~path ~location ~pyre_api ~name =
   | Some (Global.Attribute _)
   | Some (Global.UnknownAttribute _)
   | None -> (
-      let class_summary =
-        Reference.prefix name
-        >>| Reference.show
-        >>= PyrePysaApi.ReadOnly.get_class_summary pyre_api
-        >>| Node.value
+      let class_name = Reference.prefix name |> Option.value ~default:Reference.empty in
+      let class_attributes =
+        PyrePysaApi.ReadOnly.get_class_attributes
+          pyre_api
+          ~include_generated_attributes:false
+          ~only_simple_assignments:false
+          (Reference.show class_name)
       in
-      match class_summary, global with
-      | Some ({ name = class_name; _ } as class_summary), _ ->
-          let attributes =
-            PyrePysaLogic.ClassSummary.attributes ~include_generated_attributes:false class_summary
-          in
-          let constructor_attributes =
-            PyrePysaLogic.ClassSummary.constructor_attributes class_summary
-          in
+      match class_attributes, global with
+      | Some class_attributes, _ ->
           let attribute_name = Reference.last name in
-          if
-            Identifier.SerializableMap.mem attribute_name attributes
-            || Identifier.SerializableMap.mem attribute_name constructor_attributes
-          then
+          if List.mem ~equal:String.equal class_attributes attribute_name then
             Ok ()
           else
             Error
