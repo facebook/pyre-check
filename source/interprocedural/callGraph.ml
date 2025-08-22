@@ -6966,6 +6966,13 @@ module WholeProgramCallGraph = struct
 
 
   let to_target_graph graph = graph
+
+  let number_edges graph =
+    (* The number of edges should fit on an `int` (30 bits + 1 sign bit), but let's use Int64 and
+       convert to an int at the end to catch overflows. This is just to be overly cautious. *)
+    fold graph ~init:Int64.zero ~f:(fun ~target:_ ~callees count ->
+        Int64.( + ) count (Int64.of_int (List.length callees)))
+    |> Int64.to_int_exn
 end
 
 (** Call graphs of callables, stored in the shared memory. This is a mapping from a callable to its

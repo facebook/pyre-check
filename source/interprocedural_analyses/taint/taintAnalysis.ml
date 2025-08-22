@@ -889,7 +889,16 @@ let run_taint_analysis
           ~type_of_expression_shared_memory
           ~create_dependency_for:Interprocedural.CallGraph.AllTargetsUseCase.CallGraphDependency)
   in
-  let () = StepLogger.finish step_logger in
+  let () =
+    StepLogger.finish
+      ~integers:
+        [
+          ( "edges",
+            Interprocedural.CallGraph.WholeProgramCallGraph.number_edges
+              original_whole_program_call_graph );
+        ]
+      step_logger
+  in
 
   let prune_method =
     if limit_entrypoints then

@@ -681,6 +681,8 @@ module WholeProgramCallGraph : sig
   val to_target_graph : t -> TargetGraph.t
 
   val merge_disjoint : t -> t -> t
+
+  val number_edges : t -> int
 end
 
 (** Call graphs of callables, stored in the shared memory. This is a mapping from a callable to its
