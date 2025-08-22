@@ -2339,7 +2339,7 @@ module ModelQueries = struct
           (FullyQualifiedName.from_reference_unchecked name)
       with
       | Some { CallableMetadata.is_property_getter; is_property_setter; parent_is_class; _ } ->
-          let annotation =
+          let undecorated_annotation =
             CallableSignatureSharedMemory.get
               callable_signature_shared_memory
               (FullyQualifiedName.from_reference_unchecked name)
@@ -2375,7 +2375,7 @@ module ModelQueries = struct
             (Global.Function
                {
                  Function.define_name = name;
-                 annotation;
+                 undecorated_annotation;
                  is_property_getter;
                  is_property_setter;
                  is_method = parent_is_class;

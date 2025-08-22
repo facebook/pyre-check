@@ -213,7 +213,8 @@ module ModelQueries : sig
   module Function : sig
     type t = {
       define_name: Ast.Reference.t;
-      annotation: Type.Callable.t option;
+      (* Annotation of the function, ignoring all decorators. *)
+      undecorated_annotation: Type.Callable.t option;
       is_property_getter: bool;
       is_property_setter: bool;
       is_method: bool;

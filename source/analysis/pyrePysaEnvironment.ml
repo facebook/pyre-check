@@ -496,7 +496,8 @@ module ModelQueries = struct
   module Function = struct
     type t = {
       define_name: Ast.Reference.t;
-      annotation: Type.Callable.t option;
+      (* Annotation of the function, ignoring all decorators. *)
+      undecorated_annotation: Type.Callable.t option;
       is_property_getter: bool;
       is_property_setter: bool;
       is_method: bool;
@@ -652,7 +653,7 @@ module ModelQueries = struct
           (Global.Function
              {
                Function.define_name = name;
-               annotation = Some (toplevel_define_type ());
+               undecorated_annotation = Some (toplevel_define_type ());
                is_property_getter = false;
                is_property_setter = false;
                is_method = false;
@@ -671,7 +672,7 @@ module ModelQueries = struct
           (Global.Function
              {
                Function.define_name = name;
-               annotation = Some (toplevel_define_type ());
+               undecorated_annotation = Some (toplevel_define_type ());
                is_property_getter = false;
                is_property_setter = false;
                is_method = true;
@@ -690,7 +691,7 @@ module ModelQueries = struct
       Global.Function
         {
           Function.define_name = name;
-          annotation = Some callable;
+          undecorated_annotation = Some callable;
           is_property_setter;
           is_property_getter;
           is_method = true;
@@ -707,7 +708,7 @@ module ModelQueries = struct
       Global.Function
         {
           Function.define_name = name;
-          annotation = Some callable;
+          undecorated_annotation = Some callable;
           is_property_getter;
           is_property_setter;
           is_method = true;
@@ -752,7 +753,7 @@ module ModelQueries = struct
             (Global.Function
                {
                  Function.define_name = name;
-                 annotation = Some signature;
+                 undecorated_annotation = Some signature;
                  is_property_getter = false;
                  is_property_setter = false;
                  is_method = Option.is_some class_summary;
@@ -765,7 +766,7 @@ module ModelQueries = struct
                 (Global.Function
                    {
                      define_name = name;
-                     annotation =
+                     undecorated_annotation =
                        Some (Type.Callable.create_from_implementation callable |> get_callable_type);
                      is_property_getter = false;
                      is_property_setter = false;
@@ -778,7 +779,7 @@ module ModelQueries = struct
                 (Global.Function
                    {
                      define_name = name;
-                     annotation =
+                     undecorated_annotation =
                        Some
                          (Type.Callable.create
                             ~overloads
@@ -816,7 +817,7 @@ module ModelQueries = struct
                     (Global.Function
                        {
                          define_name = name;
-                         annotation = Some t;
+                         undecorated_annotation = Some t;
                          is_property_getter = false;
                          is_property_setter = false;
                          is_method = Option.is_some class_summary;
@@ -826,7 +827,7 @@ module ModelQueries = struct
                     (Global.Function
                        {
                          define_name = name;
-                         annotation = Some t;
+                         undecorated_annotation = Some t;
                          is_property_getter = false;
                          is_property_setter = false;
                          is_method = Option.is_some class_summary;

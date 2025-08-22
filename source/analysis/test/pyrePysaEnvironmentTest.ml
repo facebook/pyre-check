@@ -97,7 +97,7 @@ let test_resolve_qualified_name_to_global context =
     in
     {
       Function.define_name;
-      annotation = Some annotation;
+      undecorated_annotation = Some annotation;
       is_property_getter = false;
       is_property_setter = false;
       is_method;
@@ -344,7 +344,7 @@ let test_resolve_qualified_name_to_global context =
          (Global.Function
             {
               Function.define_name = Reference.create "test.Foo.bar";
-              annotation =
+              undecorated_annotation =
                 Type.Callable.create
                   ~parameters:
                     (Type.Callable.Defined
