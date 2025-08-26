@@ -22,13 +22,13 @@ module IncompatibleModelError : sig
         position: int;
         valid_roots: Interprocedural.AccessPath.Root.t list;
       }
-  [@@deriving sexp, equal, compare]
+  [@@deriving equal, compare]
 
   type t = {
     reason: reason;
-    overload: Type.t Type.Callable.overload option;
+    overload: Interprocedural.PyrePysaApi.ModelQueries.FunctionParameters.t option;
   }
-  [@@deriving sexp, equal, compare]
+  [@@deriving equal, compare]
 
   val strip_overload : t -> t
 end
@@ -43,7 +43,7 @@ module FormatStringError : sig
       }
     | InvalidIdentifierForContext of string
     | InvalidIdentifierInIntegerExpression of string
-  [@@deriving sexp, equal, compare, show]
+  [@@deriving equal, compare, show]
 
   val description : t -> string
 end
@@ -58,7 +58,7 @@ type kind =
     }
   | IncompatibleModelError of {
       name: string;
-      callable_type: Type.Callable.t;
+      callable_signature: Interprocedural.PyrePysaApi.ModelQueries.FunctionSignature.t;
       errors: IncompatibleModelError.t list;
     }
   | ImportedFunctionModel of {
@@ -191,14 +191,14 @@ type kind =
       error: FormatStringError.t;
     }
   | UnmatchedPartialSinkKind of Sinks.PartialSink.t
-[@@deriving sexp, equal, compare]
+[@@deriving equal, compare]
 
 type t = {
   kind: kind;
   path: PyrePath.t option;
   location: Location.t;
 }
-[@@deriving sexp, equal, compare, show]
+[@@deriving equal, compare, show]
 
 val to_json : t -> Yojson.Safe.t
 

@@ -210,11 +210,62 @@ end
 module ModelQueries : sig
   val property_decorators : String.Set.t
 
+  module FunctionParameter : sig
+    type t =
+      | PositionalOnly of {
+          name: string option;
+          index: int;
+          annotation: Type.t;
+          has_default: bool;
+        }
+      | Named of {
+          name: string;
+          annotation: Type.t;
+          has_default: bool;
+        }
+      | KeywordOnly of {
+          name: string;
+          annotation: Type.t;
+          has_default: bool;
+        }
+      | Variable of { name: string option }
+      | Keywords of {
+          name: string option;
+          annotation: Type.t;
+        }
+    [@@deriving equal, compare, show]
+
+    val annotation : t -> Type.t option
+
+    val has_default : t -> bool
+  end
+
+  module FunctionParameters : sig
+    type t =
+      | List of FunctionParameter.t list
+      | Ellipsis
+      | ParamSpec
+    [@@deriving equal, compare, show]
+  end
+
+  module FunctionSignature : sig
+    type t = {
+      (* Functions with `@overload` have multiple parameter signatures. *)
+      overloads: FunctionParameters.t list;
+      return_annotation: Type.t;
+    }
+    [@@deriving equal, compare, show]
+
+    val from_callable_type : Type.Callable.t -> t
+  end
+
   module Function : sig
     type t = {
       define_name: Ast.Reference.t;
-      (* Annotation of the function, ignoring all decorators. *)
-      undecorated_annotation: Type.Callable.t option;
+      (* If the user-provided name is a re-export, this is the original name. *)
+      imported_name: Ast.Reference.t option;
+      (* Signature of the function, ignoring all decorators. None when unknown. *)
+      undecorated_signature: FunctionSignature.t option;
       is_property_getter: bool;
       is_property_setter: bool;
       is_method: bool;

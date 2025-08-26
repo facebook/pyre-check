@@ -69,35 +69,30 @@ let test_resolve_qualified_name_to_global context =
     in
     assert_equal ~printer expect actual
   in
-  let create_parameter ?(annotation = Type.Any) ?(default = false) name =
-    Type.Callable.CallableParamType.Named { name = "$parameter$" ^ name; annotation; default }
-  in
-  let get_callable_type = function
-    | Type.Callable t -> t
-    | _ -> failwith "unreachable"
+  let create_parameter ?(annotation = Type.Any) name =
+    PyrePysaEnvironment.ModelQueries.FunctionParameter.Named
+      { name = "$parameter$" ^ name; annotation; has_default = false }
   in
   let create_callable
       ~define_name
-      ?annotation_name
+      ?imported_name
       ?(is_method = false)
       ?(overloads = [])
       ?(parameters = [])
-      ?(annotation = Type.Any)
+      ?(return_annotation = Type.Any)
       ()
     =
     let define_name = Reference.create define_name in
-    let annotation =
-      Type.Callable.create
-        ?name:(annotation_name >>| Reference.create)
-        ~overloads
-        ~parameters:(Type.Callable.Defined parameters)
-        ~annotation
-        ()
-      |> get_callable_type
-    in
     {
       Function.define_name;
-      undecorated_annotation = Some annotation;
+      imported_name = imported_name >>| Reference.create;
+      undecorated_signature =
+        Some
+          {
+            PyrePysaEnvironment.ModelQueries.FunctionSignature.overloads =
+              PyrePysaEnvironment.ModelQueries.FunctionParameters.List parameters :: overloads;
+            return_annotation;
+          };
       is_property_getter = false;
       is_property_setter = false;
       is_method;
@@ -112,8 +107,7 @@ let test_resolve_qualified_name_to_global context =
     |}]
     "test.foo"
     ~expect:
-      (Some
-         (Global.Function (create_callable ~define_name:"test.foo" ~annotation_name:"test.foo" ())));
+      (Some (Global.Function (create_callable ~define_name:"test.foo" ~imported_name:"test.foo" ())));
   assert_resolve
     ~context
     ["test.py", {|
@@ -142,7 +136,9 @@ let test_resolve_qualified_name_to_global context =
     ]
     "test.foo"
     ~expect:
-      (Some (Global.Function (create_callable ~define_name:"test.foo" ~annotation:Type.NoneType ())));
+      (Some
+         (Global.Function
+            (create_callable ~define_name:"test.foo" ~return_annotation:Type.NoneType ())));
   assert_resolve
     ~context
     [
@@ -161,7 +157,7 @@ let test_resolve_qualified_name_to_global context =
             (create_callable
                ~define_name:"test.Foo.bar"
                ~is_method:true
-               ~annotation:Type.NoneType
+               ~return_annotation:Type.NoneType
                ())));
   assert_resolve
     ~context
@@ -282,9 +278,9 @@ let test_resolve_qualified_name_to_global context =
       (Some
          (Global.Function
             (create_callable
-               ~annotation:Type.integer
+               ~return_annotation:Type.integer
                ~define_name:"test.foo"
-               ~annotation_name:"test.foo"
+               ~imported_name:"test.foo"
                ~parameters:[create_parameter ~annotation:Type.integer "x"]
                ())));
   assert_resolve
@@ -315,7 +311,7 @@ let test_resolve_qualified_name_to_global context =
             (create_callable
                ~define_name:"test.Foo.bar"
                ~is_method:true
-               ~annotation:Type.integer
+               ~return_annotation:Type.integer
                ~parameters:
                  [
                    create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
@@ -344,39 +340,30 @@ let test_resolve_qualified_name_to_global context =
          (Global.Function
             {
               Function.define_name = Reference.create "test.Foo.bar";
-              undecorated_annotation =
-                Type.Callable.create
-                  ~parameters:
-                    (Type.Callable.Defined
-                       [
-                         create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
-                         create_parameter ~annotation:Type.integer "x";
-                       ])
-                  ~annotation:Type.string
-                  ~overloads:
-                    [
-                      {
-                        parameters =
-                          Defined
-                            [
-                              create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
-                              create_parameter ~annotation:Type.integer "x";
-                            ];
-                        annotation = Type.string;
-                      };
-                      {
-                        parameters =
-                          Defined
-                            [
-                              create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
-                              create_parameter ~annotation:Type.string "x";
-                            ];
-                        annotation = Type.integer;
-                      };
-                    ]
-                  ()
-                |> get_callable_type
-                |> Option.some;
+              imported_name = None;
+              undecorated_signature =
+                Some
+                  {
+                    PyrePysaEnvironment.ModelQueries.FunctionSignature.overloads =
+                      [
+                        PyrePysaEnvironment.ModelQueries.FunctionParameters.List
+                          [
+                            create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
+                            create_parameter ~annotation:Type.integer "x";
+                          ];
+                        PyrePysaEnvironment.ModelQueries.FunctionParameters.List
+                          [
+                            create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
+                            create_parameter ~annotation:Type.integer "x";
+                          ];
+                        PyrePysaEnvironment.ModelQueries.FunctionParameters.List
+                          [
+                            create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
+                            create_parameter ~annotation:Type.string "x";
+                          ];
+                      ];
+                    return_annotation = Type.string;
+                  };
               is_property_getter = false;
               is_property_setter = false;
               is_method = true;
@@ -411,9 +398,9 @@ let test_resolve_qualified_name_to_global context =
       (Some
          (Global.Function
             (create_callable
-               ~annotation:Type.NoneType
+               ~return_annotation:Type.NoneType
                ~define_name:"test.foo"
-               ~annotation_name:"test.foo"
+               ~imported_name:"test.foo"
                ())));
   assert_resolve
     ~context
@@ -428,7 +415,7 @@ let test_resolve_qualified_name_to_global context =
             (create_callable
                ~define_name:"test.Foo.bar"
                ~is_method:true
-               ~annotation:Type.NoneType
+               ~return_annotation:Type.NoneType
                ~parameters:[create_parameter ~annotation:(Type.Primitive "test.Foo") "self"]
                ())));
   assert_resolve
@@ -442,7 +429,9 @@ let test_resolve_qualified_name_to_global context =
     ]
     "test.foo"
     ~expect:
-      (Some (Global.Function (create_callable ~define_name:"test.foo" ~annotation:Type.NoneType ())));
+      (Some
+         (Global.Function
+            (create_callable ~define_name:"test.foo" ~return_annotation:Type.NoneType ())));
   assert_resolve
     ~context
     ["test.pyi", {|
@@ -467,9 +456,9 @@ let test_resolve_qualified_name_to_global context =
       (Some
          (Global.Function
             (create_callable
-               ~annotation:Type.NoneType
+               ~return_annotation:Type.NoneType
                ~define_name:"outer.middle.inner.b.foo"
-               ~annotation_name:"outer.middle.inner.a.foo"
+               ~imported_name:"outer.middle.inner.a.foo"
                ())));
   assert_resolve
     ~context
@@ -488,7 +477,7 @@ let test_resolve_qualified_name_to_global context =
          (Global.Function
             (create_callable
                ~define_name:"outer.middle.inner.b.Foo.bar"
-               ~annotation_name:"outer.middle.inner.a.Foo.bar"
+               ~imported_name:"outer.middle.inner.a.Foo.bar"
                ~is_method:true
                ~parameters:
                  [create_parameter ~annotation:(Type.Primitive "outer.middle.inner.a.Foo") "self"]

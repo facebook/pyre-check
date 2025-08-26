@@ -20,14 +20,18 @@ type parameter_requirements = {
   has_star_star_parameter: bool;
 }
 
-let create_parameters_requirements ~type_parameters =
-  let get_parameters_requirements requirements type_parameter =
-    let open Type.Callable.CallableParamType in
-    match type_parameter with
-    | PositionalOnly { index; _ } ->
+let create_parameters_requirements parameters =
+  let get_parameters_requirements requirements parameter =
+    let open PyrePysaApi.ModelQueries.FunctionParameter in
+    match parameter with
+    | PositionalOnly { index; name; _ } ->
         {
           requirements with
           anonymous_parameters_positions = Set.add requirements.anonymous_parameters_positions index;
+          parameter_set =
+            (match name with
+            | Some name -> Set.add requirements.parameter_set name
+            | None -> requirements.parameter_set);
         }
     | Named { name; _ }
     | KeywordOnly { name; _ } ->
@@ -44,7 +48,7 @@ let create_parameters_requirements ~type_parameters =
       has_star_star_parameter = false;
     }
   in
-  List.fold_left type_parameters ~f:get_parameters_requirements ~init
+  List.fold_left parameters ~f:get_parameters_requirements ~init
 
 
 let model_verification_error ~path ~location kind = { ModelVerificationError.kind; path; location }
@@ -70,19 +74,18 @@ let verify_model_syntax ~path ~location ~callable_name ~normalized_model_paramet
   | None -> Ok ()
 
 
-let verify_imported_model ~path ~location ~callable_name ~callable_annotation =
-  match callable_annotation with
-  | Some { Type.Callable.kind = Type.Callable.Named actual_name; _ }
-    when not (Reference.equal callable_name actual_name) ->
+let verify_imported_model ~path ~location ~callable_name ~imported_name =
+  match imported_name with
+  | Some imported_name when not (Reference.equal callable_name imported_name) ->
       Error
         (model_verification_error
            ~path
            ~location
-           (ImportedFunctionModel { name = callable_name; actual_name }))
+           (ImportedFunctionModel { name = callable_name; actual_name = imported_name }))
   | _ -> Ok ()
 
 
-let model_compatible_errors ~callable_overload ~normalized_model_parameters =
+let model_compatible_errors ~callable_overload ~add_overload_in_error ~normalized_model_parameters =
   let open ModelVerificationError in
   (* Once a requirement has been satisfied, it is removed from requirement object. At the end, we
      check whether there remains unsatisfied requirements. *)
@@ -143,8 +146,8 @@ let model_compatible_errors ~callable_overload ~normalized_model_parameters =
           IncompatibleModelError.UnexpectedDoubleStarredParameter :: errors, requirements
   in
   match callable_overload with
-  | { Type.Callable.parameters = Type.Callable.Defined type_parameters; _ } ->
-      let parameter_requirements = create_parameters_requirements ~type_parameters in
+  | PyrePysaApi.ModelQueries.FunctionParameters.List parameters ->
+      let parameter_requirements = create_parameters_requirements parameters in
       let errors, _ =
         List.foldi
           normalized_model_parameters
@@ -152,7 +155,11 @@ let model_compatible_errors ~callable_overload ~normalized_model_parameters =
           ~init:([], parameter_requirements)
       in
       List.map
-        ~f:(fun reason -> { IncompatibleModelError.reason; overload = Some callable_overload })
+        ~f:(fun reason ->
+          {
+            IncompatibleModelError.reason;
+            overload = Option.some_if add_overload_in_error callable_overload;
+          })
         errors
   | _ -> []
 
@@ -162,31 +169,29 @@ let verify_signature
     ~location
     ~normalized_model_parameters
     ~name:callable_name
-    callable_annotation
+    ~imported_name
+    callable_signature
   =
   let open Result in
   verify_model_syntax ~path ~location ~callable_name ~normalized_model_parameters
   >>= fun () ->
-  verify_imported_model ~path ~location ~callable_name ~callable_annotation
+  verify_imported_model ~path ~location ~callable_name ~imported_name
   >>= fun () ->
-  match callable_annotation with
-  | Some ({ Type.Callable.implementation; overloads; _ } as callable) ->
+  match callable_signature with
+  | Some ({ PyrePysaApi.ModelQueries.FunctionSignature.overloads; _ } as callable_signature) ->
+      let add_overload_in_error = List.length overloads > 1 in
       let errors =
-        model_compatible_errors ~callable_overload:implementation ~normalized_model_parameters
-      in
-      let errors =
-        if (not (List.is_empty errors)) && not (List.is_empty overloads) then
-          (* We might be referring to a parameter defined in an overload. *)
-          let errors_in_overloads =
-            List.map overloads ~f:(fun callable_overload ->
-                model_compatible_errors ~callable_overload ~normalized_model_parameters)
-          in
-          if List.find ~f:List.is_empty errors_in_overloads |> Option.is_some then
-            []
-          else
-            errors @ List.concat errors_in_overloads
+        let errors_in_overloads =
+          List.map overloads ~f:(fun callable_overload ->
+              model_compatible_errors
+                ~callable_overload
+                ~add_overload_in_error
+                ~normalized_model_parameters)
+        in
+        if List.find ~f:List.is_empty errors_in_overloads |> Option.is_some then
+          [] (* No error for at least one overload. *)
         else
-          List.map ~f:ModelVerificationError.IncompatibleModelError.strip_overload errors
+          List.concat errors_in_overloads
       in
       if not (List.is_empty errors) then
         Error
@@ -194,7 +199,7 @@ let verify_signature
              ~path
              ~location
              (IncompatibleModelError
-                { name = Reference.show callable_name; callable_type = callable; errors }))
+                { name = Reference.show callable_name; callable_signature; errors }))
       else
         Ok ()
   | _ -> Ok ()

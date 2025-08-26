@@ -2586,45 +2586,45 @@ let parse_model_clause
   | _ -> parse_model expression >>| List.return
 
 
-let parameters_of_callable_annotation { Type.Callable.implementation; overloads; _ } =
+let parameters_of_callable_signature { PyrePysaApi.ModelQueries.FunctionSignature.overloads; _ } =
   let parameters_of_overload = function
-    | { Type.Callable.parameters = Type.Callable.Defined parameters; _ } ->
-        List.mapi parameters ~f:(fun position parameter -> position, parameter)
+    | PyrePysaApi.ModelQueries.FunctionParameters.List parameters ->
+        List.mapi ~f:(fun position parameter -> position, parameter) parameters
     | _ -> []
   in
-  parameters_of_overload implementation
-  @ (List.map overloads ~f:parameters_of_overload |> List.concat)
+  overloads |> List.map ~f:parameters_of_overload |> List.concat
 
 
 (* Return all type annotations on the given port.
  * Note that there could be multiple annotations because of type overloads. *)
-let port_annotations_from_signature ~root ~callable_annotation =
-  match callable_annotation with
+let port_annotations_from_signature ~root ~callable_signature =
+  match callable_signature with
   | None -> []
-  | Some callable_annotation -> (
+  | Some callable_signature -> (
       match root with
       | AccessPath.Root.PositionalParameter { position; _ } ->
-          parameters_of_callable_annotation callable_annotation
+          parameters_of_callable_signature callable_signature
           |> List.filter_map ~f:(fun (parameter_position, parameter) ->
                  Option.some_if (Int.equal parameter_position position) parameter)
-          |> List.filter_map ~f:Type.Callable.CallableParamType.annotation
+          |> List.filter_map ~f:PyrePysaApi.ModelQueries.FunctionParameter.annotation
       | AccessPath.Root.NamedParameter { name; _ } ->
-          parameters_of_callable_annotation callable_annotation
+          parameters_of_callable_signature callable_signature
           |> List.filter_map ~f:(fun (_, parameter) ->
                  match parameter with
-                 | Type.Callable.CallableParamType.KeywordOnly { name = parameter_name; _ }
+                 | PyrePysaApi.ModelQueries.FunctionParameter.KeywordOnly
+                     { name = parameter_name; _ }
                    when String.equal parameter_name ("$parameter$" ^ name) ->
                      Some parameter
-                 | Type.Callable.CallableParamType.Named { name = parameter_name; _ }
+                 | PyrePysaApi.ModelQueries.FunctionParameter.Named { name = parameter_name; _ }
                    when String.equal parameter_name name ->
                      Some parameter
                  | _ -> None)
-          |> List.filter_map ~f:Type.Callable.CallableParamType.annotation
+          |> List.filter_map ~f:PyrePysaApi.ModelQueries.FunctionParameter.annotation
       | AccessPath.Root.LocalResult ->
-          let { Type.Callable.implementation = { Type.Callable.annotation; _ }; _ } =
-            callable_annotation
+          let { PyrePysaApi.ModelQueries.FunctionSignature.return_annotation; _ } =
+            callable_signature
           in
-          [annotation]
+          [return_annotation]
       | _ -> [])
 
 
@@ -2783,7 +2783,7 @@ let add_taint_annotation_to_model
     ~path
     ~location
     ~model_name
-    ~callable_undecorated_annotation
+    ~callable_undecorated_signature
     ~source_sink_filter
     model
     annotation
@@ -2801,9 +2801,7 @@ let add_taint_annotation_to_model
       match annotation with
       | TaintAnnotation.Sink { sink; features } ->
           let root_annotations =
-            port_annotations_from_signature
-              ~root
-              ~callable_annotation:callable_undecorated_annotation
+            port_annotations_from_signature ~root ~callable_signature:callable_undecorated_signature
           in
           introduce_sink_taint
             ~pyre_api
@@ -2816,9 +2814,7 @@ let add_taint_annotation_to_model
           |> map_error ~f:invalid_model_for_taint
       | TaintAnnotation.Source { source; features } ->
           let root_annotations =
-            port_annotations_from_signature
-              ~root
-              ~callable_annotation:callable_undecorated_annotation
+            port_annotations_from_signature ~root ~callable_signature:callable_undecorated_signature
           in
           introduce_source_taint
             ~pyre_api
@@ -2848,9 +2844,7 @@ let add_taint_annotation_to_model
       match annotation with
       | TaintAnnotation.Sink { sink; features } ->
           let root_annotations =
-            port_annotations_from_signature
-              ~root
-              ~callable_annotation:callable_undecorated_annotation
+            port_annotations_from_signature ~root ~callable_signature:callable_undecorated_signature
           in
           introduce_sink_taint
             ~pyre_api
@@ -2863,9 +2857,7 @@ let add_taint_annotation_to_model
           |> map_error ~f:invalid_model_for_taint
       | TaintAnnotation.Source { source; features } ->
           let root_annotations =
-            port_annotations_from_signature
-              ~root
-              ~callable_annotation:callable_undecorated_annotation
+            port_annotations_from_signature ~root ~callable_signature:callable_undecorated_signature
           in
           introduce_source_taint
             ~pyre_api
@@ -2879,14 +2871,12 @@ let add_taint_annotation_to_model
           |> map_error ~f:invalid_model_for_taint
       | TaintAnnotation.Tito { tito; features } ->
           let root_annotations =
-            port_annotations_from_signature
-              ~root
-              ~callable_annotation:callable_undecorated_annotation
+            port_annotations_from_signature ~root ~callable_signature:callable_undecorated_signature
           in
           let result_annotations =
             port_annotations_from_signature
               ~root:AccessPath.Root.LocalResult
-              ~callable_annotation:callable_undecorated_annotation
+              ~callable_signature:callable_undecorated_signature
           in
           introduce_taint_in_taint_out
             ~pyre_api
@@ -2899,9 +2889,7 @@ let add_taint_annotation_to_model
           |> map_error ~f:invalid_model_for_taint
       | TaintAnnotation.AddFeatureToArgument { features } ->
           let root_annotations =
-            port_annotations_from_signature
-              ~root
-              ~callable_annotation:callable_undecorated_annotation
+            port_annotations_from_signature ~root ~callable_signature:callable_undecorated_signature
           in
           introduce_sink_taint
             ~pyre_api
@@ -3613,7 +3601,8 @@ let create_model_from_signature
         Ok
           {
             Function.define_name = name;
-            undecorated_annotation = None;
+            imported_name = None;
+            undecorated_signature = None;
             is_property_getter;
             is_property_setter;
             is_method = parent_is_class;
@@ -3623,12 +3612,12 @@ let create_model_from_signature
   in
   (* Check model matches callables primary signature. *)
   let callable_parameter_names_to_roots =
-    (* TODO(T180849788): Consolidate `callable_annotation` accesses into an API *)
+    (* TODO(T180849788): Consolidate `callable_signature` accesses into an API *)
     match resolved_callable with
     | Ok
         {
-          PyrePysaApi.ModelQueries.Function.undecorated_annotation =
-            Some callable_undecorated_annotation;
+          PyrePysaApi.ModelQueries.Function.undecorated_signature =
+            Some callable_undecorated_signature;
           _;
         } ->
         let add_into_map map name root =
@@ -3638,19 +3627,19 @@ let create_model_from_signature
         in
         let add_parameter_to_position map (position, parameter) =
           match parameter with
-          | Type.Callable.CallableParamType.Named { name; _ } ->
+          | PyrePysaApi.ModelQueries.FunctionParameter.Named { name; _ } ->
               let name = Identifier.sanitized name in
               add_into_map
                 map
                 name
                 (AccessPath.Root.PositionalParameter { name; position; positional_only = false })
-          | Type.Callable.CallableParamType.KeywordOnly { name; _ } ->
+          | PyrePysaApi.ModelQueries.FunctionParameter.KeywordOnly { name; _ } ->
               let name = Identifier.sanitized name in
               add_into_map map name (AccessPath.Root.NamedParameter { name })
           | _ -> map
         in
-        callable_undecorated_annotation
-        |> parameters_of_callable_annotation
+        callable_undecorated_signature
+        |> parameters_of_callable_signature
         |> List.fold ~init:String.Map.empty ~f:add_parameter_to_position
         |> String.Map.map ~f:(List.dedup_and_sort ~compare:AccessPath.Root.compare)
         |> Option.some
@@ -3669,11 +3658,11 @@ let create_model_from_signature
               IncompatibleModelError
                 {
                   name = Reference.show callable_name;
-                  callable_type =
+                  callable_signature =
                     (resolved_callable
                     |> Stdlib.Result.get_ok
-                    |> fun { Function.undecorated_annotation; _ } ->
-                    Option.value_exn undecorated_annotation);
+                    |> fun { Function.undecorated_signature; _ } ->
+                    Option.value_exn undecorated_signature);
                   errors =
                     [ModelVerificationError.IncompatibleModelError.{ reason; overload = None }];
                 };
@@ -3804,7 +3793,7 @@ let create_model_from_signature
     | None -> Ok []
   in
   resolved_callable
-  >>= fun ({ Function.undecorated_annotation = callable_undecorated_annotation; _ } as
+  >>= fun ({ Function.undecorated_signature = callable_undecorated_signature; imported_name; _ } as
           resolved_callable) ->
   check_decorators
     ~path
@@ -3822,7 +3811,8 @@ let create_model_from_signature
     ~location
     ~normalized_model_parameters
     ~name:callable_name
-    callable_undecorated_annotation
+    ~imported_name
+    callable_undecorated_signature
   >>= fun () ->
   List.map
     normalized_model_parameters
@@ -3885,7 +3875,7 @@ let create_model_from_signature
          ~location
          ~model_name:(Reference.show callable_name)
          ~pyre_api
-         ~callable_undecorated_annotation
+         ~callable_undecorated_signature
          ~source_sink_filter)
   >>| fun model -> { Model.WithTarget.model; target = callable }
 
@@ -3931,7 +3921,7 @@ let create_model_from_attribute
          ~location
          ~model_name:(Reference.show attribute_name)
          ~pyre_api
-         ~callable_undecorated_annotation:None
+         ~callable_undecorated_signature:None
          ~source_sink_filter)
   >>| fun model -> { Model.WithTarget.model; target = Target.create_object attribute_name }
 
@@ -4770,7 +4760,7 @@ let create_callable_model_from_annotations
   let define_name = Target.define_name_exn target in
   let decorators = Modelable.decorator_expressions_after_inlining modelable in
   let is_property_getter, is_property_setter = is_property_getter_setter ~decorators ~define_name in
-  let callable_undecorated_annotation =
+  let callable_undecorated_signature =
     match
       PyrePysaApi.ModelQueries.resolve_qualified_name_to_global
         pyre_api
@@ -4780,8 +4770,8 @@ let create_callable_model_from_annotations
     with
     | Some
         (PyrePysaApi.ModelQueries.Global.Function
-          { PyrePysaApi.ModelQueries.Function.undecorated_annotation = Some annotation; _ }) ->
-        Some annotation
+          { PyrePysaApi.ModelQueries.Function.undecorated_signature; _ }) ->
+        undecorated_signature
     | _ -> None
   in
   let default_model = if is_obscure then Model.obscure_model else Model.empty_model in
@@ -4797,7 +4787,7 @@ let create_callable_model_from_annotations
         ~location:Location.any
         ~model_name:"Model query"
         ~pyre_api
-        ~callable_undecorated_annotation
+        ~callable_undecorated_signature
         ~source_sink_filter
         accumulator
         model_annotation)
@@ -4829,7 +4819,7 @@ let create_attribute_model_from_annotations ~pyre_api ~name ~source_sink_filter 
         ~location:Location.any
         ~model_name:"Model query"
         ~pyre_api
-        ~callable_undecorated_annotation:None
+        ~callable_undecorated_signature:None
         ~source_sink_filter
         accumulator
         model_annotation)

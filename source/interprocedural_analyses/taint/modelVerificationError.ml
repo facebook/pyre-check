@@ -11,6 +11,7 @@
 open Core
 open Ast
 module AccessPath = Interprocedural.AccessPath
+module PyrePysaApi = Interprocedural.PyrePysaApi
 
 module IncompatibleModelError = struct
   type reason =
@@ -27,13 +28,13 @@ module IncompatibleModelError = struct
         position: int;
         valid_roots: AccessPath.Root.t list;
       }
-  [@@deriving sexp, equal, compare, show]
+  [@@deriving equal, compare, show]
 
   type t = {
     reason: reason;
-    overload: Type.t Type.Callable.overload option;
+    overload: PyrePysaApi.ModelQueries.FunctionParameters.t option;
   }
-  [@@deriving sexp, equal, compare, show]
+  [@@deriving equal, compare, show]
 
   let strip_overload { reason; _ } = { reason; overload = None }
 end
@@ -48,7 +49,7 @@ module FormatStringError = struct
       }
     | InvalidIdentifierForContext of string
     | InvalidIdentifierInIntegerExpression of string
-  [@@deriving sexp, equal, compare, show]
+  [@@deriving equal, compare, show]
 
   let description = function
     | InvalidExpression expression ->
@@ -72,7 +73,7 @@ type kind =
     }
   | IncompatibleModelError of {
       name: string;
-      callable_type: Type.Callable.t;
+      callable_signature: PyrePysaApi.ModelQueries.FunctionSignature.t;
       errors: IncompatibleModelError.t list;
     }
   | ImportedFunctionModel of {
@@ -205,20 +206,63 @@ type kind =
       error: FormatStringError.t;
     }
   | UnmatchedPartialSinkKind of Sinks.PartialSink.t
-[@@deriving sexp, equal, compare, show]
+[@@deriving equal, compare, show]
 
 type t = {
   kind: kind;
   path: PyrePath.t option;
   location: Location.t;
 }
-[@@deriving sexp, equal, compare, show]
+[@@deriving equal, compare, show]
 
-let show_type_for_error annotation =
-  match annotation with
-  | Type.Callable { kind = Named reference; _ } ->
-      Format.asprintf "def %s%s: ..." (Reference.last reference) (Type.show_concise annotation)
-  | _ -> Type.show_concise annotation
+let pp_function_overload formatter = function
+  | PyrePysaApi.ModelQueries.FunctionParameters.List parameters ->
+      let pp_parameter index parameter =
+        let () =
+          if index > 0 then
+            Format.fprintf formatter ", "
+        in
+        let () =
+          match parameter with
+          | PyrePysaApi.ModelQueries.FunctionParameter.PositionalOnly { name = Some name; _ }
+          | Named { name; _ }
+          | KeywordOnly { name; _ }
+          | Variable { name = Some name }
+          | Keywords { name = Some name; _ } ->
+              Format.fprintf formatter "%s" (Identifier.sanitized name)
+          | PyrePysaApi.ModelQueries.FunctionParameter.PositionalOnly { index; _ } ->
+              Format.fprintf formatter "__arg%d" index
+          | Variable { name = None } -> Format.fprintf formatter "*args"
+          | Keywords { name = None; _ } -> Format.fprintf formatter "**kwargs"
+        in
+        let () =
+          match PyrePysaApi.ModelQueries.FunctionParameter.annotation parameter with
+          | Some annotation -> Format.fprintf formatter ": %a" Type.pp_concise annotation
+          | None -> ()
+        in
+        let () =
+          if PyrePysaApi.ModelQueries.FunctionParameter.has_default parameter then
+            Format.fprintf formatter " = ..."
+        in
+        ()
+      in
+      Format.fprintf formatter "(";
+      List.iteri parameters ~f:pp_parameter;
+      Format.fprintf formatter ")";
+      ()
+  | PyrePysaApi.ModelQueries.FunctionParameters.Ellipsis -> Format.fprintf formatter "(...)"
+  | PyrePysaApi.ModelQueries.FunctionParameters.ParamSpec ->
+      Format.fprintf formatter "(ParamSpec[T])"
+
+
+let pp_function_signature formatter { PyrePysaApi.ModelQueries.FunctionSignature.overloads; _ } =
+  let pp_overload index overload =
+    let () = if index > 0 then Format.fprintf formatter " | " in
+    pp_function_overload formatter overload
+  in
+  Format.fprintf formatter "def ";
+  List.iteri ~f:pp_overload overloads;
+  Format.fprintf formatter ": ..."
 
 
 let description error =
@@ -232,7 +276,7 @@ let description error =
         callable_name
         name
         (Expression.show expression)
-  | IncompatibleModelError { name; callable_type; errors } ->
+  | IncompatibleModelError { name; callable_signature; errors } ->
       let errors =
         List.map errors ~f:(fun { reason; overload } ->
             let reason =
@@ -267,11 +311,7 @@ let description error =
             in
             match overload with
             | Some overload ->
-                Format.asprintf
-                  "%s in overload `%s`"
-                  reason
-                  (show_type_for_error
-                     (Type.Callable { kind = Anonymous; implementation = overload; overloads = [] }))
+                Format.asprintf "%s in overload `def %a: ...`" reason pp_function_overload overload
             | None -> reason)
       in
       let reasons =
@@ -280,9 +320,10 @@ let description error =
         | errors -> Format.sprintf "Reasons:\n%s" (String.concat errors ~sep:"\n")
       in
       Format.asprintf
-        "Model signature parameters for `%s` do not match implementation `%s`. %s"
+        "Model signature parameters for `%s` do not match implementation `%a`. %s"
         name
-        (show_type_for_error (Type.Callable callable_type))
+        pp_function_signature
+        callable_signature
         reasons
   | ImportedFunctionModel { name; actual_name } ->
       Format.asprintf

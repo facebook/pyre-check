@@ -2339,7 +2339,7 @@ module ModelQueries = struct
           (FullyQualifiedName.from_reference_unchecked name)
       with
       | Some { CallableMetadata.is_property_getter; is_property_setter; parent_is_class; _ } ->
-          let undecorated_annotation =
+          let undecorated_signature =
             CallableSignatureSharedMemory.get
               callable_signature_shared_memory
               (FullyQualifiedName.from_reference_unchecked name)
@@ -2368,6 +2368,7 @@ module ModelQueries = struct
                 |> (function
                      | Type.Callable t -> t
                      | _ -> failwith "unexpected")
+                |> Pyre1Api.ModelQueries.FunctionSignature.from_callable_type
                 |> Option.some
             | _ -> None
           in
@@ -2375,7 +2376,8 @@ module ModelQueries = struct
             (Global.Function
                {
                  Function.define_name = name;
-                 undecorated_annotation;
+                 imported_name = None;
+                 undecorated_signature;
                  is_property_getter;
                  is_property_setter;
                  is_method = parent_is_class;

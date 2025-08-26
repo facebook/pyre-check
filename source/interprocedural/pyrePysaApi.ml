@@ -351,6 +351,9 @@ end
 module ModelQueries = struct
   let property_decorators = Pyre1Api.ModelQueries.property_decorators
 
+  module FunctionParameter = Pyre1Api.ModelQueries.FunctionParameter
+  module FunctionParameters = Pyre1Api.ModelQueries.FunctionParameters
+  module FunctionSignature = Analysis.PyrePysaEnvironment.ModelQueries.FunctionSignature
   module Function = Pyre1Api.ModelQueries.Function
   module Global = Pyre1Api.ModelQueries.Global
 

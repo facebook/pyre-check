@@ -493,11 +493,104 @@ module InContext = struct
 end
 
 module ModelQueries = struct
+  module FunctionParameter = struct
+    type t =
+      | PositionalOnly of {
+          name: string option;
+          index: int;
+          annotation: Type.t;
+          has_default: bool;
+        }
+      | Named of {
+          name: string;
+          annotation: Type.t;
+          has_default: bool;
+        }
+      | KeywordOnly of {
+          name: string;
+          annotation: Type.t;
+          has_default: bool;
+        }
+      | Variable of { name: string option }
+      | Keywords of {
+          name: string option;
+          annotation: Type.t;
+        }
+    [@@deriving equal, compare, show]
+
+    let from_callable_parameter = function
+      | Type.Callable.CallableParamType.PositionalOnly { index; annotation; default } ->
+          PositionalOnly { name = None; index; annotation; has_default = default }
+      | Type.Callable.CallableParamType.Named { name; annotation; default } ->
+          Named { name; annotation; has_default = default }
+      | Type.Callable.CallableParamType.KeywordOnly { name; annotation; default } ->
+          KeywordOnly { name; annotation; has_default = default }
+      | Type.Callable.CallableParamType.Variable _ -> Variable { name = None }
+      | Type.Callable.CallableParamType.Keywords annotation -> Keywords { name = None; annotation }
+
+
+    let annotation = function
+      | PositionalOnly { annotation; _ } -> Some annotation
+      | Named { annotation; _ } -> Some annotation
+      | KeywordOnly { annotation; _ } -> Some annotation
+      | Variable _ -> None
+      | Keywords { annotation; _ } -> Some annotation
+
+
+    let has_default = function
+      | PositionalOnly { has_default; _ }
+      | Named { has_default; _ }
+      | KeywordOnly { has_default; _ } ->
+          has_default
+      | _ -> false
+  end
+
+  module FunctionParameters = struct
+    type t =
+      | List of FunctionParameter.t list
+      | Ellipsis
+      | ParamSpec
+    [@@deriving equal, compare, show]
+
+    let from_overload { Type.Callable.parameters; _ } =
+      match parameters with
+      | Defined parameters ->
+          List (List.map ~f:FunctionParameter.from_callable_parameter parameters)
+      | Undefined -> Ellipsis
+      | FromParamSpec _ -> ParamSpec
+  end
+
+  module FunctionSignature = struct
+    type t = {
+      (* Functions with `@overload` have multiple parameter signatures. *)
+      overloads: FunctionParameters.t list;
+      return_annotation: Type.t;
+    }
+    [@@deriving equal, compare, show]
+
+    let toplevel = { overloads = [List []]; return_annotation = Type.NoneType }
+
+    let from_callable_type { Type.Callable.implementation; overloads; _ } =
+      {
+        overloads = List.map ~f:FunctionParameters.from_overload (implementation :: overloads);
+        return_annotation = implementation.annotation;
+      }
+
+
+    let from_implementation_overload overload =
+      {
+        overloads = [FunctionParameters.from_overload overload];
+        return_annotation = overload.annotation;
+      }
+  end
+
   module Function = struct
     type t = {
       define_name: Ast.Reference.t;
-      (* Annotation of the function, ignoring all decorators. *)
-      undecorated_annotation: Type.Callable.t option;
+      (* If the user-provided name is a re-export, this is the original name. *)
+      imported_name: Ast.Reference.t option;
+      (* Signature of the function, ignoring all decorators. None when unknown. *)
+      undecorated_signature: FunctionSignature.t option;
       is_property_getter: bool;
       is_property_setter: bool;
       is_method: bool;
@@ -633,13 +726,10 @@ module ModelQueries = struct
       | Type.Callable t -> t
       | _ -> failwith "expected callable type"
     in
-    let toplevel_define_type () =
-      Type.Callable.create
-        ~overloads:[]
-        ~parameters:(Type.Callable.Defined [])
-        ~annotation:Type.NoneType
-        ()
-      |> get_callable_type
+    let get_imported_name { Type.Callable.kind; _ } =
+      match kind with
+      | Named name -> Some name
+      | _ -> None
     in
     let name_end = Ast.Reference.last name in
     if Ast.Identifier.equal name_end Ast.Statement.toplevel_define_name then
@@ -653,7 +743,8 @@ module ModelQueries = struct
           (Global.Function
              {
                Function.define_name = name;
-               undecorated_annotation = Some (toplevel_define_type ());
+               imported_name = None;
+               undecorated_signature = Some FunctionSignature.toplevel;
                is_property_getter = false;
                is_property_setter = false;
                is_method = false;
@@ -672,7 +763,8 @@ module ModelQueries = struct
           (Global.Function
              {
                Function.define_name = name;
-               undecorated_annotation = Some (toplevel_define_type ());
+               imported_name = None;
+               undecorated_signature = Some FunctionSignature.toplevel;
                is_property_getter = false;
                is_property_setter = false;
                is_method = true;
@@ -685,13 +777,12 @@ module ModelQueries = struct
       in
       find_method_definitions read_only ~predicate name
       |> List.hd
-      >>| Type.Callable.create_from_implementation
-      >>| get_callable_type
       >>| fun callable ->
       Global.Function
         {
           Function.define_name = name;
-          undecorated_annotation = Some callable;
+          imported_name = None;
+          undecorated_signature = Some (FunctionSignature.from_implementation_overload callable);
           is_property_setter;
           is_property_getter;
           is_method = true;
@@ -702,13 +793,12 @@ module ModelQueries = struct
         ~predicate:Ast.Statement.Define.Signature.is_property_setter
         name
       |> List.hd
-      >>| Type.Callable.create_from_implementation
-      >>| get_callable_type
       >>| fun callable ->
       Global.Function
         {
           Function.define_name = name;
-          undecorated_annotation = Some callable;
+          imported_name = None;
+          undecorated_signature = Some (FunctionSignature.from_implementation_overload callable);
           is_property_getter;
           is_property_setter;
           is_method = true;
@@ -753,7 +843,8 @@ module ModelQueries = struct
             (Global.Function
                {
                  Function.define_name = name;
-                 undecorated_annotation = Some signature;
+                 imported_name = get_imported_name signature;
+                 undecorated_signature = Some (FunctionSignature.from_callable_type signature);
                  is_property_getter = false;
                  is_property_setter = false;
                  is_method = Option.is_some class_summary;
@@ -766,8 +857,9 @@ module ModelQueries = struct
                 (Global.Function
                    {
                      define_name = name;
-                     undecorated_annotation =
-                       Some (Type.Callable.create_from_implementation callable |> get_callable_type);
+                     imported_name = None;
+                     undecorated_signature =
+                       Some (FunctionSignature.from_implementation_overload callable);
                      is_property_getter = false;
                      is_property_setter = false;
                      is_method = Option.is_some class_summary;
@@ -779,14 +871,16 @@ module ModelQueries = struct
                 (Global.Function
                    {
                      define_name = name;
-                     undecorated_annotation =
+                     imported_name = None;
+                     undecorated_signature =
                        Some
                          (Type.Callable.create
                             ~overloads
                             ~parameters:first.parameters
                             ~annotation:first.annotation
                             ()
-                         |> get_callable_type);
+                         |> get_callable_type
+                         |> FunctionSignature.from_callable_type);
                      is_property_getter = false;
                      is_property_setter = false;
                      is_method = Option.is_some class_summary;
@@ -817,7 +911,8 @@ module ModelQueries = struct
                     (Global.Function
                        {
                          define_name = name;
-                         undecorated_annotation = Some t;
+                         imported_name = get_imported_name t;
+                         undecorated_signature = Some (FunctionSignature.from_callable_type t);
                          is_property_getter = false;
                          is_property_setter = false;
                          is_method = Option.is_some class_summary;
@@ -827,7 +922,8 @@ module ModelQueries = struct
                     (Global.Function
                        {
                          define_name = name;
-                         undecorated_annotation = Some t;
+                         imported_name = get_imported_name t;
+                         undecorated_signature = Some (FunctionSignature.from_callable_type t);
                          is_property_getter = false;
                          is_property_setter = false;
                          is_method = Option.is_some class_summary;

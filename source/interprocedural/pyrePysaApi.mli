@@ -229,6 +229,9 @@ end
 module ModelQueries : sig
   val property_decorators : String.Set.t
 
+  module FunctionParameter = Analysis.PyrePysaEnvironment.ModelQueries.FunctionParameter
+  module FunctionParameters = Analysis.PyrePysaEnvironment.ModelQueries.FunctionParameters
+  module FunctionSignature = Analysis.PyrePysaEnvironment.ModelQueries.FunctionSignature
   module Function = Analysis.PyrePysaEnvironment.ModelQueries.Function
   module Global = Analysis.PyrePysaEnvironment.ModelQueries.Global
 
