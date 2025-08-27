@@ -13,6 +13,9 @@ open Pyre
 open Data_structures
 open Ast
 module Pyre1Api = Analysis.PyrePysaEnvironment
+module PyreflyType = Pyre1Api.PyreflyType
+module PysaType = Pyre1Api.PysaType
+module ScalarTypeProperties = Pyre1Api.ScalarTypeProperties
 
 module FormatError = struct
   type t =
@@ -119,6 +122,19 @@ module JsonUtil = struct
   let get_list_member json key =
     match Yojson.Safe.Util.member key json with
     | `List elements -> Ok elements
+    | _ ->
+        Error
+          (FormatError.UnexpectedJsonType
+             {
+               json;
+               message = Format.sprintf "expected an object with key `%s` containing a list" key;
+             })
+
+
+  let get_optional_list_member json key =
+    match Yojson.Safe.Util.member key json with
+    | `List elements -> Ok elements
+    | `Null -> Ok []
     | _ ->
         Error
           (FormatError.UnexpectedJsonType
@@ -409,6 +425,35 @@ end
 (* Information from pyrefly about a given module, stored as a `module:id.json` file. This matches
    the `pyrefly::report::pysa::PysaModuleFile` rust type. *)
 module ModuleInfoFile = struct
+  module JsonType = struct
+    type t = {
+      string: string;
+      scalar_properties: ScalarTypeProperties.t;
+      class_names: GlobalClassId.t list;
+    }
+
+    let from_json json =
+      let open Core.Result.Monad_infix in
+      JsonUtil.get_string_member json "string"
+      >>= fun string ->
+      JsonUtil.get_optional_bool_member ~default:false json "is_bool"
+      >>= fun is_boolean ->
+      JsonUtil.get_optional_bool_member ~default:false json "is_int"
+      >>= fun is_integer ->
+      JsonUtil.get_optional_bool_member ~default:false json "is_float"
+      >>= fun is_float ->
+      JsonUtil.get_optional_bool_member ~default:false json "is_enum"
+      >>= fun is_enumeration ->
+      JsonUtil.get_optional_list_member json "class_names"
+      >>| List.map ~f:GlobalClassId.from_json
+      >>= Result.all
+      >>| fun class_names ->
+      let scalar_properties =
+        ScalarTypeProperties.create ~is_boolean ~is_integer ~is_float ~is_enumeration
+      in
+      { string; scalar_properties; class_names }
+  end
+
   module ParentScope = struct
     type t =
       | TopLevel
@@ -555,7 +600,7 @@ module ModuleInfoFile = struct
     module_id: ModuleId.t;
     module_name: Reference.t;
     source_path: ModulePath.t;
-    type_of_expression: string Location.Map.t;
+    type_of_expression: JsonType.t Location.Map.t;
     function_definitions: FunctionDefinition.t Location.Map.t;
     class_definitions: ClassDefinition.t Location.Map.t;
   }
@@ -564,11 +609,11 @@ module ModuleInfoFile = struct
     let open Core.Result.Monad_infix in
     let parse_type_of_expression type_of_expression =
       type_of_expression
-      |> List.map ~f:(fun (location, ty) ->
+      |> List.map ~f:(fun (location, type_) ->
              Location.from_string location
              |> Result.map_error ~f:(fun error ->
                     FormatError.UnexpectedJsonType { json = `String location; message = error })
-             >>= fun location -> JsonUtil.as_string ty >>| fun ty -> location, ty)
+             >>= fun location -> JsonType.from_json type_ >>| fun type_ -> location, type_)
       |> Result.all
       >>| Location.Map.of_alist_exn
     in
@@ -692,7 +737,7 @@ module TypeOfExpressionsSharedMemory = struct
     Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
       (Key)
       (struct
-        type t = string (* TODO(T225700656): For now, pyrefly exports types as strings *)
+        type t = PysaType.t
 
         let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -951,6 +996,11 @@ module CallableSignatureSharedMemory =
       let description = "pyrefly signature of callables"
     end)
 
+let assert_shared_memory_key_exists message = function
+  | Some value -> value
+  | None -> failwith (Format.sprintf "unexpected: %s" message)
+
+
 (* API handle stored in the main process. The type `t` should not be sent to workers, since it's
    expensive to copy. *)
 module ReadWrite = struct
@@ -1137,6 +1187,7 @@ module ReadWrite = struct
       ~scheduler_policies
       ~pyrefly_directory
       ~qualifier_to_module_map
+      ~class_id_to_qualified_name_shared_memory
     =
     let timer = Timer.start () in
     let () = Log.info "Parsing type of expressions from pyrefly..." in
@@ -1164,11 +1215,26 @@ module ReadWrite = struct
         =
         ModuleInfoFile.from_path_exn ~pyrefly_directory pyrefly_info_path
       in
-      Map.iteri type_of_expression ~f:(fun ~key:location ~data:ty ->
+      let get_class_qualified_name class_id =
+        ClassIdToQualifiedNameSharedMemory.get class_id_to_qualified_name_shared_memory class_id
+        |> assert_shared_memory_key_exists "missing qualified name for class id"
+        |> FullyQualifiedName.to_reference
+        |> Reference.show
+      in
+      Map.iteri
+        type_of_expression
+        ~f:(fun
+             ~key:location
+             ~data:{ ModuleInfoFile.JsonType.string; scalar_properties; class_names }
+           ->
+          let class_names = List.map ~f:get_class_qualified_name class_names in
+          let type_ =
+            PysaType.from_pyrefly_type { PyreflyType.string; scalar_properties; class_names }
+          in
           TypeOfExpressionsSharedMemory.add
             type_of_expressions_shared_memory
             { TypeOfExpressionsSharedMemory.Key.module_qualifier; location }
-            ty)
+            type_)
     in
     let inputs =
       qualifier_to_module_map
@@ -2083,6 +2149,7 @@ module ReadWrite = struct
         ~scheduler_policies
         ~pyrefly_directory
         ~qualifier_to_module_map
+        ~class_id_to_qualified_name_shared_memory
     in
 
     {
@@ -2180,12 +2247,6 @@ module ReadOnly = struct
       callable_signature_shared_memory;
       object_class;
     }
-
-
-  (* This is called when we expect the key to be present in shared memory *)
-  let assert_shared_memory_key_exists message = function
-    | Some value -> value
-    | None -> failwith (Format.sprintf "unexpected: %s" message)
 
 
   let artifact_path_of_qualifier { module_infos_shared_memory; _ } qualifier =
@@ -2298,6 +2359,13 @@ module ReadOnly = struct
     ClassFieldsSharedMemory.get
       class_fields_shared_memory
       (FullyQualifiedName.from_reference_unchecked (Reference.create class_name))
+
+
+  let scalar_type_properties _ pysa_type =
+    match PysaType.as_pyrefly_type pysa_type with
+    | Some { PyreflyType.scalar_properties; _ } -> scalar_properties
+    | None ->
+        failwith "ReadOnly.scalar_type_properties: trying to use a pyre1 type with a pyrefly API."
 end
 
 module ModelQueries = struct
@@ -2343,7 +2411,7 @@ module ModelQueries = struct
             CallableSignatureSharedMemory.get
               callable_signature_shared_memory
               (FullyQualifiedName.from_reference_unchecked name)
-            |> ReadOnly.assert_shared_memory_key_exists "missing ast for callable"
+            |> assert_shared_memory_key_exists "missing ast for callable"
             |> function
             | CallableAst.Some { Node.value = signature; _ } ->
                 let dummy_parser =
@@ -2422,14 +2490,14 @@ module ModelQueries = struct
         let add_signature callable_name =
           let signature =
             CallableSignatureSharedMemory.get callable_signature_shared_memory callable_name
-            |> ReadOnly.assert_shared_memory_key_exists "missing signature for callable"
+            |> assert_shared_memory_key_exists "missing signature for callable"
             |> CallableAst.to_option
             >>| Node.value
           in
           FullyQualifiedName.to_reference callable_name, signature
         in
         ModuleCallablesSharedMemory.get module_callables_shared_memory module_qualifier
-        |> ReadOnly.assert_shared_memory_key_exists "missing module callables for qualifier"
+        |> assert_shared_memory_key_exists "missing module callables for qualifier"
         |> List.filter ~f:is_method_for_class
         |> List.map ~f:add_signature
         |> Option.some

@@ -27,6 +27,17 @@ module ScalarTypeProperties : sig
   val is_float : t -> bool
 
   val is_enumeration : t -> bool
+
+  val create : is_boolean:bool -> is_integer:bool -> is_float:bool -> is_enumeration:bool -> t
+end
+
+module PyreflyType : sig
+  type t = {
+    string: string;
+    scalar_properties: ScalarTypeProperties.t;
+    class_names: string list;
+  }
+  [@@deriving equal, compare, show]
 end
 
 (* Minimal abstraction for a type, provided from Pyre1 or Pyrefly and used by Pysa. *)
@@ -34,6 +45,10 @@ module PysaType : sig
   type t [@@deriving equal, compare, show]
 
   val from_pyre1_type : Type.t -> t
+
+  val from_pyrefly_type : PyreflyType.t -> t
+
+  val as_pyrefly_type : t -> PyreflyType.t option
 
   (* Pretty print the type, usually meant for the user *)
   val pp_concise : Format.formatter -> t -> unit

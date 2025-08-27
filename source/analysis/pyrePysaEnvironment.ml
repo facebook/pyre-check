@@ -70,16 +70,49 @@ module ScalarTypeProperties = struct
   let integer = 0 |> set_bit integer_bit |> set_bit float_bit
 
   let enumeration = set_bit enumeration_bit 0
+
+  let create ~is_boolean ~is_integer ~is_float ~is_enumeration =
+    0
+    |> set_boolean is_boolean
+    |> set_integer is_integer
+    |> set_float is_float
+    |> set_enumeration is_enumeration
+end
+
+module PyreflyType = struct
+  type t = {
+    string: string;
+    scalar_properties: ScalarTypeProperties.t;
+    class_names: string list;
+  }
+  [@@deriving equal, compare, show]
 end
 
 (* Minimal abstraction for a type, provided from Pyre1 or Pyrefly and used by Pysa. *)
 module PysaType = struct
-  type t = PyreType.t [@@deriving equal, compare, show]
+  (* TODO(T225700656): We currently expose the representation for Pyrefly here instead of exposing
+     it in Interprocedural.Pyrefly, because the current module defines other types that depend on
+     `PysaType`, such as `FunctionDefinition.t`. The alternative would require to copy/paste all
+     these type definitions, which is not ideal. *)
+  type t =
+    | Pyre1 of PyreType.t
+    | Pyrefly of PyreflyType.t
+  [@@deriving equal, compare, show]
 
-  let from_pyre1_type = Fn.id
+  let from_pyre1_type annotation = Pyre1 annotation
+
+  let from_pyrefly_type type_ = Pyrefly type_
+
+  let as_pyrefly_type = function
+    | Pyrefly type_ -> Some type_
+    | Pyre1 _ -> None
+
 
   (* Pretty print the type, usually meant for the user *)
-  let pp_concise = PyreType.pp_concise
+  let pp_concise formatter = function
+    | Pyre1 type_ -> PyreType.pp_concise formatter type_
+    | Pyrefly { PyreflyType.string; _ } -> Format.fprintf formatter "%s" string
+
 
   (* Return a list of fully qualified class names that this type refers to, after
    * stripping Optional, ReadOnly and TypeVar.
@@ -90,52 +123,54 @@ module PysaType = struct
    * List[int] -> [List]
    * List[Dict[str, str]] -> [List]
    *)
-  let get_class_names annotation =
-    let rec extract_class_names = function
-      | Type.Bottom
-      | Type.Top
-      | Type.Any
-      | Type.Literal _
-      | Type.Callable _
-      | Type.Tuple _
-      | Type.NoneType
-      | Type.TypeOperation _
-      | Type.Variable _
-      | Type.RecursiveType _
-      | Type.ParamSpecComponent _ ->
-          []
-      | Type.Primitive class_name
-      | Type.Parametric { name = class_name; _ } ->
-          [class_name]
-      | Type.Union members ->
-          List.fold
-            ~init:[]
-            ~f:(fun sofar annotation -> List.rev_append (extract_class_names annotation) sofar)
-            members
-      | Type.PyreReadOnly annotation -> extract_class_names annotation
-    in
-    let extract_coroutine_value annotation =
-      annotation |> Type.coroutine_value |> Option.value ~default:annotation
-    in
-    let strip_optional annotation =
-      annotation |> Type.optional_value |> Option.value ~default:annotation
-    in
-    let strip_readonly annotation =
-      if Type.PyreReadOnly.is_readonly annotation then
-        Type.PyreReadOnly.strip_readonly annotation
-      else
+  let get_class_names = function
+    | Pyrefly { PyreflyType.class_names; _ } -> class_names
+    | Pyre1 annotation ->
+        let rec extract_class_names = function
+          | Type.Bottom
+          | Type.Top
+          | Type.Any
+          | Type.Literal _
+          | Type.Callable _
+          | Type.Tuple _
+          | Type.NoneType
+          | Type.TypeOperation _
+          | Type.Variable _
+          | Type.RecursiveType _
+          | Type.ParamSpecComponent _ ->
+              []
+          | Type.Primitive class_name
+          | Type.Parametric { name = class_name; _ } ->
+              [class_name]
+          | Type.Union members ->
+              List.fold
+                ~init:[]
+                ~f:(fun sofar annotation -> List.rev_append (extract_class_names annotation) sofar)
+                members
+          | Type.PyreReadOnly annotation -> extract_class_names annotation
+        in
+        let extract_coroutine_value annotation =
+          annotation |> Type.coroutine_value |> Option.value ~default:annotation
+        in
+        let strip_optional annotation =
+          annotation |> Type.optional_value |> Option.value ~default:annotation
+        in
+        let strip_readonly annotation =
+          if Type.PyreReadOnly.is_readonly annotation then
+            Type.PyreReadOnly.strip_readonly annotation
+          else
+            annotation
+        in
+        let unbind_type_variable = function
+          | Type.Variable { constraints = Type.Record.TypeVarConstraints.Bound bound; _ } -> bound
+          | annotation -> annotation
+        in
         annotation
-    in
-    let unbind_type_variable = function
-      | Type.Variable { constraints = Type.Record.TypeVarConstraints.Bound bound; _ } -> bound
-      | annotation -> annotation
-    in
-    annotation
-    |> extract_coroutine_value
-    |> strip_optional
-    |> strip_readonly
-    |> unbind_type_variable
-    |> extract_class_names
+        |> extract_coroutine_value
+        |> strip_optional
+        |> strip_readonly
+        |> unbind_type_variable
+        |> extract_class_names
 end
 
 let absolute_source_path_of_qualifier ~lookup_source read_only_type_environment =
@@ -554,55 +589,54 @@ module ReadOnly = struct
 
   (* Returns whether the type is an int, float, bool or enum, after stripping Optional and
      Awaitable. *)
-  let scalar_type_properties api annotation =
-    let matches_at_leaves ~f annotation =
-      let rec matches_at_leaves ~f annotation =
-        match annotation with
-        | Type.Any
-        | Type.Bottom ->
-            false
-        | Type.Union [Type.NoneType; annotation]
-        | Type.Union [annotation; Type.NoneType]
-        | Type.Parametric { name = "typing.Awaitable"; arguments = [Single annotation] } ->
-            matches_at_leaves ~f annotation
-        | Type.Tuple (Concatenation concatenation) ->
-            Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
-            >>| (fun element -> matches_at_leaves ~f element)
-            |> Option.value ~default:(f annotation)
-        | Type.Tuple (Type.OrderedTypes.Concrete annotations) ->
-            List.for_all annotations ~f:(matches_at_leaves ~f)
-        | annotation -> f annotation
-      in
-      matches_at_leaves ~f annotation
-    in
-    try
-      let is_boolean =
-        matches_at_leaves annotation ~f:(fun left -> less_or_equal api ~left ~right:Type.bool)
-      in
-      let is_integer =
-        matches_at_leaves annotation ~f:(fun left -> less_or_equal api ~left ~right:Type.integer)
-      in
-      let is_float =
-        matches_at_leaves annotation ~f:(fun left -> less_or_equal api ~left ~right:Type.float)
-      in
-      let is_enumeration =
-        matches_at_leaves annotation ~f:(fun left ->
-            less_or_equal api ~left ~right:Type.enumeration)
-      in
-      ScalarTypeProperties.none
-      |> ScalarTypeProperties.set_boolean is_boolean
-      |> ScalarTypeProperties.set_integer is_integer
-      |> ScalarTypeProperties.set_float is_float
-      |> ScalarTypeProperties.set_enumeration is_enumeration
-    with
-    | PyrePysaLogic.UntrackedClass untracked_type ->
-        Log.warning
-          "Found untracked type `%s` when checking the return type `%a` of a call. The return type \
-           will NOT be considered a scalar, which could lead to missing breadcrumbs."
-          untracked_type
-          Type.pp
-          annotation;
-        ScalarTypeProperties.none
+  let scalar_type_properties api = function
+    | PysaType.Pyrefly { PyreflyType.scalar_properties; _ } -> scalar_properties
+    | PysaType.Pyre1 annotation -> (
+        let matches_at_leaves ~f annotation =
+          let rec matches_at_leaves ~f annotation =
+            match annotation with
+            | Type.Any
+            | Type.Bottom ->
+                false
+            | Type.Union [Type.NoneType; annotation]
+            | Type.Union [annotation; Type.NoneType]
+            | Type.Parametric { name = "typing.Awaitable"; arguments = [Single annotation] } ->
+                matches_at_leaves ~f annotation
+            | Type.Tuple (Concatenation concatenation) ->
+                Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
+                >>| (fun element -> matches_at_leaves ~f element)
+                |> Option.value ~default:(f annotation)
+            | Type.Tuple (Type.OrderedTypes.Concrete annotations) ->
+                List.for_all annotations ~f:(matches_at_leaves ~f)
+            | annotation -> f annotation
+          in
+          matches_at_leaves ~f annotation
+        in
+        try
+          let is_boolean =
+            matches_at_leaves annotation ~f:(fun left -> less_or_equal api ~left ~right:Type.bool)
+          in
+          let is_integer =
+            matches_at_leaves annotation ~f:(fun left ->
+                less_or_equal api ~left ~right:Type.integer)
+          in
+          let is_float =
+            matches_at_leaves annotation ~f:(fun left -> less_or_equal api ~left ~right:Type.float)
+          in
+          let is_enumeration =
+            matches_at_leaves annotation ~f:(fun left ->
+                less_or_equal api ~left ~right:Type.enumeration)
+          in
+          ScalarTypeProperties.create ~is_boolean ~is_integer ~is_float ~is_enumeration
+        with
+        | PyrePysaLogic.UntrackedClass untracked_type ->
+            Log.warning
+              "Found untracked type `%s` when checking the return type `%a` of a call. The return \
+               type will NOT be considered a scalar, which could lead to missing breadcrumbs."
+              untracked_type
+              Type.pp
+              annotation;
+            ScalarTypeProperties.none)
 end
 
 (* This module represents the API Pysa uses when it needs to interact with Pyre inside of a context
@@ -679,36 +713,43 @@ module ModelQueries = struct
       | PositionalOnly of {
           name: string option;
           index: int;
-          annotation: Type.t;
+          annotation: PysaType.t;
           has_default: bool;
         }
       | Named of {
           name: string;
-          annotation: Type.t;
+          annotation: PysaType.t;
           has_default: bool;
         }
       | KeywordOnly of {
           name: string;
-          annotation: Type.t;
+          annotation: PysaType.t;
           has_default: bool;
         }
       | Variable of { name: string option }
       | Keywords of {
           name: string option;
-          annotation: Type.t;
+          annotation: PysaType.t;
         }
     [@@deriving equal, compare, show]
 
     let from_callable_parameter = function
       | PyreType.Callable.CallableParamType.PositionalOnly { index; annotation; default } ->
-          PositionalOnly { name = None; index; annotation; has_default = default }
+          PositionalOnly
+            {
+              name = None;
+              index;
+              annotation = PysaType.from_pyre1_type annotation;
+              has_default = default;
+            }
       | PyreType.Callable.CallableParamType.Named { name; annotation; default } ->
-          Named { name; annotation; has_default = default }
+          Named { name; annotation = PysaType.from_pyre1_type annotation; has_default = default }
       | PyreType.Callable.CallableParamType.KeywordOnly { name; annotation; default } ->
-          KeywordOnly { name; annotation; has_default = default }
+          KeywordOnly
+            { name; annotation = PysaType.from_pyre1_type annotation; has_default = default }
       | PyreType.Callable.CallableParamType.Variable _ -> Variable { name = None }
       | PyreType.Callable.CallableParamType.Keywords annotation ->
-          Keywords { name = None; annotation }
+          Keywords { name = None; annotation = PysaType.from_pyre1_type annotation }
 
 
     let annotation = function
@@ -746,23 +787,25 @@ module ModelQueries = struct
     type t = {
       (* Functions with `@overload` have multiple parameter signatures. *)
       overloads: FunctionParameters.t list;
-      return_annotation: Type.t;
+      return_annotation: PysaType.t;
     }
     [@@deriving equal, compare, show]
 
-    let toplevel = { overloads = [List []]; return_annotation = PyreType.NoneType }
+    let toplevel =
+      { overloads = [List []]; return_annotation = PysaType.from_pyre1_type PyreType.NoneType }
+
 
     let from_callable_type { PyreType.Callable.implementation; overloads; _ } =
       {
         overloads = List.map ~f:FunctionParameters.from_overload (implementation :: overloads);
-        return_annotation = implementation.annotation;
+        return_annotation = PysaType.from_pyre1_type implementation.annotation;
       }
 
 
     let from_implementation_overload overload =
       {
         overloads = [FunctionParameters.from_overload overload];
-        return_annotation = overload.annotation;
+        return_annotation = PysaType.from_pyre1_type overload.annotation;
       }
   end
 

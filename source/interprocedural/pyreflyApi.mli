@@ -9,6 +9,7 @@
    --report-pysa. *)
 
 open Core
+module PysaType = Analysis.PyrePysaEnvironment.PysaType
 
 module FormatError : sig
   type t =
@@ -105,6 +106,11 @@ module ReadOnly : sig
     only_simple_assignments:bool ->
     string ->
     string list option
+
+  val scalar_type_properties
+    :  t ->
+    PysaType.t ->
+    Analysis.PyrePysaEnvironment.ScalarTypeProperties.t
 end
 
 module ModelQueries : sig

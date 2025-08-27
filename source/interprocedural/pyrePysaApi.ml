@@ -292,7 +292,7 @@ module ReadOnly = struct
 
   let scalar_type_properties = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.scalar_type_properties pyre_api
-    | Pyrefly _ -> failwith "unimplemented: ReadOnly.scalar_type_properties"
+    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.scalar_type_properties pyrefly_api
 end
 
 module InContext = struct
