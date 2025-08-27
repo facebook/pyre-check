@@ -10,6 +10,109 @@
 
 open Core
 open Pyre
+module PyreType = Type
+
+module ScalarTypeProperties = struct
+  type t = {
+    is_boolean: bool;
+    is_integer: bool;
+    is_float: bool;
+    is_enumeration: bool;
+  }
+  [@@deriving compare, equal, sexp, hash]
+
+  let pp formatter { is_boolean; is_integer; is_float; is_enumeration } =
+    let add_if condition tag tags =
+      if condition then
+        tag :: tags
+      else
+        tags
+    in
+    []
+    |> add_if is_enumeration "enum"
+    |> add_if is_float "float"
+    |> add_if is_integer "int"
+    |> add_if is_boolean "bool"
+    |> String.concat ~sep:"|"
+    |> Format.fprintf formatter "{%s}"
+
+
+  let show = Format.asprintf "%a" pp
+
+  let none = { is_boolean = false; is_integer = false; is_float = false; is_enumeration = false }
+
+  let unknown = none
+
+  let bool = { is_boolean = true; is_integer = true; is_float = true; is_enumeration = false }
+
+  let integer = { is_boolean = false; is_integer = true; is_float = true; is_enumeration = false }
+end
+
+(* Minimal abstraction for a type, provided from Pyre1 or Pyrefly and used by Pysa. *)
+module PysaType = struct
+  type t = PyreType.t [@@deriving equal, compare, show]
+
+  let from_pyre1_type = Fn.id
+
+  (* Pretty print the type, usually meant for the user *)
+  let pp_concise = PyreType.pp_concise
+
+  (* Return a list of fully qualified class names that this type refers to, after
+   * stripping Optional, ReadOnly and TypeVar.
+   *
+   * For instance:
+   * Union[int, str] -> [int, str]
+   * Optional[int] -> [int]
+   * List[int] -> [List]
+   * List[Dict[str, str]] -> [List]
+   *)
+  let get_class_names annotation =
+    let rec extract_class_names = function
+      | Type.Bottom
+      | Type.Top
+      | Type.Any
+      | Type.Literal _
+      | Type.Callable _
+      | Type.Tuple _
+      | Type.NoneType
+      | Type.TypeOperation _
+      | Type.Variable _
+      | Type.RecursiveType _
+      | Type.ParamSpecComponent _ ->
+          []
+      | Type.Primitive class_name
+      | Type.Parametric { name = class_name; _ } ->
+          [class_name]
+      | Type.Union members ->
+          List.fold
+            ~init:[]
+            ~f:(fun sofar annotation -> List.rev_append (extract_class_names annotation) sofar)
+            members
+      | Type.PyreReadOnly annotation -> extract_class_names annotation
+    in
+    let extract_coroutine_value annotation =
+      annotation |> Type.coroutine_value |> Option.value ~default:annotation
+    in
+    let strip_optional annotation =
+      annotation |> Type.optional_value |> Option.value ~default:annotation
+    in
+    let strip_readonly annotation =
+      if Type.PyreReadOnly.is_readonly annotation then
+        Type.PyreReadOnly.strip_readonly annotation
+      else
+        annotation
+    in
+    let unbind_type_variable = function
+      | Type.Variable { constraints = Type.Record.TypeVarConstraints.Bound bound; _ } -> bound
+      | annotation -> annotation
+    in
+    annotation
+    |> extract_coroutine_value
+    |> strip_optional
+    |> strip_readonly
+    |> unbind_type_variable
+    |> extract_class_names
+end
 
 let absolute_source_path_of_qualifier ~lookup_source read_only_type_environment =
   let source_code_api =
@@ -294,8 +397,8 @@ module ReadOnly = struct
 
   let typed_dictionary_field_names api type_name =
     GlobalResolution.get_typed_dictionary (global_resolution api) type_name
-    >>| (fun { Type.TypedDictionary.fields; _ } -> fields)
-    >>| List.map ~f:(fun { Type.TypedDictionary.name; required = _; _ } -> name)
+    >>| (fun { PyreType.TypedDictionary.fields; _ } -> fields)
+    >>| List.map ~f:(fun { PyreType.TypedDictionary.name; required = _; _ } -> name)
     |> Option.value ~default:[]
 
 
@@ -397,7 +500,8 @@ module ReadOnly = struct
 
   let named_tuple_attributes api receiver_class =
     let global_resolution = global_resolution api in
-    if NamedTuple.is_named_tuple ~global_resolution ~annotation:(Type.Primitive receiver_class) then
+    if NamedTuple.is_named_tuple ~global_resolution ~annotation:(PyreType.Primitive receiver_class)
+    then
       NamedTuple.field_names_from_class_name ~global_resolution receiver_class
     else
       None
@@ -422,6 +526,55 @@ module ReadOnly = struct
     unannotated_global_environment api
     |> UnannotatedGlobalEnvironment.ReadOnly.GlobalApis.all_unannotated_globals
          ~global_module_paths_api:(global_module_paths_api api)
+
+
+  (* Returns whether the type is an int, float, bool or enum, after stripping Optional and
+     Awaitable. *)
+  let scalar_type_properties api annotation =
+    let matches_at_leaves ~f annotation =
+      let rec matches_at_leaves ~f annotation =
+        match annotation with
+        | Type.Any
+        | Type.Bottom ->
+            false
+        | Type.Union [Type.NoneType; annotation]
+        | Type.Union [annotation; Type.NoneType]
+        | Type.Parametric { name = "typing.Awaitable"; arguments = [Single annotation] } ->
+            matches_at_leaves ~f annotation
+        | Type.Tuple (Concatenation concatenation) ->
+            Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
+            >>| (fun element -> matches_at_leaves ~f element)
+            |> Option.value ~default:(f annotation)
+        | Type.Tuple (Type.OrderedTypes.Concrete annotations) ->
+            List.for_all annotations ~f:(matches_at_leaves ~f)
+        | annotation -> f annotation
+      in
+      matches_at_leaves ~f annotation
+    in
+    try
+      let is_boolean =
+        matches_at_leaves annotation ~f:(fun left -> less_or_equal api ~left ~right:Type.bool)
+      in
+      let is_integer =
+        matches_at_leaves annotation ~f:(fun left -> less_or_equal api ~left ~right:Type.integer)
+      in
+      let is_float =
+        matches_at_leaves annotation ~f:(fun left -> less_or_equal api ~left ~right:Type.float)
+      in
+      let is_enumeration =
+        matches_at_leaves annotation ~f:(fun left ->
+            less_or_equal api ~left ~right:Type.enumeration)
+      in
+      { ScalarTypeProperties.is_boolean; is_integer; is_float; is_enumeration }
+    with
+    | PyrePysaLogic.UntrackedClass untracked_type ->
+        Log.warning
+          "Found untracked type `%s` when checking the return type `%a` of a call. The return type \
+           will NOT be considered a scalar, which could lead to missing breadcrumbs."
+          untracked_type
+          Type.pp
+          annotation;
+        ScalarTypeProperties.none
 end
 
 (* This module represents the API Pysa uses when it needs to interact with Pyre inside of a context
@@ -519,14 +672,15 @@ module ModelQueries = struct
     [@@deriving equal, compare, show]
 
     let from_callable_parameter = function
-      | Type.Callable.CallableParamType.PositionalOnly { index; annotation; default } ->
+      | PyreType.Callable.CallableParamType.PositionalOnly { index; annotation; default } ->
           PositionalOnly { name = None; index; annotation; has_default = default }
-      | Type.Callable.CallableParamType.Named { name; annotation; default } ->
+      | PyreType.Callable.CallableParamType.Named { name; annotation; default } ->
           Named { name; annotation; has_default = default }
-      | Type.Callable.CallableParamType.KeywordOnly { name; annotation; default } ->
+      | PyreType.Callable.CallableParamType.KeywordOnly { name; annotation; default } ->
           KeywordOnly { name; annotation; has_default = default }
-      | Type.Callable.CallableParamType.Variable _ -> Variable { name = None }
-      | Type.Callable.CallableParamType.Keywords annotation -> Keywords { name = None; annotation }
+      | PyreType.Callable.CallableParamType.Variable _ -> Variable { name = None }
+      | PyreType.Callable.CallableParamType.Keywords annotation ->
+          Keywords { name = None; annotation }
 
 
     let annotation = function
@@ -552,7 +706,7 @@ module ModelQueries = struct
       | ParamSpec
     [@@deriving equal, compare, show]
 
-    let from_overload { Type.Callable.parameters; _ } =
+    let from_overload { PyreType.Callable.parameters; _ } =
       match parameters with
       | Defined parameters ->
           List (List.map ~f:FunctionParameter.from_callable_parameter parameters)
@@ -568,9 +722,9 @@ module ModelQueries = struct
     }
     [@@deriving equal, compare, show]
 
-    let toplevel = { overloads = [List []]; return_annotation = Type.NoneType }
+    let toplevel = { overloads = [List []]; return_annotation = PyreType.NoneType }
 
-    let from_callable_type { Type.Callable.implementation; overloads; _ } =
+    let from_callable_type { PyreType.Callable.implementation; overloads; _ } =
       {
         overloads = List.map ~f:FunctionParameters.from_overload (implementation :: overloads);
         return_annotation = implementation.annotation;
@@ -723,10 +877,10 @@ module ModelQueries = struct
      interface. *)
   let resolve_qualified_name_to_global read_only ~is_property_getter ~is_property_setter name =
     let get_callable_type = function
-      | Type.Callable t -> t
+      | PyreType.Callable t -> t
       | _ -> failwith "expected callable type"
     in
-    let get_imported_name { Type.Callable.kind; _ } =
+    let get_imported_name { PyreType.Callable.kind; _ } =
       match kind with
       | Named name -> Some name
       | _ -> None
@@ -807,9 +961,9 @@ module ModelQueries = struct
       let class_summary =
         Ast.Reference.prefix name
         >>| ReadOnly.parse_reference read_only
-        >>| Type.split
+        >>| PyreType.split
         >>| fst
-        >>= Type.primitive_name
+        >>= PyreType.primitive_name
         >>= ReadOnly.get_class_summary read_only
       in
       let maybe_signature_of_function =
@@ -874,7 +1028,7 @@ module ModelQueries = struct
                      imported_name = None;
                      undecorated_signature =
                        Some
-                         (Type.Callable.create
+                         (PyreType.Callable.create
                             ~overloads
                             ~parameters:first.parameters
                             ~annotation:first.annotation
@@ -895,18 +1049,20 @@ module ModelQueries = struct
                 |> ReadOnly.resolve_expression_to_type_info read_only
               in
               match TypeInfo.Unit.annotation annotation with
-              | Type.Parametric { name = "type"; _ }
+              | PyreType.Parametric { name = "type"; _ }
                 when ReadOnly.class_exists read_only (Ast.Reference.show name) ->
                   Some (Global.Class { class_name = Ast.Reference.show name })
-              | Type.Top when ReadOnly.module_exists read_only name -> Some Global.Module
-              | Type.Top when not (TypeInfo.Unit.is_immutable annotation) ->
+              | PyreType.Top when ReadOnly.module_exists read_only name -> Some Global.Module
+              | PyreType.Top when not (TypeInfo.Unit.is_immutable annotation) ->
                   (* FIXME: We are relying on the fact that nonexistent functions & attributes
                      resolve to mutable annotation, while existing ones resolve to immutable
                      annotation. This is fragile! *)
                   None
-              | Type.Parametric
-                  { name = "BoundMethod"; arguments = [Type.Argument.Single (Type.Callable t); _] }
-                ->
+              | PyreType.Parametric
+                  {
+                    name = "BoundMethod";
+                    arguments = [PyreType.Argument.Single (PyreType.Callable t); _];
+                  } ->
                   Some
                     (Global.Function
                        {
@@ -917,7 +1073,7 @@ module ModelQueries = struct
                          is_property_setter = false;
                          is_method = Option.is_some class_summary;
                        })
-              | Type.Callable t ->
+              | PyreType.Callable t ->
                   Some
                     (Global.Function
                        {
@@ -928,11 +1084,11 @@ module ModelQueries = struct
                          is_property_setter = false;
                          is_method = Option.is_some class_summary;
                        })
-              | Type.Top ->
+              | PyreType.Top ->
                   Some
                     (Global.UnknownAttribute
                        { name; parent_is_class = Option.is_some class_summary })
-              | Type.Any ->
+              | PyreType.Any ->
                   Some
                     (Global.UnknownAttribute
                        { name; parent_is_class = Option.is_some class_summary })

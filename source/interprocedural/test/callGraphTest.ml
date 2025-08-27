@@ -624,14 +624,14 @@ let test_call_graph_of_define =
                         [
                           CallTarget.create_regular
                             ~implicit_receiver:true
-                            ~return_type:(Some ReturnType.any)
+                            ~return_type:(Some ReturnType.unknown)
                             (Target.Regular.Method
                                { class_name = "test.C"; method_name = "__init__"; kind = Normal });
                         ]
                       ~new_targets:
                         [
                           CallTarget.create_regular
-                            ~return_type:(Some ReturnType.any)
+                            ~return_type:(Some ReturnType.unknown)
                             ~is_static_method:true
                             (Target.Regular.Method
                                { class_name = "object"; method_name = "__new__"; kind = Normal });
@@ -689,14 +689,14 @@ let test_call_graph_of_define =
                         [
                           CallTarget.create_regular
                             ~implicit_receiver:true
-                            ~return_type:(Some ReturnType.any)
+                            ~return_type:(Some ReturnType.unknown)
                             (Target.Regular.Method
                                { class_name = "object"; method_name = "__init__"; kind = Normal });
                         ]
                       ~new_targets:
                         [
                           CallTarget.create_regular
-                            ~return_type:(Some ReturnType.any)
+                            ~return_type:(Some ReturnType.unknown)
                             ~is_static_method:true
                             (Target.Regular.Method
                                { class_name = "test.C"; method_name = "__new__"; kind = Normal });
@@ -724,14 +724,14 @@ let test_call_graph_of_define =
                         [
                           CallTarget.create_regular
                             ~implicit_receiver:true
-                            ~return_type:(Some ReturnType.any)
+                            ~return_type:(Some ReturnType.unknown)
                             (Target.Regular.Method
                                { class_name = "test.B"; method_name = "__init__"; kind = Normal });
                         ]
                       ~new_targets:
                         [
                           CallTarget.create_regular
-                            ~return_type:(Some ReturnType.any)
+                            ~return_type:(Some ReturnType.unknown)
                             ~is_static_method:true
                             (Target.Regular.Method
                                { class_name = "object"; method_name = "__new__"; kind = Normal });
@@ -759,14 +759,14 @@ let test_call_graph_of_define =
                         [
                           CallTarget.create_regular
                             ~implicit_receiver:true
-                            ~return_type:(Some ReturnType.any)
+                            ~return_type:(Some ReturnType.unknown)
                             (Target.Regular.Method
                                { class_name = "object"; method_name = "__init__"; kind = Normal });
                         ]
                       ~new_targets:
                         [
                           CallTarget.create_regular
-                            ~return_type:(Some ReturnType.any)
+                            ~return_type:(Some ReturnType.unknown)
                             ~is_static_method:true
                             (Target.Regular.Method
                                { class_name = "test.B"; method_name = "__new__"; kind = Normal });
@@ -1940,7 +1940,7 @@ let test_call_graph_of_define =
                        [
                          CallTarget.create_regular
                            ~implicit_receiver:true
-                           ~return_type:(Some ReturnType.any)
+                           ~return_type:(Some ReturnType.unknown)
                            (Target.Regular.Method
                               { class_name = "test.C"; method_name = "p"; kind = Normal });
                        ];
@@ -4141,7 +4141,7 @@ let test_call_graph_of_define =
                         [
                           CallTarget.create_regular
                             ~implicit_receiver:true
-                            ~return_type:(Some ReturnType.any)
+                            ~return_type:(Some ReturnType.unknown)
                             ~receiver_class:"list"
                             (Target.Regular.Method
                                { class_name = "list"; method_name = "__iter__"; kind = Normal });
@@ -4842,14 +4842,7 @@ let test_call_graph_of_define =
                         [
                           CallTarget.create_regular
                             ~implicit_receiver:true
-                            ~return_type:
-                              (Some
-                                 {
-                                   ReturnType.is_boolean = false;
-                                   is_integer = true;
-                                   is_float = true;
-                                   is_enumeration = false;
-                                 })
+                            ~return_type:(Some ReturnType.integer)
                             ~receiver_class:"typing.AsyncIterator"
                             (Target.Regular.Method
                                {
@@ -4878,14 +4871,7 @@ let test_call_graph_of_define =
                         [
                           CallTarget.create_regular
                             ~implicit_receiver:true
-                            ~return_type:
-                              (Some
-                                 {
-                                   ReturnType.is_boolean = false;
-                                   is_integer = true;
-                                   is_float = true;
-                                   is_enumeration = false;
-                                 })
+                            ~return_type:(Some ReturnType.integer)
                             ~receiver_class:"typing.Iterator"
                             (Target.Regular.Method
                                {
@@ -4918,14 +4904,7 @@ let test_call_graph_of_define =
                         [
                           CallTarget.create_regular
                             ~implicit_receiver:true
-                            ~return_type:
-                              (Some
-                                 {
-                                   ReturnType.is_boolean = false;
-                                   is_integer = true;
-                                   is_float = true;
-                                   is_enumeration = false;
-                                 })
+                            ~return_type:(Some ReturnType.integer)
                             ~receiver_class:"typing.AsyncIterator"
                             ~index:1
                             (Target.Regular.Method
@@ -4966,14 +4945,7 @@ let test_call_graph_of_define =
                           CallTarget.create_regular
                             ~implicit_receiver:true
                             ~receiver_class:"typing.Iterator"
-                            ~return_type:
-                              (Some
-                                 {
-                                   ReturnType.is_boolean = false;
-                                   is_integer = true;
-                                   is_float = true;
-                                   is_enumeration = false;
-                                 })
+                            ~return_type:(Some ReturnType.integer)
                             ~index:1
                             (Target.Regular.Method
                                {
@@ -5015,14 +4987,7 @@ let test_call_graph_of_define =
                         [
                           CallTarget.create_regular
                             ~implicit_receiver:true
-                            ~return_type:
-                              (Some
-                                 {
-                                   ReturnType.is_boolean = false;
-                                   is_integer = true;
-                                   is_float = true;
-                                   is_enumeration = false;
-                                 })
+                            ~return_type:(Some ReturnType.integer)
                             ~receiver_class:"typing.Iterator"
                             ~index:2
                             (Target.Regular.Method
@@ -5057,14 +5022,7 @@ let test_call_graph_of_define =
                         [
                           CallTarget.create_regular
                             ~implicit_receiver:true
-                            ~return_type:
-                              (Some
-                                 {
-                                   ReturnType.is_boolean = false;
-                                   is_integer = true;
-                                   is_float = true;
-                                   is_enumeration = false;
-                                 })
+                            ~return_type:(Some ReturnType.integer)
                             ~receiver_class:"typing.AsyncIterator"
                             ~index:2
                             (Target.Regular.Method
@@ -5095,14 +5053,7 @@ let test_call_graph_of_define =
                         [
                           CallTarget.create_regular
                             ~implicit_receiver:true
-                            ~return_type:
-                              (Some
-                                 {
-                                   ReturnType.is_boolean = false;
-                                   is_integer = true;
-                                   is_float = true;
-                                   is_enumeration = false;
-                                 })
+                            ~return_type:(Some ReturnType.integer)
                             ~receiver_class:"typing.Iterator"
                             ~index:3
                             (Target.Regular.Method
@@ -5137,14 +5088,7 @@ let test_call_graph_of_define =
                         [
                           CallTarget.create_regular
                             ~implicit_receiver:true
-                            ~return_type:
-                              (Some
-                                 {
-                                   ReturnType.is_boolean = false;
-                                   is_integer = true;
-                                   is_float = true;
-                                   is_enumeration = false;
-                                 })
+                            ~return_type:(Some ReturnType.integer)
                             ~receiver_class:"typing.AsyncIterator"
                             ~index:3
                             (Target.Regular.Method
@@ -5175,14 +5119,7 @@ let test_call_graph_of_define =
                         [
                           CallTarget.create_regular
                             ~implicit_receiver:true
-                            ~return_type:
-                              (Some
-                                 {
-                                   ReturnType.is_boolean = false;
-                                   is_integer = true;
-                                   is_float = true;
-                                   is_enumeration = false;
-                                 })
+                            ~return_type:(Some ReturnType.integer)
                             ~receiver_class:"typing.Iterator"
                             ~index:4
                             (Target.Regular.Method
@@ -5217,14 +5154,7 @@ let test_call_graph_of_define =
                         [
                           CallTarget.create_regular
                             ~implicit_receiver:true
-                            ~return_type:
-                              (Some
-                                 {
-                                   ReturnType.is_boolean = false;
-                                   is_integer = true;
-                                   is_float = true;
-                                   is_enumeration = false;
-                                 })
+                            ~return_type:(Some ReturnType.integer)
                             ~receiver_class:"typing.AsyncIterator"
                             ~index:4
                             (Target.Regular.Method
@@ -6403,7 +6333,7 @@ let test_call_graph_of_define_foo_and_bar =
                       ~new_targets:
                         [
                           CallTarget.create_regular
-                            ~return_type:(Some ReturnType.any)
+                            ~return_type:(Some ReturnType.unknown)
                             ~is_static_method:true
                             (Target.Regular.Method
                                { class_name = "object"; method_name = "__new__"; kind = Normal });
@@ -6474,7 +6404,7 @@ let test_call_graph_of_define_foo_and_bar =
                       ~new_targets:
                         [
                           CallTarget.create_regular
-                            ~return_type:(Some ReturnType.any)
+                            ~return_type:(Some ReturnType.unknown)
                             ~is_static_method:true
                             (Target.Regular.Method
                                { class_name = "object"; method_name = "__new__"; kind = Normal });
@@ -6522,7 +6452,7 @@ let test_call_graph_of_define_foo_and_bar =
                       ~new_targets:
                         [
                           CallTarget.create_regular
-                            ~return_type:(Some ReturnType.any)
+                            ~return_type:(Some ReturnType.unknown)
                             ~is_static_method:true
                             (Target.Regular.Method
                                { class_name = "object"; method_name = "__new__"; kind = Normal });
@@ -6573,7 +6503,7 @@ let test_call_graph_of_define_foo_and_bar =
                       ~new_targets:
                         [
                           CallTarget.create_regular
-                            ~return_type:(Some ReturnType.any)
+                            ~return_type:(Some ReturnType.unknown)
                             ~is_static_method:true
                             (Target.Regular.Method
                                { class_name = "object"; method_name = "__new__"; kind = Normal });
@@ -6590,146 +6520,6 @@ let test_call_graph_of_define_foo_and_bar =
                       ()) );
              ]
            ();
-    ]
-
-
-let test_return_type_from_annotation =
-  let assert_from_annotation annotation expected context =
-    let project = Test.ScratchProject.setup ~context [] in
-    let pyre_api =
-      project |> Test.ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
-    in
-    let actual = ReturnType.from_annotation ~pyre_api annotation in
-    assert_equal ~printer:ReturnType.show ~cmp:ReturnType.equal expected actual
-  in
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_from_annotation
-           Type.bool
-           {
-             ReturnType.is_boolean = true;
-             is_integer = true;
-             is_float = true;
-             is_enumeration = false;
-           };
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_from_annotation
-           Type.enumeration
-           {
-             ReturnType.is_boolean = false;
-             is_integer = false;
-             is_float = false;
-             is_enumeration = true;
-           };
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_from_annotation
-           Type.integer
-           {
-             ReturnType.is_boolean = false;
-             is_integer = true;
-             is_float = true;
-             is_enumeration = false;
-           };
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_from_annotation
-           (Type.optional Type.bool)
-           {
-             ReturnType.is_boolean = true;
-             is_integer = true;
-             is_float = true;
-             is_enumeration = false;
-           };
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_from_annotation
-           (Type.optional Type.enumeration)
-           {
-             ReturnType.is_boolean = false;
-             is_integer = false;
-             is_float = false;
-             is_enumeration = true;
-           };
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_from_annotation
-           (Type.optional Type.integer)
-           {
-             ReturnType.is_boolean = false;
-             is_integer = true;
-             is_float = true;
-             is_enumeration = false;
-           };
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_from_annotation
-           Type.none
-           {
-             ReturnType.is_boolean = false;
-             is_integer = false;
-             is_float = false;
-             is_enumeration = false;
-           };
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_from_annotation
-           Type.Any
-           {
-             ReturnType.is_boolean = false;
-             is_integer = false;
-             is_float = false;
-             is_enumeration = false;
-           };
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_from_annotation
-           (Type.awaitable Type.bool)
-           {
-             ReturnType.is_boolean = true;
-             is_integer = true;
-             is_float = true;
-             is_enumeration = false;
-           };
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_from_annotation
-           (Type.awaitable Type.enumeration)
-           {
-             ReturnType.is_boolean = false;
-             is_integer = false;
-             is_float = false;
-             is_enumeration = true;
-           };
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_from_annotation
-           (Type.awaitable Type.integer)
-           {
-             ReturnType.is_boolean = false;
-             is_integer = true;
-             is_float = true;
-             is_enumeration = false;
-           };
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_from_annotation
-           (Type.awaitable (Type.optional Type.bool))
-           {
-             ReturnType.is_boolean = true;
-             is_integer = true;
-             is_float = true;
-             is_enumeration = false;
-           };
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_from_annotation
-           (Type.awaitable (Type.optional Type.enumeration))
-           {
-             ReturnType.is_boolean = false;
-             is_integer = false;
-             is_float = false;
-             is_enumeration = true;
-           };
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_from_annotation
-           (Type.awaitable (Type.optional Type.integer))
-           {
-             ReturnType.is_boolean = false;
-             is_integer = true;
-             is_float = true;
-             is_enumeration = false;
-           };
     ]
 
 
@@ -7230,14 +7020,14 @@ let test_higher_order_call_graph_of_define =
                         [
                           CallTarget.create_regular
                             ~implicit_receiver:true
-                            ~return_type:(Some ReturnType.any)
+                            ~return_type:(Some ReturnType.unknown)
                             (Target.Regular.Method
                                { class_name = "object"; method_name = "__init__"; kind = Normal });
                         ]
                       ~new_targets:
                         [
                           CallTarget.create_regular
-                            ~return_type:(Some ReturnType.any)
+                            ~return_type:(Some ReturnType.unknown)
                             ~is_static_method:true
                             (Target.Regular.Method
                                { class_name = "object"; method_name = "__new__"; kind = Normal });
@@ -8297,7 +8087,7 @@ let test_resolve_decorator_callees =
                                 [
                                   CallTarget.create_regular
                                     ~implicit_receiver:true
-                                    ~return_type:(Some ReturnType.any)
+                                    ~return_type:(Some ReturnType.unknown)
                                     (Target.Regular.Method
                                        {
                                          class_name = "test.ClassDecorator";
@@ -8308,7 +8098,7 @@ let test_resolve_decorator_callees =
                               ~new_targets:
                                 [
                                   CallTarget.create_regular
-                                    ~return_type:(Some ReturnType.any)
+                                    ~return_type:(Some ReturnType.unknown)
                                     ~is_static_method:true
                                     (Target.Regular.Method
                                        {
@@ -8674,7 +8464,6 @@ let () =
   >::: [
          test_call_graph_of_define;
          test_call_graph_of_define_foo_and_bar;
-         test_return_type_from_annotation;
          test_higher_order_call_graph_of_define;
          test_resolve_decorator_callees;
        ]

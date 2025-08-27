@@ -47,88 +47,20 @@ end
 
 (** Represents type information about the return type of a call. *)
 module ReturnType = struct
-  type t = {
-    is_boolean: bool;
-    is_integer: bool;
-    is_float: bool;
-    is_enumeration: bool;
-  }
-  [@@deriving compare, equal, sexp, hash]
+  type t = PyrePysaApi.ScalarTypeProperties.t [@@deriving compare, equal, sexp, hash, show]
 
-  let pp formatter { is_boolean; is_integer; is_float; is_enumeration } =
-    let add_if condition tag tags =
-      if condition then
-        tag :: tags
-      else
-        tags
-    in
-    []
-    |> add_if is_enumeration "enum"
-    |> add_if is_float "float"
-    |> add_if is_integer "int"
-    |> add_if is_boolean "bool"
-    |> String.concat ~sep:"|"
-    |> Format.fprintf formatter "{%s}"
+  let unknown = PyrePysaApi.ScalarTypeProperties.unknown
 
+  let none = PyrePysaApi.ScalarTypeProperties.none
 
-  let show = Format.asprintf "%a" pp
+  let bool = PyrePysaApi.ScalarTypeProperties.bool
 
-  let none = { is_boolean = false; is_integer = false; is_float = false; is_enumeration = false }
-
-  let any = none
-
-  let bool = { is_boolean = true; is_integer = true; is_float = true; is_enumeration = false }
-
-  let integer = { is_boolean = false; is_integer = true; is_float = true; is_enumeration = false }
+  let integer = PyrePysaApi.ScalarTypeProperties.integer
 
   let from_annotation ~pyre_api annotation =
-    let matches_at_leaves ~f annotation =
-      let rec matches_at_leaves ~f annotation =
-        match annotation with
-        | Type.Any
-        | Type.Bottom ->
-            false
-        | Type.Union [Type.NoneType; annotation]
-        | Type.Union [annotation; Type.NoneType]
-        | Type.Parametric { name = "typing.Awaitable"; arguments = [Single annotation] } ->
-            matches_at_leaves ~f annotation
-        | Type.Tuple (Concatenation concatenation) ->
-            Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
-            >>| (fun element -> matches_at_leaves ~f element)
-            |> Option.value ~default:(f annotation)
-        | Type.Tuple (Type.OrderedTypes.Concrete annotations) ->
-            List.for_all annotations ~f:(matches_at_leaves ~f)
-        | annotation -> f annotation
-      in
-      matches_at_leaves ~f annotation
-    in
-    try
-      let is_boolean =
-        matches_at_leaves annotation ~f:(fun left ->
-            PyrePysaApi.ReadOnly.less_or_equal pyre_api ~left ~right:Type.bool)
-      in
-      let is_integer =
-        matches_at_leaves annotation ~f:(fun left ->
-            PyrePysaApi.ReadOnly.less_or_equal pyre_api ~left ~right:Type.integer)
-      in
-      let is_float =
-        matches_at_leaves annotation ~f:(fun left ->
-            PyrePysaApi.ReadOnly.less_or_equal pyre_api ~left ~right:Type.float)
-      in
-      let is_enumeration =
-        matches_at_leaves annotation ~f:(fun left ->
-            PyrePysaApi.ReadOnly.less_or_equal pyre_api ~left ~right:Type.enumeration)
-      in
-      { is_boolean; is_integer; is_float; is_enumeration }
-    with
-    | PyrePysaLogic.UntrackedClass untracked_type ->
-        Log.warning
-          "Found untracked type `%s` when checking the return type `%a` of a call. The return type \
-           will NOT be considered a scalar, which could lead to missing breadcrumbs."
-          untracked_type
-          Type.pp
-          annotation;
-        none
+    PyrePysaApi.ReadOnly.scalar_type_properties
+      pyre_api
+      (PyrePysaApi.PysaType.from_pyre1_type annotation)
 
 
   (* Try to infer the return type from the callable type, otherwise lazily fallback
@@ -141,10 +73,12 @@ module ReturnType = struct
           annotation
       | _ -> Lazy.force return_type
     in
-    from_annotation ~pyre_api annotation
+    PyrePysaApi.ReadOnly.scalar_type_properties
+      pyre_api
+      (PyrePysaApi.PysaType.from_pyre1_type annotation)
 
 
-  let to_json { is_boolean; is_integer; is_float; is_enumeration } =
+  let to_json { PyrePysaApi.ScalarTypeProperties.is_boolean; is_integer; is_float; is_enumeration } =
     let add_string_if name condition elements =
       if condition then `String name :: elements else elements
     in
@@ -481,7 +415,7 @@ module CallTarget = struct
       implicit_receiver = false;
       implicit_dunder_call = false;
       index = 0;
-      return_type = Some ReturnType.any;
+      return_type = Some ReturnType.unknown;
       receiver_class = None;
       is_class_method = false;
       is_static_method = false;
@@ -4370,7 +4304,7 @@ module MissingFlowTypeAnalysis = struct
             implicit_receiver = false;
             implicit_dunder_call = false;
             index = 0;
-            return_type = Some ReturnType.any;
+            return_type = Some ReturnType.unknown;
             receiver_class = None;
             is_class_method = false;
             is_static_method = false;

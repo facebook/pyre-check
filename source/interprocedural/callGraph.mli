@@ -10,23 +10,15 @@ open Expression
 
 (** Represents type information about the return type of a call. *)
 module ReturnType : sig
-  type t = {
-    is_boolean: bool;
-    is_integer: bool;
-    is_float: bool;
-    is_enumeration: bool;
-  }
-  [@@deriving equal, show]
+  type t = PyrePysaApi.ScalarTypeProperties.t [@@deriving equal, show]
 
-  val any : t
+  val unknown : t
 
   val none : t
 
   val bool : t
 
   val integer : t
-
-  val from_annotation : pyre_api:PyrePysaApi.ReadOnly.t -> Type.t -> t
 
   val to_json : t -> Yojson.Safe.t
 end

@@ -11,6 +11,9 @@ open Core
    information about the code to analyze. Right now, this wraps either the old Pyre 1 API provided
    by `Analysis.PyrePysaEnvironment` or the Pyrefly API provided by `Interprocedural.Pyrefly`. *)
 
+module ScalarTypeProperties = Analysis.PyrePysaEnvironment.ScalarTypeProperties
+module PysaType = Analysis.PyrePysaEnvironment.PysaType
+
 module ReadWrite : sig
   type t
 
@@ -189,6 +192,8 @@ module ReadOnly : sig
   val all_classes : t -> scheduler:Scheduler.t -> string list
 
   val all_unannotated_globals : t -> scheduler:Scheduler.t -> Ast.Reference.t list
+
+  val scalar_type_properties : t -> PysaType.t -> ScalarTypeProperties.t
 end
 
 module InContext : sig

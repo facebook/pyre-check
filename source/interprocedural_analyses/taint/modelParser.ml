@@ -946,30 +946,6 @@ let rec parse_annotations
   parse_annotation (Node.value annotation)
 
 
-let rec class_names_from_annotation = function
-  | Type.Bottom
-  | Type.Top
-  | Type.Any
-  | Type.Literal _
-  | Type.Callable _
-  | Type.Tuple _
-  | Type.NoneType
-  | Type.TypeOperation _
-  | Type.Variable _
-  | Type.RecursiveType _
-  | Type.ParamSpecComponent _ ->
-      []
-  | Type.Primitive class_name
-  | Type.Parametric { name = class_name; _ } ->
-      [class_name]
-  | Type.Union members ->
-      List.fold
-        ~init:[]
-        ~f:(fun sofar annotation -> List.rev_append (class_names_from_annotation annotation) sofar)
-        members
-  | Type.PyreReadOnly annotation -> class_names_from_annotation annotation
-
-
 let get_class_attributes ~pyre_api = function
   | "object" -> Some []
   | class_name ->
@@ -988,18 +964,9 @@ let get_class_attributes_transitive ~pyre_api class_name =
 let paths_for_source_or_sink ~pyre_api ~kind ~root ~root_annotations ~features =
   let open Core.Result in
   let all_static_field_paths () =
-    let is_return = AccessPath.Root.equal root LocalResult in
-    let string_coroutine = if is_return then CallResolution.extract_coroutine_value else Fn.id in
-    let strip_all =
-      string_coroutine
-      |> Fn.compose CallResolution.strip_optional
-      |> Fn.compose CallResolution.strip_readonly
-      |> Fn.compose CallResolution.unbind_type_variable
-    in
     let attributes =
       root_annotations
-      |> List.map ~f:strip_all
-      |> List.concat_map ~f:class_names_from_annotation
+      |> List.concat_map ~f:PyrePysaApi.PysaType.get_class_names
       |> List.concat_map ~f:(get_class_attributes_transitive ~pyre_api)
       |> List.filter ~f:(Fn.non Ast.Expression.is_dunder_attribute)
       |> List.dedup_and_sort ~compare:Identifier.compare
@@ -1143,7 +1110,7 @@ let output_path_for_tito ~input_root ~kind ~features =
 
 let type_breadcrumbs_from_annotations ~pyre_api annotations =
   List.fold annotations ~init:Features.BreadcrumbSet.empty ~f:(fun sofar annotation ->
-      CallGraph.ReturnType.from_annotation ~pyre_api annotation
+      PyrePysaApi.ReadOnly.scalar_type_properties pyre_api annotation
       |> Features.type_breadcrumbs
       |> Features.BreadcrumbSet.union sofar)
 

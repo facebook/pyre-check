@@ -71,7 +71,11 @@ let test_resolve_qualified_name_to_global context =
   in
   let create_parameter ?(annotation = Type.Any) name =
     PyrePysaEnvironment.ModelQueries.FunctionParameter.Named
-      { name = "$parameter$" ^ name; annotation; has_default = false }
+      {
+        name = "$parameter$" ^ name;
+        annotation = PyrePysaEnvironment.PysaType.from_pyre1_type annotation;
+        has_default = false;
+      }
   in
   let create_callable
       ~define_name
@@ -91,7 +95,7 @@ let test_resolve_qualified_name_to_global context =
           {
             PyrePysaEnvironment.ModelQueries.FunctionSignature.overloads =
               PyrePysaEnvironment.ModelQueries.FunctionParameters.List parameters :: overloads;
-            return_annotation;
+            return_annotation = PyrePysaEnvironment.PysaType.from_pyre1_type return_annotation;
           };
       is_property_getter = false;
       is_property_setter = false;
@@ -362,7 +366,7 @@ let test_resolve_qualified_name_to_global context =
                             create_parameter ~annotation:Type.string "x";
                           ];
                       ];
-                    return_annotation = Type.string;
+                    return_annotation = PyrePysaEnvironment.PysaType.from_pyre1_type Type.string;
                   };
               is_property_getter = false;
               is_property_setter = false;
@@ -485,10 +489,154 @@ let test_resolve_qualified_name_to_global context =
   ()
 
 
+let test_scalar_type_properties =
+  let module ScalarTypeProperties = PyrePysaEnvironment.ScalarTypeProperties in
+  let assert_scalar_properties annotation expected context =
+    let project = Test.ScratchProject.setup ~context [] in
+    let pyre_api = project |> Test.ScratchProject.pyre_pysa_read_only_api in
+    let actual =
+      PyrePysaEnvironment.ReadOnly.scalar_type_properties
+        pyre_api
+        (PyrePysaEnvironment.PysaType.from_pyre1_type annotation)
+    in
+    assert_equal ~printer:ScalarTypeProperties.show ~cmp:ScalarTypeProperties.equal expected actual
+  in
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_scalar_properties
+           Type.bool
+           {
+             ScalarTypeProperties.is_boolean = true;
+             is_integer = true;
+             is_float = true;
+             is_enumeration = false;
+           };
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_scalar_properties
+           Type.enumeration
+           {
+             ScalarTypeProperties.is_boolean = false;
+             is_integer = false;
+             is_float = false;
+             is_enumeration = true;
+           };
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_scalar_properties
+           Type.integer
+           {
+             ScalarTypeProperties.is_boolean = false;
+             is_integer = true;
+             is_float = true;
+             is_enumeration = false;
+           };
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_scalar_properties
+           (Type.optional Type.bool)
+           {
+             ScalarTypeProperties.is_boolean = true;
+             is_integer = true;
+             is_float = true;
+             is_enumeration = false;
+           };
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_scalar_properties
+           (Type.optional Type.enumeration)
+           {
+             ScalarTypeProperties.is_boolean = false;
+             is_integer = false;
+             is_float = false;
+             is_enumeration = true;
+           };
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_scalar_properties
+           (Type.optional Type.integer)
+           {
+             ScalarTypeProperties.is_boolean = false;
+             is_integer = true;
+             is_float = true;
+             is_enumeration = false;
+           };
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_scalar_properties
+           Type.none
+           {
+             ScalarTypeProperties.is_boolean = false;
+             is_integer = false;
+             is_float = false;
+             is_enumeration = false;
+           };
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_scalar_properties
+           Type.Any
+           {
+             ScalarTypeProperties.is_boolean = false;
+             is_integer = false;
+             is_float = false;
+             is_enumeration = false;
+           };
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_scalar_properties
+           (Type.awaitable Type.bool)
+           {
+             ScalarTypeProperties.is_boolean = true;
+             is_integer = true;
+             is_float = true;
+             is_enumeration = false;
+           };
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_scalar_properties
+           (Type.awaitable Type.enumeration)
+           {
+             ScalarTypeProperties.is_boolean = false;
+             is_integer = false;
+             is_float = false;
+             is_enumeration = true;
+           };
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_scalar_properties
+           (Type.awaitable Type.integer)
+           {
+             ScalarTypeProperties.is_boolean = false;
+             is_integer = true;
+             is_float = true;
+             is_enumeration = false;
+           };
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_scalar_properties
+           (Type.awaitable (Type.optional Type.bool))
+           {
+             ScalarTypeProperties.is_boolean = true;
+             is_integer = true;
+             is_float = true;
+             is_enumeration = false;
+           };
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_scalar_properties
+           (Type.awaitable (Type.optional Type.enumeration))
+           {
+             ScalarTypeProperties.is_boolean = false;
+             is_integer = false;
+             is_float = false;
+             is_enumeration = true;
+           };
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_scalar_properties
+           (Type.awaitable (Type.optional Type.integer))
+           {
+             ScalarTypeProperties.is_boolean = false;
+             is_integer = true;
+             is_float = true;
+             is_enumeration = false;
+           };
+    ]
+
+
 let () =
   "pyrePysaApi"
   >::: [
          "source_is_unit_test" >:: test_source_is_unit_test;
          "resolve_qualified_name_to_global" >:: test_resolve_qualified_name_to_global;
+         test_scalar_type_properties;
        ]
   |> Test.run

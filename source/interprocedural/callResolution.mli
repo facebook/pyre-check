@@ -64,5 +64,3 @@ val strip_optional : Type.t -> Type.t
 val unbind_type_variable : Type.t -> Type.t
 
 val strip_readonly : Type.t -> Type.t
-
-val extract_coroutine_value : Type.t -> Type.t

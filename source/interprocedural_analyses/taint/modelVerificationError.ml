@@ -237,7 +237,8 @@ let pp_function_overload formatter = function
         in
         let () =
           match PyrePysaApi.ModelQueries.FunctionParameter.annotation parameter with
-          | Some annotation -> Format.fprintf formatter ": %a" Type.pp_concise annotation
+          | Some annotation ->
+              Format.fprintf formatter ": %a" PyrePysaApi.PysaType.pp_concise annotation
           | None -> ()
         in
         let () =

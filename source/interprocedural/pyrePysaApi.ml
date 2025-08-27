@@ -10,6 +10,8 @@
    by `Analysis.PyrePysaEnvironment` or the Pyrefly API provided by `Interprocedural.Pyrefly`. *)
 
 module Pyre1Api = Analysis.PyrePysaEnvironment
+module ScalarTypeProperties = Pyre1Api.ScalarTypeProperties
+module PysaType = Pyre1Api.PysaType
 
 module ReadWrite = struct
   type t =
@@ -286,6 +288,11 @@ module ReadOnly = struct
   let all_unannotated_globals = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.all_unannotated_globals pyre_api
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.all_unannotated_globals"
+
+
+  let scalar_type_properties = function
+    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.scalar_type_properties pyre_api
+    | Pyrefly _ -> failwith "unimplemented: ReadOnly.scalar_type_properties"
 end
 
 module InContext = struct
