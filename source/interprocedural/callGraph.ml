@@ -78,15 +78,16 @@ module ReturnType = struct
       (PyrePysaApi.PysaType.from_pyre1_type annotation)
 
 
-  let to_json { PyrePysaApi.ScalarTypeProperties.is_boolean; is_integer; is_float; is_enumeration } =
+  let to_json value =
     let add_string_if name condition elements =
       if condition then `String name :: elements else elements
     in
+    let module ScalarTypeProperties = PyrePysaApi.ScalarTypeProperties in
     []
-    |> add_string_if "boolean" is_boolean
-    |> add_string_if "integer" is_integer
-    |> add_string_if "float" is_float
-    |> add_string_if "enum" is_enumeration
+    |> add_string_if "boolean" (ScalarTypeProperties.is_boolean value)
+    |> add_string_if "integer" (ScalarTypeProperties.is_integer value)
+    |> add_string_if "float" (ScalarTypeProperties.is_float value)
+    |> add_string_if "enum" (ScalarTypeProperties.is_enumeration value)
     |> fun elements -> `List elements
 end
 

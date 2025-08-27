@@ -13,15 +13,37 @@ open Pyre
 module PyreType = Type
 
 module ScalarTypeProperties = struct
-  type t = {
-    is_boolean: bool;
-    is_integer: bool;
-    is_float: bool;
-    is_enumeration: bool;
-  }
-  [@@deriving compare, equal, sexp, hash]
+  type t = int [@@deriving compare, equal, sexp, hash]
 
-  let pp formatter { is_boolean; is_integer; is_float; is_enumeration } =
+  let boolean_bit = 0b1
+
+  let integer_bit = 0b10
+
+  let float_bit = 0b100
+
+  let enumeration_bit = 0b1000
+
+  let get_bit pattern value = Int.equal (Int.bit_and pattern value) pattern
+
+  let set_bit pattern value = Int.bit_or pattern value
+
+  let is_boolean = get_bit boolean_bit
+
+  let is_integer = get_bit integer_bit
+
+  let is_float = get_bit float_bit
+
+  let is_enumeration = get_bit enumeration_bit
+
+  let set_boolean flag = set_bit (if flag then boolean_bit else 0)
+
+  let set_integer flag = set_bit (if flag then integer_bit else 0)
+
+  let set_float flag = set_bit (if flag then float_bit else 0)
+
+  let set_enumeration flag = set_bit (if flag then enumeration_bit else 0)
+
+  let pp formatter value =
     let add_if condition tag tags =
       if condition then
         tag :: tags
@@ -29,23 +51,25 @@ module ScalarTypeProperties = struct
         tags
     in
     []
-    |> add_if is_enumeration "enum"
-    |> add_if is_float "float"
-    |> add_if is_integer "int"
-    |> add_if is_boolean "bool"
+    |> add_if (is_enumeration value) "enum"
+    |> add_if (is_float value) "float"
+    |> add_if (is_integer value) "int"
+    |> add_if (is_boolean value) "bool"
     |> String.concat ~sep:"|"
     |> Format.fprintf formatter "{%s}"
 
 
   let show = Format.asprintf "%a" pp
 
-  let none = { is_boolean = false; is_integer = false; is_float = false; is_enumeration = false }
+  let none = 0
 
   let unknown = none
 
-  let bool = { is_boolean = true; is_integer = true; is_float = true; is_enumeration = false }
+  let bool = 0 |> set_bit boolean_bit |> set_bit integer_bit |> set_bit float_bit
 
-  let integer = { is_boolean = false; is_integer = true; is_float = true; is_enumeration = false }
+  let integer = 0 |> set_bit integer_bit |> set_bit float_bit
+
+  let enumeration = set_bit enumeration_bit 0
 end
 
 (* Minimal abstraction for a type, provided from Pyre1 or Pyrefly and used by Pysa. *)
@@ -565,7 +589,11 @@ module ReadOnly = struct
         matches_at_leaves annotation ~f:(fun left ->
             less_or_equal api ~left ~right:Type.enumeration)
       in
-      { ScalarTypeProperties.is_boolean; is_integer; is_float; is_enumeration }
+      ScalarTypeProperties.none
+      |> ScalarTypeProperties.set_boolean is_boolean
+      |> ScalarTypeProperties.set_integer is_integer
+      |> ScalarTypeProperties.set_float is_float
+      |> ScalarTypeProperties.set_enumeration is_enumeration
     with
     | PyrePysaLogic.UntrackedClass untracked_type ->
         Log.warning

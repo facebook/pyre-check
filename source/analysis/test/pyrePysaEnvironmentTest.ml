@@ -504,131 +504,39 @@ let test_scalar_type_properties =
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_scalar_properties
-           Type.bool
-           {
-             ScalarTypeProperties.is_boolean = true;
-             is_integer = true;
-             is_float = true;
-             is_enumeration = false;
-           };
+      @@ assert_scalar_properties Type.bool ScalarTypeProperties.bool;
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_scalar_properties
-           Type.enumeration
-           {
-             ScalarTypeProperties.is_boolean = false;
-             is_integer = false;
-             is_float = false;
-             is_enumeration = true;
-           };
+      @@ assert_scalar_properties Type.enumeration ScalarTypeProperties.enumeration;
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_scalar_properties
-           Type.integer
-           {
-             ScalarTypeProperties.is_boolean = false;
-             is_integer = true;
-             is_float = true;
-             is_enumeration = false;
-           };
+      @@ assert_scalar_properties Type.integer ScalarTypeProperties.integer;
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_scalar_properties
-           (Type.optional Type.bool)
-           {
-             ScalarTypeProperties.is_boolean = true;
-             is_integer = true;
-             is_float = true;
-             is_enumeration = false;
-           };
+      @@ assert_scalar_properties (Type.optional Type.bool) ScalarTypeProperties.bool;
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_scalar_properties
-           (Type.optional Type.enumeration)
-           {
-             ScalarTypeProperties.is_boolean = false;
-             is_integer = false;
-             is_float = false;
-             is_enumeration = true;
-           };
+      @@ assert_scalar_properties (Type.optional Type.enumeration) ScalarTypeProperties.enumeration;
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_scalar_properties
-           (Type.optional Type.integer)
-           {
-             ScalarTypeProperties.is_boolean = false;
-             is_integer = true;
-             is_float = true;
-             is_enumeration = false;
-           };
+      @@ assert_scalar_properties (Type.optional Type.integer) ScalarTypeProperties.integer;
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_scalar_properties
-           Type.none
-           {
-             ScalarTypeProperties.is_boolean = false;
-             is_integer = false;
-             is_float = false;
-             is_enumeration = false;
-           };
+      @@ assert_scalar_properties Type.none ScalarTypeProperties.none;
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_scalar_properties
-           Type.Any
-           {
-             ScalarTypeProperties.is_boolean = false;
-             is_integer = false;
-             is_float = false;
-             is_enumeration = false;
-           };
+      @@ assert_scalar_properties Type.Any ScalarTypeProperties.none;
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_scalar_properties
-           (Type.awaitable Type.bool)
-           {
-             ScalarTypeProperties.is_boolean = true;
-             is_integer = true;
-             is_float = true;
-             is_enumeration = false;
-           };
+      @@ assert_scalar_properties (Type.awaitable Type.bool) ScalarTypeProperties.bool;
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_scalar_properties
-           (Type.awaitable Type.enumeration)
-           {
-             ScalarTypeProperties.is_boolean = false;
-             is_integer = false;
-             is_float = false;
-             is_enumeration = true;
-           };
+      @@ assert_scalar_properties (Type.awaitable Type.enumeration) ScalarTypeProperties.enumeration;
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_scalar_properties
-           (Type.awaitable Type.integer)
-           {
-             ScalarTypeProperties.is_boolean = false;
-             is_integer = true;
-             is_float = true;
-             is_enumeration = false;
-           };
+      @@ assert_scalar_properties (Type.awaitable Type.integer) ScalarTypeProperties.integer;
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_scalar_properties
            (Type.awaitable (Type.optional Type.bool))
-           {
-             ScalarTypeProperties.is_boolean = true;
-             is_integer = true;
-             is_float = true;
-             is_enumeration = false;
-           };
+           ScalarTypeProperties.bool;
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_scalar_properties
            (Type.awaitable (Type.optional Type.enumeration))
-           {
-             ScalarTypeProperties.is_boolean = false;
-             is_integer = false;
-             is_float = false;
-             is_enumeration = true;
-           };
+           ScalarTypeProperties.enumeration;
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_scalar_properties
            (Type.awaitable (Type.optional Type.integer))
-           {
-             ScalarTypeProperties.is_boolean = false;
-             is_integer = true;
-             is_float = true;
-             is_enumeration = false;
-           };
+           ScalarTypeProperties.integer;
     ]
 
 

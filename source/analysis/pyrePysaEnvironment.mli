@@ -8,13 +8,7 @@
 open Core
 
 module ScalarTypeProperties : sig
-  type t = {
-    is_boolean: bool;
-    is_integer: bool;
-    is_float: bool;
-    is_enumeration: bool;
-  }
-  [@@deriving compare, equal, sexp, hash, show]
+  type t [@@deriving compare, equal, sexp, hash, show]
 
   val none : t
 
@@ -23,6 +17,16 @@ module ScalarTypeProperties : sig
   val bool : t
 
   val integer : t
+
+  val enumeration : t
+
+  val is_boolean : t -> bool
+
+  val is_integer : t -> bool
+
+  val is_float : t -> bool
+
+  val is_enumeration : t -> bool
 end
 
 (* Minimal abstraction for a type, provided from Pyre1 or Pyrefly and used by Pysa. *)

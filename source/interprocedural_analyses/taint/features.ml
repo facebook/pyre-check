@@ -774,14 +774,12 @@ let shim_broadening_set = memoize_breadcrumb_set [Breadcrumb.Broadening; Breadcr
 
 let type_bool_scalar_set = memoize_breadcrumb_set [Breadcrumb.Type "scalar"; Breadcrumb.Type "bool"]
 
-let type_breadcrumbs
-    {
-      Interprocedural.PyrePysaApi.ScalarTypeProperties.is_boolean;
-      is_integer;
-      is_float;
-      is_enumeration;
-    }
-  =
+let type_breadcrumbs scalar_properties =
+  let module ScalarTypeProperties = PyrePysaApi.ScalarTypeProperties in
+  let is_boolean = ScalarTypeProperties.is_boolean scalar_properties in
+  let is_integer = ScalarTypeProperties.is_integer scalar_properties in
+  let is_float = ScalarTypeProperties.is_float scalar_properties in
+  let is_enumeration = ScalarTypeProperties.is_enumeration scalar_properties in
   let is_scalar = is_boolean || is_integer || is_float || is_enumeration in
   let add_if condition breadcrumb features =
     if condition then
