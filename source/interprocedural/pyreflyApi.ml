@@ -749,7 +749,6 @@ end
  *
  * - In most cases, this will be a dotted path such as `my.module.MyClass.foo`.
  * - Property setters have a suffix `@setter` to be different from property getters.
- * - Type overloads have a suffix `@overload` to be different from regular methods.
  * - The code at the top level of a module is considered part of an implicit function called `$toplevel`.
  * - The code within a class scope is considered part of an implicit function called `$class_toplevel`.
  * - The name might have a suffix with an index such as `$1`, `$2` to differentiate multiple definitions
@@ -1705,17 +1704,11 @@ module ReadWrite = struct
             let name =
               match definition with
               | Definition.Function
-                  { ModuleInfoFile.FunctionDefinition.name; is_property_setter; is_overload; _ } ->
-                  (* For methods, we need to differentiate property setters and overloads *)
+                  { ModuleInfoFile.FunctionDefinition.name; is_property_setter; _ } ->
+                  (* We need to differentiate property setters from property getters *)
                   let name =
                     if is_property_setter then
                       Format.sprintf "%s@setter" name
-                    else
-                      name
-                  in
-                  let name =
-                    if is_overload then
-                      Format.sprintf "%s@overload" name
                     else
                       name
                   in

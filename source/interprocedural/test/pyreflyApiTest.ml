@@ -694,6 +694,8 @@ let test_fully_qualified_names _ =
     ~expected:["test.$toplevel"; "test.a"; "test.a.$class_toplevel"; "test.a.__init__"; "test.a$2"]
     ();
   (* Type overloads *)
+  (* Note: pyrefly only exports one definition per overload set, so this test isn't relevant
+     anymore. *)
   assert_fully_qualified_names
     ~definitions:
       [
@@ -701,7 +703,7 @@ let test_fully_qualified_names _ =
         2, create_function ~is_overload:true "a";
         3, create_function ~is_overload:true "a";
       ]
-    ~expected:["test.$toplevel"; "test.a"; "test.a@overload"; "test.a@overload$2"]
+    ~expected:["test.$toplevel"; "test.a"; "test.a$2"; "test.a$3"]
     ();
   (* Property getter and setter *)
   assert_fully_qualified_names
