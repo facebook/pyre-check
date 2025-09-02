@@ -3515,6 +3515,105 @@ module ScratchProject = struct
       artifact_paths
 end
 
+module ScratchPyreflyProject = struct
+  type t = Interprocedural.PyreflyApi.ReadWrite.t
+
+  let find_pyrefly_binary () = Stdlib.Sys.getenv_opt "PYREFLY_BINARY"
+
+  let setup ~context ~pyrefly_binary ?(external_sources = []) sources =
+    let local_root = bracket_tmpdir context |> PyrePath.create_absolute in
+    let external_root = bracket_tmpdir context |> PyrePath.create_absolute in
+    let add_source ~root (relative, content) =
+      let content = trim_extra_indentation content in
+      let file = File.create ~content (PyrePath.create_relative ~root ~relative) in
+      File.write file
+    in
+    let () = List.iter sources ~f:(add_source ~root:local_root) in
+    let () = List.iter external_sources ~f:(add_source ~root:external_root) in
+    let () =
+      File.write
+        (File.create
+           ~content:"\n"
+           (PyrePath.create_relative ~root:local_root ~relative:"pyrefly.toml"))
+    in
+    let result_directory = bracket_tmpdir context |> PyrePath.create_absolute in
+    let python_version = Configuration.PythonVersion.create () in
+    let arguments =
+      [
+        "check";
+        "--threads=1";
+        "--verbose";
+        Format.sprintf
+          "--python-version=%d.%d.%d"
+          python_version.major
+          python_version.minor
+          python_version.micro;
+        "--search-path";
+        PyrePath.absolute external_root;
+        "--report-pysa";
+        PyrePath.absolute result_directory;
+        PyrePath.absolute local_root;
+      ]
+    in
+    Log.info "Running command: %s" (Stdlib.Filename.quote_command pyrefly_binary arguments);
+    let stdout, stdin, stderr =
+      CamlUnix.open_process_args_full
+        pyrefly_binary
+        (Array.of_list ("pyrefly" :: arguments))
+        (CamlUnix.environment ())
+    in
+    let () = Out_channel.close stdin in
+    Log.info "Pyrefly stdout: %s" (In_channel.input_all stdout);
+    Log.info "Pyrefly stderr: %s" (In_channel.input_all stderr);
+    let () = In_channel.close stdout in
+    let () = In_channel.close stderr in
+    let configuration =
+      Configuration.Analysis.create
+        ~parallel:false
+        ~source_paths:[]
+        ~search_paths:[]
+        ~python_version
+        ()
+    in
+    Interprocedural.PyreflyApi.ReadWrite.create_from_directory
+      ~scheduler:(Scheduler.create_sequential ())
+      ~scheduler_policies:Configuration.SchedulerPolicies.empty
+      ~configuration
+      result_directory
+
+
+  let pyre_pysa_read_only_api api =
+    Interprocedural.PyrePysaApi.ReadOnly.from_pyrefly_api
+      (Interprocedural.PyreflyApi.ReadOnly.of_read_write_api api)
+end
+
+module ScratchPyrePysaProject = struct
+  type t =
+    | Pyre1 of ScratchProject.t
+    | Pyrefly of ScratchPyreflyProject.t
+
+  let pyrefly_binary =
+    lazy
+      (match ScratchPyreflyProject.find_pyrefly_binary () with
+      | Some path ->
+          let () = Log.dump "Found PYREFLY_BINARY=`%s`, running tests using pyrefly" path in
+          Some path
+      | None -> None)
+
+
+  let setup ~context ?(external_sources = []) sources =
+    match Lazy.force pyrefly_binary with
+    | Some pyrefly_binary ->
+        Pyrefly (ScratchPyreflyProject.setup ~context ~pyrefly_binary ~external_sources sources)
+    | None -> Pyre1 (ScratchProject.setup ~context ~external_sources sources)
+
+
+  let read_only_api = function
+    | Pyre1 project ->
+        Interprocedural.PyrePysaApi.ReadOnly.Pyre1 (ScratchProject.pyre_pysa_read_only_api project)
+    | Pyrefly project -> ScratchPyreflyProject.pyre_pysa_read_only_api project
+end
+
 type test_other_sources_t = {
   handle: string;
   source: string;

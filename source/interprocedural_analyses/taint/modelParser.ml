@@ -3431,100 +3431,6 @@ let is_property_getter_setter ~decorators ~define_name =
   is_property_getter, is_property_setter
 
 
-(* List of symbols exported from the 'builtins' module. To keep it short, this only contains symbols
-   that users might want to annotate. *)
-let builtins_symbols =
-  String.Set.of_list
-    [
-      "__build_class__";
-      "__import__";
-      "abs";
-      "aiter";
-      "all";
-      "anext";
-      "any";
-      "ascii";
-      "BaseException";
-      "bin";
-      "bool";
-      "bytearray";
-      "bytes";
-      "callable";
-      "chr";
-      "classmethod";
-      "compile";
-      "complex";
-      "delattr";
-      "dict";
-      "dir";
-      "enumerate";
-      "eval";
-      "Exception";
-      "exec";
-      "filter";
-      "float";
-      "format";
-      "frozenset";
-      "function";
-      "GeneratorExit";
-      "getattr";
-      "globals";
-      "hasattr";
-      "hash";
-      "hex";
-      "id";
-      "input";
-      "int";
-      "isinstance";
-      "issubclass";
-      "iter";
-      "KeyboardInterrupt";
-      "len";
-      "list";
-      "locals";
-      "map";
-      "max";
-      "memoryview";
-      "min";
-      "next";
-      "object";
-      "open";
-      "ord";
-      "pow";
-      "print";
-      "property";
-      "range";
-      "repr";
-      "reversed";
-      "round";
-      "set";
-      "setattr";
-      "slice";
-      "sorted";
-      "staticmethod";
-      "str";
-      "sum";
-      "super";
-      "SystemExit";
-      "tuple";
-      "type";
-      "vars";
-      "zip";
-    ]
-
-
-(* Users can model symbols from the 'builtins' module without prefixing the name by 'builtins.'. We
-   need to add the prefix before performing lookups when using Pyrefly. *)
-let add_builtins_prefix ~pyre_api name =
-  match pyre_api with
-  | PyrePysaApi.ReadOnly.Pyre1 _ -> name
-  | PyrePysaApi.ReadOnly.Pyrefly _ ->
-      if Set.mem builtins_symbols (Reference.first name) then
-        Reference.create_from_list ("builtins" :: Reference.as_list name)
-      else
-        name
-
-
 let create_model_from_signature
     ~pyre_api
     ~path
@@ -3555,10 +3461,12 @@ let create_model_from_signature
         pyre_api
         ~is_property_getter
         ~is_property_setter
-        (callable_name |> mangle_top_level_name |> add_builtins_prefix ~pyre_api)
+        (callable_name |> mangle_top_level_name |> PyrePysaApi.ReadOnly.add_builtins_prefix pyre_api)
     with
     | None -> (
-        let module_name = Reference.first (add_builtins_prefix ~pyre_api callable_name) in
+        let module_name =
+          Reference.first (PyrePysaApi.ReadOnly.add_builtins_prefix pyre_api callable_name)
+        in
         let module_resolved =
           PyrePysaApi.ModelQueries.resolve_qualified_name_to_global
             pyre_api
@@ -3874,7 +3782,10 @@ let create_model_from_attribute
     ~path
     ~location
     ~pyre_api
-    ~name:(attribute_name |> demangle_class_attribute |> add_builtins_prefix ~pyre_api)
+    ~name:
+      (attribute_name
+      |> demangle_class_attribute
+      |> PyrePysaApi.ReadOnly.add_builtins_prefix pyre_api)
   >>= fun () ->
   let model_annotations =
     List.map annotations ~f:(fun annotation ->
@@ -3926,7 +3837,7 @@ let create_models_from_class
   let model_verification_error kind = Error { ModelVerificationError.kind; path; location } in
   match
     class_name
-    |> add_builtins_prefix ~pyre_api
+    |> PyrePysaApi.ReadOnly.add_builtins_prefix pyre_api
     |> PyrePysaApi.ModelQueries.class_method_signatures pyre_api
   with
   | Some method_signatures ->

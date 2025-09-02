@@ -61,7 +61,6 @@ module ReadWrite : sig
     :  scheduler:Scheduler.t ->
     scheduler_policies:Configuration.SchedulerPolicies.t ->
     configuration:Configuration.Analysis.t ->
-    decorator_configuration:Analysis.DecoratorPreprocessing.Configuration.t ->
     PyrePath.t ->
     t
 end
@@ -114,6 +113,8 @@ module ReadOnly : sig
     PysaType.t ->
     Analysis.PyrePysaEnvironment.ScalarTypeProperties.t
 end
+
+val add_builtins_prefix : Ast.Reference.t -> Ast.Reference.t
 
 module ModelQueries : sig
   module Function = Analysis.PyrePysaEnvironment.ModelQueries.Function

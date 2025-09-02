@@ -40,7 +40,6 @@ module ReadWrite = struct
              ~scheduler
              ~scheduler_policies
              ~configuration
-             ~decorator_configuration
              pyrefly_results)
     | None ->
         Pyre1
@@ -95,6 +94,13 @@ module ReadOnly = struct
 
 
   let from_pyre1_api pyre_api = Pyre1 pyre_api
+
+  let from_pyrefly_api pyrefly_api = Pyrefly pyrefly_api
+
+  let is_pyrefly = function
+    | Pyre1 _ -> false
+    | Pyrefly _ -> true
+
 
   let explicit_qualifiers = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.explicit_qualifiers pyre_api
@@ -293,6 +299,12 @@ module ReadOnly = struct
   let scalar_type_properties = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.scalar_type_properties pyre_api
     | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.scalar_type_properties pyrefly_api
+
+
+  let add_builtins_prefix api reference =
+    match api with
+    | Pyre1 _ -> reference
+    | Pyrefly _ -> PyreflyApi.add_builtins_prefix reference
 end
 
 module InContext = struct

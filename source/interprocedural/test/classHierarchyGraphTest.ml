@@ -7,24 +7,45 @@
 
 open Core
 open OUnit2
-open Test
 open Ast
 open Interprocedural
-open ClassHierarchyGraph.Heap
 
 let test_from_source context =
-  let assert_class_hierarchy ~source ~expected =
+  let assert_class_hierarchy ?pyrefly_expected ~source ~expected () =
     let pyre_api =
-      Test.ScratchProject.setup ~context ["test.py", source]
-      |> ScratchProject.pyre_pysa_read_only_api
-      |> PyrePysaApi.ReadOnly.from_pyre1_api
+      Test.ScratchPyrePysaProject.setup ~context ["test.py", source]
+      |> Test.ScratchPyrePysaProject.read_only_api
     in
-    let class_hierarchy = from_qualifier ~pyre_api ~qualifier:(Reference.create "test") in
+    let expected =
+      (* Allow different results for pyrefly and pyre1 *)
+      match pyrefly_expected with
+      | Some pyrefly_expected when PyrePysaApi.ReadOnly.is_pyrefly pyre_api ->
+          pyrefly_expected ~pyre_api
+      | _ -> expected ~pyre_api
+    in
+    let class_hierarchy =
+      ClassHierarchyGraph.Heap.from_qualifier ~pyre_api ~qualifier:(Reference.create "test")
+    in
     assert_equal
       expected
       class_hierarchy
       ~printer:ClassHierarchyGraph.Heap.show
       ~cmp:ClassHierarchyGraph.Heap.equal
+  in
+  let create ~pyre_api ~roots ~edges =
+    (* When using pyrefly, add the builtins prefix, e.g object -> builtins.object *)
+    let add_builtins_prefix reference =
+      Reference.show
+        (PyrePysaApi.ReadOnly.add_builtins_prefix pyre_api (Reference.create reference))
+    in
+    let roots = List.map ~f:add_builtins_prefix roots in
+    let edges =
+      List.map
+        ~f:(fun (parent, children) ->
+          add_builtins_prefix parent, List.map ~f:add_builtins_prefix children)
+        edges
+    in
+    ClassHierarchyGraph.Heap.create ~roots ~edges
   in
   assert_class_hierarchy
     ~source:
@@ -44,7 +65,8 @@ let test_from_source context =
              "test.B", ["test.D"];
              "test.C", ["test.D"];
              "test.D", [];
-           ]);
+           ])
+    ();
   assert_class_hierarchy
     ~source:
       {|
@@ -62,7 +84,19 @@ let test_from_source context =
              "test.Meta", ["test.B"];
              "test.A", [];
              "test.B", [];
-           ]);
+           ])
+    ~pyrefly_expected:
+      (create
+         ~roots:["object"; "type"]
+         ~edges:
+           [
+             "object", ["test.A"; "test.B"];
+             "type", ["test.Meta"];
+             "test.Meta", ["test.B"];
+             "test.A", [];
+             "test.B", [];
+           ])
+    ();
   assert_class_hierarchy
     ~source:
       {|
@@ -86,6 +120,8 @@ let test_from_source context =
              "test.E", [];
              "test.F", [];
            ])
+    ();
+  ()
 
 
 let test_graph_join _ =
@@ -97,6 +133,7 @@ let test_graph_join _ =
       ~printer:ClassHierarchyGraph.Heap.show
       ~cmp:ClassHierarchyGraph.Heap.equal
   in
+  let create = ClassHierarchyGraph.Heap.create in
   let left_graph = create ~roots:["A"; "D"] ~edges:["A", ["B"; "C"]; "B", []; "C", []; "D", []] in
   assert_graph_join ~left:left_graph ~right:left_graph ~expected:left_graph;
   assert_graph_join

@@ -64,6 +64,10 @@ module ReadOnly : sig
 
   val from_pyre1_api : Analysis.PyrePysaEnvironment.ReadOnly.t -> t
 
+  val from_pyrefly_api : PyreflyApi.ReadOnly.t -> t
+
+  val is_pyrefly : t -> bool
+
   val explicit_qualifiers : t -> Ast.Reference.t list
 
   val absolute_source_path_of_qualifier
@@ -194,6 +198,8 @@ module ReadOnly : sig
   val all_unannotated_globals : t -> scheduler:Scheduler.t -> Ast.Reference.t list
 
   val scalar_type_properties : t -> PysaType.t -> ScalarTypeProperties.t
+
+  val add_builtins_prefix : t -> Ast.Reference.t -> Ast.Reference.t
 end
 
 module InContext : sig

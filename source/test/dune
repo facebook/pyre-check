@@ -10,7 +10,7 @@
    ppx_compare
    ppx_sexp_conv
    ppx_deriving_yojson))
- (libraries core unix ounit2 pyrelib.analysis))
+ (libraries core unix ounit2 pyrelib.analysis pyrelib.interprocedural))
 
 (tests
  (names

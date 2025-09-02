@@ -2355,13 +2355,7 @@ module ReadWrite = struct
       callable_undecorated_signatures_shared_memory )
 
 
-  let create_from_directory
-      ~scheduler
-      ~scheduler_policies
-      ~configuration
-      ~decorator_configuration:_
-      pyrefly_directory
-    =
+  let create_from_directory ~scheduler ~scheduler_policies ~configuration pyrefly_directory =
     let qualifier_to_module_map, object_class_id = parse_modules ~pyrefly_directory in
 
     let module_infos_shared_memory = write_module_infos_to_shared_memory ~qualifier_to_module_map in
@@ -2671,6 +2665,98 @@ module ReadOnly = struct
     | None ->
         failwith "ReadOnly.scalar_type_properties: trying to use a pyre1 type with a pyrefly API."
 end
+
+(* List of symbols exported from the 'builtins' module. To keep it short, this only contains symbols
+   that users might want to annotate. *)
+let builtins_symbols =
+  String.Set.of_list
+    [
+      "__build_class__";
+      "__import__";
+      "abs";
+      "aiter";
+      "all";
+      "anext";
+      "any";
+      "ascii";
+      "BaseException";
+      "bin";
+      "bool";
+      "bytearray";
+      "bytes";
+      "callable";
+      "chr";
+      "classmethod";
+      "compile";
+      "complex";
+      "delattr";
+      "dict";
+      "dir";
+      "enumerate";
+      "eval";
+      "Exception";
+      "exec";
+      "filter";
+      "float";
+      "format";
+      "frozenset";
+      "function";
+      "GeneratorExit";
+      "getattr";
+      "globals";
+      "hasattr";
+      "hash";
+      "hex";
+      "id";
+      "input";
+      "int";
+      "isinstance";
+      "issubclass";
+      "iter";
+      "KeyboardInterrupt";
+      "len";
+      "list";
+      "locals";
+      "map";
+      "max";
+      "memoryview";
+      "min";
+      "next";
+      "object";
+      "open";
+      "ord";
+      "pow";
+      "print";
+      "property";
+      "range";
+      "repr";
+      "reversed";
+      "round";
+      "set";
+      "setattr";
+      "slice";
+      "sorted";
+      "staticmethod";
+      "str";
+      "sum";
+      "super";
+      "SystemExit";
+      "tuple";
+      "type";
+      "vars";
+      "zip";
+    ]
+
+
+(* Unlike Pyre1, Pyrefly prefixes all builtins symbols with 'builtins.'. This function automatically
+   adds 'builtins.' in front of references that are likely builtins symbols. The main use case is
+   for taint models in .pysa files. *)
+let add_builtins_prefix name =
+  if Set.mem builtins_symbols (Reference.first name) then
+    Reference.create_from_list ("builtins" :: Reference.as_list name)
+  else
+    name
+
 
 module ModelQueries = struct
   module Function = Pyre1Api.ModelQueries.Function
