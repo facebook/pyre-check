@@ -14,16 +14,10 @@ open Taint
 module PyrePysaApi = Interprocedural.PyrePysaApi
 module AccessPath = Interprocedural.AccessPath
 
-let get_stubs_and_definitions ~source_file_name ~project =
-  let pyre_api =
-    project |> Test.ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
-  in
+let get_stubs_and_definitions ~pyre_api ~configuration ~source_file_name =
   let qualifier = Ast.Reference.create (String.chop_suffix_exn source_file_name ~suffix:".py") in
   let initial_callables =
-    Interprocedural.FetchCallables.from_qualifier
-      ~configuration:(Test.ScratchProject.configuration_of project)
-      ~pyre_api
-      ~qualifier
+    Interprocedural.FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier
   in
   ( Interprocedural.FetchCallables.get_stubs initial_callables,
     Interprocedural.FetchCallables.get_definitions initial_callables )
@@ -36,20 +30,39 @@ let set_up_environment
     ?filtered_sinks
     ?filtered_transforms
     ?(registered_partial_sinks = TaintConfiguration.RegisteredPartialSinks.empty)
+    ?(skip_for_pyrefly = false)
     ~context
     ~model_source
     ()
   =
   let source =
     match source with
-    | None -> model_source
     | Some source -> source
+    | None ->
+        {|
+          from django.http import Request
+
+          def source() -> None: ...
+          def sink(parameter0, parameter1, parameter, arg) -> None: ...
+          def taint(x, y) -> None: ...
+          def tito(parameter) -> str: ...
+          def partial_sink(x, y) -> None: ...
+          def update(self, arg1, arg2) -> None: ...
+          def both(parameter0, parameter) -> None: ...
+          def xss(parameter) -> None: ...
+          def multiple(parameter) -> None: ...
+        |}
   in
   let source_file_name = "test.py" in
-  let project = ScratchProject.setup ~context [source_file_name, source] in
-  let pyre_api =
-    project |> Test.ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
+  let project =
+    Test.ScratchPyrePysaProject.setup
+      ~context
+      ~requires_type_of_expressions:false
+      ~force_pyre1:skip_for_pyrefly
+      [source_file_name, source]
   in
+  let pyre_api = Test.ScratchPyrePysaProject.read_only_api project in
+  let configuration = Test.ScratchPyrePysaProject.configuration_of project in
   let taint_configuration =
     let named name = { AnnotationParser.KindDefinition.name; kind = Named; location = None } in
     let sources =
@@ -121,7 +134,7 @@ let set_up_environment
   let source = Test.trim_extra_indentation model_source in
 
   PyrePysaApi.ModelQueries.invalidate_cache pyre_api;
-  let stubs, definitions = get_stubs_and_definitions ~source_file_name ~project in
+  let stubs, definitions = get_stubs_and_definitions ~pyre_api ~configuration ~source_file_name in
   let ({ ModelParseResult.errors; _ } as parse_result) =
     ModelParser.parse
       ~pyre_api
@@ -142,9 +155,6 @@ let set_up_environment
        (List.to_string errors ~f:ModelVerificationError.display))
     (List.is_empty errors);
 
-  let pyre_api =
-    project |> ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
-  in
   parse_result, pyre_api, taint_configuration
 
 
@@ -155,6 +165,7 @@ let assert_model
     ?filtered_sinks
     ?expected_skipped_overrides
     ?registered_partial_sinks
+    ?skip_for_pyrefly
     ~context
     ~model_source
     ~expect
@@ -167,6 +178,7 @@ let assert_model
       ?filtered_sources
       ?filtered_sinks
       ?registered_partial_sinks
+      ?skip_for_pyrefly
       ~context
       ~model_source
       ()
@@ -599,6 +611,7 @@ let test_source_models context =
   assert_model
     ~model_source:"os.environ: TaintSource[TestTest] = ..."
     ~expect:[outcome ~kind:`Object ~returns:[Sources.NamedSource "TestTest"] "os.environ"]
+    ~skip_for_pyrefly:true (* TODO(T225700656): support models for global variables *)
     ();
   assert_model
     ~model_source:"django.http.Request.GET: TaintSource[TestTest] = ..."
@@ -625,6 +638,7 @@ let test_source_models context =
           ~parameter_sinks:[{ name = "$global"; sinks = [Sinks.NamedSink "Test"] }]
           "os.environ";
       ]
+    ~skip_for_pyrefly:true (* TODO(T225700656): support models for global variables *)
     ();
   assert_model
     ~source:"def f(x: int): ..."
@@ -2449,6 +2463,7 @@ let test_class_models context =
 
 
 let test_closure_models context =
+  (* TODO(T225700656): Handle models on captured variables for Pyrefly. *)
   assert_model
     ~context
     ~model_source:
@@ -2462,6 +2477,7 @@ let test_closure_models context =
           pass
     |}
     ~expect:[outcome ~kind:`Function "test.outer.inner"]
+    ~skip_for_pyrefly:true
     ();
   assert_invalid_model
     ~context
@@ -2491,6 +2507,7 @@ let test_closure_models context =
           pass
     |}
     ~expect:[outcome ~kind:`Function "test.outer.inner"]
+    ~skip_for_pyrefly:true
     ();
   assert_invalid_model
     ~context
@@ -2553,6 +2570,7 @@ let test_closure_models context =
           pass
     |}
     ~expect:[outcome ~kind:`Function "test.outer.inner"]
+    ~skip_for_pyrefly:true
     ();
   ()
 
@@ -3055,12 +3073,12 @@ let test_attach_features context =
       ]
     ();
   assert_model
-    ~model_source:"def test.tito(arg: AttachToTito[Via[special]]): ..."
+    ~model_source:"def test.tito(parameter: AttachToTito[Via[special]]): ..."
     ~expect:
       [
         outcome
           ~kind:`Function
-          ~parameter_titos:[{ name = "arg"; titos = [Sinks.Attach] }]
+          ~parameter_titos:[{ name = "parameter"; titos = [Sinks.Attach] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]

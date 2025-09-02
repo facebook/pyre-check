@@ -13,7 +13,10 @@ open Interprocedural
 let test_from_source context =
   let assert_class_hierarchy ?pyrefly_expected ~source ~expected () =
     let pyre_api =
-      Test.ScratchPyrePysaProject.setup ~context ["test.py", source]
+      Test.ScratchPyrePysaProject.setup
+        ~context
+        ~requires_type_of_expressions:false
+        ["test.py", source]
       |> Test.ScratchPyrePysaProject.read_only_api
     in
     let expected =

@@ -2401,7 +2401,13 @@ module ReadWrite = struct
       callable_undecorated_signatures_shared_memory )
 
 
-  let create_from_directory ~scheduler ~scheduler_policies ~configuration pyrefly_directory =
+  let create_from_directory
+      ~scheduler
+      ~scheduler_policies
+      ~configuration
+      ~store_type_of_expressions
+      pyrefly_directory
+    =
     let qualifier_to_module_map, object_class_id = parse_modules ~pyrefly_directory in
 
     let module_infos_shared_memory = write_module_infos_to_shared_memory ~qualifier_to_module_map in
@@ -2460,12 +2466,15 @@ module ReadWrite = struct
     in
 
     let type_of_expressions_shared_memory =
-      parse_type_of_expressions
-        ~scheduler
-        ~scheduler_policies
-        ~pyrefly_directory
-        ~qualifier_to_module_map
-        ~class_id_to_qualified_name_shared_memory
+      if store_type_of_expressions then
+        parse_type_of_expressions
+          ~scheduler
+          ~scheduler_policies
+          ~pyrefly_directory
+          ~qualifier_to_module_map
+          ~class_id_to_qualified_name_shared_memory
+      else
+        TypeOfExpressionsSharedMemory.create ()
     in
 
     {

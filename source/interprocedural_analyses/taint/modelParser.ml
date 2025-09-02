@@ -3163,10 +3163,17 @@ let check_decorators
 
 
 let resolved_callable_target
+    ~pyre_api
     { PyrePysaApi.ModelQueries.Function.define_name; is_property_setter; is_method; _ }
   =
   if is_property_setter then
-    Target.create_method_from_reference ~kind:Target.Pyre1PropertySetter define_name
+    let kind =
+      if PyrePysaApi.ReadOnly.is_pyrefly pyre_api then
+        Target.PyreflyPropertySetter
+      else
+        Target.Pyre1PropertySetter
+    in
+    Target.create_method_from_reference ~kind define_name
   else if is_method then
     Target.create_method_from_reference define_name
   else
@@ -3747,7 +3754,7 @@ let create_model_from_signature
     ~origin:DefineDecoratorCapturedVariables
     ~top_level_decorators:taint_decorators
   >>= fun captured_variables_annotations ->
-  let callable = resolved_callable_target resolved_callable in
+  let callable = resolved_callable_target ~pyre_api resolved_callable in
   let default_model = if is_obscure callable then Model.obscure_model else Model.empty_model in
   let all_annotations =
     return_annotations

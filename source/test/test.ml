@@ -479,6 +479,32 @@ let bracket_tmpfile ?suffix context =
   |> fun (filename, channel) -> CamlUnix.realpath filename, channel
 
 
+let django_stubs () =
+  [
+    ( "django/http/__init__.pyi",
+      {|
+        import typing
+        from django.http.request import HttpRequest as HttpRequest
+
+        class HttpResponse: ...
+        class Request:
+          GET: typing.Dict[str, typing.Any] = ...
+          POST: typing.Dict[str, typing.Any] = ...
+        |}
+    );
+    ( "django/http/request.pyi",
+      {|
+        import typing
+
+        class HttpRequest:
+          GET: typing.Dict[str, typing.Any] = ...
+          POST: typing.Dict[str, typing.Any] = ...
+        |}
+    );
+    "django/__init__.pyi", "import django.http";
+  ]
+
+
 let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions = true) () =
   let builtins =
     let helper_builtin_stubs =
@@ -1687,24 +1713,6 @@ let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions =
         |}
     );
     "builtins.pyi", builtins;
-    ( "django/http/__init__.pyi",
-      {|
-        from django.http.request import HttpRequest as HttpRequest
-
-        class HttpResponse: ...
-        class Request:
-          GET: typing.Dict[str, typing.Any] = ...
-          POST: typing.Dict[str, typing.Any] = ...
-        |}
-    );
-    ( "django/http/request.pyi",
-      {|
-        class HttpRequest:
-          GET: typing.Dict[str, typing.Any] = ...
-          POST: typing.Dict[str, typing.Any] = ...
-        |}
-    );
-    "django/__init__.pyi", "import django.http";
     ( "dataclasses.pyi",
       {|
         from typing import TypeVar, Generic, Type, Mapping, Any
@@ -3164,6 +3172,7 @@ let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions =
   @ sqlalchemy_stubs
   @ torch_stubs
   @ readonly_stubs
+  @ django_stubs ()
   @ if include_pyre_extensions then pyre_extensions_stubs else []
 
 
@@ -3523,7 +3532,7 @@ module ScratchPyreflyProject = struct
 
   let find_pyrefly_binary () = Stdlib.Sys.getenv_opt "PYREFLY_BINARY"
 
-  let setup ~context ~pyrefly_binary ?(external_sources = []) sources =
+  let setup ~context ~pyrefly_binary ~requires_type_of_expressions ?(external_sources = []) sources =
     let local_root = bracket_tmpdir context |> PyrePath.create_absolute in
     let external_root = bracket_tmpdir context |> PyrePath.create_absolute in
     let add_source ~root (relative, content) =
@@ -3531,6 +3540,7 @@ module ScratchPyreflyProject = struct
       let file = File.create ~content (PyrePath.create_relative ~root ~relative) in
       File.write file
     in
+    let external_sources = django_stubs () @ external_sources in
     let () = List.iter sources ~f:(add_source ~root:local_root) in
     let () = List.iter external_sources ~f:(add_source ~root:external_root) in
     let () =
@@ -3583,6 +3593,7 @@ module ScratchPyreflyProject = struct
         Interprocedural.PyreflyApi.ReadWrite.create_from_directory
           ~scheduler:(Scheduler.create_sequential ())
           ~scheduler_policies:Configuration.SchedulerPolicies.empty
+          ~store_type_of_expressions:requires_type_of_expressions
           ~configuration
           result_directory
       with
@@ -3623,11 +3634,23 @@ module ScratchPyrePysaProject = struct
       | None -> None)
 
 
-  let setup ~context ?(external_sources = []) sources =
+  let setup
+      ~context
+      ~requires_type_of_expressions
+      ?(force_pyre1 = false)
+      ?(external_sources = [])
+      sources
+    =
     match Lazy.force pyrefly_binary with
-    | Some pyrefly_binary ->
-        Pyrefly (ScratchPyreflyProject.setup ~context ~pyrefly_binary ~external_sources sources)
-    | None -> Pyre1 (ScratchProject.setup ~context ~external_sources sources)
+    | Some pyrefly_binary when not force_pyre1 ->
+        Pyrefly
+          (ScratchPyreflyProject.setup
+             ~context
+             ~pyrefly_binary
+             ~requires_type_of_expressions
+             ~external_sources
+             sources)
+    | _ -> Pyre1 (ScratchProject.setup ~context ~external_sources sources)
 
 
   let read_only_api = function

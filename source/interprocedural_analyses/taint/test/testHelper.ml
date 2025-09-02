@@ -104,12 +104,18 @@ let outcome
   }
 
 
-let create_callable kind define_name =
+let create_callable ~pyre_api kind define_name =
   let name = Reference.create define_name in
   match kind with
   | `Method -> Target.create_method_from_reference name
   | `Function -> Target.create_function name
-  | `PropertySetter -> Target.create_method_from_reference ~kind:Target.Pyre1PropertySetter name
+  | `PropertySetter ->
+      if PyrePysaApi.ReadOnly.is_pyrefly pyre_api then
+        Target.create_method_from_reference
+          ~kind:Target.PyreflyPropertySetter
+          (Reference.create (Format.sprintf "%s@setter" define_name))
+      else
+        Target.create_method_from_reference ~kind:Target.Pyre1PropertySetter name
   | `Override -> Target.create_override_from_reference name
   | `Object -> Target.create_object name
 
@@ -137,7 +143,7 @@ let check_expectation
       analysis_modes = expected_analysis_modes;
     }
   =
-  let callable = create_callable kind define_name in
+  let callable = create_callable ~pyre_api kind define_name in
   let extract_sinks_by_parameter_name (root, sink_tree) sink_map =
     match AccessPath.Root.parameter_name root with
     | Some name ->

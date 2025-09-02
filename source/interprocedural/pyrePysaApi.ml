@@ -40,6 +40,7 @@ module ReadWrite = struct
              ~scheduler
              ~scheduler_policies
              ~configuration
+             ~store_type_of_expressions:true
              pyrefly_results)
     | None ->
         Pyre1
@@ -112,8 +113,9 @@ module ReadOnly = struct
     | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.absolute_source_path_of_qualifier pyrefly_api
 
 
-  let relative_path_of_qualifier = function
-    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.relative_path_of_qualifier pyre_api
+  let relative_path_of_qualifier api qualifier =
+    match api with
+    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.relative_path_of_qualifier pyre_api qualifier
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.relative_path_of_qualifier"
 
 

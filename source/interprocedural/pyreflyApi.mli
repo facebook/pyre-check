@@ -61,6 +61,7 @@ module ReadWrite : sig
     :  scheduler:Scheduler.t ->
     scheduler_policies:Configuration.SchedulerPolicies.t ->
     configuration:Configuration.Analysis.t ->
+    store_type_of_expressions:bool ->
     PyrePath.t ->
     t
 
