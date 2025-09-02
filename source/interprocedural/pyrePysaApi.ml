@@ -282,7 +282,7 @@ module ReadOnly = struct
 
   let all_classes = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.all_classes pyre_api
-    | Pyrefly _ -> failwith "unimplemented: ReadOnly.all_classes"
+    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.all_classes pyrefly_api
 
 
   let all_unannotated_globals = function

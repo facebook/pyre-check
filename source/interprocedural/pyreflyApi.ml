@@ -868,17 +868,27 @@ module ModuleInfosSharedMemory = struct
       end)
 end
 
-(* List of module qualifiers with source code, stored in shared memory. *)
-module QualifiersWithSourceSharedMemory =
-  Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
-    (Memory.SingletonKey)
-    (struct
-      type t = ModuleQualifier.t list
+(* List of module qualifiers, stored in shared memory. *)
+module QualifiersSharedMemory = struct
+  module Value = struct
+    type t = {
+      module_qualifier: ModuleQualifier.t;
+      has_source: bool;
+      has_info: bool;
+    }
+  end
 
-      let prefix = Hack_parallel.Std.Prefix.make ()
+  include
+    Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+      (Memory.SingletonKey)
+      (struct
+        type t = Value.t list
 
-      let description = "pyrefly all modules"
-    end)
+        let prefix = Hack_parallel.Std.Prefix.make ()
+
+        let description = "pyrefly all modules"
+      end)
+end
 
 (* Type of expression at a given module qualifier and location, stored in shared memory. *)
 module TypeOfExpressionsSharedMemory = struct
@@ -1224,7 +1234,7 @@ module ReadWrite = struct
   type t = {
     qualifier_to_module_map: Module.t ModuleQualifier.Map.t;
     module_infos_shared_memory: ModuleInfosSharedMemory.t;
-    qualifiers_with_source_shared_memory: QualifiersWithSourceSharedMemory.t;
+    qualifiers_shared_memory: QualifiersSharedMemory.t;
     type_of_expressions_shared_memory: TypeOfExpressionsSharedMemory.t;
     callable_metadata_shared_memory: CallableMetadataSharedMemory.t;
     class_metadata_shared_memory: ClassMetadataSharedMemory.t;
@@ -2356,15 +2366,19 @@ module ReadWrite = struct
 
     let module_infos_shared_memory = write_module_infos_to_shared_memory ~qualifier_to_module_map in
 
-    let qualifiers_with_source_shared_memory =
-      let handle = QualifiersWithSourceSharedMemory.create () in
+    let qualifiers_shared_memory =
+      let handle = QualifiersSharedMemory.create () in
       let qualifiers =
         qualifier_to_module_map
         |> Map.to_alist
-        |> List.filter ~f:(fun (_, { Module.source_path; _ }) -> Option.is_some source_path)
-        |> List.map ~f:fst
+        |> List.map ~f:(fun (module_qualifier, { Module.source_path; pyrefly_info_path; _ }) ->
+               {
+                 QualifiersSharedMemory.Value.module_qualifier;
+                 has_source = Option.is_some source_path;
+                 has_info = Option.is_some pyrefly_info_path;
+               })
       in
-      let () = QualifiersWithSourceSharedMemory.add handle Memory.SingletonKey.key qualifiers in
+      let () = QualifiersSharedMemory.add handle Memory.SingletonKey.key qualifiers in
       handle
     in
 
@@ -2417,7 +2431,7 @@ module ReadWrite = struct
     {
       qualifier_to_module_map;
       module_infos_shared_memory;
-      qualifiers_with_source_shared_memory;
+      qualifiers_shared_memory;
       type_of_expressions_shared_memory;
       callable_metadata_shared_memory;
       class_metadata_shared_memory;
@@ -2464,7 +2478,7 @@ end
 module ReadOnly = struct
   type t = {
     module_infos_shared_memory: ModuleInfosSharedMemory.t;
-    qualifiers_with_source_shared_memory: QualifiersWithSourceSharedMemory.t;
+    qualifiers_shared_memory: QualifiersSharedMemory.t;
     callable_metadata_shared_memory: CallableMetadataSharedMemory.t;
     class_metadata_shared_memory: ClassMetadataSharedMemory.t;
     class_fields_shared_memory: ClassFieldsSharedMemory.t;
@@ -2480,7 +2494,7 @@ module ReadOnly = struct
   let of_read_write_api
       {
         ReadWrite.module_infos_shared_memory;
-        qualifiers_with_source_shared_memory;
+        qualifiers_shared_memory;
         callable_metadata_shared_memory;
         class_metadata_shared_memory;
         class_fields_shared_memory;
@@ -2496,7 +2510,7 @@ module ReadOnly = struct
     =
     {
       module_infos_shared_memory;
-      qualifiers_with_source_shared_memory;
+      qualifiers_shared_memory;
       callable_metadata_shared_memory;
       class_metadata_shared_memory;
       class_fields_shared_memory;
@@ -2525,12 +2539,11 @@ module ReadOnly = struct
 
 
   (* Return all qualifiers with source code *)
-  let explicit_qualifiers { qualifiers_with_source_shared_memory; _ } =
-    QualifiersWithSourceSharedMemory.get
-      qualifiers_with_source_shared_memory
-      Memory.SingletonKey.key
+  let explicit_qualifiers { qualifiers_shared_memory; _ } =
+    QualifiersSharedMemory.get qualifiers_shared_memory Memory.SingletonKey.key
     |> assert_shared_memory_key_exists "missing qualifiers with source in shared memory"
-    |> List.map ~f:ModuleQualifier.to_reference
+    |> List.filter_map ~f:(fun { QualifiersSharedMemory.Value.module_qualifier; has_source; _ } ->
+           Option.some_if has_source (ModuleQualifier.to_reference module_qualifier))
 
 
   let is_test_qualifier { module_infos_shared_memory; _ } qualifier =
@@ -2562,6 +2575,36 @@ module ReadOnly = struct
         (ModuleQualifier.from_reference_unchecked qualifier)
       |> assert_shared_memory_key_exists "missing module classes for qualifier"
       |> List.map ~f:FullyQualifiedName.to_reference
+
+
+  let all_classes { qualifiers_shared_memory; module_classes_shared_memory; _ } ~scheduler =
+    let qualifiers =
+      QualifiersSharedMemory.get qualifiers_shared_memory Memory.SingletonKey.key
+      |> assert_shared_memory_key_exists "missing qualifiers with source in shared memory"
+      |> List.filter_map ~f:(fun { QualifiersSharedMemory.Value.module_qualifier; has_info; _ } ->
+             Option.some_if has_info module_qualifier)
+    in
+    let get_class_names_for_qualifier module_qualifier =
+      ModuleClassesSharedMemory.get module_classes_shared_memory module_qualifier
+      |> assert_shared_memory_key_exists "missing module classes for qualifier"
+      |> List.map ~f:FullyQualifiedName.to_reference
+      |> List.map ~f:Reference.show
+    in
+    let scheduler_policy =
+      Scheduler.Policy.fixed_chunk_count
+        ~minimum_chunks_per_worker:1
+        ~minimum_chunk_size:1
+        ~preferred_chunks_per_worker:1
+        ()
+    in
+    Scheduler.map_reduce
+      scheduler
+      ~policy:scheduler_policy
+      ~initial:[]
+      ~map:(List.concat_map ~f:get_class_names_for_qualifier)
+      ~reduce:List.append
+      ~inputs:qualifiers
+      ()
 
 
   let get_define_names_for_qualifier
