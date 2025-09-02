@@ -36,6 +36,8 @@ val load_shared_memory : path:string -> configuration:Configuration.Analysis.t -
 
 val reset_shared_memory : unit -> unit
 
+val add_reset_shared_memory_callback : (unit -> unit) -> unit
+
 module SingletonKey : sig
   include KeyType with type t = int
 

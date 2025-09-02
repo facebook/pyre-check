@@ -3350,9 +3350,7 @@ module ScratchProject = struct
         in
         AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment;
         let set_up_shared_memory _ = () in
-        let tear_down_shared_memory () _ =
-          AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment
-        in
+        let tear_down_shared_memory () _ = Memory.reset_shared_memory () in
         (* Clean shared memory up after the test *)
         OUnit2.bracket set_up_shared_memory tear_down_shared_memory context)
     in
@@ -3604,9 +3602,7 @@ module ScratchPyreflyProject = struct
     let () =
       (* Clean shared memory up after the test *)
       let set_up_shared_memory _ = () in
-      let tear_down_shared_memory () _ =
-        Interprocedural.PyreflyApi.ReadWrite.cleanup api ~scheduler:(Scheduler.create_sequential ())
-      in
+      let tear_down_shared_memory () _ = Memory.reset_shared_memory () in
       OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
     in
     { api; configuration }

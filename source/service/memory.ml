@@ -186,9 +186,16 @@ let load_shared_memory ~path ~configuration =
 
 external pyre_reset : unit -> unit = "pyre_reset"
 
+let reset_shared_memory_callbacks = ref []
+
 let reset_shared_memory () =
   SharedMemory.invalidate_caches ();
-  pyre_reset ()
+  pyre_reset ();
+  List.iter !reset_shared_memory_callbacks ~f:(fun callback -> callback ())
+
+
+let add_reset_shared_memory_callback callback =
+  reset_shared_memory_callbacks := callback :: !reset_shared_memory_callbacks
 
 
 module IntKey = struct

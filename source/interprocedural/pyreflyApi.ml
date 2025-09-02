@@ -2497,6 +2497,9 @@ module ReadWrite = struct
     }
 
 
+  (* Remove information about the project from the shared memory. This should reduce considerably
+     the shared memory **heap** size. However, note that the shared memory does NOT allow removing
+     entries from the **hash table**, so all entries are kept. *)
   let cleanup
       {
         qualifier_to_module_map;

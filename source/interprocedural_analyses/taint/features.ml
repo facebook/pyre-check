@@ -682,6 +682,8 @@ end
 let memoize closure () = Lazy.force closure
 
 let memoize_breadcrumb_interned breadcrumb =
+  (* When shared memory is reset, we need to write the breadcrumb in shared memory again. *)
+  Memory.add_reset_shared_memory_callback (fun () -> ignore (BreadcrumbInterned.intern breadcrumb));
   memoize (lazy (breadcrumb |> BreadcrumbInterned.intern))
 
 
@@ -722,6 +724,9 @@ let string_concat_right_hand_side =
 
 
 let memoize_breadcrumb_set breadcrumbs =
+  (* When shared memory is reset, we need to write the breadcrumbs in shared memory again. *)
+  Memory.add_reset_shared_memory_callback (fun () ->
+      List.iter breadcrumbs ~f:(fun breadcrumb -> ignore (BreadcrumbInterned.intern breadcrumb)));
   memoize
     (lazy (breadcrumbs |> List.map ~f:BreadcrumbInterned.intern |> BreadcrumbMayAlwaysSet.of_list))
 

@@ -910,14 +910,7 @@ end
 
 let invalidate_callback_list = ref []
 
-let invalidate_caches () =
-  List.iter
-    !invalidate_callback_list
-    ~f:
-      begin
-        fun callback -> callback ()
-      end
-
+let invalidate_caches () = List.iter !invalidate_callback_list ~f:(fun callback -> callback ())
 
 module LocalCache (KeyType : KeyType) (Value : ValueType) = struct
   type key = KeyType.t
@@ -1013,7 +1006,7 @@ module WithCache = struct
     let get_no_cache = Direct.get
 
     let write_around x y =
-      (* Note that we do not need to do any cache invalidation here because * Direct.add is a no-op
+      (* Note that we do not need to do any cache invalidation here because `Direct.add` is a no-op
          if the key already exists. *)
       Direct.add x y
 
@@ -1090,13 +1083,7 @@ module WithCache = struct
       KeySet.iter Cache.remove xs
 
 
-    let () =
-      invalidate_callback_list :=
-        begin
-          fun () -> Cache.clear ()
-        end
-        :: !invalidate_callback_list
-
+    let () = invalidate_callback_list := Cache.clear :: !invalidate_callback_list
 
     let remove_old_batch = Direct.remove_old_batch
   end
