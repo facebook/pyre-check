@@ -3516,7 +3516,10 @@ module ScratchProject = struct
 end
 
 module ScratchPyreflyProject = struct
-  type t = Interprocedural.PyreflyApi.ReadWrite.t
+  type t = {
+    api: Interprocedural.PyreflyApi.ReadWrite.t;
+    configuration: Configuration.Analysis.t;
+  }
 
   let find_pyrefly_binary () = Stdlib.Sys.getenv_opt "PYREFLY_BINARY"
 
@@ -3575,16 +3578,35 @@ module ScratchPyreflyProject = struct
         ~python_version
         ()
     in
-    Interprocedural.PyreflyApi.ReadWrite.create_from_directory
-      ~scheduler:(Scheduler.create_sequential ())
-      ~scheduler_policies:Configuration.SchedulerPolicies.empty
-      ~configuration
-      result_directory
+    let api =
+      try
+        Interprocedural.PyreflyApi.ReadWrite.create_from_directory
+          ~scheduler:(Scheduler.create_sequential ())
+          ~scheduler_policies:Configuration.SchedulerPolicies.empty
+          ~configuration
+          result_directory
+      with
+      | Interprocedural.PyreflyApi.PyreflyFileFormatError { path; error } ->
+          failwith
+            (Format.asprintf "%a: %a" PyrePath.pp path Interprocedural.PyreflyApi.Error.pp error)
+    in
+    let () =
+      (* Clean shared memory up after the test *)
+      let set_up_shared_memory _ = () in
+      let tear_down_shared_memory () _ =
+        Interprocedural.PyreflyApi.ReadWrite.cleanup api ~scheduler:(Scheduler.create_sequential ())
+      in
+      OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
+    in
+    { api; configuration }
 
 
-  let pyre_pysa_read_only_api api =
+  let pyre_pysa_read_only_api { api; _ } =
     Interprocedural.PyrePysaApi.ReadOnly.from_pyrefly_api
       (Interprocedural.PyreflyApi.ReadOnly.of_read_write_api api)
+
+
+  let configuration_of { configuration; _ } = configuration
 end
 
 module ScratchPyrePysaProject = struct
@@ -3612,6 +3634,11 @@ module ScratchPyrePysaProject = struct
     | Pyre1 project ->
         Interprocedural.PyrePysaApi.ReadOnly.Pyre1 (ScratchProject.pyre_pysa_read_only_api project)
     | Pyrefly project -> ScratchPyreflyProject.pyre_pysa_read_only_api project
+
+
+  let configuration_of = function
+    | Pyre1 project -> ScratchProject.configuration_of project
+    | Pyrefly project -> ScratchPyreflyProject.configuration_of project
 end
 
 type test_other_sources_t = {

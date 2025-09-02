@@ -63,6 +63,8 @@ module ReadWrite : sig
     configuration:Configuration.Analysis.t ->
     PyrePath.t ->
     t
+
+  val cleanup : t -> scheduler:Scheduler.t -> unit
 end
 
 (* Read-only API that can be sent to workers. Cheap to copy. *)

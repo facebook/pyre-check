@@ -858,7 +858,9 @@ end
 module ModuleInfosSharedMemory = struct
   module Module = struct
     type t = {
+      module_id: ModuleId.t;
       source_path: ArtifactPath.t option (* The path of source code as seen by the analyzer. *);
+      has_info: bool;
       is_test: bool; (* Is this a test file? *)
       is_stub: bool; (* Is this a stub file (e.g, `a.pyi`)? *)
     }
@@ -1483,11 +1485,21 @@ module ReadWrite = struct
     let handle = ModuleInfosSharedMemory.create () in
     let () =
       Map.to_alist qualifier_to_module_map
-      |> List.iter ~f:(fun (qualifier, { Module.source_path; is_test; is_stub; _ }) ->
+      |> List.iter
+           ~f:(fun
+                ( qualifier,
+                  { Module.module_id; source_path; pyrefly_info_path; is_test; is_stub; _ } )
+              ->
              ModuleInfosSharedMemory.add
                handle
                qualifier
-               { ModuleInfosSharedMemory.Module.source_path; is_test; is_stub })
+               {
+                 ModuleInfosSharedMemory.Module.module_id;
+                 source_path;
+                 has_info = Option.is_some pyrefly_info_path;
+                 is_test;
+                 is_stub;
+               })
     in
     Log.info "Wrote modules to shared memory: %.3fs" (Timer.stop_in_sec timer);
     handle
@@ -2476,30 +2488,100 @@ module ReadWrite = struct
     }
 
 
-  (* TODO(T225700656): Remove this, this is to silence the unused value warning *)
-  let unused
+  let cleanup
       {
         qualifier_to_module_map;
-        type_of_expressions_shared_memory;
+        module_infos_shared_memory;
+        qualifiers_shared_memory;
+        type_of_expressions_shared_memory = _;
+        callable_metadata_shared_memory;
+        class_metadata_shared_memory;
+        class_fields_shared_memory;
+        module_callables_shared_memory;
+        module_classes_shared_memory;
         class_id_to_qualified_name_shared_memory;
         callable_id_to_qualified_name_shared_memory;
-        _;
+        class_immediate_parents_shared_memory;
+        callable_ast_shared_memory;
+        callable_define_signature_shared_memory;
+        callable_undecorated_signatures_shared_memory;
+        object_class = _;
       }
+      ~scheduler
     =
-    let _ =
-      ( Module.pp,
-        CallableMetadata.pp,
-        ClassMetadataSharedMemory.Metadata.pp,
-        DefinitionCollector.Tree.QualifiedNode.pp,
-        qualifier_to_module_map,
-        type_of_expressions_shared_memory,
-        class_id_to_qualified_name_shared_memory,
-        callable_id_to_qualified_name_shared_memory )
+    let scheduler_policy =
+      Scheduler.Policy.fixed_chunk_count
+        ~minimum_chunks_per_worker:1
+        ~minimum_chunk_size:1
+        ~preferred_chunks_per_worker:1
+        ()
     in
+    let cleanup_callable ~module_id callable_name =
+      let { CallableMetadata.name_location; _ } =
+        CallableMetadataSharedMemory.get callable_metadata_shared_memory callable_name
+        |> assert_shared_memory_key_exists "missing callable metadata"
+      in
+      CallableMetadataSharedMemory.remove callable_metadata_shared_memory callable_name;
+      CallableAstSharedMemory.remove callable_ast_shared_memory callable_name;
+      CallableDefineSignatureSharedMemory.remove
+        callable_define_signature_shared_memory
+        callable_name;
+      CallableUndecoratedSignaturesSharedMemory.remove
+        callable_undecorated_signatures_shared_memory
+        callable_name;
+      CallableIdToQualifiedNameSharedMemory.remove
+        callable_id_to_qualified_name_shared_memory
+        { GlobalCallableId.module_id; name_location };
+      ()
+    in
+    let cleanup_class ~module_id class_name =
+      let { ClassMetadataSharedMemory.Metadata.local_class_id; _ } =
+        ClassMetadataSharedMemory.get class_metadata_shared_memory class_name
+        |> assert_shared_memory_key_exists "missing class metadata"
+      in
+      ClassMetadataSharedMemory.remove class_metadata_shared_memory class_name;
+      ClassFieldsSharedMemory.remove class_fields_shared_memory class_name;
+      ClassImmediateParentsSharedMemory.remove class_immediate_parents_shared_memory class_name;
+      ClassIdToQualifiedNameSharedMemory.remove
+        class_id_to_qualified_name_shared_memory
+        { GlobalClassId.module_id; local_class_id };
+      ()
+    in
+    let cleanup_module module_qualifier =
+      let { ModuleInfosSharedMemory.Module.module_id; has_info; _ } =
+        ModuleInfosSharedMemory.get module_infos_shared_memory module_qualifier
+        |> assert_shared_memory_key_exists "missing module info"
+      in
+      ModuleInfosSharedMemory.remove module_infos_shared_memory module_qualifier;
+      let () =
+        if has_info then
+          ModuleCallablesSharedMemory.get module_callables_shared_memory module_qualifier
+          |> assert_shared_memory_key_exists "missing module callables"
+          |> List.iter ~f:(cleanup_callable ~module_id)
+      in
+      let () =
+        if has_info then
+          ModuleClassesSharedMemory.get module_classes_shared_memory module_qualifier
+          |> assert_shared_memory_key_exists "missing module classes"
+          |> List.iter ~f:(cleanup_class ~module_id)
+      in
+      ModuleCallablesSharedMemory.remove module_callables_shared_memory module_qualifier;
+      ModuleClassesSharedMemory.remove module_classes_shared_memory module_qualifier;
+      ()
+    in
+    Scheduler.map_reduce
+      scheduler
+      ~policy:scheduler_policy
+      ~initial:()
+      ~map:(List.iter ~f:cleanup_module)
+      ~reduce:(fun () () -> ())
+      ~inputs:(Map.keys qualifier_to_module_map)
+      ();
+    QualifiersSharedMemory.remove qualifiers_shared_memory Memory.SingletonKey.key;
+    (* TODO(T225700656): Clean up TypeOfExpressionsSharedMemory (this requires storing all locations
+       with a type) *)
+    Memory.SharedMemory.collect `aggressive;
     ()
-
-
-  let _ = unused
 end
 
 (* Read-only API that can be sent to workers. Cheap to copy. *)
