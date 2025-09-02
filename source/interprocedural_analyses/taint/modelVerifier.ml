@@ -85,7 +85,13 @@ let verify_imported_model ~path ~location ~callable_name ~imported_name =
   | _ -> Ok ()
 
 
-let model_compatible_errors ~callable_overload ~add_overload_in_error ~normalized_model_parameters =
+let model_compatible_errors
+    ~callable_signature:
+      ({ PyrePysaApi.ModelQueries.FunctionSignature.parameters = callable_parameters; _ } as
+      callable_signature)
+    ~add_overload_in_error
+    ~normalized_model_parameters
+  =
   let open ModelVerificationError in
   (* Once a requirement has been satisfied, it is removed from requirement object. At the end, we
      check whether there remains unsatisfied requirements. *)
@@ -145,7 +151,7 @@ let model_compatible_errors ~callable_overload ~add_overload_in_error ~normalize
         else
           IncompatibleModelError.UnexpectedDoubleStarredParameter :: errors, requirements
   in
-  match callable_overload with
+  match callable_parameters with
   | PyrePysaApi.ModelQueries.FunctionParameters.List parameters ->
       let parameter_requirements = create_parameters_requirements parameters in
       let errors, _ =
@@ -158,7 +164,7 @@ let model_compatible_errors ~callable_overload ~add_overload_in_error ~normalize
         ~f:(fun reason ->
           {
             IncompatibleModelError.reason;
-            overload = Option.some_if add_overload_in_error callable_overload;
+            overload = Option.some_if add_overload_in_error callable_signature;
           })
         errors
   | _ -> []
@@ -170,21 +176,21 @@ let verify_signature
     ~normalized_model_parameters
     ~name:callable_name
     ~imported_name
-    callable_signature
+    callable_signatures
   =
   let open Result in
   verify_model_syntax ~path ~location ~callable_name ~normalized_model_parameters
   >>= fun () ->
   verify_imported_model ~path ~location ~callable_name ~imported_name
   >>= fun () ->
-  match callable_signature with
-  | Some ({ PyrePysaApi.ModelQueries.FunctionSignature.overloads; _ } as callable_signature) ->
-      let add_overload_in_error = List.length overloads > 1 in
+  match callable_signatures with
+  | Some callable_signatures ->
+      let add_overload_in_error = List.length callable_signatures > 1 in
       let errors =
         let errors_in_overloads =
-          List.map overloads ~f:(fun callable_overload ->
+          List.map callable_signatures ~f:(fun callable_signature ->
               model_compatible_errors
-                ~callable_overload
+                ~callable_signature
                 ~add_overload_in_error
                 ~normalized_model_parameters)
         in
@@ -199,7 +205,7 @@ let verify_signature
              ~path
              ~location
              (IncompatibleModelError
-                { name = Reference.show callable_name; callable_signature; errors }))
+                { name = Reference.show callable_name; callable_signatures; errors }))
       else
         Ok ()
   | _ -> Ok ()

@@ -523,6 +523,7 @@ let test_fully_qualified_names _ =
         ModuleInfoFile.FunctionDefinition.name;
         parent;
         is_overload;
+        undecorated_signatures = [];
         is_staticmethod = false;
         is_classmethod = false;
         is_property_getter;

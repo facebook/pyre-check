@@ -77,26 +77,25 @@ let test_resolve_qualified_name_to_global context =
         has_default = false;
       }
   in
+  let create_signature ?(return_annotation = Type.Any) parameters =
+    {
+      PyrePysaEnvironment.ModelQueries.FunctionSignature.parameters =
+        PyrePysaEnvironment.ModelQueries.FunctionParameters.List parameters;
+      return_annotation = PyrePysaEnvironment.PysaType.from_pyre1_type return_annotation;
+    }
+  in
   let create_callable
       ~define_name
       ?imported_name
       ?(is_method = false)
-      ?(overloads = [])
-      ?(parameters = [])
-      ?(return_annotation = Type.Any)
+      ?(signatures = [create_signature []])
       ()
     =
     let define_name = Reference.create define_name in
     {
       Function.define_name;
       imported_name = imported_name >>| Reference.create;
-      undecorated_signature =
-        Some
-          {
-            PyrePysaEnvironment.ModelQueries.FunctionSignature.overloads =
-              PyrePysaEnvironment.ModelQueries.FunctionParameters.List parameters :: overloads;
-            return_annotation = PyrePysaEnvironment.PysaType.from_pyre1_type return_annotation;
-          };
+      undecorated_signatures = Some signatures;
       is_property_getter = false;
       is_property_setter = false;
       is_method;
@@ -126,7 +125,10 @@ let test_resolve_qualified_name_to_global context =
             (create_callable
                ~define_name:"test.Foo.bar"
                ~is_method:true
-               ~parameters:[create_parameter ~annotation:(Type.Primitive "test.Foo") "self"]
+               ~signatures:
+                 [
+                   create_signature [create_parameter ~annotation:(Type.Primitive "test.Foo") "self"];
+                 ]
                ())));
   assert_resolve
     ~context
@@ -142,7 +144,10 @@ let test_resolve_qualified_name_to_global context =
     ~expect:
       (Some
          (Global.Function
-            (create_callable ~define_name:"test.foo" ~return_annotation:Type.NoneType ())));
+            (create_callable
+               ~define_name:"test.foo"
+               ~signatures:[create_signature ~return_annotation:Type.NoneType []]
+               ())));
   assert_resolve
     ~context
     [
@@ -161,7 +166,7 @@ let test_resolve_qualified_name_to_global context =
             (create_callable
                ~define_name:"test.Foo.bar"
                ~is_method:true
-               ~return_annotation:Type.NoneType
+               ~signatures:[create_signature ~return_annotation:Type.NoneType []]
                ())));
   assert_resolve
     ~context
@@ -282,10 +287,14 @@ let test_resolve_qualified_name_to_global context =
       (Some
          (Global.Function
             (create_callable
-               ~return_annotation:Type.integer
                ~define_name:"test.foo"
                ~imported_name:"test.foo"
-               ~parameters:[create_parameter ~annotation:Type.integer "x"]
+               ~signatures:
+                 [
+                   create_signature
+                     ~return_annotation:Type.integer
+                     [create_parameter ~annotation:Type.integer "x"];
+                 ]
                ())));
   assert_resolve
     ~context
@@ -315,11 +324,14 @@ let test_resolve_qualified_name_to_global context =
             (create_callable
                ~define_name:"test.Foo.bar"
                ~is_method:true
-               ~return_annotation:Type.integer
-               ~parameters:
+               ~signatures:
                  [
-                   create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
-                   create_parameter ~annotation:Type.integer "x";
+                   create_signature
+                     ~return_annotation:Type.integer
+                     [
+                       create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
+                       create_parameter ~annotation:Type.integer "x";
+                     ];
                  ]
                ())));
 
@@ -342,36 +354,31 @@ let test_resolve_qualified_name_to_global context =
     ~expect:
       (Some
          (Global.Function
-            {
-              Function.define_name = Reference.create "test.Foo.bar";
-              imported_name = None;
-              undecorated_signature =
-                Some
-                  {
-                    PyrePysaEnvironment.ModelQueries.FunctionSignature.overloads =
-                      [
-                        PyrePysaEnvironment.ModelQueries.FunctionParameters.List
-                          [
-                            create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
-                            create_parameter ~annotation:Type.integer "x";
-                          ];
-                        PyrePysaEnvironment.ModelQueries.FunctionParameters.List
-                          [
-                            create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
-                            create_parameter ~annotation:Type.integer "x";
-                          ];
-                        PyrePysaEnvironment.ModelQueries.FunctionParameters.List
-                          [
-                            create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
-                            create_parameter ~annotation:Type.string "x";
-                          ];
-                      ];
-                    return_annotation = PyrePysaEnvironment.PysaType.from_pyre1_type Type.string;
-                  };
-              is_property_getter = false;
-              is_property_setter = false;
-              is_method = true;
-            }));
+            (create_callable
+               ~define_name:"test.Foo.bar"
+               ~is_method:true
+               ~signatures:
+                 [
+                   create_signature
+                     ~return_annotation:Type.string
+                     [
+                       create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
+                       create_parameter ~annotation:Type.integer "x";
+                     ];
+                   create_signature
+                     ~return_annotation:Type.string
+                     [
+                       create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
+                       create_parameter ~annotation:Type.integer "x";
+                     ];
+                   create_signature
+                     ~return_annotation:Type.integer
+                     [
+                       create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
+                       create_parameter ~annotation:Type.string "x";
+                     ];
+                 ]
+               ())));
 
   (* Top. *)
   assert_resolve
@@ -402,9 +409,9 @@ let test_resolve_qualified_name_to_global context =
       (Some
          (Global.Function
             (create_callable
-               ~return_annotation:Type.NoneType
                ~define_name:"test.foo"
                ~imported_name:"test.foo"
+               ~signatures:[create_signature ~return_annotation:Type.NoneType []]
                ())));
   assert_resolve
     ~context
@@ -419,8 +426,12 @@ let test_resolve_qualified_name_to_global context =
             (create_callable
                ~define_name:"test.Foo.bar"
                ~is_method:true
-               ~return_annotation:Type.NoneType
-               ~parameters:[create_parameter ~annotation:(Type.Primitive "test.Foo") "self"]
+               ~signatures:
+                 [
+                   create_signature
+                     ~return_annotation:Type.NoneType
+                     [create_parameter ~annotation:(Type.Primitive "test.Foo") "self"];
+                 ]
                ())));
   assert_resolve
     ~context
@@ -435,7 +446,10 @@ let test_resolve_qualified_name_to_global context =
     ~expect:
       (Some
          (Global.Function
-            (create_callable ~define_name:"test.foo" ~return_annotation:Type.NoneType ())));
+            (create_callable
+               ~define_name:"test.foo"
+               ~signatures:[create_signature ~return_annotation:Type.NoneType []]
+               ())));
   assert_resolve
     ~context
     ["test.pyi", {|
@@ -460,9 +474,9 @@ let test_resolve_qualified_name_to_global context =
       (Some
          (Global.Function
             (create_callable
-               ~return_annotation:Type.NoneType
                ~define_name:"outer.middle.inner.b.foo"
                ~imported_name:"outer.middle.inner.a.foo"
+               ~signatures:[create_signature ~return_annotation:Type.NoneType []]
                ())));
   assert_resolve
     ~context
@@ -483,8 +497,15 @@ let test_resolve_qualified_name_to_global context =
                ~define_name:"outer.middle.inner.b.Foo.bar"
                ~imported_name:"outer.middle.inner.a.Foo.bar"
                ~is_method:true
-               ~parameters:
-                 [create_parameter ~annotation:(Type.Primitive "outer.middle.inner.a.Foo") "self"]
+               ~signatures:
+                 [
+                   create_signature
+                     [
+                       create_parameter
+                         ~annotation:(Type.Primitive "outer.middle.inner.a.Foo")
+                         "self";
+                     ];
+                 ]
                ())));
   ()
 

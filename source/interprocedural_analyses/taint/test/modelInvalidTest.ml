@@ -328,43 +328,43 @@ let test_invalid_models =
            ~expect:
              "Model signature parameters for `test.sink_with_optional` do not match implementation \
               `def (parameter: unknown, firstOptional: unknown = ..., secondOptional: unknown = \
-              ...): ...`. Reason: unexpected named parameter: `thirdOptional`.";
+              ...) -> None: ...`. Reason: unexpected named parameter: `thirdOptional`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"def test.sink_with_optional(parameter, firstBad, secondBad): ..."
            ~expect:
              "Model signature parameters for `test.sink_with_optional` do not match implementation \
               `def (parameter: unknown, firstOptional: unknown = ..., secondOptional: unknown = \
-              ...): ...`. Reason: unexpected named parameter: `firstBad`.";
+              ...) -> None: ...`. Reason: unexpected named parameter: `firstBad`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"def test.sink_with_optional(parameter, *args): ..."
            ~expect:
              "Model signature parameters for `test.sink_with_optional` do not match implementation \
               `def (parameter: unknown, firstOptional: unknown = ..., secondOptional: unknown = \
-              ...): ...`. Reason: unexpected star parameter.";
+              ...) -> None: ...`. Reason: unexpected star parameter.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"def test.sink_with_optional(parameter, **kwargs): ..."
            ~expect:
              "Model signature parameters for `test.sink_with_optional` do not match implementation \
               `def (parameter: unknown, firstOptional: unknown = ..., secondOptional: unknown = \
-              ...): ...`. Reason: unexpected star star parameter.";
+              ...) -> None: ...`. Reason: unexpected star star parameter.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"def test.sink_with_optional(__parameter): ..."
            ~expect:
              "Model signature parameters for `test.sink_with_optional` do not match implementation \
               `def (parameter: unknown, firstOptional: unknown = ..., secondOptional: unknown = \
-              ...): ...`. Reason: unexpected positional only parameter: `__parameter`.";
+              ...) -> None: ...`. Reason: unexpected positional only parameter: `__parameter`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:
              "def test.function_with_args(normal_arg, __random_name, named_arg, *args): ..."
            ~expect:
              "Model signature parameters for `test.function_with_args` do not match implementation \
-              `def (normal_arg: unknown, __arg1: unknown, *args): ...`. Reason: unexpected named \
-              parameter: `named_arg`.";
+              `def (normal_arg: unknown, __arg1: unknown, *args) -> None: ...`. Reason: unexpected \
+              named parameter: `named_arg`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model
            ~model_source:"def test.function_with_args(normal_arg, __random_name, *args): ...";
@@ -374,8 +374,8 @@ let test_invalid_models =
              "def test.function_with_args(normal_arg, __random_name, *, named_arg, *args): ..."
            ~expect:
              "Model signature parameters for `test.function_with_args` do not match implementation \
-              `def (normal_arg: unknown, __arg1: unknown, *args): ...`. Reason: unexpected named \
-              parameter: `named_arg`.";
+              `def (normal_arg: unknown, __arg1: unknown, *args) -> None: ...`. Reason: unexpected \
+              named parameter: `named_arg`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model
            ~model_source:
@@ -387,7 +387,7 @@ let test_invalid_models =
            ~model_source:"def test.function_with_kwargs(normal_arg, crazy_arg, **kwargs): ..."
            ~expect:
              "Model signature parameters for `test.function_with_kwargs` do not match \
-              implementation `def (normal_arg: unknown, **kwargs: unknown): ...`. Reason: \
+              implementation `def (normal_arg: unknown, **kwargs: unknown) -> None: ...`. Reason: \
               unexpected named parameter: `crazy_arg`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model ~model_source:"def test.function_with_overloads(__key): ...";
@@ -400,36 +400,40 @@ let test_invalid_models =
            ~model_source:"def test.function_with_overloads(unknownNamed): ..."
            ~expect:
              "Model signature parameters for `test.function_with_overloads` do not match \
-              implementation `def (__arg0: str) | (__arg0: str, firstNamed: int) | (__arg0: str, \
-              secondNamed: str): ...`. Reason: unexpected named parameter: `unknownNamed`.";
+              implementation `def (__arg0: str) -> int | str: ... | def (__arg0: str, firstNamed: \
+              int) -> int: ... | def (__arg0: str, secondNamed: str) -> str: ...`. Reason: \
+              unexpected named parameter: `unknownNamed`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"def test.function_with_overloads(firstNamed, secondNamed): ..."
            ~expect:
              "Model signature parameters for `test.function_with_overloads` do not match \
-              implementation `def (__arg0: str) | (__arg0: str, firstNamed: int) | (__arg0: str, \
-              secondNamed: str): ...`. Reasons:\n\
-              unexpected named parameter: `secondNamed` in overload `def (__arg0: str): ...`\n\
-              unexpected named parameter: `firstNamed` in overload `def (__arg0: str): ...`\n\
+              implementation `def (__arg0: str) -> int | str: ... | def (__arg0: str, firstNamed: \
+              int) -> int: ... | def (__arg0: str, secondNamed: str) -> str: ...`. Reasons:\n\
+              unexpected named parameter: `secondNamed` in overload `def (__arg0: str) -> int | \
+              str: ...`\n\
+              unexpected named parameter: `firstNamed` in overload `def (__arg0: str) -> int | \
+              str: ...`\n\
               unexpected named parameter: `secondNamed` in overload `def (__arg0: str, firstNamed: \
-              int): ...`\n\
+              int) -> int: ...`\n\
               unexpected named parameter: `firstNamed` in overload `def (__arg0: str, secondNamed: \
-              str): ...`";
+              str) -> str: ...`";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"def test.function_with_multiple_positions(c): ..."
            ~expect:
              "Model signature parameters for `test.function_with_multiple_positions` do not match \
-              implementation `def (a: int, b: int, c: int) | (a: int, c: int): ...`. Reason: \
-              invalid position 0 for named parameter `c` (valid options are {formal(c, \
-              position=1), formal(c, position=2)}).";
+              implementation `def (a: int, b: int, c: int) -> int | str: ... | def (a: int, c: \
+              int) -> str: ...`. Reason: invalid position 0 for named parameter `c` (valid options \
+              are {formal(c, position=1), formal(c, position=2)}).";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"def test.function_with_positional_and_named(__x): ..."
            ~expect:
              "Model signature parameters for `test.function_with_positional_and_named` do not \
-              match implementation `def (a: str, __arg1: str, __arg2: str, b: str): ...`. Reason: \
-              unexpected positional only parameter: `__x` at position: 0 (0 not in {1, 2}).";
+              match implementation `def (a: str, __arg1: str, __arg2: str, b: str) -> None: ...`. \
+              Reason: unexpected positional only parameter: `__x` at position: 0 (0 not in {1, \
+              2}).";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model
            ~model_source:"def test.function_with_positional_and_named(a, __random_name): ...";
@@ -441,8 +445,9 @@ let test_invalid_models =
            ~model_source:"def test.function_with_positional_and_named(a, __x, b, __y): ..."
            ~expect:
              "Model signature parameters for `test.function_with_positional_and_named` do not \
-              match implementation `def (a: str, __arg1: str, __arg2: str, b: str): ...`. Reason: \
-              unexpected positional only parameter: `__y` at position: 3 (3 not in {1, 2}).";
+              match implementation `def (a: str, __arg1: str, __arg2: str, b: str) -> None: ...`. \
+              Reason: unexpected positional only parameter: `__y` at position: 3 (3 not in {1, \
+              2}).";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model
            ~model_source:"def test.function_with_kwargs(normal_arg, *, crazy_arg, **kwargs): ...";
@@ -453,8 +458,8 @@ let test_invalid_models =
            ~model_source:"def test.anonymous_only(parameter: Any): ..."
            ~expect:
              "Model signature parameters for `test.anonymous_only` do not match implementation \
-              `def (__arg0: unknown, __arg1: unknown, __arg2: unknown): ...`. Reason: unexpected \
-              named parameter: `parameter`.";
+              `def (__arg0: unknown, __arg1: unknown, __arg2: unknown) -> None: ...`. Reason: \
+              unexpected named parameter: `parameter`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model ~model_source:"def test.anonymous_with_optional(__a1, __a2): ...";
       labeled_test_case __FUNCTION__ __LINE__
@@ -769,7 +774,7 @@ let test_invalid_models =
     |}
            ~expect:
              "Model signature parameters for `test.C.foo` do not match implementation `def (self: \
-              C): ...`. Reason: unexpected named parameter: `value`.";
+              C) -> int: ...`. Reason: unexpected named parameter: `value`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model
            ~source:

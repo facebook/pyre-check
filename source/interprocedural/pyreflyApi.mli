@@ -184,6 +184,15 @@ end
 
 (* Exposed for testing purposes *)
 module ModuleInfoFile : sig
+  module JsonType : sig
+    type t = {
+      string: string;
+      scalar_properties: Analysis.PyrePysaEnvironment.ScalarTypeProperties.t;
+      class_names: GlobalClassId.t list;
+    }
+    [@@deriving equal, show]
+  end
+
   module ParentScope : sig
     type t =
       | TopLevel
@@ -192,10 +201,55 @@ module ModuleInfoFile : sig
     [@@deriving equal, show]
   end
 
+  module FunctionParameter : sig
+    type t =
+      | PosOnly of {
+          name: string option;
+          annotation: JsonType.t;
+          required: bool;
+        }
+      | Pos of {
+          name: string;
+          annotation: JsonType.t;
+          required: bool;
+        }
+      | VarArg of {
+          name: string option;
+          annotation: JsonType.t;
+        }
+      | KwOnly of {
+          name: string;
+          annotation: JsonType.t;
+          required: bool;
+        }
+      | Kwargs of {
+          name: string option;
+          annotation: JsonType.t;
+        }
+    [@@deriving equal, show]
+  end
+
+  module FunctionParameters : sig
+    type t =
+      | List of FunctionParameter.t list
+      | Ellipsis
+      | ParamSpec
+    [@@deriving equal, show]
+  end
+
+  module FunctionSignature : sig
+    type t = {
+      parameters: FunctionParameters.t;
+      return_annotation: JsonType.t;
+    }
+    [@@deriving equal, show]
+  end
+
   module FunctionDefinition : sig
     type t = {
       name: string;
       parent: ParentScope.t;
+      undecorated_signatures: FunctionSignature.t list;
       is_overload: bool;
       is_staticmethod: bool;
       is_classmethod: bool;

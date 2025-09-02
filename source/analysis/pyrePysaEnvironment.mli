@@ -312,13 +312,12 @@ module ModelQueries : sig
 
   module FunctionSignature : sig
     type t = {
-      (* Functions with `@overload` have multiple parameter signatures. *)
-      overloads: FunctionParameters.t list;
+      parameters: FunctionParameters.t;
       return_annotation: PysaType.t;
     }
     [@@deriving equal, compare, show]
 
-    val from_callable_type : Type.Callable.t -> t
+    val from_callable_type : Type.Callable.t -> t list
   end
 
   module Function : sig
@@ -327,7 +326,8 @@ module ModelQueries : sig
       (* If the user-provided name is a re-export, this is the original name. *)
       imported_name: Ast.Reference.t option;
       (* Signature of the function, ignoring all decorators. None when unknown. *)
-      undecorated_signature: FunctionSignature.t option;
+      (* Note that functions with `@overload` have multiple signatures. *)
+      undecorated_signatures: FunctionSignature.t list option;
       is_property_getter: bool;
       is_property_setter: bool;
       is_method: bool;

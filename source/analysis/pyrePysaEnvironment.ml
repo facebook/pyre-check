@@ -774,39 +774,36 @@ module ModelQueries = struct
       | Ellipsis
       | ParamSpec
     [@@deriving equal, compare, show]
-
-    let from_overload { PyreType.Callable.parameters; _ } =
-      match parameters with
-      | Defined parameters ->
-          List (List.map ~f:FunctionParameter.from_callable_parameter parameters)
-      | Undefined -> Ellipsis
-      | FromParamSpec _ -> ParamSpec
   end
 
   module FunctionSignature = struct
     type t = {
-      (* Functions with `@overload` have multiple parameter signatures. *)
-      overloads: FunctionParameters.t list;
+      parameters: FunctionParameters.t;
       return_annotation: PysaType.t;
     }
     [@@deriving equal, compare, show]
 
     let toplevel =
-      { overloads = [List []]; return_annotation = PysaType.from_pyre1_type PyreType.NoneType }
+      {
+        parameters = FunctionParameters.List [];
+        return_annotation = PysaType.from_pyre1_type PyreType.NoneType;
+      }
+
+
+    let from_overload { PyreType.Callable.parameters; annotation } =
+      let parameters =
+        match parameters with
+        | Defined parameters ->
+            FunctionParameters.List
+              (List.map ~f:FunctionParameter.from_callable_parameter parameters)
+        | Undefined -> FunctionParameters.Ellipsis
+        | FromParamSpec _ -> FunctionParameters.ParamSpec
+      in
+      { parameters; return_annotation = PysaType.from_pyre1_type annotation }
 
 
     let from_callable_type { PyreType.Callable.implementation; overloads; _ } =
-      {
-        overloads = List.map ~f:FunctionParameters.from_overload (implementation :: overloads);
-        return_annotation = PysaType.from_pyre1_type implementation.annotation;
-      }
-
-
-    let from_implementation_overload overload =
-      {
-        overloads = [FunctionParameters.from_overload overload];
-        return_annotation = PysaType.from_pyre1_type overload.annotation;
-      }
+      List.map ~f:from_overload (implementation :: overloads)
   end
 
   module Function = struct
@@ -815,7 +812,8 @@ module ModelQueries = struct
       (* If the user-provided name is a re-export, this is the original name. *)
       imported_name: Ast.Reference.t option;
       (* Signature of the function, ignoring all decorators. None when unknown. *)
-      undecorated_signature: FunctionSignature.t option;
+      (* Note that functions with `@overload` have multiple signatures. *)
+      undecorated_signatures: FunctionSignature.t list option;
       is_property_getter: bool;
       is_property_setter: bool;
       is_method: bool;
@@ -969,7 +967,7 @@ module ModelQueries = struct
              {
                Function.define_name = name;
                imported_name = None;
-               undecorated_signature = Some FunctionSignature.toplevel;
+               undecorated_signatures = Some [FunctionSignature.toplevel];
                is_property_getter = false;
                is_property_setter = false;
                is_method = false;
@@ -989,7 +987,7 @@ module ModelQueries = struct
              {
                Function.define_name = name;
                imported_name = None;
-               undecorated_signature = Some FunctionSignature.toplevel;
+               undecorated_signatures = Some [FunctionSignature.toplevel];
                is_property_getter = false;
                is_property_setter = false;
                is_method = true;
@@ -1007,7 +1005,7 @@ module ModelQueries = struct
         {
           Function.define_name = name;
           imported_name = None;
-          undecorated_signature = Some (FunctionSignature.from_implementation_overload callable);
+          undecorated_signatures = Some [FunctionSignature.from_overload callable];
           is_property_setter;
           is_property_getter;
           is_method = true;
@@ -1023,7 +1021,7 @@ module ModelQueries = struct
         {
           Function.define_name = name;
           imported_name = None;
-          undecorated_signature = Some (FunctionSignature.from_implementation_overload callable);
+          undecorated_signatures = Some [FunctionSignature.from_overload callable];
           is_property_getter;
           is_property_setter;
           is_method = true;
@@ -1069,7 +1067,7 @@ module ModelQueries = struct
                {
                  Function.define_name = name;
                  imported_name = get_imported_name signature;
-                 undecorated_signature = Some (FunctionSignature.from_callable_type signature);
+                 undecorated_signatures = Some (FunctionSignature.from_callable_type signature);
                  is_property_getter = false;
                  is_property_setter = false;
                  is_method = Option.is_some class_summary;
@@ -1083,8 +1081,7 @@ module ModelQueries = struct
                    {
                      define_name = name;
                      imported_name = None;
-                     undecorated_signature =
-                       Some (FunctionSignature.from_implementation_overload callable);
+                     undecorated_signatures = Some [FunctionSignature.from_overload callable];
                      is_property_getter = false;
                      is_property_setter = false;
                      is_method = Option.is_some class_summary;
@@ -1097,7 +1094,7 @@ module ModelQueries = struct
                    {
                      define_name = name;
                      imported_name = None;
-                     undecorated_signature =
+                     undecorated_signatures =
                        Some
                          (PyreType.Callable.create
                             ~overloads
@@ -1139,7 +1136,7 @@ module ModelQueries = struct
                        {
                          define_name = name;
                          imported_name = get_imported_name t;
-                         undecorated_signature = Some (FunctionSignature.from_callable_type t);
+                         undecorated_signatures = Some (FunctionSignature.from_callable_type t);
                          is_property_getter = false;
                          is_property_setter = false;
                          is_method = Option.is_some class_summary;
@@ -1150,7 +1147,7 @@ module ModelQueries = struct
                        {
                          define_name = name;
                          imported_name = get_imported_name t;
-                         undecorated_signature = Some (FunctionSignature.from_callable_type t);
+                         undecorated_signatures = Some (FunctionSignature.from_callable_type t);
                          is_property_getter = false;
                          is_property_setter = false;
                          is_method = Option.is_some class_summary;

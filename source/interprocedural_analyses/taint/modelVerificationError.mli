@@ -26,7 +26,7 @@ module IncompatibleModelError : sig
 
   type t = {
     reason: reason;
-    overload: Interprocedural.PyrePysaApi.ModelQueries.FunctionParameters.t option;
+    overload: Interprocedural.PyrePysaApi.ModelQueries.FunctionSignature.t option;
   }
   [@@deriving equal, compare]
 
@@ -58,7 +58,7 @@ type kind =
     }
   | IncompatibleModelError of {
       name: string;
-      callable_signature: Interprocedural.PyrePysaApi.ModelQueries.FunctionSignature.t;
+      callable_signatures: Interprocedural.PyrePysaApi.ModelQueries.FunctionSignature.t list;
       errors: IncompatibleModelError.t list;
     }
   | ImportedFunctionModel of {

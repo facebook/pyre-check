@@ -32,7 +32,7 @@ module IncompatibleModelError = struct
 
   type t = {
     reason: reason;
-    overload: PyrePysaApi.ModelQueries.FunctionParameters.t option;
+    overload: PyrePysaApi.ModelQueries.FunctionSignature.t option;
   }
   [@@deriving equal, compare, show]
 
@@ -73,7 +73,7 @@ type kind =
     }
   | IncompatibleModelError of {
       name: string;
-      callable_signature: PyrePysaApi.ModelQueries.FunctionSignature.t;
+      callable_signatures: PyrePysaApi.ModelQueries.FunctionSignature.t list;
       errors: IncompatibleModelError.t list;
     }
   | ImportedFunctionModel of {
@@ -215,55 +215,61 @@ type t = {
 }
 [@@deriving equal, compare, show]
 
-let pp_function_overload formatter = function
-  | PyrePysaApi.ModelQueries.FunctionParameters.List parameters ->
-      let pp_parameter index parameter =
-        let () =
-          if index > 0 then
-            Format.fprintf formatter ", "
+let pp_function_signature
+    formatter
+    { PyrePysaApi.ModelQueries.FunctionSignature.parameters; return_annotation }
+  =
+  let () = Format.fprintf formatter "def " in
+  let () =
+    match parameters with
+    | PyrePysaApi.ModelQueries.FunctionParameters.List parameters ->
+        let pp_parameter index parameter =
+          let () =
+            if index > 0 then
+              Format.fprintf formatter ", "
+          in
+          let () =
+            match parameter with
+            | PyrePysaApi.ModelQueries.FunctionParameter.PositionalOnly { name = Some name; _ }
+            | Named { name; _ }
+            | KeywordOnly { name; _ }
+            | Variable { name = Some name }
+            | Keywords { name = Some name; _ } ->
+                Format.fprintf formatter "%s" (Identifier.sanitized name)
+            | PyrePysaApi.ModelQueries.FunctionParameter.PositionalOnly { index; _ } ->
+                Format.fprintf formatter "__arg%d" index
+            | Variable { name = None } -> Format.fprintf formatter "*args"
+            | Keywords { name = None; _ } -> Format.fprintf formatter "**kwargs"
+          in
+          let () =
+            match PyrePysaApi.ModelQueries.FunctionParameter.annotation parameter with
+            | Some annotation ->
+                Format.fprintf formatter ": %a" PyrePysaApi.PysaType.pp_concise annotation
+            | None -> ()
+          in
+          let () =
+            if PyrePysaApi.ModelQueries.FunctionParameter.has_default parameter then
+              Format.fprintf formatter " = ..."
+          in
+          ()
         in
-        let () =
-          match parameter with
-          | PyrePysaApi.ModelQueries.FunctionParameter.PositionalOnly { name = Some name; _ }
-          | Named { name; _ }
-          | KeywordOnly { name; _ }
-          | Variable { name = Some name }
-          | Keywords { name = Some name; _ } ->
-              Format.fprintf formatter "%s" (Identifier.sanitized name)
-          | PyrePysaApi.ModelQueries.FunctionParameter.PositionalOnly { index; _ } ->
-              Format.fprintf formatter "__arg%d" index
-          | Variable { name = None } -> Format.fprintf formatter "*args"
-          | Keywords { name = None; _ } -> Format.fprintf formatter "**kwargs"
-        in
-        let () =
-          match PyrePysaApi.ModelQueries.FunctionParameter.annotation parameter with
-          | Some annotation ->
-              Format.fprintf formatter ": %a" PyrePysaApi.PysaType.pp_concise annotation
-          | None -> ()
-        in
-        let () =
-          if PyrePysaApi.ModelQueries.FunctionParameter.has_default parameter then
-            Format.fprintf formatter " = ..."
-        in
+        Format.fprintf formatter "(";
+        List.iteri parameters ~f:pp_parameter;
+        Format.fprintf formatter ")";
         ()
-      in
-      Format.fprintf formatter "(";
-      List.iteri parameters ~f:pp_parameter;
-      Format.fprintf formatter ")";
-      ()
-  | PyrePysaApi.ModelQueries.FunctionParameters.Ellipsis -> Format.fprintf formatter "(...)"
-  | PyrePysaApi.ModelQueries.FunctionParameters.ParamSpec ->
-      Format.fprintf formatter "(ParamSpec[T])"
-
-
-let pp_function_signature formatter { PyrePysaApi.ModelQueries.FunctionSignature.overloads; _ } =
-  let pp_overload index overload =
-    let () = if index > 0 then Format.fprintf formatter " | " in
-    pp_function_overload formatter overload
+    | PyrePysaApi.ModelQueries.FunctionParameters.Ellipsis -> Format.fprintf formatter "(...)"
+    | PyrePysaApi.ModelQueries.FunctionParameters.ParamSpec ->
+        Format.fprintf formatter "(ParamSpec[T])"
   in
-  Format.fprintf formatter "def ";
-  List.iteri ~f:pp_overload overloads;
-  Format.fprintf formatter ": ..."
+  Format.fprintf formatter " -> %a: ..." PyrePysaApi.PysaType.pp_concise return_annotation
+
+
+let pp_function_signatures formatter signatures =
+  let pp_overload index signature =
+    let () = if index > 0 then Format.fprintf formatter " | " in
+    pp_function_signature formatter signature
+  in
+  List.iteri ~f:pp_overload signatures
 
 
 let description error =
@@ -277,7 +283,7 @@ let description error =
         callable_name
         name
         (Expression.show expression)
-  | IncompatibleModelError { name; callable_signature; errors } ->
+  | IncompatibleModelError { name; callable_signatures; errors } ->
       let errors =
         List.map errors ~f:(fun { reason; overload } ->
             let reason =
@@ -312,7 +318,7 @@ let description error =
             in
             match overload with
             | Some overload ->
-                Format.asprintf "%s in overload `def %a: ...`" reason pp_function_overload overload
+                Format.asprintf "%s in overload `%a`" reason pp_function_signature overload
             | None -> reason)
       in
       let reasons =
@@ -323,8 +329,8 @@ let description error =
       Format.asprintf
         "Model signature parameters for `%s` do not match implementation `%a`. %s"
         name
-        pp_function_signature
-        callable_signature
+        pp_function_signatures
+        callable_signatures
         reasons
   | ImportedFunctionModel { name; actual_name } ->
       Format.asprintf
