@@ -3923,6 +3923,7 @@ let create_models_from_class
       location;
     }
   =
+  let model_verification_error kind = Error { ModelVerificationError.kind; path; location } in
   match
     class_name
     |> add_builtins_prefix ~pyre_api
@@ -3995,14 +3996,22 @@ let create_models_from_class
         | _ -> []
       in
       method_signatures |> List.map ~f:create_model_for_method |> List.concat |> Result.all
-  | _ ->
-      Error
-        {
-          ModelVerificationError.kind =
-            ModelVerificationError.MissingClass { class_name = Reference.show class_name };
-          path;
-          location;
-        }
+  | _ -> (
+      let module_name = Reference.first class_name in
+      let module_resolved =
+        PyrePysaApi.ModelQueries.resolve_qualified_name_to_global
+          pyre_api
+          ~is_property_getter:false
+          ~is_property_setter:false
+          (Reference.create module_name)
+      in
+      match module_resolved with
+      | Some _ ->
+          model_verification_error
+            (ModelVerificationError.MissingClass { class_name = Reference.show class_name })
+      | None ->
+          model_verification_error
+            (NotInEnvironment { module_name; name = Reference.show class_name }))
 
 
 let is_obscure ~definitions ~stubs call_target =

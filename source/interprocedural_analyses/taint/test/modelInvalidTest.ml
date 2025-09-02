@@ -2601,6 +2601,13 @@ let test_invalid_decorators =
               search path.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
+           ~path:"a.py"
+           ~model_source:{|
+      class a.Foo(SkipOverrides): ...
+    |}
+           ~expect:"a.py:2: `a.Foo` is not part of the environment, no module `a` in search path.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
            ~source:
              {|
       class C:
