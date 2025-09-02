@@ -1400,6 +1400,15 @@ module ReadWrite = struct
     PysaType.from_pyrefly_type { PyreflyType.string; scalar_properties; class_names }
 
 
+  let pysa_type_none =
+    PysaType.from_pyrefly_type
+      {
+        PyreflyType.string = "None";
+        scalar_properties = ScalarTypeProperties.none;
+        class_names = [];
+      }
+
+
   let parse_type_of_expressions
       ~scheduler
       ~scheduler_policies
@@ -2235,7 +2244,7 @@ module ReadWrite = struct
     let callable_undecorated_signatures_shared_memory =
       CallableUndecoratedSignaturesSharedMemory.create ()
     in
-    let parse_class_parents_and_undecorated_signatures (_module_qualifier, pyrefly_info_path) =
+    let parse_class_parents_and_undecorated_signatures (module_qualifier, pyrefly_info_path) =
       let { ModuleInfoFile.function_definitions; class_definitions; module_id; _ } =
         ModuleInfoFile.from_path_exn ~pyrefly_directory pyrefly_info_path
       in
@@ -2296,6 +2305,12 @@ module ReadWrite = struct
             create_pysa_type ~class_id_to_qualified_name_shared_memory return_annotation;
         }
       in
+      let toplevel_undecorated_signature =
+        {
+          FunctionSignature.parameters = FunctionParameters.List [];
+          return_annotation = pysa_type_none;
+        }
+      in
       let add_function
           ~key:name_location
           ~data:{ ModuleInfoFile.FunctionDefinition.undecorated_signatures; _ }
@@ -2317,10 +2332,21 @@ module ReadWrite = struct
         ClassImmediateParentsSharedMemory.add
           class_immediate_parents_shared_memory
           class_name
-          parents
+          parents;
+        CallableUndecoratedSignaturesSharedMemory.add
+          callable_undecorated_signatures_shared_memory
+          (FullyQualifiedName.create_class_toplevel class_name)
+          [toplevel_undecorated_signature];
+        ()
       in
       let () = Map.iteri ~f:add_function function_definitions in
       let () = Map.iteri ~f:add_class class_definitions in
+      let () =
+        CallableUndecoratedSignaturesSharedMemory.add
+          callable_undecorated_signatures_shared_memory
+          (FullyQualifiedName.create_module_toplevel ~module_qualifier)
+          [toplevel_undecorated_signature]
+      in
       ()
     in
     let scheduler_policy =
