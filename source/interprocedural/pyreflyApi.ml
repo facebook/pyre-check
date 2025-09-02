@@ -110,6 +110,15 @@ module JsonUtil = struct
     | version -> Error (FormatError.UnsupportedVersion { version })
 
 
+  let get_member json key =
+    match Yojson.Safe.Util.member key json with
+    | `Null ->
+        Error
+          (FormatError.UnexpectedJsonType
+             { json; message = Format.sprintf "expected an object with key `%s`" key })
+    | value -> Ok value
+
+
   let get_object_member json key =
     match Yojson.Safe.Util.member key json with
     | `Assoc bindings -> Ok bindings
@@ -584,8 +593,8 @@ module ModuleInfoFile = struct
           List.map ~f:FunctionParameter.from_json parameters
           |> Result.all
           >>| fun parameters -> List parameters
-      | `Assoc [("Ellipsis", `Null)] -> Ok Ellipsis
-      | `Assoc [("ParamSpec", `Null)] -> Ok ParamSpec
+      | `String "Ellipsis" -> Ok Ellipsis
+      | `String "ParamSpec" -> Ok ParamSpec
       | _ ->
           Error (FormatError.UnexpectedJsonType { json; message = "expected function parameters" })
   end
@@ -599,8 +608,7 @@ module ModuleInfoFile = struct
 
     let from_json json =
       let open Core.Result.Monad_infix in
-      JsonUtil.get_object_member json "parameters"
-      >>| (fun bindings -> `Assoc bindings)
+      JsonUtil.get_member json "parameters"
       >>= FunctionParameters.from_json
       >>= fun parameters ->
       JsonUtil.get_object_member json "return_annotation"
