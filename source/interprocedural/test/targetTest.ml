@@ -70,45 +70,6 @@ let test_get_module_and_definition context =
            ] ))
 
 
-let test_resolve_method context =
-  let assert_get_resolve_method ~source ~class_type ~method_name expected =
-    let pyre_api =
-      Test.ScratchProject.setup ~context ["test.py", source]
-      |> Test.ScratchProject.pyre_pysa_read_only_api
-      |> PyrePysaApi.ReadOnly.from_pyre1_api
-    in
-    assert_equal
-      ~printer:(show_optional Target.show_pretty)
-      expected
-      (Target.resolve_method ~pyre_api ~class_type ~method_name)
-  in
-  assert_get_resolve_method
-    ~source:
-      {|
-      from typing import Callable
-      class Foo:
-        method: Callable(cls.named)[[int], str]
-     |}
-    ~class_type:(Primitive "test.Foo")
-    ~method_name:"method"
-    (Some
-       (Target.Regular.Method { class_name = "cls"; method_name = "named"; kind = Normal }
-       |> Target.from_regular));
-  assert_get_resolve_method
-    ~source:
-      {|
-      from typing import Callable
-      class Foo:
-        method: BoundMethod[Callable(cls.named)[[int], str], Foo]
-     |}
-    ~class_type:(Primitive "test.Foo")
-    ~method_name:"method"
-    (Some
-       (Target.Regular.Method { class_name = "cls"; method_name = "named"; kind = Normal }
-       |> Target.from_regular));
-  ()
-
-
 let test_pretty_print _ =
   let assert_equal ~expected ~actual =
     assert_equal ~cmp:String.equal ~printer:Fn.id expected (Target.show_pretty actual)
@@ -279,7 +240,6 @@ let () =
   "callable"
   >::: [
          "get_module_and_definition" >:: test_get_module_and_definition;
-         "resolve_method" >:: test_resolve_method;
          "pretty_print" >:: test_pretty_print;
          "contain_recursive_targets" >:: test_contain_recursive_targets;
          "target_depth" >:: test_target_depth;

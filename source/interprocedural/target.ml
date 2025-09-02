@@ -621,23 +621,6 @@ let get_definitions ~pyre1_api ~warn_multiple_definitions define_name =
   }
 
 
-let resolve_method ~pyre_api ~class_type ~method_name =
-  let callable_implementation =
-    Type.split class_type
-    |> fst
-    |> Type.primitive_name
-    >>= PyrePysaApi.ReadOnly.attribute_from_class_name
-          pyre_api
-          ~transitive:true
-          ~name:method_name
-          ~type_for_lookup:class_type
-  in
-  match callable_implementation with
-  | Some callable when PyrePysaLogic.AnnotatedAttribute.defined callable ->
-      PyrePysaLogic.name_of_method callable >>| create_method_from_reference
-  | _ -> None
-
-
 (* Define the meaning of `skip_analysis_targets`. We assume `skip_analysis_targets` only contains
    regular callables. *)
 let should_skip_analysis ~skip_analysis_targets target =
