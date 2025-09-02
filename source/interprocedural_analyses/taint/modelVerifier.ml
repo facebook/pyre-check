@@ -279,3 +279,57 @@ let verify_global_attribute ~path ~location ~pyre_api ~name =
                    ~path
                    ~location
                    (NotInEnvironment { module_name; name = Reference.show name }))))
+
+
+(* List of stdlib modules. To keep it short, this only includes modules that we want to annotate
+   with taint models. *)
+let stdlib_modules =
+  String.Set.of_list
+    [
+      "_socket";
+      "argparse";
+      "asyncio";
+      "bz2";
+      "code";
+      "copy";
+      "email";
+      "gzip";
+      "hmac";
+      "http";
+      "linecache";
+      "logging";
+      "marshal";
+      "os";
+      "pickle";
+      "queue";
+      "runpy";
+      "shelve";
+      "shlex";
+      "shutil";
+      "smtplib";
+      "socket";
+      "socketserver";
+      "sqlite3";
+      "tarfile";
+      "tempfile";
+      "urllib";
+      "wsgiref";
+      "xml";
+    ]
+
+
+(* Unlike Pyre, Pyrefly won't type check stdlib modules (from typeshed) that aren't included
+   transitively by a source file in under the roots. This means they won't be visible to Pysa
+   either, and taint models for those will error. Let's skip these errors since these are
+   harmless. *)
+let filter_unused_stdlib_modules_errors errors =
+  let filter = function
+    | {
+        ModelVerificationError.kind = ModelVerificationError.NotInEnvironment { module_name; _ };
+        _;
+      }
+      when Set.mem stdlib_modules module_name ->
+        false
+    | _ -> true
+  in
+  List.filter ~f:filter errors

@@ -23,3 +23,7 @@ val verify_global_attribute
   pyre_api:Interprocedural.PyrePysaApi.ReadOnly.t ->
   name:Reference.t ->
   (unit, ModelVerificationError.t) result
+
+val filter_unused_stdlib_modules_errors
+  :  ModelVerificationError.t list ->
+  ModelVerificationError.t list

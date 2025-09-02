@@ -313,8 +313,9 @@ let parse_models_and_queries_from_configuration
          ~stubs
          ~python_version
   in
+  let errors = ModelVerifier.filter_unused_stdlib_modules_errors errors in
   let () = ModelVerificationError.verify_models_and_dsl ~raise_exception:verify_models errors in
-  parse_result
+  { parse_result with errors }
 
 
 module ModelGenerationResult = struct
