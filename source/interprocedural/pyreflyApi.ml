@@ -2896,6 +2896,7 @@ module ModelQueries = struct
         callable_metadata_shared_memory;
         class_metadata_shared_memory;
         callable_undecorated_signatures_shared_memory;
+        class_fields_shared_memory;
         _;
       }
       ~is_property_getter:_
@@ -2904,51 +2905,65 @@ module ModelQueries = struct
     =
     (* TODO(T225700656): For now, we only support looking up symbols in module names that are unique
        (i.e, the module qualifier is not prefixed by the path) *)
-    let is_module_qualifier name =
-      ModuleInfosSharedMemory.get
-        module_infos_shared_memory
-        (ModuleQualifier.from_reference_unchecked name)
-      |> Option.is_some
-    in
     let name =
       if is_property_setter then
         Reference.create (Format.asprintf "%a@setter" Reference.pp name)
       else
         name
     in
-    if is_module_qualifier name then
-      Some Global.Module
-    else
-      match
-        CallableMetadataSharedMemory.get
-          callable_metadata_shared_memory
-          (FullyQualifiedName.from_reference_unchecked name)
-      with
-      | Some { CallableMetadata.is_property_getter; is_property_setter; parent_is_class; _ } ->
-          let undecorated_signatures =
-            CallableUndecoratedSignaturesSharedMemory.get
-              callable_undecorated_signatures_shared_memory
-              (FullyQualifiedName.from_reference_unchecked name)
-            |> assert_shared_memory_key_exists "missing undecorated signatures for callable"
-          in
-          Some
-            (Global.Function
-               {
-                 Function.define_name = name;
-                 imported_name = None;
-                 undecorated_signatures = Some undecorated_signatures;
-                 is_property_getter;
-                 is_property_setter;
-                 is_method = parent_is_class;
-               })
-      | None -> (
-          match
-            ClassMetadataSharedMemory.get
-              class_metadata_shared_memory
-              (FullyQualifiedName.from_reference_unchecked name)
-          with
-          | Some _ -> Some (Global.Class { class_name = Reference.show name })
-          | None -> None)
+    let is_module_qualifier name =
+      ModuleInfosSharedMemory.get
+        module_infos_shared_memory
+        (ModuleQualifier.from_reference_unchecked name)
+      |> Option.is_some
+    in
+    let is_class_name name =
+      ClassMetadataSharedMemory.get
+        class_metadata_shared_memory
+        (FullyQualifiedName.from_reference_unchecked name)
+      |> Option.is_some
+    in
+    let is_class_attribute name =
+      Reference.prefix name
+      >>| FullyQualifiedName.from_reference_unchecked
+      >>= ClassFieldsSharedMemory.get class_fields_shared_memory
+      >>| (fun fields -> List.mem ~equal:String.equal fields (Reference.last name))
+      |> Option.value ~default:false
+    in
+    (* Check if this is a valid function first. *)
+    match
+      CallableMetadataSharedMemory.get
+        callable_metadata_shared_memory
+        (FullyQualifiedName.from_reference_unchecked name)
+    with
+    | Some { CallableMetadata.is_property_getter; is_property_setter; parent_is_class; _ } ->
+        let undecorated_signatures =
+          CallableUndecoratedSignaturesSharedMemory.get
+            callable_undecorated_signatures_shared_memory
+            (FullyQualifiedName.from_reference_unchecked name)
+          |> assert_shared_memory_key_exists "missing undecorated signatures for callable"
+        in
+        Some
+          (Global.Function
+             {
+               Function.define_name = name;
+               imported_name = None;
+               undecorated_signatures = Some undecorated_signatures;
+               is_property_getter;
+               is_property_setter;
+               is_method = parent_is_class;
+             })
+    | None ->
+        if is_module_qualifier name then
+          Some Global.Module
+        else if is_class_name name then
+          Some (Global.Class { class_name = Reference.show name })
+        else if is_class_attribute name then
+          (* Functions might also be considered class attributes by pyrefly, so this should be
+             checked last. *)
+          Some (Global.Attribute { name; parent_is_class = true })
+        else
+          None
 
 
   let class_method_signatures

@@ -7,20 +7,17 @@
 
 open Core
 open OUnit2
-open Test
 module Target = Interprocedural.Target
 module PyrePysaApi = Interprocedural.PyrePysaApi
 open Taint
 open ModelParseResult.ModelQuery
 
 let get_stubs_and_definitions ~source_file_name ~project =
-  let pyre_api =
-    project |> Test.ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
-  in
+  let pyre_api = Test.ScratchPyrePysaProject.read_only_api project in
   let qualifier = Ast.Reference.create (String.chop_suffix_exn source_file_name ~suffix:".py") in
   let initial_callables =
     Interprocedural.FetchCallables.from_qualifier
-      ~configuration:(Test.ScratchProject.configuration_of project)
+      ~configuration:(Test.ScratchPyrePysaProject.configuration_of project)
       ~pyre_api
       ~qualifier
   in
@@ -31,11 +28,16 @@ let get_stubs_and_definitions ~source_file_name ~project =
 let set_up_environment ?source ~context ~model_source ~validate () =
   let source =
     match source with
-    | None -> model_source
+    | None -> ""
     | Some source -> source
   in
   let source_file_name = "test.py" in
-  let project = ScratchProject.setup ~context [source_file_name, source] in
+  let project =
+    Test.ScratchPyrePysaProject.setup
+      ~context
+      ~requires_type_of_expressions:false
+      [source_file_name, source]
+  in
   let taint_configuration =
     let named name = { AnnotationParser.KindDefinition.name; kind = Named; location = None } in
     let sources = [named "Test"] in
@@ -44,9 +46,7 @@ let set_up_environment ?source ~context ~model_source ~validate () =
     TaintConfiguration.Heap.{ empty with sources; sinks; transforms }
   in
   let source = Test.trim_extra_indentation model_source in
-  let pyre_api =
-    project |> ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
-  in
+  let pyre_api = Test.ScratchPyrePysaProject.read_only_api project in
 
   PyrePysaApi.ModelQueries.invalidate_cache pyre_api;
   let stubs, definitions = get_stubs_and_definitions ~source_file_name ~project in
@@ -71,12 +71,11 @@ let set_up_environment ?source ~context ~model_source ~validate () =
          (List.to_string errors ~f:ModelVerificationError.display))
       (List.is_empty errors);
 
-  let environment = ScratchProject.type_environment project in
-  parse_result, environment, taint_configuration
+  parse_result
 
 
 let assert_queries ?source ~context ~model_source ~expect () =
-  let { ModelParseResult.queries; _ }, _, _ =
+  let { ModelParseResult.queries; _ } =
     set_up_environment ?source ~context ~model_source ~validate:true ()
   in
   assert_equal
@@ -87,7 +86,7 @@ let assert_queries ?source ~context ~model_source ~expect () =
 
 
 let assert_invalid_queries ?source ~context ~model_source ~expect () =
-  let { ModelParseResult.errors; _ }, _, _ =
+  let { ModelParseResult.errors; _ } =
     set_up_environment ?source ~context ~model_source ~validate:false ()
   in
   let error_message =
@@ -1447,7 +1446,7 @@ let test_query_parsing_model_parameters context =
 
 let test_query_parsing_expected_models context =
   let create_expected_model ?source ~model_source function_name =
-    let { ModelParseResult.models; _ }, _, _ =
+    let { ModelParseResult.models; _ } =
       set_up_environment ?source ~context ~model_source ~validate:true ()
     in
     let model = Option.value_exn (Registry.get models (List.hd_exn (Registry.targets models))) in

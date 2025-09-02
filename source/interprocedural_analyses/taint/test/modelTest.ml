@@ -234,9 +234,8 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
   in
   let sources = ("test.py", source) :: sources in
   let pyre_api =
-    ScratchProject.setup ~context sources
-    |> ScratchProject.pyre_pysa_read_only_api
-    |> PyrePysaApi.ReadOnly.from_pyre1_api
+    Test.ScratchPyrePysaProject.setup ~context ~requires_type_of_expressions:false sources
+    |> Test.ScratchPyrePysaProject.read_only_api
   in
   let taint_configuration =
     TaintConfiguration.Heap.
