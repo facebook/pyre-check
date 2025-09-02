@@ -860,7 +860,7 @@ let test_invalid_models =
               C) -> int: ...`. Reason: unexpected named parameter: `value`."
            ~pyrefly_expect:
              "Model signature parameters for `test.C.foo` do not match implementation `def (self: \
-              Self@test.C) -> int: ...`. Reason: unexpected named parameter: `value`.";
+              test.C) -> int: ...`. Reason: unexpected named parameter: `value`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model
            ~source:
