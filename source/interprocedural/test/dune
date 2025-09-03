@@ -14,7 +14,8 @@
   changedPathsTest
   globalConstantsTest
   taintAccessPathTest
-  pyreflyApiTest)
+  pyreflyApiTest
+  pyrePysaApiTest)
  (preprocess
   (pps
    ppx_deriving.eq

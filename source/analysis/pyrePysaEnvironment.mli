@@ -50,6 +50,8 @@ module PysaType : sig
 
   val as_pyrefly_type : t -> PyreflyType.t option
 
+  val as_pyre1_type : t -> Type.t option
+
   (* Pretty print the type, usually meant for the user *)
   val pp_concise : Format.formatter -> t -> unit
 

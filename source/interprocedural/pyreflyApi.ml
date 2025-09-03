@@ -491,7 +491,13 @@ module ModuleInfoFile = struct
       >>= Result.all
       >>| fun class_names ->
       let scalar_properties =
-        ScalarTypeProperties.create ~is_boolean ~is_integer ~is_float ~is_enumeration
+        ScalarTypeProperties.create
+          ~is_boolean
+          ~is_integer
+            (* TODO(T225700656): pyre1 considers integers to be valid floats. We preserve that
+               behavior for now. *)
+          ~is_float:(is_float || is_integer)
+          ~is_enumeration
       in
       { string; scalar_properties; class_names }
   end

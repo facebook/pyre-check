@@ -108,6 +108,11 @@ module PysaType = struct
     | Pyre1 _ -> None
 
 
+  let as_pyre1_type = function
+    | Pyre1 type_ -> Some type_
+    | Pyrefly _ -> None
+
+
   (* Pretty print the type, usually meant for the user *)
   let pp_concise formatter = function
     | Pyre1 type_ -> PyreType.pp_concise formatter type_
