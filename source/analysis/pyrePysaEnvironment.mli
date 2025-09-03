@@ -343,16 +343,14 @@ module ModelQueries : sig
       | Module
       (* function or method *)
       | Function of Function.t
-      (* non-callable module attribute. *)
-      | Attribute of {
-          name: Ast.Reference.t;
-          parent_is_class: bool;
-        }
-      (* module attribute exists, but type is unknown. *)
-      | UnknownAttribute of {
-          name: Ast.Reference.t;
-          parent_is_class: bool;
-        }
+      (* non-callable class attribute. *)
+      | ClassAttribute of { name: Ast.Reference.t }
+      (* non-callable module global variable. *)
+      | ModuleGlobal of { name: Ast.Reference.t }
+      (* class attribute exists, but type is unknown. *)
+      | UnknownClassAttribute of { name: Ast.Reference.t }
+      (* module global exists, but type is unknown. *)
+      | UnknownModuleGlobal of { name: Ast.Reference.t }
     [@@deriving show]
   end
 

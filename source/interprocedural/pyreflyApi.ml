@@ -3007,9 +3007,9 @@ module ModelQueries = struct
         else if is_class_attribute name then
           (* Functions might also be considered class attributes by pyrefly, so this should be
              checked last. *)
-          Some (Global.Attribute { name; parent_is_class = true })
+          Some (Global.ClassAttribute { name })
         else if is_module_global_variable name then
-          Some (Global.Attribute { name; parent_is_class = false })
+          Some (Global.ModuleGlobal { name })
         else
           None
 

@@ -832,16 +832,14 @@ module ModelQueries = struct
       | Module
       (* function or method *)
       | Function of Function.t
-      (* non-callable module attribute. *)
-      | Attribute of {
-          name: Ast.Reference.t;
-          parent_is_class: bool;
-        }
-      (* module attribute exists, but type is unknown. *)
-      | UnknownAttribute of {
-          name: Ast.Reference.t;
-          parent_is_class: bool;
-        }
+      (* non-callable class attribute. *)
+      | ClassAttribute of { name: Ast.Reference.t }
+      (* non-callable module global variable. *)
+      | ModuleGlobal of { name: Ast.Reference.t }
+      (* class attribute exists, but type is unknown. *)
+      | UnknownClassAttribute of { name: Ast.Reference.t }
+      (* module global exists, but type is unknown. *)
+      | UnknownModuleGlobal of { name: Ast.Reference.t }
     [@@deriving show]
   end
 
@@ -1157,16 +1155,17 @@ module ModelQueries = struct
                          is_property_setter = false;
                          is_method = Option.is_some class_summary;
                        })
-              | PyreType.Top ->
-                  Some
-                    (Global.UnknownAttribute
-                       { name; parent_is_class = Option.is_some class_summary })
+              | PyreType.Top
               | PyreType.Any ->
-                  Some
-                    (Global.UnknownAttribute
-                       { name; parent_is_class = Option.is_some class_summary })
+                  if Option.is_some class_summary then
+                    Some (Global.UnknownClassAttribute { name })
+                  else
+                    Some (Global.UnknownModuleGlobal { name })
               | _ ->
-                  Some (Global.Attribute { name; parent_is_class = Option.is_some class_summary })))
+                  if Option.is_some class_summary then
+                    Some (Global.ClassAttribute { name })
+                  else
+                    Some (Global.ModuleGlobal { name })))
 
 
   let invalidate_cache = ClassMethodSignatureCache.invalidate

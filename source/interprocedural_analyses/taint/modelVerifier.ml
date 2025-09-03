@@ -233,8 +233,10 @@ let verify_global_attribute ~path ~location ~pyre_api ~name =
            ~path
            ~location
            (ModelingCallableAsAttribute (Reference.show name)))
-  | Some (Global.Attribute _)
-  | Some (Global.UnknownAttribute _)
+  | Some (Global.ModuleGlobal _)
+  | Some (Global.ClassAttribute _)
+  | Some (Global.UnknownClassAttribute _)
+  | Some (Global.UnknownModuleGlobal _)
   | None -> (
       let class_name = Reference.prefix name |> Option.value ~default:Reference.empty in
       let class_attributes =

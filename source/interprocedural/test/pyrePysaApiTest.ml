@@ -227,8 +227,7 @@ let test_resolve_qualified_name_to_global context =
                ~define_name:"test.foo"
                ~signatures:[create_signature ~return_annotation:Type.NoneType []]
                ())))
-    ~pyrefly_expect:
-      (Some (Global.Attribute { name = Reference.create "test.foo"; parent_is_class = false }));
+    ~pyrefly_expect:(Some (Global.ModuleGlobal { name = Reference.create "test.foo" }));
   assert_resolve
     ~context
     [
@@ -249,8 +248,7 @@ let test_resolve_qualified_name_to_global context =
                ~is_method:true
                ~signatures:[create_signature ~return_annotation:Type.NoneType []]
                ())))
-    ~pyrefly_expect:
-      (Some (Global.Attribute { name = Reference.create "test.Foo.bar"; parent_is_class = true }));
+    ~pyrefly_expect:(Some (Global.ClassAttribute { name = Reference.create "test.Foo.bar" }));
   assert_resolve
     ~context
     ["test.py", {|
@@ -283,15 +281,14 @@ let test_resolve_qualified_name_to_global context =
         x: int = 1
     |}]
     "test.Foo.x"
-    ~expect:
-      (Some (Global.Attribute { name = Reference.create "test.Foo.x"; parent_is_class = true }));
+    ~expect:(Some (Global.ClassAttribute { name = Reference.create "test.Foo.x" }));
   assert_resolve
     ~context
     ["test.py", {|
       x: int = 1
     |}]
     "test.x"
-    ~expect:(Some (Global.Attribute { name = Reference.create "test.x"; parent_is_class = false }));
+    ~expect:(Some (Global.ModuleGlobal { name = Reference.create "test.x" }));
   assert_resolve
     ~context
     ["test.py", {|
@@ -299,10 +296,8 @@ let test_resolve_qualified_name_to_global context =
       x: Any = 1
     |}]
     "test.x"
-    ~expect:
-      (Some (Global.UnknownAttribute { name = Reference.create "test.x"; parent_is_class = false }))
-    ~pyrefly_expect:
-      (Some (Global.Attribute { name = Reference.create "test.x"; parent_is_class = false }));
+    ~expect:(Some (Global.UnknownModuleGlobal { name = Reference.create "test.x" }))
+    ~pyrefly_expect:(Some (Global.ModuleGlobal { name = Reference.create "test.x" }));
   assert_resolve
     ~context
     [
@@ -316,7 +311,7 @@ let test_resolve_qualified_name_to_global context =
       );
     ]
     "test.x"
-    ~expect:(Some (Global.Attribute { name = Reference.create "test.x"; parent_is_class = false }));
+    ~expect:(Some (Global.ModuleGlobal { name = Reference.create "test.x" }));
 
   (* Symbol is not found. *)
   assert_resolve
@@ -501,9 +496,7 @@ let test_resolve_qualified_name_to_global context =
       );
     ]
     "test.Foo.baz"
-    ~expect:
-      (Some
-         (Global.UnknownAttribute { name = Reference.create "test.Foo.baz"; parent_is_class = true }))
+    ~expect:(Some (Global.UnknownClassAttribute { name = Reference.create "test.Foo.baz" }))
     ~pyrefly_expect:None;
 
   (* Definition in type stub. *)
@@ -558,15 +551,14 @@ let test_resolve_qualified_name_to_global context =
                ~define_name:"test.foo"
                ~signatures:[create_signature ~return_annotation:Type.NoneType []]
                ())))
-    ~pyrefly_expect:
-      (Some (Global.Attribute { name = Reference.create "test.foo"; parent_is_class = false }));
+    ~pyrefly_expect:(Some (Global.ModuleGlobal { name = Reference.create "test.foo" }));
   assert_resolve
     ~context
     ["test.pyi", {|
       x: int = 1
     |}]
     "test.x"
-    ~expect:(Some (Global.Attribute { name = Reference.create "test.x"; parent_is_class = false }));
+    ~expect:(Some (Global.ModuleGlobal { name = Reference.create "test.x" }));
 
   (* Deeply nested code, where outer packages are not importable *)
   assert_resolve

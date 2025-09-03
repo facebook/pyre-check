@@ -3493,7 +3493,8 @@ let create_model_from_signature
     | Some Global.Module ->
         model_verification_error (ModelingModuleAsDefine (Reference.show callable_name))
     | Some (Global.Function resolved_callable) -> Ok resolved_callable
-    | Some (Global.UnknownAttribute { name; parent_is_class }) ->
+    | Some ((Global.UnknownClassAttribute { name } | Global.UnknownModuleGlobal { name }) as kind)
+      ->
         (* We just assume this is a valid model *)
         Ok
           {
@@ -3502,9 +3503,13 @@ let create_model_from_signature
             undecorated_signatures = None;
             is_property_getter;
             is_property_setter;
-            is_method = parent_is_class;
+            is_method =
+              (match kind with
+              | Global.UnknownClassAttribute _ -> true
+              | _ -> false);
           }
-    | Some (Global.Attribute _) ->
+    | Some (Global.ClassAttribute _)
+    | Some (Global.ModuleGlobal _) ->
         model_verification_error (ModelingAttributeAsDefine (Reference.show callable_name))
   in
   (* Check model matches callables primary signature. *)
