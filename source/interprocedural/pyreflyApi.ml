@@ -778,6 +778,7 @@ module ModuleInfoFile = struct
     type_of_expression: JsonType.t Location.Map.t;
     function_definitions: FunctionDefinition.t Location.Map.t;
     class_definitions: ClassDefinition.t Location.Map.t;
+    global_variables: string list;
   }
 
   let from_json json =
@@ -836,7 +837,11 @@ module ModuleInfoFile = struct
     >>= fun function_definitions ->
     JsonUtil.get_object_member json "class_definitions"
     >>= parse_class_definitions
-    >>| fun class_definitions ->
+    >>= fun class_definitions ->
+    JsonUtil.get_list_member json "global_variables"
+    >>| List.map ~f:JsonUtil.as_string
+    >>= Result.all
+    >>| fun global_variables ->
     {
       module_id = ModuleId.from_int module_id;
       module_name = Reference.create module_name;
@@ -844,6 +849,7 @@ module ModuleInfoFile = struct
       type_of_expression;
       function_definitions;
       class_definitions;
+      global_variables;
     }
 
 
@@ -1113,6 +1119,17 @@ module ModuleClassesSharedMemory =
       let description = "pyrefly classes in module"
     end)
 
+module ModuleGlobalsSharedMemory =
+  Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+    (ModuleQualifierSharedMemoryKey)
+    (struct
+      type t = string list
+
+      let prefix = Hack_parallel.Std.Prefix.make ()
+
+      let description = "pyrefly global variables in module"
+    end)
+
 module ClassIdToQualifiedNameSharedMemory =
   Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
     (GlobalClassIdSharedMemoryKey)
@@ -1256,6 +1273,7 @@ module ReadWrite = struct
     class_metadata_shared_memory: ClassMetadataSharedMemory.t;
     module_callables_shared_memory: ModuleCallablesSharedMemory.t;
     module_classes_shared_memory: ModuleClassesSharedMemory.t;
+    module_globals_shared_memory: ModuleGlobalsSharedMemory.t;
     (* TODO(T225700656): this can be removed from shared memory after initialization. *)
     class_id_to_qualified_name_shared_memory: ClassIdToQualifiedNameSharedMemory.t;
     callable_id_to_qualified_name_shared_memory: CallableIdToQualifiedNameSharedMemory.t;
@@ -1446,6 +1464,7 @@ module ReadWrite = struct
         source_path = _;
         function_definitions = _;
         class_definitions = _;
+        global_variables = _;
       }
         =
         ModuleInfoFile.from_path_exn ~pyrefly_directory pyrefly_info_path
@@ -2136,6 +2155,7 @@ module ReadWrite = struct
     let class_fields_shared_memory = ClassFieldsSharedMemory.create () in
     let module_callables_shared_memory = ModuleCallablesSharedMemory.create () in
     let module_classes_shared_memory = ModuleClassesSharedMemory.create () in
+    let module_globals_shared_memory = ModuleGlobalsSharedMemory.create () in
     let class_id_to_qualified_name_shared_memory = ClassIdToQualifiedNameSharedMemory.create () in
     let callable_id_to_qualified_name_shared_memory =
       CallableIdToQualifiedNameSharedMemory.create ()
@@ -2143,7 +2163,8 @@ module ReadWrite = struct
     let () = Log.info "Collecting classes and definitions..." in
     (* First step: collect classes and definitions, and assign them fully qualified names. *)
     let collect_definitions_and_assign_names (module_qualifier, pyrefly_info_path) =
-      let { ModuleInfoFile.function_definitions; class_definitions; module_id; _ } =
+      let { ModuleInfoFile.function_definitions; class_definitions; module_id; global_variables; _ }
+        =
         ModuleInfoFile.from_path_exn ~pyrefly_directory pyrefly_info_path
       in
       let definitions =
@@ -2218,6 +2239,7 @@ module ReadWrite = struct
       let callables, classes = List.fold definitions ~init:([], []) ~f:store_definition in
       ModuleCallablesSharedMemory.add module_callables_shared_memory module_qualifier callables;
       ModuleClassesSharedMemory.add module_classes_shared_memory module_qualifier classes;
+      ModuleGlobalsSharedMemory.add module_globals_shared_memory module_qualifier global_variables;
       {
         DefinitionCount.number_callables = List.length callables;
         number_classes = List.length classes;
@@ -2401,6 +2423,7 @@ module ReadWrite = struct
       class_fields_shared_memory,
       module_callables_shared_memory,
       module_classes_shared_memory,
+      module_globals_shared_memory,
       class_id_to_qualified_name_shared_memory,
       callable_id_to_qualified_name_shared_memory,
       class_immediate_parents_shared_memory,
@@ -2439,6 +2462,7 @@ module ReadWrite = struct
           class_fields_shared_memory,
           module_callables_shared_memory,
           module_classes_shared_memory,
+          module_globals_shared_memory,
           class_id_to_qualified_name_shared_memory,
           callable_id_to_qualified_name_shared_memory,
           class_immediate_parents_shared_memory,
@@ -2493,6 +2517,7 @@ module ReadWrite = struct
       class_fields_shared_memory;
       module_callables_shared_memory;
       module_classes_shared_memory;
+      module_globals_shared_memory;
       class_id_to_qualified_name_shared_memory;
       callable_id_to_qualified_name_shared_memory;
       class_immediate_parents_shared_memory;
@@ -2517,6 +2542,7 @@ module ReadWrite = struct
         class_fields_shared_memory;
         module_callables_shared_memory;
         module_classes_shared_memory;
+        module_globals_shared_memory;
         class_id_to_qualified_name_shared_memory;
         callable_id_to_qualified_name_shared_memory;
         class_immediate_parents_shared_memory;
@@ -2585,6 +2611,7 @@ module ReadWrite = struct
       in
       ModuleCallablesSharedMemory.remove module_callables_shared_memory module_qualifier;
       ModuleClassesSharedMemory.remove module_classes_shared_memory module_qualifier;
+      ModuleGlobalsSharedMemory.remove module_globals_shared_memory module_qualifier;
       ()
     in
     Scheduler.map_reduce
@@ -2612,6 +2639,7 @@ module ReadOnly = struct
     class_fields_shared_memory: ClassFieldsSharedMemory.t;
     module_callables_shared_memory: ModuleCallablesSharedMemory.t;
     module_classes_shared_memory: ModuleClassesSharedMemory.t;
+    module_globals_shared_memory: ModuleGlobalsSharedMemory.t;
     class_immediate_parents_shared_memory: ClassImmediateParentsSharedMemory.t;
     callable_ast_shared_memory: CallableAstSharedMemory.t;
     callable_define_signature_shared_memory: CallableDefineSignatureSharedMemory.t;
@@ -2628,6 +2656,7 @@ module ReadOnly = struct
         class_fields_shared_memory;
         module_callables_shared_memory;
         module_classes_shared_memory;
+        module_globals_shared_memory;
         class_immediate_parents_shared_memory;
         callable_ast_shared_memory;
         callable_define_signature_shared_memory;
@@ -2644,6 +2673,7 @@ module ReadOnly = struct
       class_fields_shared_memory;
       module_callables_shared_memory;
       module_classes_shared_memory;
+      module_globals_shared_memory;
       class_immediate_parents_shared_memory;
       callable_ast_shared_memory;
       callable_define_signature_shared_memory;
@@ -2903,6 +2933,7 @@ module ModelQueries = struct
         class_metadata_shared_memory;
         callable_undecorated_signatures_shared_memory;
         class_fields_shared_memory;
+        module_globals_shared_memory;
         _;
       }
       ~is_property_getter:_
@@ -2930,10 +2961,19 @@ module ModelQueries = struct
       |> Option.is_some
     in
     let is_class_attribute name =
+      let last_name = Reference.last name in
       Reference.prefix name
       >>| FullyQualifiedName.from_reference_unchecked
       >>= ClassFieldsSharedMemory.get class_fields_shared_memory
-      >>| (fun fields -> List.mem ~equal:String.equal fields (Reference.last name))
+      >>| (fun fields -> List.mem ~equal:String.equal fields last_name)
+      |> Option.value ~default:false
+    in
+    let is_module_global_variable name =
+      let last_name = Reference.last name in
+      Reference.prefix name
+      >>| ModuleQualifier.from_reference_unchecked
+      >>= ModuleGlobalsSharedMemory.get module_globals_shared_memory
+      >>| (fun globals -> List.mem ~equal:String.equal globals last_name)
       |> Option.value ~default:false
     in
     (* Check if this is a valid function first. *)
@@ -2968,6 +3008,8 @@ module ModelQueries = struct
           (* Functions might also be considered class attributes by pyrefly, so this should be
              checked last. *)
           Some (Global.Attribute { name; parent_is_class = true })
+        else if is_module_global_variable name then
+          Some (Global.Attribute { name; parent_is_class = false })
         else
           None
 

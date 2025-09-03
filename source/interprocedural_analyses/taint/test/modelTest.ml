@@ -610,7 +610,6 @@ let test_source_models context =
   assert_model
     ~model_source:"os.environ: TaintSource[TestTest] = ..."
     ~expect:[outcome ~kind:`Object ~returns:[Sources.NamedSource "TestTest"] "os.environ"]
-    ~skip_for_pyrefly:true (* TODO(T225700656): support models for global variables *)
     ();
   assert_model
     ~model_source:"django.http.Request.GET: TaintSource[TestTest] = ..."
@@ -637,7 +636,6 @@ let test_source_models context =
           ~parameter_sinks:[{ name = "$global"; sinks = [Sinks.NamedSink "Test"] }]
           "os.environ";
       ]
-    ~skip_for_pyrefly:true (* TODO(T225700656): support models for global variables *)
     ();
   assert_model
     ~source:"def f(x: int): ..."

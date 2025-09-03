@@ -118,13 +118,9 @@ let convert_to_pyrefly_global global =
 
 
 let test_resolve_qualified_name_to_global context =
-  let assert_resolve ~context ?(skip_for_pyrefly = false) ?pyrefly_expect sources name ~expect =
+  let assert_resolve ~context ?pyrefly_expect sources name ~expect =
     let pyre_api =
-      Test.ScratchPyrePysaProject.setup
-        ~context
-        ~requires_type_of_expressions:false
-        ~force_pyre1:skip_for_pyrefly
-        sources
+      Test.ScratchPyrePysaProject.setup ~context ~requires_type_of_expressions:false sources
       |> Test.ScratchPyrePysaProject.read_only_api
     in
     let actual =
@@ -231,7 +227,8 @@ let test_resolve_qualified_name_to_global context =
                ~define_name:"test.foo"
                ~signatures:[create_signature ~return_annotation:Type.NoneType []]
                ())))
-    ~pyrefly_expect:None;
+    ~pyrefly_expect:
+      (Some (Global.Attribute { name = Reference.create "test.foo"; parent_is_class = false }));
   assert_resolve
     ~context
     [
@@ -294,9 +291,7 @@ let test_resolve_qualified_name_to_global context =
       x: int = 1
     |}]
     "test.x"
-    ~expect:(Some (Global.Attribute { name = Reference.create "test.x"; parent_is_class = false }))
-      (* TODO(T225700656): Support global variables with pyrefly *)
-    ~skip_for_pyrefly:true;
+    ~expect:(Some (Global.Attribute { name = Reference.create "test.x"; parent_is_class = false }));
   assert_resolve
     ~context
     ["test.py", {|
@@ -306,8 +301,8 @@ let test_resolve_qualified_name_to_global context =
     "test.x"
     ~expect:
       (Some (Global.UnknownAttribute { name = Reference.create "test.x"; parent_is_class = false }))
-      (* TODO(T225700656): Support global variables with pyrefly *)
-    ~skip_for_pyrefly:true;
+    ~pyrefly_expect:
+      (Some (Global.Attribute { name = Reference.create "test.x"; parent_is_class = false }));
   assert_resolve
     ~context
     [
@@ -321,9 +316,7 @@ let test_resolve_qualified_name_to_global context =
       );
     ]
     "test.x"
-    ~expect:(Some (Global.Attribute { name = Reference.create "test.x"; parent_is_class = false }))
-      (* TODO(T225700656): Support global variables with pyrefly *)
-    ~skip_for_pyrefly:true;
+    ~expect:(Some (Global.Attribute { name = Reference.create "test.x"; parent_is_class = false }));
 
   (* Symbol is not found. *)
   assert_resolve
@@ -565,16 +558,15 @@ let test_resolve_qualified_name_to_global context =
                ~define_name:"test.foo"
                ~signatures:[create_signature ~return_annotation:Type.NoneType []]
                ())))
-    ~pyrefly_expect:None;
+    ~pyrefly_expect:
+      (Some (Global.Attribute { name = Reference.create "test.foo"; parent_is_class = false }));
   assert_resolve
     ~context
     ["test.pyi", {|
       x: int = 1
     |}]
     "test.x"
-    ~expect:(Some (Global.Attribute { name = Reference.create "test.x"; parent_is_class = false }))
-      (* TODO(T225700656): Support global variables with pyrefly *)
-    ~skip_for_pyrefly:true;
+    ~expect:(Some (Global.Attribute { name = Reference.create "test.x"; parent_is_class = false }));
 
   (* Deeply nested code, where outer packages are not importable *)
   assert_resolve

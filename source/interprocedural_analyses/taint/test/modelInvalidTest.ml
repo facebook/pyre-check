@@ -569,11 +569,8 @@ let test_invalid_models =
            ~expect:
              "`TaintSink[Updates[self]]` is an invalid taint annotation: `Updates` can only be \
               used within `TaintInTaintOut[]`";
-      (* TODO(T225700656): support global variable models with pyrefly *)
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_valid_model
-           ~model_source:"test.unannotated_global: TaintSink[Test]"
-           ~skip_for_pyrefly:true;
+      @@ assert_valid_model ~model_source:"test.unannotated_global: TaintSink[Test]";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"test.missing_global: TaintSink[Test]"
