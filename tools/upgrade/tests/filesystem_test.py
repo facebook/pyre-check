@@ -18,6 +18,7 @@ from ..filesystem import (
     Filesystem,
     LocalMode,
     MercurialBackedFilesystem,
+    remove_local_mode,
     Target,
     TargetCollector,
 )
@@ -408,3 +409,15 @@ class FilesystemTest(unittest.TestCase):
             path_write_text.assert_called_once_with(
                 "# this is a header comment\n\n# pyre-strict\n# @manual=fbsource//some/buck:target\n\nimport buck.target"
             )
+
+    @patch.object(Path, "read_text")
+    def test_remove_local_mode(self, read_text: MagicMock) -> None:
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = "# pyre-unsafe\n1\n2"
+            remove_local_mode(Path("local.py"), [LocalMode.UNSAFE])
+            path_write_text.assert_called_once_with("1\n2")
+
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = "# pyre-strict\n1\n2"
+            remove_local_mode(Path("local.py"), [LocalMode.UNSAFE])
+            path_write_text.assert_called_once_with("# pyre-strict\n1\n2")

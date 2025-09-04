@@ -176,7 +176,9 @@ def remove_local_mode(path: Path, modes: List[LocalMode]) -> List[LocalMode]:
 
     lines: List[str] = text.split("\n")
     lines_with_modes = get_lines_with_modes(lines, modes)
-    lines = [line for index, line in enumerate(lines) if index not in lines_with_modes]
+    lines = [
+        line for index, line in enumerate(lines) if index + 1 not in lines_with_modes
+    ]
 
     new_text = "\n".join(lines)
     ast.check_stable(text, new_text)
