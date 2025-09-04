@@ -55,9 +55,7 @@ module Heap = struct
         let get_method_overrides child_method =
           let method_name = Define.unqualified_name child_method in
           let ancestor =
-            try
-              PyrePysaApi.ReadOnly.overrides pyre_api (Reference.show class_name) ~name:method_name
-            with
+            try PyrePysaApi.ReadOnly.get_overriden_base_class pyre_api ~class_name ~method_name with
             | PyrePysaLogic.UntrackedClass untracked_type ->
                 Log.warning
                   "Found untracked type `%s` when looking for a parent of `%a.%s`. The method will \
@@ -68,28 +66,17 @@ module Heap = struct
                   method_name;
                 None
           in
-          ancestor
-          >>= fun ancestor ->
-          let parent_annotation = PyrePysaLogic.AnnotatedAttribute.parent ancestor in
-          let ancestor_parent =
-            Type.Primitive parent_annotation
-            |> Type.expression
-            |> Expression.show
-            |> Reference.create
-          in
-          (* This special case exists only for `type`. Our override lookup for a class C first looks
-             at the regular MRO. If that fails, it looks for Type[C]'s MRO. However, when C is type,
-             this causes a cycle to get registered. *)
-          if Reference.equal ancestor_parent class_name then
-            None
-          else
-            let kind =
-              if Define.is_property_setter child_method then
-                Target.Pyre1PropertySetter
+          let kind =
+            if Define.is_property_setter child_method then
+              if PyrePysaApi.ReadOnly.is_pyrefly pyre_api then
+                Target.PyreflyPropertySetter
               else
-                Target.Normal
-            in
-            Some (Target.create_method ~kind ancestor_parent method_name, class_name)
+                Target.Pyre1PropertySetter
+            else
+              Target.Normal
+          in
+          ancestor
+          >>= fun ancestor -> Some (Target.create_method ~kind ancestor method_name, class_name)
         in
         let extract_define = function
           | { Node.value = Statement.Define define; _ } -> Some define

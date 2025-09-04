@@ -102,6 +102,12 @@ module JsonUtil = struct
              })
 
 
+  let get_optional_member json key =
+    match Yojson.Safe.Util.member key json with
+    | `Null -> None
+    | json -> Some json
+
+
   let check_format_version ~expected json =
     let open Core.Result.Monad_infix in
     get_int_member json "format_version"
@@ -248,6 +254,13 @@ module GlobalClassId = struct
     JsonUtil.get_int_member json "class_id"
     >>| fun class_id ->
     { module_id = ModuleId.from_int module_id; local_class_id = LocalClassId.from_int class_id }
+
+
+  let from_optional_json = function
+    | Some json ->
+        let open Core.Result.Monad_infix in
+        json |> from_json >>| Option.some
+    | None -> Ok None
 end
 
 module GlobalClassIdSharedMemoryKey = struct
@@ -276,6 +289,8 @@ module GlobalCallableId = struct
     name_location: Location.t;
   }
   [@@deriving compare, equal, show]
+
+  let _ = pp
 end
 
 module GlobalCallableIdSharedMemoryKey = struct
@@ -636,6 +651,7 @@ module ModuleInfoFile = struct
       is_stub: bool;
       is_toplevel: bool;
       is_class_toplevel: bool;
+      overridden_base_class: GlobalClassId.t option;
     }
     [@@deriving equal, show]
 
@@ -660,7 +676,10 @@ module ModuleInfoFile = struct
       JsonUtil.get_optional_bool_member ~default:false json "is_property_setter"
       >>= fun is_property_setter ->
       JsonUtil.get_optional_bool_member ~default:false json "is_stub"
-      >>| fun is_stub ->
+      >>= fun is_stub ->
+      JsonUtil.get_optional_member json "overridden_base_class"
+      |> GlobalClassId.from_optional_json
+      >>| fun overridden_base_class ->
       {
         name;
         parent;
@@ -673,6 +692,7 @@ module ModuleInfoFile = struct
         is_stub;
         is_toplevel = false;
         is_class_toplevel = false;
+        overridden_base_class;
       }
 
 
@@ -700,6 +720,7 @@ module ModuleInfoFile = struct
         is_stub = false;
         is_toplevel = true;
         is_class_toplevel = false;
+        overridden_base_class = None;
       }
 
 
@@ -727,6 +748,7 @@ module ModuleInfoFile = struct
         is_stub = false;
         is_toplevel = false;
         is_class_toplevel = true;
+        overridden_base_class = None;
       }
   end
 
@@ -1054,9 +1076,15 @@ module CallableMetadata = struct
     is_class_toplevel: bool;
     is_stub: bool;
     parent_is_class: bool;
+    overridden_base_class: GlobalClassId.t option;
   }
   [@@deriving show]
 end
+
+let assert_shared_memory_key_exists message = function
+  | Some value -> value
+  | None -> failwith (Format.sprintf "unexpected: %s" message)
+
 
 module CallableMetadataSharedMemory = struct
   include
@@ -1083,6 +1111,8 @@ module ClassMetadataSharedMemory = struct
       is_synthesized: bool;
     }
     [@@deriving show]
+
+    let _ = pp
   end
 
   include
@@ -1130,16 +1160,21 @@ module ModuleGlobalsSharedMemory =
       let description = "pyrefly global variables in module"
     end)
 
-module ClassIdToQualifiedNameSharedMemory =
-  Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
-    (GlobalClassIdSharedMemoryKey)
-    (struct
-      type t = FullyQualifiedName.t
+module ClassIdToQualifiedNameSharedMemory = struct
+  include
+    Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+      (GlobalClassIdSharedMemoryKey)
+      (struct
+        type t = FullyQualifiedName.t
 
-      let prefix = Hack_parallel.Std.Prefix.make ()
+        let prefix = Hack_parallel.Std.Prefix.make ()
 
-      let description = "pyrefly class id to fully qualified name"
-    end)
+        let description = "pyrefly class id to fully qualified name"
+      end)
+
+  let get_class_name handle class_id =
+    class_id |> get handle |> assert_shared_memory_key_exists "unknown class id"
+end
 
 module CallableIdToQualifiedNameSharedMemory =
   Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
@@ -1222,11 +1257,6 @@ module CallableUndecoratedSignaturesSharedMemory =
 
       let description = "pyrefly undecorated signatures of callables"
     end)
-
-let assert_shared_memory_key_exists message = function
-  | Some value -> value
-  | None -> failwith (Format.sprintf "unexpected: %s" message)
-
 
 (* API handle stored in the main process. The type `t` should not be sent to workers, since it's
    expensive to copy. *)
@@ -1417,8 +1447,8 @@ module ReadWrite = struct
       { ModuleInfoFile.JsonType.string; scalar_properties; class_names }
     =
     let get_class_qualified_name class_id =
-      ClassIdToQualifiedNameSharedMemory.get class_id_to_qualified_name_shared_memory class_id
-      |> assert_shared_memory_key_exists "missing qualified name for class id"
+      class_id
+      |> ClassIdToQualifiedNameSharedMemory.get_class_name class_id_to_qualified_name_shared_memory
       |> FullyQualifiedName.to_reference
       |> Reference.show
     in
@@ -1945,6 +1975,8 @@ module ReadWrite = struct
           name_overlaps_module: bool;
         }
         [@@deriving show]
+
+        let _ = pp
       end
 
       let create_qualified_names { children } =
@@ -2193,6 +2225,7 @@ module ReadWrite = struct
               is_toplevel;
               is_class_toplevel;
               parent;
+              overridden_base_class;
               _;
             } ->
             CallableMetadataSharedMemory.add
@@ -2213,6 +2246,7 @@ module ReadWrite = struct
                   (match parent with
                   | ModuleInfoFile.ParentScope.Class _ -> true
                   | _ -> false);
+                overridden_base_class;
               };
             CallableIdToQualifiedNameSharedMemory.add
               callable_id_to_qualified_name_shared_memory
@@ -2294,10 +2328,6 @@ module ReadWrite = struct
           { GlobalCallableId.module_id; name_location }
         |> assert_shared_memory_key_exists "unknown callable id"
       in
-      let get_class_name class_id =
-        ClassIdToQualifiedNameSharedMemory.get class_id_to_qualified_name_shared_memory class_id
-        |> assert_shared_memory_key_exists "unknown class id"
-      in
       let convert_function_parameter index = function
         | ModuleInfoFile.FunctionParameter.PosOnly { name; annotation; required } ->
             FunctionParameter.PositionalOnly
@@ -2365,8 +2395,18 @@ module ReadWrite = struct
           undecorated_signatures
       in
       let add_class ~key:_ ~data:{ ModuleInfoFile.ClassDefinition.local_class_id; bases; _ } =
-        let class_name = get_class_name { GlobalClassId.module_id; local_class_id } in
-        let parents = List.map bases ~f:get_class_name in
+        let class_name =
+          ClassIdToQualifiedNameSharedMemory.get_class_name
+            class_id_to_qualified_name_shared_memory
+            { GlobalClassId.module_id; local_class_id }
+        in
+        let parents =
+          List.map
+            bases
+            ~f:
+              (ClassIdToQualifiedNameSharedMemory.get_class_name
+                 class_id_to_qualified_name_shared_memory)
+        in
         (* TODO(T225700656): To save memory, we could skip classes with no bases (which implicitly
            extend `object`) *)
         ClassImmediateParentsSharedMemory.add
@@ -2489,10 +2529,9 @@ module ReadWrite = struct
     in
 
     let object_class =
-      Option.value_exn
-        (ClassIdToQualifiedNameSharedMemory.get
-           class_id_to_qualified_name_shared_memory
-           object_class_id)
+      ClassIdToQualifiedNameSharedMemory.get_class_name
+        class_id_to_qualified_name_shared_memory
+        object_class_id
     in
 
     let type_of_expressions_shared_memory =
@@ -2644,6 +2683,7 @@ module ReadOnly = struct
     callable_ast_shared_memory: CallableAstSharedMemory.t;
     callable_define_signature_shared_memory: CallableDefineSignatureSharedMemory.t;
     callable_undecorated_signatures_shared_memory: CallableUndecoratedSignaturesSharedMemory.t;
+    class_id_to_qualified_name_shared_memory: ClassIdToQualifiedNameSharedMemory.t;
     object_class: FullyQualifiedName.t;
   }
 
@@ -2661,6 +2701,7 @@ module ReadOnly = struct
         callable_ast_shared_memory;
         callable_define_signature_shared_memory;
         callable_undecorated_signatures_shared_memory;
+        class_id_to_qualified_name_shared_memory;
         object_class;
         _;
       }
@@ -2678,6 +2719,7 @@ module ReadOnly = struct
       callable_ast_shared_memory;
       callable_define_signature_shared_memory;
       callable_undecorated_signatures_shared_memory;
+      class_id_to_qualified_name_shared_memory;
       object_class;
     }
 
@@ -2797,6 +2839,22 @@ module ReadOnly = struct
       callable_metadata_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
     |> assert_shared_memory_key_exists "missing callable metadata"
+
+
+  let get_overriden_base_class
+      { callable_metadata_shared_memory; class_id_to_qualified_name_shared_memory; _ }
+      ~class_name
+      ~method_name
+    =
+    let define_name = Reference.create ~prefix:class_name method_name in
+    CallableMetadataSharedMemory.get
+      callable_metadata_shared_memory
+      (FullyQualifiedName.from_reference_unchecked define_name)
+    |> assert_shared_memory_key_exists "missing callable metadata"
+    |> fun { CallableMetadata.overridden_base_class; _ } ->
+    overridden_base_class
+    >>| ClassIdToQualifiedNameSharedMemory.get_class_name class_id_to_qualified_name_shared_memory
+    >>| FullyQualifiedName.to_reference
 
 
   let get_define_opt { callable_ast_shared_memory; _ } define_name =

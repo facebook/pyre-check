@@ -167,7 +167,11 @@ module ReadOnly : sig
 
   val global : t -> Ast.Reference.t -> AttributeResolution.Global.t option
 
-  val overrides : t -> string -> name:string -> AnnotatedAttribute.instantiated option
+  val get_overriden_base_class
+    :  t ->
+    class_name:Ast.Reference.t ->
+    method_name:string ->
+    Ast.Reference.t option
 
   val annotation_parser : t -> AnnotatedCallable.annotation_parser
 

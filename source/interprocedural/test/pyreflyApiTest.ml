@@ -31,6 +31,8 @@ module ModuleQualifierExpected = struct
     id: int;
   }
   [@@deriving show]
+
+  let _ = pp
 end
 
 let filesystem_module_path path =
@@ -531,6 +533,7 @@ let test_fully_qualified_names _ =
         is_stub = false;
         is_toplevel = false;
         is_class_toplevel = false;
+        overridden_base_class = None;
       }
   in
   let create_class ?(parent = ModuleInfoFile.ParentScope.TopLevel) name =

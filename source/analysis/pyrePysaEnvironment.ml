@@ -455,7 +455,31 @@ module ReadOnly = struct
 
   let get_variable api = GlobalResolution.get_variable (global_resolution api)
 
-  let overrides api = global_resolution api |> GlobalResolution.overrides
+  let get_overriden_base_class api ~class_name ~method_name =
+    let ancestor =
+      GlobalResolution.overrides
+        (global_resolution api)
+        (Ast.Reference.show class_name)
+        ~name:method_name
+    in
+    let open Core.Option.Monad_infix in
+    ancestor
+    >>= fun ancestor ->
+    let parent_annotation = AnnotatedAttribute.parent ancestor in
+    let ancestor_parent =
+      Type.Primitive parent_annotation
+      |> Type.expression
+      |> Ast.Expression.show
+      |> Ast.Reference.create
+    in
+    (* This special case exists only for `type`. Our override lookup for a class C first looks at
+       the regular MRO. If that fails, it looks for Type[C]'s MRO. However, when C is type, this
+       causes a cycle to get registered. *)
+    if Ast.Reference.equal ancestor_parent class_name then
+      None
+    else
+      Some ancestor_parent
+
 
   let annotation_parser api = global_resolution api |> GlobalResolution.annotation_parser
 

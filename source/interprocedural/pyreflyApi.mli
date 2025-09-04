@@ -35,6 +35,10 @@ exception
     error: Error.t;
   }
 
+module GlobalClassId : sig
+  type t [@@deriving show]
+end
+
 module CallableMetadata : sig
   type t = {
     module_qualifier: Ast.Reference.t;
@@ -48,6 +52,7 @@ module CallableMetadata : sig
     is_class_toplevel: bool;
     is_stub: bool; (* Is this a stub definition, e.g `def foo(): ...` *)
     parent_is_class: bool;
+    overridden_base_class: GlobalClassId.t option;
   }
   [@@deriving show]
 end
@@ -99,6 +104,12 @@ module ReadOnly : sig
 
   val get_callable_metadata : t -> Ast.Reference.t -> CallableMetadata.t
 
+  val get_overriden_base_class
+    :  t ->
+    class_name:Ast.Reference.t ->
+    method_name:string ->
+    Ast.Reference.t option
+
   (* Is this a stub module, i.e a `.pyi` file. *)
   val is_stub_qualifier : t -> Ast.Reference.t -> bool
 
@@ -148,11 +159,6 @@ module LocalClassId : sig
   type t [@@deriving compare, equal, show]
 
   val from_int : int -> t
-end
-
-(* Exposed for testing purposes *)
-module GlobalClassId : sig
-  type t [@@deriving compare, equal, show]
 end
 
 (* Exposed for testing purposes *)
@@ -264,6 +270,7 @@ module ModuleInfoFile : sig
       is_stub: bool;
       is_toplevel: bool;
       is_class_toplevel: bool;
+      overridden_base_class: GlobalClassId.t option;
     }
     [@@deriving equal, show]
   end
