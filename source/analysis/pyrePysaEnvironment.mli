@@ -100,6 +100,14 @@ module ReadWrite : sig
   val purge_sources_from_shared_memory : t -> unit
 end
 
+module MethodInQualifier : sig
+  type t = {
+    class_name: Ast.Reference.t;
+    method_name: string;
+    is_property_setter: bool;
+  }
+end
+
 module ReadOnly : sig
   type t
 
@@ -238,6 +246,12 @@ module ReadOnly : sig
   (* Returns whether the type is an int, float, bool or enum, after stripping Optional and
      Awaitable. *)
   val scalar_type_properties : t -> PysaType.t -> ScalarTypeProperties.t
+
+  val get_methods_for_qualifier
+    :  t ->
+    exclude_test_modules:bool ->
+    Ast.Reference.t ->
+    MethodInQualifier.t list
 end
 
 module InContext : sig

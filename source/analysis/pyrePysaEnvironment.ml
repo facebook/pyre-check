@@ -346,6 +346,14 @@ module ReadWrite = struct
     ()
 end
 
+module MethodInQualifier = struct
+  type t = {
+    class_name: Ast.Reference.t;
+    method_name: string;
+    is_property_setter: bool;
+  }
+end
+
 module ReadOnly = struct
   type t = {
     type_environment: TypeEnvironment.ReadOnly.t;
@@ -666,6 +674,41 @@ module ReadOnly = struct
               Type.pp
               annotation;
             ScalarTypeProperties.none)
+
+
+  let get_methods_for_qualifier api ~exclude_test_modules qualifier =
+    let timer = Timer.start () in
+    let extract_methods_from_class
+        { Ast.Node.value = { Ast.Statement.Class.body; name = class_name; _ }; _ }
+      =
+      let methods =
+        List.filter_map body ~f:(function
+            | { Ast.Node.value = Ast.Statement.Statement.Define define; _ } ->
+                Some
+                  {
+                    MethodInQualifier.class_name;
+                    method_name = Ast.Statement.Define.unqualified_name define;
+                    is_property_setter = Ast.Statement.Define.is_property_setter define;
+                  }
+            | _ -> None)
+      in
+      methods
+    in
+    let classes =
+      match source_of_qualifier api qualifier with
+      | Some source when (not exclude_test_modules) || not (source_is_unit_test api ~source) ->
+          Preprocessing.classes source
+      | _ -> []
+    in
+    let results = List.concat_map ~f:extract_methods_from_class classes in
+    Statistics.performance
+      ~randomly_log_every:1000
+      ~always_log_time_threshold:1.0 (* Seconds *)
+      ~name:"Fetched all methods for a qualifier"
+      ~section:`DependencyGraph
+      ~timer
+      ();
+    results
 end
 
 (* This module represents the API Pysa uses when it needs to interact with Pyre inside of a context

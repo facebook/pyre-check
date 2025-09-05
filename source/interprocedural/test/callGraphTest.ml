@@ -18,7 +18,6 @@ let compute_define_call_graph
     ~module_name
     ~callable
     ~define
-    ~source
     ~pyre_api
     ~configuration
     ~object_targets
@@ -27,7 +26,12 @@ let compute_define_call_graph
   let static_analysis_configuration =
     Configuration.StaticAnalysis.create ~maximum_target_depth configuration ()
   in
-  let override_graph_heap = OverrideGraph.Heap.from_source ~pyre_api ~source in
+  let override_graph_heap =
+    OverrideGraph.Heap.from_qualifier
+      ~pyre_api
+      ~skip_overrides_targets:Reference.SerializableSet.empty
+      module_name
+  in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
   let initial_callables =
     FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier:module_name
@@ -115,7 +119,6 @@ let assert_call_graph_of_define
       ~module_name
       ~callable
       ~define
-      ~source
       ~pyre_api
       ~configuration
       ~object_targets
@@ -157,7 +160,11 @@ let assert_higher_order_call_graph_of_define
     TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
   in
   let override_graph_shared_memory =
-    OverrideGraph.Heap.from_source ~pyre_api ~source |> OverrideGraph.SharedMemory.from_heap
+    module_name
+    |> OverrideGraph.Heap.from_qualifier
+         ~pyre_api
+         ~skip_overrides_targets:Reference.SerializableSet.empty
+    |> OverrideGraph.SharedMemory.from_heap
   in
   let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory in
   let define = find_define_exn ~define_name ~module_name source in
@@ -173,7 +180,6 @@ let assert_higher_order_call_graph_of_define
       ~module_name
       ~callable
       ~define
-      ~source
       ~pyre_api
       ~configuration
       ~object_targets
@@ -7649,15 +7655,18 @@ let test_higher_order_call_graph_of_define =
 
 
 let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () context =
-  let source, _, pyre_api, configuration =
+  let _, _, pyre_api, configuration =
     TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
   in
-  let initial_callables =
-    FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier:!&"test"
-  in
+  let qualifier = Reference.create "test" in
+  let initial_callables = FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier in
   let pyre_in_context = PyrePysaApi.InContext.create_at_global_scope pyre_api in
   let override_graph_shared_memory =
-    OverrideGraph.Heap.from_source ~pyre_api ~source |> OverrideGraph.SharedMemory.from_heap
+    qualifier
+    |> OverrideGraph.Heap.from_qualifier
+         ~pyre_api
+         ~skip_overrides_targets:Reference.SerializableSet.empty
+    |> OverrideGraph.SharedMemory.from_heap
   in
   let module TestResult = struct
     type t =

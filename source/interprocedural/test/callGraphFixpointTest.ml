@@ -30,7 +30,7 @@ let assert_higher_order_call_graph_fixpoint
     ()
     context
   =
-  let source, _, pyre_api, configuration =
+  let _, _, pyre_api, configuration =
     TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
   in
   let static_analysis_configuration =
@@ -40,11 +40,15 @@ let assert_higher_order_call_graph_fixpoint
       configuration
       ()
   in
-  let override_graph_heap = OverrideGraph.Heap.from_source ~pyre_api ~source in
-  let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
-  let initial_callables =
-    FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier:!&"test"
+  let qualifier = Ast.Reference.create "test" in
+  let override_graph_heap =
+    OverrideGraph.Heap.from_qualifier
+      ~pyre_api
+      ~skip_overrides_targets:Ast.Reference.SerializableSet.empty
+      qualifier
   in
+  let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
+  let initial_callables = FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier in
   let definitions = FetchCallables.get_definitions initial_callables in
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in

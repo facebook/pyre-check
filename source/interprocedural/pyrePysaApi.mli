@@ -92,6 +92,12 @@ module ReadOnly : sig
     Ast.Reference.t ->
     Ast.Reference.t list
 
+  val get_methods_for_qualifier
+    :  t ->
+    exclude_test_modules:bool ->
+    Ast.Reference.t ->
+    Analysis.PyrePysaEnvironment.MethodInQualifier.t list
+
   val module_exists : t -> Ast.Reference.t -> bool
 
   val parse_annotation

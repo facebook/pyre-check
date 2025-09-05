@@ -173,6 +173,14 @@ module ReadOnly = struct
           qualifier
 
 
+  let get_methods_for_qualifier api ~exclude_test_modules qualifier =
+    match api with
+    | Pyre1 pyre_api ->
+        Pyre1Api.ReadOnly.get_methods_for_qualifier ~exclude_test_modules pyre_api qualifier
+    | Pyrefly pyrefly_api ->
+        PyreflyApi.ReadOnly.get_methods_for_qualifier ~exclude_test_modules pyrefly_api qualifier
+
+
   let parse_reference = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.parse_reference pyre_api
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.parse_reference"

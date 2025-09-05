@@ -14,31 +14,33 @@ open Test
 let setup ?(other_sources = []) ~context ~handle source =
   let project =
     let external_sources = List.map other_sources ~f:(fun { handle; source } -> handle, source) in
-    ScratchProject.setup ~context ~external_sources [handle, source]
+    ScratchPyrePysaProject.setup
+      ~external_sources
+      ~context
+      ~requires_type_of_expressions:false
+      [handle, source]
   in
-  let { ScratchProject.BuiltTypeEnvironment.sources; _ } =
-    ScratchProject.build_type_environment project
-  in
-  let pyre_api =
-    project |> ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
-  in
-  let source =
-    List.find_exn sources ~f:(fun { Source.module_path; _ } ->
-        String.equal (ModulePath.relative module_path) handle)
-  in
-  source, pyre_api, ScratchProject.configuration_of project
+  ScratchPyrePysaProject.read_only_api project
 
 
 let test_method_overrides context =
-  let assert_method_overrides ?(other_sources = []) ?(handle = "test.py") source ~expected =
+  let assert_method_overrides ?(other_sources = []) source ~expected =
     let expected =
       let create_callables (member, overriding_types) =
         Target.create_method_from_reference !&member, List.map overriding_types ~f:Reference.create
       in
       List.map expected ~f:create_callables
     in
-    let source, pyre_api, _ = setup ~other_sources ~context ~handle source in
-    let overrides_map = OverrideGraph.Heap.from_source ~pyre_api ~source in
+    let qualifier_name = "test" in
+    let handle = Format.asprintf "%s.py" qualifier_name in
+    let qualifier = Ast.Reference.create qualifier_name in
+    let pyre_api = setup ~other_sources ~context ~handle source in
+    let overrides_map =
+      OverrideGraph.Heap.from_qualifier
+        ~pyre_api
+        ~skip_overrides_targets:Ast.Reference.SerializableSet.empty
+        qualifier
+    in
     let expected_overrides = OverrideGraph.Heap.of_alist_exn expected in
     assert_equal
       ~cmp:OverrideGraph.Heap.equal
@@ -63,11 +65,12 @@ let test_method_overrides context =
   (* We don't register any overrides at all for classes in test files. *)
   assert_method_overrides
     {|
+      from unittest.case import TestCase
       class Foo:
         def foo(): pass
       class Bar(Foo):
         def foo(): pass
-      class Test(unittest.case.TestCase):
+      class Test(TestCase):
         class Baz(Foo):
           def foo(): pass
     |}
@@ -85,7 +88,6 @@ let test_method_overrides context =
       |};
         };
       ]
-    ~handle:"test_module.py"
     {|
       import module
       class Test(unittest.case.TestCase):

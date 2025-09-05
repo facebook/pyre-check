@@ -652,6 +652,7 @@ module ModuleInfoFile = struct
       is_toplevel: bool;
       is_class_toplevel: bool;
       overridden_base_class: GlobalClassId.t option;
+      defining_class: GlobalClassId.t option;
     }
     [@@deriving equal, show]
 
@@ -679,7 +680,10 @@ module ModuleInfoFile = struct
       >>= fun is_stub ->
       JsonUtil.get_optional_member json "overridden_base_class"
       |> GlobalClassId.from_optional_json
-      >>| fun overridden_base_class ->
+      >>= fun overridden_base_class ->
+      JsonUtil.get_optional_member json "defining_class"
+      |> GlobalClassId.from_optional_json
+      >>| fun defining_class ->
       {
         name;
         parent;
@@ -693,6 +697,7 @@ module ModuleInfoFile = struct
         is_toplevel = false;
         is_class_toplevel = false;
         overridden_base_class;
+        defining_class;
       }
 
 
@@ -721,6 +726,7 @@ module ModuleInfoFile = struct
         is_toplevel = true;
         is_class_toplevel = false;
         overridden_base_class = None;
+        defining_class = None;
       }
 
 
@@ -749,6 +755,7 @@ module ModuleInfoFile = struct
         is_toplevel = false;
         is_class_toplevel = true;
         overridden_base_class = None;
+        defining_class = None;
       }
   end
 
@@ -1076,7 +1083,6 @@ module CallableMetadata = struct
     is_class_toplevel: bool;
     is_stub: bool;
     parent_is_class: bool;
-    overridden_base_class: GlobalClassId.t option;
   }
   [@@deriving show]
 end
@@ -1087,11 +1093,21 @@ let assert_shared_memory_key_exists message = function
 
 
 module CallableMetadataSharedMemory = struct
+  module Value = struct
+    type t = {
+      metadata: CallableMetadata.t;
+      (* This is the original name, without the fully qualified suffixes like `$2` or `@setter`. *)
+      name: string;
+      overridden_base_class: GlobalClassId.t option;
+      defining_class: GlobalClassId.t option;
+    }
+  end
+
   include
     Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
       (FullyQualifiedNameSharedMemoryKey)
       (struct
-        type t = CallableMetadata.t
+        type t = Value.t
 
         let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -1602,7 +1618,8 @@ module ReadWrite = struct
         |> List.map ~f:(fun callable ->
                CallableMetadataSharedMemory.get callable_metadata_shared_memory callable
                |> Option.value_exn ~message:"missing callable metadata for callable"
-               |> fun { CallableMetadata.name_location; _ } -> name_location, callable)
+               |> fun { CallableMetadataSharedMemory.Value.metadata = { name_location; _ }; _ } ->
+               name_location, callable)
         |> Location.Map.of_alist_exn
       in
       let defines =
@@ -2216,6 +2233,7 @@ module ReadWrite = struct
         match definition with
         | Function
             {
+              name;
               is_overload;
               is_staticmethod;
               is_classmethod;
@@ -2226,27 +2244,33 @@ module ReadWrite = struct
               is_class_toplevel;
               parent;
               overridden_base_class;
+              defining_class;
               _;
             } ->
             CallableMetadataSharedMemory.add
               callable_metadata_shared_memory
               qualified_name
               {
-                CallableMetadata.module_qualifier = ModuleQualifier.to_reference module_qualifier;
-                name_location;
-                is_overload;
-                is_staticmethod;
-                is_classmethod;
-                is_property_getter;
-                is_property_setter;
-                is_toplevel;
-                is_class_toplevel;
-                is_stub;
-                parent_is_class =
-                  (match parent with
-                  | ModuleInfoFile.ParentScope.Class _ -> true
-                  | _ -> false);
+                CallableMetadataSharedMemory.Value.metadata =
+                  {
+                    module_qualifier = ModuleQualifier.to_reference module_qualifier;
+                    name_location;
+                    is_overload;
+                    is_staticmethod;
+                    is_classmethod;
+                    is_property_getter;
+                    is_property_setter;
+                    is_toplevel;
+                    is_class_toplevel;
+                    is_stub;
+                    parent_is_class =
+                      (match parent with
+                      | ModuleInfoFile.ParentScope.Class _ -> true
+                      | _ -> false);
+                  };
+                name;
                 overridden_base_class;
+                defining_class;
               };
             CallableIdToQualifiedNameSharedMemory.add
               callable_id_to_qualified_name_shared_memory
@@ -2600,7 +2624,7 @@ module ReadWrite = struct
         ()
     in
     let cleanup_callable ~module_id callable_name =
-      let { CallableMetadata.name_location; _ } =
+      let { CallableMetadataSharedMemory.Value.metadata = { name_location; _ }; _ } =
         CallableMetadataSharedMemory.get callable_metadata_shared_memory callable_name
         |> assert_shared_memory_key_exists "missing callable metadata"
       in
@@ -2839,6 +2863,7 @@ module ReadOnly = struct
       callable_metadata_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
     |> assert_shared_memory_key_exists "missing callable metadata"
+    |> fun { CallableMetadataSharedMemory.Value.metadata; _ } -> metadata
 
 
   let get_overriden_base_class
@@ -2851,10 +2876,51 @@ module ReadOnly = struct
       callable_metadata_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
     |> assert_shared_memory_key_exists "missing callable metadata"
-    |> fun { CallableMetadata.overridden_base_class; _ } ->
+    |> fun { CallableMetadataSharedMemory.Value.overridden_base_class; _ } ->
     overridden_base_class
     >>| ClassIdToQualifiedNameSharedMemory.get_class_name class_id_to_qualified_name_shared_memory
     >>| FullyQualifiedName.to_reference
+
+
+  let get_methods_for_qualifier
+      ({
+         module_callables_shared_memory;
+         callable_metadata_shared_memory;
+         class_id_to_qualified_name_shared_memory;
+         _;
+       } as api)
+      ~exclude_test_modules
+      qualifier
+    =
+    if exclude_test_modules && is_test_qualifier api qualifier then
+      []
+    else
+      let convert_to_method_in_qualifier callable =
+        callable
+        |> CallableMetadataSharedMemory.get callable_metadata_shared_memory
+        |> assert_shared_memory_key_exists "missing callable metadata"
+        |> fun {
+                 CallableMetadataSharedMemory.Value.defining_class;
+                 name = method_name;
+                 metadata = { is_property_setter; _ };
+                 _;
+               } ->
+        defining_class
+        >>| ClassIdToQualifiedNameSharedMemory.get_class_name
+              class_id_to_qualified_name_shared_memory
+        >>| fun defining_class ->
+        {
+          Analysis.PyrePysaEnvironment.MethodInQualifier.class_name =
+            FullyQualifiedName.to_reference defining_class;
+          method_name;
+          is_property_setter;
+        }
+      in
+      ModuleCallablesSharedMemory.get
+        module_callables_shared_memory
+        (ModuleQualifier.from_reference_unchecked qualifier)
+      |> assert_shared_memory_key_exists "missing module callables for qualifier"
+      |> List.filter_map ~f:convert_to_method_in_qualifier
 
 
   let get_define_opt { callable_ast_shared_memory; _ } define_name =
@@ -3040,7 +3106,12 @@ module ModelQueries = struct
         callable_metadata_shared_memory
         (FullyQualifiedName.from_reference_unchecked name)
     with
-    | Some { CallableMetadata.is_property_getter; is_property_setter; parent_is_class; _ } ->
+    | Some
+        {
+          CallableMetadataSharedMemory.Value.metadata =
+            { is_property_getter; is_property_setter; parent_is_class; _ };
+          _;
+        } ->
         let undecorated_signatures =
           CallableUndecoratedSignaturesSharedMemory.get
             callable_undecorated_signatures_shared_memory

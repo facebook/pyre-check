@@ -719,9 +719,10 @@ let initialize
   in
   (* Overrides must be done first, as they influence the call targets. *)
   let { OverrideGraph.Heap.overrides = override_graph_heap; _ } =
-    OverrideGraph.Heap.from_source ~pyre_api ~source
-    |> OverrideGraph.Heap.skip_overrides
-         ~to_skip:(SharedModels.skip_overrides ~scheduler initial_models)
+    qualifier
+    |> OverrideGraph.Heap.from_qualifier
+         ~pyre_api
+         ~skip_overrides_targets:(SharedModels.skip_overrides ~scheduler initial_models)
     |> OverrideGraph.Heap.cap_overrides
          ~analyze_all_overrides_targets:
            (SharedModels.analyze_all_overrides ~scheduler initial_models)

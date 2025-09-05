@@ -23,9 +23,11 @@ module Heap : sig
 
   val show : t -> string
 
-  val from_source : pyre_api:PyrePysaApi.ReadOnly.t -> source:Source.t -> t
-
-  val skip_overrides : to_skip:Reference.SerializableSet.t -> t -> t
+  val from_qualifier
+    :  pyre_api:PyrePysaApi.ReadOnly.t ->
+    skip_overrides_targets:Reference.SerializableSet.t ->
+    Reference.t ->
+    t
 
   type cap_overrides_result = {
     overrides: t;

@@ -14,7 +14,6 @@
 open Core
 open Pyre
 open Ast
-open Statement
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
 (** Override graph in the ocaml heap, storing a mapping from a method to classes overriding it. *)
@@ -46,67 +45,63 @@ module Heap = struct
 
   let show = Format.asprintf "%a" pp
 
-  let from_source ~pyre_api ~source =
-    if PyrePysaApi.ReadOnly.source_is_unit_test pyre_api ~source then
-      Target.Map.Tree.empty
-    else
-      let timer = Timer.start () in
-      let class_method_overrides { Node.value = { Class.body; name = class_name; _ }; _ } =
-        let get_method_overrides child_method =
-          let method_name = Define.unqualified_name child_method in
-          let ancestor =
-            try PyrePysaApi.ReadOnly.get_overriden_base_class pyre_api ~class_name ~method_name with
-            | PyrePysaLogic.UntrackedClass untracked_type ->
-                Log.warning
-                  "Found untracked type `%s` when looking for a parent of `%a.%s`. The method will \
-                   be considered has having no parent, which could lead to false negatives."
-                  untracked_type
-                  Reference.pp
-                  class_name
-                  method_name;
-                None
-          in
-          let kind =
-            if Define.is_property_setter child_method then
-              if PyrePysaApi.ReadOnly.is_pyrefly pyre_api then
-                Target.PyreflyPropertySetter
-              else
-                Target.Pyre1PropertySetter
-            else
-              Target.Normal
-          in
-          ancestor
-          >>= fun ancestor -> Some (Target.create_method ~kind ancestor method_name, class_name)
-        in
-        let extract_define = function
-          | { Node.value = Statement.Define define; _ } -> Some define
-          | _ -> None
-        in
-        let overrides =
-          body |> List.filter_map ~f:extract_define |> List.filter_map ~f:get_method_overrides
-        in
-        Statistics.performance
-          ~randomly_log_every:1000
-          ~always_log_time_threshold:1.0 (* Seconds *)
-          ~name:"Overrides built"
-          ~section:`DependencyGraph
-          ~normals:["class", Reference.show class_name]
-          ~timer
-          ();
-        overrides
+  module OverridingRelation = struct
+    (* Represent a relation where `base_callable` is overridden by a method with the same name in
+       `overriding_class`. *)
+    type t = {
+      base_callable: Target.t;
+      overriding_class: Reference.t;
+    }
+
+    let from_method_in_qualifier
+        ~pyre_api
+        {
+          Analysis.PyrePysaEnvironment.MethodInQualifier.class_name;
+          method_name;
+          is_property_setter;
+        }
+      =
+      let ancestor =
+        try PyrePysaApi.ReadOnly.get_overriden_base_class pyre_api ~class_name ~method_name with
+        | PyrePysaLogic.UntrackedClass untracked_type ->
+            Log.warning
+              "Found untracked type `%s` when looking for a parent of `%a.%s`. The method will be \
+               considered has having no parent, which could lead to false negatives."
+              untracked_type
+              Reference.pp
+              class_name
+              method_name;
+            None
       in
-      let record_overrides map (ancestor_method, overriding_type) =
-        let update_types = function
-          | Some types -> overriding_type :: types
-          | None -> [overriding_type]
-        in
-        Target.Map.Tree.update map ancestor_method ~f:update_types
+      let kind =
+        if is_property_setter then
+          if PyrePysaApi.ReadOnly.is_pyrefly pyre_api then
+            Target.PyreflyPropertySetter
+          else
+            Target.Pyre1PropertySetter
+        else
+          Target.Normal
       in
-      let record_overrides_list map relations = List.fold relations ~init:map ~f:record_overrides in
-      Preprocessing.classes source
-      |> List.map ~f:class_method_overrides
-      |> List.fold ~init:Target.Map.Tree.empty ~f:record_overrides_list
-      |> Target.Map.Tree.map ~f:(List.dedup_and_sort ~compare:Reference.compare)
+      ancestor
+      >>= fun ancestor ->
+      Some
+        {
+          base_callable = Target.create_method ~kind ancestor method_name;
+          overriding_class = class_name;
+        }
+  end
+
+  let from_overriding_relations relations =
+    let accumulate map { OverridingRelation.base_callable; overriding_class } =
+      let update_types = function
+        | Some types -> overriding_class :: types
+        | None -> [overriding_class]
+      in
+      Target.Map.Tree.update map base_callable ~f:update_types
+    in
+    relations
+    |> List.fold ~init:Target.Map.Tree.empty ~f:accumulate
+    |> Target.Map.Tree.map ~f:(List.dedup_and_sort ~compare:Reference.compare)
 
 
   let skip_overrides ~to_skip overrides =
@@ -120,6 +115,13 @@ module Heap = struct
              |> Target.Regular.define_name_exn)
         |> Core.not)
       overrides
+
+
+  let from_qualifier ~pyre_api ~skip_overrides_targets qualifier =
+    PyrePysaApi.ReadOnly.get_methods_for_qualifier ~exclude_test_modules:true pyre_api qualifier
+    |> List.filter_map ~f:(OverridingRelation.from_method_in_qualifier ~pyre_api)
+    |> from_overriding_relations
+    |> skip_overrides ~to_skip:skip_overrides_targets
 
 
   type cap_overrides_result = {
@@ -266,14 +268,9 @@ let build_whole_program_overrides
   let overrides =
     let combine ~key:_ left right = List.rev_append left right in
     let build_overrides overrides qualifier =
-      match PyrePysaApi.ReadOnly.source_of_qualifier pyre_api qualifier with
-      | None -> overrides
-      | Some source ->
-          let new_overrides =
-            Heap.from_source ~pyre_api ~source
-            |> Heap.skip_overrides ~to_skip:skip_overrides_targets
-          in
-          Target.Map.Tree.merge_skewed ~combine overrides new_overrides
+      qualifier
+      |> Heap.from_qualifier ~pyre_api ~skip_overrides_targets
+      |> Target.Map.Tree.merge_skewed ~combine overrides
     in
     let scheduler_policy =
       Scheduler.Policy.from_configuration_or_default

@@ -21,28 +21,27 @@ let setup ?(other_sources = []) ~context ~handle source =
   let pyre_api =
     project |> ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
   in
-  let { ScratchProject.BuiltTypeEnvironment.sources; type_environment; _ } =
+  let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
     ScratchProject.build_type_environment project
   in
-  let source =
-    List.find_exn sources ~f:(fun { Source.module_path; _ } ->
-        String.equal (ModulePath.relative module_path) handle)
-  in
-  source, pyre_api, type_environment, ScratchProject.configuration_of project
+  pyre_api, type_environment, ScratchProject.configuration_of project
 
 
 let create_call_graph ?(other_sources = []) ~context source_text =
   let module_name, handle = !&"test", "test.py" in
-  let source, pyre_api, environment, configuration =
-    setup ~other_sources ~context ~handle source_text
-  in
+  let pyre_api, environment, configuration = setup ~other_sources ~context ~handle source_text in
   let static_analysis_configuration =
     Configuration.StaticAnalysis.create
       ~maximum_target_depth:Configuration.StaticAnalysis.default_maximum_target_depth
       configuration
       ()
   in
-  let override_graph = OverrideGraph.Heap.from_source ~pyre_api ~source in
+  let override_graph =
+    OverrideGraph.Heap.from_qualifier
+      ~pyre_api
+      ~skip_overrides_targets:Reference.SerializableSet.empty
+      module_name
+  in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph in
   let () =
     let errors = TypeEnvironment.ReadOnly.get_errors environment module_name in

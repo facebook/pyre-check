@@ -534,6 +534,7 @@ let test_fully_qualified_names _ =
         is_toplevel = false;
         is_class_toplevel = false;
         overridden_base_class = None;
+        defining_class = None;
       }
   in
   let create_class ?(parent = ModuleInfoFile.ParentScope.TopLevel) name =
