@@ -2242,7 +2242,6 @@ module ReadWrite = struct
               is_stub;
               is_toplevel;
               is_class_toplevel;
-              parent;
               overridden_base_class;
               defining_class;
               _;
@@ -2263,10 +2262,7 @@ module ReadWrite = struct
                     is_toplevel;
                     is_class_toplevel;
                     is_stub;
-                    parent_is_class =
-                      (match parent with
-                      | ModuleInfoFile.ParentScope.Class _ -> true
-                      | _ -> false);
+                    parent_is_class = Option.is_some defining_class;
                   };
                 name;
                 overridden_base_class;
