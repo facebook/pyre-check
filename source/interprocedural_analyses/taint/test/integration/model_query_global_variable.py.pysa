@@ -47,7 +47,7 @@ ModelQuery(
 ModelQuery(
   name = "get_typed_dict",
   find = "globals",
-  where = [type_annotation.equals("typing.Dict[(str, model_query_global_variable.Baz)]")],
+  where = [type_annotation.equals("typing.Dict[str, model_query_global_variable.Baz]")],
   model = [
     GlobalModel(TaintSource[SelectDict]),
   ]
@@ -81,7 +81,7 @@ ModelQuery(
   name = "get_callables",
   find = "globals",
   where = [
-    type_annotation.equals("typing.Callable[([int, str], int)]"),
+    type_annotation.equals("typing.Callable[[int, str], int]"),
   ],
   model = [
     GlobalModel(TaintSource[SelectCallable])

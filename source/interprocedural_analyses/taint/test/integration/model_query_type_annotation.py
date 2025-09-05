@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Annotated, Dict, List
+from typing import Dict, List, Annotated
 
 
 def test1_f1(taint_1: int, taint_2: str, taint_3: float):
@@ -40,16 +40,6 @@ class Test2_C:
         pass
 
 
-def test3_f1(
-    taint_1: Annotated[str, "foo"], no_taint_1: str, taint_2: Annotated[int, "bar"]
-):
-    pass
-
-
-def test3_f2(no_taint_1: List[Annotated[str, "foo"]], no_taint_2: int):
-    pass
-
-
 def test4_taint_1(x) -> str:
     pass
 
@@ -80,17 +70,6 @@ def test5_taint_2(x) -> Test5_T2:
 
 def test5_no_taint_1(x) -> Test5_Foo:
     pass
-
-
-class Test6_C:
-    def test6_taint_1(self, x) -> Annotated[str, "foo"]:
-        pass
-
-    def test6_taint_2(self, x) -> Annotated[List[str], "bar"]:
-        pass
-
-    def test6_no_taint_1(self, x) -> str:
-        pass
 
 
 class Test7_C:

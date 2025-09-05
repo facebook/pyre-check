@@ -1522,7 +1522,8 @@ let parse_class_hierarchy_options ~path ~location ~callee ~arguments =
            (InvalidModelQueryClauseArguments { callee; arguments }))
 
 
-let parse_annotation_constraint ~path ~location ~callee ~attribute ~arguments =
+let parse_annotation_constraint ~path ~location ~find_clause ~callee ~attribute ~arguments =
+  let is_find_attribute () = ModelQuery.Find.equal find_clause ModelQuery.Find.Attribute in
   match attribute, arguments with
   | ( "equals",
       [
@@ -1536,8 +1537,11 @@ let parse_annotation_constraint ~path ~location ~callee ~attribute ~arguments =
           _;
         };
       ] ) ->
-      Ok
-        (ModelQuery.AnnotationConstraint.NameConstraint (ModelQuery.NameConstraint.Equals type_name))
+      let name_constraint = ModelQuery.NameConstraint.Equals type_name in
+      if is_find_attribute () then
+        Ok (ModelQuery.AnnotationConstraint.OriginalAnnotationConstraint name_constraint)
+      else
+        Ok (ModelQuery.AnnotationConstraint.FullyQualifiedConstraint name_constraint)
   | ( "matches",
       [
         {
@@ -1550,10 +1554,21 @@ let parse_annotation_constraint ~path ~location ~callee ~attribute ~arguments =
           _;
         };
       ] ) ->
-      Ok
-        (ModelQuery.AnnotationConstraint.NameConstraint
-           (ModelQuery.NameConstraint.Matches (Re2.create_exn type_name_pattern)))
-  | "is_annotated_type", [] -> Ok ModelQuery.AnnotationConstraint.IsAnnotatedTypeConstraint
+      let name_constraint = ModelQuery.NameConstraint.Matches (Re2.create_exn type_name_pattern) in
+      if is_find_attribute () then
+        Ok (ModelQuery.AnnotationConstraint.OriginalAnnotationConstraint name_constraint)
+      else
+        Ok (ModelQuery.AnnotationConstraint.FullyQualifiedConstraint name_constraint)
+  | "is_annotated_type", [] ->
+      if is_find_attribute () then
+        Ok ModelQuery.AnnotationConstraint.IsAnnotatedTypeConstraint
+      else
+        Error
+          (model_verification_error
+             ~path
+             ~location
+             (DeprecatedIsAnnotatedType
+                { expression = callee; find_clause_kind = ModelQuery.Find.show find_clause }))
   | "extends", _ -> (
       let open Core.Result in
       parse_class_hierarchy_options ~path ~location ~callee ~arguments
@@ -2063,7 +2078,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
       | ["type_annotation"; attribute], _ ->
           check_find_in ~callee [ModelQuery.Find.Attribute; ModelQuery.Find.Global]
           >>= fun () ->
-          parse_annotation_constraint ~path ~location ~callee ~attribute ~arguments
+          parse_annotation_constraint ~path ~location ~find_clause ~callee ~attribute ~arguments
           >>= fun annotation_constraint ->
           Ok (ModelQuery.Constraint.AnnotationConstraint annotation_constraint)
       | ["Decorator"], _ ->
@@ -2075,13 +2090,13 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
       | ["return_annotation"; attribute], _ ->
           check_find ~callee ModelQuery.Find.is_callable
           >>= fun () ->
-          parse_annotation_constraint ~path ~location ~callee ~attribute ~arguments
+          parse_annotation_constraint ~path ~location ~find_clause ~callee ~attribute ~arguments
           >>= fun annotation_constraint ->
           Ok (ModelQuery.Constraint.ReturnConstraint annotation_constraint)
       | ["any_parameter"; "annotation"; attribute], _ ->
           check_find ~callee ModelQuery.Find.is_callable
           >>= fun () ->
-          parse_annotation_constraint ~path ~location ~callee ~attribute ~arguments
+          parse_annotation_constraint ~path ~location ~find_clause ~callee ~attribute ~arguments
           >>| fun parameter_constraint ->
           ModelQuery.Constraint.AnyParameterConstraint
             (ModelQuery.ParameterConstraint.AnnotationConstraint parameter_constraint)
@@ -2135,7 +2150,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
   constraints >>= check_invalid_read_form_cache ~path ~location ~constraint_expression:expression
 
 
-let parse_parameter_where_clause ~path ({ Node.value; location } as expression) =
+let parse_parameter_where_clause ~path ~find_clause ({ Node.value; location } as expression) =
   let open Core.Result in
   let rec parse_constraint ({ Node.value; _ } as constraint_expression) =
     let parse_constraint_reference ~callee ~reference ~arguments =
@@ -2155,7 +2170,7 @@ let parse_parameter_where_clause ~path ({ Node.value; location } as expression) 
           parse_constraint value
           >>| fun query_constraint -> ModelQuery.ParameterConstraint.Not query_constraint
       | ["type_annotation"; attribute], _ ->
-          parse_annotation_constraint ~path ~location ~callee ~attribute ~arguments
+          parse_annotation_constraint ~path ~location ~find_clause ~callee ~attribute ~arguments
           >>| fun annotation_constraint ->
           ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint
       | ( ["index"; "equals"],
@@ -2229,38 +2244,14 @@ let parse_model_clause
                         parametric_annotation));
                   _;
                 };
-              arguments =
-                [
-                  {
-                    Call.Argument.name = Some { Node.value = "pattern"; _ };
-                    value = { Node.value = Expression.Name (Name.Identifier pattern); _ };
-                  };
-                  {
-                    Call.Argument.name = Some { Node.value = "kind"; _ };
-                    value = { Node.value = Expression.Name (Name.Identifier kind); _ };
-                  };
-                ];
+              arguments = _;
               origin = _;
-            } -> (
-            match parametric_annotation with
-            | "ParametricSourceFromAnnotation" ->
-                Ok
-                  [
-                    ModelQuery.QueryTaintAnnotation.ParametricSourceFromAnnotation
-                      { source_pattern = pattern; kind };
-                  ]
-            | "ParametricSinkFromAnnotation" ->
-                Ok
-                  [
-                    ModelQuery.QueryTaintAnnotation.ParametricSinkFromAnnotation
-                      { sink_pattern = pattern; kind };
-                  ]
-            | _ ->
-                Error
-                  (model_verification_error
-                     ~path
-                     ~location
-                     (UnexpectedTaintAnnotation parametric_annotation)))
+            } ->
+            Error
+              (model_verification_error
+                 ~path
+                 ~location
+                 (DeprecatedParametricTaintAnnotation parametric_annotation))
         | Expression.Subscript
             {
               base = { Node.value = Name (Name.Identifier "CrossRepositoryTaintAnchor"); _ };
@@ -2527,7 +2518,7 @@ let parse_model_clause
          { Call.Argument.value = taint; _ };
          { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
         ] ->
-            parse_parameter_where_clause ~path where_clause
+            parse_parameter_where_clause ~path ~find_clause where_clause
             >>= fun where ->
             parse_taint ~origin:ModelQueryParameter taint
             >>| fun taint -> ModelQuery.Model.Parameter { where; taint }

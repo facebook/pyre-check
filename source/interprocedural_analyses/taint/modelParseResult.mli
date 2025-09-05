@@ -167,7 +167,10 @@ module ModelQuery : sig
   module AnnotationConstraint : sig
     type t =
       | IsAnnotatedTypeConstraint
-      | NameConstraint of NameConstraint.t
+      | OriginalAnnotationConstraint of NameConstraint.t (* match the user-provided type *)
+      | FullyQualifiedConstraint of NameConstraint.t
+        (* match the fully qualified type from the type checker (after parsing, resolving aliases,
+           etc.) *)
       | AnnotationClassExtends of {
           class_name: string;
           is_transitive: bool;
@@ -331,14 +334,6 @@ module ModelQuery : sig
   module QueryTaintAnnotation : sig
     type t =
       | TaintAnnotation of TaintAnnotation.t
-      | ParametricSourceFromAnnotation of {
-          source_pattern: string;
-          kind: string;
-        }
-      | ParametricSinkFromAnnotation of {
-          sink_pattern: string;
-          kind: string;
-        }
       | CrossRepositoryTaintAnchor of {
           annotation: TaintAnnotation.t;
           canonical_name: FormatString.t;

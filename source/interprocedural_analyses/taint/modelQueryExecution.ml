@@ -686,31 +686,85 @@ let rec matches_decorator_constraint ~pyre_api ~name_captures ~decorator = funct
                (SanitizedCallArgumentSet.of_list decorator_keyword_arguments))
 
 
+module TypeAnnotation : sig
+  type t
+
+  val from_original_annotation
+    :  pyre_api:PyrePysaApi.ReadOnly.t ->
+    preserve_original:bool ->
+    Expression.t ->
+    t
+
+  val is_annotated : t -> bool
+
+  val as_type : t -> Type.t
+
+  (* Show the original annotation, as written by the user. *)
+  val show_original_annotation : t -> string
+
+  (* Show the fully qualified type annotation from the type checker. *)
+  val show_fully_qualified_annotation : t -> string
+end = struct
+  type t = {
+    expression: Expression.t option;
+        (* The original annotation, as an expression. None if not supported. *)
+    type_: Type.t Lazy.t;
+  }
+
+  let from_original_annotation ~pyre_api ~preserve_original expression =
+    {
+      expression = Option.some_if preserve_original expression;
+      type_ = lazy (PyrePysaApi.ReadOnly.parse_annotation pyre_api expression);
+    }
+
+
+  let is_annotated = function
+    | { expression = None; _ } -> failwith "is_annotated is not supported in this context"
+    | { expression = Some { Node.value = expression; _ }; _ } -> (
+        match expression with
+        | Expression.Expression.Subscript
+            {
+              base =
+                { Node.value = Name (Expression.Name.Attribute { attribute = "Annotated"; _ }); _ };
+              _;
+            } ->
+            true
+        | _ -> false)
+
+
+  let as_type { type_; _ } = Lazy.force type_
+
+  (* Show the original annotation, as written by the user. *)
+  let show_original_annotation = function
+    | { expression = Some expression; _ } -> Expression.show expression
+    | _ -> failwith "show_original_annotation is not supported in this context"
+
+
+  (* Show the parsed annotation from pyre *)
+  let show_fully_qualified_annotation { type_; _ } = Type.show (Lazy.force type_)
+end
+
 let matches_annotation_constraint
-    ~pyre_api
     ~class_hierarchy_graph
     ~name_captures
     ~annotation_constraint
     annotation
   =
-  let open Expression in
-  match annotation_constraint, annotation with
-  | ( ModelQuery.AnnotationConstraint.IsAnnotatedTypeConstraint,
-      {
-        Node.value =
-          Expression.Subscript
-            { base = { Node.value = Name (Name.Attribute { attribute = "Annotated"; _ }); _ }; _ };
-        _;
-      } ) ->
-      true
-  | ModelQuery.AnnotationConstraint.NameConstraint name_constraint, annotation_expression ->
+  match annotation_constraint with
+  | ModelQuery.AnnotationConstraint.IsAnnotatedTypeConstraint ->
+      TypeAnnotation.is_annotated annotation
+  | ModelQuery.AnnotationConstraint.OriginalAnnotationConstraint name_constraint ->
       matches_name_constraint
         ~name_captures
         ~name_constraint
-        (Expression.show annotation_expression)
-  | ( ModelQuery.AnnotationConstraint.AnnotationClassExtends
-        { class_name; is_transitive; includes_self },
-      annotation_expression ) -> (
+        (TypeAnnotation.show_original_annotation annotation)
+  | ModelQuery.AnnotationConstraint.FullyQualifiedConstraint name_constraint ->
+      matches_name_constraint
+        ~name_captures
+        ~name_constraint
+        (TypeAnnotation.show_fully_qualified_annotation annotation)
+  | ModelQuery.AnnotationConstraint.AnnotationClassExtends
+      { class_name; is_transitive; includes_self } -> (
       let extract_readonly t =
         match t with
         | Type.PyreReadOnly t -> t
@@ -736,13 +790,12 @@ let matches_annotation_constraint
             extract_class_name (extract_readonly t)
         | extracted_class_name -> Some extracted_class_name
       in
-      let parsed_type = PyrePysaApi.ReadOnly.parse_annotation pyre_api annotation_expression in
+      let parsed_type = TypeAnnotation.as_type annotation in
       match extract_class_name parsed_type with
       | Some extracted_class_name ->
           find_children ~class_hierarchy_graph ~is_transitive ~includes_self class_name
           |> ClassHierarchyGraph.ClassNameSet.mem extracted_class_name
       | None -> false)
-  | _ -> false
 
 
 let rec normalized_parameter_matches_constraint
@@ -758,11 +811,8 @@ let rec normalized_parameter_matches_constraint
   = function
   | ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint ->
       annotation
-      >>| matches_annotation_constraint
-            ~pyre_api
-            ~class_hierarchy_graph
-            ~name_captures
-            ~annotation_constraint
+      >>| TypeAnnotation.from_original_annotation ~pyre_api ~preserve_original:false
+      >>| matches_annotation_constraint ~class_hierarchy_graph ~name_captures ~annotation_constraint
       |> Option.value ~default:false
   | ModelQuery.ParameterConstraint.NameConstraint name_constraint ->
       matches_name_constraint ~name_captures ~name_constraint (Identifier.sanitized qualified_name)
@@ -963,19 +1013,13 @@ let rec matches_constraint
         (value |> Modelable.name |> Reference.show)
   | ModelQuery.Constraint.AnnotationConstraint annotation_constraint ->
       Modelable.type_annotation value
-      >>| matches_annotation_constraint
-            ~pyre_api
-            ~class_hierarchy_graph
-            ~name_captures
-            ~annotation_constraint
+      >>| TypeAnnotation.from_original_annotation ~pyre_api ~preserve_original:true
+      >>| matches_annotation_constraint ~class_hierarchy_graph ~name_captures ~annotation_constraint
       |> Option.value ~default:false
   | ModelQuery.Constraint.ReturnConstraint annotation_constraint ->
       Modelable.return_annotation value
-      >>| matches_annotation_constraint
-            ~pyre_api
-            ~class_hierarchy_graph
-            ~name_captures
-            ~annotation_constraint
+      >>| TypeAnnotation.from_original_annotation ~pyre_api ~preserve_original:false
+      >>| matches_annotation_constraint ~class_hierarchy_graph ~name_captures ~annotation_constraint
       |> Option.value ~default:false
   | ModelQuery.Constraint.AnyParameterConstraint parameter_constraint ->
       Modelable.parameters value
@@ -1760,45 +1804,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       ~modelable
       models
     =
-    let production_to_taint ~root ~production annotation =
-      let open Expression in
-      let get_subkind_from_annotation ~pattern annotation =
-        let get_annotation_of_type annotation =
-          match annotation >>| Node.value with
-          | Some
-              (Expression.Subscript
-                {
-                  base = { Node.value = Name (Name.Attribute { attribute = "Annotated"; _ }); _ };
-                  index = { Node.value = Expression.Tuple [_; annotation]; _ };
-                  origin = _;
-                }) ->
-              Some annotation
-          | _ -> None
-        in
-        match get_annotation_of_type annotation with
-        | Some
-            {
-              Node.value =
-                Expression.Call
-                  {
-                    Call.callee = { Node.value = Name (Name.Identifier callee_name); _ };
-                    arguments =
-                      [
-                        {
-                          Call.Argument.value = { Node.value = Name (Name.Identifier subkind); _ };
-                          _;
-                        };
-                      ];
-                    origin = _;
-                  };
-              _;
-            } ->
-            if String.equal callee_name pattern then
-              Some subkind
-            else
-              None
-        | _ -> None
-      in
+    let production_to_taint ~root ~production =
       let update_placeholder_via_feature ~actual_parameter =
         (* If we see a via_feature on the $global attribute symbolic parameter in the taint for an
            actual parameter, we replace it with the actual parameter. *)
@@ -1864,22 +1870,6 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       match production with
       | ModelQuery.QueryTaintAnnotation.TaintAnnotation taint_annotation ->
           Some (update_placeholder_via_features taint_annotation)
-      | ModelQuery.QueryTaintAnnotation.ParametricSourceFromAnnotation { source_pattern; kind } ->
-          get_subkind_from_annotation ~pattern:source_pattern annotation
-          >>| fun subkind ->
-          ModelParseResult.TaintAnnotation.Source
-            {
-              source = Sources.ParametricSource { source_name = kind; subkind };
-              features = ModelParseResult.TaintFeatures.empty;
-            }
-      | ModelQuery.QueryTaintAnnotation.ParametricSinkFromAnnotation { sink_pattern; kind } ->
-          get_subkind_from_annotation ~pattern:sink_pattern annotation
-          >>| fun subkind ->
-          ModelParseResult.TaintAnnotation.Sink
-            {
-              sink = Sinks.ParametricSink { sink_name = kind; subkind };
-              features = ModelParseResult.TaintFeatures.empty;
-            }
       | ModelQuery.QueryTaintAnnotation.CrossRepositoryTaintAnchor
           { annotation; canonical_name; canonical_port } ->
           let expand_format_string format_string =
@@ -1902,10 +1892,10 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
                ~canonical_port:(expand_format_string canonical_port)
           |> Option.some
     in
-    let apply_model ~normalized_parameters ~captures ~return_annotation = function
+    let apply_model ~normalized_parameters ~captures = function
       | ModelQuery.Model.Return productions ->
           List.filter_map productions ~f:(fun production ->
-              production_to_taint ~root:AccessPath.Root.LocalResult ~production return_annotation
+              production_to_taint ~root:AccessPath.Root.LocalResult ~production
               >>| fun taint -> ModelParseResult.ModelAnnotation.ReturnAnnotation taint)
       | ModelQuery.Model.CapturedVariables { taint = productions; generation_if_source } ->
           List.cartesian_product productions captures
@@ -1913,7 +1903,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
                  let root =
                    AccessPath.Root.CapturedVariable { name = capture.Statement.Define.Capture.name }
                  in
-                 production_to_taint ~root ~production return_annotation
+                 production_to_taint ~root ~production
                  >>| fun annotation ->
                  ModelParseResult.ModelAnnotation.ParameterAnnotation
                    { root; annotation; generation_if_source })
@@ -1921,22 +1911,16 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
           let parameter =
             List.find_map
               normalized_parameters
-              ~f:(fun
-                   {
-                     AccessPath.NormalizedParameter.root;
-                     qualified_name;
-                     original = { Node.value = { Expression.Parameter.annotation; _ }; _ };
-                   }
-                 ->
+              ~f:(fun { AccessPath.NormalizedParameter.root; qualified_name; original = _ } ->
                 if Identifier.equal_sanitized qualified_name name then
-                  Some (root, annotation)
+                  Some root
                 else
                   None)
           in
           match parameter with
-          | Some (parameter, annotation) ->
+          | Some parameter ->
               List.filter_map productions ~f:(fun production ->
-                  production_to_taint ~root:parameter ~production annotation
+                  production_to_taint ~root:parameter ~production
                   >>| fun annotation ->
                   ModelParseResult.ModelAnnotation.ParameterAnnotation
                     { root = parameter; annotation; generation_if_source = false })
@@ -1945,34 +1929,23 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
           let parameter =
             List.find_map
               normalized_parameters
-              ~f:(fun
-                   {
-                     AccessPath.NormalizedParameter.root;
-                     original = { Node.value = { Expression.Parameter.annotation; _ }; _ };
-                     _;
-                   }
-                 ->
+              ~f:(fun { AccessPath.NormalizedParameter.root; original = _; _ } ->
                 match root with
                 | AccessPath.Root.PositionalParameter { position; _ } when position = index ->
-                    Some (root, annotation)
+                    Some root
                 | _ -> None)
           in
           match parameter with
-          | Some (parameter, annotation) ->
+          | Some parameter ->
               List.filter_map productions ~f:(fun production ->
-                  production_to_taint ~root:parameter ~production annotation
+                  production_to_taint ~root:parameter ~production
                   >>| fun annotation ->
                   ModelParseResult.ModelAnnotation.ParameterAnnotation
                     { root = parameter; annotation; generation_if_source = false })
           | None -> [])
       | ModelQuery.Model.AllParameters { excludes; taint } ->
           let apply_parameter_production
-              ( {
-                  AccessPath.NormalizedParameter.root;
-                  qualified_name;
-                  original = { Node.value = { Expression.Parameter.annotation; _ }; _ };
-                },
-                production )
+              ({ AccessPath.NormalizedParameter.root; qualified_name; original = _ }, production)
             =
             if
               (not (List.is_empty excludes))
@@ -1980,7 +1953,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
             then
               None
             else
-              production_to_taint ~root ~production annotation
+              production_to_taint ~root ~production
               >>| fun annotation ->
               ModelParseResult.ModelAnnotation.ParameterAnnotation
                 { root; annotation; generation_if_source = false }
@@ -1989,12 +1962,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
           |> List.filter_map ~f:apply_parameter_production
       | ModelQuery.Model.Parameter { where; taint; _ } ->
           let apply_parameter_production
-              ( ({
-                   AccessPath.NormalizedParameter.root;
-                   original = { Node.value = { Expression.Parameter.annotation; _ }; _ };
-                   _;
-                 } as parameter),
-                production )
+              (({ AccessPath.NormalizedParameter.root; original = _; _ } as parameter), production)
             =
             if
               List.for_all
@@ -2006,7 +1974,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
                      ~name_captures
                      ~parameter)
             then
-              production_to_taint ~root ~production annotation
+              production_to_taint ~root ~production
               >>| fun annotation ->
               ModelParseResult.ModelAnnotation.ParameterAnnotation
                 { root; annotation; generation_if_source = false }
@@ -2020,11 +1988,9 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       | ModelQuery.Model.Global _ -> failwith "impossible case"
       | ModelQuery.Model.WriteToCache _ -> failwith "impossible case"
     in
-    let { Target.CallableSignature.parameters; return_annotation; captures; _ } =
-      Modelable.signature modelable
-    in
+    let { Target.CallableSignature.parameters; captures; _ } = Modelable.signature modelable in
     let normalized_parameters = AccessPath.normalize_parameters parameters in
-    List.concat_map models ~f:(apply_model ~normalized_parameters ~captures ~return_annotation)
+    List.concat_map models ~f:(apply_model ~normalized_parameters ~captures)
 
 
   let generate_model_from_annotations

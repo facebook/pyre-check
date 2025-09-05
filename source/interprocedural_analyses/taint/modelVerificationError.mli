@@ -191,6 +191,11 @@ type kind =
       error: FormatStringError.t;
     }
   | UnmatchedPartialSinkKind of Sinks.PartialSink.t
+  | DeprecatedIsAnnotatedType of {
+      expression: Expression.t;
+      find_clause_kind: string;
+    }
+  | DeprecatedParametricTaintAnnotation of string
 [@@deriving equal, compare]
 
 type t = {

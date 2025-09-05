@@ -1328,7 +1328,7 @@ let test_invalid_model_queries =
       ModelQuery(
         name = "invalid_model",
         find = "functions",
-        where = return_annotation.is_annotated_type(),
+        where = return_annotation.equals("int"),
         model = AttributeModel(TaintSource[Test])
       )
     |}
@@ -1342,7 +1342,7 @@ let test_invalid_model_queries =
       ModelQuery(
         name = "invalid_model",
         find = "methods",
-        where = return_annotation.is_annotated_type(),
+        where = return_annotation.equals("int"),
         model = AttributeModel(TaintSource[Test])
       )
     |}
@@ -2385,7 +2385,7 @@ Unexpected statement: `food(y)`
       ModelQuery(
         name = "invalid_model",
         find = "globals",
-        where = type_annotation.is_annotated_type(),
+        where = type_annotation.equals("int"),
         model = GlobalModel(TaintSource[A])
       )
     |};
@@ -2445,6 +2445,20 @@ Unexpected statement: `food(y)`
         model = AttributeModel(ViaTypeOf)
       )
     |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "globals",
+        where = type_annotation.is_annotated_type(),
+        model = GlobalModel(TaintSource[A])
+      )
+    |}
+           ~expect:
+             "In `type_annotation.is_annotated_type`: `is_annotated_type` is deprecated for find \
+              clause of kind `globals`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model
            ~model_source:
@@ -2652,6 +2666,38 @@ Unexpected statement: `food(y)`
            ~expect:
              "`TaintInTaintOut[(LocalReturn, ParameterPath[_.foo])]` is an invalid taint \
               annotation: `ParameterPath` can only be used on parameters";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
+      ModelQuery(
+         name = "foo_finders",
+         find = "functions",
+         where = any_parameter.annotation.equals("foo"),
+         model = [
+           AllParameters(
+             ParametricSourceFromAnnotation(pattern=DynamicSource, kind=Dynamic)
+           )
+         ]
+      )
+    |}
+           ~expect:"Parametric taint annotation `ParametricSourceFromAnnotation` is deprecated.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
+      ModelQuery(
+         name = "foo_finders",
+         find = "functions",
+         where = any_parameter.annotation.equals("foo"),
+         model = [
+           AllParameters(
+             ParametricSinkFromAnnotation(pattern=DynamicSink, kind=Dynamic)
+           )
+         ]
+      )
+    |}
+           ~expect:"Parametric taint annotation `ParametricSinkFromAnnotation` is deprecated.";
     ]
 
 

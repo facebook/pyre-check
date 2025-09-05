@@ -256,32 +256,7 @@ ModelQuery(
 
 #### `return_annotation.is_annotated_type`
 
-This will match when a callable's return type is annotated with
-[`typing.Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated).
-This is a type used to decorate existing types with context-specific metadata,
-e.g.
-
-```python
-from typing import Annotated
-
-def bad() -> Annotated[str, "SQL"]:
-  ...
-```
-
-Example:
-
-```python
-ModelQuery(
-  name = "get_return_annotated_sources",
-  find = functions,
-  where = [
-    return_annotation.is_annotated_type(),
-  ],
-  model = Returns(TaintSource[SQL])
-)
-```
-
-This query would match on functions like the one shown above.
+This constraint has been **deprecated**, and is not supported anymore.
 
 #### `return_annotation.extends`
 
@@ -341,15 +316,15 @@ def baz2() -> Optional[ReadOnly[Optional[C]]]: ...
 
 ### `type_annotation` clauses
 
-Model queries allow for querying based on the type annotation of a `global`.
-Note that this is similar to the
+Model queries allow for querying based on the type annotation of a global
+variable or class attribute. This is similar to the
 [`return_annotation`](#return_annotation-clauses) clauses shown previously. See
 also: `Parameters` model [`type_annotation`](#type_annotation-clause) clauses.
 
 #### `type_annotation.equals`
 
-The clause will match when the fully-qualified name of the global's explicitly
-annotated type matches the specified value exactly.
+The clause will match when the fully-qualified name of the global or class
+attribute explicitly annotated type matches the specified value exactly.
 
 ```python
 ModelQuery(
@@ -374,7 +349,8 @@ will result in a model for `annotated_dict: TaintSource[SelectDict]`.
 #### `type_annotation.matches`
 
 This is similar to the previous clause, but will match when the fully-qualified
-name of the global's explicit type annotation matches the specified pattern.
+name of the global or class attribute explicit type annotation matches the
+specified pattern.
 
 ```python
 ModelQuery(
@@ -389,7 +365,7 @@ ModelQuery(
 
 #### `type_annotation.is_annotated_type`
 
-This will match when a global's type is annotated with
+This will match when a class attribute's type is annotated with
 [`typing.Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated).
 This is a type used to decorate existing types with context-specific metadata,
 e.g.
@@ -397,7 +373,8 @@ e.g.
 ```python
 from typing import Annotated
 
-result: Annotated[str, "SQL"] = ...
+class Foo:
+  bar: Annotated[str, "SQL"] = ...
 ```
 
 Example:
@@ -405,15 +382,21 @@ Example:
 ```python
 ModelQuery(
   name = "get_return_annotated_sources",
-  find = globals,
+  find = attributes,
   where = [
-    return_annotation.is_annotated_type(),
+    type_annotation.is_annotated_type(),
   ],
-  model = GlobalModel(TaintSource[SQL])
+  model = AttributeModel(TaintSource[SQL])
 )
 ```
 
 This query would match on functions like the one shown above.
+
+:::caution
+
+Note that this is only supported for class attributes, not globals or functions.
+
+:::
 
 #### `type_annotation.extends`
 
@@ -481,27 +464,7 @@ ModelQuery(
 
 #### `any_parameter.annotation.is_annotated_type`
 
-This clause will match all callables which have at least one parameter with type
-`typing.Annotated`.
-
-Example:
-
-```python
-ModelQuery(
-  name = "get_parameter_annotated_sources",
-  find = "functions",
-  where = [
-    any_parameter.annotation.is_annotated_type()
-  ],
-  model =
-    Parameters(
-      TaintSource[Test],
-      where=[
-        type_annotation.is_annotated_type(),
-      ]
-    )
-)
-```
+This constraint has been **deprecated**, and is not supported anymore.
 
 ### `AnyOf` clauses
 
@@ -516,8 +479,8 @@ ModelQuery(
   find = "methods",
   where = [
     AnyOf(
-      any_parameter.annotation.is_annotated_type(),
-      return_annotation.is_annotated_type(),
+      any_parameter.annotation.equals("int"),
+      return_annotation.equals("int"),
     )
   ],
   model = ...
@@ -1375,10 +1338,8 @@ ModelQuery(
 This clause is used to specify a constraint on parameter type annotation.
 Currently the clauses supported are: `type_annotation.equals()`, which takes the
 fully-qualified name of a Python type or class and matches when there is an
-exact match, `type_annotation.matches()`, which takes a regex pattern to match
-type annotations against, and `type_annotation.is_annotated_type()`, which will
-match parameters of type
-[`typing.Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated).
+exact match, and `type_annotation.matches()`, which takes a regex pattern to match
+type annotations against.
 
 Example:
 
@@ -1393,65 +1354,15 @@ ModelQuery(
       where=[
         type_annotation.equals("foo.bar.C"),  # exact match
         type_annotation.matches("^List\["),   # regex match
-        type_annotation.is_annotated_type(),  # matches Annotated[T, x]
       ]
     )
   ]
 )
 ```
 
-To match on the annotation portion of `Annotated` types, consider the following
-example. Suppose this code was in `test.py`:
-
-```python
-from enum import Enum
-from typing import Annotated, Option
-
-class Color(Enum):
-    RED = 1
-    GREEN = 2
-    BLUE = 3
-
-class Foo:
-  x: Annotated[Optional[int], Color.RED]
-  y: Annotated[Optional[int], Color.BLUE]
-  z: Annotated[int, "z"]
-```
-
-Note that the type name that should be matched against is its fully qualified
-name, which also includes the fully qualified name of any other types referenced
-(for example, `typing.Optional` rather than just `Optional`). When multiple
-arguments are provided to the type they are implicitly treated as being in a
-tuple.
-
-Here are some examples of `where` clauses that can be used to specify models for
-the annotated attributes in this case:
-
-```python
-ModelQuery(
-  name = "get_annotated_attributes_sources",
-  find = "attributes",
-  where = [
-    AnyOf(
-      type_annotation.equals("typing.Annotated[(typing.Optional[int], test.Color.RED)]"),
-      type_annotation.equals("typing.Annotated[(int, z)]"),
-      type_annotation.matches(".*Annotated\[.*Optional[int].*Color\..*\]")
-      type_annotation.is_annotated_type()
-    )
-  ],
-  model = [
-    AttributeModel(TaintSource[Test]),
-  ]
-)
-```
-
-This query should generate the following models:
-
-```
-test.Foo.x: TaintSource[Test]
-test.Foo.y: TaintSource[Test]
-test.Foo.z: TaintSource[Test]
-```
+Note that it is not possible to match on the `typing.Annotated[]` type anymore
+(unlike in previous versions of Pysa), since that information is lost by the type
+checker.
 
 #### `Not`, `AllOf` and `AnyOf` clauses
 

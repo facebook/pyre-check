@@ -438,7 +438,11 @@ module ModelQuery = struct
   module AnnotationConstraint = struct
     type t =
       | IsAnnotatedTypeConstraint
-      | NameConstraint of NameConstraint.t
+      | OriginalAnnotationConstraint of
+          NameConstraint.t (* match the user-provided annotation, as seen in the source code *)
+      | FullyQualifiedConstraint of NameConstraint.t
+        (* match the fully qualified type from the type checker (after parsing, resolving aliases,
+           etc.) *)
       | AnnotationClassExtends of {
           class_name: string;
           is_transitive: bool;
@@ -659,14 +663,6 @@ module ModelQuery = struct
   module QueryTaintAnnotation = struct
     type t =
       | TaintAnnotation of TaintAnnotation.t
-      | ParametricSourceFromAnnotation of {
-          source_pattern: string;
-          kind: string;
-        }
-      | ParametricSinkFromAnnotation of {
-          sink_pattern: string;
-          kind: string;
-        }
       | CrossRepositoryTaintAnchor of {
           annotation: TaintAnnotation.t;
           canonical_name: FormatString.t;
@@ -676,10 +672,6 @@ module ModelQuery = struct
 
     let should_keep ~source_sink_filter = function
       | TaintAnnotation taint -> TaintAnnotation.should_keep ~source_sink_filter taint
-      | ParametricSourceFromAnnotation { kind; _ } ->
-          SourceSinkFilter.should_keep_source source_sink_filter (Sources.NamedSource kind)
-      | ParametricSinkFromAnnotation { kind; _ } ->
-          SourceSinkFilter.should_keep_sink source_sink_filter (Sinks.NamedSink kind)
       | CrossRepositoryTaintAnchor { annotation; _ } ->
           TaintAnnotation.should_keep ~source_sink_filter annotation
   end

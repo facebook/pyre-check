@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_sink
-from typing import Annotated, List
+from typing import List
 
 
 class C:
@@ -85,7 +85,7 @@ class Test5:
     def test5_alarm3(self, x: C):
         pass
 
-    def test5_alarm4(self, x: Annotated[str, "test"]):
+    def test5_alarm4(self, x: str):
         pass
 
     def test5_noalarm1(self, x: int):
@@ -136,7 +136,7 @@ def test9_f(a, b):
     pass
 
 
-def test10_f(a: Annotated[int, "foo"], b: str, c_foo, d: List[str]):
+def test10_f(a: int, b: str, c_foo, d: List[str]):
     pass
 
 

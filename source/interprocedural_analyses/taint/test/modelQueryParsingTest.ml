@@ -385,7 +385,7 @@ let test_query_parsing_find_functions context =
     ModelQuery(
        name = "foo_finders",
        find = "functions",
-       where = return_annotation.is_annotated_type(),
+       where = return_annotation.equals("int"),
        model = [Returns([TaintSource[Test]])]
     )
     |}
@@ -396,7 +396,11 @@ let test_query_parsing_find_functions context =
           name = "foo_finders";
           logging_group_name = None;
           path = None;
-          where = [ReturnConstraint IsAnnotatedTypeConstraint];
+          where =
+            [
+              ReturnConstraint
+                (AnnotationConstraint.FullyQualifiedConstraint (NameConstraint.Equals "int"));
+            ];
           find = Function;
           models =
             [
@@ -418,7 +422,7 @@ let test_query_parsing_find_functions context =
     ModelQuery(
        name = "foo_finders",
        find = "functions",
-       where = any_parameter.annotation.is_annotated_type(),
+       where = any_parameter.annotation.equals("int"),
        model = [Returns([TaintSource[Test]])]
     )
     |}
@@ -429,7 +433,12 @@ let test_query_parsing_find_functions context =
           name = "foo_finders";
           logging_group_name = None;
           path = None;
-          where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
+          where =
+            [
+              AnyParameterConstraint
+                (AnnotationConstraint
+                   (AnnotationConstraint.FullyQualifiedConstraint (NameConstraint.Equals "int")));
+            ];
           find = Function;
           models =
             [
@@ -452,8 +461,8 @@ let test_query_parsing_find_functions context =
        name = "foo_finders",
        find = "functions",
        where = AnyOf(
-         any_parameter.annotation.is_annotated_type(),
-         return_annotation.is_annotated_type(),
+         any_parameter.annotation.equals("int"),
+         return_annotation.equals("int"),
        ),
        model = [Returns([TaintSource[Test]])]
     )
@@ -469,8 +478,11 @@ let test_query_parsing_find_functions context =
             [
               AnyOf
                 [
-                  AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint);
-                  ReturnConstraint IsAnnotatedTypeConstraint;
+                  AnyParameterConstraint
+                    (AnnotationConstraint
+                       (AnnotationConstraint.FullyQualifiedConstraint (NameConstraint.Equals "int")));
+                  ReturnConstraint
+                    (AnnotationConstraint.FullyQualifiedConstraint (NameConstraint.Equals "int"));
                 ];
             ];
           find = Function;
@@ -495,8 +507,8 @@ let test_query_parsing_find_functions context =
        name = "foo_finders",
        find = "functions",
        where = AllOf(
-         any_parameter.annotation.is_annotated_type(),
-         return_annotation.is_annotated_type(),
+         any_parameter.annotation.equals("int"),
+         return_annotation.equals("int"),
        ),
        model = [Returns([TaintSource[Test]])]
     )
@@ -512,8 +524,11 @@ let test_query_parsing_find_functions context =
             [
               AllOf
                 [
-                  AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint);
-                  ReturnConstraint IsAnnotatedTypeConstraint;
+                  AnyParameterConstraint
+                    (AnnotationConstraint
+                       (AnnotationConstraint.FullyQualifiedConstraint (NameConstraint.Equals "int")));
+                  ReturnConstraint
+                    (AnnotationConstraint.FullyQualifiedConstraint (NameConstraint.Equals "int"));
                 ];
             ];
           find = Function;
@@ -700,87 +715,6 @@ let test_query_parsing_find_functions context =
                     [
                       TaintAnnotation
                         (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
-                    ];
-                };
-            ];
-          expected_models = [];
-          unexpected_models = [];
-        };
-      ]
-    ();
-  assert_queries
-    ~context
-    ~model_source:
-      {|
-    ModelQuery(
-       name = "foo_finders",
-       find = "functions",
-       where = any_parameter.annotation.is_annotated_type(),
-       model = [
-         AllParameters(
-           ParametricSourceFromAnnotation(pattern=DynamicSource, kind=Dynamic)
-         )
-       ]
-    )
-    |}
-    ~expect:
-      [
-        {
-          location = { start = { line = 2; column = 0 }; stop = { line = 11; column = 1 } };
-          name = "foo_finders";
-          logging_group_name = None;
-          path = None;
-          where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-          find = Function;
-          models =
-            [
-              AllParameters
-                {
-                  excludes = [];
-                  taint =
-                    [
-                      ParametricSourceFromAnnotation
-                        { source_pattern = "DynamicSource"; kind = "Dynamic" };
-                    ];
-                };
-            ];
-          expected_models = [];
-          unexpected_models = [];
-        };
-      ]
-    ();
-  assert_queries
-    ~context
-    ~model_source:
-      {|
-    ModelQuery(
-       name = "foo_finders",
-       find = "functions",
-       where = any_parameter.annotation.is_annotated_type(),
-       model = [
-         AllParameters(
-           ParametricSinkFromAnnotation(pattern=DynamicSink, kind=Dynamic)
-         )
-       ]
-    )
-    |}
-    ~expect:
-      [
-        {
-          location = { start = { line = 2; column = 0 }; stop = { line = 11; column = 1 } };
-          name = "foo_finders";
-          logging_group_name = None;
-          path = None;
-          where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-          find = Function;
-          models =
-            [
-              AllParameters
-                {
-                  excludes = [];
-                  taint =
-                    [
-                      ParametricSinkFromAnnotation { sink_pattern = "DynamicSink"; kind = "Dynamic" };
                     ];
                 };
             ];
@@ -1424,9 +1358,9 @@ let test_query_parsing_model_parameters context =
                              ParameterConstraint.NameConstraint (Matches (Re2.create_exn "self"));
                              ParameterConstraint.NameConstraint (Matches (Re2.create_exn "cls"));
                              ParameterConstraint.AnnotationConstraint
-                               (NameConstraint (Matches (Re2.create_exn "IGWSGIRequest")));
+                               (FullyQualifiedConstraint (Matches (Re2.create_exn "IGWSGIRequest")));
                              ParameterConstraint.AnnotationConstraint
-                               (NameConstraint (Matches (Re2.create_exn "HttpRequest")));
+                               (FullyQualifiedConstraint (Matches (Re2.create_exn "HttpRequest")));
                            ]);
                     ];
                   taint =

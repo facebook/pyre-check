@@ -71,21 +71,3 @@ def test3_noalarm1(a: str, b: int) -> None:
 
 def test3_noalarm2(a: str, b: int) -> None:
     _test_sink(b)
-
-
-def test3_alarm1(
-    a: Annotated[str, Color.RED], b: str, c: Annotated[str, Color.BLUE, "foo"]
-) -> None:
-    _test_sink(a)
-
-
-def test3_alarm2(
-    a: Annotated[str, Color.RED], b: str, c: Annotated[str, Color.BLUE, "foo"]
-) -> None:
-    _test_sink(c)
-
-
-def test3_noalarm3(
-    a: Annotated[str, Color.RED], b: str, c: Annotated[str, Color.BLUE, "foo"]
-) -> None:
-    _test_sink(b)

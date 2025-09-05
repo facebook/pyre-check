@@ -2150,21 +2150,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "model_query_parameters_where.Test5.test5_alarm4",
-    "filename": "model_query_parameters_where.py",
-    "callable_line": 88,
-    "sinks": [
-      {
-        "port": "formal(x, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "model_generators": [ "get_model_query_parameters_test5_sink" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "model_query_parameters_where.Test7.test7_alarm1",
     "filename": "model_query_parameters_where.py",
     "callable_line": 112,

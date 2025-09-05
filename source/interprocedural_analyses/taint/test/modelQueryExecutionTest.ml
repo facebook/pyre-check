@@ -637,7 +637,7 @@ let test_generated_annotations context =
                 where =
                   [
                     ModelQuery.ParameterConstraint.AnnotationConstraint
-                      (NameConstraint (Matches (Re2.create_exn "int")));
+                      (FullyQualifiedConstraint (Matches (Re2.create_exn "int")));
                   ];
                 taint = [TaintAnnotation (source "Test")];
               };
@@ -678,47 +678,8 @@ let test_generated_annotations context =
                   [
                     Not
                       (ModelQuery.ParameterConstraint.AnnotationConstraint
-                         (NameConstraint (Equals "int")));
+                         (FullyQualifiedConstraint (Equals "int")));
                   ];
-                taint = [TaintAnnotation (source "Test")];
-              };
-          ];
-        find = Method;
-        expected_models = [];
-        unexpected_models = [];
-      }
-    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:
-      [
-        ModelParseResult.ModelAnnotation.ParameterAnnotation
-          {
-            root =
-              AccessPath.Root.PositionalParameter
-                { position = 1; name = "y"; positional_only = false };
-            annotation = source "Test";
-            generation_if_source = false;
-          };
-      ];
-  assert_generated_annotations
-    ~source:
-      {|
-      from typing import Annotated
-      class C:
-        def foo(x: int, y: Annotated[str, "foo"]): ...
-     |}
-    ~query:
-      {
-        location = Ast.Location.any;
-        name = "get_foo";
-        logging_group_name = None;
-        path = None;
-        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        models =
-          [
-            Parameter
-              {
-                where =
-                  [ModelQuery.ParameterConstraint.AnnotationConstraint IsAnnotatedTypeConstraint];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
@@ -826,7 +787,7 @@ let test_generated_annotations context =
                 where =
                   [
                     ModelQuery.ParameterConstraint.AnnotationConstraint
-                      (NameConstraint (Matches (Re2.create_exn "int")));
+                      (FullyQualifiedConstraint (Matches (Re2.create_exn "int")));
                   ];
                 taint = [TaintAnnotation (source "Test")];
               };
@@ -866,46 +827,8 @@ let test_generated_annotations context =
                   [
                     Not
                       (ModelQuery.ParameterConstraint.AnnotationConstraint
-                         (NameConstraint (Equals "int")));
+                         (FullyQualifiedConstraint (Equals "int")));
                   ];
-                taint = [TaintAnnotation (source "Test")];
-              };
-          ];
-        find = Function;
-        expected_models = [];
-        unexpected_models = [];
-      }
-    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:
-      [
-        ModelParseResult.ModelAnnotation.ParameterAnnotation
-          {
-            root =
-              AccessPath.Root.PositionalParameter
-                { position = 1; name = "y"; positional_only = false };
-            annotation = source "Test";
-            generation_if_source = false;
-          };
-      ];
-  assert_generated_annotations
-    ~source:
-      {|
-      from typing import Annotated
-      def foo(x: int, y: Annotated[str, "foo"]): ...
-     |}
-    ~query:
-      {
-        location = Ast.Location.any;
-        name = "get_foo";
-        logging_group_name = None;
-        path = None;
-        where = [NameConstraint (Matches (Re2.create_exn "foo"))];
-        models =
-          [
-            Parameter
-              {
-                where =
-                  [ModelQuery.ParameterConstraint.AnnotationConstraint IsAnnotatedTypeConstraint];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
@@ -1032,12 +955,31 @@ let test_generated_annotations context =
           };
       ];
 
-  (* Annotated returns. *)
+  (* typing.Annotated is lost during parsing, this is expected behavior. *)
+  assert_generated_annotations
+    ~source:{|
+       import typing
+       def foo() -> typing.Annotated[str, "foo"]: ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
+        where = [ReturnConstraint (FullyQualifiedConstraint (Matches (Re2.create_exn "foo")))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
+    ~expected:[];
   assert_generated_annotations
     ~source:
       {|
-       from typing import Annotated
-       def foo(x: int, y: str) -> Annotated[int, "annotation"]: ...
+       import typing
+       def foo(x: typing.Annotated[int, "foo"], y: str): ...
      |}
     ~query:
       {
@@ -1045,25 +987,11 @@ let test_generated_annotations context =
         name = "get_foo";
         logging_group_name = None;
         path = None;
-        where = [ReturnConstraint IsAnnotatedTypeConstraint];
-        models = [Return [TaintAnnotation (source "Test")]];
-        find = Function;
-        expected_models = [];
-        unexpected_models = [];
-      }
-    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_generated_annotations
-    ~source:{|
-       def foo(x: int, y: str) -> int: ...
-     |}
-    ~query:
-      {
-        location = Ast.Location.any;
-        name = "get_foo";
-        logging_group_name = None;
-        path = None;
-        where = [ReturnConstraint IsAnnotatedTypeConstraint];
+        where =
+          [
+            AnyParameterConstraint
+              (AnnotationConstraint (FullyQualifiedConstraint (Matches (Re2.create_exn "foo"))));
+          ];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
@@ -1071,60 +999,6 @@ let test_generated_annotations context =
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
-  assert_generated_annotations
-    ~source:{|
-       def foo(x: int, y: str): ...
-     |}
-    ~query:
-      {
-        location = Ast.Location.any;
-        name = "get_foo";
-        logging_group_name = None;
-        path = None;
-        where = [ReturnConstraint IsAnnotatedTypeConstraint];
-        models = [Return [TaintAnnotation (source "Test")]];
-        find = Function;
-        expected_models = [];
-        unexpected_models = [];
-      }
-    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[];
-  assert_generated_annotations
-    ~source:{|
-       def foo(x: typing.Annotated[int, "annotation"], y: str): ...
-     |}
-    ~query:
-      {
-        location = Ast.Location.any;
-        name = "get_foo";
-        logging_group_name = None;
-        path = None;
-        where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-        models = [Return [TaintAnnotation (source "Test")]];
-        find = Function;
-        expected_models = [];
-        unexpected_models = [];
-      }
-    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_generated_annotations
-    ~source:{|
-       def foo(a, b: typing.Annotated[int, "annotation"], c: str): ...
-     |}
-    ~query:
-      {
-        location = Ast.Location.any;
-        name = "get_foo";
-        logging_group_name = None;
-        path = None;
-        where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-        models = [Return [TaintAnnotation (source "Test")]];
-        find = Function;
-        expected_models = [];
-        unexpected_models = [];
-      }
-    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   (* Return annotation extends. *)
   assert_generated_annotations
     ~source:
@@ -1572,7 +1446,7 @@ let test_generated_annotations context =
   (* Any of. *)
   assert_generated_annotations
     ~source:{|
-       def foo(a, b: typing.Annotated[int, "annotation"], c: str): ...
+       def foo(a, b: int, c: str): ...
      |}
     ~query:
       {
@@ -1584,8 +1458,9 @@ let test_generated_annotations context =
           [
             AnyOf
               [
-                AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint);
-                ReturnConstraint IsAnnotatedTypeConstraint;
+                AnyParameterConstraint
+                  (AnnotationConstraint (FullyQualifiedConstraint (Equals "int")));
+                ReturnConstraint (FullyQualifiedConstraint (Equals "int"));
               ];
           ];
         models = [Return [TaintAnnotation (source "Test")]];
@@ -1597,7 +1472,7 @@ let test_generated_annotations context =
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:{|
-       def foo(a, b, c: str) -> typing.Annotated[int, "annotation"]: ...
+       def foo(a, b, c: str) -> int: ...
      |}
     ~query:
       {
@@ -1609,8 +1484,9 @@ let test_generated_annotations context =
           [
             AnyOf
               [
-                AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint);
-                ReturnConstraint IsAnnotatedTypeConstraint;
+                AnyParameterConstraint
+                  (AnnotationConstraint (FullyQualifiedConstraint (Equals "int")));
+                ReturnConstraint (FullyQualifiedConstraint (Equals "int"));
               ];
           ];
         models = [Return [TaintAnnotation (source "Test")]];
@@ -1620,80 +1496,10 @@ let test_generated_annotations context =
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_generated_annotations
-    ~source:{|
-       def foo(a, b: typing.Annotated[int, DynamicSource(A)], c: str): ...
-     |}
-    ~query:
-      {
-        location = Ast.Location.any;
-        name = "get_foo";
-        logging_group_name = None;
-        path = None;
-        where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-        models =
-          [
-            PositionalParameter
-              {
-                index = 1;
-                taint =
-                  [
-                    ParametricSourceFromAnnotation
-                      { source_pattern = "DynamicSource"; kind = "Dynamic" };
-                  ];
-              };
-          ];
-        find = Function;
-        expected_models = [];
-        unexpected_models = [];
-      }
-    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:
-      [
-        ModelParseResult.ModelAnnotation.ParameterAnnotation
-          {
-            root =
-              AccessPath.Root.PositionalParameter
-                { position = 1; name = "b"; positional_only = false };
-            annotation = source ~subkind:"A" "Dynamic";
-            generation_if_source = false;
-          };
-      ];
-  (* Case where we don't match. *)
-  assert_generated_annotations
-    ~source:{|
-       def foo(a, b: typing.Annotated[int, DynamicSource(A)], c: str): ...
-     |}
-    ~query:
-      {
-        location = Ast.Location.any;
-        name = "get_foo";
-        logging_group_name = None;
-        path = None;
-        where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-        models =
-          [
-            PositionalParameter
-              {
-                index = 0;
-                taint =
-                  [
-                    ParametricSourceFromAnnotation
-                      { source_pattern = "DynamicSource"; kind = "Dynamic" };
-                  ];
-              };
-          ];
-        find = Function;
-        expected_models = [];
-        unexpected_models = [];
-      }
-    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[];
   (* All of. *)
   assert_generated_annotations
-    ~source:
-      {|
-       def foo(a: typing.Annotated[int, "annotation"])-> typing.Annotated[int, "annotation"]: ...
+    ~source:{|
+       def foo(a: int) -> int: ...
      |}
     ~query:
       {
@@ -1705,8 +1511,9 @@ let test_generated_annotations context =
           [
             AllOf
               [
-                AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint);
-                ReturnConstraint IsAnnotatedTypeConstraint;
+                AnyParameterConstraint
+                  (AnnotationConstraint (FullyQualifiedConstraint (Equals "int")));
+                ReturnConstraint (FullyQualifiedConstraint (Equals "int"));
               ];
           ];
         models = [Return [TaintAnnotation (source "Test")]];
@@ -1719,7 +1526,7 @@ let test_generated_annotations context =
   (* Some cases where we don't match with "AllOf". *)
   assert_generated_annotations
     ~source:{|
-       def foo(a: typing.Annotated[int, "annotation"]): ...
+       def foo(a: int): ...
      |}
     ~query:
       {
@@ -1731,8 +1538,9 @@ let test_generated_annotations context =
           [
             AllOf
               [
-                AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint);
-                ReturnConstraint IsAnnotatedTypeConstraint;
+                AnyParameterConstraint
+                  (AnnotationConstraint (FullyQualifiedConstraint (Equals "int")));
+                ReturnConstraint (FullyQualifiedConstraint (Equals "int"));
               ];
           ];
         models = [Return [TaintAnnotation (source "Test")]];
@@ -1744,7 +1552,7 @@ let test_generated_annotations context =
     ~expected:[];
   assert_generated_annotations
     ~source:{|
-       def foo(a) -> typing.Annotated[int, "annotation"]: ...
+       def foo(a) -> int: ...
      |}
     ~query:
       {
@@ -1756,8 +1564,9 @@ let test_generated_annotations context =
           [
             AllOf
               [
-                AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint);
-                ReturnConstraint IsAnnotatedTypeConstraint;
+                AnyParameterConstraint
+                  (AnnotationConstraint (FullyQualifiedConstraint (Equals "int")));
+                ReturnConstraint (FullyQualifiedConstraint (Equals "int"));
               ];
           ];
         models = [Return [TaintAnnotation (source "Test")]];
@@ -1767,189 +1576,10 @@ let test_generated_annotations context =
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
-  (* Named parameters + parametric sources from annotation. *)
-  assert_generated_annotations
-    ~source:{|
-       def foo(a, b: typing.Annotated[int, DynamicSource(A)], c: str): ...
-     |}
-    ~query:
-      {
-        location = Ast.Location.any;
-        name = "get_foo";
-        logging_group_name = None;
-        path = None;
-        where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-        models =
-          [
-            NamedParameter
-              {
-                name = "b";
-                taint =
-                  [
-                    ParametricSourceFromAnnotation
-                      { source_pattern = "DynamicSource"; kind = "Dynamic" };
-                  ];
-              };
-          ];
-        find = Function;
-        expected_models = [];
-        unexpected_models = [];
-      }
-    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:
-      [
-        ModelParseResult.ModelAnnotation.ParameterAnnotation
-          {
-            root =
-              AccessPath.Root.PositionalParameter
-                { position = 1; name = "b"; positional_only = false };
-            annotation = source ~subkind:"A" "Dynamic";
-            generation_if_source = false;
-          };
-      ];
-  (* All parameters taint + parametric source from annotation. *)
-  assert_generated_annotations
-    ~source:{|
-       def foo(a, b: typing.Annotated[int, DynamicSource(A)], c: str): ...
-     |}
-    ~query:
-      {
-        location = Ast.Location.any;
-        name = "get_foo";
-        logging_group_name = None;
-        path = None;
-        where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-        models =
-          [
-            AllParameters
-              {
-                excludes = [];
-                taint =
-                  [
-                    ParametricSourceFromAnnotation
-                      { source_pattern = "DynamicSource"; kind = "Dynamic" };
-                  ];
-              };
-          ];
-        find = Function;
-        expected_models = [];
-        unexpected_models = [];
-      }
-    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:
-      [
-        ModelParseResult.ModelAnnotation.ParameterAnnotation
-          {
-            root =
-              AccessPath.Root.PositionalParameter
-                { position = 1; name = "b"; positional_only = false };
-            annotation = source ~subkind:"A" "Dynamic";
-            generation_if_source = false;
-          };
-      ];
-  (* Returned taint + parametric source from annotation. *)
-  assert_generated_annotations
-    ~source:{|
-       def foo(a) -> typing.Annotated[int, DynamicSource(B)]: ...
-     |}
-    ~query:
-      {
-        location = Ast.Location.any;
-        name = "get_foo";
-        logging_group_name = None;
-        path = None;
-        where = [ReturnConstraint IsAnnotatedTypeConstraint];
-        models =
-          [
-            Return
-              [
-                ParametricSourceFromAnnotation { source_pattern = "DynamicSource"; kind = "Dynamic" };
-              ];
-          ];
-        find = Function;
-        expected_models = [];
-        unexpected_models = [];
-      }
-    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source ~subkind:"B" "Dynamic")];
-  (* Named parameters + parametric sinks from annotation. *)
-  assert_generated_annotations
-    ~source:{|
-       def foo(a, b: typing.Annotated[int, DynamicSink(BSink)], c: str): ...
-     |}
-    ~query:
-      {
-        location = Ast.Location.any;
-        name = "get_foo";
-        logging_group_name = None;
-        path = None;
-        where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-        models =
-          [
-            NamedParameter
-              {
-                name = "b";
-                taint =
-                  [ParametricSinkFromAnnotation { sink_pattern = "DynamicSink"; kind = "Dynamic" }];
-              };
-          ];
-        find = Function;
-        expected_models = [];
-        unexpected_models = [];
-      }
-    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:
-      [
-        ModelParseResult.ModelAnnotation.ParameterAnnotation
-          {
-            root =
-              AccessPath.Root.PositionalParameter
-                { position = 1; name = "b"; positional_only = false };
-            annotation =
-              ModelParseResult.TaintAnnotation.from_sink
-                (Sinks.ParametricSink { sink_name = "Dynamic"; subkind = "BSink" });
-            generation_if_source = false;
-          };
-      ];
   (* Type annotation constraint for callables *)
   assert_generated_annotations
     ~source:{|
-       def foo(a, b: typing.Annotated[str, "foo"], c: str, d: int): ...
-     |}
-    ~query:
-      {
-        location = Ast.Location.any;
-        name = "get_foo";
-        logging_group_name = None;
-        path = None;
-        where = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
-        models =
-          [
-            Parameter
-              {
-                where = [AnnotationConstraint IsAnnotatedTypeConstraint];
-                taint = [TaintAnnotation (source "Test")];
-              };
-          ];
-        find = Function;
-        expected_models = [];
-        unexpected_models = [];
-      }
-    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:
-      [
-        ModelParseResult.ModelAnnotation.ParameterAnnotation
-          {
-            root =
-              AccessPath.Root.PositionalParameter
-                { position = 1; name = "b"; positional_only = false };
-            annotation = source "Test";
-            generation_if_source = false;
-          };
-      ];
-  assert_generated_annotations
-    ~source:{|
-       def foo(a, b: typing.Annotated[str, "foo"], c: str, d: int): ...
+       def foo(a, b: str, c: str, d: int): ...
      |}
     ~query:
       {
@@ -1960,13 +1590,14 @@ let test_generated_annotations context =
         where =
           [
             AnyParameterConstraint
-              (AnnotationConstraint (NameConstraint (Matches (Re2.create_exn "str"))));
+              (AnnotationConstraint (FullyQualifiedConstraint (Matches (Re2.create_exn "str"))));
           ];
         models =
           [
             Parameter
               {
-                where = [AnnotationConstraint (NameConstraint (Matches (Re2.create_exn "str")))];
+                where =
+                  [AnnotationConstraint (FullyQualifiedConstraint (Matches (Re2.create_exn "str")))];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
@@ -1996,7 +1627,7 @@ let test_generated_annotations context =
       ];
   assert_generated_annotations
     ~source:{|
-       def foo(a, b: typing.Annotated[str, "foo"], c: str, d: int): ...
+       def foo(a, b: str, c: str, d: int): ...
      |}
     ~query:
       {
@@ -2004,12 +1635,13 @@ let test_generated_annotations context =
         name = "get_foo";
         logging_group_name = None;
         path = None;
-        where = [AnyParameterConstraint (AnnotationConstraint (NameConstraint (Equals "int")))];
+        where =
+          [AnyParameterConstraint (AnnotationConstraint (FullyQualifiedConstraint (Equals "int")))];
         models =
           [
             Parameter
               {
-                where = [AnnotationConstraint (NameConstraint (Equals "int"))];
+                where = [AnnotationConstraint (FullyQualifiedConstraint (Equals "int"))];
                 taint = [TaintAnnotation (source "Test")];
               };
           ];
@@ -2040,7 +1672,7 @@ let test_generated_annotations context =
         name = "get_foo";
         logging_group_name = None;
         path = None;
-        where = [ReturnConstraint (NameConstraint (Equals "int"))];
+        where = [ReturnConstraint (FullyQualifiedConstraint (Equals "int"))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
@@ -2059,7 +1691,7 @@ let test_generated_annotations context =
         name = "get_foo";
         logging_group_name = None;
         path = None;
-        where = [ReturnConstraint (NameConstraint (Equals "int"))];
+        where = [ReturnConstraint (FullyQualifiedConstraint (Equals "int"))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
@@ -2078,7 +1710,7 @@ let test_generated_annotations context =
         name = "get_foo";
         logging_group_name = None;
         path = None;
-        where = [ReturnConstraint (NameConstraint (Matches (Re2.create_exn "str")))];
+        where = [ReturnConstraint (FullyQualifiedConstraint (Matches (Re2.create_exn "str")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
@@ -2097,49 +1729,13 @@ let test_generated_annotations context =
         name = "get_foo";
         logging_group_name = None;
         path = None;
-        where = [ReturnConstraint (NameConstraint (Matches (Re2.create_exn "str")))];
+        where = [ReturnConstraint (FullyQualifiedConstraint (Matches (Re2.create_exn "str")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.bar"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_generated_annotations
-    ~source:{|
-       def foo() -> typing.Annotated[str, "foo"]: ...
-     |}
-    ~query:
-      {
-        location = Ast.Location.any;
-        name = "get_foo";
-        logging_group_name = None;
-        path = None;
-        where = [ReturnConstraint IsAnnotatedTypeConstraint];
-        models = [Return [TaintAnnotation (source "Test")]];
-        find = Function;
-        expected_models = [];
-        unexpected_models = [];
-      }
-    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_generated_annotations
-    ~source:{|
-       def foo() -> typing.Annotated[str, "foo"]: ...
-     |}
-    ~query:
-      {
-        location = Ast.Location.any;
-        name = "get_foo";
-        logging_group_name = None;
-        path = None;
-        where = [ReturnConstraint (NameConstraint (Matches (Re2.create_exn "foo")))];
-        models = [Return [TaintAnnotation (source "Test")]];
-        find = Function;
-        expected_models = [];
-        unexpected_models = [];
-      }
-    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
 
   (* Decorator names. *)
@@ -3295,7 +2891,7 @@ let test_generated_annotations context =
         name = "get_foo";
         logging_group_name = None;
         path = None;
-        where = [AnnotationConstraint (NameConstraint (Equals "int"))];
+        where = [AnnotationConstraint (OriginalAnnotationConstraint (Equals "int"))];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
         expected_models = [];
@@ -3315,7 +2911,7 @@ let test_generated_annotations context =
         name = "get_foo";
         logging_group_name = None;
         path = None;
-        where = [AnnotationConstraint (NameConstraint (Equals "int"))];
+        where = [AnnotationConstraint (OriginalAnnotationConstraint (Equals "int"))];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
         expected_models = [];
@@ -3343,7 +2939,8 @@ let test_generated_annotations context =
         name = "get_foo";
         logging_group_name = None;
         path = None;
-        where = [AnnotationConstraint (NameConstraint (Matches (Re2.create_exn "Foo")))];
+        where =
+          [AnnotationConstraint (OriginalAnnotationConstraint (Matches (Re2.create_exn "Foo")))];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
         expected_models = [];
@@ -3371,7 +2968,8 @@ let test_generated_annotations context =
         name = "get_foo";
         logging_group_name = None;
         path = None;
-        where = [AnnotationConstraint (NameConstraint (Matches (Re2.create_exn "Foo")))];
+        where =
+          [AnnotationConstraint (OriginalAnnotationConstraint (Matches (Re2.create_exn "Foo")))];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
         expected_models = [];
@@ -3399,7 +2997,8 @@ let test_generated_annotations context =
         name = "get_foo";
         logging_group_name = None;
         path = None;
-        where = [AnnotationConstraint (NameConstraint (Matches (Re2.create_exn "Foo")))];
+        where =
+          [AnnotationConstraint (OriginalAnnotationConstraint (Matches (Re2.create_exn "Foo")))];
         models = [Attribute [TaintAnnotation (source "Test")]];
         find = Attribute;
         expected_models = [];
@@ -3500,9 +3099,8 @@ let test_generated_annotations context =
     ~callable:(Target.Regular.Function { name = "test.barfoo"; kind = Normal })
     ~expected:[];
   assert_generated_annotations
-    ~source:
-      {|
-       def foo(a) -> typing.Annotated[int, DynamicSource(B)]: ...
+    ~source:{|
+       def foo(a) -> int: ...
        def bar(b): ...
      |}
     ~query:
@@ -3511,7 +3109,7 @@ let test_generated_annotations context =
         name = "get_foo";
         logging_group_name = None;
         path = None;
-        where = [Not (ReturnConstraint IsAnnotatedTypeConstraint)];
+        where = [Not (ReturnConstraint (FullyQualifiedConstraint (Equals "int")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];

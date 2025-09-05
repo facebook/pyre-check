@@ -206,6 +206,11 @@ type kind =
       error: FormatStringError.t;
     }
   | UnmatchedPartialSinkKind of Sinks.PartialSink.t
+  | DeprecatedIsAnnotatedType of {
+      expression: Expression.t;
+      find_clause_kind: string;
+    }
+  | DeprecatedParametricTaintAnnotation of string
 [@@deriving equal, compare, show]
 
 type t = {
@@ -592,6 +597,14 @@ let description error =
       Format.asprintf
         "Cannot find any matching partial sink for `%s`"
         (Sinks.show (Sinks.PartialSink partial_sink))
+  | DeprecatedIsAnnotatedType { expression; find_clause_kind } ->
+      Format.asprintf
+        "In `%a`: `is_annotated_type` is deprecated for find clause of kind `%s`."
+        Expression.pp
+        expression
+        find_clause_kind
+  | DeprecatedParametricTaintAnnotation annotation ->
+      Format.sprintf "Parametric taint annotation `%s` is deprecated." annotation
 
 
 let code { kind; _ } =
@@ -668,6 +681,8 @@ let code { kind; _ } =
   | UnmatchedPartialSinkKind _ -> 73
   | UnsupportedFullyQualifiedCalleeInClassConstraint -> 74
   | MissingClass _ -> 75
+  | DeprecatedIsAnnotatedType _ -> 76
+  | DeprecatedParametricTaintAnnotation _ -> 77
 
 
 let display { kind = error; path; location } =

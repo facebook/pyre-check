@@ -44,40 +44,9 @@
 {
   "kind": "model",
   "data": {
-    "callable": "model_query_type_annotation.test3_f1",
-    "filename": "model_query_type_annotation.py",
-    "callable_line": 43,
-    "parameter_sources": [
-      {
-        "port": "formal(taint_2, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" }, { "always-type": "scalar" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      },
-      {
-        "port": "formal(taint_1, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "model_generators": [ "get_model_query_type_annotation_test3_sources" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "model_query_type_annotation.test4_taint_1",
     "filename": "model_query_type_annotation.py",
-    "callable_line": 53,
+    "callable_line": 43,
     "sources": [
       {
         "port": "result",
@@ -92,7 +61,7 @@
   "data": {
     "callable": "model_query_type_annotation.test5_taint_1",
     "filename": "model_query_type_annotation.py",
-    "callable_line": 73,
+    "callable_line": 63,
     "sources": [
       {
         "port": "result",
@@ -107,7 +76,7 @@
   "data": {
     "callable": "model_query_type_annotation.test5_taint_2",
     "filename": "model_query_type_annotation.py",
-    "callable_line": 77,
+    "callable_line": 67,
     "sources": [
       {
         "port": "result",
@@ -149,36 +118,6 @@
       }
     ],
     "model_generators": [ "get_model_query_type_annotation_test2_sources" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_type_annotation.Test6_C.test6_taint_1",
-    "filename": "model_query_type_annotation.py",
-    "callable_line": 86,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "model_generators": [ "get_model_query_type_annotation_test6_sources" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_type_annotation.Test6_C.test6_taint_2",
-    "filename": "model_query_type_annotation.py",
-    "callable_line": 89,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "model_generators": [ "get_model_query_type_annotation_test6_sources" ]
   }
 }
 {

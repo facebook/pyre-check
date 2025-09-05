@@ -27,22 +27,3 @@ ModelQuery(
     AttributeModel(TaintSource[Test, ViaTypeOf]),
   ]
 )
-
-ModelQuery(
-  name = "get_model_query_annotated_test3_sources",
-  find = "functions",
-  where = [
-      name.matches("test3_"),
-      AnyOf(
-        any_parameter.annotation.matches(".*Annotated\[.*Color\..*"),
-      )
-    ],
-  model = [
-    Parameters(TaintSource[Test], where=[
-      AnyOf(
-        type_annotation.equals("typing.Annotated[(str, model_query_annotated.Color.RED)]"),
-        type_annotation.equals("typing.Annotated[(str, model_query_annotated.Color.BLUE, foo)]")
-      )
-    ]),
-  ]
-)
