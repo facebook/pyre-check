@@ -440,24 +440,6 @@ let assert_source_equal_with_locations expected actual =
 
 let assert_type_equal = OUnit2.assert_equal ~printer:Type.show ~cmp:Type.equal
 
-(* Expression helpers. *)
-let ( ~+ ) value = Node.create_with_default_location value
-
-let ( ~- ) value = Expression.Origin.create ~location:Location.any value
-
-let ( ! ) name =
-  +Expression.Expression.Name
-     (Expression.create_name ~location:Location.any ~create_origin:(fun _ -> None) name)
-
-
-let ( !! ) name =
-  +Statement.Expression
-     (+Expression.Expression.Name
-         (Expression.create_name ~location:Location.any ~create_origin:(fun _ -> None) name))
-
-
-let ( !& ) name = Reference.create name
-
 (* Assertion helpers. *)
 let assert_true = OUnit2.assert_bool ""
 
@@ -3616,10 +3598,100 @@ module ScratchPyreflyProject = struct
   let configuration_of { configuration; _ } = configuration
 end
 
-module ScratchPyrePysaProject = struct
+module ScratchPyrePysaProject : sig
+  type t
+
+  val setup
+    :  context:OUnitTest.ctxt ->
+    requires_type_of_expressions:bool ->
+    ?use_cache:bool ->
+    ?force_pyre1:bool ->
+    ?external_sources:(string * string) list ->
+    (string * string) list ->
+    t
+
+  val read_only_api : t -> Interprocedural.PyrePysaApi.ReadOnly.t
+
+  val configuration_of : t -> Configuration.Analysis.t
+end = struct
   type t =
     | Pyre1 of ScratchProject.t
     | Pyrefly of ScratchPyreflyProject.t
+
+  module ProjectInputs = struct
+    module T = struct
+      type t = {
+        requires_type_of_expressions: bool;
+        force_pyre1: bool;
+        external_sources: string String.Map.t;
+        sources: string String.Map.t;
+      }
+      [@@deriving compare, equal, sexp]
+    end
+
+    include T
+    module Map = Map.Make (T)
+  end
+
+  type project = t
+
+  module ProjectCache : sig
+    type t
+
+    val create : unit -> t
+
+    val try_load : t -> ProjectInputs.t -> project option
+
+    val save : t -> inputs:ProjectInputs.t -> project:project -> unit
+  end = struct
+    type cache_value = {
+      file_path: PyrePath.t;
+      project: project;
+    }
+
+    (* Maps a ProjectInputs to a file containing the shared memory state, and its associated
+       project. *)
+    type t = cache_value ProjectInputs.Map.t ref
+
+    let create () = ref ProjectInputs.Map.empty
+
+    let try_load cache inputs =
+      match Map.find !cache inputs with
+      | Some { file_path; project } ->
+          let timer = Timer.start () in
+          Memory.initialize_for_tests ();
+          Hack_parallel.Std.SharedMemory.load_table (PyrePath.absolute file_path);
+          (* Note: we don't save/load the dependency table, this could be a problem for some
+             tests. *)
+          Log.debug "Loaded project from shared memory cache in %.3fs" (Timer.stop_in_sec timer);
+          Some project
+      | None -> None
+
+
+    let save cache ~inputs ~project =
+      let timer = Timer.start () in
+      let file_path, channel = Stdlib.Filename.open_temp_file "ounit-pysa-project-" ".shm" in
+      Hack_parallel.Std.SharedMemory.collect `aggressive;
+      Hack_parallel.Std.SharedMemory.save_table file_path;
+      cache :=
+        Map.add_exn
+          !cache
+          ~key:inputs
+          ~data:{ file_path = PyrePath.create_absolute file_path; project };
+      Log.debug "Saved project to shared memory cache in %.3fs" (Timer.stop_in_sec timer);
+      (* Remove the file at the end of the tests. We can't use bracket_tmpfile because the cache
+         needs to be preserved between brackets. *)
+      let () =
+        at_exit (fun () ->
+            (try Stdlib.close_out channel with
+            | _ -> ());
+            try Stdlib.Sys.remove file_path with
+            | _ -> ())
+      in
+      ()
+  end
+
+  let global_cache = ProjectCache.create ()
 
   let pyrefly_binary =
     lazy
@@ -3630,23 +3702,60 @@ module ScratchPyrePysaProject = struct
       | None -> None)
 
 
+  let setup_without_cache
+      ~context
+      { ProjectInputs.requires_type_of_expressions; force_pyre1; external_sources; sources }
+    =
+    let timer = Timer.start () in
+    let external_sources = Map.to_alist external_sources in
+    let sources = Map.to_alist sources in
+    let result =
+      match Lazy.force pyrefly_binary with
+      | Some pyrefly_binary when not force_pyre1 ->
+          Pyrefly
+            (ScratchPyreflyProject.setup
+               ~context
+               ~pyrefly_binary
+               ~requires_type_of_expressions
+               ~external_sources
+               sources)
+      | _ -> Pyre1 (ScratchProject.setup ~context ~external_sources sources)
+    in
+    Log.debug
+      "Type checked project using %s in %.3fs"
+      (match result with
+      | Pyrefly _ -> "pyrefly"
+      | Pyre1 _ -> "pyre1")
+      (Timer.stop_in_sec timer);
+    result
+
+
   let setup
       ~context
       ~requires_type_of_expressions
+      ?(use_cache = true)
       ?(force_pyre1 = false)
       ?(external_sources = [])
       sources
     =
-    match Lazy.force pyrefly_binary with
-    | Some pyrefly_binary when not force_pyre1 ->
-        Pyrefly
-          (ScratchPyreflyProject.setup
-             ~context
-             ~pyrefly_binary
-             ~requires_type_of_expressions
-             ~external_sources
-             sources)
-    | _ -> Pyre1 (ScratchProject.setup ~context ~external_sources sources)
+    let inputs =
+      {
+        ProjectInputs.requires_type_of_expressions;
+        force_pyre1;
+        external_sources =
+          external_sources |> String.Map.of_alist_exn |> String.Map.map ~f:trim_extra_indentation;
+        sources = sources |> String.Map.of_alist_exn |> String.Map.map ~f:trim_extra_indentation;
+      }
+    in
+    if not use_cache then
+      setup_without_cache ~context inputs
+    else
+      match ProjectCache.try_load global_cache inputs with
+      | Some project -> project
+      | None ->
+          let project = setup_without_cache ~context inputs in
+          let () = ProjectCache.save global_cache ~inputs ~project in
+          project
 
 
   let read_only_api = function
@@ -3964,3 +4073,21 @@ module MockClassHierarchyHandler = struct
           generic_metadata = ClassHierarchy.GenericMetadata.NotGeneric;
         }
 end
+
+(* Expression helpers. *)
+let ( ~+ ) value = Node.create_with_default_location value
+
+let ( ~- ) value = Expression.Origin.create ~location:Location.any value
+
+let ( ! ) name =
+  +Expression.Expression.Name
+     (Expression.create_name ~location:Location.any ~create_origin:(fun _ -> None) name)
+
+
+let ( !! ) name =
+  +Statement.Expression
+     (+Expression.Expression.Name
+         (Expression.create_name ~location:Location.any ~create_origin:(fun _ -> None) name))
+
+
+let ( !& ) name = Reference.create name
