@@ -166,6 +166,7 @@ let assert_model
     ?expected_skipped_overrides
     ?registered_partial_sinks
     ?skip_for_pyrefly
+    ?pyrefly_expect
     ~context
     ~model_source
     ~expect
@@ -198,6 +199,11 @@ let assert_model
   end;
   let get_model = Registry.get models in
   let get_errors _ = [] in
+  let expect =
+    match pyrefly_expect with
+    | Some pyrefly_expect when PyrePysaApi.ReadOnly.is_pyrefly pyre_api -> pyrefly_expect
+    | _ -> expect
+  in
   List.iter ~f:(check_expectation ~pyre_api ~taint_configuration ~get_model ~get_errors) expect
 
 
@@ -3925,6 +3931,13 @@ let test_top_level_models context =
       [
         outcome
           ~kind:`Method
+          ~analysis_modes:(Model.ModeSet.of_list [SkipAnalysis])
+          "test.TopLevel.$class_toplevel";
+      ]
+    ~pyrefly_expect:
+      [
+        outcome
+          ~kind:`Function
           ~analysis_modes:(Model.ModeSet.of_list [SkipAnalysis])
           "test.TopLevel.$class_toplevel";
       ]

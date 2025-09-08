@@ -3154,6 +3154,8 @@ module ModelQueries = struct
         (FullyQualifiedName.from_reference_unchecked class_name)
     with
     | Some { ClassMetadataSharedMemory.Metadata.module_qualifier; _ } ->
+        (* TODO(T225700656): We should check if the callable is a method using the parent_is_class
+           field. *)
         let is_method_for_class callable_name =
           Reference.equal
             (callable_name

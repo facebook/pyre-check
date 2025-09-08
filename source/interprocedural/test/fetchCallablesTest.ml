@@ -10,7 +10,13 @@ open Core
 open Interprocedural
 
 let test_callables context =
-  let assert_callables ?(additional_sources = []) ?(source_filename = "test.py") source ~expected =
+  let assert_callables
+      ?(additional_sources = [])
+      ?(source_filename = "test.py")
+      ?pyrefly_expected
+      source
+      ~expected
+    =
     let configuration, pyre_api =
       let project =
         Test.ScratchPyrePysaProject.setup
@@ -21,11 +27,16 @@ let test_callables context =
       ( Test.ScratchPyrePysaProject.configuration_of project,
         Test.ScratchPyrePysaProject.read_only_api project )
     in
+    let expected =
+      match pyrefly_expected with
+      | Some pyrefly_expected when PyrePysaApi.ReadOnly.is_pyrefly pyre_api -> pyrefly_expected
+      | _ -> expected
+    in
     FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier:(Ast.Reference.create "test")
     |> FetchCallables.get ~definitions:true ~stubs:true
     |> List.sort ~compare:Target.compare
     |> assert_equal
-         ~printer:(List.to_string ~f:Target.show_pretty)
+         ~printer:(List.to_string ~f:Target.show_internal)
          ~cmp:(List.equal Target.equal)
          (List.map ~f:Target.from_regular expected)
   in
@@ -40,6 +51,12 @@ let test_callables context =
         Target.Regular.Function { name = "test.$toplevel"; kind = Normal };
         Target.Regular.Method
           { class_name = "test.C"; method_name = "$class_toplevel"; kind = Normal };
+        Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+      ]
+    ~pyrefly_expected:
+      [
+        Target.Regular.Function { name = "test.$toplevel"; kind = Normal };
+        Target.Regular.Function { name = "test.C.$class_toplevel"; kind = Normal };
         Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
       ];
   assert_callables
@@ -63,7 +80,14 @@ let test_callables context =
         Target.Regular.Method
           { class_name = "test.C"; method_name = "$class_toplevel"; kind = Normal };
         Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+      ]
+    ~pyrefly_expected:
+      [
+        Target.Regular.Function { name = "test.$toplevel"; kind = Normal };
+        Target.Regular.Function { name = "test.C.$class_toplevel"; kind = Normal };
+        Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
       ];
+
   assert_callables
     {|
       import pytest
@@ -120,7 +144,15 @@ let test_callables context =
         Target.Regular.Method
           { class_name = "test.C"; method_name = "$class_toplevel"; kind = Normal };
         Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
+      ]
+    ~pyrefly_expected:
+      [
+        Target.Regular.Function { name = "test.$toplevel"; kind = Normal };
+        Target.Regular.Function { name = "test.C.$class_toplevel"; kind = Normal };
+        Target.Regular.Function { name = "test.test_int"; kind = Normal };
+        Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
       ];
+
   assert_callables
     "pass"
     ~additional_sources:
