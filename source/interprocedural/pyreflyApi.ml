@@ -1125,6 +1125,9 @@ module ClassMetadataSharedMemory = struct
       (* True if this class was synthesized (e.g., from namedtuple), false if from actual `class X:`
          statement *)
       is_synthesized: bool;
+      (* For a given class, its list of immediate parents. Empty if the class has no parents (it is
+         implicitly ['object']) *)
+      parents: GlobalClassId.t list;
     }
     [@@deriving show]
 
@@ -1201,19 +1204,6 @@ module CallableIdToQualifiedNameSharedMemory =
       let prefix = Hack_parallel.Std.Prefix.make ()
 
       let description = "pyrefly callable id to fully qualified name"
-    end)
-
-(* For a given class, its list of immediate parents. Empty if the class has no parents (it is
-   implicitly ['object']) *)
-module ClassImmediateParentsSharedMemory =
-  Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
-    (FullyQualifiedNameSharedMemoryKey)
-    (struct
-      type t = FullyQualifiedName.t list
-
-      let prefix = Hack_parallel.Std.Prefix.make ()
-
-      let description = "pyrefly class immediate parents"
     end)
 
 module ClassFieldsSharedMemory =
@@ -1323,7 +1313,6 @@ module ReadWrite = struct
     (* TODO(T225700656): this can be removed from shared memory after initialization. *)
     class_id_to_qualified_name_shared_memory: ClassIdToQualifiedNameSharedMemory.t;
     callable_id_to_qualified_name_shared_memory: CallableIdToQualifiedNameSharedMemory.t;
-    class_immediate_parents_shared_memory: ClassImmediateParentsSharedMemory.t;
     class_fields_shared_memory: ClassFieldsSharedMemory.t;
     callable_ast_shared_memory: CallableAstSharedMemory.t;
     callable_define_signature_shared_memory: CallableDefineSignatureSharedMemory.t;
@@ -2273,7 +2262,7 @@ module ReadWrite = struct
               { GlobalCallableId.module_id; name_location }
               qualified_name;
             qualified_name :: callables, classes
-        | Class { local_class_id; is_synthesized; fields; _ } ->
+        | Class { local_class_id; is_synthesized; fields; bases; _ } ->
             ClassMetadataSharedMemory.add
               class_metadata_shared_memory
               qualified_name
@@ -2282,6 +2271,7 @@ module ReadWrite = struct
                 name_location;
                 local_class_id;
                 is_synthesized;
+                parents = bases;
               };
             ClassFieldsSharedMemory.add class_fields_shared_memory qualified_name fields;
             ClassIdToQualifiedNameSharedMemory.add
@@ -2332,9 +2322,8 @@ module ReadWrite = struct
         ~inputs
         ()
     in
-    (* Second step: record class parents and undecorated signatures. This currently requires parsing
-       module info files again, which is wasteful. *)
-    let class_immediate_parents_shared_memory = ClassImmediateParentsSharedMemory.create () in
+    (* Second step: record undecorated signatures. This currently requires parsing module info files
+       again, which is wasteful. *)
     let callable_undecorated_signatures_shared_memory =
       CallableUndecoratedSignaturesSharedMemory.create ()
     in
@@ -2414,25 +2403,15 @@ module ReadWrite = struct
           qualified_name
           undecorated_signatures
       in
-      let add_class ~key:_ ~data:{ ModuleInfoFile.ClassDefinition.local_class_id; bases; _ } =
+      let add_undecorated_signature_for_class
+          ~key:_
+          ~data:{ ModuleInfoFile.ClassDefinition.local_class_id; _ }
+        =
         let class_name =
           ClassIdToQualifiedNameSharedMemory.get_class_name
             class_id_to_qualified_name_shared_memory
             { GlobalClassId.module_id; local_class_id }
         in
-        let parents =
-          List.map
-            bases
-            ~f:
-              (ClassIdToQualifiedNameSharedMemory.get_class_name
-                 class_id_to_qualified_name_shared_memory)
-        in
-        (* TODO(T225700656): To save memory, we could skip classes with no bases (which implicitly
-           extend `object`) *)
-        ClassImmediateParentsSharedMemory.add
-          class_immediate_parents_shared_memory
-          class_name
-          parents;
         CallableUndecoratedSignaturesSharedMemory.add
           callable_undecorated_signatures_shared_memory
           (FullyQualifiedName.create_class_toplevel class_name)
@@ -2440,7 +2419,7 @@ module ReadWrite = struct
         ()
       in
       let () = Map.iteri ~f:add_function function_definitions in
-      let () = Map.iteri ~f:add_class class_definitions in
+      let () = Map.iteri ~f:add_undecorated_signature_for_class class_definitions in
       let () =
         CallableUndecoratedSignaturesSharedMemory.add
           callable_undecorated_signatures_shared_memory
@@ -2486,7 +2465,6 @@ module ReadWrite = struct
       module_globals_shared_memory,
       class_id_to_qualified_name_shared_memory,
       callable_id_to_qualified_name_shared_memory,
-      class_immediate_parents_shared_memory,
       callable_undecorated_signatures_shared_memory )
 
 
@@ -2525,7 +2503,6 @@ module ReadWrite = struct
           module_globals_shared_memory,
           class_id_to_qualified_name_shared_memory,
           callable_id_to_qualified_name_shared_memory,
-          class_immediate_parents_shared_memory,
           callable_undecorated_signatures_shared_memory )
       =
       collect_classes_and_definitions
@@ -2579,7 +2556,6 @@ module ReadWrite = struct
       module_globals_shared_memory;
       class_id_to_qualified_name_shared_memory;
       callable_id_to_qualified_name_shared_memory;
-      class_immediate_parents_shared_memory;
       callable_ast_shared_memory;
       callable_define_signature_shared_memory;
       callable_undecorated_signatures_shared_memory;
@@ -2604,7 +2580,6 @@ module ReadWrite = struct
         module_globals_shared_memory;
         class_id_to_qualified_name_shared_memory;
         callable_id_to_qualified_name_shared_memory;
-        class_immediate_parents_shared_memory;
         callable_ast_shared_memory;
         callable_define_signature_shared_memory;
         callable_undecorated_signatures_shared_memory;
@@ -2644,7 +2619,6 @@ module ReadWrite = struct
       in
       ClassMetadataSharedMemory.remove class_metadata_shared_memory class_name;
       ClassFieldsSharedMemory.remove class_fields_shared_memory class_name;
-      ClassImmediateParentsSharedMemory.remove class_immediate_parents_shared_memory class_name;
       ClassIdToQualifiedNameSharedMemory.remove
         class_id_to_qualified_name_shared_memory
         { GlobalClassId.module_id; local_class_id };
@@ -2699,7 +2673,6 @@ module ReadOnly = struct
     module_callables_shared_memory: ModuleCallablesSharedMemory.t;
     module_classes_shared_memory: ModuleClassesSharedMemory.t;
     module_globals_shared_memory: ModuleGlobalsSharedMemory.t;
-    class_immediate_parents_shared_memory: ClassImmediateParentsSharedMemory.t;
     callable_ast_shared_memory: CallableAstSharedMemory.t;
     callable_define_signature_shared_memory: CallableDefineSignatureSharedMemory.t;
     callable_undecorated_signatures_shared_memory: CallableUndecoratedSignaturesSharedMemory.t;
@@ -2717,7 +2690,6 @@ module ReadOnly = struct
         module_callables_shared_memory;
         module_classes_shared_memory;
         module_globals_shared_memory;
-        class_immediate_parents_shared_memory;
         callable_ast_shared_memory;
         callable_define_signature_shared_memory;
         callable_undecorated_signatures_shared_memory;
@@ -2735,7 +2707,6 @@ module ReadOnly = struct
       module_callables_shared_memory;
       module_classes_shared_memory;
       module_globals_shared_memory;
-      class_immediate_parents_shared_memory;
       callable_ast_shared_memory;
       callable_define_signature_shared_memory;
       callable_undecorated_signatures_shared_memory;
@@ -2842,14 +2813,25 @@ module ReadOnly = struct
       |> List.map ~f:FullyQualifiedName.to_reference
 
 
-  let class_immediate_parents { class_immediate_parents_shared_memory; object_class; _ } class_name =
+  let class_immediate_parents
+      { class_metadata_shared_memory; class_id_to_qualified_name_shared_memory; object_class; _ }
+      class_name
+    =
     (* TOOD(T225700656): Update the API to take a reference and return a reference. *)
     let class_name = FullyQualifiedName.from_reference_unchecked (Reference.create class_name) in
-    ClassImmediateParentsSharedMemory.get class_immediate_parents_shared_memory class_name
-    |> assert_shared_memory_key_exists "missing class parents for class"
-    |> (function
-         | [] when not (FullyQualifiedName.equal class_name object_class) -> [object_class]
-         | parents -> parents)
+    let get_parents_from_class_metadata { ClassMetadataSharedMemory.Metadata.parents; _ } =
+      match parents with
+      | [] when not (FullyQualifiedName.equal class_name object_class) -> [object_class]
+      | parents ->
+          List.map
+            ~f:
+              (ClassIdToQualifiedNameSharedMemory.get_class_name
+                 class_id_to_qualified_name_shared_memory)
+            parents
+    in
+    ClassMetadataSharedMemory.get class_metadata_shared_memory class_name
+    |> assert_shared_memory_key_exists "missing class metadata for class"
+    |> get_parents_from_class_metadata
     |> List.map ~f:FullyQualifiedName.to_reference
     |> List.map ~f:Reference.show
 
