@@ -39,8 +39,19 @@ let worker_garbage_control =
   }
 
 
-let initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () =
-  if not !initialized then (
+let reset_shared_memory_callbacks = ref []
+
+let initialize ~on_already_initialized ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () =
+  let do_initialize =
+    if !initialized then
+      match on_already_initialized with
+      | `Skip -> false
+      | `Error -> failwith "shared memory already initialized"
+      | `Reset -> true
+    else
+      true
+  in
+  if do_initialize then (
     let timer = Timer.start () in
     (* 4 MB *)
     let minor_heap_size = 4 * 1024 * 1024 in
@@ -54,6 +65,11 @@ let initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () =
       };
     let shared_mem_config = { SharedMemory.heap_size; dep_table_pow; hash_table_pow; log_level } in
     SharedMemory.init shared_mem_config;
+    let () =
+      if !initialized then (
+        SharedMemory.invalidate_caches ();
+        List.iter !reset_shared_memory_callbacks ~f:(fun callback -> callback ()))
+    in
     Statistics.performance
       ~name:"Initialized shared memory"
       ~phase_name:"Initializing shared memory"
@@ -64,6 +80,22 @@ let initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () =
     initialized := true)
 
 
+external pyre_reset : unit -> unit = "pyre_reset"
+
+let reset_shared_memory () =
+  let () =
+    if not !initialized then
+      failwith "cannot call reset_shared_memory() before initializing shared memory"
+  in
+  SharedMemory.invalidate_caches ();
+  pyre_reset ();
+  List.iter !reset_shared_memory_callbacks ~f:(fun callback -> callback ())
+
+
+let add_reset_shared_memory_callback callback =
+  reset_shared_memory_callbacks := callback :: !reset_shared_memory_callbacks
+
+
 let initialize_for_tests () =
   let heap_size =
     (* 1 GB *)
@@ -72,7 +104,7 @@ let initialize_for_tests () =
   let dep_table_pow = 18 in
   let hash_table_pow = 20 in
   let log_level = 0 in
-  initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level ()
+  initialize ~on_already_initialized:`Reset ~heap_size ~dep_table_pow ~hash_table_pow ~log_level ()
 
 
 let initialize
@@ -89,6 +121,7 @@ let initialize
       0
   in
   initialize
+    ~on_already_initialized:`Skip
     ~heap_size
     ~dep_table_pow:dependency_table_power
     ~hash_table_pow:hash_table_power
@@ -182,20 +215,6 @@ let load_shared_memory ~path ~configuration =
           message
       in
       raise (SavedStateLoadingFailure message)
-
-
-external pyre_reset : unit -> unit = "pyre_reset"
-
-let reset_shared_memory_callbacks = ref []
-
-let reset_shared_memory () =
-  SharedMemory.invalidate_caches ();
-  pyre_reset ();
-  List.iter !reset_shared_memory_callbacks ~f:(fun callback -> callback ())
-
-
-let add_reset_shared_memory_callback callback =
-  reset_shared_memory_callbacks := callback :: !reset_shared_memory_callbacks
 
 
 module IntKey = struct

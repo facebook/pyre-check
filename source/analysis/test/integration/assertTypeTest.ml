@@ -8,8 +8,6 @@
 open OUnit2
 open IntegrationTest
 
-let () = Unix.putenv "OUNIT_SHARDS" "1"
-
 (* `typing.assert_type` is only defined as of 3.11 *)
 let assert_type_errors =
   assert_type_errors ~python_version:(Configuration.PythonVersion.create ~major:3 ~minor:11 ())

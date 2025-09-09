@@ -129,12 +129,8 @@ def foo(x: typing.Optional[int]) -> None:
 Assuming that the test you're interested in running is `analysis/test/integration/methodTest.ml`:
 
 ```bash
-OUNIT_SHARDS="1" dune exec analysis/test/integration/methodTest.exe
+dune exec analysis/test/integration/methodTest.exe
 ```
-
-If you see strange looking lookup errors, it may be because you forgot to set
-the shards to 1, which can mess up tests that rely on a scratch project in
-shared memory.
 
 ## License
 By contributing to Pyre, you agree that your contributions will be licensed
