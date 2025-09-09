@@ -11,8 +11,6 @@ open OUnit2
 let test_directory = "source/interprocedural_analyses/taint/test/integration/"
 
 let () =
-  (* dummy ocaml module so when the test files change, the test gets triggered again *)
-  ignore TaintIntegrationTest.Files.dummy_dependency;
   match Sys.getenv "PYSA_INTEGRATION_TEST" with
   | Some test_file ->
       let root = TestHelper.find_pyre_source_code_root () in

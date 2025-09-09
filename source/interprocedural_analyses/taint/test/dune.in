@@ -1,3 +1,5 @@
+; Copyright (c) Meta Platforms, Inc. and affiliates. All Rights Reserved.
+
 (library
  (name testHelper)
  (public_name pyrelib.taintTestHelper)
@@ -70,7 +72,4 @@
  (modules integrationTest)
  (preprocess
   (pps ppx_sexp_message ppx_compare ppx_deriving.show))
- (libraries
-  pyrelib.taintTestHelper
-  pyrelib.taintAnalysis
-  pyrelib.taintIntegrationTest))
+ (libraries pyrelib.taintTestHelper pyrelib.taintAnalysis))

@@ -172,6 +172,10 @@ def produce_root_dune_file(pyre_directory: Path, build_type: BuildType) -> None:
         with open(pyre_directory / "source" / "dune", "w") as dune:
             dune_data = dune_in.read()
             dune.write(
+                "; WARNING: This file is generated from dune.in when invoking 'make'.\n"
+            )
+            dune.write("; Please edit the original file.\n\n")
+            dune.write(
                 dune_data.replace("%VERSION%", build_type.value).replace(
                     "%CUSTOM_LINKER_OPTION%",
                     _custom_linker_option(pyre_directory, build_type),
@@ -185,16 +189,38 @@ def produce_taint_test_dune_file(pyre_directory: Path) -> None:
     with open(directory / "dune.in") as dune_in:
         # lint-ignore: NoUnsafeFilesystemRule
         with open(directory / "dune", "w") as dune:
+            dune.write(
+                "; WARNING: This file is generated from dune.in when invoking 'make'.\n"
+            )
+            dune.write("; Please edit the original file.\n\n")
             dune.write(dune_in.read())
             for test_file in (directory / "integration").glob("*.py"):
+                dune.write("\n")
+                dune.write("(rule\n")
+                dune.write(" (alias runtest)\n")
+
+                dependencies = [
+                    f"integration/{test_file.name}",
+                    f"integration/{test_file.name}.models",
+                    f"integration/{test_file.name}.cg",
+                    f"integration/{test_file.name}.hofcg",
+                    f"integration/{test_file.name}.config",
+                    f"integration/{test_file.name}.overrides",
+                    f"integration/{test_file.name}.pysa",
+                ]
+                dependencies = [
+                    path for path in dependencies if (directory / path).exists()
+                ]
+                dune.write(
+                    f" (deps\n{textwrap.indent('\n'.join(dependencies), prefix='  ')})\n"
+                )
+
                 action = "(run ./integrationTest.exe)"
                 action = f"(setenv\n PYSA_INTEGRATION_TEST\n {test_file.name}\n{textwrap.indent(action, prefix=' ')})"
                 if test_file.name != "sanitize_tito_shaping.py":
                     # Enable invariant checking, except for the test above.
                     action = f"(setenv\n PYSA_CHECK_INVARIANTS\n 1\n{textwrap.indent(action, prefix=' ')})"
-                dune.write(
-                    f"\n(rule\n (alias runtest)\n (action\n{textwrap.indent(action, prefix='  ')}))\n"
-                )
+                dune.write(f" (action\n{textwrap.indent(action, prefix='  ')}))\n")
 
 
 def _get_opam_environment_variables(
