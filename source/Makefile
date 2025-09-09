@@ -37,10 +37,13 @@ release_test: release
 clean:
 	dune clean
 	@if [ -f dune ]; then rm dune; fi
+	@if [ -f interprocedural_analyses/taint/test/dune ]; then rm interprocedural_analyses/taint/test/dune; fi
 
 .PHONY: configure
 configure: dune;
 
-dune: dune.in $(wildcard **/dune)
+dune: dune.in interprocedural_analyses/taint/test/dune.in $(wildcard **/dune)
 	../scripts/setup.sh --configure
 	dune build @fmt --auto-promote || true
+
+interprocedural_analyses/taint/test/dune: dune

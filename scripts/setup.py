@@ -18,6 +18,7 @@ import logging
 import os
 import subprocess
 import sys
+import textwrap
 from enum import Enum
 from pathlib import Path
 from subprocess import CalledProcessError
@@ -164,7 +165,7 @@ def _opam_command(opam_version: Tuple[int, ...]) -> List[str]:
     return command
 
 
-def produce_dune_file(pyre_directory: Path, build_type: BuildType) -> None:
+def produce_root_dune_file(pyre_directory: Path, build_type: BuildType) -> None:
     # lint-ignore: NoUnsafeFilesystemRule
     with open(pyre_directory / "source" / "dune.in") as dune_in:
         # lint-ignore: NoUnsafeFilesystemRule
@@ -176,6 +177,24 @@ def produce_dune_file(pyre_directory: Path, build_type: BuildType) -> None:
                     _custom_linker_option(pyre_directory, build_type),
                 )
             )
+
+
+def produce_taint_test_dune_file(pyre_directory: Path) -> None:
+    directory = pyre_directory / "source/interprocedural_analyses/taint/test"
+    # lint-ignore: NoUnsafeFilesystemRule
+    with open(directory / "dune.in") as dune_in:
+        # lint-ignore: NoUnsafeFilesystemRule
+        with open(directory / "dune", "w") as dune:
+            dune.write(dune_in.read())
+            for test_file in (directory / "integration").glob("*.py"):
+                action = "(run ./integrationTest.exe)"
+                action = f"(setenv\n PYSA_INTEGRATION_TEST\n {test_file.name}\n{textwrap.indent(action, prefix=' ')})"
+                if test_file.name != "sanitize_tito_shaping.py":
+                    # Enable invariant checking, except for the test above.
+                    action = f"(setenv\n PYSA_CHECK_INVARIANTS\n 1\n{textwrap.indent(action, prefix=' ')})"
+                dune.write(
+                    f"\n(rule\n (alias runtest)\n (action\n{textwrap.indent(action, prefix='  ')}))\n"
+                )
 
 
 def _get_opam_environment_variables(
@@ -349,10 +368,11 @@ def full_setup(
             add_environment_variables=opam_environment_variables,
         )
 
-    produce_dune_file(pyre_directory, build_type)
+    produce_root_dune_file(pyre_directory, build_type)
+    produce_taint_test_dune_file(pyre_directory)
     if run_clean:
         # Note: we do not run `make clean` because we want the result of the
-        # explicit `produce_dune_file` to remain.
+        # explicit `produce_root_dune_file` to remain.
         # Dune 3.7 runs into `rmdir` failure when cleaning the `_build` directory
         # for some reason. Manually clean the dir to work around the issue.
         run_in_opam_environment(["rm", "-rf", "_build"])
@@ -415,7 +435,8 @@ def setup(
     release = parsed.release
 
     if parsed.configure:
-        produce_dune_file(pyre_directory, build_type)
+        produce_root_dune_file(pyre_directory, build_type)
+        produce_taint_test_dune_file(pyre_directory)
     else:
         initialize_opam_switch(
             opam_root,

@@ -19,7 +19,6 @@
   configurationTest
   domainTest
   dumpModelQueryResultsTest
-  integrationTest
   fixpointTest
   issueTest
   forwardAnalysisTest
@@ -36,15 +35,42 @@
   globalVariableModelQueryTest
   kindCoverageTest
   ruleCoverageTest)
- (modules :standard \ testHelper)
+ (modules
+  annotationParserTest
+  configurationTest
+  domainTest
+  dumpModelQueryResultsTest
+  fixpointTest
+  issueTest
+  forwardAnalysisTest
+  backwardAnalysisTest
+  modelTest
+  modelInvalidTest
+  modelVerificationErrorTest
+  missingFlowsTest
+  sanitizeTest
+  sanitizeTransformTest
+  sanitizeTransformSetTest
+  modelQueryExecutionTest
+  modelQueryParsingTest
+  globalVariableModelQueryTest
+  kindCoverageTest
+  ruleCoverageTest)
  (preprocess
   (pps ppx_sexp_message ppx_compare ppx_deriving.show))
- (libraries
-  pyrelib.taintTestHelper
-  pyrelib.taintAnalysis
-  pyrelib.taintIntegrationTest)
+ (libraries pyrelib.taintTestHelper pyrelib.taintAnalysis)
  (action
   (setenv
    PYSA_CHECK_INVARIANTS
    1
    (run %{test}))))
+
+(executable
+ (name integrationTest)
+ (modules integrationTest)
+ (preprocess
+  (pps ppx_sexp_message ppx_compare ppx_deriving.show))
+ (libraries
+  pyrelib.taintTestHelper
+  pyrelib.taintAnalysis
+  pyrelib.taintIntegrationTest))
