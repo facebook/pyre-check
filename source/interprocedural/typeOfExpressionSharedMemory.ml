@@ -16,8 +16,6 @@ module Key = struct
   [@@deriving compare, sexp]
 
   let to_string key = key |> sexp_of_t |> Core.Sexp.to_string
-
-  let from_string sexp_string = sexp_string |> Core.Sexp.of_string |> t_of_sexp
 end
 
 (* `Type.t` is a function of `Expression.t`, which can be uniquely identified by file paths and

@@ -268,17 +268,6 @@ module GlobalClassIdSharedMemoryKey = struct
 
   let to_string { GlobalClassId.module_id; local_class_id } =
     Format.sprintf "%d|%d" (ModuleId.to_int module_id) (LocalClassId.to_int local_class_id)
-
-
-  let from_string s =
-    String.split ~on:'|' s
-    |> function
-    | [module_id; local_class_id] ->
-        {
-          GlobalClassId.module_id = ModuleId.from_int (int_of_string module_id);
-          local_class_id = LocalClassId.from_int (int_of_string local_class_id);
-        }
-    | _ -> failwith "unexpected global class id key"
 end
 
 (* Unique identifier for a callable (function or method) *)
@@ -298,17 +287,6 @@ module GlobalCallableIdSharedMemoryKey = struct
 
   let to_string { GlobalCallableId.module_id; name_location } =
     Format.asprintf "%d|%a" (ModuleId.to_int module_id) Location.pp name_location
-
-
-  let from_string s =
-    String.split ~on:'|' s
-    |> function
-    | [module_id; name_location] ->
-        {
-          GlobalCallableId.module_id = ModuleId.from_int (int_of_string module_id);
-          name_location = Result.ok_or_failwith (Location.from_string name_location);
-        }
-    | _ -> failwith "unexpected global callable id key"
 end
 
 (* Unique identifier for a module, assigned by pysa. This maps to a specific source file. Note that
@@ -367,12 +345,6 @@ module ModuleQualifierSharedMemoryKey = struct
 
   let to_string key =
     key |> ModuleQualifier.to_reference |> Analysis.SharedMemoryKeys.ReferenceKey.to_string
-
-
-  let from_string s =
-    s
-    |> Analysis.SharedMemoryKeys.ReferenceKey.from_string
-    |> ModuleQualifier.from_reference_unchecked
 end
 
 (* Path to a pyrefly module information file. *)
@@ -951,8 +923,6 @@ module TypeOfExpressionsSharedMemory = struct
     [@@deriving compare, sexp]
 
     let to_string key = key |> sexp_of_t |> Core.Sexp.to_string
-
-    let from_string sexp_string = sexp_string |> Core.Sexp.of_string |> t_of_sexp
   end
 
   include
@@ -1057,12 +1027,6 @@ module FullyQualifiedNameSharedMemoryKey = struct
 
   let to_string key =
     key |> FullyQualifiedName.to_reference |> Analysis.SharedMemoryKeys.ReferenceKey.to_string
-
-
-  let from_string s =
-    s
-    |> Analysis.SharedMemoryKeys.ReferenceKey.from_string
-    |> FullyQualifiedName.from_reference_unchecked
 end
 
 module CallableMetadata = struct

@@ -223,8 +223,6 @@ module IntKey = struct
   let to_string = Int.to_string
 
   let compare = Int.compare
-
-  let from_string = Int.of_string
 end
 
 module SingletonKey = struct

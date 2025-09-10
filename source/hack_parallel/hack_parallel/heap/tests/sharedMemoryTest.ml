@@ -14,8 +14,6 @@ module StringKey = struct
   let to_string = Fn.id
 
   let compare = String.compare
-
-  let from_string = Fn.id
 end
 
 module StringValue = struct

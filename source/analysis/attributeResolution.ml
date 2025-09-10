@@ -4276,8 +4276,6 @@ module MetaclassCache = struct
       type t = string [@@deriving compare, show, sexp, hash]
 
       let to_string = show
-
-      let from_string = Fn.id
     end
 
     module Value = struct

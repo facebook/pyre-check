@@ -26,8 +26,6 @@ module StringKey = struct
 
   let compare = String.compare
 
-  let from_string x = x
-
   module Registry = struct
     let table = DependencyTrackedMemory.EncodedDependency.Table.create ()
 

@@ -11,8 +11,6 @@ module type SexpableKeyType = sig
   type t [@@deriving sexp, compare]
 
   val to_string : t -> string
-
-  val from_string : string -> t
 end
 
 module type In = sig

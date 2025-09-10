@@ -277,8 +277,6 @@ module type KeyType = sig
 
   val to_string : t -> string
 
-  val from_string : string -> t
-
   val compare : t -> t -> int
 end
 
@@ -1108,16 +1106,6 @@ module FirstClass = struct
     type t = int * Key.t
 
     let to_string (id, key) = Format.asprintf "%d:%s" id (Key.to_string key)
-
-    let from_string string_key =
-      let split = String.split_on_char ':' string_key in
-      match split with
-      | [] -> failwith (Format.asprintf "Invalid stringified key: %s" string_key)
-      | id_string :: rest ->
-          let id = int_of_string id_string in
-          let key = String.concat ":" rest |> Key.from_string in
-          id, key
-
 
     let compare (id0, key0) (id1, key1) =
       let id_compare = Int.compare id0 id1 in
