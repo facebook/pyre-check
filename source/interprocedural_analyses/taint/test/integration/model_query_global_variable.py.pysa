@@ -34,8 +34,8 @@ ModelQuery(
   find = "globals",
   where = [
     AnyOf(
-      type_annotation.equals("str"),
-      type_annotation.equals("int"),
+      type_annotation.fully_qualified.equals("str"),
+      type_annotation.fully_qualified.equals("int"),
     ),
     fully_qualified_name.matches("model_query_global_variable.*")
   ],
@@ -47,7 +47,7 @@ ModelQuery(
 ModelQuery(
   name = "get_typed_dict",
   find = "globals",
-  where = [type_annotation.equals("typing.Dict[str, model_query_global_variable.Baz]")],
+  where = [type_annotation.fully_qualified.equals("typing.Dict[str, model_query_global_variable.Baz]")],
   model = [
     GlobalModel(TaintSource[SelectDict]),
   ]
@@ -57,7 +57,7 @@ ModelQuery(
   name = "get_any_globals",
   find = "globals",
   where = [
-    type_annotation.equals("typing.Any"),
+    type_annotation.fully_qualified.equals("typing.Any"),
     fully_qualified_name.matches("model_query_global_variable.*")
   ],
   model = [
@@ -69,7 +69,7 @@ ModelQuery(
   name = "get_any_functions",
   find = "functions",
   where = [
-    return_annotation.matches("typing.Any"),
+    return_annotation.fully_qualified.matches("typing.Any"),
     fully_qualified_name.matches("model_query_global_variable.*")
   ],
   model = [
@@ -81,7 +81,7 @@ ModelQuery(
   name = "get_callables",
   find = "globals",
   where = [
-    type_annotation.equals("typing.Callable[[int, str], int]"),
+    type_annotation.fully_qualified.equals("typing.Callable[[int, str], int]"),
   ],
   model = [
     GlobalModel(TaintSource[SelectCallable])

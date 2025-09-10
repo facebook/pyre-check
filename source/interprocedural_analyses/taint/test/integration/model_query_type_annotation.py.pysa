@@ -3,7 +3,7 @@ ModelQuery(
   find = "functions",
   where = [
     name.matches("test1_"),
-    any_parameter.annotation.equals("str")
+    any_parameter.annotation.fully_qualified.equals("str")
   ],
   model = [
     Parameters(TaintSource[Test])
@@ -16,7 +16,7 @@ ModelQuery(
   where = [
     name.matches("test2_"),
     cls.fully_qualified_name.equals("model_query_type_annotation.Test2_C"),
-    any_parameter.annotation.matches("Test2_T")
+    any_parameter.annotation.fully_qualified.matches("Test2_T")
   ],
   model = [
     Parameters(TaintSource[Test], where=[Not(name.equals("self")), type_annotation.matches("Test2_T")])
@@ -28,7 +28,7 @@ ModelQuery(
   find = "functions",
   where = [
     name.matches("test4_"),
-    return_annotation.equals("str")
+    return_annotation.fully_qualified.equals("str")
   ],
   model = [
     Returns(TaintSource[Test])
@@ -40,7 +40,7 @@ ModelQuery(
   find = "functions",
   where = [
     name.matches("test5_"),
-    return_annotation.matches("Test5_T")
+    return_annotation.fully_qualified.matches("Test5_T")
   ],
   model = [
     Returns(TaintSource[Test])
@@ -52,7 +52,7 @@ ModelQuery(
   find = "attributes",
   where = [
     cls.fully_qualified_name.equals("model_query_type_annotation.Test7_C"),
-    type_annotation.equals("int")
+    type_annotation.fully_qualified.equals("int")
   ],
   model = [
     AttributeModel(TaintSource[Test])
@@ -65,7 +65,7 @@ ModelQuery(
   find = "attributes",
   where = [
     cls.fully_qualified_name.equals("model_query_type_annotation.Test8_C"),
-    type_annotation.matches("str")
+    type_annotation.fully_qualified.matches("str")
   ],
   model = [
     AttributeModel(TaintSource[Test])

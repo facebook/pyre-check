@@ -1328,7 +1328,7 @@ let test_invalid_model_queries =
       ModelQuery(
         name = "invalid_model",
         find = "functions",
-        where = return_annotation.equals("int"),
+        where = return_annotation.fully_qualified.equals("int"),
         model = AttributeModel(TaintSource[Test])
       )
     |}
@@ -1342,7 +1342,7 @@ let test_invalid_model_queries =
       ModelQuery(
         name = "invalid_model",
         find = "methods",
-        where = return_annotation.equals("int"),
+        where = return_annotation.fully_qualified.equals("int"),
         model = AttributeModel(TaintSource[Test])
       )
     |}
@@ -1389,14 +1389,14 @@ let test_invalid_model_queries =
         find = "attributes",
         where = AnyOf(
           cls.name.matches("foo"),
-          any_parameter.annotation.equals("int")
+          any_parameter.annotation.fully_qualified.equals("int")
         ),
         model = AttributeModel(TaintSource[Test])
       )
     |}
            ~expect:
-             "`any_parameter.annotation.equals` is not a valid constraint for model queries with \
-              find clause of kind `attributes`.";
+             "`any_parameter.annotation.fully_qualified.equals` is not a valid constraint for \
+              model queries with find clause of kind `attributes`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:
@@ -1406,14 +1406,14 @@ let test_invalid_model_queries =
         find = "attributes",
         where = AnyOf(
           cls.name.matches("foo"),
-          any_parameter.annotation.matches("int")
+          any_parameter.annotation.fully_qualified.matches("int")
         ),
         model = AttributeModel(TaintSource[Test])
       )
     |}
            ~expect:
-             "`any_parameter.annotation.matches` is not a valid constraint for model queries with \
-              find clause of kind `attributes`.";
+             "`any_parameter.annotation.fully_qualified.matches` is not a valid constraint for \
+              model queries with find clause of kind `attributes`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:
@@ -1423,14 +1423,14 @@ let test_invalid_model_queries =
         find = "attributes",
         where = AnyOf(
           cls.name.matches("foo"),
-          return_annotation.equals("int")
+          return_annotation.fully_qualified.equals("int")
         ),
         model = AttributeModel(TaintSource[Test])
       )
     |}
            ~expect:
-             "`return_annotation.equals` is not a valid constraint for model queries with find \
-              clause of kind `attributes`.";
+             "`return_annotation.fully_qualified.equals` is not a valid constraint for model \
+              queries with find clause of kind `attributes`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:
@@ -1440,14 +1440,14 @@ let test_invalid_model_queries =
         find = "attributes",
         where = AnyOf(
           cls.name.matches("foo"),
-          return_annotation.matches("str")
+          return_annotation.fully_qualified.matches("str")
         ),
         model = AttributeModel(TaintSource[Test])
       )
     |}
            ~expect:
-             "`return_annotation.matches` is not a valid constraint for model queries with find \
-              clause of kind `attributes`.";
+             "`return_annotation.fully_qualified.matches` is not a valid constraint for model \
+              queries with find clause of kind `attributes`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:
@@ -2385,7 +2385,7 @@ Unexpected statement: `food(y)`
       ModelQuery(
         name = "invalid_model",
         find = "globals",
-        where = type_annotation.equals("int"),
+        where = type_annotation.fully_qualified.equals("int"),
         model = GlobalModel(TaintSource[A])
       )
     |};
@@ -2459,6 +2459,65 @@ Unexpected statement: `food(y)`
            ~expect:
              "In `type_annotation.is_annotated_type`: `is_annotated_type` is deprecated for find \
               clause of kind `globals`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "globals",
+        where = type_annotation.original.matches("int"),
+        model = GlobalModel(TaintSource[A])
+      )
+    |}
+           ~expect:
+             "In `type_annotation.original.matches`: `original.equals` or `original.matches` is \
+              not supported for find clause of kind `globals`. Use `fully_qualified.equals` or \
+              `fully_qualified.matches` instead.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "functions",
+        where = return_annotation.is_annotated_type(),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+           ~expect:
+             "In `return_annotation.is_annotated_type`: `is_annotated_type` is deprecated for find \
+              clause of kind `functions`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "functions",
+        where = return_annotation.original.equals("int"),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+           ~expect:
+             "In `return_annotation.original.equals`: `original.equals` or `original.matches` is \
+              not supported for find clause of kind `functions`. Use `fully_qualified.equals` or \
+              `fully_qualified.matches` instead.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
+        where = return_annotation.original.equals("int"),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+           ~expect:
+             "In `return_annotation.original.equals`: `original.equals` or `original.matches` is \
+              not supported for find clause of kind `methods`. Use `fully_qualified.equals` or \
+              `fully_qualified.matches` instead.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model
            ~model_source:
@@ -2673,7 +2732,7 @@ Unexpected statement: `food(y)`
       ModelQuery(
          name = "foo_finders",
          find = "functions",
-         where = any_parameter.annotation.equals("foo"),
+         where = any_parameter.annotation.fully_qualified.equals("foo"),
          model = [
            AllParameters(
              ParametricSourceFromAnnotation(pattern=DynamicSource, kind=Dynamic)
@@ -2689,7 +2748,7 @@ Unexpected statement: `food(y)`
       ModelQuery(
          name = "foo_finders",
          find = "functions",
-         where = any_parameter.annotation.equals("foo"),
+         where = any_parameter.annotation.fully_qualified.equals("foo"),
          model = [
            AllParameters(
              ParametricSinkFromAnnotation(pattern=DynamicSink, kind=Dynamic)

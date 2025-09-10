@@ -196,6 +196,10 @@ type kind =
       find_clause_kind: string;
     }
   | DeprecatedParametricTaintAnnotation of string
+  | UnsupportedOriginalTypeAnnotation of {
+      expression: Expression.t;
+      find_clause_kind: string;
+    }
 [@@deriving equal, compare]
 
 type t = {

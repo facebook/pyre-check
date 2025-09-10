@@ -1522,10 +1522,10 @@ let parse_class_hierarchy_options ~path ~location ~callee ~arguments =
            (InvalidModelQueryClauseArguments { callee; arguments }))
 
 
-let parse_annotation_constraint ~path ~location ~find_clause ~callee ~attribute ~arguments =
+let parse_annotation_constraint ~path ~location ~find_clause ~callee ~reference ~arguments =
   let is_find_attribute () = ModelQuery.Find.equal find_clause ModelQuery.Find.Attribute in
-  match attribute, arguments with
-  | ( "equals",
+  match reference, arguments with
+  | ( ["fully_qualified"; "equals"],
       [
         {
           Call.Argument.value =
@@ -1538,11 +1538,8 @@ let parse_annotation_constraint ~path ~location ~find_clause ~callee ~attribute 
         };
       ] ) ->
       let name_constraint = ModelQuery.NameConstraint.Equals type_name in
-      if is_find_attribute () then
-        Ok (ModelQuery.AnnotationConstraint.OriginalAnnotationConstraint name_constraint)
-      else
-        Ok (ModelQuery.AnnotationConstraint.FullyQualifiedConstraint name_constraint)
-  | ( "matches",
+      Ok (ModelQuery.AnnotationConstraint.FullyQualifiedConstraint name_constraint)
+  | ( ["fully_qualified"; "matches"],
       [
         {
           Call.Argument.value =
@@ -1555,11 +1552,92 @@ let parse_annotation_constraint ~path ~location ~find_clause ~callee ~attribute 
         };
       ] ) ->
       let name_constraint = ModelQuery.NameConstraint.Matches (Re2.create_exn type_name_pattern) in
+      Ok (ModelQuery.AnnotationConstraint.FullyQualifiedConstraint name_constraint)
+  | ( ["original"; "equals"],
+      [
+        {
+          Call.Argument.value =
+            {
+              Node.value =
+                Expression.Constant (Constant.String { StringLiteral.value = type_name; _ });
+              _;
+            };
+          _;
+        };
+      ] ) ->
+      if is_find_attribute () then
+        let name_constraint = ModelQuery.NameConstraint.Equals type_name in
+        Ok (ModelQuery.AnnotationConstraint.OriginalAnnotationConstraint name_constraint)
+      else
+        Error
+          (model_verification_error
+             ~path
+             ~location
+             (UnsupportedOriginalTypeAnnotation
+                { expression = callee; find_clause_kind = ModelQuery.Find.show find_clause }))
+  | ( ["original"; "matches"],
+      [
+        {
+          Call.Argument.value =
+            {
+              Node.value =
+                Expression.Constant (Constant.String { StringLiteral.value = type_name_pattern; _ });
+              _;
+            };
+          _;
+        };
+      ] ) ->
+      if is_find_attribute () then
+        let name_constraint =
+          ModelQuery.NameConstraint.Matches (Re2.create_exn type_name_pattern)
+        in
+        Ok (ModelQuery.AnnotationConstraint.OriginalAnnotationConstraint name_constraint)
+      else
+        Error
+          (model_verification_error
+             ~path
+             ~location
+             (UnsupportedOriginalTypeAnnotation
+                { expression = callee; find_clause_kind = ModelQuery.Find.show find_clause }))
+  | ( ["equals"],
+      [
+        {
+          Call.Argument.value =
+            {
+              Node.value =
+                Expression.Constant (Constant.String { StringLiteral.value = type_name; _ });
+              _;
+            };
+          _;
+        };
+      ] ) ->
+      (* TODO(T225700656): This will be deprecated in the future. Use fully_qualified.equals or
+         original.equals *)
+      let name_constraint = ModelQuery.NameConstraint.Equals type_name in
       if is_find_attribute () then
         Ok (ModelQuery.AnnotationConstraint.OriginalAnnotationConstraint name_constraint)
       else
         Ok (ModelQuery.AnnotationConstraint.FullyQualifiedConstraint name_constraint)
-  | "is_annotated_type", [] ->
+  | ( ["matches"],
+      [
+        {
+          Call.Argument.value =
+            {
+              Node.value =
+                Expression.Constant (Constant.String { StringLiteral.value = type_name_pattern; _ });
+              _;
+            };
+          _;
+        };
+      ] ) ->
+      (* TODO(T225700656): This will be deprecated in the future. Use fully_qualified.matches or
+         original.matches *)
+      let name_constraint = ModelQuery.NameConstraint.Matches (Re2.create_exn type_name_pattern) in
+      if is_find_attribute () then
+        Ok (ModelQuery.AnnotationConstraint.OriginalAnnotationConstraint name_constraint)
+      else
+        Ok (ModelQuery.AnnotationConstraint.FullyQualifiedConstraint name_constraint)
+  | ["is_annotated_type"], [] ->
       if is_find_attribute () then
         Ok ModelQuery.AnnotationConstraint.IsAnnotatedTypeConstraint
       else
@@ -1569,7 +1647,7 @@ let parse_annotation_constraint ~path ~location ~find_clause ~callee ~attribute 
              ~location
              (DeprecatedIsAnnotatedType
                 { expression = callee; find_clause_kind = ModelQuery.Find.show find_clause }))
-  | "extends", _ -> (
+  | ["extends"], _ -> (
       let open Core.Result in
       parse_class_hierarchy_options ~path ~location ~callee ~arguments
       >>= fun (first_parameter, is_transitive, includes_self) ->
@@ -2075,10 +2153,10 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
           parse_name_constraint ~path ~location ~constraint_expression ~attribute ~arguments
           >>= fun name_constraint ->
           Ok (ModelQuery.Constraint.FullyQualifiedNameConstraint name_constraint)
-      | ["type_annotation"; attribute], _ ->
+      | "type_annotation" :: reference, _ ->
           check_find_in ~callee [ModelQuery.Find.Attribute; ModelQuery.Find.Global]
           >>= fun () ->
-          parse_annotation_constraint ~path ~location ~find_clause ~callee ~attribute ~arguments
+          parse_annotation_constraint ~path ~location ~find_clause ~callee ~reference ~arguments
           >>= fun annotation_constraint ->
           Ok (ModelQuery.Constraint.AnnotationConstraint annotation_constraint)
       | ["Decorator"], _ ->
@@ -2087,16 +2165,16 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
           parse_decorator_constraint_list ~path ~location ~within_class_constraint:false ~arguments
           >>= fun decorator_constraint ->
           Ok (ModelQuery.Constraint.AnyDecoratorConstraint decorator_constraint)
-      | ["return_annotation"; attribute], _ ->
+      | "return_annotation" :: reference, _ ->
           check_find ~callee ModelQuery.Find.is_callable
           >>= fun () ->
-          parse_annotation_constraint ~path ~location ~find_clause ~callee ~attribute ~arguments
+          parse_annotation_constraint ~path ~location ~find_clause ~callee ~reference ~arguments
           >>= fun annotation_constraint ->
           Ok (ModelQuery.Constraint.ReturnConstraint annotation_constraint)
-      | ["any_parameter"; "annotation"; attribute], _ ->
+      | "any_parameter" :: "annotation" :: reference, _ ->
           check_find ~callee ModelQuery.Find.is_callable
           >>= fun () ->
-          parse_annotation_constraint ~path ~location ~find_clause ~callee ~attribute ~arguments
+          parse_annotation_constraint ~path ~location ~find_clause ~callee ~reference ~arguments
           >>| fun parameter_constraint ->
           ModelQuery.Constraint.AnyParameterConstraint
             (ModelQuery.ParameterConstraint.AnnotationConstraint parameter_constraint)
@@ -2169,8 +2247,8 @@ let parse_parameter_where_clause ~path ~find_clause ({ Node.value; location } as
       | ["Not"], [{ Call.Argument.value; _ }] ->
           parse_constraint value
           >>| fun query_constraint -> ModelQuery.ParameterConstraint.Not query_constraint
-      | ["type_annotation"; attribute], _ ->
-          parse_annotation_constraint ~path ~location ~find_clause ~callee ~attribute ~arguments
+      | "type_annotation" :: reference, _ ->
+          parse_annotation_constraint ~path ~location ~find_clause ~callee ~reference ~arguments
           >>| fun annotation_constraint ->
           ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint
       | ( ["index"; "equals"],

@@ -211,6 +211,10 @@ type kind =
       find_clause_kind: string;
     }
   | DeprecatedParametricTaintAnnotation of string
+  | UnsupportedOriginalTypeAnnotation of {
+      expression: Expression.t;
+      find_clause_kind: string;
+    }
 [@@deriving equal, compare, show]
 
 type t = {
@@ -605,6 +609,13 @@ let description error =
         find_clause_kind
   | DeprecatedParametricTaintAnnotation annotation ->
       Format.sprintf "Parametric taint annotation `%s` is deprecated." annotation
+  | UnsupportedOriginalTypeAnnotation { expression; find_clause_kind } ->
+      Format.asprintf
+        "In `%a`: `original.equals` or `original.matches` is not supported for find clause of kind \
+         `%s`. Use `fully_qualified.equals` or `fully_qualified.matches` instead."
+        Expression.pp
+        expression
+        find_clause_kind
 
 
 let code { kind; _ } =
@@ -683,6 +694,7 @@ let code { kind; _ } =
   | MissingClass _ -> 75
   | DeprecatedIsAnnotatedType _ -> 76
   | DeprecatedParametricTaintAnnotation _ -> 77
+  | UnsupportedOriginalTypeAnnotation _ -> 78
 
 
 let display { kind = error; path; location } =

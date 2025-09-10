@@ -385,7 +385,7 @@ let test_query_parsing_find_functions context =
     ModelQuery(
        name = "foo_finders",
        find = "functions",
-       where = return_annotation.equals("int"),
+       where = return_annotation.fully_qualified.equals("int"),
        model = [Returns([TaintSource[Test]])]
     )
     |}
@@ -422,7 +422,7 @@ let test_query_parsing_find_functions context =
     ModelQuery(
        name = "foo_finders",
        find = "functions",
-       where = any_parameter.annotation.equals("int"),
+       where = any_parameter.annotation.fully_qualified.equals("int"),
        model = [Returns([TaintSource[Test]])]
     )
     |}
@@ -461,8 +461,8 @@ let test_query_parsing_find_functions context =
        name = "foo_finders",
        find = "functions",
        where = AnyOf(
-         any_parameter.annotation.equals("int"),
-         return_annotation.equals("int"),
+         any_parameter.annotation.fully_qualified.equals("int"),
+         return_annotation.fully_qualified.equals("int"),
        ),
        model = [Returns([TaintSource[Test]])]
     )
@@ -507,8 +507,8 @@ let test_query_parsing_find_functions context =
        name = "foo_finders",
        find = "functions",
        where = AllOf(
-         any_parameter.annotation.equals("int"),
-         return_annotation.equals("int"),
+         any_parameter.annotation.fully_qualified.equals("int"),
+         return_annotation.fully_qualified.equals("int"),
        ),
        model = [Returns([TaintSource[Test]])]
     )
@@ -1329,8 +1329,8 @@ let test_query_parsing_model_parameters context =
               Not(AnyOf(
                 name.matches("self"),
                 name.matches("cls"),
-                type_annotation.matches("IGWSGIRequest"),
-                type_annotation.matches("HttpRequest"),
+                type_annotation.fully_qualified.matches("IGWSGIRequest"),
+                type_annotation.fully_qualified.matches("HttpRequest"),
               ))
            ]
          )

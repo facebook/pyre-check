@@ -222,37 +222,61 @@ Model queries allow for querying based on the return annotation of a callable.
 Note that this `where` clause does not work when the `find` clause specifies
 `"attributes"`.
 
-#### `return_annotation.equals`
+#### `return_annotation.fully_qualified.equals`
 
-The clause will match when the fully-qualified name of the callable's return
-type matches the specified value exactly.
+The clause will match when the fully-qualified return type of the callable
+matches the specified value exactly. Fully qualified here means all class names
+are prefixed with their module name, for instance `typing.Dict[test.A, test.B]`
+if A and B are in module test.
 
 ```python
 ModelQuery(
   name = "get_return_HttpRequest_sources",
   find = "functions",
   where = [
-    return_annotation.equals("django.http.HttpRequest"),
+    return_annotation.fully_qualified.equals("django.http.HttpRequest"),
   ],
   model = Returns(TaintSource[UserControlled, Via[http_request]])
 )
 ```
 
-#### `return_annotation.matches`
+#### `return_annotation.fully_qualified.matches`
 
 This is similar to the previous clause, but will match when the fully-qualified
-name of the callable's return type matches the specified pattern.
+return type of the callable matches the specified pattern.
 
 ```python
 ModelQuery(
   name = "get_return_Request_sources",
   find = "methods",
   where = [
-    return_annotation.matches(".*Request"),
+    return_annotation.fully_qualified.matches(".*Request"),
   ],
   model = Returns(TaintSource[UserControlled, Via[http_request]])
 )
 ```
+
+#### `return_annotation.equals`
+
+:::caution
+
+This will be deprecated in future versions. Please migrate to
+`return_annotation.fully_qualified.equals`.
+
+:::
+
+This is equivalent to `return_annotation.fully_qualified.equals`.
+
+#### `return_annotation.matches`
+
+:::caution
+
+This will be deprecated in future versions. Please migrate to
+`return_annotation.fully_qualified.matches`.
+
+:::
+
+This is equivalent to `return_annotation.fully_qualified.matches`.
 
 #### `return_annotation.is_annotated_type`
 
@@ -321,17 +345,19 @@ variable or class attribute. This is similar to the
 [`return_annotation`](#return_annotation-clauses) clauses shown previously. See
 also: `Parameters` model [`type_annotation`](#type_annotation-clause) clauses.
 
-#### `type_annotation.equals`
+#### `type_annotation.fully_qualified.equals`
 
-The clause will match when the fully-qualified name of the global or class
-attribute explicitly annotated type matches the specified value exactly.
+The clause will match when the fully qualified type of the global or class
+attribute matches the specified value exactly. Fully qualified here means all
+class names are prefixed with the module name, for instance
+`typing.Dict[test.A, test.B]` if A and B are in module test.
 
 ```python
 ModelQuery(
   name = "get_string_dicts",
   find = "globals",
   where = [
-    type_annotation.equals("typing.Dict[(str, str)]"),
+    type_annotation.fully_qualified.equals("typing.Dict[str, str]"),
   ],
   model = GlobalModel(TaintSource[SelectDict])
 )
@@ -346,22 +372,94 @@ annotated_dict: Dict[str, str] = {"hello": "world", "abc": "123"}
 
 will result in a model for `annotated_dict: TaintSource[SelectDict]`.
 
-#### `type_annotation.matches`
+Note that `typing.Annotated` is stripped from the fully qualified type.
+
+#### `type_annotation.fully_qualified.matches`
 
 This is similar to the previous clause, but will match when the fully-qualified
-name of the global or class attribute explicit type annotation matches the
-specified pattern.
+type of the global or class attribute matches the specified pattern.
 
 ```python
 ModelQuery(
   name = "get_anys",
   find = "globals",
   where = [
-    return_annotation.matches(".*typing.Any.*"),
+    return_annotation.fully_qualified.matches(".*typing.Any.*"),
   ],
   model = GlobalModel(TaintSource[SelectAny])
 )
 ```
+
+#### `type_annotation.original.equals`
+
+The clause will match when the original, user-provided annotation of a the class
+attribute matches the specified value exactly.
+
+When using pyre1 (the current default), the source code annotation will be
+fully qualified, but the structure of the user-provided type is preserved.
+When using pyrefly (currently a work in progress), the original source code
+annotation will be used as-is, without qualification.
+
+```python
+ModelQuery(
+  name = "get_string_dicts",
+  find = "attributes",
+  where = [
+    # With pyre1
+    type_annotation.original.equals('typing.Annotated[typing.Dict[(str, str)], "foo"]'),
+    # With pyrefly
+    type_annotation.original.equals('Annotated[Dict[(str, str)], "foo"]'),
+  ],
+  model = AttributeModel(TaintSource[Test])
+)
+```
+
+For example, the above query when run on the following code:
+
+```python
+class Foo:
+  attribute: Annotated[Dict[str, str], "foo"] = {"hello": "world", "abc": "123"}
+```
+
+will result in a model for `Foo.attribute: TaintSource[Test]`.
+
+
+:::caution
+
+In general, prefer using `fully_qualified.equals`, This is meant to be used when
+matching against `typing.Annotated`. This constraint is only available for class
+attributes.
+
+:::
+
+#### `type_annotation.original.matches`
+
+This is similar to the previous clause, but will match when the original type
+annotation of the class attribute matches the specified pattern.
+
+#### `type_annotation.equals`
+
+:::caution
+
+This will be deprecated in future versions. Please migrate to
+`type_annotation.fully_qualified.equals` or `type_annotation.original.equals`.
+
+:::
+
+This is equivalent to `type_annotation.fully_qualified.equals`, except for class
+attributes, where it's equivalent to `type_annotation.original.equals`.
+
+#### `type_annotation.matches`
+
+:::caution
+
+This will be deprecated in future versions. Please migrate to
+`type_annotation.fully_qualified.matches` or `type_annotation.original.matches`.
+
+:::
+
+This is equivalent to `type_annotation.fully_qualified.matches`, except for class
+attributes, where it's equivalent to `type_annotation.original.matches`.
 
 #### `type_annotation.is_annotated_type`
 
@@ -413,10 +511,10 @@ in conjunction with the `Parameters` model clause (see
 that this `where` clause does not work when the `find` clause specifies
 `"attributes"`.
 
-#### `any_parameter.annotation.equals`
+#### `any_parameter.annotation.fully_qualified.equals`
 
 This clause will match all callables which have at least one parameter where the
-fully-qualified name of the parameter type matches the specified value exactly.
+fully-qualified type of the parameter matches the specified value exactly.
 
 Example:
 
@@ -425,7 +523,7 @@ ModelQuery(
   name = "get_parameter_HttpRequest_sources",
   find = "functions",
   where = [
-    any_parameter.annotation.equals("django.http.HttpRequest")
+    any_parameter.annotation.fully_qualified.equals("django.http.HttpRequest")
   ],
   model =
     Parameters(
@@ -438,10 +536,10 @@ ModelQuery(
 )
 ```
 
-#### `any_parameter.annotation.matches`
+#### `any_parameter.annotation.fully_qualified.matches`
 
 This clause will match all callables which have at least one parameter where the
-fully-qualified name of the parameter type matches the specified pattern.
+fully-qualified type of the parameter matches the specified pattern.
 
 Example:
 
@@ -450,7 +548,7 @@ ModelQuery(
   name = "get_parameter_Request_sources",
   find = "methods",
   where = [
-    any_parameter.annotation.matches(".*Request")
+    any_parameter.annotation.fully_qualified.matches(".*Request")
   ],
   model =
     Parameters(
@@ -461,6 +559,28 @@ ModelQuery(
     )
 )
 ```
+
+#### `any_parameter.annotation.equals`
+
+:::caution
+
+This will be deprecated in future versions. Please migrate to
+`any_parameter.annotation.fully_qualified.equals`.
+
+:::
+
+This is equivalent to `any_parameter.annotation.fully_qualified.equals`.
+
+#### `any_parameter.annotation.matches`
+
+:::caution
+
+This will be deprecated in future versions. Please migrate to
+`any_parameter.annotation.fully_qualified.matches`.
+
+:::
+
+This is equivalent to `any_parameter.annotation.fully_qualified.matches`.
 
 #### `any_parameter.annotation.is_annotated_type`
 

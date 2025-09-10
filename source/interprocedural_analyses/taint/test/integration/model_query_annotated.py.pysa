@@ -6,7 +6,7 @@ ModelQuery(
   find = "attributes",
   where = [
       cls.fully_qualified_name.equals("model_query_annotated.Test1_C"),
-      type_annotation.matches(".*Annotated\[.*Color\..*")
+      type_annotation.original.matches(".*Annotated\[.*Color\..*")
     ],
   model = [
     AttributeModel(TaintSource[Test, ViaTypeOf]),
@@ -19,8 +19,9 @@ ModelQuery(
   where = [
       cls.fully_qualified_name.equals("model_query_annotated.Test2_C"),
       AnyOf(
-        type_annotation.equals("typing.Annotated[(typing.Optional[float], model_query_annotated.Color.RED)]"),
-        type_annotation.equals("typing.Annotated[(typing.Optional[float], model_query_annotated.Color.RED, foo)]")
+        # Right now, type_annotation.original still uses fully qualified names due to pyre1 internals, but in the future, it won't.
+        type_annotation.original.equals("typing.Annotated[(typing.Optional[float], model_query_annotated.Color.RED)]"),
+        type_annotation.original.equals("typing.Annotated[(typing.Optional[float], model_query_annotated.Color.RED, foo)]")
       )
     ],
   model = [
