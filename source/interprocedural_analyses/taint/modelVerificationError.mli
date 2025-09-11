@@ -20,7 +20,7 @@ module IncompatibleModelError : sig
     | InvalidNamedParameterPosition of {
         name: string;
         position: int;
-        valid_roots: Interprocedural.AccessPath.Root.t list;
+        valid_roots: Analysis.TaintAccessPath.Root.t list;
       }
   [@@deriving equal, compare]
 

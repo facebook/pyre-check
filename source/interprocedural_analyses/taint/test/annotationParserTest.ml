@@ -8,7 +8,7 @@
 open OUnit2
 open Core
 open Taint
-module AccessPath = Interprocedural.AccessPath
+module AccessPath = Analysis.TaintAccessPath
 
 let named name = { AnnotationParser.KindDefinition.name; kind = Named; location = None }
 

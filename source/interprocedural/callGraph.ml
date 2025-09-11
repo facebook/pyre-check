@@ -21,6 +21,7 @@ open Ast
 open Statement
 open Expression
 open Pyre
+module TaintAccessPath = Analysis.TaintAccessPath
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
 module JsonHelper = struct

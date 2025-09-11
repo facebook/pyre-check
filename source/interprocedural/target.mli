@@ -57,7 +57,8 @@ module Regular : sig
   val set_kind : kind -> t -> t
 end
 
-module ParameterMap : Data_structures.SerializableMap.S with type key = TaintAccessPath.Root.t
+module ParameterMap :
+  Data_structures.SerializableMap.S with type key = Analysis.TaintAccessPath.Root.t
 
 type t =
   | Regular of Regular.t

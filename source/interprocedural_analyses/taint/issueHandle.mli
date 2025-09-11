@@ -13,7 +13,7 @@ module Sink : sig
     | Call of {
         callee: Target.t;
         index: int;
-        parameter: AccessPath.Root.t;
+        parameter: Analysis.TaintAccessPath.Root.t;
       }
     | Global of {
         callee: Target.t;
@@ -29,7 +29,7 @@ module Sink : sig
       }
   [@@deriving compare, equal, hash, sexp, show]
 
-  val make_call : call_target:CallGraph.CallTarget.t -> root:AccessPath.Root.t -> t
+  val make_call : call_target:CallGraph.CallTarget.t -> root:Analysis.TaintAccessPath.Root.t -> t
 
   val make_global : call_target:CallGraph.CallTarget.t -> t
 

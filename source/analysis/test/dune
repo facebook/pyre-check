@@ -37,6 +37,7 @@
   scopeTest
   signatureSelectionTest
   sqlAlchemyTest
+  taintAccessPathTest
   typeAliasEnvironmentTest
   typeCheckTest
   typeConstraintsTest

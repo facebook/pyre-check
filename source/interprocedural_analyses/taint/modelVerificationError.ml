@@ -10,7 +10,7 @@
 
 open Core
 open Ast
-module AccessPath = Interprocedural.AccessPath
+module AccessPath = Analysis.TaintAccessPath
 module PyrePysaApi = Interprocedural.PyrePysaApi
 
 module IncompatibleModelError = struct

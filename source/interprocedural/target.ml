@@ -17,6 +17,7 @@ open Core
 open Ast
 open Statement
 open Pyre
+module TaintAccessPath = Analysis.TaintAccessPath
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
 type kind =

@@ -12,7 +12,7 @@ open Test
 open TestHelper
 open Taint
 module PyrePysaApi = Interprocedural.PyrePysaApi
-module AccessPath = Interprocedural.AccessPath
+module AccessPath = Analysis.TaintAccessPath
 
 let get_stubs_and_definitions ~pyre_api ~configuration ~source_file_name =
   let qualifier = Ast.Reference.create (String.chop_suffix_exn source_file_name ~suffix:".py") in

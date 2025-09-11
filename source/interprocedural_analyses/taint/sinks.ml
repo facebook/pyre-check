@@ -11,7 +11,7 @@
  *)
 
 open Core
-module AccessPath = Interprocedural.AccessPath
+module AccessPath = Analysis.TaintAccessPath
 
 let name = "sink"
 

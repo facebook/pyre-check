@@ -11,6 +11,7 @@ open OUnit2
 open Ast
 open Test
 open Interprocedural
+module AccessPath = Analysis.TaintAccessPath
 
 let test_get_module_and_definition context =
   let assert_get_module_and_definition

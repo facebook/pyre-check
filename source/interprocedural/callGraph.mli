@@ -570,7 +570,7 @@ module HigherOrderCallGraph : sig
 
     val initialize_from_roots
       :  callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
-      (TaintAccessPath.Root.t * Target.t) list ->
+      (Analysis.TaintAccessPath.Root.t * Target.t) list ->
       t
 
     val initialize_from_callable

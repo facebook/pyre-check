@@ -11,7 +11,7 @@ open Ast
 val verify_signature
   :  path:PyrePath.t option ->
   location:Location.t ->
-  normalized_model_parameters:Interprocedural.AccessPath.NormalizedParameter.t list ->
+  normalized_model_parameters:Analysis.TaintAccessPath.NormalizedParameter.t list ->
   name:Reference.t ->
   imported_name:Reference.t option ->
   Interprocedural.PyrePysaApi.ModelQueries.FunctionSignature.t list option ->

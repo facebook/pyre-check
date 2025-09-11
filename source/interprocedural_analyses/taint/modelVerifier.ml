@@ -10,8 +10,8 @@
 open Core
 open Ast
 open Expression
+module AccessPath = Analysis.TaintAccessPath
 module PyrePysaApi = Interprocedural.PyrePysaApi
-module AccessPath = Interprocedural.AccessPath
 
 type parameter_requirements = {
   anonymous_parameters_positions: Int.Set.t;
