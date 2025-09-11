@@ -1068,7 +1068,7 @@ module CallableMetadataSharedMemory = struct
   end
 
   include
-    Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+    Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
       (FullyQualifiedNameSharedMemoryKey)
       (struct
         type t = Value.t
@@ -1099,7 +1099,7 @@ module ClassMetadataSharedMemory = struct
   end
 
   include
-    Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+    Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
       (FullyQualifiedNameSharedMemoryKey)
       (struct
         type t = Metadata.t
@@ -1145,7 +1145,7 @@ module ModuleGlobalsSharedMemory =
 
 module ClassIdToQualifiedNameSharedMemory = struct
   include
-    Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+    Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
       (GlobalClassIdSharedMemoryKey)
       (struct
         type t = FullyQualifiedName.t
@@ -1160,7 +1160,7 @@ module ClassIdToQualifiedNameSharedMemory = struct
 end
 
 module CallableIdToQualifiedNameSharedMemory =
-  Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+  Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
     (GlobalCallableIdSharedMemoryKey)
     (struct
       type t = FullyQualifiedName.t
