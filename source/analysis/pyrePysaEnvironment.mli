@@ -55,6 +55,22 @@ module PysaType : sig
   (* Pretty print the type, usually meant for the user *)
   val pp_concise : Format.formatter -> t -> unit
 
+  val show_fully_qualified : t -> string
+
+  module ClassNamesResult : sig
+    type t = {
+      stripped_coroutine: bool;
+      stripped_optional: bool;
+      stripped_readonly: bool;
+      unbound_type_variable: bool;
+      class_names: string list;
+      is_exhaustive: bool;
+          (* Is there an element (after stripping) that isn't a class name? For instance:
+             get_class_name(Union[A, Callable[...])) = { class_names = [A], is_exhaustive = false
+             } *)
+    }
+  end
+
   (* Return a list of fully qualified class names that this type refers to, after
    * stripping Optional, ReadOnly and TypeVar.
    *
@@ -64,7 +80,7 @@ module PysaType : sig
    * List[int] -> [List]
    * List[Dict[str, str]] -> [List]
    *)
-  val get_class_names : t -> string list
+  val get_class_names : t -> ClassNamesResult.t
 end
 
 module ReadWrite : sig
@@ -296,12 +312,13 @@ module ModelQueries : sig
     type t =
       | PositionalOnly of {
           name: string option;
-          index: int;
+          position: int;
           annotation: PysaType.t;
           has_default: bool;
         }
       | Named of {
           name: string;
+          position: int;
           annotation: PysaType.t;
           has_default: bool;
         }
@@ -310,14 +327,22 @@ module ModelQueries : sig
           annotation: PysaType.t;
           has_default: bool;
         }
-      | Variable of { name: string option }
+      | Variable of {
+          name: string option;
+          position: int;
+        }
       | Keywords of {
           name: string option;
           annotation: PysaType.t;
+          excluded: string list;
         }
     [@@deriving equal, compare, show]
 
     val annotation : t -> PysaType.t option
+
+    val root : t -> TaintAccessPath.Root.t
+
+    val name : t -> string option
 
     val has_default : t -> bool
   end
@@ -338,6 +363,12 @@ module ModelQueries : sig
     [@@deriving equal, compare, show]
 
     val from_callable_type : Type.Callable.t -> t list
+
+    val from_pyre1_ast
+      :  pyre_api:ReadOnly.t ->
+      parameters:Ast.Expression.Parameter.t list ->
+      return_annotation:Ast.Expression.t option ->
+      t
   end
 
   module Function : sig

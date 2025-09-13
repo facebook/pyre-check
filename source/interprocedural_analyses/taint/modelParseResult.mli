@@ -466,15 +466,15 @@ module Modelable : sig
 
   val type_annotation : t -> Ast.Expression.t option
 
-  val return_annotation : t -> Ast.Expression.t option
+  val return_annotation : t -> Interprocedural.PyrePysaApi.PysaType.t
 
-  val parameters : t -> Ast.Expression.Parameter.t list
+  val parameters : t -> Interprocedural.PyrePysaApi.ModelQueries.FunctionParameter.t list
+
+  val captures : t -> Ast.Statement.Define.Capture.t list
 
   val decorator_expressions_after_inlining : t -> Ast.Expression.t list
 
   val resolved_original_decorators : t -> CallableDecorator.t list
-
-  val signature : t -> Interprocedural.Target.CallableSignature.t
 
   val class_name : t -> string option
 

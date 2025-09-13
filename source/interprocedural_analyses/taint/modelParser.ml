@@ -966,7 +966,9 @@ let paths_for_source_or_sink ~pyre_api ~kind ~root ~root_annotations ~features =
   let all_static_field_paths () =
     let attributes =
       root_annotations
-      |> List.concat_map ~f:PyrePysaApi.PysaType.get_class_names
+      |> List.map ~f:PyrePysaApi.PysaType.get_class_names
+      |> List.map ~f:(fun { PyrePysaApi.PysaType.ClassNamesResult.class_names; _ } -> class_names)
+      |> List.concat
       |> List.concat_map ~f:(get_class_attributes_transitive ~pyre_api)
       |> List.filter ~f:(Fn.non Ast.Expression.is_dunder_attribute)
       |> List.dedup_and_sort ~compare:Identifier.compare
@@ -2625,8 +2627,7 @@ let parse_model_clause
 let parameters_of_callable_signatures signatures =
   let parameters_of_signature { PyrePysaApi.ModelQueries.FunctionSignature.parameters; _ } =
     match parameters with
-    | PyrePysaApi.ModelQueries.FunctionParameters.List parameters ->
-        List.mapi ~f:(fun position parameter -> position, parameter) parameters
+    | PyrePysaApi.ModelQueries.FunctionParameters.List parameters -> parameters
     | _ -> []
   in
   List.concat_map ~f:parameters_of_signature signatures
@@ -2639,21 +2640,45 @@ let port_annotations_from_signature ~root ~callable_signatures =
   | None -> []
   | Some callable_signatures -> (
       match root with
-      | AccessPath.Root.PositionalParameter { position; _ } ->
+      | AccessPath.Root.PositionalParameter { position; name; _ } ->
           parameters_of_callable_signatures callable_signatures
-          |> List.filter_map ~f:(fun (parameter_position, parameter) ->
-                 Option.some_if (Int.equal parameter_position position) parameter)
+          |> List.filter_map ~f:(fun parameter ->
+                 match parameter with
+                 | PyrePysaApi.ModelQueries.FunctionParameter.PositionalOnly
+                     { position = parameter_position; _ }
+                   when Int.equal parameter_position position ->
+                     Some parameter
+                 | PyrePysaApi.ModelQueries.FunctionParameter.PositionalOnly
+                     { name = Some parameter_name; _ }
+                   when String.equal (Identifier.sanitized parameter_name) name ->
+                     Some parameter
+                 | PyrePysaApi.ModelQueries.FunctionParameter.Named
+                     { position = parameter_position; _ }
+                   when Int.equal parameter_position position ->
+                     Some parameter
+                 | PyrePysaApi.ModelQueries.FunctionParameter.Named { name = parameter_name; _ }
+                   when String.equal (Identifier.sanitized parameter_name) name ->
+                     Some parameter
+                 | PyrePysaApi.ModelQueries.FunctionParameter.KeywordOnly
+                     { name = parameter_name; _ }
+                   when String.equal (Identifier.sanitized parameter_name) name ->
+                     Some parameter
+                 | _ -> None)
           |> List.filter_map ~f:PyrePysaApi.ModelQueries.FunctionParameter.annotation
       | AccessPath.Root.NamedParameter { name; _ } ->
           parameters_of_callable_signatures callable_signatures
-          |> List.filter_map ~f:(fun (_, parameter) ->
+          |> List.filter_map ~f:(fun parameter ->
                  match parameter with
-                 | PyrePysaApi.ModelQueries.FunctionParameter.KeywordOnly
-                     { name = parameter_name; _ }
-                   when String.equal parameter_name ("$parameter$" ^ name) ->
+                 | PyrePysaApi.ModelQueries.FunctionParameter.PositionalOnly
+                     { name = Some parameter_name; _ }
+                   when String.equal (Identifier.sanitized parameter_name) name ->
                      Some parameter
                  | PyrePysaApi.ModelQueries.FunctionParameter.Named { name = parameter_name; _ }
-                   when String.equal parameter_name name ->
+                   when String.equal (Identifier.sanitized parameter_name) name ->
+                     Some parameter
+                 | PyrePysaApi.ModelQueries.FunctionParameter.KeywordOnly
+                     { name = parameter_name; _ }
+                   when String.equal (Identifier.sanitized parameter_name) name ->
                      Some parameter
                  | _ -> None)
           |> List.filter_map ~f:PyrePysaApi.ModelQueries.FunctionParameter.annotation
@@ -3596,9 +3621,9 @@ let create_model_from_signature
               | None -> [root]
               | Some roots -> root :: roots)
         in
-        let add_parameter_to_position map (position, parameter) =
+        let add_parameter_to_position map parameter =
           match parameter with
-          | PyrePysaApi.ModelQueries.FunctionParameter.Named { name; _ } ->
+          | PyrePysaApi.ModelQueries.FunctionParameter.Named { name; position; _ } ->
               let name = Identifier.sanitized name in
               add_into_map
                 map

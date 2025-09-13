@@ -18,6 +18,7 @@ open Ast
 open Interprocedural
 open ModelParseResult
 module PyrePysaApi = Interprocedural.PyrePysaApi
+module FunctionParameter = PyrePysaApi.ModelQueries.FunctionParameter
 
 (* Represents results from model queries, stored in the ocaml heap. *)
 module ModelQueryResultMap = struct
@@ -695,9 +696,11 @@ module TypeAnnotation : sig
     Expression.t ->
     t
 
+  val from_pysa_type : PyrePysaApi.PysaType.t -> t
+
   val is_annotated : t -> bool
 
-  val as_type : t -> Type.t
+  val as_type : t -> PyrePysaApi.PysaType.t
 
   (* Show the original annotation, as written by the user. *)
   val show_original_annotation : t -> string
@@ -708,15 +711,20 @@ end = struct
   type t = {
     expression: Expression.t option;
         (* The original annotation, as an expression. None if not supported. *)
-    type_: Type.t Lazy.t;
+    type_: PyrePysaApi.PysaType.t Lazy.t;
   }
 
   let from_original_annotation ~pyre_api ~preserve_original expression =
     {
       expression = Option.some_if preserve_original expression;
-      type_ = lazy (PyrePysaApi.ReadOnly.parse_annotation pyre_api expression);
+      type_ =
+        lazy
+          (PyrePysaApi.ReadOnly.parse_annotation pyre_api expression
+          |> PyrePysaApi.PysaType.from_pyre1_type);
     }
 
+
+  let from_pysa_type type_ = { expression = None; type_ = lazy type_ }
 
   let is_annotated = function
     | { expression = None; _ } -> failwith "is_annotated is not supported in this context"
@@ -741,7 +749,8 @@ end = struct
 
 
   (* Show the parsed annotation from pyre *)
-  let show_fully_qualified_annotation { type_; _ } = Type.show (Lazy.force type_)
+  let show_fully_qualified_annotation { type_; _ } =
+    PyrePysaApi.PysaType.show_fully_qualified (Lazy.force type_)
 end
 
 let matches_annotation_constraint
@@ -765,83 +774,54 @@ let matches_annotation_constraint
         (TypeAnnotation.show_fully_qualified_annotation annotation)
   | ModelQuery.AnnotationConstraint.AnnotationClassExtends
       { class_name; is_transitive; includes_self } -> (
-      let extract_readonly t =
-        match t with
-        | Type.PyreReadOnly t -> t
-        | t -> t
-      in
-      let extract_optional t =
-        match Type.optional_value t with
-        | Some t -> t
-        | _ -> t
-      in
-      let rec extract_class_name t =
-        match Reference.show (Type.class_name t) with
-        | "typing.Any"
-        | "typing.Union"
-        | "typing.Callable"
-        | "$bottom"
-        | "$unknown" ->
-            None
-        | "typing.Optional" -> extract_class_name (extract_optional t)
-        | "typing._PyreReadOnly_"
-        | "pyre_extensions.ReadOnly"
-        | "pyre_extensions.PyreReadOnly" ->
-            extract_class_name (extract_readonly t)
-        | extracted_class_name -> Some extracted_class_name
-      in
-      let parsed_type = TypeAnnotation.as_type annotation in
-      match extract_class_name parsed_type with
-      | Some extracted_class_name ->
+      match PyrePysaApi.PysaType.get_class_names (TypeAnnotation.as_type annotation) with
+      | {
+       PyrePysaApi.PysaType.ClassNamesResult.class_names = [extracted_class_name];
+       is_exhaustive = true;
+       _;
+      } ->
           find_children ~class_hierarchy_graph ~is_transitive ~includes_self class_name
           |> ClassHierarchyGraph.ClassNameSet.mem extracted_class_name
-      | None -> false)
+      | _ -> false)
 
 
-let rec normalized_parameter_matches_constraint
-    ~pyre_api
-    ~class_hierarchy_graph
-    ~name_captures
-    ~parameter:
-      ({
-         AccessPath.NormalizedParameter.root;
-         qualified_name;
-         original = { Node.value = { Expression.Parameter.annotation; _ }; _ };
-       } as parameter)
+let rec parameter_matches_constraint ~pyre_api ~class_hierarchy_graph ~name_captures ~parameter
   = function
   | ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint ->
-      annotation
-      >>| TypeAnnotation.from_original_annotation ~pyre_api ~preserve_original:false
+      FunctionParameter.annotation parameter
+      >>| TypeAnnotation.from_pysa_type
       >>| matches_annotation_constraint ~class_hierarchy_graph ~name_captures ~annotation_constraint
       |> Option.value ~default:false
   | ModelQuery.ParameterConstraint.NameConstraint name_constraint ->
-      matches_name_constraint ~name_captures ~name_constraint (Identifier.sanitized qualified_name)
+      FunctionParameter.name parameter
+      >>| matches_name_constraint ~name_captures ~name_constraint
+      |> Option.value ~default:false
   | ModelQuery.ParameterConstraint.IndexConstraint index -> (
-      match root with
-      | AccessPath.Root.PositionalParameter { position; _ } when position = index -> true
+      match parameter with
+      | FunctionParameter.PositionalOnly { position = parameter_position; _ }
+      | FunctionParameter.Named { position = parameter_position; _ } ->
+          parameter_position = index
       | _ -> false)
   | ModelQuery.ParameterConstraint.HasPosition -> (
-      match root with
-      | AccessPath.Root.PositionalParameter _ -> true
+      match parameter with
+      | FunctionParameter.PositionalOnly _
+      | FunctionParameter.Named _ ->
+          true
       | _ -> false)
   | ModelQuery.ParameterConstraint.HasName -> (
-      match root with
-      | AccessPath.Root.PositionalParameter _
-      | AccessPath.Root.NamedParameter _ ->
+      match parameter with
+      | FunctionParameter.PositionalOnly _
+      | FunctionParameter.Named _
+      | FunctionParameter.KeywordOnly _ ->
           true
       | _ -> false)
   | ModelQuery.ParameterConstraint.AnyOf constraints ->
       List.exists
         constraints
-        ~f:
-          (normalized_parameter_matches_constraint
-             ~pyre_api
-             ~class_hierarchy_graph
-             ~name_captures
-             ~parameter)
+        ~f:(parameter_matches_constraint ~pyre_api ~class_hierarchy_graph ~name_captures ~parameter)
   | ModelQuery.ParameterConstraint.Not query_constraint ->
       not
-        (normalized_parameter_matches_constraint
+        (parameter_matches_constraint
            ~pyre_api
            ~class_hierarchy_graph
            ~name_captures
@@ -850,12 +830,7 @@ let rec normalized_parameter_matches_constraint
   | ModelQuery.ParameterConstraint.AllOf constraints ->
       List.for_all
         constraints
-        ~f:
-          (normalized_parameter_matches_constraint
-             ~pyre_api
-             ~class_hierarchy_graph
-             ~name_captures
-             ~parameter)
+        ~f:(parameter_matches_constraint ~pyre_api ~class_hierarchy_graph ~name_captures ~parameter)
 
 
 let class_matches_decorator_constraint ~name_captures ~pyre_api ~decorator_constraint class_name =
@@ -1018,14 +993,12 @@ let rec matches_constraint
       |> Option.value ~default:false
   | ModelQuery.Constraint.ReturnConstraint annotation_constraint ->
       Modelable.return_annotation value
-      >>| TypeAnnotation.from_original_annotation ~pyre_api ~preserve_original:false
-      >>| matches_annotation_constraint ~class_hierarchy_graph ~name_captures ~annotation_constraint
-      |> Option.value ~default:false
+      |> TypeAnnotation.from_pysa_type
+      |> matches_annotation_constraint ~class_hierarchy_graph ~name_captures ~annotation_constraint
   | ModelQuery.Constraint.AnyParameterConstraint parameter_constraint ->
       Modelable.parameters value
-      |> AccessPath.normalize_parameters
       |> List.exists ~f:(fun parameter ->
-             normalized_parameter_matches_constraint
+             parameter_matches_constraint
                ~pyre_api
                ~class_hierarchy_graph
                ~name_captures
@@ -1892,7 +1865,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
                ~canonical_port:(expand_format_string canonical_port)
           |> Option.some
     in
-    let apply_model ~normalized_parameters ~captures = function
+    let apply_model ~parameters ~captures = function
       | ModelQuery.Model.Return productions ->
           List.filter_map productions ~f:(fun production ->
               production_to_taint ~root:AccessPath.Root.LocalResult ~production
@@ -1909,11 +1882,9 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
                    { root; annotation; generation_if_source })
       | ModelQuery.Model.NamedParameter { name; taint = productions } -> (
           let parameter =
-            List.find_map
-              normalized_parameters
-              ~f:(fun { AccessPath.NormalizedParameter.root; qualified_name; original = _ } ->
-                if Identifier.equal_sanitized qualified_name name then
-                  Some root
+            List.find_map parameters ~f:(fun parameter ->
+                if Option.equal String.equal (FunctionParameter.name parameter) (Some name) then
+                  Some (FunctionParameter.root parameter)
                 else
                   None)
           in
@@ -1927,12 +1898,12 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
           | None -> [])
       | ModelQuery.Model.PositionalParameter { index; taint = productions } -> (
           let parameter =
-            List.find_map
-              normalized_parameters
-              ~f:(fun { AccessPath.NormalizedParameter.root; original = _; _ } ->
-                match root with
-                | AccessPath.Root.PositionalParameter { position; _ } when position = index ->
-                    Some root
+            List.find_map parameters ~f:(fun parameter ->
+                match parameter with
+                | FunctionParameter.PositionalOnly { position; _ }
+                | FunctionParameter.Named { position; _ }
+                  when position = index ->
+                    Some (FunctionParameter.root parameter)
                 | _ -> None)
           in
           match parameter with
@@ -1944,36 +1915,36 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
                     { root = parameter; annotation; generation_if_source = false })
           | None -> [])
       | ModelQuery.Model.AllParameters { excludes; taint } ->
-          let apply_parameter_production
-              ({ AccessPath.NormalizedParameter.root; qualified_name; original = _ }, production)
-            =
+          let apply_parameter_production (parameter, production) =
             if
               (not (List.is_empty excludes))
-              && List.mem excludes ~equal:String.equal (Identifier.sanitized qualified_name)
+              && List.mem
+                   excludes
+                   ~equal:String.equal
+                   (FunctionParameter.name parameter |> Option.value ~default:"")
             then
               None
             else
+              let root = FunctionParameter.root parameter in
               production_to_taint ~root ~production
               >>| fun annotation ->
               ModelParseResult.ModelAnnotation.ParameterAnnotation
                 { root; annotation; generation_if_source = false }
           in
-          List.cartesian_product normalized_parameters taint
-          |> List.filter_map ~f:apply_parameter_production
+          List.cartesian_product parameters taint |> List.filter_map ~f:apply_parameter_production
       | ModelQuery.Model.Parameter { where; taint; _ } ->
-          let apply_parameter_production
-              (({ AccessPath.NormalizedParameter.root; original = _; _ } as parameter), production)
-            =
+          let apply_parameter_production (parameter, production) =
             if
               List.for_all
                 where
                 ~f:
-                  (normalized_parameter_matches_constraint
+                  (parameter_matches_constraint
                      ~pyre_api
                      ~class_hierarchy_graph
                      ~name_captures
                      ~parameter)
             then
+              let root = FunctionParameter.root parameter in
               production_to_taint ~root ~production
               >>| fun annotation ->
               ModelParseResult.ModelAnnotation.ParameterAnnotation
@@ -1981,16 +1952,15 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
             else
               None
           in
-          List.cartesian_product normalized_parameters taint
-          |> List.filter_map ~f:apply_parameter_production
+          List.cartesian_product parameters taint |> List.filter_map ~f:apply_parameter_production
       | ModelQuery.Model.Modes modes -> [ModelParseResult.ModelAnnotation.ModeAnnotation modes]
       | ModelQuery.Model.Attribute _ -> failwith "impossible case"
       | ModelQuery.Model.Global _ -> failwith "impossible case"
       | ModelQuery.Model.WriteToCache _ -> failwith "impossible case"
     in
-    let { Target.CallableSignature.parameters; captures; _ } = Modelable.signature modelable in
-    let normalized_parameters = AccessPath.normalize_parameters parameters in
-    List.concat_map models ~f:(apply_model ~normalized_parameters ~captures)
+    let captures = Modelable.captures modelable in
+    let parameters = Modelable.parameters modelable in
+    List.concat_map models ~f:(apply_model ~parameters ~captures)
 
 
   let generate_model_from_annotations

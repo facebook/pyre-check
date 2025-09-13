@@ -878,7 +878,10 @@ module Modelable = struct
   type t =
     | Callable of {
         target: Target.t;
-        signature: Target.CallableSignature.t Lazy.t;
+        (* The syntactic definition of the function, including the AST for each parameters. *)
+        define_signature: Target.CallableSignature.t Lazy.t;
+        (* The semantic (undecorated) signature of the function. *)
+        undecorated_signature: PyrePysaApi.ModelQueries.FunctionSignature.t Lazy.t;
         decorators: CallableDecorator.t list Lazy.t;
       }
     | Attribute of {
@@ -891,7 +894,7 @@ module Modelable = struct
       }
 
   let create_callable ~pyre_api ~callables_to_definitions_map target =
-    let signature =
+    let define_signature =
       lazy
         (match
            Target.CallablesSharedMemory.ReadOnly.get_signature callables_to_definitions_map target
@@ -904,9 +907,21 @@ module Modelable = struct
               target
             |> failwith)
     in
+    let undecorated_signature =
+      lazy
+        (match pyre_api with
+        | PyrePysaApi.ReadOnly.Pyre1 pyre_api ->
+            Lazy.force define_signature
+            |> fun { Target.CallableSignature.parameters; return_annotation; _ } ->
+            Analysis.PyrePysaEnvironment.ModelQueries.FunctionSignature.from_pyre1_ast
+              ~pyre_api
+              ~parameters
+              ~return_annotation
+        | PyrePysaApi.ReadOnly.Pyrefly _ -> failwith "unimplemented: Modelable.create_callable")
+    in
     let decorators =
       lazy
-        (signature
+        (define_signature
         |> Lazy.force
         |> (fun { Target.CallableSignature.define_name; decorators; _ } ->
              PyrePysaLogic.DecoratorPreprocessing.original_decorators_from_preprocessed_signature
@@ -915,7 +930,7 @@ module Modelable = struct
         |> List.filter_map ~f:Statement.Decorator.from_expression
         |> List.map ~f:(CallableDecorator.create ~pyre_api ~callables_to_definitions_map))
     in
-    Callable { target; signature; decorators }
+    Callable { target; define_signature; undecorated_signature; decorators }
 
 
   let create_attribute ~pyre_api target =
@@ -988,8 +1003,10 @@ module Modelable = struct
 
 
   let return_annotation = function
-    | Callable { signature; _ } ->
-        let { Target.CallableSignature.return_annotation; _ } = Lazy.force signature in
+    | Callable { undecorated_signature; _ } ->
+        let { PyrePysaApi.ModelQueries.FunctionSignature.return_annotation; _ } =
+          Lazy.force undecorated_signature
+        in
         return_annotation
     | Attribute _
     | Global _ ->
@@ -997,17 +1014,30 @@ module Modelable = struct
 
 
   let parameters = function
-    | Callable { signature; _ } ->
-        let { Target.CallableSignature.parameters; _ } = Lazy.force signature in
-        parameters
+    | Callable { undecorated_signature; _ } -> (
+        let { PyrePysaApi.ModelQueries.FunctionSignature.parameters; _ } =
+          Lazy.force undecorated_signature
+        in
+        match parameters with
+        | PyrePysaApi.ModelQueries.FunctionParameters.List parameters -> parameters
+        | _ -> [])
     | Attribute _
     | Global _ ->
         failwith "unexpected use of any_parameter on an attribute or global"
 
 
+  let captures = function
+    | Callable { define_signature; _ } ->
+        let { Target.CallableSignature.captures; _ } = Lazy.force define_signature in
+        captures
+    | Attribute _
+    | Global _ ->
+        failwith "unexpected use of captures on an attribute or global"
+
+
   let decorator_expressions_after_inlining = function
-    | Callable { signature; _ } ->
-        let { Target.CallableSignature.decorators; _ } = Lazy.force signature in
+    | Callable { define_signature; _ } ->
+        let { Target.CallableSignature.decorators; _ } = Lazy.force define_signature in
         decorators
     | Attribute _
     | Global _ ->
@@ -1021,16 +1051,9 @@ module Modelable = struct
         failwith "unexpected use of resolved_decorators on an attribute or global"
 
 
-  let signature = function
-    | Callable { signature; _ } -> Lazy.force signature
-    | Attribute _
-    | Global _ ->
-        failwith "unexpected use of signature on an attribute or global"
-
-
   let is_instance_method = function
-    | Callable { signature; _ } -> (
-        match Lazy.force signature with
+    | Callable { define_signature; _ } -> (
+        match Lazy.force define_signature with
         | { Target.CallableSignature.method_kind = Some Target.MethodKind.Instance; _ } -> true
         | _ -> false)
     | Attribute _

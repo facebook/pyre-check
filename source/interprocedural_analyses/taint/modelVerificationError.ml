@@ -242,12 +242,12 @@ let pp_function_signature
             | PyrePysaApi.ModelQueries.FunctionParameter.PositionalOnly { name = Some name; _ }
             | Named { name; _ }
             | KeywordOnly { name; _ }
-            | Variable { name = Some name }
+            | Variable { name = Some name; _ }
             | Keywords { name = Some name; _ } ->
                 Format.fprintf formatter "%s" (Identifier.sanitized name)
-            | PyrePysaApi.ModelQueries.FunctionParameter.PositionalOnly { index; _ } ->
-                Format.fprintf formatter "__arg%d" index
-            | Variable { name = None } -> Format.fprintf formatter "*args"
+            | PositionalOnly { name = None; position; _ } ->
+                Format.fprintf formatter "__arg%d" position
+            | Variable { name = None; _ } -> Format.fprintf formatter "*args"
             | Keywords { name = None; _ } -> Format.fprintf formatter "**kwargs"
           in
           let () =

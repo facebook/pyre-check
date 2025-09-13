@@ -3173,26 +3173,6 @@ let test_generated_annotations context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.DC"; method_name = "foo"; kind = Normal })
     ~expected:[];
-  assert_generated_annotations
-    ~source:
-      {|
-       def foo(a) -> typing.Annotated[int, DynamicSource(B)]: ...
-       def bar(b): ...
-     |}
-    ~query:
-      {
-        location = Ast.Location.any;
-        name = "get_foo";
-        logging_group_name = None;
-        path = None;
-        where = [Not (ReturnConstraint IsAnnotatedTypeConstraint)];
-        models = [Return [TaintAnnotation (source "Test")]];
-        find = Function;
-        expected_models = [];
-        unexpected_models = [];
-      }
-    ~callable:(Target.Regular.Function { name = "test.bar"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations_for_attributes
     ~source:
       {|

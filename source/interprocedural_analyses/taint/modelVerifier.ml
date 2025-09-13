@@ -24,10 +24,11 @@ let create_parameters_requirements parameters =
   let get_parameters_requirements requirements parameter =
     let open PyrePysaApi.ModelQueries.FunctionParameter in
     match parameter with
-    | PositionalOnly { index; name; _ } ->
+    | PositionalOnly { position; name; _ } ->
         {
           requirements with
-          anonymous_parameters_positions = Set.add requirements.anonymous_parameters_positions index;
+          anonymous_parameters_positions =
+            Set.add requirements.anonymous_parameters_positions position;
           parameter_set =
             (match name with
             | Some name -> Set.add requirements.parameter_set name

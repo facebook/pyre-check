@@ -63,33 +63,19 @@ let convert_to_pyrefly_global global =
     | None -> annotation
   in
   let convert_to_pyrefly_parameter = function
-    | FunctionParameter.PositionalOnly { name; index; annotation; has_default } ->
+    | FunctionParameter.PositionalOnly { name; position; annotation; has_default } ->
         FunctionParameter.PositionalOnly
-          {
-            name = name >>| Identifier.sanitized;
-            index;
-            annotation = convert_to_pyrefly_type annotation;
-            has_default;
-          }
-    | FunctionParameter.Named { name; annotation; has_default } ->
+          { name; position; annotation = convert_to_pyrefly_type annotation; has_default }
+    | FunctionParameter.Named { name; position; annotation; has_default } ->
         FunctionParameter.Named
-          {
-            name = Identifier.sanitized name;
-            annotation = convert_to_pyrefly_type annotation;
-            has_default;
-          }
+          { name; position; annotation = convert_to_pyrefly_type annotation; has_default }
     | FunctionParameter.KeywordOnly { name; annotation; has_default } ->
         FunctionParameter.KeywordOnly
-          {
-            name = Identifier.sanitized name;
-            annotation = convert_to_pyrefly_type annotation;
-            has_default;
-          }
-    | FunctionParameter.Variable { name } ->
-        FunctionParameter.Variable { name = name >>| Identifier.sanitized }
-    | FunctionParameter.Keywords { name; annotation } ->
+          { name; annotation = convert_to_pyrefly_type annotation; has_default }
+    | FunctionParameter.Variable { name; position } -> FunctionParameter.Variable { name; position }
+    | FunctionParameter.Keywords { name; annotation; excluded } ->
         FunctionParameter.Keywords
-          { name = name >>| Identifier.sanitized; annotation = convert_to_pyrefly_type annotation }
+          { name; annotation = convert_to_pyrefly_type annotation; excluded }
   in
   let convert_to_pyrefly_parameters = function
     | FunctionParameters.List parameters ->
@@ -148,10 +134,11 @@ let test_resolve_qualified_name_to_global context =
     in
     assert_equal ~printer expect actual
   in
-  let create_parameter ?(annotation = Type.Any) name =
+  let create_parameter ?(annotation = Type.Any) ?(position = 0) name =
     PyrePysaEnvironment.ModelQueries.FunctionParameter.Named
       {
-        name = "$parameter$" ^ name;
+        name;
+        position;
         annotation = PyrePysaEnvironment.PysaType.from_pyre1_type annotation;
         has_default = false;
       }
@@ -410,7 +397,7 @@ let test_resolve_qualified_name_to_global context =
                      ~return_annotation:Type.integer
                      [
                        create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
-                       create_parameter ~annotation:Type.integer "x";
+                       create_parameter ~annotation:Type.integer ~position:1 "x";
                      ];
                  ]
                ())));
@@ -443,19 +430,19 @@ let test_resolve_qualified_name_to_global context =
                      ~return_annotation:Type.string
                      [
                        create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
-                       create_parameter ~annotation:Type.integer "x";
+                       create_parameter ~annotation:Type.integer ~position:1 "x";
                      ];
                    create_signature
                      ~return_annotation:Type.string
                      [
                        create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
-                       create_parameter ~annotation:Type.integer "x";
+                       create_parameter ~annotation:Type.integer ~position:1 "x";
                      ];
                    create_signature
                      ~return_annotation:Type.integer
                      [
                        create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
-                       create_parameter ~annotation:Type.string "x";
+                       create_parameter ~annotation:Type.string ~position:1 "x";
                      ];
                  ]
                ())))
@@ -471,13 +458,13 @@ let test_resolve_qualified_name_to_global context =
                      ~return_annotation:Type.string
                      [
                        create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
-                       create_parameter ~annotation:Type.integer "x";
+                       create_parameter ~annotation:Type.integer ~position:1 "x";
                      ];
                    create_signature
                      ~return_annotation:Type.integer
                      [
                        create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
-                       create_parameter ~annotation:Type.string "x";
+                       create_parameter ~annotation:Type.string ~position:1 "x";
                      ];
                  ]
                ())));

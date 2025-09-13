@@ -116,8 +116,62 @@ module PysaType = struct
   (* Pretty print the type, usually meant for the user *)
   let pp_concise formatter = function
     | Pyre1 type_ -> PyreType.pp_concise formatter type_
-    | Pyrefly { PyreflyType.string; _ } -> Format.fprintf formatter "%s" string
+    | Pyrefly { PyreflyType.string; _ } ->
+        (* Technically, this is the fully qualified representation, but we use it as the concise
+           representation for now. *)
+        Format.fprintf formatter "%s" string
 
+
+  let show_fully_qualified = function
+    | Pyre1 type_ -> PyreType.show type_
+    | Pyrefly { PyreflyType.string; _ } -> string
+
+
+  module ClassNamesResult = struct
+    type t = {
+      stripped_coroutine: bool;
+      stripped_optional: bool;
+      stripped_readonly: bool;
+      unbound_type_variable: bool;
+      class_names: string list;
+      is_exhaustive: bool;
+          (* Is there an element (after stripping) that isn't a class name? For instance:
+             get_class_name(Union[A, Callable[...])) = { class_names = [A], is_exhaustive = false
+             } *)
+    }
+
+    let from_class_name class_name =
+      {
+        stripped_coroutine = false;
+        stripped_optional = false;
+        stripped_readonly = false;
+        unbound_type_variable = false;
+        class_names = [class_name];
+        is_exhaustive = true;
+      }
+
+
+    let not_a_classs =
+      {
+        stripped_coroutine = false;
+        stripped_optional = false;
+        stripped_readonly = false;
+        unbound_type_variable = false;
+        class_names = [];
+        is_exhaustive = false;
+      }
+
+
+    let join left right =
+      {
+        stripped_coroutine = left.stripped_coroutine || right.stripped_coroutine;
+        stripped_optional = left.stripped_optional || right.stripped_optional;
+        stripped_readonly = left.stripped_readonly || right.stripped_readonly;
+        unbound_type_variable = left.unbound_type_variable || right.unbound_type_variable;
+        class_names = List.rev_append left.class_names right.class_names;
+        is_exhaustive = left.is_exhaustive && right.is_exhaustive;
+      }
+  end
 
   (* Return a list of fully qualified class names that this type refers to, after
    * stripping Optional, ReadOnly and TypeVar.
@@ -129,7 +183,16 @@ module PysaType = struct
    * List[Dict[str, str]] -> [List]
    *)
   let get_class_names = function
-    | Pyrefly { PyreflyType.class_names; _ } -> class_names
+    | Pyrefly { PyreflyType.class_names; _ } ->
+        (* TODO(T225700656): Export the information we need from pyrefly. *)
+        {
+          ClassNamesResult.stripped_coroutine = true;
+          stripped_optional = true;
+          stripped_readonly = true;
+          unbound_type_variable = true;
+          class_names;
+          is_exhaustive = true;
+        }
     | Pyre1 annotation ->
         let rec extract_class_names = function
           | Type.Bottom
@@ -137,45 +200,55 @@ module PysaType = struct
           | Type.Any
           | Type.Literal _
           | Type.Callable _
-          | Type.Tuple _
           | Type.NoneType
           | Type.TypeOperation _
           | Type.Variable _
           | Type.RecursiveType _
-          | Type.ParamSpecComponent _ ->
-              []
+          | Type.ParamSpecComponent _
+          | Type.PyreReadOnly _ ->
+              ClassNamesResult.not_a_classs
+          | Type.Tuple _ -> ClassNamesResult.from_class_name "tuple"
           | Type.Primitive class_name
           | Type.Parametric { name = class_name; _ } ->
-              [class_name]
-          | Type.Union members ->
+              ClassNamesResult.from_class_name class_name
+          | Type.Union [] -> failwith "unreachable"
+          | Type.Union (head :: tail) ->
               List.fold
-                ~init:[]
-                ~f:(fun sofar annotation -> List.rev_append (extract_class_names annotation) sofar)
-                members
-          | Type.PyreReadOnly annotation -> extract_class_names annotation
+                ~init:(extract_class_names head)
+                ~f:(fun sofar annotation ->
+                  ClassNamesResult.join (extract_class_names annotation) sofar)
+                tail
         in
-        let extract_coroutine_value annotation =
-          annotation |> Type.coroutine_value |> Option.value ~default:annotation
+        let annotation, stripped_coroutine =
+          match Type.coroutine_value annotation with
+          | Some annotation -> annotation, true
+          | None -> annotation, false
         in
-        let strip_optional annotation =
-          annotation |> Type.optional_value |> Option.value ~default:annotation
+        let annotation, stripped_optional =
+          match Type.optional_value annotation with
+          | Some annotation -> annotation, true
+          | None -> annotation, false
         in
-        let strip_readonly annotation =
+        let annotation, stripped_readonly =
           if Type.PyreReadOnly.is_readonly annotation then
-            Type.PyreReadOnly.strip_readonly annotation
+            Type.PyreReadOnly.strip_readonly annotation, true
           else
-            annotation
+            annotation, false
         in
-        let unbind_type_variable = function
-          | Type.Variable { constraints = Type.Record.TypeVarConstraints.Bound bound; _ } -> bound
-          | annotation -> annotation
+        let annotation, unbound_type_variable =
+          match annotation with
+          | Type.Variable { constraints = Type.Record.TypeVarConstraints.Bound bound; _ } ->
+              bound, true
+          | annotation -> annotation, false
         in
-        annotation
-        |> extract_coroutine_value
-        |> strip_optional
-        |> strip_readonly
-        |> unbind_type_variable
-        |> extract_class_names
+        let class_name_result = extract_class_names annotation in
+        {
+          class_name_result with
+          ClassNamesResult.stripped_coroutine;
+          stripped_optional;
+          stripped_readonly;
+          unbound_type_variable;
+        }
 end
 
 let absolute_source_path_of_qualifier ~lookup_source read_only_type_environment =
@@ -784,12 +857,13 @@ module ModelQueries = struct
     type t =
       | PositionalOnly of {
           name: string option;
-          index: int;
+          position: int;
           annotation: PysaType.t;
           has_default: bool;
         }
       | Named of {
           name: string;
+          position: int;
           annotation: PysaType.t;
           has_default: bool;
         }
@@ -798,30 +872,30 @@ module ModelQueries = struct
           annotation: PysaType.t;
           has_default: bool;
         }
-      | Variable of { name: string option }
+      | Variable of {
+          name: string option;
+          position: int;
+        }
       | Keywords of {
           name: string option;
           annotation: PysaType.t;
+          excluded: string list;
         }
     [@@deriving equal, compare, show]
 
-    let from_callable_parameter = function
-      | PyreType.Callable.CallableParamType.PositionalOnly { index; annotation; default } ->
-          PositionalOnly
-            {
-              name = None;
-              index;
-              annotation = PysaType.from_pyre1_type annotation;
-              has_default = default;
-            }
-      | PyreType.Callable.CallableParamType.Named { name; annotation; default } ->
-          Named { name; annotation = PysaType.from_pyre1_type annotation; has_default = default }
-      | PyreType.Callable.CallableParamType.KeywordOnly { name; annotation; default } ->
-          KeywordOnly
-            { name; annotation = PysaType.from_pyre1_type annotation; has_default = default }
-      | PyreType.Callable.CallableParamType.Variable _ -> Variable { name = None }
-      | PyreType.Callable.CallableParamType.Keywords annotation ->
-          Keywords { name = None; annotation = PysaType.from_pyre1_type annotation }
+    let root = function
+      | PositionalOnly { name; position; _ } ->
+          let name =
+            match name with
+            | Some name -> name
+            | None -> Format.sprintf "__arg%d" position
+          in
+          TaintAccessPath.Root.PositionalParameter { position; name; positional_only = true }
+      | Named { name; position; _ } ->
+          TaintAccessPath.Root.PositionalParameter { position; name; positional_only = false }
+      | KeywordOnly { name; _ } -> TaintAccessPath.Root.NamedParameter { name }
+      | Variable { position; _ } -> TaintAccessPath.Root.StarParameter { position }
+      | Keywords { excluded; _ } -> TaintAccessPath.Root.StarStarParameter { excluded }
 
 
     let annotation = function
@@ -830,6 +904,14 @@ module ModelQueries = struct
       | KeywordOnly { annotation; _ } -> Some annotation
       | Variable _ -> None
       | Keywords { annotation; _ } -> Some annotation
+
+
+    let name = function
+      | PositionalOnly { name; _ } -> name
+      | Named { name; _ } -> Some name
+      | KeywordOnly { name; _ } -> Some name
+      | Variable { name; _ } -> name
+      | Keywords { name; _ } -> name
 
 
     let has_default = function
@@ -863,11 +945,56 @@ module ModelQueries = struct
 
 
     let from_overload { PyreType.Callable.parameters; annotation } =
+      let fold_parameters (position, excluded, sofar) = function
+        | PyreType.Callable.CallableParamType.PositionalOnly { index; annotation; default } ->
+            ( position + 1,
+              excluded,
+              FunctionParameter.PositionalOnly
+                {
+                  name = None;
+                  position = index;
+                  annotation = PysaType.from_pyre1_type annotation;
+                  has_default = default;
+                }
+              :: sofar )
+        | PyreType.Callable.CallableParamType.Named { name; annotation; default } ->
+            let name = Ast.Identifier.sanitized name in
+            ( position + 1,
+              name :: excluded,
+              FunctionParameter.Named
+                {
+                  name;
+                  position;
+                  annotation = PysaType.from_pyre1_type annotation;
+                  has_default = default;
+                }
+              :: sofar )
+        | PyreType.Callable.CallableParamType.KeywordOnly { name; annotation; default } ->
+            let name = Ast.Identifier.sanitized name in
+            ( position + 1,
+              name :: excluded,
+              FunctionParameter.KeywordOnly
+                { name; annotation = PysaType.from_pyre1_type annotation; has_default = default }
+              :: sofar )
+        | PyreType.Callable.CallableParamType.Variable _ ->
+            position + 1, excluded, FunctionParameter.Variable { name = None; position } :: sofar
+        | PyreType.Callable.CallableParamType.Keywords annotation ->
+            ( position + 1,
+              [],
+              FunctionParameter.Keywords
+                { name = None; annotation = PysaType.from_pyre1_type annotation; excluded }
+              :: sofar )
+      in
       let parameters =
         match parameters with
         | Defined parameters ->
-            FunctionParameters.List
-              (List.map ~f:FunctionParameter.from_callable_parameter parameters)
+            let parameters =
+              parameters
+              |> List.fold ~init:(0, [], []) ~f:fold_parameters
+              |> (fun (_, _, parameters) -> parameters)
+              |> List.rev
+            in
+            FunctionParameters.List parameters
         | Undefined -> FunctionParameters.Ellipsis
         | FromParamSpec _ -> FunctionParameters.ParamSpec
       in
@@ -876,6 +1003,82 @@ module ModelQueries = struct
 
     let from_callable_type { PyreType.Callable.implementation; overloads; _ } =
       List.map ~f:from_overload (implementation :: overloads)
+
+
+    let from_pyre1_ast ~pyre_api ~parameters ~return_annotation =
+      let fold_parameters
+          (position, excluded, sofar)
+          {
+            TaintAccessPath.NormalizedParameter.root;
+            qualified_name;
+            original =
+              {
+                Ast.Node.value = { Ast.Expression.Parameter.annotation; value = default_value; _ };
+                _;
+              };
+          }
+        =
+        let get_annotation () =
+          annotation
+          >>| ReadOnly.parse_annotation pyre_api
+          |> Option.value ~default:Type.Top
+          |> PysaType.from_pyre1_type
+        in
+        match root with
+        | TaintAccessPath.Root.PositionalParameter { position; name; positional_only } ->
+            ( position + 1,
+              name :: excluded,
+              (if positional_only then
+                 FunctionParameter.PositionalOnly
+                   {
+                     name = Some name;
+                     position;
+                     annotation = get_annotation ();
+                     has_default = Option.is_some default_value;
+                   }
+              else
+                FunctionParameter.Named
+                  {
+                    name;
+                    position;
+                    annotation = get_annotation ();
+                    has_default = Option.is_some default_value;
+                  })
+              :: sofar )
+        | TaintAccessPath.Root.NamedParameter { name } ->
+            ( position + 1,
+              name :: excluded,
+              FunctionParameter.KeywordOnly
+                { name; annotation = get_annotation (); has_default = Option.is_some default_value }
+              :: sofar )
+        | TaintAccessPath.Root.StarParameter { position } ->
+            let name = Ast.Identifier.sanitized qualified_name in
+            ( position + 1,
+              excluded,
+              FunctionParameter.Variable { name = Some name; position } :: sofar )
+        | TaintAccessPath.Root.StarStarParameter { excluded } ->
+            let name = Ast.Identifier.sanitized qualified_name in
+            ( position + 1,
+              excluded,
+              FunctionParameter.Keywords
+                { name = Some name; annotation = get_annotation (); excluded }
+              :: sofar )
+        | _ -> failwith "unsupported root"
+      in
+      let parameters =
+        parameters
+        |> TaintAccessPath.normalize_parameters
+        |> List.fold ~init:(0, [], []) ~f:fold_parameters
+        |> (fun (_, _, parameters) -> parameters)
+        |> List.rev
+      in
+      let return_annotation =
+        return_annotation
+        >>| ReadOnly.parse_annotation pyre_api
+        |> Option.value ~default:Type.Top
+        |> PysaType.from_pyre1_type
+      in
+      { parameters = FunctionParameters.List parameters; return_annotation }
   end
 
   module Function = struct

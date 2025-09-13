@@ -2301,36 +2301,53 @@ module ReadWrite = struct
           { GlobalCallableId.module_id; name_location }
         |> assert_shared_memory_key_exists "unknown callable id"
       in
-      let convert_function_parameter index = function
+      let fold_function_parameters (position, excluded, sofar) = function
         | ModuleInfoFile.FunctionParameter.PosOnly { name; annotation; required } ->
-            FunctionParameter.PositionalOnly
-              {
-                name;
-                index;
-                annotation = create_pysa_type ~class_id_to_qualified_name_shared_memory annotation;
-                has_default = not required;
-              }
+            ( position + 1,
+              (match name with
+              | Some name -> name :: excluded
+              | None -> excluded),
+              FunctionParameter.PositionalOnly
+                {
+                  name;
+                  position;
+                  annotation = create_pysa_type ~class_id_to_qualified_name_shared_memory annotation;
+                  has_default = not required;
+                }
+              :: sofar )
         | Pos { name; annotation; required } ->
-            FunctionParameter.Named
-              {
-                name;
-                annotation = create_pysa_type ~class_id_to_qualified_name_shared_memory annotation;
-                has_default = not required;
-              }
-        | VarArg { name; annotation = _ } -> FunctionParameter.Variable { name }
+            ( position + 1,
+              name :: excluded,
+              FunctionParameter.Named
+                {
+                  name;
+                  position;
+                  annotation = create_pysa_type ~class_id_to_qualified_name_shared_memory annotation;
+                  has_default = not required;
+                }
+              :: sofar )
+        | VarArg { name; annotation = _ } ->
+            position + 1, excluded, FunctionParameter.Variable { name; position } :: sofar
         | KwOnly { name; annotation; required } ->
-            FunctionParameter.KeywordOnly
-              {
-                name;
-                annotation = create_pysa_type ~class_id_to_qualified_name_shared_memory annotation;
-                has_default = not required;
-              }
+            ( position + 1,
+              name :: excluded,
+              FunctionParameter.KeywordOnly
+                {
+                  name;
+                  annotation = create_pysa_type ~class_id_to_qualified_name_shared_memory annotation;
+                  has_default = not required;
+                }
+              :: sofar )
         | Kwargs { name; annotation } ->
-            FunctionParameter.Keywords
-              {
-                name;
-                annotation = create_pysa_type ~class_id_to_qualified_name_shared_memory annotation;
-              }
+            ( position + 1,
+              [],
+              FunctionParameter.Keywords
+                {
+                  name;
+                  annotation = create_pysa_type ~class_id_to_qualified_name_shared_memory annotation;
+                  excluded;
+                }
+              :: sofar )
       in
       let convert_function_signature
           { ModuleInfoFile.FunctionSignature.parameters; return_annotation }
@@ -2338,7 +2355,12 @@ module ReadWrite = struct
         let parameters =
           match parameters with
           | ModuleInfoFile.FunctionParameters.List parameters ->
-              FunctionParameters.List (List.mapi ~f:convert_function_parameter parameters)
+              let parameters =
+                parameters
+                |> List.fold ~init:(0, [], []) ~f:fold_function_parameters
+                |> fun (_, _, parameters) -> parameters |> List.rev
+              in
+              FunctionParameters.List parameters
           | ModuleInfoFile.FunctionParameters.Ellipsis -> FunctionParameters.Ellipsis
           | ModuleInfoFile.FunctionParameters.ParamSpec -> FunctionParameters.ParamSpec
         in
