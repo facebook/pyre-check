@@ -754,6 +754,7 @@ end = struct
 end
 
 let matches_annotation_constraint
+    ~pyre_api
     ~class_hierarchy_graph
     ~name_captures
     ~annotation_constraint
@@ -780,6 +781,10 @@ let matches_annotation_constraint
        is_exhaustive = true;
        _;
       } ->
+          let class_name =
+            Reference.show
+              (PyrePysaApi.ReadOnly.add_builtins_prefix pyre_api (Reference.create class_name))
+          in
           find_children ~class_hierarchy_graph ~is_transitive ~includes_self class_name
           |> ClassHierarchyGraph.ClassNameSet.mem extracted_class_name
       | _ -> false)
@@ -790,7 +795,11 @@ let rec parameter_matches_constraint ~pyre_api ~class_hierarchy_graph ~name_capt
   | ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint ->
       FunctionParameter.annotation parameter
       >>| TypeAnnotation.from_pysa_type
-      >>| matches_annotation_constraint ~class_hierarchy_graph ~name_captures ~annotation_constraint
+      >>| matches_annotation_constraint
+            ~pyre_api
+            ~class_hierarchy_graph
+            ~name_captures
+            ~annotation_constraint
       |> Option.value ~default:false
   | ModelQuery.ParameterConstraint.NameConstraint name_constraint ->
       FunctionParameter.name parameter
@@ -854,7 +863,7 @@ let class_matches_decorator_constraint ~name_captures ~pyre_api ~decorator_const
 
 let find_parents ~pyre_api ~is_transitive ~includes_self class_name =
   let parents =
-    if is_transitive then
+    if is_transitive then (* TODO(T225700656): implement successors for pyrefly *)
       PyrePysaApi.ReadOnly.successors pyre_api class_name
     else
       PyrePysaApi.ReadOnly.class_immediate_parents pyre_api class_name
@@ -989,14 +998,24 @@ let rec matches_constraint
   | ModelQuery.Constraint.AnnotationConstraint annotation_constraint ->
       Modelable.type_annotation value
       >>| TypeAnnotation.from_original_annotation ~pyre_api ~preserve_original:true
-      >>| matches_annotation_constraint ~class_hierarchy_graph ~name_captures ~annotation_constraint
+      >>| matches_annotation_constraint
+            ~pyre_api
+            ~class_hierarchy_graph
+            ~name_captures
+            ~annotation_constraint
       |> Option.value ~default:false
   | ModelQuery.Constraint.ReturnConstraint annotation_constraint ->
-      Modelable.return_annotation value
-      |> TypeAnnotation.from_pysa_type
-      |> matches_annotation_constraint ~class_hierarchy_graph ~name_captures ~annotation_constraint
+      Modelable.return_annotations value
+      |> List.exists ~f:(fun return_annotation ->
+             return_annotation
+             |> TypeAnnotation.from_pysa_type
+             |> matches_annotation_constraint
+                  ~pyre_api
+                  ~class_hierarchy_graph
+                  ~name_captures
+                  ~annotation_constraint)
   | ModelQuery.Constraint.AnyParameterConstraint parameter_constraint ->
-      Modelable.parameters value
+      Modelable.parameters_of_signatures value
       |> List.exists ~f:(fun parameter ->
              parameter_matches_constraint
                ~pyre_api
@@ -1959,7 +1978,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       | ModelQuery.Model.WriteToCache _ -> failwith "impossible case"
     in
     let captures = Modelable.captures modelable in
-    let parameters = Modelable.parameters modelable in
+    let parameters = Modelable.parameters_of_signatures modelable in
     List.concat_map models ~f:(apply_model ~parameters ~captures)
 
 

@@ -466,9 +466,15 @@ module Modelable : sig
 
   val type_annotation : t -> Ast.Expression.t option
 
-  val return_annotation : t -> Interprocedural.PyrePysaApi.PysaType.t
+  val undecorated_signatures
+    :  t ->
+    Interprocedural.PyrePysaApi.ModelQueries.FunctionSignature.t list
 
-  val parameters : t -> Interprocedural.PyrePysaApi.ModelQueries.FunctionParameter.t list
+  val return_annotations : t -> Interprocedural.PyrePysaApi.PysaType.t list
+
+  val parameters_of_signatures
+    :  t ->
+    Interprocedural.PyrePysaApi.ModelQueries.FunctionParameter.t list
 
   val captures : t -> Ast.Statement.Define.Capture.t list
 

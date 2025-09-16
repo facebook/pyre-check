@@ -880,8 +880,8 @@ module Modelable = struct
         target: Target.t;
         (* The syntactic definition of the function, including the AST for each parameters. *)
         define_signature: Target.CallableSignature.t Lazy.t;
-        (* The semantic (undecorated) signature of the function. *)
-        undecorated_signature: PyrePysaApi.ModelQueries.FunctionSignature.t Lazy.t;
+        (* The semantic (undecorated) signature(s) of the function. *)
+        undecorated_signatures: PyrePysaApi.ModelQueries.FunctionSignature.t list Lazy.t;
         decorators: CallableDecorator.t list Lazy.t;
       }
     | Attribute of {
@@ -907,7 +907,7 @@ module Modelable = struct
               target
             |> failwith)
     in
-    let undecorated_signature =
+    let undecorated_signatures =
       lazy
         (match pyre_api with
         | PyrePysaApi.ReadOnly.Pyre1 pyre_api ->
@@ -917,7 +917,11 @@ module Modelable = struct
               ~pyre_api
               ~parameters
               ~return_annotation
-        | PyrePysaApi.ReadOnly.Pyrefly _ -> failwith "unimplemented: Modelable.create_callable")
+            |> fun signature -> [signature]
+        | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->
+            Interprocedural.PyreflyApi.ReadOnly.get_undecorated_signatures
+              pyrefly_api
+              (Target.define_name_exn target))
     in
     let decorators =
       lazy
@@ -930,7 +934,7 @@ module Modelable = struct
         |> List.filter_map ~f:Statement.Decorator.from_expression
         |> List.map ~f:(CallableDecorator.create ~pyre_api ~callables_to_definitions_map))
     in
-    Callable { target; define_signature; undecorated_signature; decorators }
+    Callable { target; define_signature; undecorated_signatures; decorators }
 
 
   let create_attribute ~pyre_api target =
@@ -988,6 +992,7 @@ module Modelable = struct
         Target.create_object name
 
 
+  (* TODO(T225700656): This should return a symbolic name *)
   let name = function
     | Callable { target; _ } -> Target.define_name_exn target
     | Attribute { name; _ }
@@ -1002,25 +1007,34 @@ module Modelable = struct
         Lazy.force type_annotation
 
 
-  let return_annotation = function
-    | Callable { undecorated_signature; _ } ->
-        let { PyrePysaApi.ModelQueries.FunctionSignature.return_annotation; _ } =
-          Lazy.force undecorated_signature
-        in
-        return_annotation
+  let undecorated_signatures = function
+    | Callable { undecorated_signatures; _ } -> Lazy.force undecorated_signatures
+    | Attribute _
+    | Global _ ->
+        failwith "unexpected use of undecorated_signatures on an attribute or global"
+
+
+  let return_annotations = function
+    | Callable { undecorated_signatures; _ } ->
+        undecorated_signatures
+        |> Lazy.force
+        |> List.map ~f:(fun { PyrePysaApi.ModelQueries.FunctionSignature.return_annotation; _ } ->
+               return_annotation)
     | Attribute _
     | Global _ ->
         failwith "unexpected use of return_annotation on an attribute or global"
 
 
-  let parameters = function
-    | Callable { undecorated_signature; _ } -> (
-        let { PyrePysaApi.ModelQueries.FunctionSignature.parameters; _ } =
-          Lazy.force undecorated_signature
-        in
-        match parameters with
-        | PyrePysaApi.ModelQueries.FunctionParameters.List parameters -> parameters
-        | _ -> [])
+  let parameters_of_signatures = function
+    | Callable { undecorated_signatures; _ } ->
+        undecorated_signatures
+        |> Lazy.force
+        |> List.map ~f:(fun { PyrePysaApi.ModelQueries.FunctionSignature.parameters; _ } ->
+               parameters)
+        |> List.filter_map ~f:(function
+               | PyrePysaApi.ModelQueries.FunctionParameters.List parameters -> Some parameters
+               | _ -> None)
+        |> List.concat
     | Attribute _
     | Global _ ->
         failwith "unexpected use of any_parameter on an attribute or global"

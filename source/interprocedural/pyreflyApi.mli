@@ -114,7 +114,14 @@ module ReadOnly : sig
   (* Is this a stub module, i.e a `.pyi` file. *)
   val is_stub_qualifier : t -> Ast.Reference.t -> bool
 
+  (* Return the AST for the given function, or None if the source failed to parse or is a test
+     file. *)
   val get_define_opt : t -> Ast.Reference.t -> Ast.Statement.Define.t Ast.Node.t option
+
+  val get_undecorated_signatures
+    :  t ->
+    Ast.Reference.t ->
+    Analysis.PyrePysaEnvironment.ModelQueries.FunctionSignature.t list
 
   val get_class_attributes
     :  t ->

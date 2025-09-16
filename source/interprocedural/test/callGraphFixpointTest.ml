@@ -31,7 +31,13 @@ let assert_higher_order_call_graph_fixpoint
     context
   =
   let _, _, pyre_api, configuration =
-    TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
+    TestHelper.setup_single_py_file
+      ~force_pyre1:true
+      ~requires_type_of_expressions:false
+      ~file_name:"test.py"
+      ~context
+      ~source
+      ()
   in
   let static_analysis_configuration =
     Configuration.StaticAnalysis.create

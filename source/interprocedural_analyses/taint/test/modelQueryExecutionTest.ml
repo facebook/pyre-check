@@ -30,10 +30,17 @@ let sink name =
 
 
 let test_generated_annotations context =
-  let assert_generated_annotations ~source ~query ~callable ~expected =
-    let _, _, pyre_api, configuration =
-      TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
+  let assert_generated_annotations ?(skip_for_pyrefly = false) ~source ~query ~callable ~expected ()
+    =
+    let project =
+      Test.ScratchPyrePysaProject.setup
+        ~context
+        ~force_pyre1:skip_for_pyrefly
+        ~requires_type_of_expressions:false
+        ["test.py", source]
     in
+    let pyre_api = Test.ScratchPyrePysaProject.read_only_api project in
+    let configuration = Test.ScratchPyrePysaProject.configuration_of project in
     let initial_callables =
       FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier:!&"test"
     in
@@ -79,10 +86,23 @@ let test_generated_annotations context =
       expected
       actual
   in
-  let assert_generated_annotations_for_attributes ~source ~query ~name ~expected =
-    let _, _, pyre_api, configuration =
-      TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
+  let assert_generated_annotations_for_attributes
+      ?(skip_for_pyrefly = false)
+      ~source
+      ~query
+      ~name
+      ~expected
+      ()
+    =
+    let project =
+      Test.ScratchPyrePysaProject.setup
+        ~context
+        ~force_pyre1:skip_for_pyrefly
+        ~requires_type_of_expressions:false
+        ["test.py", source]
     in
+    let pyre_api = Test.ScratchPyrePysaProject.read_only_api project in
+    let configuration = Test.ScratchPyrePysaProject.configuration_of project in
     let initial_callables =
       FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier:!&"test"
     in
@@ -129,10 +149,23 @@ let test_generated_annotations context =
       expected
       actual
   in
-  let assert_generated_annotations_for_globals ~source ~query ~name ~expected =
-    let _, _, pyre_api, configuration =
-      TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
+  let assert_generated_annotations_for_globals
+      ?(skip_for_pyrefly = false)
+      ~source
+      ~query
+      ~name
+      ~expected
+      ()
+    =
+    let project =
+      Test.ScratchPyrePysaProject.setup
+        ~context
+        ~force_pyre1:skip_for_pyrefly
+        ~requires_type_of_expressions:false
+        ["test.py", source]
     in
+    let pyre_api = Test.ScratchPyrePysaProject.read_only_api project in
+    let configuration = Test.ScratchPyrePysaProject.configuration_of project in
     let initial_callables =
       FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier:!&"test"
     in
@@ -196,7 +229,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
   assert_generated_annotations
     ~source:{|
       def foo(): ...
@@ -214,7 +248,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations
     ~source:{|
       def foo(): ...
@@ -232,7 +267,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
   assert_generated_annotations
     ~source:{|
       def foo(): ...
@@ -250,7 +286,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
   assert_generated_annotations
     ~source:{|
       def foo(): ...
@@ -268,7 +305,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
   assert_generated_annotations
     ~source:{|
       def foo(): ...
@@ -286,7 +324,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
 
   (* Test multiple constraints. *)
   assert_generated_annotations
@@ -311,7 +350,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.barfoo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
   assert_generated_annotations
     ~source:{|
       def foo(): ...
@@ -334,7 +374,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
 
   (* Method vs. callable productions. *)
   assert_generated_annotations
@@ -355,7 +396,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
 
   assert_generated_annotations
     ~source:{|
@@ -375,7 +417,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
 
   (* Multiple productions. *)
   assert_generated_annotations
@@ -411,7 +454,8 @@ let test_generated_annotations context =
             annotation = source "Test";
             generation_if_source = false;
           };
-      ];
+      ]
+    ();
   assert_generated_annotations
     ~source:{|
       def foo(): ...
@@ -429,7 +473,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
   assert_generated_annotations
     ~source:{|
       def foo(): ...
@@ -447,7 +492,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   (* All parameter taint. *)
   assert_generated_annotations
     ~source:{|
@@ -485,7 +531,8 @@ let test_generated_annotations context =
             annotation = source "Test";
             generation_if_source = false;
           };
-      ];
+      ]
+    ();
   assert_generated_annotations
     ~source:{|
       class C:
@@ -514,7 +561,8 @@ let test_generated_annotations context =
             annotation = source "Test";
             generation_if_source = false;
           };
-      ];
+      ]
+    ();
   assert_generated_annotations
     ~source:{|
       class C:
@@ -543,7 +591,8 @@ let test_generated_annotations context =
             annotation = source "Test";
             generation_if_source = false;
           };
-      ];
+      ]
+    ();
 
   (* Parameter taint. *)
   assert_generated_annotations
@@ -581,7 +630,8 @@ let test_generated_annotations context =
             annotation = source "Test";
             generation_if_source = false;
           };
-      ];
+      ]
+    ();
   assert_generated_annotations
     ~source:{|
       class C:
@@ -617,7 +667,8 @@ let test_generated_annotations context =
             annotation = source "Test";
             generation_if_source = false;
           };
-      ];
+      ]
+    ();
   assert_generated_annotations
     ~source:{|
       class C:
@@ -657,7 +708,8 @@ let test_generated_annotations context =
             annotation = source "Test";
             generation_if_source = false;
           };
-      ];
+      ]
+    ();
   assert_generated_annotations
     ~source:{|
       class C:
@@ -698,7 +750,8 @@ let test_generated_annotations context =
             annotation = source "Test";
             generation_if_source = false;
           };
-      ];
+      ]
+    ();
   assert_generated_annotations
     ~source:{|
       def foo(x: int, y: str): ...
@@ -733,7 +786,8 @@ let test_generated_annotations context =
             annotation = source "Test";
             generation_if_source = false;
           };
-      ];
+      ]
+    ();
   assert_generated_annotations
     ~source:{|
       def foo(x: int, y: str): ...
@@ -768,7 +822,8 @@ let test_generated_annotations context =
             annotation = source "Test";
             generation_if_source = false;
           };
-      ];
+      ]
+    ();
   assert_generated_annotations
     ~source:{|
       def foo(x: int, y: str): ...
@@ -807,7 +862,8 @@ let test_generated_annotations context =
             annotation = source "Test";
             generation_if_source = false;
           };
-      ];
+      ]
+    ();
   assert_generated_annotations
     ~source:{|
       def foo(x: int, y: str): ...
@@ -847,7 +903,8 @@ let test_generated_annotations context =
             annotation = source "Test";
             generation_if_source = false;
           };
-      ];
+      ]
+    ();
   assert_generated_annotations
     ~source:{|
       def foo(x, y): ...
@@ -882,7 +939,8 @@ let test_generated_annotations context =
             annotation = source "Test";
             generation_if_source = false;
           };
-      ];
+      ]
+    ();
   assert_generated_annotations
     ~source:{|
       def foo(x, y): ...
@@ -917,7 +975,8 @@ let test_generated_annotations context =
             annotation = source "Test";
             generation_if_source = false;
           };
-      ];
+      ]
+    ();
   assert_generated_annotations
     ~source:{|
       def foo(x, y): ...
@@ -953,7 +1012,8 @@ let test_generated_annotations context =
             annotation = source "Test";
             generation_if_source = false;
           };
-      ];
+      ]
+    ();
 
   (* typing.Annotated is lost during parsing, this is expected behavior. *)
   assert_generated_annotations
@@ -974,7 +1034,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -998,7 +1059,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   (* Return annotation extends. *)
   assert_generated_annotations
     ~source:
@@ -1036,7 +1098,8 @@ let test_generated_annotations context =
       }
     ~callable:
       (Target.Regular.Method { class_name = "test.Test"; method_name = "test1"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -1073,7 +1136,8 @@ let test_generated_annotations context =
       }
     ~callable:
       (Target.Regular.Method { class_name = "test.Test"; method_name = "test2"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -1110,10 +1174,13 @@ let test_generated_annotations context =
       }
     ~callable:
       (Target.Regular.Method { class_name = "test.Test"; method_name = "test3"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")]
+    ();
   assert_generated_annotations
     ~source:
       {|
+      import typing
+
       class A:
         pass
 
@@ -1145,10 +1212,13 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")]
+    ();
   assert_generated_annotations
     ~source:
       {|
+      import typing
+
       class A:
         pass
 
@@ -1180,10 +1250,13 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.test2"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")]
+    ();
   assert_generated_annotations
     ~source:
       {|
+      import typing
+
       class A:
         pass
 
@@ -1215,7 +1288,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.test3"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -1247,7 +1321,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations
     ~source:{|
       from typing import List
@@ -1272,7 +1347,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")]
+    ();
   assert_generated_annotations
     ~source:{|
       from typing import List
@@ -1297,7 +1373,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -1326,7 +1403,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")]
+    ();
   assert_generated_annotations
     ~source:{|
       from typing import Tuple
@@ -1351,7 +1429,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -1380,7 +1459,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -1416,7 +1496,10 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")]
+      (* TODO(T225700656): Handle PyreReadOnly *)
+    ~skip_for_pyrefly:true
+    ();
   assert_generated_annotations
     ~source:{|
       class A:
@@ -1442,7 +1525,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   (* Any of. *)
   assert_generated_annotations
     ~source:{|
@@ -1469,7 +1553,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
   assert_generated_annotations
     ~source:{|
        def foo(a, b, c: str) -> int: ...
@@ -1495,7 +1580,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
   (* All of. *)
   assert_generated_annotations
     ~source:{|
@@ -1522,7 +1608,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
   (* Some cases where we don't match with "AllOf". *)
   assert_generated_annotations
     ~source:{|
@@ -1549,7 +1636,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations
     ~source:{|
        def foo(a) -> int: ...
@@ -1575,7 +1663,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   (* Type annotation constraint for callables *)
   assert_generated_annotations
     ~source:{|
@@ -1624,7 +1713,8 @@ let test_generated_annotations context =
             annotation = source "Test";
             generation_if_source = false;
           };
-      ];
+      ]
+    ();
   assert_generated_annotations
     ~source:{|
        def foo(a, b: str, c: str, d: int): ...
@@ -1660,7 +1750,8 @@ let test_generated_annotations context =
             annotation = source "Test";
             generation_if_source = false;
           };
-      ];
+      ]
+    ();
   assert_generated_annotations
     ~source:{|
        def foo() -> int: ...
@@ -1679,7 +1770,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
   assert_generated_annotations
     ~source:{|
        def foo() -> int: ...
@@ -1698,7 +1790,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.bar"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations
     ~source:{|
        def foo() -> str: ...
@@ -1717,9 +1810,12 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
   assert_generated_annotations
-    ~source:{|
+    ~source:
+      {|
+       import typing
        def foo() -> str: ...
        def bar() -> typing.List[str]: ...
      |}
@@ -1736,7 +1832,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.bar"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
 
   (* Decorator names. *)
   assert_generated_annotations
@@ -1767,7 +1864,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   (* Basic test case for `FullyQualifiedCallee`. *)
   assert_generated_annotations
     ~source:
@@ -1797,7 +1896,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   (* Test `FullyQualifiedCallee` when the callee is unresolvable. *)
   assert_generated_annotations
     ~source:{|
@@ -1822,7 +1923,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   (* Test `FullyQualifiedCallee` on a decorator factory. *)
   assert_generated_annotations
     ~source:
@@ -1852,7 +1955,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   (* Test `FullyQualifiedCallee` when there are multiple decorators. We consider it as being matched
      if one of the decorators match. *)
   assert_generated_annotations
@@ -1886,7 +1991,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   (* Test `FullyQualifiedCallee` when the decorator is overriden. *)
   assert_generated_annotations
     ~source:
@@ -1919,7 +2026,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   (* Test `FullyQualifiedCallee` when the decorator is a base method. *)
   assert_generated_annotations
     ~source:
@@ -1951,7 +2060,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   (* Test `FullyQualifiedCallee` for class decorators. *)
   assert_generated_annotations
     ~source:
@@ -1987,7 +2098,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2016,7 +2129,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2045,7 +2160,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.bar"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2074,7 +2191,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2102,7 +2221,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2124,7 +2245,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2153,7 +2276,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2182,7 +2307,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2226,7 +2353,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2270,7 +2399,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2315,7 +2446,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2360,7 +2493,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2412,7 +2547,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2464,7 +2601,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2516,7 +2655,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ();
 
   assert_generated_annotations
     ~source:
@@ -2541,7 +2682,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2565,7 +2707,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
 
   assert_generated_annotations
     ~source:
@@ -2590,7 +2733,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.DC"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2618,7 +2762,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2646,7 +2792,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2690,7 +2838,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -2734,7 +2884,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
 
   (* Test attribute models. *)
   assert_generated_annotations_for_attributes
@@ -2757,7 +2909,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.x"
-    ~expected:[source "Test"];
+    ~expected:[source "Test"]
+    ();
   assert_generated_annotations_for_attributes
     ~source:{|
       class C:
@@ -2778,7 +2931,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.x"
-    ~expected:[sink "Test"];
+    ~expected:[sink "Test"]
+    ();
   assert_generated_annotations_for_attributes
     ~source:{|
       class C:
@@ -2799,7 +2953,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.D.y"
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations_for_attributes
     ~source:{|
       class C:
@@ -2824,8 +2979,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.x"
-    ~expected:[source "Test"];
-  ();
+    ~expected:[source "Test"]
+    ();
   assert_generated_annotations_for_attributes
     ~source:{|
       class C:
@@ -2850,7 +3005,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.D.y"
-    ~expected:[source "Test"];
+    ~expected:[source "Test"]
+    ();
   assert_generated_annotations_for_attributes
     ~source:
       {|
@@ -2878,7 +3034,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.E.z"
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations_for_attributes
     ~source:{|
       class C:
@@ -2898,7 +3055,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.x"
-    ~expected:[source "Test"];
+    ~expected:[source "Test"]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class attribute annotation constraints. *)
+    ();
   assert_generated_annotations_for_attributes
     ~source:{|
       class C:
@@ -2918,7 +3077,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.y"
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class attribute annotation constraints. *)
+    ();
   assert_generated_annotations_for_attributes
     ~source:
       {|
@@ -2947,7 +3108,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.x"
-    ~expected:[source "Test"];
+    ~expected:[source "Test"]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class attribute annotation constraints. *)
+    ();
   assert_generated_annotations_for_attributes
     ~source:
       {|
@@ -2976,7 +3139,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.y"
-    ~expected:[source "Test"];
+    ~expected:[source "Test"]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class attribute annotation constraints. *)
+    ();
   assert_generated_annotations_for_attributes
     ~source:
       {|
@@ -3005,7 +3170,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.z"
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class attribute annotation constraints. *)
+    ();
   assert_generated_annotations_for_attributes
     ~source:
       {|
@@ -3027,7 +3194,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.x"
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class attribute annotation constraints. *)
+    ();
   assert_generated_annotations_for_attributes
     ~source:
       {|
@@ -3049,7 +3218,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.y"
-    ~expected:[source "Test"];
+    ~expected:[source "Test"]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class attribute annotation constraints. *)
+    ();
 
   (* Test 'Not' clause *)
   assert_generated_annotations
@@ -3074,7 +3245,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
   assert_generated_annotations
     ~source:{|
       def foo(): ...
@@ -3097,7 +3269,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.barfoo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations
     ~source:{|
        def foo(a) -> int: ...
@@ -3116,7 +3289,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -3144,7 +3318,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -3172,7 +3347,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.DC"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations_for_attributes
     ~source:
       {|
@@ -3201,7 +3377,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.x"
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations_for_attributes
     ~source:
       {|
@@ -3230,7 +3407,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.D.y"
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations_for_attributes
     ~source:
       {|
@@ -3259,7 +3437,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.E.z"
-    ~expected:[source "Test"];
+    ~expected:[source "Test"]
+    ();
 
   (* Test transitive extends *)
   assert_generated_annotations_for_attributes
@@ -3289,7 +3468,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.E.z"
-    ~expected:[source "Test"];
+    ~expected:[source "Test"]
+    ();
   assert_generated_annotations_for_attributes
     ~source:
       {|
@@ -3317,7 +3497,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.D.y"
-    ~expected:[source "Test"];
+    ~expected:[source "Test"]
+    ();
   assert_generated_annotations_for_attributes
     ~source:
       {|
@@ -3345,7 +3526,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.x"
-    ~expected:[source "Test"];
+    ~expected:[source "Test"]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -3376,7 +3558,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -3407,7 +3590,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -3438,7 +3622,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -3469,7 +3654,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
 
   (* Test includes_self=False *)
   assert_generated_annotations_for_attributes
@@ -3499,7 +3685,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.C.x"
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations_for_attributes
     ~source:
       {|
@@ -3527,7 +3714,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.D.y"
-    ~expected:[source "Test"];
+    ~expected:[source "Test"]
+    ();
   assert_generated_annotations_for_attributes
     ~source:
       {|
@@ -3555,7 +3743,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.E.z"
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -3585,7 +3774,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -3615,7 +3805,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -3645,7 +3836,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -3675,7 +3867,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -3705,7 +3898,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -3735,7 +3929,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
 
   (* Test cls.any_child *)
   assert_generated_annotations
@@ -3774,7 +3969,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -3811,7 +4008,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -3848,7 +4047,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -3885,7 +4086,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -3922,7 +4125,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -3959,7 +4164,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -3996,7 +4203,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4033,7 +4242,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4070,7 +4281,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4107,7 +4320,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
 
   (* Test cls.any_parent *)
   assert_generated_annotations
@@ -4145,7 +4360,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4181,7 +4398,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4217,7 +4436,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4253,7 +4474,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4289,7 +4512,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4325,7 +4550,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4361,7 +4588,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4397,7 +4626,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4433,7 +4664,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4469,7 +4702,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
+    ();
 
   (* Test any_overriden_method *)
   assert_generated_annotations
@@ -4499,7 +4734,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4527,7 +4764,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4555,7 +4794,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4583,7 +4824,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "bar"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4611,7 +4854,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.D"; method_name = "bar"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
+    ();
   (* Only consider instance methods. *)
   assert_generated_annotations
     ~source:
@@ -4636,7 +4881,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4660,7 +4907,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4682,7 +4931,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4704,7 +4955,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4728,7 +4981,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
-    ~expected:[];
+    ~expected:[]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
+    ();
   assert_generated_annotations
     ~source:
       {|
@@ -4752,7 +5007,9 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
-    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
+    ();
 
   assert_generated_annotations_for_globals
     ~source:{|
@@ -4771,7 +5028,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.foo"
-    ~expected:[source "Test"];
+    ~expected:[source "Test"]
+    ();
   assert_generated_annotations_for_globals
     ~source:{|
       foo, bar = [], {}
@@ -4789,7 +5047,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.bar"
-    ~expected:[source "Test"];
+    ~expected:[source "Test"]
+    ();
   assert_generated_annotations_for_globals
     ~source:{|
       foo = []
@@ -4807,7 +5066,8 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~name:"test.foo"
-    ~expected:[];
+    ~expected:[]
+    ();
   ()
 
 
@@ -4897,9 +5157,14 @@ let test_partition_cache_queries _ =
 
 let test_generated_cache context =
   let assert_generated_cache ~source ~queries ~regular_callables ~expected =
-    let _, _, pyre_api, configuration =
-      TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
+    let project =
+      Test.ScratchPyrePysaProject.setup
+        ~context
+        ~requires_type_of_expressions:false
+        ["test.py", source]
     in
+    let pyre_api = Test.ScratchPyrePysaProject.read_only_api project in
+    let configuration = Test.ScratchPyrePysaProject.configuration_of project in
     let initial_callables =
       FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier:!&"test"
     in

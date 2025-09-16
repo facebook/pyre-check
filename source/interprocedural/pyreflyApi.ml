@@ -2898,6 +2898,13 @@ module ReadOnly = struct
     | CallableAst.TestFile -> None
 
 
+  let get_undecorated_signatures { callable_undecorated_signatures_shared_memory; _ } define_name =
+    CallableUndecoratedSignaturesSharedMemory.get
+      callable_undecorated_signatures_shared_memory
+      (FullyQualifiedName.from_reference_unchecked define_name)
+    |> assert_shared_memory_key_exists "missing callable undecorated signature"
+
+
   let get_class_attributes
       { class_fields_shared_memory; _ }
       ~include_generated_attributes:_

@@ -108,7 +108,13 @@ let assert_call_graph_of_define
   =
   let expected = DefineCallGraphForTest.from_expected expected in
   let source, module_name, pyre_api, configuration =
-    TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
+    TestHelper.setup_single_py_file
+      ~force_pyre1:true
+      ~requires_type_of_expressions:false
+      ~file_name:"test.py"
+      ~context
+      ~source
+      ()
   in
   let define = find_define_exn ~define_name ~module_name source in
   let callable =
@@ -157,7 +163,13 @@ let assert_higher_order_call_graph_of_define
       }
   in
   let source, module_name, pyre_api, configuration =
-    TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
+    TestHelper.setup_single_py_file
+      ~force_pyre1:true
+      ~requires_type_of_expressions:false
+      ~file_name:"test.py"
+      ~context
+      ~source
+      ()
   in
   let override_graph_shared_memory =
     module_name
@@ -7656,7 +7668,13 @@ let test_higher_order_call_graph_of_define =
 
 let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () context =
   let _, _, pyre_api, configuration =
-    TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
+    TestHelper.setup_single_py_file
+      ~force_pyre1:true
+      ~requires_type_of_expressions:false
+      ~file_name:"test.py"
+      ~context
+      ~source
+      ()
   in
   let qualifier = Reference.create "test" in
   let initial_callables = FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier in

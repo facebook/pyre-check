@@ -1169,11 +1169,22 @@ let end_to_end_test_paths_found relative_path _ =
     assert_bool "No test paths to check." false
 
 
-let setup_single_py_file ~file_name ~context ~source =
+let setup_single_py_file
+    ?(force_pyre1 = false)
+    ?(requires_type_of_expressions = true)
+    ~file_name
+    ~context
+    ~source
+    ()
+  =
   let test_module_name = Reference.create (String.chop_suffix_exn file_name ~suffix:".py") in
-  let project = Test.ScratchProject.setup ~context [file_name, source] in
-  let pyre_api =
-    project |> Test.ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
+  let project =
+    Test.ScratchPyrePysaProject.setup
+      ~context
+      ~force_pyre1
+      ~requires_type_of_expressions
+      [file_name, source]
   in
+  let pyre_api = Test.ScratchPyrePysaProject.read_only_api project in
   let test_source = source_from_qualifier ~pyre_api test_module_name in
-  test_source, test_module_name, pyre_api, Test.ScratchProject.configuration_of project
+  test_source, test_module_name, pyre_api, Test.ScratchPyrePysaProject.configuration_of project
