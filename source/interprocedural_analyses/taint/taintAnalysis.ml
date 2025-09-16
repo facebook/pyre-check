@@ -1090,7 +1090,7 @@ let run_taint_analysis
             Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map;
         }
       ~callables_to_analyze
-      ~max_iterations:100
+      ~max_iterations:150
       ~error_on_max_iterations:true
       ~epoch:Taint.TaintFixpoint.Epoch.initial
       ~state:fixpoint_state
