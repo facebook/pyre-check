@@ -536,7 +536,7 @@ module ReadOnly = struct
 
   let get_variable api = GlobalResolution.get_variable (global_resolution api)
 
-  let get_overriden_base_class api ~class_name ~method_name =
+  let get_overriden_base_method api ~class_name ~method_name =
     let ancestor =
       GlobalResolution.overrides
         (global_resolution api)
@@ -559,7 +559,7 @@ module ReadOnly = struct
     if Ast.Reference.equal ancestor_parent class_name then
       None
     else
-      Some ancestor_parent
+      Some (Ast.Reference.create ~prefix:ancestor_parent method_name)
 
 
   let annotation_parser api = global_resolution api |> GlobalResolution.annotation_parser

@@ -38,6 +38,12 @@ module Error = struct
   [@@deriving show]
 end
 
+let parse_location location =
+  Location.from_string location
+  |> Result.map_error ~f:(fun error ->
+         FormatError.UnexpectedJsonType { json = `String location; message = error })
+
+
 exception
   PyreflyFileFormatError of {
     path: PyrePath.t;
@@ -270,23 +276,50 @@ module GlobalClassIdSharedMemoryKey = struct
     Format.sprintf "%d|%d" (ModuleId.to_int module_id) (LocalClassId.to_int local_class_id)
 end
 
+(* Unique identifier for a function within a module, assigned by pyrefly. *)
+module LocalFunctionId : sig
+  type t [@@deriving compare, equal, show]
+
+  val from_string : string -> (t, FormatError.t) result
+
+  val from_location : Location.t -> t
+end = struct
+  (* TODO(T225700656): Potentially use a TextRange (2 ints) instead of Location.t (4 ints) *)
+  type t = Location.t [@@deriving compare, equal, show]
+
+  let from_string = parse_location
+
+  let from_location = Fn.id
+end
+
 (* Unique identifier for a callable (function or method) *)
 module GlobalCallableId = struct
   type t = {
     module_id: ModuleId.t;
-    (* TODO(T225700656): Potentially use a TextRange (2 ints) instead of Location.t (4 ints) *)
-    name_location: Location.t;
+    local_function_id: LocalFunctionId.t;
   }
   [@@deriving compare, equal, show]
 
-  let _ = pp
+  let _ = pp, LocalFunctionId.show
+
+  let from_optional_json = function
+    | Some json ->
+        let open Core.Result.Monad_infix in
+        JsonUtil.get_int_member json "module_id"
+        >>= fun module_id ->
+        JsonUtil.get_string_member json "function_id"
+        >>= fun function_id ->
+        LocalFunctionId.from_string function_id
+        >>| fun function_id ->
+        Some { module_id = ModuleId.from_int module_id; local_function_id = function_id }
+    | None -> Ok None
 end
 
 module GlobalCallableIdSharedMemoryKey = struct
   type t = GlobalCallableId.t [@@deriving compare]
 
-  let to_string { GlobalCallableId.module_id; name_location } =
-    Format.asprintf "%d|%a" (ModuleId.to_int module_id) Location.pp name_location
+  let to_string { GlobalCallableId.module_id; local_function_id } =
+    Format.asprintf "%d|%a" (ModuleId.to_int module_id) LocalFunctionId.pp local_function_id
 end
 
 (* Unique identifier for a module, assigned by pysa. This maps to a specific source file. Note that
@@ -501,15 +534,9 @@ module ModuleInfoFile = struct
       match json with
       | `String "TopLevel" -> Ok TopLevel
       | `Assoc [("Class", `Assoc [("location", `String location_string)])] ->
-          Location.from_string location_string
-          |> Result.map_error ~f:(fun error ->
-                 FormatError.UnexpectedJsonType { json = `String location_string; message = error })
-          >>| fun location -> Class location
+          parse_location location_string >>| fun location -> Class location
       | `Assoc [("Function", `Assoc [("location", `String location_string)])] ->
-          Location.from_string location_string
-          |> Result.map_error ~f:(fun error ->
-                 FormatError.UnexpectedJsonType { json = `String location_string; message = error })
-          >>| fun location -> Function location
+          parse_location location_string >>| fun location -> Function location
       | _ -> Error (FormatError.UnexpectedJsonType { json; message = "expected parent_scope" })
   end
 
@@ -623,7 +650,7 @@ module ModuleInfoFile = struct
       is_stub: bool;
       is_toplevel: bool;
       is_class_toplevel: bool;
-      overridden_base_class: GlobalClassId.t option;
+      overridden_base_method: GlobalCallableId.t option;
       defining_class: GlobalClassId.t option;
     }
     [@@deriving equal, show]
@@ -650,9 +677,9 @@ module ModuleInfoFile = struct
       >>= fun is_property_setter ->
       JsonUtil.get_optional_bool_member ~default:false json "is_stub"
       >>= fun is_stub ->
-      JsonUtil.get_optional_member json "overridden_base_class"
-      |> GlobalClassId.from_optional_json
-      >>= fun overridden_base_class ->
+      JsonUtil.get_optional_member json "overridden_base_method"
+      |> GlobalCallableId.from_optional_json
+      >>= fun overridden_base_method ->
       JsonUtil.get_optional_member json "defining_class"
       |> GlobalClassId.from_optional_json
       >>| fun defining_class ->
@@ -668,7 +695,7 @@ module ModuleInfoFile = struct
         is_stub;
         is_toplevel = false;
         is_class_toplevel = false;
-        overridden_base_class;
+        overridden_base_method;
         defining_class;
       }
 
@@ -697,7 +724,7 @@ module ModuleInfoFile = struct
         is_stub = false;
         is_toplevel = true;
         is_class_toplevel = false;
-        overridden_base_class = None;
+        overridden_base_method = None;
         defining_class = None;
       }
 
@@ -726,7 +753,7 @@ module ModuleInfoFile = struct
         is_stub = false;
         is_toplevel = false;
         is_class_toplevel = true;
-        overridden_base_class = None;
+        overridden_base_method = None;
         defining_class = None;
       }
   end
@@ -787,9 +814,7 @@ module ModuleInfoFile = struct
     let parse_type_of_expression type_of_expression =
       type_of_expression
       |> List.map ~f:(fun (location, type_) ->
-             Location.from_string location
-             |> Result.map_error ~f:(fun error ->
-                    FormatError.UnexpectedJsonType { json = `String location; message = error })
+             parse_location location
              >>= fun location -> JsonType.from_json type_ >>| fun type_ -> location, type_)
       |> Result.all
       >>| Location.Map.of_alist_exn
@@ -797,9 +822,7 @@ module ModuleInfoFile = struct
     let parse_function_definitions function_definitions =
       function_definitions
       |> List.map ~f:(fun (location, function_definition) ->
-             Location.from_string location
-             |> Result.map_error ~f:(fun error ->
-                    FormatError.UnexpectedJsonType { json = `String location; message = error })
+             parse_location location
              >>= fun location ->
              FunctionDefinition.from_json function_definition
              >>| fun function_definition -> location, function_definition)
@@ -809,9 +832,7 @@ module ModuleInfoFile = struct
     let parse_class_definitions class_definitions =
       class_definitions
       |> List.map ~f:(fun (location, class_definition) ->
-             Location.from_string location
-             |> Result.map_error ~f:(fun error ->
-                    FormatError.UnexpectedJsonType { json = `String location; message = error })
+             parse_location location
              >>= fun location ->
              ClassDefinition.from_json class_definition
              >>| fun class_definition -> location, class_definition)
@@ -1062,7 +1083,7 @@ module CallableMetadataSharedMemory = struct
       metadata: CallableMetadata.t;
       (* This is the original name, without the fully qualified suffixes like `$2` or `@setter`. *)
       name: string;
-      overridden_base_class: GlobalClassId.t option;
+      overridden_base_method: GlobalCallableId.t option;
       defining_class: GlobalClassId.t option;
     }
   end
@@ -2195,7 +2216,7 @@ module ReadWrite = struct
               is_stub;
               is_toplevel;
               is_class_toplevel;
-              overridden_base_class;
+              overridden_base_method;
               defining_class;
               _;
             } ->
@@ -2218,12 +2239,15 @@ module ReadWrite = struct
                     parent_is_class = Option.is_some defining_class;
                   };
                 name;
-                overridden_base_class;
+                overridden_base_method;
                 defining_class;
               };
             CallableIdToQualifiedNameSharedMemory.add
               callable_id_to_qualified_name_shared_memory
-              { GlobalCallableId.module_id; name_location }
+              {
+                GlobalCallableId.module_id;
+                local_function_id = LocalFunctionId.from_location name_location;
+              }
               qualified_name;
             qualified_name :: callables, classes
         | Class { local_class_id; is_synthesized; fields; bases; _ } ->
@@ -2298,7 +2322,10 @@ module ReadWrite = struct
       let get_function_name name_location =
         CallableIdToQualifiedNameSharedMemory.get
           callable_id_to_qualified_name_shared_memory
-          { GlobalCallableId.module_id; name_location }
+          {
+            GlobalCallableId.module_id;
+            local_function_id = LocalFunctionId.from_location name_location;
+          }
         |> assert_shared_memory_key_exists "unknown callable id"
       in
       let fold_function_parameters (position, excluded, sofar) = function
@@ -2595,7 +2622,10 @@ module ReadWrite = struct
         callable_name;
       CallableIdToQualifiedNameSharedMemory.remove
         callable_id_to_qualified_name_shared_memory
-        { GlobalCallableId.module_id; name_location };
+        {
+          GlobalCallableId.module_id;
+          local_function_id = LocalFunctionId.from_location name_location;
+        };
       ()
     in
     let cleanup_class ~module_id class_name =
@@ -2663,6 +2693,7 @@ module ReadOnly = struct
     callable_define_signature_shared_memory: CallableDefineSignatureSharedMemory.t;
     callable_undecorated_signatures_shared_memory: CallableUndecoratedSignaturesSharedMemory.t;
     class_id_to_qualified_name_shared_memory: ClassIdToQualifiedNameSharedMemory.t;
+    callable_id_to_qualified_name_shared_memory: CallableIdToQualifiedNameSharedMemory.t;
     object_class: FullyQualifiedName.t;
   }
 
@@ -2680,6 +2711,7 @@ module ReadOnly = struct
         callable_define_signature_shared_memory;
         callable_undecorated_signatures_shared_memory;
         class_id_to_qualified_name_shared_memory;
+        callable_id_to_qualified_name_shared_memory;
         object_class;
         _;
       }
@@ -2697,6 +2729,7 @@ module ReadOnly = struct
       callable_define_signature_shared_memory;
       callable_undecorated_signatures_shared_memory;
       class_id_to_qualified_name_shared_memory;
+      callable_id_to_qualified_name_shared_memory;
       object_class;
     }
 
@@ -2830,8 +2863,8 @@ module ReadOnly = struct
     |> fun { CallableMetadataSharedMemory.Value.metadata; _ } -> metadata
 
 
-  let get_overriden_base_class
-      { callable_metadata_shared_memory; class_id_to_qualified_name_shared_memory; _ }
+  let get_overriden_base_method
+      { callable_metadata_shared_memory; callable_id_to_qualified_name_shared_memory; _ }
       ~class_name
       ~method_name
     =
@@ -2840,9 +2873,9 @@ module ReadOnly = struct
       callable_metadata_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
     |> assert_shared_memory_key_exists "missing callable metadata"
-    |> fun { CallableMetadataSharedMemory.Value.overridden_base_class; _ } ->
-    overridden_base_class
-    >>| ClassIdToQualifiedNameSharedMemory.get_class_name class_id_to_qualified_name_shared_memory
+    |> fun { CallableMetadataSharedMemory.Value.overridden_base_method; _ } ->
+    overridden_base_method
+    >>= CallableIdToQualifiedNameSharedMemory.get callable_id_to_qualified_name_shared_memory
     >>| FullyQualifiedName.to_reference
 
 

@@ -533,7 +533,7 @@ let test_fully_qualified_names _ =
         is_stub = false;
         is_toplevel = false;
         is_class_toplevel = false;
-        overridden_base_class = None;
+        overridden_base_method = None;
         defining_class = None;
       }
   in

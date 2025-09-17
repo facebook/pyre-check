@@ -216,11 +216,12 @@ module ReadOnly = struct
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.global"
 
 
-  let get_overriden_base_class api ~class_name ~method_name =
+  let get_overriden_base_method api ~class_name ~method_name =
     match api with
-    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.get_overriden_base_class pyre_api ~class_name ~method_name
+    | Pyre1 pyre_api ->
+        Pyre1Api.ReadOnly.get_overriden_base_method pyre_api ~class_name ~method_name
     | Pyrefly pyrefly_api ->
-        PyreflyApi.ReadOnly.get_overriden_base_class pyrefly_api ~class_name ~method_name
+        PyreflyApi.ReadOnly.get_overriden_base_method pyrefly_api ~class_name ~method_name
 
 
   let annotation_parser = function

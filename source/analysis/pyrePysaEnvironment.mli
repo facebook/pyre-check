@@ -191,7 +191,7 @@ module ReadOnly : sig
 
   val global : t -> Ast.Reference.t -> AttributeResolution.Global.t option
 
-  val get_overriden_base_class
+  val get_overriden_base_method
     :  t ->
     class_name:Ast.Reference.t ->
     method_name:string ->

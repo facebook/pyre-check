@@ -61,8 +61,8 @@ module Heap = struct
           is_property_setter;
         }
       =
-      let ancestor =
-        try PyrePysaApi.ReadOnly.get_overriden_base_class pyre_api ~class_name ~method_name with
+      let base_callable =
+        try PyrePysaApi.ReadOnly.get_overriden_base_method pyre_api ~class_name ~method_name with
         | PyrePysaLogic.UntrackedClass untracked_type ->
             Log.warning
               "Found untracked type `%s` when looking for a parent of `%a.%s`. The method will be \
@@ -82,11 +82,11 @@ module Heap = struct
         else
           Target.Normal
       in
-      ancestor
-      >>= fun ancestor ->
+      base_callable
+      >>= fun base_callable ->
       Some
         {
-          base_callable = Target.create_method ~kind ancestor method_name;
+          base_callable = Target.create_method_from_reference ~kind base_callable;
           overriding_class = class_name;
         }
   end
