@@ -32,6 +32,7 @@ let sink name =
 let assert_generated_annotations
     context
     ?(skip_for_pyrefly = false)
+    ?pyrefly_expected
     ~source
     ~query
     ~callable
@@ -69,6 +70,11 @@ let assert_generated_annotations
       ~pyre_api
       ~qualifiers:[Ast.Reference.create "test"]
     |> ClassHierarchyGraph.SharedMemory.from_heap ~store_transitive_children_for:[]
+  in
+  let expected =
+    match pyrefly_expected with
+    | Some pyrefly_expected when PyrePysaApi.ReadOnly.is_pyrefly pyre_api -> pyrefly_expected
+    | _ -> expected
   in
   let actual =
     ModelQueryExecution.CallableQueryExecutor.generate_annotations_from_query_on_target
@@ -336,6 +342,104 @@ let test_generated_annotations_function_name context =
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[]
+    ();
+  (* Multiple definitions *)
+  assert_generated_annotations
+    ~source:{|
+      def foo(): ...
+      def foo(): ...
+      |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
+        where = [FullyQualifiedNameConstraint (Equals "test.foo")];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
+  assert_generated_annotations
+    ~source:{|
+      def foo(): ...
+      def foo(): ...
+      |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
+        where = [FullyQualifiedNameConstraint (Equals "test.foo")];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Regular.Function { name = "test.foo$2"; kind = Normal })
+    ~expected:[]
+    ~pyrefly_expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
+  assert_generated_annotations
+    ~source:
+      {|
+      class Foo:
+        @property
+        def bar(self):
+          return 0
+        @bar.setter
+        def bar(self, value):
+          pass
+      |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
+        where = [FullyQualifiedNameConstraint (Equals "test.Foo.bar")];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:
+      (Target.Regular.Method { class_name = "test.Foo"; method_name = "bar"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ();
+  assert_generated_annotations
+    ~source:
+      {|
+      class Foo:
+        @property
+        def bar(self):
+          return 0
+        @bar.setter
+        def bar(self, value):
+          pass
+      |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
+        where = [FullyQualifiedNameConstraint (Equals "test.Foo.bar")];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:
+      (Target.Regular.Method
+         { class_name = "test.Foo"; method_name = "bar@setter"; kind = PyreflyPropertySetter })
+    ~expected:[]
+    ~pyrefly_expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
     ();
   ()
 

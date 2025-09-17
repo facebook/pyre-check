@@ -3017,6 +3017,55 @@ let add_builtins_prefix name =
     name
 
 
+(* Given a fully qualified name for a function, method, class, attribute or global variable, return
+   its 'symbolic' name. This removes any path prefix and suffixes such as `@setter` and `$2`. *)
+let target_symbolic_name reference =
+  (* We could technically get the proper module name and symbol name using shared memory, but we use
+     basic string operations for performance reasons. *)
+  let reference = Reference.as_list reference in
+  let reference =
+    (* First, strip the potential path prefixed to the module name, if any. *)
+    if List.exists reference ~f:(fun s -> String.contains s ':') then
+      reference
+      |> String.concat ~sep:"."
+      |> String.rsplit2_exn ~on:':'
+      |> snd
+      |> String.split ~on:'.'
+    else
+      reference
+  in
+  let reference =
+    (* If '#' was added to distinguish symbols for different modules, replace it with a dot. *)
+    if List.exists reference ~f:(fun s -> String.contains s '#') then
+      reference
+      |> String.concat ~sep:"."
+      |> String.substr_replace_all ~pattern:"#" ~with_:"."
+      |> String.split ~on:'.'
+    else
+      reference
+  in
+  let reference =
+    (* Strip '$2' and '@setter' suffixes. Preserve '$toplevel' and '$class_toplevel' *)
+    let strip_suffix name =
+      let name =
+        if Option.value ~default:(-1) (String.index name '$') >= 1 then
+          String.rsplit2_exn name ~on:'$' |> fst
+        else
+          name
+      in
+      let name =
+        if String.contains name '@' then
+          String.rsplit2_exn name ~on:'@' |> fst
+        else
+          name
+      in
+      name
+    in
+    List.map ~f:strip_suffix reference
+  in
+  Reference.create_from_list reference
+
+
 module ModelQueries = struct
   module Function = Pyre1Api.ModelQueries.Function
   module Global = Pyre1Api.ModelQueries.Global

@@ -885,11 +885,11 @@ module Modelable = struct
         decorators: CallableDecorator.t list Lazy.t;
       }
     | Attribute of {
-        name: Reference.t;
+        target_name: Reference.t;
         type_annotation: Expression.t option Lazy.t;
       }
     | Global of {
-        name: Reference.t;
+        target_name: Reference.t;
         type_annotation: Expression.t option Lazy.t;
       }
 
@@ -938,7 +938,7 @@ module Modelable = struct
 
 
   let create_attribute ~pyre_api target =
-    let name = Target.object_name target in
+    let target_name = Target.object_name target in
     let get_type_annotation class_name attribute =
       let get_annotation = function
         | {
@@ -967,37 +967,39 @@ module Modelable = struct
     in
     let type_annotation =
       lazy
-        (let class_name = Reference.prefix name >>| Reference.show |> Option.value ~default:"" in
-         let attribute = Reference.last name in
+        ((* TODO(T225700656): Add API to get class name from attribute name *)
+         let class_name =
+           Reference.prefix target_name >>| Reference.show |> Option.value ~default:""
+         in
+         let attribute = Reference.last target_name in
          get_type_annotation class_name attribute)
     in
-    Attribute { name; type_annotation }
+    Attribute { target_name; type_annotation }
 
 
   let create_global ~pyre_api target =
-    let name = Target.object_name target in
+    let target_name = Target.object_name target in
     let get_type_annotation reference =
       match Interprocedural.PyrePysaApi.ReadOnly.get_unannotated_global pyre_api reference with
       | Some (SimpleAssign { explicit_annotation; _ }) -> explicit_annotation
       | _ -> None
     in
-    let type_annotation = lazy (get_type_annotation name) in
-    Global { name; type_annotation }
+    let type_annotation = lazy (get_type_annotation target_name) in
+    Global { target_name; type_annotation }
 
 
   let target = function
     | Callable { target; _ } -> target
-    | Attribute { name; _ }
-    | Global { name; _ } ->
-        Target.create_object name
+    | Attribute { target_name; _ }
+    | Global { target_name; _ } ->
+        Target.create_object target_name
 
 
-  (* TODO(T225700656): This should return a symbolic name *)
-  let name = function
+  let target_name = function
     | Callable { target; _ } -> Target.define_name_exn target
-    | Attribute { name; _ }
-    | Global { name; _ } ->
-        name
+    | Attribute { target_name; _ }
+    | Global { target_name; _ } ->
+        target_name
 
 
   let type_annotation = function
@@ -1077,7 +1079,9 @@ module Modelable = struct
 
   let class_name = function
     | Callable { target; _ } -> Target.class_name target
-    | Attribute { name; _ } -> Reference.prefix name >>| Reference.show
+    | Attribute { target_name; _ } ->
+        (* TODO(T225700656): Add API to get class name from attribute name *)
+        Reference.prefix target_name >>| Reference.show
     | Global _ -> failwith "unexpected use of a class constraint on a global"
 
 

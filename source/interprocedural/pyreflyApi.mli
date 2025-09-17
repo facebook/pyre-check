@@ -138,6 +138,8 @@ end
 
 val add_builtins_prefix : Ast.Reference.t -> Ast.Reference.t
 
+val target_symbolic_name : Ast.Reference.t -> Ast.Reference.t
+
 module ModelQueries : sig
   module Function = Analysis.PyrePysaEnvironment.ModelQueries.Function
   module Global = Analysis.PyrePysaEnvironment.ModelQueries.Global

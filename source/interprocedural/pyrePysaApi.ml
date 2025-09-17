@@ -317,6 +317,15 @@ module ReadOnly = struct
     match api with
     | Pyre1 _ -> reference
     | Pyrefly _ -> PyreflyApi.add_builtins_prefix reference
+
+
+  (* Given a fully qualified name for a function, method, class, attribute or global variable,
+     return its 'symbolic' name. This removes any path prefix and suffixes such as `@setter` and
+     `$2`. *)
+  let target_symbolic_name api reference =
+    match api with
+    | Pyre1 _ -> reference
+    | Pyrefly _ -> PyreflyApi.target_symbolic_name reference
 end
 
 module InContext = struct

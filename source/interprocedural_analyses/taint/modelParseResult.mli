@@ -462,7 +462,7 @@ module Modelable : sig
 
   val target : t -> Interprocedural.Target.t
 
-  val name : t -> Ast.Reference.t
+  val target_name : t -> Ast.Reference.t
 
   val type_annotation : t -> Ast.Expression.t option
 

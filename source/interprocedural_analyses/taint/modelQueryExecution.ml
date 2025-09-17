@@ -913,11 +913,20 @@ let rec class_matches_constraint ~pyre_api ~class_hierarchy_graph ~name_captures
            ~name_captures
            class_constraint)
   | ModelQuery.ClassConstraint.NameConstraint name_constraint ->
-      matches_name_constraint
-        ~name_captures
-        ~name_constraint
-        (name |> Reference.create |> Reference.last)
+      let name =
+        name
+        |> Reference.create
+        |> PyrePysaApi.ReadOnly.target_symbolic_name pyre_api
+        |> Reference.last
+      in
+      matches_name_constraint ~name_captures ~name_constraint name
   | ModelQuery.ClassConstraint.FullyQualifiedNameConstraint name_constraint ->
+      let name =
+        name
+        |> Reference.create
+        |> PyrePysaApi.ReadOnly.target_symbolic_name pyre_api
+        |> Reference.show
+      in
       matches_name_constraint ~name_captures ~name_constraint name
   | ModelQuery.ClassConstraint.Extends { class_name; is_transitive; includes_self } ->
       find_children ~class_hierarchy_graph ~is_transitive ~includes_self class_name
@@ -986,15 +995,21 @@ let rec matches_constraint
            query_constraint)
   | ModelQuery.Constraint.Constant value -> value
   | ModelQuery.Constraint.NameConstraint name_constraint ->
-      matches_name_constraint
-        ~name_captures
-        ~name_constraint
-        (value |> Modelable.name |> Reference.last)
+      let name =
+        value
+        |> Modelable.target_name
+        |> PyrePysaApi.ReadOnly.target_symbolic_name pyre_api
+        |> Reference.last
+      in
+      matches_name_constraint ~name_captures ~name_constraint name
   | ModelQuery.Constraint.FullyQualifiedNameConstraint name_constraint ->
-      matches_name_constraint
-        ~name_captures
-        ~name_constraint
-        (value |> Modelable.name |> Reference.show)
+      let name =
+        value
+        |> Modelable.target_name
+        |> PyrePysaApi.ReadOnly.target_symbolic_name pyre_api
+        |> Reference.show
+      in
+      matches_name_constraint ~name_captures ~name_constraint name
   | ModelQuery.Constraint.AnnotationConstraint annotation_constraint ->
       Modelable.type_annotation value
       >>| TypeAnnotation.from_original_annotation ~pyre_api ~preserve_original:true

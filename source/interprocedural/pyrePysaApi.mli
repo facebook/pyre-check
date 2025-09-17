@@ -210,6 +210,8 @@ module ReadOnly : sig
   val scalar_type_properties : t -> PysaType.t -> ScalarTypeProperties.t
 
   val add_builtins_prefix : t -> Ast.Reference.t -> Ast.Reference.t
+
+  val target_symbolic_name : t -> Ast.Reference.t -> Ast.Reference.t
 end
 
 module InContext : sig
