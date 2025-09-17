@@ -276,20 +276,40 @@ module GlobalClassIdSharedMemoryKey = struct
     Format.sprintf "%d|%d" (ModuleId.to_int module_id) (LocalClassId.to_int local_class_id)
 end
 
-(* Unique identifier for a function within a module, assigned by pyrefly. *)
+(* Unique identifier for a function within a module, which needs to be consistent between here and
+   the outputs of Pyrefly because the outputs often use this as the key to associate information
+   with (e.g., call graphs). *)
 module LocalFunctionId : sig
-  type t [@@deriving compare, equal, show]
+  type t =
+    | Function of Location.t
+    | ModuleTopLevel
+    | ClassTopLevel of LocalClassId.t
+  [@@deriving compare, equal, show]
 
-  val from_string : string -> (t, FormatError.t) result
+  val from_json : Yojson.Safe.t -> (t, FormatError.t) result
 
-  val from_location : Location.t -> t
+  val create_function : Location.t -> t
 end = struct
   (* TODO(T225700656): Potentially use a TextRange (2 ints) instead of Location.t (4 ints) *)
-  type t = Location.t [@@deriving compare, equal, show]
+  type t =
+    | Function of Location.t
+    | ModuleTopLevel
+    | ClassTopLevel of LocalClassId.t
+  [@@deriving compare, equal, show]
 
-  let from_string = parse_location
+  let from_json json =
+    let open Core.Result.Monad_infix in
+    match json with
+    | `String "ModuleTopLevel" -> Ok ModuleTopLevel
+    | `Assoc [("Function", `String location)] ->
+        parse_location location >>| fun location -> Function location
+    | `Assoc [("ClassTopLevel", `Assoc [("class_id", `Int class_id)])] ->
+        Ok (ClassTopLevel (LocalClassId.from_int class_id))
+    | json ->
+        failwith (Format.asprintf "Unknown FunctionId: `%s`" (Yojson.Safe.pretty_to_string json))
 
-  let from_location = Fn.id
+
+  let create_function location = Function location
 end
 
 (* Unique identifier for a callable (function or method) *)
@@ -307,9 +327,8 @@ module GlobalCallableId = struct
         let open Core.Result.Monad_infix in
         JsonUtil.get_int_member json "module_id"
         >>= fun module_id ->
-        JsonUtil.get_string_member json "function_id"
-        >>= fun function_id ->
-        LocalFunctionId.from_string function_id
+        JsonUtil.get_member json "function_id"
+        >>= LocalFunctionId.from_json
         >>| fun function_id ->
         Some { module_id = ModuleId.from_int module_id; local_function_id = function_id }
     | None -> Ok None
@@ -1085,6 +1104,7 @@ module CallableMetadataSharedMemory = struct
       name: string;
       overridden_base_method: GlobalCallableId.t option;
       defining_class: GlobalClassId.t option;
+      local_function_id: LocalFunctionId.t;
     }
   end
 
@@ -1846,6 +1866,7 @@ module ReadWrite = struct
         local_name: Reference.t; (* a non-unique name, more user-friendly. *)
         definition: Definition.t;
         name_location: Location.t;
+        local_function_id: LocalFunctionId.t;
       }
     end
 
@@ -2094,6 +2115,7 @@ module ReadWrite = struct
               local_name = Reference.create_from_list (List.rev (symbol_name :: parent_local_name));
               definition;
               name_location = location;
+              local_function_id = LocalFunctionId.create_function location;
             }
             :: sofar
           in
@@ -2120,7 +2142,7 @@ module ReadWrite = struct
         =
         let sofar = qualified_definition :: sofar in
         match definition with
-        | Definition.Class _ ->
+        | Definition.Class { local_class_id; _ } ->
             {
               QualifiedDefinition.definition =
                 Definition.Function
@@ -2131,6 +2153,7 @@ module ReadWrite = struct
                   local_name
                   (Reference.create_from_list [Ast.Statement.class_toplevel_define_name]);
               name_location;
+              local_function_id = LocalFunctionId.ClassTopLevel local_class_id;
             }
             :: sofar
         | _ -> sofar
@@ -2143,6 +2166,7 @@ module ReadWrite = struct
         qualified_name = FullyQualifiedName.create_module_toplevel ~module_qualifier;
         local_name = Reference.create_from_list [Ast.Statement.toplevel_define_name];
         name_location = Location.any;
+        local_function_id = LocalFunctionId.ModuleTopLevel;
       }
       :: definitions
   end
@@ -2202,7 +2226,13 @@ module ReadWrite = struct
       in
       let store_definition
           (callables, classes)
-          { DefinitionCollector.QualifiedDefinition.qualified_name; definition; name_location; _ }
+          {
+            DefinitionCollector.QualifiedDefinition.qualified_name;
+            definition;
+            name_location;
+            local_function_id;
+            _;
+          }
         =
         match definition with
         | Function
@@ -2241,13 +2271,11 @@ module ReadWrite = struct
                 name;
                 overridden_base_method;
                 defining_class;
+                local_function_id;
               };
             CallableIdToQualifiedNameSharedMemory.add
               callable_id_to_qualified_name_shared_memory
-              {
-                GlobalCallableId.module_id;
-                local_function_id = LocalFunctionId.from_location name_location;
-              }
+              { GlobalCallableId.module_id; local_function_id }
               qualified_name;
             qualified_name :: callables, classes
         | Class { local_class_id; is_synthesized; fields; bases; _ } ->
@@ -2324,7 +2352,7 @@ module ReadWrite = struct
           callable_id_to_qualified_name_shared_memory
           {
             GlobalCallableId.module_id;
-            local_function_id = LocalFunctionId.from_location name_location;
+            local_function_id = LocalFunctionId.create_function name_location;
           }
         |> assert_shared_memory_key_exists "unknown callable id"
       in
@@ -2608,7 +2636,7 @@ module ReadWrite = struct
         ()
     in
     let cleanup_callable ~module_id callable_name =
-      let { CallableMetadataSharedMemory.Value.metadata = { name_location; _ }; _ } =
+      let { CallableMetadataSharedMemory.Value.local_function_id; _ } =
         CallableMetadataSharedMemory.get callable_metadata_shared_memory callable_name
         |> assert_shared_memory_key_exists "missing callable metadata"
       in
@@ -2622,10 +2650,7 @@ module ReadWrite = struct
         callable_name;
       CallableIdToQualifiedNameSharedMemory.remove
         callable_id_to_qualified_name_shared_memory
-        {
-          GlobalCallableId.module_id;
-          local_function_id = LocalFunctionId.from_location name_location;
-        };
+        { GlobalCallableId.module_id; local_function_id };
       ()
     in
     let cleanup_class ~module_id class_name =

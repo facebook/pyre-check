@@ -214,6 +214,10 @@ module GlobalClassId : sig
   type t [@@deriving show]
 end
 
+module LocalFunctionId : sig
+  type t [@@deriving show]
+end
+
 (* Exposed for testing purposes *)
 module ModuleInfoFile : sig
   module JsonType : sig
@@ -363,6 +367,7 @@ module Testing : sig
       local_name: Ast.Reference.t; (* a non-unique name, more user-friendly. *)
       definition: Definition.t; (* class or def *)
       name_location: Ast.Location.t;
+      local_function_id: LocalFunctionId.t;
     }
   end
 
