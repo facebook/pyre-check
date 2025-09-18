@@ -27,6 +27,7 @@ module FormatError = struct
         message: string;
       }
     | UnsupportedVersion of { version: int }
+    | UnparsableString of string
   [@@deriving show]
 end
 
@@ -223,12 +224,16 @@ module LocalClassId : sig
   val from_int : int -> t
 
   val to_int : t -> int
+
+  val of_string : string -> t
 end = struct
   type t = int [@@deriving compare, equal, sexp, hash, show]
 
   let from_int = Fn.id
 
   let to_int = Fn.id
+
+  let of_string = Int.of_string
 end
 
 (* Unique identifier for a class, assigned by pyrefly. *)
@@ -273,30 +278,48 @@ module LocalFunctionId : sig
     | ClassTopLevel of LocalClassId.t
   [@@deriving compare, equal, show]
 
-  val from_json : Yojson.Safe.t -> (t, FormatError.t) result
+  val from_string : string -> (t, FormatError.t) result
 
   val create_function : Location.t -> t
-end = struct
-  (* TODO(T225700656): Potentially use a TextRange (2 ints) instead of Location.t (4 ints) *)
-  type t =
-    | Function of Location.t
-    | ModuleTopLevel
-    | ClassTopLevel of LocalClassId.t
-  [@@deriving compare, equal, show]
 
-  let from_json json =
-    let open Core.Result.Monad_infix in
-    match json with
-    | `String "ModuleTopLevel" -> Ok ModuleTopLevel
-    | `Assoc [("Function", `String location)] ->
-        parse_location location >>| fun location -> Function location
-    | `Assoc [("ClassTopLevel", `Assoc [("class_id", `Int class_id)])] ->
-        Ok (ClassTopLevel (LocalClassId.from_int class_id))
-    | json ->
-        failwith (Format.asprintf "Unknown FunctionId: `%s`" (Yojson.Safe.pretty_to_string json))
+  val get_location_exn : t -> Location.t
+
+  module Map : Map.S with type Key.t = t
+end = struct
+  module T = struct
+    (* TODO(T225700656): Potentially use a TextRange (2 ints) instead of Location.t (4 ints) *)
+    type t =
+      | Function of Location.t
+      | ModuleTopLevel
+      | ClassTopLevel of LocalClassId.t
+    [@@deriving compare, equal, show, sexp]
+  end
+
+  include T
+
+  let from_string string =
+    if String.equal string "MTL" then
+      Ok ModuleTopLevel
+    else
+      match String.chop_prefix ~prefix:"F:" string with
+      | Some location ->
+          let open Core.Result.Monad_infix in
+          parse_location location >>| fun location -> Function location
+      | None -> (
+          match String.chop_prefix ~prefix:"CTL:" string with
+          | Some class_id -> Ok (ClassTopLevel (LocalClassId.of_string class_id))
+          | None -> Error (FormatError.UnparsableString string))
 
 
   let create_function location = Function location
+
+  let get_location_exn = function
+    | Function location -> location
+    | local_function_id ->
+        Format.asprintf "Expect `Function` but got %a" pp local_function_id |> failwith
+
+
+  module Map = Map.Make (T)
 end
 
 (* Unique identifier for a callable (function or method) *)
@@ -314,10 +337,10 @@ module GlobalCallableId = struct
         let open Core.Result.Monad_infix in
         JsonUtil.get_int_member json "module_id"
         >>= fun module_id ->
-        JsonUtil.get_member json "function_id"
-        >>= LocalFunctionId.from_json
-        >>| fun function_id ->
-        Some { module_id = ModuleId.from_int module_id; local_function_id = function_id }
+        JsonUtil.get_string_member json "function_id"
+        >>= LocalFunctionId.from_string
+        >>| fun local_function_id ->
+        Some { module_id = ModuleId.from_int module_id; local_function_id }
     | None -> Ok None
 end
 
@@ -873,7 +896,7 @@ module ModuleInfoFile = struct
     module_name: Reference.t;
     source_path: ModulePath.t;
     type_of_expression: JsonType.t Location.Map.t;
-    function_definitions: FunctionDefinition.t Location.Map.t;
+    function_definitions: FunctionDefinition.t LocalFunctionId.Map.t;
     class_definitions: ClassDefinition.t Location.Map.t;
     global_variables: string list;
   }
@@ -890,13 +913,13 @@ module ModuleInfoFile = struct
     in
     let parse_function_definitions function_definitions =
       function_definitions
-      |> List.map ~f:(fun (location, function_definition) ->
-             parse_location location
-             >>= fun location ->
+      |> List.map ~f:(fun (local_function_id, function_definition) ->
+             LocalFunctionId.from_string local_function_id
+             >>= fun local_function_id ->
              FunctionDefinition.from_json function_definition
-             >>| fun function_definition -> location, function_definition)
+             >>| fun function_definition -> local_function_id, function_definition)
       |> Result.all
-      >>| Location.Map.of_alist_exn
+      >>| LocalFunctionId.Map.of_alist_exn
     in
     let parse_class_definitions class_definitions =
       class_definitions
@@ -1953,7 +1976,7 @@ module ReadWrite = struct
           create_local_path ~function_definitions ~class_definitions sofar parent
       | ModuleInfoFile.ParentScope.Function parent_location ->
           let ({ ModuleInfoFile.FunctionDefinition.parent; _ } as function_definition) =
-            Map.find_exn function_definitions parent_location
+            Map.find_exn function_definitions (LocalFunctionId.create_function parent_location)
           in
           let sofar =
             { Node.location = parent_location; value = Definition.Function function_definition }
@@ -1965,13 +1988,18 @@ module ReadWrite = struct
     let local_path_of_function
         ~function_definitions
         ~class_definitions
-        ~location
+        ~local_function_id
         ({ ModuleInfoFile.FunctionDefinition.parent; _ } as function_definition)
       =
       create_local_path
         ~function_definitions
         ~class_definitions
-        [{ Node.location; value = Definition.Function function_definition }]
+        [
+          {
+            Node.location = LocalFunctionId.get_location_exn local_function_id;
+            value = Definition.Function function_definition;
+          };
+        ]
         parent
 
 
@@ -2037,12 +2065,12 @@ module ReadWrite = struct
         in
         Map.fold
           ~init:tree
-          ~f:(fun ~key:location ~data:function_definition sofar ->
+          ~f:(fun ~key:local_function_id ~data:function_definition sofar ->
             add_local_path
               (local_path_of_function
                  ~function_definitions
                  ~class_definitions
-                 ~location
+                 ~local_function_id
                  function_definition)
               sofar)
           function_definitions
@@ -2416,13 +2444,10 @@ module ReadWrite = struct
       let { ModuleInfoFile.function_definitions; class_definitions; module_id; _ } =
         ModuleInfoFile.from_path_exn ~pyrefly_directory pyrefly_info_path
       in
-      let get_function_name name_location =
+      let get_function_name local_function_id =
         CallableIdToQualifiedNameSharedMemory.get
           callable_id_to_qualified_name_shared_memory
-          {
-            GlobalCallableId.module_id;
-            local_function_id = LocalFunctionId.create_function name_location;
-          }
+          { GlobalCallableId.module_id; local_function_id }
         |> assert_shared_memory_key_exists "unknown callable id"
       in
       let fold_function_parameters (position, excluded, sofar) = function
@@ -2489,10 +2514,10 @@ module ReadWrite = struct
         }
       in
       let add_function
-          ~key:name_location
+          ~key:local_function_id
           ~data:{ ModuleInfoFile.FunctionDefinition.undecorated_signatures; _ }
         =
-        let qualified_name = get_function_name name_location in
+        let qualified_name = get_function_name local_function_id in
         let undecorated_signatures =
           List.map ~f:convert_function_signature undecorated_signatures
         in

@@ -18,6 +18,7 @@ module FormatError : sig
         message: string;
       }
     | UnsupportedVersion of { version: int }
+    | UnparsableString of string
   [@@deriving show]
 end
 
@@ -219,6 +220,10 @@ end
 
 module LocalFunctionId : sig
   type t [@@deriving show]
+
+  val create_function : Ast.Location.t -> t
+
+  module Map : Map.S with type Key.t = t
 end
 
 (* Exposed for testing purposes *)
@@ -398,6 +403,6 @@ module Testing : sig
     :  module_qualifier:ModuleQualifier.t ->
     module_exists:(ModuleQualifier.t -> bool) ->
     class_definitions:ModuleInfoFile.ClassDefinition.t Ast.Location.Map.t ->
-    function_definitions:ModuleInfoFile.FunctionDefinition.t Ast.Location.Map.t ->
+    function_definitions:ModuleInfoFile.FunctionDefinition.t LocalFunctionId.Map.t ->
     QualifiedDefinition.t list
 end
