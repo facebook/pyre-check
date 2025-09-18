@@ -19,7 +19,7 @@ ModelQuery(
     any_parameter.annotation.fully_qualified.matches("Test2_T")
   ],
   model = [
-    Parameters(TaintSource[Test], where=[Not(name.equals("self")), type_annotation.matches("Test2_T")])
+    Parameters(TaintSource[Test], where=[Not(name.equals("self")), type_annotation.fully_qualified.matches("Test2_T")])
   ]
 )
 
