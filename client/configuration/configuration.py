@@ -178,6 +178,7 @@ class PartialConfiguration:
         return {
             "allow_shadow_language_server",
             "create_open_source_configuration",
+            "disable_type_errors_in_ide",
             "saved_state",
             "saved_state_metadata",
             "stable_client",
