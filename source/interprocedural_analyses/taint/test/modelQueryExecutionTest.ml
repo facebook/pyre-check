@@ -1644,8 +1644,6 @@ let test_generated_annotations_return_extends context =
       }
     ~callable:(Target.Regular.Function { name = "test.test1"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (sink "Test")]
-      (* TODO(T225700656): Handle PyreReadOnly *)
-    ~skip_for_pyrefly:true
     ();
   assert_generated_annotations
     ~source:{|

@@ -155,19 +155,6 @@ module JsonUtil = struct
              })
 
 
-  let get_optional_list_member json key =
-    match Yojson.Safe.Util.member key json with
-    | `List elements -> Ok elements
-    | `Null -> Ok []
-    | _ ->
-        Error
-          (FormatError.UnexpectedJsonType
-             {
-               json;
-               message = Format.sprintf "expected an object with key `%s` containing a list" key;
-             })
-
-
   let check_object = function
     | `Assoc _ -> Ok ()
     | json ->
@@ -505,11 +492,53 @@ end
 (* Information from pyrefly about a given module, stored as a `module:id.json` file. This matches
    the `pyrefly::report::pysa::PysaModuleFile` rust type. *)
 module ModuleInfoFile = struct
+  module ClassNamesResult = struct
+    type t = {
+      class_names: GlobalClassId.t list;
+      stripped_coroutine: bool;
+      stripped_optional: bool;
+      stripped_readonly: bool;
+      unbound_type_variable: bool;
+      is_exhaustive: bool;
+    }
+    [@@deriving equal, show]
+
+    let from_json json =
+      let open Core.Result.Monad_infix in
+      JsonUtil.get_list_member json "class_names"
+      >>| List.map ~f:GlobalClassId.from_json
+      >>= Result.all
+      >>= fun class_names ->
+      JsonUtil.get_optional_bool_member ~default:false json "stripped_coroutine"
+      >>= fun stripped_coroutine ->
+      JsonUtil.get_optional_bool_member ~default:false json "stripped_optional"
+      >>= fun stripped_optional ->
+      JsonUtil.get_optional_bool_member ~default:false json "stripped_readonly"
+      >>= fun stripped_readonly ->
+      JsonUtil.get_optional_bool_member ~default:false json "unbound_type_variable"
+      >>= fun unbound_type_variable ->
+      JsonUtil.get_optional_bool_member ~default:false json "is_exhaustive"
+      >>| fun is_exhaustive ->
+      {
+        class_names;
+        stripped_coroutine;
+        stripped_optional;
+        stripped_readonly;
+        unbound_type_variable;
+        is_exhaustive;
+      }
+
+
+    let from_optional_json = function
+      | None -> Ok None
+      | Some json -> from_json json |> Result.map ~f:Option.some
+  end
+
   module JsonType = struct
     type t = {
       string: string;
       scalar_properties: ScalarTypeProperties.t;
-      class_names: GlobalClassId.t list;
+      class_names: ClassNamesResult.t option;
     }
     [@@deriving equal, show]
 
@@ -525,9 +554,8 @@ module ModuleInfoFile = struct
       >>= fun is_float ->
       JsonUtil.get_optional_bool_member ~default:false json "is_enum"
       >>= fun is_enumeration ->
-      JsonUtil.get_optional_list_member json "class_names"
-      >>| List.map ~f:GlobalClassId.from_json
-      >>= Result.all
+      JsonUtil.get_optional_member json "class_names"
+      |> ClassNamesResult.from_optional_json
       >>| fun class_names ->
       let scalar_properties =
         ScalarTypeProperties.create
@@ -731,7 +759,7 @@ module ModuleInfoFile = struct
                 {
                   JsonType.string = "None";
                   scalar_properties = ScalarTypeProperties.none;
-                  class_names = [];
+                  class_names = None;
                 };
             };
           ];
@@ -760,7 +788,7 @@ module ModuleInfoFile = struct
                 {
                   JsonType.string = "None";
                   scalar_properties = ScalarTypeProperties.none;
-                  class_names = [];
+                  class_names = None;
                 };
             };
           ];
@@ -1452,17 +1480,34 @@ module ReadWrite = struct
     qualifier_to_module_map, object_class_id
 
 
-  let create_pysa_type
-      ~class_id_to_qualified_name_shared_memory
-      { ModuleInfoFile.JsonType.string; scalar_properties; class_names }
-    =
-    let get_class_qualified_name class_id =
-      class_id
-      |> ClassIdToQualifiedNameSharedMemory.get_class_name class_id_to_qualified_name_shared_memory
-      |> FullyQualifiedName.to_reference
-      |> Reference.show
+  let create_pysa_type { ModuleInfoFile.JsonType.string; scalar_properties; class_names } =
+    let class_names =
+      match class_names with
+      | Some
+          {
+            ModuleInfoFile.ClassNamesResult.class_names;
+            stripped_coroutine;
+            stripped_optional;
+            stripped_readonly;
+            unbound_type_variable;
+            is_exhaustive;
+          } ->
+          Some
+            {
+              PyreflyType.ClassNamesFromType.class_names =
+                List.map
+                  ~f:(fun { GlobalClassId.module_id; local_class_id } ->
+                    ModuleId.to_int module_id, LocalClassId.to_int local_class_id)
+                  class_names;
+              stripped_coroutine;
+              stripped_optional;
+              stripped_readonly;
+              unbound_type_variable;
+              is_exhaustive;
+            }
+      | None -> None
     in
-    let class_names = List.map ~f:get_class_qualified_name class_names in
+
     PysaType.from_pyrefly_type { PyreflyType.string; scalar_properties; class_names }
 
 
@@ -1471,7 +1516,7 @@ module ReadWrite = struct
       {
         PyreflyType.string = "None";
         scalar_properties = ScalarTypeProperties.none;
-        class_names = [];
+        class_names = None;
       }
 
 
@@ -1480,7 +1525,6 @@ module ReadWrite = struct
       ~scheduler_policies
       ~pyrefly_directory
       ~qualifier_to_module_map
-      ~class_id_to_qualified_name_shared_memory
     =
     let timer = Timer.start () in
     let () = Log.info "Parsing type of expressions from pyrefly..." in
@@ -1510,7 +1554,7 @@ module ReadWrite = struct
         ModuleInfoFile.from_path_exn ~pyrefly_directory pyrefly_info_path
       in
       Map.iteri type_of_expression ~f:(fun ~key:location ~data:type_ ->
-          let type_ = create_pysa_type ~class_id_to_qualified_name_shared_memory type_ in
+          let type_ = create_pysa_type type_ in
           TypeOfExpressionsSharedMemory.add
             type_of_expressions_shared_memory
             { TypeOfExpressionsSharedMemory.Key.module_qualifier; location }
@@ -2366,7 +2410,7 @@ module ReadWrite = struct
                 {
                   name;
                   position;
-                  annotation = create_pysa_type ~class_id_to_qualified_name_shared_memory annotation;
+                  annotation = create_pysa_type annotation;
                   has_default = not required;
                 }
               :: sofar )
@@ -2377,7 +2421,7 @@ module ReadWrite = struct
                 {
                   name;
                   position;
-                  annotation = create_pysa_type ~class_id_to_qualified_name_shared_memory annotation;
+                  annotation = create_pysa_type annotation;
                   has_default = not required;
                 }
               :: sofar )
@@ -2387,21 +2431,13 @@ module ReadWrite = struct
             ( position + 1,
               name :: excluded,
               FunctionParameter.KeywordOnly
-                {
-                  name;
-                  annotation = create_pysa_type ~class_id_to_qualified_name_shared_memory annotation;
-                  has_default = not required;
-                }
+                { name; annotation = create_pysa_type annotation; has_default = not required }
               :: sofar )
         | Kwargs { name; annotation } ->
             ( position + 1,
               [],
               FunctionParameter.Keywords
-                {
-                  name;
-                  annotation = create_pysa_type ~class_id_to_qualified_name_shared_memory annotation;
-                  excluded;
-                }
+                { name; annotation = create_pysa_type annotation; excluded }
               :: sofar )
       in
       let convert_function_signature
@@ -2419,11 +2455,7 @@ module ReadWrite = struct
           | ModuleInfoFile.FunctionParameters.Ellipsis -> FunctionParameters.Ellipsis
           | ModuleInfoFile.FunctionParameters.ParamSpec -> FunctionParameters.ParamSpec
         in
-        {
-          FunctionSignature.parameters;
-          return_annotation =
-            create_pysa_type ~class_id_to_qualified_name_shared_memory return_annotation;
-        }
+        { FunctionSignature.parameters; return_annotation = create_pysa_type return_annotation }
       in
       let toplevel_undecorated_signature =
         {
@@ -2579,7 +2611,6 @@ module ReadWrite = struct
           ~scheduler_policies
           ~pyrefly_directory
           ~qualifier_to_module_map
-          ~class_id_to_qualified_name_shared_memory
       else
         TypeOfExpressionsSharedMemory.create ()
     in
@@ -2976,11 +3007,55 @@ module ReadOnly = struct
       (FullyQualifiedName.from_reference_unchecked (Reference.create class_name))
 
 
-  let scalar_type_properties _ pysa_type =
-    match PysaType.as_pyrefly_type pysa_type with
-    | Some { PyreflyType.scalar_properties; _ } -> scalar_properties
-    | None ->
-        failwith "ReadOnly.scalar_type_properties: trying to use a pyre1 type with a pyrefly API."
+  module Type = struct
+    let scalar_properties _ pysa_type =
+      match PysaType.as_pyrefly_type pysa_type with
+      | None ->
+          failwith "ReadOnly.Type.type_properties: trying to use a pyre1 type with a pyrefly API."
+      | Some { PyreflyType.scalar_properties; _ } -> scalar_properties
+
+
+    let get_class_names { class_id_to_qualified_name_shared_memory; _ } pysa_type =
+      match PysaType.as_pyrefly_type pysa_type with
+      | None ->
+          failwith "ReadOnly.Type.get_class_names: trying to use a pyre1 type with a pyrefly API."
+      | Some { PyreflyType.class_names = None; _ } ->
+          Analysis.PyrePysaEnvironment.ClassNamesFromType.not_a_class
+      | Some
+          {
+            PyreflyType.class_names =
+              Some
+                {
+                  class_names;
+                  stripped_coroutine;
+                  stripped_optional;
+                  stripped_readonly;
+                  unbound_type_variable;
+                  is_exhaustive;
+                };
+            _;
+          } ->
+          let get_class_name (module_id, class_id) =
+            ClassIdToQualifiedNameSharedMemory.get
+              class_id_to_qualified_name_shared_memory
+              {
+                GlobalClassId.module_id = ModuleId.from_int module_id;
+                local_class_id = LocalClassId.from_int class_id;
+              }
+            |> assert_shared_memory_key_exists "missing class id"
+            |> FullyQualifiedName.to_reference
+            |> Reference.show
+          in
+          {
+            Analysis.PyrePysaEnvironment.ClassNamesFromType.class_names =
+              List.map ~f:get_class_name class_names;
+            stripped_coroutine;
+            stripped_optional;
+            stripped_readonly;
+            unbound_type_variable;
+            is_exhaustive;
+          }
+  end
 end
 
 (* List of symbols exported from the 'builtins' module. To keep it short, this only contains symbols

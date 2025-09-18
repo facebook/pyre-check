@@ -775,9 +775,11 @@ let matches_annotation_constraint
         (TypeAnnotation.show_fully_qualified_annotation annotation)
   | ModelQuery.AnnotationConstraint.AnnotationClassExtends
       { class_name; is_transitive; includes_self } -> (
-      match PyrePysaApi.PysaType.get_class_names (TypeAnnotation.as_type annotation) with
+      match
+        PyrePysaApi.ReadOnly.Type.get_class_names pyre_api (TypeAnnotation.as_type annotation)
+      with
       | {
-       PyrePysaApi.PysaType.ClassNamesResult.class_names = [extracted_class_name];
+       PyrePysaApi.ClassNamesFromType.class_names = [extracted_class_name];
        is_exhaustive = true;
        _;
       } ->

@@ -12,6 +12,7 @@ open Core
    by `Analysis.PyrePysaEnvironment` or the Pyrefly API provided by `Interprocedural.Pyrefly`. *)
 
 module ScalarTypeProperties = Analysis.PyrePysaEnvironment.ScalarTypeProperties
+module ClassNamesFromType = Analysis.PyrePysaEnvironment.ClassNamesFromType
 module PysaType = Analysis.PyrePysaEnvironment.PysaType
 
 module ReadWrite : sig
@@ -207,7 +208,11 @@ module ReadOnly : sig
 
   val all_unannotated_globals : t -> scheduler:Scheduler.t -> Ast.Reference.t list
 
-  val scalar_type_properties : t -> PysaType.t -> ScalarTypeProperties.t
+  module Type : sig
+    val scalar_properties : t -> PysaType.t -> ScalarTypeProperties.t
+
+    val get_class_names : t -> PysaType.t -> ClassNamesFromType.t
+  end
 
   val add_builtins_prefix : t -> Ast.Reference.t -> Ast.Reference.t
 

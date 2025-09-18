@@ -28,35 +28,46 @@ let convert_to_pyrefly_global global =
           {
             PyrePysaEnvironment.PyreflyType.string = "None";
             scalar_properties = ScalarTypeProperties.none;
-            class_names = [];
+            class_names = None;
           }
     | Some Type.Any ->
         PysaType.from_pyrefly_type
           {
             PyrePysaEnvironment.PyreflyType.string = "Any";
             scalar_properties = ScalarTypeProperties.none;
-            class_names = [];
+            class_names = None;
           }
     | Some (Type.Primitive "int") ->
         PysaType.from_pyrefly_type
           {
             PyrePysaEnvironment.PyreflyType.string = "int";
             scalar_properties = ScalarTypeProperties.integer;
-            class_names = ["builtins.int"];
+            class_names =
+              Some (PyrePysaEnvironment.PyreflyType.ClassNamesFromType.from_class (13, 5));
           }
     | Some (Type.Primitive "str") ->
         PysaType.from_pyrefly_type
           {
             PyrePysaEnvironment.PyreflyType.string = "str";
             scalar_properties = ScalarTypeProperties.none;
-            class_names = ["builtins.str"];
+            class_names =
+              Some (PyrePysaEnvironment.PyreflyType.ClassNamesFromType.from_class (13, 10));
           }
     | Some (Type.Primitive "test.Foo") ->
         PysaType.from_pyrefly_type
           {
             PyrePysaEnvironment.PyreflyType.string = "test.Foo";
             scalar_properties = ScalarTypeProperties.none;
-            class_names = ["test.Foo"];
+            class_names =
+              Some (PyrePysaEnvironment.PyreflyType.ClassNamesFromType.from_class (50, 0));
+          }
+    | Some (Type.Primitive "test.Bar") ->
+        PysaType.from_pyrefly_type
+          {
+            PyrePysaEnvironment.PyreflyType.string = "test.Bar";
+            scalar_properties = ScalarTypeProperties.none;
+            class_names =
+              Some (PyrePysaEnvironment.PyreflyType.ClassNamesFromType.from_class (50, 1));
           }
     | Some annotation ->
         failwith (Format.asprintf "unimplemented: pyrefly representation for %a" Type.pp annotation)
@@ -377,26 +388,26 @@ let test_resolve_qualified_name_to_global context =
           def memoize(f) -> Memoize:
             return Memoize(f)
 
-          class Foo:
+          class Bar:
             @memoize
-            def bar(self, x: int) -> int:
+            def baz(self, x: int) -> int:
               return x
         |}
       );
     ]
-    "test.Foo.bar"
+    "test.Bar.baz"
     ~expect:
       (Some
          (Global.Function
             (create_callable
-               ~define_name:"test.Foo.bar"
+               ~define_name:"test.Bar.baz"
                ~is_method:true
                ~signatures:
                  [
                    create_signature
                      ~return_annotation:Type.integer
                      [
-                       create_parameter ~annotation:(Type.Primitive "test.Foo") "self";
+                       create_parameter ~annotation:(Type.Primitive "test.Bar") "self";
                        create_parameter ~annotation:Type.integer ~position:1 "x";
                      ];
                  ]

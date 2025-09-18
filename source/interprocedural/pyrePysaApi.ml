@@ -11,6 +11,7 @@
 
 module Pyre1Api = Analysis.PyrePysaEnvironment
 module ScalarTypeProperties = Pyre1Api.ScalarTypeProperties
+module ClassNamesFromType = Pyre1Api.ClassNamesFromType
 module PysaType = Pyre1Api.PysaType
 
 module ReadWrite = struct
@@ -309,10 +310,16 @@ module ReadOnly = struct
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.all_unannotated_globals"
 
 
-  let scalar_type_properties = function
-    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.scalar_type_properties pyre_api
-    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.scalar_type_properties pyrefly_api
+  module Type = struct
+    let scalar_properties = function
+      | Pyre1 pyre_api -> Pyre1Api.ReadOnly.Type.scalar_properties pyre_api
+      | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.Type.scalar_properties pyrefly_api
 
+
+    let get_class_names = function
+      | Pyre1 pyre_api -> Pyre1Api.ReadOnly.Type.get_class_names pyre_api
+      | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.Type.get_class_names pyrefly_api
+  end
 
   let add_builtins_prefix api reference =
     match api with

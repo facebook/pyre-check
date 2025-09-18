@@ -130,10 +130,11 @@ module ReadOnly : sig
     string ->
     string list option
 
-  val scalar_type_properties
-    :  t ->
-    PysaType.t ->
-    Analysis.PyrePysaEnvironment.ScalarTypeProperties.t
+  module Type : sig
+    val scalar_properties : t -> PysaType.t -> Analysis.PyrePysaEnvironment.ScalarTypeProperties.t
+
+    val get_class_names : t -> PysaType.t -> Analysis.PyrePysaEnvironment.ClassNamesFromType.t
+  end
 end
 
 val add_builtins_prefix : Ast.Reference.t -> Ast.Reference.t
@@ -220,11 +221,23 @@ end
 
 (* Exposed for testing purposes *)
 module ModuleInfoFile : sig
+  module ClassNamesResult : sig
+    type t = {
+      class_names: GlobalClassId.t list;
+      stripped_coroutine: bool;
+      stripped_optional: bool;
+      stripped_readonly: bool;
+      unbound_type_variable: bool;
+      is_exhaustive: bool;
+    }
+    [@@deriving equal, show]
+  end
+
   module JsonType : sig
     type t = {
       string: string;
       scalar_properties: Analysis.PyrePysaEnvironment.ScalarTypeProperties.t;
-      class_names: GlobalClassId.t list;
+      class_names: ClassNamesResult.t option;
     }
     [@@deriving equal, show]
   end

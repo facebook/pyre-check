@@ -59,7 +59,7 @@ module ReturnType = struct
   let integer = PyrePysaApi.ScalarTypeProperties.integer
 
   let from_annotation ~pyre_api annotation =
-    PyrePysaApi.ReadOnly.scalar_type_properties
+    PyrePysaApi.ReadOnly.Type.scalar_properties
       pyre_api
       (PyrePysaApi.PysaType.from_pyre1_type annotation)
 
@@ -74,7 +74,7 @@ module ReturnType = struct
           annotation
       | _ -> Lazy.force return_type
     in
-    PyrePysaApi.ReadOnly.scalar_type_properties
+    PyrePysaApi.ReadOnly.Type.scalar_properties
       pyre_api
       (PyrePysaApi.PysaType.from_pyre1_type annotation)
 

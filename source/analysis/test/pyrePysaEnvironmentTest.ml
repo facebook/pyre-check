@@ -52,7 +52,7 @@ let test_scalar_type_properties =
     let project = Test.ScratchProject.setup ~context [] in
     let pyre_api = project |> Test.ScratchProject.pyre_pysa_read_only_api in
     let actual =
-      PyrePysaEnvironment.ReadOnly.scalar_type_properties
+      PyrePysaEnvironment.ReadOnly.Type.scalar_properties
         pyre_api
         (PyrePysaEnvironment.PysaType.from_pyre1_type annotation)
     in

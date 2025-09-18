@@ -803,7 +803,7 @@ let type_breadcrumbs_from_annotation ~pyre_api type_ =
   type_
   (* TODO(T225700656): Remove call to `from_pyre1_type` *)
   >>| PyrePysaApi.PysaType.from_pyre1_type
-  >>| PyrePysaApi.ReadOnly.scalar_type_properties pyre_api
+  >>| PyrePysaApi.ReadOnly.Type.scalar_properties pyre_api
   |> Option.value ~default:PyrePysaApi.ScalarTypeProperties.none
   |> type_breadcrumbs
 

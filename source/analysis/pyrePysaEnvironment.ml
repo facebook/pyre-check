@@ -12,6 +12,7 @@ open Core
 open Pyre
 module PyreType = Type
 
+(* Scalar properties of a type (it is a bool/int/float/etc.) *)
 module ScalarTypeProperties = struct
   type t = int [@@deriving compare, equal, sexp, hash]
 
@@ -79,11 +80,79 @@ module ScalarTypeProperties = struct
     |> set_enumeration is_enumeration
 end
 
+(* Result of extracting class names from a type. *)
+module ClassNamesFromType = struct
+  type t = {
+    class_names: string list;
+    stripped_coroutine: bool;
+    stripped_optional: bool;
+    stripped_readonly: bool;
+    unbound_type_variable: bool;
+    is_exhaustive: bool;
+        (* Is there an element (after stripping) that isn't a class name? For instance:
+           get_class_name(Union[A, Callable[...])) = { class_names = [A], is_exhaustive = false } *)
+  }
+
+  let from_class_name class_name =
+    {
+      class_names = [class_name];
+      stripped_coroutine = false;
+      stripped_optional = false;
+      stripped_readonly = false;
+      unbound_type_variable = false;
+      is_exhaustive = true;
+    }
+
+
+  let not_a_class =
+    {
+      class_names = [];
+      stripped_coroutine = false;
+      stripped_optional = false;
+      stripped_readonly = false;
+      unbound_type_variable = false;
+      is_exhaustive = false;
+    }
+
+
+  let join left right =
+    {
+      class_names = List.rev_append left.class_names right.class_names;
+      stripped_coroutine = left.stripped_coroutine || right.stripped_coroutine;
+      stripped_optional = left.stripped_optional || right.stripped_optional;
+      stripped_readonly = left.stripped_readonly || right.stripped_readonly;
+      unbound_type_variable = left.unbound_type_variable || right.unbound_type_variable;
+      is_exhaustive = left.is_exhaustive && right.is_exhaustive;
+    }
+end
+
 module PyreflyType = struct
+  module ClassNamesFromType = struct
+    type t = {
+      class_names: (int * int) list;
+      stripped_coroutine: bool;
+      stripped_optional: bool;
+      stripped_readonly: bool;
+      unbound_type_variable: bool;
+      is_exhaustive: bool;
+    }
+    [@@deriving equal, compare, show]
+
+    let from_class (module_id, class_id) =
+      {
+        class_names = [module_id, class_id];
+        stripped_coroutine = false;
+        stripped_optional = false;
+        stripped_readonly = false;
+        unbound_type_variable = false;
+        is_exhaustive = true;
+      }
+  end
+
   type t = {
     string: string;
     scalar_properties: ScalarTypeProperties.t;
-    class_names: string list;
+    class_names: ClassNamesFromType.t option;
   }
   [@@deriving equal, compare, show]
 end
@@ -125,130 +194,6 @@ module PysaType = struct
   let show_fully_qualified = function
     | Pyre1 type_ -> PyreType.show type_
     | Pyrefly { PyreflyType.string; _ } -> string
-
-
-  module ClassNamesResult = struct
-    type t = {
-      stripped_coroutine: bool;
-      stripped_optional: bool;
-      stripped_readonly: bool;
-      unbound_type_variable: bool;
-      class_names: string list;
-      is_exhaustive: bool;
-          (* Is there an element (after stripping) that isn't a class name? For instance:
-             get_class_name(Union[A, Callable[...])) = { class_names = [A], is_exhaustive = false
-             } *)
-    }
-
-    let from_class_name class_name =
-      {
-        stripped_coroutine = false;
-        stripped_optional = false;
-        stripped_readonly = false;
-        unbound_type_variable = false;
-        class_names = [class_name];
-        is_exhaustive = true;
-      }
-
-
-    let not_a_classs =
-      {
-        stripped_coroutine = false;
-        stripped_optional = false;
-        stripped_readonly = false;
-        unbound_type_variable = false;
-        class_names = [];
-        is_exhaustive = false;
-      }
-
-
-    let join left right =
-      {
-        stripped_coroutine = left.stripped_coroutine || right.stripped_coroutine;
-        stripped_optional = left.stripped_optional || right.stripped_optional;
-        stripped_readonly = left.stripped_readonly || right.stripped_readonly;
-        unbound_type_variable = left.unbound_type_variable || right.unbound_type_variable;
-        class_names = List.rev_append left.class_names right.class_names;
-        is_exhaustive = left.is_exhaustive && right.is_exhaustive;
-      }
-  end
-
-  (* Return a list of fully qualified class names that this type refers to, after
-   * stripping Optional, ReadOnly and TypeVar.
-   *
-   * For instance:
-   * Union[int, str] -> [int, str]
-   * Optional[int] -> [int]
-   * List[int] -> [List]
-   * List[Dict[str, str]] -> [List]
-   *)
-  let get_class_names = function
-    | Pyrefly { PyreflyType.class_names; _ } ->
-        (* TODO(T225700656): Export the information we need from pyrefly. *)
-        {
-          ClassNamesResult.stripped_coroutine = true;
-          stripped_optional = true;
-          stripped_readonly = true;
-          unbound_type_variable = true;
-          class_names;
-          is_exhaustive = true;
-        }
-    | Pyre1 annotation ->
-        let rec extract_class_names = function
-          | Type.Bottom
-          | Type.Top
-          | Type.Any
-          | Type.Literal _
-          | Type.Callable _
-          | Type.NoneType
-          | Type.TypeOperation _
-          | Type.Variable _
-          | Type.RecursiveType _
-          | Type.ParamSpecComponent _
-          | Type.PyreReadOnly _ ->
-              ClassNamesResult.not_a_classs
-          | Type.Tuple _ -> ClassNamesResult.from_class_name "tuple"
-          | Type.Primitive class_name
-          | Type.Parametric { name = class_name; _ } ->
-              ClassNamesResult.from_class_name class_name
-          | Type.Union [] -> failwith "unreachable"
-          | Type.Union (head :: tail) ->
-              List.fold
-                ~init:(extract_class_names head)
-                ~f:(fun sofar annotation ->
-                  ClassNamesResult.join (extract_class_names annotation) sofar)
-                tail
-        in
-        let annotation, stripped_coroutine =
-          match Type.coroutine_value annotation with
-          | Some annotation -> annotation, true
-          | None -> annotation, false
-        in
-        let annotation, stripped_optional =
-          match Type.optional_value annotation with
-          | Some annotation -> annotation, true
-          | None -> annotation, false
-        in
-        let annotation, stripped_readonly =
-          if Type.PyreReadOnly.is_readonly annotation then
-            Type.PyreReadOnly.strip_readonly annotation, true
-          else
-            annotation, false
-        in
-        let annotation, unbound_type_variable =
-          match annotation with
-          | Type.Variable { constraints = Type.Record.TypeVarConstraints.Bound bound; _ } ->
-              bound, true
-          | annotation -> annotation, false
-        in
-        let class_name_result = extract_class_names annotation in
-        {
-          class_name_result with
-          ClassNamesResult.stripped_coroutine;
-          stripped_optional;
-          stripped_readonly;
-          unbound_type_variable;
-        }
 end
 
 let absolute_source_path_of_qualifier ~lookup_source read_only_type_environment =
@@ -697,57 +642,129 @@ module ReadOnly = struct
          ~global_module_paths_api:(global_module_paths_api api)
 
 
-  (* Returns whether the type is an int, float, bool or enum, after stripping Optional and
-     Awaitable. *)
-  let scalar_type_properties api = function
-    | PysaType.Pyrefly { PyreflyType.scalar_properties; _ } -> scalar_properties
-    | PysaType.Pyre1 annotation -> (
-        let matches_at_leaves ~f annotation =
-          let rec matches_at_leaves ~f annotation =
-            match annotation with
-            | Type.Any
-            | Type.Bottom ->
-                false
-            | Type.Union [Type.NoneType; annotation]
-            | Type.Union [annotation; Type.NoneType]
-            | Type.Parametric { name = "typing.Awaitable"; arguments = [Single annotation] } ->
-                matches_at_leaves ~f annotation
-            | Type.Tuple (Concatenation concatenation) ->
-                Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
-                >>| (fun element -> matches_at_leaves ~f element)
-                |> Option.value ~default:(f annotation)
-            | Type.Tuple (Type.OrderedTypes.Concrete annotations) ->
-                List.for_all annotations ~f:(matches_at_leaves ~f)
-            | annotation -> f annotation
+  module Type = struct
+    (* Returns whether the type is an int, float, bool or enum, after stripping Optional and
+       Awaitable. *)
+    let scalar_properties api = function
+      | PysaType.Pyrefly _ -> failwith "cannot use a pyrefly type with the pyre API"
+      | PysaType.Pyre1 annotation -> (
+          let matches_at_leaves ~f annotation =
+            let rec matches_at_leaves ~f annotation =
+              match annotation with
+              | Type.Any
+              | Type.Bottom ->
+                  false
+              | Type.Union [Type.NoneType; annotation]
+              | Type.Union [annotation; Type.NoneType]
+              | Type.Parametric { name = "typing.Awaitable"; arguments = [Single annotation] } ->
+                  matches_at_leaves ~f annotation
+              | Type.Tuple (Concatenation concatenation) ->
+                  Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
+                  >>| (fun element -> matches_at_leaves ~f element)
+                  |> Option.value ~default:(f annotation)
+              | Type.Tuple (Type.OrderedTypes.Concrete annotations) ->
+                  List.for_all annotations ~f:(matches_at_leaves ~f)
+              | annotation -> f annotation
+            in
+            matches_at_leaves ~f annotation
           in
-          matches_at_leaves ~f annotation
-        in
-        try
-          let is_boolean =
-            matches_at_leaves annotation ~f:(fun left -> less_or_equal api ~left ~right:Type.bool)
-          in
-          let is_integer =
-            matches_at_leaves annotation ~f:(fun left ->
-                less_or_equal api ~left ~right:Type.integer)
-          in
-          let is_float =
-            matches_at_leaves annotation ~f:(fun left -> less_or_equal api ~left ~right:Type.float)
-          in
-          let is_enumeration =
-            matches_at_leaves annotation ~f:(fun left ->
-                less_or_equal api ~left ~right:Type.enumeration)
-          in
-          ScalarTypeProperties.create ~is_boolean ~is_integer ~is_float ~is_enumeration
-        with
-        | PyrePysaLogic.UntrackedClass untracked_type ->
-            Log.warning
-              "Found untracked type `%s` when checking the return type `%a` of a call. The return \
-               type will NOT be considered a scalar, which could lead to missing breadcrumbs."
-              untracked_type
-              Type.pp
-              annotation;
-            ScalarTypeProperties.none)
+          try
+            let is_boolean =
+              matches_at_leaves annotation ~f:(fun left -> less_or_equal api ~left ~right:Type.bool)
+            in
+            let is_integer =
+              matches_at_leaves annotation ~f:(fun left ->
+                  less_or_equal api ~left ~right:Type.integer)
+            in
+            let is_float =
+              matches_at_leaves annotation ~f:(fun left ->
+                  less_or_equal api ~left ~right:Type.float)
+            in
+            let is_enumeration =
+              matches_at_leaves annotation ~f:(fun left ->
+                  less_or_equal api ~left ~right:Type.enumeration)
+            in
+            ScalarTypeProperties.create ~is_boolean ~is_integer ~is_float ~is_enumeration
+          with
+          | PyrePysaLogic.UntrackedClass untracked_type ->
+              Log.warning
+                "Found untracked type `%s` when checking the return type `%a` of a call. The \
+                 return type will NOT be considered a scalar, which could lead to missing \
+                 breadcrumbs."
+                untracked_type
+                Type.pp
+                annotation;
+              ScalarTypeProperties.none)
 
+
+    (* Return a list of fully qualified class names that this type refers to, after
+     * stripping Optional, ReadOnly and TypeVar.
+     *
+     * For instance:
+     * Union[int, str] -> [int, str]
+     * Optional[int] -> [int]
+     * List[int] -> [List]
+     * List[Dict[str, str]] -> [List]
+     *)
+    let get_class_names _ = function
+      | PysaType.Pyrefly _ -> failwith "cannot use a pyrefly type with the pyre API"
+      | PysaType.Pyre1 annotation ->
+          let rec extract_class_names = function
+            | Type.Bottom
+            | Type.Top
+            | Type.Any
+            | Type.Literal _
+            | Type.Callable _
+            | Type.NoneType
+            | Type.TypeOperation _
+            | Type.Variable _
+            | Type.RecursiveType _
+            | Type.ParamSpecComponent _
+            | Type.PyreReadOnly _ ->
+                ClassNamesFromType.not_a_class
+            | Type.Tuple _ -> ClassNamesFromType.from_class_name "tuple"
+            | Type.Primitive class_name
+            | Type.Parametric { name = class_name; _ } ->
+                ClassNamesFromType.from_class_name class_name
+            | Type.Union [] -> failwith "unreachable"
+            | Type.Union (head :: tail) ->
+                List.fold
+                  ~init:(extract_class_names head)
+                  ~f:(fun sofar annotation ->
+                    ClassNamesFromType.join (extract_class_names annotation) sofar)
+                  tail
+          in
+          let annotation, stripped_coroutine =
+            match Type.coroutine_value annotation with
+            | Some annotation -> annotation, true
+            | None -> annotation, false
+          in
+          let annotation, stripped_optional =
+            match Type.optional_value annotation with
+            | Some annotation -> annotation, true
+            | None -> annotation, false
+          in
+          let annotation, stripped_readonly =
+            if Type.PyreReadOnly.is_readonly annotation then
+              Type.PyreReadOnly.strip_readonly annotation, true
+            else
+              annotation, false
+          in
+          let annotation, unbound_type_variable =
+            match annotation with
+            | Type.Variable { constraints = Type.Record.TypeVarConstraints.Bound bound; _ } ->
+                bound, true
+            | annotation -> annotation, false
+          in
+          let class_name_result = extract_class_names annotation in
+          {
+            class_name_result with
+            ClassNamesFromType.stripped_coroutine;
+            stripped_optional;
+            stripped_readonly;
+            unbound_type_variable;
+          }
+  end
 
   let get_methods_for_qualifier api ~exclude_test_modules qualifier =
     let timer = Timer.start () in

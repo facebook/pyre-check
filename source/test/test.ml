@@ -461,6 +461,76 @@ let bracket_tmpfile ?suffix context =
   |> fun (filename, channel) -> CamlUnix.realpath filename, channel
 
 
+let pyre_extensions_stubs () =
+  [
+    ( "pyre_extensions/__init__.pyi",
+      {|
+        from typing import List, Optional, Type, TypeVar, Callable
+        from .generic import Generic as Generic
+        import type_variable_operators
+
+        _T = TypeVar("_T")
+        _A = TypeVar("_A", bound=int)
+        _B = TypeVar("_B", bound=int)
+        _T1 = TypeVar("_T1")
+        _T2 = TypeVar("_T2")
+
+        class TypeVarTuple:
+          def __init__(
+              self,
+              name: str,
+              *constraints: Type[Any],
+              bound: Union[None, Type[Any], str] = ...,
+              covariant: bool = ...,
+              contravariant: bool = ...,
+          ) -> None: ...
+
+        def none_throws(optional: Optional[_T]) -> _T: ...
+        def safe_cast(new_type: Type[_T], value: Any) -> _T: ...
+        def ParameterSpecification(__name: str) -> List[Type]: ...
+        def classproperty(f: Any) -> Any: ...
+        class Add(Generic[_A, _B], int): pass
+        class Multiply(Generic[_A, _B], int): pass
+        class Subtract(Generic[_A, _B], int): pass
+        class Divide(Generic[_A, _B], int): pass
+        _Ts = TypeVarTuple("_Ts")
+        class Length(Generic[_Ts], int): pass
+        class Product(Generic[_Ts], int): pass
+
+        class Unpack(Generic[_T]): ...
+        class Broadcast(Generic[_T1, _T2]): ...
+        class BroadcastError(Generic[_T1, _T2]): ...
+        class Compose(Generic[_Ts]): ...
+
+        T = TypeVar("T", bound=Callable[..., object])
+
+        def override(func: T) -> T:
+            return func
+
+        class PyreReadOnly(Generic[_T]): ...
+        |}
+    );
+    ( "pyre_extensions/generic.pyi",
+      {|
+        from typing import Any
+        class Generic:
+            def __class_getitem__(cls, *args: object) -> Any:
+                return cls
+        |}
+    );
+    ( "pyre_extensions/type_variable_operators.pyi",
+      {|
+        from typing import List, Optional, Type, TypeVar, _SpecialForm
+        Map: _SpecialForm
+        PositionalArgumentsOf: _SpecialForm
+        KeywordArgumentsOf: _SpecialForm
+        ArgumentsOf: _SpecialForm
+        Concatenate: _SpecialForm
+        |}
+    );
+  ]
+
+
 let django_stubs () =
   [
     ( "django/http/__init__.pyi",
@@ -1267,75 +1337,6 @@ let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions =
 
           def some_function(x: int) -> None: ...
 |}
-      );
-    ]
-  in
-  let pyre_extensions_stubs =
-    [
-      ( "pyre_extensions/__init__.pyi",
-        {|
-        from typing import List, Optional, Type, TypeVar, Callable
-        from .generic import Generic as Generic
-        import type_variable_operators
-
-        _T = TypeVar("_T")
-        _A = TypeVar("_A", bound=int)
-        _B = TypeVar("_B", bound=int)
-        _T1 = TypeVar("_T1")
-        _T2 = TypeVar("_T2")
-
-        class TypeVarTuple:
-          def __init__(
-              self,
-              name: str,
-              *constraints: Type[Any],
-              bound: Union[None, Type[Any], str] = ...,
-              covariant: bool = ...,
-              contravariant: bool = ...,
-          ) -> None: ...
-
-        def none_throws(optional: Optional[_T]) -> _T: ...
-        def safe_cast(new_type: Type[_T], value: Any) -> _T: ...
-        def ParameterSpecification(__name: str) -> List[Type]: ...
-        def classproperty(f: Any) -> Any: ...
-        class Add(Generic[_A, _B], int): pass
-        class Multiply(Generic[_A, _B], int): pass
-        class Subtract(Generic[_A, _B], int): pass
-        class Divide(Generic[_A, _B], int): pass
-        _Ts = TypeVarTuple("_Ts")
-        class Length(Generic[_Ts], int): pass
-        class Product(Generic[_Ts], int): pass
-
-        class Unpack(Generic[_T]): ...
-        class Broadcast(Generic[_T1, _T2]): ...
-        class BroadcastError(Generic[_T1, _T2]): ...
-        class Compose(Generic[_Ts]): ...
-
-        T = TypeVar("T", bound=Callable[..., object])
-
-        def override(func: T) -> T:
-            return func
-
-        class PyreReadOnly(Generic[_T]): ...
-        |}
-      );
-      ( "pyre_extensions/generic.pyi",
-        {|
-        from typing import Any
-        class Generic:
-            def __class_getitem__(cls, *args: object) -> Any:
-                return cls
-        |}
-      );
-      ( "pyre_extensions/type_variable_operators.pyi",
-        {|
-        from typing import List, Optional, Type, TypeVar, _SpecialForm
-        Map: _SpecialForm
-        PositionalArgumentsOf: _SpecialForm
-        KeywordArgumentsOf: _SpecialForm
-        ArgumentsOf: _SpecialForm
-        Concatenate: _SpecialForm
-        |}
       );
     ]
   in
@@ -3155,7 +3156,7 @@ let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions =
   @ torch_stubs
   @ readonly_stubs
   @ django_stubs ()
-  @ if include_pyre_extensions then pyre_extensions_stubs else []
+  @ if include_pyre_extensions then pyre_extensions_stubs () else []
 
 
 let mock_signature =
@@ -3520,7 +3521,7 @@ module ScratchPyreflyProject = struct
       let file = File.create ~content (PyrePath.create_relative ~root ~relative) in
       File.write file
     in
-    let external_sources = django_stubs () @ external_sources in
+    let external_sources = django_stubs () @ pyre_extensions_stubs () @ external_sources in
     let () = List.iter sources ~f:(add_source ~root:local_root) in
     let () = List.iter external_sources ~f:(add_source ~root:external_root) in
     let () =

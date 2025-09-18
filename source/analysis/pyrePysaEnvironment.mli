@@ -7,6 +7,7 @@
 
 open Core
 
+(* Scalar properties of a type (it is a bool/int/float/etc.) *)
 module ScalarTypeProperties : sig
   type t [@@deriving compare, equal, sexp, hash, show]
 
@@ -31,11 +32,41 @@ module ScalarTypeProperties : sig
   val create : is_boolean:bool -> is_integer:bool -> is_float:bool -> is_enumeration:bool -> t
 end
 
+(* Result of extracting class names from a type. *)
+module ClassNamesFromType : sig
+  type t = {
+    class_names: string list;
+    stripped_coroutine: bool;
+    stripped_optional: bool;
+    stripped_readonly: bool;
+    unbound_type_variable: bool;
+    is_exhaustive: bool;
+        (* Is there an element (after stripping) that isn't a class name? For instance:
+           get_class_name(Union[A, Callable[...])) = { class_names = [A], is_exhaustive = false } *)
+  }
+
+  val not_a_class : t
+end
+
 module PyreflyType : sig
+  module ClassNamesFromType : sig
+    type t = {
+      class_names: (int * int) list;
+      stripped_coroutine: bool;
+      stripped_optional: bool;
+      stripped_readonly: bool;
+      unbound_type_variable: bool;
+      is_exhaustive: bool;
+    }
+    [@@deriving equal, compare, show]
+
+    val from_class : int * int -> t
+  end
+
   type t = {
     string: string;
     scalar_properties: ScalarTypeProperties.t;
-    class_names: string list;
+    class_names: ClassNamesFromType.t option;
   }
   [@@deriving equal, compare, show]
 end
@@ -56,31 +87,6 @@ module PysaType : sig
   val pp_concise : Format.formatter -> t -> unit
 
   val show_fully_qualified : t -> string
-
-  module ClassNamesResult : sig
-    type t = {
-      stripped_coroutine: bool;
-      stripped_optional: bool;
-      stripped_readonly: bool;
-      unbound_type_variable: bool;
-      class_names: string list;
-      is_exhaustive: bool;
-          (* Is there an element (after stripping) that isn't a class name? For instance:
-             get_class_name(Union[A, Callable[...])) = { class_names = [A], is_exhaustive = false
-             } *)
-    }
-  end
-
-  (* Return a list of fully qualified class names that this type refers to, after
-   * stripping Optional, ReadOnly and TypeVar.
-   *
-   * For instance:
-   * Union[int, str] -> [int, str]
-   * Optional[int] -> [int]
-   * List[int] -> [List]
-   * List[Dict[str, str]] -> [List]
-   *)
-  val get_class_names : t -> ClassNamesResult.t
 end
 
 module ReadWrite : sig
@@ -259,9 +265,22 @@ module ReadOnly : sig
 
   val all_unannotated_globals : t -> scheduler:Scheduler.t -> Ast.Reference.t list
 
-  (* Returns whether the type is an int, float, bool or enum, after stripping Optional and
-     Awaitable. *)
-  val scalar_type_properties : t -> PysaType.t -> ScalarTypeProperties.t
+  module Type : sig
+    (* Returns whether the type is an int, float, bool or enum, after stripping Optional and
+       Awaitable. *)
+    val scalar_properties : t -> PysaType.t -> ScalarTypeProperties.t
+
+    (* Return a list of fully qualified class names that this type refers to, after
+     * stripping Optional, ReadOnly and TypeVar.
+     *
+     * For instance:
+     * Union[int, str] -> [int, str]
+     * Optional[int] -> [int]
+     * List[int] -> [List]
+     * List[Dict[str, str]] -> [List]
+     *)
+    val get_class_names : t -> PysaType.t -> ClassNamesFromType.t
+  end
 
   val get_methods_for_qualifier
     :  t ->
