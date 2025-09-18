@@ -120,6 +120,8 @@ module ReadOnly : sig
 
   val class_immediate_parents : t -> string -> string list
 
+  val class_mro : t -> string -> string list
+
   val parse_reference : t -> Ast.Reference.t -> Type.t
 
   val class_exists : t -> string -> bool
@@ -163,8 +165,6 @@ module ReadOnly : sig
     ?from:Ast.Reference.t ->
     Ast.Reference.t ->
     Analysis.ResolvedReference.t option
-
-  val successors : t -> string -> string list
 
   val location_of_global : t -> Ast.Reference.t -> Ast.Location.WithModule.t option
 

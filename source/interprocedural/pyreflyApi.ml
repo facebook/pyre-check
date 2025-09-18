@@ -805,12 +805,30 @@ module ModuleInfoFile = struct
       }
   end
 
+  module ClassMro = struct
+    type t =
+      | Resolved of GlobalClassId.t list
+      | Cyclic
+    [@@deriving equal, show]
+
+    let from_json = function
+      | `Assoc [("Resolved", `List classes)] ->
+          let open Core.Result.Monad_infix in
+          classes
+          |> List.map ~f:GlobalClassId.from_json
+          |> Result.all
+          >>| fun classes -> Resolved classes
+      | `String "Cyclic" -> Ok Cyclic
+      | json -> Error (FormatError.UnexpectedJsonType { json; message = "expected a class mro" })
+  end
+
   module ClassDefinition = struct
     type t = {
       name: string;
       parent: ParentScope.t;
       local_class_id: LocalClassId.t;
       bases: GlobalClassId.t list;
+      mro: ClassMro.t;
       is_synthesized: bool;
       fields: string list;
     }
@@ -828,6 +846,9 @@ module ModuleInfoFile = struct
       >>| List.map ~f:GlobalClassId.from_json
       >>= Result.all
       >>= fun bases ->
+      JsonUtil.get_member json "mro"
+      >>= ClassMro.from_json
+      >>= fun mro ->
       JsonUtil.get_optional_bool_member ~default:false json "is_synthesized"
       >>= fun is_synthesized ->
       JsonUtil.get_list_member json "fields"
@@ -839,6 +860,7 @@ module ModuleInfoFile = struct
         parent;
         local_class_id = LocalClassId.from_int class_id;
         bases;
+        mro;
         is_synthesized;
         fields;
       }
@@ -1161,6 +1183,8 @@ module ClassMetadataSharedMemory = struct
       (* For a given class, its list of immediate parents. Empty if the class has no parents (it is
          implicitly ['object']) *)
       parents: GlobalClassId.t list;
+      (* For a given class, its resolved MRO (Method Resolution Order). *)
+      mro: ModuleInfoFile.ClassMro.t;
     }
     [@@deriving show]
 
@@ -2322,7 +2346,7 @@ module ReadWrite = struct
               { GlobalCallableId.module_id; local_function_id }
               qualified_name;
             qualified_name :: callables, classes
-        | Class { local_class_id; is_synthesized; fields; bases; _ } ->
+        | Class { local_class_id; is_synthesized; fields; bases; mro; _ } ->
             ClassMetadataSharedMemory.add
               class_metadata_shared_memory
               qualified_name
@@ -2332,6 +2356,7 @@ module ReadWrite = struct
                 local_class_id;
                 is_synthesized;
                 parents = bases;
+                mro;
               };
             ClassFieldsSharedMemory.add class_fields_shared_memory qualified_name fields;
             ClassIdToQualifiedNameSharedMemory.add
@@ -2907,6 +2932,37 @@ module ReadOnly = struct
     ClassMetadataSharedMemory.get class_metadata_shared_memory class_name
     |> assert_shared_memory_key_exists "missing class metadata for class"
     |> get_parents_from_class_metadata
+    |> List.map ~f:FullyQualifiedName.to_reference
+    |> List.map ~f:Reference.show
+
+
+  let class_mro
+      { class_metadata_shared_memory; class_id_to_qualified_name_shared_memory; object_class; _ }
+      class_name
+    =
+    (* TOOD(T225700656): Update the API to take a reference and return a reference. *)
+    let class_name = FullyQualifiedName.from_reference_unchecked (Reference.create class_name) in
+    let get_mro_from_class_metadata { ClassMetadataSharedMemory.Metadata.mro; _ } =
+      match mro with
+      | _ when FullyQualifiedName.equal class_name object_class -> []
+      | ModuleInfoFile.ClassMro.Cyclic ->
+          (* Failed to resolve the mro because the class hierarchy is cyclic. Fallback to
+             [object]. *)
+          [object_class]
+      | ModuleInfoFile.ClassMro.Resolved mro ->
+          let mro =
+            List.map
+              ~f:
+                (ClassIdToQualifiedNameSharedMemory.get_class_name
+                   class_id_to_qualified_name_shared_memory)
+              mro
+          in
+          (* Pyrefly does not include 'object' in the mro. *)
+          mro @ [object_class]
+    in
+    ClassMetadataSharedMemory.get class_metadata_shared_memory class_name
+    |> assert_shared_memory_key_exists "missing class metadata for class"
+    |> get_mro_from_class_metadata
     |> List.map ~f:FullyQualifiedName.to_reference
     |> List.map ~f:Reference.show
 

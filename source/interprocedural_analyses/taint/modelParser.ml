@@ -957,7 +957,7 @@ let get_class_attributes ~pyre_api = function
 
 
 let get_class_attributes_transitive ~pyre_api class_name =
-  let successors = PyrePysaApi.ReadOnly.successors pyre_api class_name in
+  let successors = PyrePysaApi.ReadOnly.class_mro pyre_api class_name in
   class_name :: successors |> List.filter_map ~f:(get_class_attributes ~pyre_api) |> List.concat
 
 

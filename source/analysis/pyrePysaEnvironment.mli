@@ -167,6 +167,8 @@ module ReadOnly : sig
 
   val class_immediate_parents : t -> string -> string list
 
+  val class_mro : t -> string -> string list
+
   val get_define_names_for_qualifier : t -> Ast.Reference.t -> Ast.Reference.t list
 
   val parse_reference : t -> Ast.Reference.t -> Type.t
@@ -210,8 +212,6 @@ module ReadOnly : sig
   val less_or_equal : t -> left:Type.t -> right:Type.t -> bool
 
   val resolve_exports : t -> ?from:Ast.Reference.t -> Ast.Reference.t -> ResolvedReference.t option
-
-  val successors : t -> string -> string list
 
   val location_of_global : t -> Ast.Reference.t -> Ast.Location.WithModule.t option
 

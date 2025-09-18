@@ -3593,7 +3593,7 @@ let resolve_callee_ignoring_decorators
                   Some (element, contain_class_method signatures, static)
               | _ -> None
             in
-            let parent_classes_in_mro = PyrePysaApi.ReadOnly.successors pyre_api class_name in
+            let parent_classes_in_mro = PyrePysaApi.ReadOnly.class_mro pyre_api class_name in
             match List.find_map (class_name :: parent_classes_in_mro) ~f:find_attribute with
             | Some (base_class, is_class_method, is_static_method) ->
                 let receiver_type =
@@ -3947,7 +3947,7 @@ let resolve_attribute_access_global_targets
         | Type.Primitive class_name ->
             (* Access on an instance, i.e `self.foo`. *)
             let parents =
-              let successors = PyrePysaApi.ReadOnly.successors pyre_api class_name in
+              let successors = PyrePysaApi.ReadOnly.class_mro pyre_api class_name in
               class_name :: successors
             in
             let add_target targets parent =

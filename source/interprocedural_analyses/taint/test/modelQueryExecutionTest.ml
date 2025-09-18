@@ -4947,7 +4947,6 @@ let test_generated_annotations_class_any_overriden_method context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4977,7 +4976,6 @@ let test_generated_annotations_class_any_overriden_method context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
     ();
   assert_generated_annotations
     ~source:
@@ -5007,7 +5005,6 @@ let test_generated_annotations_class_any_overriden_method context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
     ();
   assert_generated_annotations
     ~source:
@@ -5037,7 +5034,6 @@ let test_generated_annotations_class_any_overriden_method context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "bar"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
     ();
   assert_generated_annotations
     ~source:
@@ -5067,7 +5063,6 @@ let test_generated_annotations_class_any_overriden_method context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.D"; method_name = "bar"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
     ();
   (* Only consider instance methods. *)
   assert_generated_annotations
@@ -5094,7 +5089,6 @@ let test_generated_annotations_class_any_overriden_method context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
     ();
   assert_generated_annotations
     ~source:
@@ -5120,7 +5114,6 @@ let test_generated_annotations_class_any_overriden_method context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
     ();
   assert_generated_annotations
     ~source:
@@ -5144,7 +5137,6 @@ let test_generated_annotations_class_any_overriden_method context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
     ();
   assert_generated_annotations
     ~source:
@@ -5168,7 +5160,6 @@ let test_generated_annotations_class_any_overriden_method context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
     ();
   assert_generated_annotations
     ~source:
@@ -5194,7 +5185,6 @@ let test_generated_annotations_class_any_overriden_method context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
     ();
   assert_generated_annotations
     ~source:
@@ -5220,7 +5210,6 @@ let test_generated_annotations_class_any_overriden_method context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle AnyOverridenMethod. *)
     ();
   ()
 

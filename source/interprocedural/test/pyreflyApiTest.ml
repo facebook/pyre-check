@@ -544,6 +544,7 @@ let test_fully_qualified_names _ =
         parent;
         local_class_id = PyreflyApi.LocalClassId.from_int 0;
         bases = [];
+        mro = ModuleInfoFile.ClassMro.Resolved [];
         is_synthesized = false;
         fields = [];
       }

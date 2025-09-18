@@ -160,6 +160,11 @@ module ReadOnly = struct
     | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.class_immediate_parents pyrefly_api
 
 
+  let class_mro = function
+    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.class_mro pyre_api
+    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.class_mro pyrefly_api
+
+
   let get_define_names_for_qualifier api ~exclude_test_modules qualifier =
     match api with
     | Pyre1 _ when exclude_test_modules ->
@@ -243,11 +248,6 @@ module ReadOnly = struct
   let resolve_exports = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.resolve_exports pyre_api
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.resolve_exports"
-
-
-  let successors = function
-    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.successors pyre_api
-    | Pyrefly _ -> failwith "unimplemented: ReadOnly.successors"
 
 
   let location_of_global = function

@@ -97,6 +97,8 @@ module ReadOnly : sig
 
   val class_immediate_parents : t -> string -> string list
 
+  val class_mro : t -> string -> string list
+
   val get_callable_metadata : t -> Ast.Reference.t -> CallableMetadata.t
 
   val get_overriden_base_method
@@ -313,12 +315,20 @@ module ModuleInfoFile : sig
     [@@deriving equal, show]
   end
 
+  module ClassMro : sig
+    type t =
+      | Resolved of GlobalClassId.t list
+      | Cyclic
+    [@@deriving equal, show]
+  end
+
   module ClassDefinition : sig
     type t = {
       name: string;
       parent: ParentScope.t;
       local_class_id: LocalClassId.t;
       bases: GlobalClassId.t list;
+      mro: ClassMro.t;
       is_synthesized: bool;
       fields: string list;
     }

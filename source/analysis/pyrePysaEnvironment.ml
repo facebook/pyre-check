@@ -455,6 +455,8 @@ module ReadOnly = struct
 
   let class_immediate_parents api = global_resolution api |> GlobalResolution.immediate_parents
 
+  let class_mro api = global_resolution api |> GlobalResolution.successors
+
   let get_define_names_for_qualifier api =
     (* In Pysa, all qualifiers are "in project" so this is always safe to use. *)
     global_resolution api |> GlobalResolution.get_define_names_for_qualifier_in_project
@@ -519,8 +521,6 @@ module ReadOnly = struct
   let less_or_equal api = global_resolution api |> GlobalResolution.less_or_equal
 
   let resolve_exports api = global_resolution api |> GlobalResolution.resolve_exports
-
-  let successors api = global_resolution api |> GlobalResolution.successors
 
   let location_of_global api = global_resolution api |> GlobalResolution.location_of_global
 
