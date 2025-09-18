@@ -108,16 +108,22 @@ let populate_for_definitions ~scheduler ~scheduler_policies environment defines 
   let number_of_defines = List.length defines in
   Log.info "Checking %d functions..." number_of_defines;
   let map names =
-    let analyze_define number_defines name =
-      let () = ReadOnly.get read_only name |> ignore in
-      number_defines + 1
+    let analyze_define (number_defines, number_errors) name =
+      let check_result = ReadOnly.get read_only name in
+      let define_errors =
+        match check_result with
+        | Some { TypeCheck.CheckResult.errors = Some errors; _ } -> List.length errors
+        | _ -> 0
+      in
+      number_defines + 1, number_errors + define_errors
     in
-    List.fold names ~init:0 ~f:analyze_define
+    List.fold names ~init:(0, 0) ~f:analyze_define
   in
-  let reduce left right =
-    let number_defines = left + right in
+  let reduce (left_defines, left_errors) (right_defines, right_errors) =
+    let number_defines = left_defines + right_defines in
+    let number_errors = left_errors + right_errors in
     Log.log ~section:`Progress "Processed %d of %d functions" number_defines number_of_defines;
-    number_defines
+    number_defines, number_errors
   in
   let scheduler_policy =
     Scheduler.Policy.from_configuration_or_default
@@ -130,18 +136,23 @@ let populate_for_definitions ~scheduler ~scheduler_policies environment defines 
            ~preferred_chunk_size:5000
            ())
   in
-  let _ =
+  let number_defines, number_errors =
     SharedMemoryKeys.DependencyKey.Registry.collected_map_reduce
       scheduler
       ~policy:scheduler_policy
-      ~initial:0
+      ~initial:(0, 0)
       ~map
       ~reduce
       ~inputs:defines
       ()
   in
 
-  Statistics.performance ~name:"check_TypeCheck" ~phase_name:CheckResultValue.description ~timer ()
+  Statistics.performance
+    ~name:"check_TypeCheck"
+    ~phase_name:CheckResultValue.description
+    ~timer
+    ~integers:["defines", number_defines; "raw errors", number_errors]
+    ()
 
 
 let collect_definitions ~scheduler ~scheduler_policies environment qualifiers =
