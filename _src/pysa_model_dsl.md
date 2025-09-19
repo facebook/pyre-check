@@ -258,25 +258,11 @@ ModelQuery(
 
 #### `return_annotation.equals`
 
-:::caution
-
-This will be deprecated in future versions. Please migrate to
-`return_annotation.fully_qualified.equals`.
-
-:::
-
-This is equivalent to `return_annotation.fully_qualified.equals`.
+This constraint has been **deprecated**, use `return_annotation.fully_qualified.equals` instead.
 
 #### `return_annotation.matches`
 
-:::caution
-
-This will be deprecated in future versions. Please migrate to
-`return_annotation.fully_qualified.matches`.
-
-:::
-
-This is equivalent to `return_annotation.fully_qualified.matches`.
+This constraint has been **deprecated**, use `return_annotation.fully_qualified.matches` instead.
 
 #### `return_annotation.is_annotated_type`
 
@@ -439,27 +425,15 @@ annotation of the class attribute matches the specified pattern.
 
 #### `type_annotation.equals`
 
-:::caution
-
-This will be deprecated in future versions. Please migrate to
-`type_annotation.fully_qualified.equals` or `type_annotation.original.equals`.
-
-:::
-
-This is equivalent to `type_annotation.fully_qualified.equals`, except for class
-attributes, where it's equivalent to `type_annotation.original.equals`.
+This constraint has been **deprecated**. Use
+`type_annotation.fully_qualified.equals` or `type_annotation.original.equals`
+instead.
 
 #### `type_annotation.matches`
 
-:::caution
-
-This will be deprecated in future versions. Please migrate to
-`type_annotation.fully_qualified.matches` or `type_annotation.original.matches`.
-
-:::
-
-This is equivalent to `type_annotation.fully_qualified.matches`, except for class
-attributes, where it's equivalent to `type_annotation.original.matches`.
+This constraint has been **deprecated**. Use
+`type_annotation.fully_qualified.matches` or `type_annotation.original.matches`
+instead.
 
 #### `type_annotation.is_annotated_type`
 
@@ -562,25 +536,13 @@ ModelQuery(
 
 #### `any_parameter.annotation.equals`
 
-:::caution
-
-This will be deprecated in future versions. Please migrate to
-`any_parameter.annotation.fully_qualified.equals`.
-
-:::
-
-This is equivalent to `any_parameter.annotation.fully_qualified.equals`.
+This constraint has been **deprecated**. Use
+`any_parameter.annotation.fully_qualified.equals` instead.
 
 #### `any_parameter.annotation.matches`
 
-:::caution
-
-This will be deprecated in future versions. Please migrate to
-`any_parameter.annotation.fully_qualified.matches`.
-
-:::
-
-This is equivalent to `any_parameter.annotation.fully_qualified.matches`.
+This constraint has been **deprecated**. Use
+`any_parameter.annotation.fully_qualified.matches` instead.
 
 #### `any_parameter.annotation.is_annotated_type`
 
@@ -1456,10 +1418,10 @@ ModelQuery(
 #### `type_annotation` clause
 
 This clause is used to specify a constraint on parameter type annotation.
-Currently the clauses supported are: `type_annotation.equals()`, which takes the
-fully-qualified name of a Python type or class and matches when there is an
-exact match, and `type_annotation.matches()`, which takes a regex pattern to match
-type annotations against.
+Currently the clauses supported are: `type_annotation.fully_qualified.equals()`,
+which takes the fully-qualified name of a Python type or class and matches when
+there is an exact match, and `type_annotation.fully_qualified.matches()`, which
+takes a regex pattern to match type annotations against.
 
 Example:
 
@@ -1472,8 +1434,8 @@ ModelQuery(
     Parameters(
       TaintSource[Test],
       where=[
-        type_annotation.equals("foo.bar.C"),  # exact match
-        type_annotation.matches("^List\["),   # regex match
+        type_annotation.fully_qualified.equals("foo.bar.C"),  # exact match
+        type_annotation.fully_qualified.matches("^List\["),   # regex match
       ]
     )
   ]
