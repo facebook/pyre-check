@@ -163,6 +163,13 @@ module ReadOnly : sig
     string ->
     string list option
 
+  val get_class_attribute_annotation
+    :  t ->
+    include_generated_attributes:bool ->
+    class_name:string ->
+    attribute:string ->
+    Ast.Expression.t option
+
   val source_is_unit_test : t -> source:Ast.Source.t -> bool
 
   val class_immediate_parents : t -> string -> string list

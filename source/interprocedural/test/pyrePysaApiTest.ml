@@ -495,7 +495,7 @@ let test_resolve_qualified_name_to_global context =
     ]
     "test.Foo.baz"
     ~expect:(Some (Global.UnknownClassAttribute { name = Reference.create "test.Foo.baz" }))
-    ~pyrefly_expect:None;
+    ~pyrefly_expect:(Some (Global.ClassAttribute { name = Reference.create "test.Foo.baz" }));
 
   (* Definition in type stub. *)
   assert_resolve

@@ -8,6 +8,7 @@
 (* ModelParseResult: defines the result of parsing pysa model files (`.pysa`). *)
 
 module AccessPath = Analysis.TaintAccessPath
+module PyrePysaApi = Interprocedural.PyrePysaApi
 
 module CollapseDepth : sig
   type t =
@@ -429,7 +430,7 @@ module CallableDecorator : sig
   type t
 
   val create
-    :  pyre_api:Interprocedural.PyrePysaApi.ReadOnly.t ->
+    :  pyre_api:PyrePysaApi.ReadOnly.t ->
     callables_to_definitions_map:Interprocedural.Target.CallablesSharedMemory.ReadOnly.t ->
     Ast.Statement.Decorator.t ->
     t
@@ -441,40 +442,54 @@ module CallableDecorator : sig
   val callees : t -> Interprocedural.CallGraph.CallCallees.t option
 end
 
+module TypeAnnotation : sig
+  type t
+
+  val from_original_annotation
+    :  pyre_api:PyrePysaApi.ReadOnly.t ->
+    preserve_original:bool ->
+    Ast.Expression.t ->
+    t
+
+  val from_pysa_type : PyrePysaApi.PysaType.t -> t
+
+  val is_annotated : t -> bool
+
+  val as_type : t -> PyrePysaApi.PysaType.t
+
+  val as_original_annotation : t -> Ast.Expression.t option
+
+  (* Show the original annotation, as written by the user. *)
+  val show_original_annotation : t -> string
+
+  (* Show the fully qualified type annotation from the type checker. *)
+  val show_fully_qualified_annotation : t -> string
+end
+
 module Modelable : sig
   type t
 
   val create_callable
-    :  pyre_api:Interprocedural.PyrePysaApi.ReadOnly.t ->
+    :  pyre_api:PyrePysaApi.ReadOnly.t ->
     callables_to_definitions_map:Interprocedural.Target.CallablesSharedMemory.ReadOnly.t ->
     Interprocedural.Target.t ->
     t
 
-  val create_attribute
-    :  pyre_api:Interprocedural.PyrePysaApi.ReadOnly.t ->
-    Interprocedural.Target.t ->
-    t
+  val create_attribute : pyre_api:PyrePysaApi.ReadOnly.t -> Interprocedural.Target.t -> t
 
-  val create_global
-    :  pyre_api:Interprocedural.PyrePysaApi.ReadOnly.t ->
-    Interprocedural.Target.t ->
-    t
+  val create_global : pyre_api:PyrePysaApi.ReadOnly.t -> Interprocedural.Target.t -> t
 
   val target : t -> Interprocedural.Target.t
 
   val target_name : t -> Ast.Reference.t
 
-  val type_annotation : t -> Ast.Expression.t option
+  val type_annotation : t -> TypeAnnotation.t option
 
-  val undecorated_signatures
-    :  t ->
-    Interprocedural.PyrePysaApi.ModelQueries.FunctionSignature.t list
+  val undecorated_signatures : t -> PyrePysaApi.ModelQueries.FunctionSignature.t list
 
-  val return_annotations : t -> Interprocedural.PyrePysaApi.PysaType.t list
+  val return_annotations : t -> PyrePysaApi.PysaType.t list
 
-  val parameters_of_signatures
-    :  t ->
-    Interprocedural.PyrePysaApi.ModelQueries.FunctionParameter.t list
+  val parameters_of_signatures : t -> PyrePysaApi.ModelQueries.FunctionParameter.t list
 
   val captures : t -> Ast.Statement.Define.Capture.t list
 

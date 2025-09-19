@@ -3315,6 +3315,35 @@ let test_generated_annotations_for_attributes context =
         name = "get_foo";
         logging_group_name = None;
         path = None;
+        where = [AnnotationConstraint (FullyQualifiedConstraint (Matches (Re2.create_exn "Foo")))];
+        models = [Attribute [TaintAnnotation (source "Test")]];
+        find = Attribute;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~name:"test.C.x"
+    ~expected:[source "Test"]
+    ();
+  assert_generated_annotations_for_attributes
+    ~source:
+      {|
+      class Foo1:
+        ...
+      class Foo2:
+        ...
+      class Bar:
+        ...
+      class C:
+        x: Foo1
+        y: Foo2
+        z: Bar
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
         where =
           [AnnotationConstraint (OriginalAnnotationConstraint (Matches (Re2.create_exn "Foo")))];
         models = [Attribute [TaintAnnotation (source "Test")]];

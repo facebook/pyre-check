@@ -133,6 +133,8 @@ module ReadOnly : sig
     string ->
     string list option
 
+  val get_class_attribute_inferred_type : t -> class_name:string -> attribute:string -> PysaType.t
+
   module Type : sig
     val scalar_properties : t -> PysaType.t -> Analysis.PyrePysaEnvironment.ScalarTypeProperties.t
 
@@ -327,6 +329,15 @@ module ModuleInfoFile : sig
     [@@deriving equal, show]
   end
 
+  module JsonClassField : sig
+    type t = {
+      name: string;
+      type_: JsonType.t;
+      location: Ast.Location.t option;
+    }
+    [@@deriving equal, show]
+  end
+
   module ClassDefinition : sig
     type t = {
       name: string;
@@ -335,7 +346,7 @@ module ModuleInfoFile : sig
       bases: GlobalClassId.t list;
       mro: ClassMro.t;
       is_synthesized: bool;
-      fields: string list;
+      fields: JsonClassField.t list;
     }
     [@@deriving equal, show]
   end

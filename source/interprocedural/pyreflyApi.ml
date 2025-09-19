@@ -845,6 +845,26 @@ module ModuleInfoFile = struct
       | json -> Error (FormatError.UnexpectedJsonType { json; message = "expected a class mro" })
   end
 
+  module JsonClassField = struct
+    type t = {
+      name: string;
+      type_: JsonType.t;
+      location: Location.t option;
+    }
+    [@@deriving equal, show]
+
+    let from_json ~name json =
+      let open Core.Result.Monad_infix in
+      JsonUtil.get_member json "type"
+      >>= JsonType.from_json
+      >>= fun type_ ->
+      JsonUtil.get_optional_string_member json "location"
+      >>= (function
+            | Some location -> parse_location location >>| Option.some
+            | None -> Ok None)
+      >>| fun location -> { name; type_; location }
+  end
+
   module ClassDefinition = struct
     type t = {
       name: string;
@@ -853,7 +873,7 @@ module ModuleInfoFile = struct
       bases: GlobalClassId.t list;
       mro: ClassMro.t;
       is_synthesized: bool;
-      fields: string list;
+      fields: JsonClassField.t list;
     }
     [@@deriving equal, show]
 
@@ -874,8 +894,8 @@ module ModuleInfoFile = struct
       >>= fun mro ->
       JsonUtil.get_optional_bool_member ~default:false json "is_synthesized"
       >>= fun is_synthesized ->
-      JsonUtil.get_list_member json "fields"
-      >>| List.map ~f:JsonUtil.as_string
+      JsonUtil.get_object_member json "fields"
+      >>| List.map ~f:(fun (name, json) -> JsonClassField.from_json ~name json)
       >>= Result.all
       >>| fun fields ->
       {
@@ -1286,11 +1306,19 @@ module CallableIdToQualifiedNameSharedMemory =
       let description = "pyrefly callable id to fully qualified name"
     end)
 
+module ClassField = struct
+  type t = {
+    type_: PysaType.t;
+    location: Location.t option;
+  }
+  [@@deriving equal, compare, show]
+end
+
 module ClassFieldsSharedMemory =
-  Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+  Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
     (FullyQualifiedNameSharedMemoryKey)
     (struct
-      type t = string list
+      type t = ClassField.t SerializableStringMap.t
 
       let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -2379,6 +2407,12 @@ module ReadWrite = struct
                 parents = bases;
                 mro;
               };
+            let fields =
+              fields
+              |> List.map ~f:(fun { ModuleInfoFile.JsonClassField.name; type_; location } ->
+                     name, { ClassField.type_ = create_pysa_type type_; location })
+              |> SerializableStringMap.of_alist_exn
+            in
             ClassFieldsSharedMemory.add class_fields_shared_memory qualified_name fields;
             ClassIdToQualifiedNameSharedMemory.add
               class_id_to_qualified_name_shared_memory
@@ -3078,6 +3112,17 @@ module ReadOnly = struct
     ClassFieldsSharedMemory.get
       class_fields_shared_memory
       (FullyQualifiedName.from_reference_unchecked (Reference.create class_name))
+    >>| SerializableStringMap.keys
+
+
+  let get_class_attribute_inferred_type { class_fields_shared_memory; _ } ~class_name ~attribute =
+    ClassFieldsSharedMemory.get
+      class_fields_shared_memory
+      (FullyQualifiedName.from_reference_unchecked (Reference.create class_name))
+    |> assert_shared_memory_key_exists "missing class fields for class"
+    |> SerializableStringMap.find_opt attribute
+    |> assert_shared_memory_key_exists "missing class field"
+    |> fun { ClassField.type_; _ } -> type_
 
 
   module Type = struct
@@ -3315,7 +3360,7 @@ module ModelQueries = struct
       Reference.prefix name
       >>| FullyQualifiedName.from_reference_unchecked
       >>= ClassFieldsSharedMemory.get class_fields_shared_memory
-      >>| (fun fields -> List.mem ~equal:String.equal fields last_name)
+      >>| (fun fields -> SerializableStringMap.mem last_name fields)
       |> Option.value ~default:false
     in
     let is_module_global_variable name =

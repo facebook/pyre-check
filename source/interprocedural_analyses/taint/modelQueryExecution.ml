@@ -19,6 +19,7 @@ open Interprocedural
 open ModelParseResult
 module PyrePysaApi = Interprocedural.PyrePysaApi
 module FunctionParameter = PyrePysaApi.ModelQueries.FunctionParameter
+module TypeAnnotation = ModelParseResult.TypeAnnotation
 
 (* Represents results from model queries, stored in the ocaml heap. *)
 module ModelQueryResultMap = struct
@@ -687,72 +688,6 @@ let rec matches_decorator_constraint ~pyre_api ~name_captures ~decorator = funct
                (SanitizedCallArgumentSet.of_list decorator_keyword_arguments))
 
 
-module TypeAnnotation : sig
-  type t
-
-  val from_original_annotation
-    :  pyre_api:PyrePysaApi.ReadOnly.t ->
-    preserve_original:bool ->
-    Expression.t ->
-    t
-
-  val from_pysa_type : PyrePysaApi.PysaType.t -> t
-
-  val is_annotated : t -> bool
-
-  val as_type : t -> PyrePysaApi.PysaType.t
-
-  (* Show the original annotation, as written by the user. *)
-  val show_original_annotation : t -> string
-
-  (* Show the fully qualified type annotation from the type checker. *)
-  val show_fully_qualified_annotation : t -> string
-end = struct
-  type t = {
-    expression: Expression.t option;
-        (* The original annotation, as an expression. None if not supported. *)
-    type_: PyrePysaApi.PysaType.t Lazy.t;
-  }
-
-  let from_original_annotation ~pyre_api ~preserve_original expression =
-    {
-      expression = Option.some_if preserve_original expression;
-      type_ =
-        lazy
-          (PyrePysaApi.ReadOnly.parse_annotation pyre_api expression
-          |> PyrePysaApi.PysaType.from_pyre1_type);
-    }
-
-
-  let from_pysa_type type_ = { expression = None; type_ = lazy type_ }
-
-  let is_annotated = function
-    | { expression = None; _ } -> failwith "is_annotated is not supported in this context"
-    | { expression = Some { Node.value = expression; _ }; _ } -> (
-        match expression with
-        | Expression.Expression.Subscript
-            {
-              base =
-                { Node.value = Name (Expression.Name.Attribute { attribute = "Annotated"; _ }); _ };
-              _;
-            } ->
-            true
-        | _ -> false)
-
-
-  let as_type { type_; _ } = Lazy.force type_
-
-  (* Show the original annotation, as written by the user. *)
-  let show_original_annotation = function
-    | { expression = Some expression; _ } -> Expression.show expression
-    | _ -> failwith "show_original_annotation is not supported in this context"
-
-
-  (* Show the parsed annotation from pyre *)
-  let show_fully_qualified_annotation { type_; _ } =
-    PyrePysaApi.PysaType.show_fully_qualified (Lazy.force type_)
-end
-
 let matches_annotation_constraint
     ~pyre_api
     ~class_hierarchy_graph
@@ -1014,7 +949,6 @@ let rec matches_constraint
       matches_name_constraint ~name_captures ~name_constraint name
   | ModelQuery.Constraint.AnnotationConstraint annotation_constraint ->
       Modelable.type_annotation value
-      >>| TypeAnnotation.from_original_annotation ~pyre_api ~preserve_original:true
       >>| matches_annotation_constraint
             ~pyre_api
             ~class_hierarchy_graph

@@ -453,6 +453,33 @@ module ReadOnly = struct
     | None -> None
 
 
+  let get_class_attribute_annotation api ~include_generated_attributes ~class_name ~attribute =
+    let get_annotation = function
+      | {
+          PyrePysaLogic.ClassSummary.Attribute.kind =
+            Simple { PyrePysaLogic.ClassSummary.Attribute.annotation; _ };
+          _;
+        } ->
+          annotation
+      | _ -> None
+    in
+    get_class_summary api class_name
+    >>| Ast.Node.value
+    >>= fun class_summary ->
+    match
+      PyrePysaLogic.ClassSummary.constructor_attributes class_summary
+      |> Ast.Identifier.SerializableMap.find_opt attribute
+      >>| Ast.Node.value
+      >>| get_annotation
+    with
+    | Some annotation -> annotation
+    | None ->
+        PyrePysaLogic.ClassSummary.attributes ~include_generated_attributes class_summary
+        |> Ast.Identifier.SerializableMap.find_opt attribute
+        >>| Ast.Node.value
+        >>= get_annotation
+
+
   let class_immediate_parents api = global_resolution api |> GlobalResolution.immediate_parents
 
   let class_mro api = global_resolution api |> GlobalResolution.successors
