@@ -215,6 +215,8 @@ type kind =
       expression: Expression.t;
       find_clause_kind: string;
     }
+  | DeprecatedAnnotationEquals of { expression: Expression.t }
+  | DeprecatedAnnotationMatches of { expression: Expression.t }
 [@@deriving equal, compare, show]
 
 type t = {
@@ -616,6 +618,18 @@ let description error =
         Expression.pp
         expression
         find_clause_kind
+  | DeprecatedAnnotationEquals { expression } ->
+      Format.asprintf
+        "In `%a`: `.equals` is deprecated. Use `fully_qualified.equals` or `original.matches` \
+         instead."
+        Expression.pp
+        expression
+  | DeprecatedAnnotationMatches { expression } ->
+      Format.asprintf
+        "In `%a`: `.matches` is deprecated. Use `fully_qualified.matches` or `original.matches` \
+         instead."
+        Expression.pp
+        expression
 
 
 let code { kind; _ } =
@@ -695,6 +709,8 @@ let code { kind; _ } =
   | DeprecatedIsAnnotatedType _ -> 76
   | DeprecatedParametricTaintAnnotation _ -> 77
   | UnsupportedOriginalTypeAnnotation _ -> 78
+  | DeprecatedAnnotationEquals _ -> 79
+  | DeprecatedAnnotationMatches _ -> 80
 
 
 let display { kind = error; path; location } =

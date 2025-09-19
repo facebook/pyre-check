@@ -1601,44 +1601,18 @@ let parse_annotation_constraint ~path ~location ~find_clause ~callee ~reference 
              ~location
              (UnsupportedOriginalTypeAnnotation
                 { expression = callee; find_clause_kind = ModelQuery.Find.show find_clause }))
-  | ( ["equals"],
-      [
-        {
-          Call.Argument.value =
-            {
-              Node.value =
-                Expression.Constant (Constant.String { StringLiteral.value = type_name; _ });
-              _;
-            };
-          _;
-        };
-      ] ) ->
-      (* TODO(T225700656): This will be deprecated in the future. Use fully_qualified.equals or
-         original.equals *)
-      let name_constraint = ModelQuery.NameConstraint.Equals type_name in
-      if is_find_attribute () then
-        Ok (ModelQuery.AnnotationConstraint.OriginalAnnotationConstraint name_constraint)
-      else
-        Ok (ModelQuery.AnnotationConstraint.FullyQualifiedConstraint name_constraint)
-  | ( ["matches"],
-      [
-        {
-          Call.Argument.value =
-            {
-              Node.value =
-                Expression.Constant (Constant.String { StringLiteral.value = type_name_pattern; _ });
-              _;
-            };
-          _;
-        };
-      ] ) ->
-      (* TODO(T225700656): This will be deprecated in the future. Use fully_qualified.matches or
-         original.matches *)
-      let name_constraint = ModelQuery.NameConstraint.Matches (Re2.create_exn type_name_pattern) in
-      if is_find_attribute () then
-        Ok (ModelQuery.AnnotationConstraint.OriginalAnnotationConstraint name_constraint)
-      else
-        Ok (ModelQuery.AnnotationConstraint.FullyQualifiedConstraint name_constraint)
+  | ["equals"], [_] ->
+      Error
+        (model_verification_error
+           ~path
+           ~location
+           (DeprecatedAnnotationEquals { expression = callee }))
+  | ["matches"], [_] ->
+      Error
+        (model_verification_error
+           ~path
+           ~location
+           (DeprecatedAnnotationMatches { expression = callee }))
   | ["is_annotated_type"], [] ->
       if is_find_attribute () then
         Ok ModelQuery.AnnotationConstraint.IsAnnotatedTypeConstraint

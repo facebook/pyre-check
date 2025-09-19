@@ -2466,6 +2466,34 @@ Unexpected statement: `food(y)`
       ModelQuery(
         name = "invalid_model",
         find = "globals",
+        where = type_annotation.equals("int"),
+        model = GlobalModel(TaintSource[A])
+      )
+    |}
+           ~expect:
+             "In `type_annotation.equals`: `.equals` is deprecated. Use `fully_qualified.equals` \
+              or `original.matches` instead.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "attributes",
+        where = type_annotation.equals("int"),
+        model = GlobalModel(TaintSource[A])
+      )
+    |}
+           ~expect:
+             "In `type_annotation.equals`: `.equals` is deprecated. Use `fully_qualified.equals` \
+              or `original.matches` instead.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "globals",
         where = type_annotation.original.matches("int"),
         model = GlobalModel(TaintSource[A])
       )
@@ -2488,6 +2516,20 @@ Unexpected statement: `food(y)`
            ~expect:
              "In `return_annotation.is_annotated_type`: `is_annotated_type` is deprecated for find \
               clause of kind `functions`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:
+             {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "functions",
+        where = return_annotation.equals("int"),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+           ~expect:
+             "In `return_annotation.equals`: `.equals` is deprecated. Use `fully_qualified.equals` \
+              or `original.matches` instead.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:

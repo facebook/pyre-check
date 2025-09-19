@@ -200,6 +200,8 @@ type kind =
       expression: Expression.t;
       find_clause_kind: string;
     }
+  | DeprecatedAnnotationEquals of { expression: Expression.t }
+  | DeprecatedAnnotationMatches of { expression: Expression.t }
 [@@deriving equal, compare]
 
 type t = {
