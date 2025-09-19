@@ -6,16 +6,15 @@
  *)
 
 type t = {
-  command: string;
   start_message: string;
   end_message: string;
   timer: Timer.t;
 }
 
-let start ?(command = "analyze") ~start_message ~end_message () =
+let start ~start_message ~end_message () =
   let timer = Timer.start () in
   Log.info "%s..." start_message;
-  { command; start_message; end_message; timer }
+  { start_message; end_message; timer }
 
 
 let finish ?(integers = []) step_logger =
@@ -24,7 +23,6 @@ let finish ?(integers = []) step_logger =
   Statistics.performance
     ~name:step_logger.end_message
     ~phase_name:step_logger.start_message
-    ~command:step_logger.command
     ~timer:step_logger.timer
     ~integers
     ()

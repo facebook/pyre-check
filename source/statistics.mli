@@ -40,7 +40,6 @@ val performance
   name:string ->
   timer:Timer.t ->
   ?phase_name:string ->
-  ?command:string ->
   ?integers:(string * int) list ->
   ?normals:(string * string) list ->
   unit ->

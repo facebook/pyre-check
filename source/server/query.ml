@@ -632,7 +632,6 @@ let rec process_request_exn
       =
       let step_logger =
         Taint.StepLogger.start
-          ~command:"query"
           ~start_message:"Parsing taint models"
           ~end_message:"Parsed taint models"
           ()
@@ -688,7 +687,6 @@ let rec process_request_exn
       let initial_callables =
         let step_logger =
           Taint.StepLogger.start
-            ~command:"query"
             ~start_message:"Fetching initial callables to analyze"
             ~end_message:"Fetched initial callables to analyze"
             ()
@@ -712,7 +710,6 @@ let rec process_request_exn
       let class_hierarchy_graph =
         let step_logger =
           Taint.StepLogger.start
-            ~command:"query"
             ~start_message:"Computing class hierarchy graph"
             ~end_message:"Computed class hierarchy graph"
             ()
@@ -737,7 +734,6 @@ let rec process_request_exn
       let callables_to_definitions_map =
         let step_logger =
           Taint.StepLogger.start
-            ~command:"query"
             ~start_message:"Building a map from callable names to definitions"
             ~end_message:"Map from callable names to definitions built"
             ()
@@ -1077,7 +1073,6 @@ let rec process_request_exn
           let taint_configuration_result =
             let step_logger =
               Taint.StepLogger.start
-                ~command:"query"
                 ~start_message:"Initializing and verifying taint configuration"
                 ~end_message:"Initialized and verified taint configuration"
                 ()
@@ -1331,7 +1326,6 @@ let rec process_request_exn
         let taint_configuration =
           let step_logger =
             Taint.StepLogger.start
-              ~command:"query"
               ~start_message:"Initializing and verifying taint configuration"
               ~end_message:"Initialized and verified taint configuration"
               ()

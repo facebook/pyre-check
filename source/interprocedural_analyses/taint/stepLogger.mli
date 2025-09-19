@@ -7,6 +7,6 @@
 
 type t
 
-val start : ?command:string -> start_message:string -> end_message:string -> unit -> t
+val start : start_message:string -> end_message:string -> unit -> t
 
 val finish : ?integers:(string * int) list -> t -> unit

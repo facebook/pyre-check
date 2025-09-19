@@ -1520,7 +1520,6 @@ module ReadWrite = struct
     Statistics.performance
       ~name:"Parsed module list from pyrefly"
       ~phase_name:"Parsing module list from pyrefly"
-      ~command:"analyze"
       ~timer
       ~integers:["modules", Map.length qualifier_to_module_map]
       ();
@@ -1629,7 +1628,6 @@ module ReadWrite = struct
     Statistics.performance
       ~name:"Parsed type of expressions from pyrefly"
       ~phase_name:"Parsing type of expressions from pyrefly"
-      ~command:"analyze"
       ~timer
       ();
     type_of_expressions_shared_memory
@@ -1929,12 +1927,7 @@ module ReadWrite = struct
         ()
     in
     Log.info "Parsed source files: %.3fs" (Timer.stop_in_sec timer);
-    Statistics.performance
-      ~name:"Parsed source files"
-      ~phase_name:"Parsing source files"
-      ~command:"analyze"
-      ~timer
-      ();
+    Statistics.performance ~name:"Parsed source files" ~phase_name:"Parsing source files" ~timer ();
     callable_ast_shared_memory, callable_define_signature_shared_memory
 
 
@@ -2576,7 +2569,6 @@ module ReadWrite = struct
     Statistics.performance
       ~name:"Collected classes and definitions"
       ~phase_name:"Collecting classes and definitions"
-      ~command:"analyze"
       ~timer
       ~integers:["callables", number_callables; "classes", number_classes]
       ();

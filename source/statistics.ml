@@ -117,6 +117,12 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
         | Some normal -> normal :: normals
         | None -> normals
       in
+      let normals =
+        if Array.length (Sys.argv [@alert "-deprecated"]) >= 2 then
+          ("command", (Sys.argv.(1) [@alert "-deprecated"])) :: normals
+        else
+          normals
+      in
       let open GlobalState in
       [
         "binary", (Sys.argv.(0) [@alert "-deprecated"]);
@@ -197,7 +203,6 @@ let performance
     ~name
     ~timer
     ?phase_name
-    ?command
     ?(integers = [])
     ?(normals = [])
     ()
@@ -233,11 +238,6 @@ let performance
   | false -> ()
   | true ->
       let normals = ("name", name) :: normals in
-      let normals =
-        match command with
-        | Some command -> ("command", command) :: normals
-        | None -> normals
-      in
       sample ~integers:(("elapsed_time", integer_time_in_microseconds) :: integers) ~normals ()
       |> log ~flush "perfpipe_pyre_performance"
 
