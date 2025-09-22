@@ -480,6 +480,17 @@ module ReadOnly = struct
         >>= get_annotation
 
 
+  let get_unannotated_global api =
+    unannotated_global_environment api
+    |> UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
+
+
+  let get_global_annotation api reference =
+    match get_unannotated_global api reference with
+    | Some (SimpleAssign { explicit_annotation; _ }) -> explicit_annotation
+    | _ -> None
+
+
   let class_immediate_parents api = global_resolution api |> GlobalResolution.immediate_parents
 
   let class_mro api = global_resolution api |> GlobalResolution.successors
@@ -650,11 +661,6 @@ module ReadOnly = struct
 
   let resolve_expression_to_type_info api =
     contextless_resolution api |> Resolution.resolve_expression_to_type_info
-
-
-  let get_unannotated_global api =
-    unannotated_global_environment api
-    |> UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
 
 
   let all_classes api =

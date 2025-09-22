@@ -135,6 +135,8 @@ module ReadOnly : sig
 
   val get_class_attribute_inferred_type : t -> class_name:string -> attribute:string -> PysaType.t
 
+  val get_global_inferred_type : t -> qualifier:Ast.Reference.t -> name:string -> PysaType.t option
+
   module Type : sig
     val scalar_properties : t -> PysaType.t -> Analysis.PyrePysaEnvironment.ScalarTypeProperties.t
 

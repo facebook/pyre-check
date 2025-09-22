@@ -59,12 +59,6 @@ module JsonUtil = struct
     | Sys_error message -> raise (PyreflyFileFormatError { path; error = Error.IOError message })
 
 
-  let as_string = function
-    | `String value -> Ok value
-    | json ->
-        Error (FormatError.UnexpectedJsonType { json; message = Format.sprintf "expected string" })
-
-
   let get_string_member json key =
     match Yojson.Safe.Util.member key json with
     | `String value -> Ok value
@@ -909,6 +903,26 @@ module ModuleInfoFile = struct
       }
   end
 
+  module JsonGlobalVariable = struct
+    type t = {
+      name: string;
+      type_: JsonType.t option;
+      location: Location.t;
+    }
+
+    let from_json ~name json =
+      let open Core.Result.Monad_infix in
+      JsonUtil.get_optional_member json "type"
+      |> Option.map ~f:JsonType.from_json
+      |> (function
+           | Some result -> Result.map ~f:Option.some result
+           | None -> Ok None)
+      >>= fun type_ ->
+      JsonUtil.get_string_member json "location"
+      >>= parse_location
+      >>| fun location -> { name; type_; location }
+  end
+
   type t = {
     (* TODO(T225700656): module_name and source_path are already specified in the Project module. We
        should probably remove those from the file format. *)
@@ -918,7 +932,7 @@ module ModuleInfoFile = struct
     type_of_expression: JsonType.t Location.Map.t;
     function_definitions: FunctionDefinition.t LocalFunctionId.Map.t;
     class_definitions: ClassDefinition.t Location.Map.t;
-    global_variables: string list;
+    global_variables: JsonGlobalVariable.t list;
   }
 
   let from_json json =
@@ -951,6 +965,11 @@ module ModuleInfoFile = struct
       |> Result.all
       >>| Location.Map.of_alist_exn
     in
+    let parse_global_variables global_variables =
+      global_variables
+      |> List.map ~f:(fun (name, json) -> JsonGlobalVariable.from_json ~name json)
+      |> Result.all
+    in
     JsonUtil.check_object json
     >>= fun () ->
     JsonUtil.check_format_version ~expected:1 json
@@ -972,9 +991,8 @@ module ModuleInfoFile = struct
     JsonUtil.get_object_member json "class_definitions"
     >>= parse_class_definitions
     >>= fun class_definitions ->
-    JsonUtil.get_list_member json "global_variables"
-    >>| List.map ~f:JsonUtil.as_string
-    >>= Result.all
+    JsonUtil.get_object_member json "global_variables"
+    >>= parse_global_variables
     >>| fun global_variables ->
     {
       module_id = ModuleId.from_int module_id;
@@ -1268,11 +1286,19 @@ module ModuleClassesSharedMemory =
       let description = "pyrefly classes in module"
     end)
 
+module GlobalVariable = struct
+  type t = {
+    type_: PysaType.t option;
+    location: Location.t;
+  }
+  [@@deriving equal, compare, show]
+end
+
 module ModuleGlobalsSharedMemory =
-  Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+  Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
     (ModuleQualifierSharedMemoryKey)
     (struct
-      type t = string list
+      type t = GlobalVariable.t SerializableStringMap.t
 
       let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -2423,6 +2449,12 @@ module ReadWrite = struct
       let callables, classes = List.fold definitions ~init:([], []) ~f:store_definition in
       ModuleCallablesSharedMemory.add module_callables_shared_memory module_qualifier callables;
       ModuleClassesSharedMemory.add module_classes_shared_memory module_qualifier classes;
+      let global_variables =
+        global_variables
+        |> List.map ~f:(fun { ModuleInfoFile.JsonGlobalVariable.name; type_; location } ->
+               name, { GlobalVariable.type_ = type_ >>| create_pysa_type; location })
+        |> SerializableStringMap.of_alist_exn
+      in
       ModuleGlobalsSharedMemory.add module_globals_shared_memory module_qualifier global_variables;
       {
         DefinitionCount.number_callables = List.length callables;
@@ -3125,6 +3157,16 @@ module ReadOnly = struct
     |> fun { ClassField.type_; _ } -> type_
 
 
+  let get_global_inferred_type { module_globals_shared_memory; _ } ~qualifier ~name =
+    ModuleGlobalsSharedMemory.get
+      module_globals_shared_memory
+      (ModuleQualifier.from_reference_unchecked qualifier)
+    |> assert_shared_memory_key_exists "missing module globals"
+    |> SerializableStringMap.find_opt name
+    |> assert_shared_memory_key_exists "missing global variable"
+    |> fun { GlobalVariable.type_; _ } -> type_
+
+
   module Type = struct
     let scalar_properties _ pysa_type =
       match PysaType.as_pyrefly_type pysa_type with
@@ -3368,7 +3410,7 @@ module ModelQueries = struct
       Reference.prefix name
       >>| ModuleQualifier.from_reference_unchecked
       >>= ModuleGlobalsSharedMemory.get module_globals_shared_memory
-      >>| (fun globals -> List.mem ~equal:String.equal globals last_name)
+      >>| (fun globals -> SerializableStringMap.mem last_name globals)
       |> Option.value ~default:false
     in
     (* Check if this is a valid function first. *)

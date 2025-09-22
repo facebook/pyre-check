@@ -170,6 +170,8 @@ module ReadOnly : sig
     attribute:string ->
     Ast.Expression.t option
 
+  val get_global_annotation : t -> Ast.Reference.t -> Ast.Expression.t option
+
   val source_is_unit_test : t -> source:Ast.Source.t -> bool
 
   val class_immediate_parents : t -> string -> string list

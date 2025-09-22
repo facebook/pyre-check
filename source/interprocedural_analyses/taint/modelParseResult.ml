@@ -1038,17 +1038,21 @@ module Modelable = struct
 
   let create_global ~pyre_api target =
     let target_name = Target.object_name target in
-    let get_type_annotation reference =
-      match PyrePysaApi.ReadOnly.get_unannotated_global pyre_api reference with
-      | Some (SimpleAssign { explicit_annotation = Some explicit_annotation; _ }) ->
-          Some
-            (TypeAnnotation.from_original_annotation
-               ~pyre_api
-               ~preserve_original:true
-               explicit_annotation)
-      | _ -> None
+    let type_annotation =
+      lazy
+        (match pyre_api with
+        | PyrePysaApi.ReadOnly.Pyre1 pyre1_api ->
+            Analysis.PyrePysaEnvironment.ReadOnly.get_global_annotation pyre1_api target_name
+            >>| TypeAnnotation.from_original_annotation ~pyre_api ~preserve_original:true
+        | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->
+            let qualifier = Option.value_exn (Reference.prefix target_name) in
+            let name = Reference.last target_name in
+            Interprocedural.PyreflyApi.ReadOnly.get_global_inferred_type
+              pyrefly_api
+              ~qualifier
+              ~name
+            >>| TypeAnnotation.from_pysa_type)
     in
-    let type_annotation = lazy (get_type_annotation target_name) in
     Global { target_name; type_annotation }
 
 
