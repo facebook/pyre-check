@@ -367,7 +367,7 @@ class DiagnosticHelperFunctionsTest(testslide.TestCase):
                 ),
                 message="description",
                 severity=lsp.DiagnosticSeverity.ERROR,
-                code="pyre (documentation link)",
+                code="name [42]",
                 source="Pyre",
                 code_description=lsp.CodeDescription(
                     href="https://pyre-check.org/docs/errors/#42-missing-overload-implementation"
@@ -429,7 +429,7 @@ class DiagnosticHelperFunctionsTest(testslide.TestCase):
                         ),
                         message="foo_description",
                         severity=lsp.DiagnosticSeverity.ERROR,
-                        code="pyre (documentation link)",
+                        code="foo_name [42]",
                         source="Pyre",
                         code_description=lsp.CodeDescription(
                             href="https://pyre-check.org/docs/errors/#42-missing-overload-implementation"
@@ -442,7 +442,7 @@ class DiagnosticHelperFunctionsTest(testslide.TestCase):
                         ),
                         message="foo_description2",
                         severity=lsp.DiagnosticSeverity.ERROR,
-                        code="pyre (documentation link)",
+                        code="foo_name2 [43]",
                         source="Pyre",
                         code_description=lsp.CodeDescription(
                             href="https://pyre-check.org/docs/errors/#43-incompatible-overload-implementation"
@@ -457,7 +457,7 @@ class DiagnosticHelperFunctionsTest(testslide.TestCase):
                         ),
                         message="bar_description",
                         severity=lsp.DiagnosticSeverity.ERROR,
-                        code="pyre (documentation link)",
+                        code="bar_name [44]",
                         source="Pyre",
                         code_description=lsp.CodeDescription(
                             href="https://pyre-check.org/docs/errors/#"
@@ -470,7 +470,7 @@ class DiagnosticHelperFunctionsTest(testslide.TestCase):
                         ),
                         message="bar_description",
                         severity=lsp.DiagnosticSeverity.WARNING,
-                        code="pyre (documentation link)",
+                        code="bar_name [0]",
                         source="Pyre",
                         code_description=lsp.CodeDescription(
                             href="https://pyre-check.org/docs/errors/#0-unused-ignore"
@@ -791,7 +791,7 @@ class ClientTypeErrorHandlerTest(testslide.TestCase):
                         ),
                         message="first error",
                         severity=lsp.DiagnosticSeverity.ERROR,
-                        code="pyre (documentation link)",
+                        code="name [42]",
                         source="Pyre",
                         code_description=lsp.CodeDescription(
                             href="https://pyre-check.org/docs/errors/#42-missing-overload-implementation"
@@ -804,7 +804,7 @@ class ClientTypeErrorHandlerTest(testslide.TestCase):
                         ),
                         message="second error",
                         severity=lsp.DiagnosticSeverity.ERROR,
-                        code="pyre (documentation link)",
+                        code="name [42]",
                         source="Pyre",
                         code_description=lsp.CodeDescription(
                             href="https://pyre-check.org/docs/errors/#42-missing-overload-implementation"
@@ -1546,7 +1546,7 @@ class DidChangeTest(ApiTestCase):
                         ),
                         message="description",
                         severity=lsp.DiagnosticSeverity.ERROR,
-                        code="pyre (documentation link)",
+                        code="name [42]",
                         source="Pyre",
                         code_description=lsp.CodeDescription(
                             href="https://pyre-check.org/docs/errors/#42-missing-overload-implementation"

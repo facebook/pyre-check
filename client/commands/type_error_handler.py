@@ -63,6 +63,13 @@ def type_error_to_diagnostic(
         if set_unused_as_warning and type_error.code == 0
         else lsp.DiagnosticSeverity.ERROR
     )
+
+    # Use the actual error code instead of the generic "pyre (documentation link)"
+    # This provides meaningful diagnostic codes for downstream tools and logging
+    diagnostic_code = None
+    if code_description is not None:
+        diagnostic_code = f"{type_error.name} [{type_error.code}]"
+
     return lsp.Diagnostic(
         range=lsp.LspRange(
             start=lsp.LspPosition(
@@ -74,7 +81,7 @@ def type_error_to_diagnostic(
         ),
         message=type_error.description,
         severity=severity,
-        code=None if code_description is None else "pyre (documentation link)",
+        code=diagnostic_code,
         code_description=code_description,
         source="Pyre",
     )
