@@ -843,6 +843,7 @@ module ModuleInfoFile = struct
     type t = {
       name: string;
       type_: JsonType.t;
+      explicit_annotation: string option;
       location: Location.t option;
     }
     [@@deriving equal, show]
@@ -852,11 +853,13 @@ module ModuleInfoFile = struct
       JsonUtil.get_member json "type"
       >>= JsonType.from_json
       >>= fun type_ ->
+      JsonUtil.get_optional_string_member json "explicit_annotation"
+      >>= fun explicit_annotation ->
       JsonUtil.get_optional_string_member json "location"
       >>= (function
             | Some location -> parse_location location >>| Option.some
             | None -> Ok None)
-      >>| fun location -> { name; type_; location }
+      >>| fun location -> { name; type_; explicit_annotation; location }
   end
 
   module ClassDefinition = struct
@@ -1335,6 +1338,7 @@ module CallableIdToQualifiedNameSharedMemory =
 module ClassField = struct
   type t = {
     type_: PysaType.t;
+    explicit_annotation: string option;
     location: Location.t option;
   }
   [@@deriving equal, compare, show]
@@ -2435,8 +2439,13 @@ module ReadWrite = struct
               };
             let fields =
               fields
-              |> List.map ~f:(fun { ModuleInfoFile.JsonClassField.name; type_; location } ->
-                     name, { ClassField.type_ = create_pysa_type type_; location })
+              |> List.map
+                   ~f:(fun
+                        { ModuleInfoFile.JsonClassField.name; type_; explicit_annotation; location }
+                      ->
+                     ( name,
+                       { ClassField.type_ = create_pysa_type type_; explicit_annotation; location }
+                     ))
               |> SerializableStringMap.of_alist_exn
             in
             ClassFieldsSharedMemory.add class_fields_shared_memory qualified_name fields;
@@ -3155,6 +3164,20 @@ module ReadOnly = struct
     |> SerializableStringMap.find_opt attribute
     |> assert_shared_memory_key_exists "missing class field"
     |> fun { ClassField.type_; _ } -> type_
+
+
+  let get_class_attribute_explicit_annotation
+      { class_fields_shared_memory; _ }
+      ~class_name
+      ~attribute
+    =
+    ClassFieldsSharedMemory.get
+      class_fields_shared_memory
+      (FullyQualifiedName.from_reference_unchecked (Reference.create class_name))
+    |> assert_shared_memory_key_exists "missing class fields for class"
+    |> SerializableStringMap.find_opt attribute
+    |> assert_shared_memory_key_exists "missing class field"
+    |> fun { ClassField.explicit_annotation; _ } -> explicit_annotation
 
 
   let get_global_inferred_type { module_globals_shared_memory; _ } ~qualifier ~name =

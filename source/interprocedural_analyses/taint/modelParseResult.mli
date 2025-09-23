@@ -445,22 +445,30 @@ end
 module TypeAnnotation : sig
   type t
 
-  val from_original_annotation
-    :  pyre_api:PyrePysaApi.ReadOnly.t ->
-    preserve_original:bool ->
-    Ast.Expression.t ->
+  module ExplicitAnnotation : sig
+    type t =
+      | Unsupported
+      | NotFound
+      | Found of string
+  end
+
+  val from_pyre1 : pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t -> Ast.Expression.t option -> t
+
+  val create
+    :  inferred_type:PyrePysaApi.PysaType.t option ->
+    explicit_annotation:ExplicitAnnotation.t ->
     t
 
-  val from_pysa_type : PyrePysaApi.PysaType.t -> t
+  val from_inferred_type : PyrePysaApi.PysaType.t option -> t
 
   val is_annotated : t -> bool
 
-  val as_type : t -> PyrePysaApi.PysaType.t
+  val inferred_type : t -> PyrePysaApi.PysaType.t option
 
-  val as_original_annotation : t -> Ast.Expression.t option
+  val explicit_annotation : t -> ExplicitAnnotation.t
 
   (* Show the original annotation, as written by the user. *)
-  val show_original_annotation : t -> string
+  val show_explicit_annotation : t -> string option
 
   (* Show the fully qualified type annotation from the type checker. *)
   val show_fully_qualified_annotation : t -> string
@@ -483,7 +491,7 @@ module Modelable : sig
 
   val target_name : t -> Ast.Reference.t
 
-  val type_annotation : t -> TypeAnnotation.t option
+  val type_annotation : t -> TypeAnnotation.t
 
   val undecorated_signatures : t -> PyrePysaApi.ModelQueries.FunctionSignature.t list
 

@@ -135,6 +135,12 @@ module ReadOnly : sig
 
   val get_class_attribute_inferred_type : t -> class_name:string -> attribute:string -> PysaType.t
 
+  val get_class_attribute_explicit_annotation
+    :  t ->
+    class_name:string ->
+    attribute:string ->
+    string option
+
   val get_global_inferred_type : t -> qualifier:Ast.Reference.t -> name:string -> PysaType.t option
 
   module Type : sig
@@ -335,6 +341,7 @@ module ModuleInfoFile : sig
     type t = {
       name: string;
       type_: JsonType.t;
+      explicit_annotation: string option;
       location: Ast.Location.t option;
     }
     [@@deriving equal, show]

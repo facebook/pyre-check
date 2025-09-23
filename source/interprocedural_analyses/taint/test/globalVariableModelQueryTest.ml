@@ -17,17 +17,13 @@ open Taint
 module VariableWithType = struct
   type t = {
     name: Reference.t;
-    type_annotation: Expression.t option;
+    type_annotation: string option;
   }
   [@@deriving show, compare]
 
   let location_insensitive_equal left right =
     Reference.equal left.name right.name
-    && Option.compare
-         Expression.location_insensitive_compare
-         left.type_annotation
-         right.type_annotation
-       = 0
+    && Option.equal String.equal left.type_annotation right.type_annotation
 end
 
 let test_find_globals =
@@ -86,9 +82,12 @@ let test_find_globals =
       {
         VariableWithType.name;
         type_annotation =
-          ModelParseResult.Modelable.create_global ~pyre_api (Target.create_object name)
+          (ModelParseResult.Modelable.create_global ~pyre_api (Target.create_object name)
           |> ModelParseResult.Modelable.type_annotation
-          >>= ModelParseResult.TypeAnnotation.as_original_annotation;
+          |> ModelParseResult.TypeAnnotation.explicit_annotation
+          |> function
+          | ModelParseResult.TypeAnnotation.ExplicitAnnotation.Found annotation -> Some annotation
+          | _ -> None);
       }
     in
     let actual =
@@ -102,7 +101,10 @@ let test_find_globals =
     let expected =
       List.map
         ~f:(fun (reference, annotation) ->
-          { VariableWithType.name = reference; type_annotation = annotation >>| Type.expression })
+          {
+            VariableWithType.name = reference;
+            type_annotation = annotation >>| Type.expression >>| Expression.show;
+          })
         expected
     in
     assert_equal

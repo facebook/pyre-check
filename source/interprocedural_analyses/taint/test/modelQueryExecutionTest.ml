@@ -3240,7 +3240,6 @@ let test_generated_annotations_for_attributes context =
       }
     ~name:"test.C.x"
     ~expected:[source "Test"]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class attribute annotation constraints. *)
     ();
   assert_generated_annotations_for_attributes
     ~source:{|
@@ -3262,7 +3261,6 @@ let test_generated_annotations_for_attributes context =
       }
     ~name:"test.C.y"
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class attribute annotation constraints. *)
     ();
   assert_generated_annotations_for_attributes
     ~source:
@@ -3293,7 +3291,6 @@ let test_generated_annotations_for_attributes context =
       }
     ~name:"test.C.x"
     ~expected:[source "Test"]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class attribute annotation constraints. *)
     ();
   assert_generated_annotations_for_attributes
     ~source:
@@ -3353,7 +3350,6 @@ let test_generated_annotations_for_attributes context =
       }
     ~name:"test.C.y"
     ~expected:[source "Test"]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class attribute annotation constraints. *)
     ();
   assert_generated_annotations_for_attributes
     ~source:
@@ -3384,7 +3380,6 @@ let test_generated_annotations_for_attributes context =
       }
     ~name:"test.C.z"
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class attribute annotation constraints. *)
     ();
   assert_generated_annotations_for_attributes
     ~source:
@@ -3408,7 +3403,6 @@ let test_generated_annotations_for_attributes context =
       }
     ~name:"test.C.x"
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class attribute annotation constraints. *)
     ();
   assert_generated_annotations_for_attributes
     ~source:
@@ -3432,7 +3426,6 @@ let test_generated_annotations_for_attributes context =
       }
     ~name:"test.C.y"
     ~expected:[source "Test"]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class attribute annotation constraints. *)
     ();
 
   ()

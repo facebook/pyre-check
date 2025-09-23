@@ -293,11 +293,29 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "Test1" } ], "declaration": null }
+          {
+            "kinds": [ { "kind": "SelectAny" }, { "kind": "Test1" } ],
+            "declaration": null
+          }
         ]
       }
     ],
-    "model_generators": [ "get_foo" ]
+    "model_generators": [ "get_any_globals", "get_foo" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_global_variable.hello}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "SelectAny" } ], "declaration": null }
+        ]
+      }
+    ],
+    "model_generators": [ "get_any_globals" ]
   }
 }
 {
@@ -358,6 +376,51 @@
       }
     ],
     "model_generators": [ "get_callables" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_global_variable.untyped_callable_assignment}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "SelectAny" } ], "declaration": null }
+        ]
+      }
+    ],
+    "model_generators": [ "get_any_globals" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_global_variable.untyped_global_callable}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "SelectAny" } ], "declaration": null }
+        ]
+      }
+    ],
+    "model_generators": [ "get_any_globals" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_global_variable.untyped_global_dict}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "SelectAny" } ], "declaration": null }
+        ]
+      }
+    ],
+    "model_generators": [ "get_any_globals" ]
   }
 }
 {

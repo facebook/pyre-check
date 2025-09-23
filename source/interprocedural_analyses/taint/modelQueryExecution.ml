@@ -699,45 +699,47 @@ let matches_annotation_constraint
   | ModelQuery.AnnotationConstraint.IsAnnotatedTypeConstraint ->
       TypeAnnotation.is_annotated annotation
   | ModelQuery.AnnotationConstraint.OriginalAnnotationConstraint name_constraint ->
-      matches_name_constraint
-        ~name_captures
-        ~name_constraint
-        (TypeAnnotation.show_original_annotation annotation)
+      annotation
+      |> TypeAnnotation.show_explicit_annotation
+      >>| matches_name_constraint ~name_captures ~name_constraint
+      |> Option.value ~default:false
   | ModelQuery.AnnotationConstraint.FullyQualifiedConstraint name_constraint ->
       matches_name_constraint
         ~name_captures
         ~name_constraint
         (TypeAnnotation.show_fully_qualified_annotation annotation)
   | ModelQuery.AnnotationConstraint.AnnotationClassExtends
-      { class_name; is_transitive; includes_self } -> (
-      match
-        PyrePysaApi.ReadOnly.Type.get_class_names pyre_api (TypeAnnotation.as_type annotation)
-      with
-      | {
-       PyrePysaApi.ClassNamesFromType.class_names = [extracted_class_name];
-       is_exhaustive = true;
-       _;
-      } ->
-          let class_name =
-            Reference.show
-              (PyrePysaApi.ReadOnly.add_builtins_prefix pyre_api (Reference.create class_name))
-          in
-          find_children ~class_hierarchy_graph ~is_transitive ~includes_self class_name
-          |> ClassHierarchyGraph.ClassNameSet.mem extracted_class_name
-      | _ -> false)
+      { class_name; is_transitive; includes_self } ->
+      TypeAnnotation.inferred_type annotation
+      >>| PyrePysaApi.ReadOnly.Type.get_class_names pyre_api
+      >>| (function
+            | {
+                PyrePysaApi.ClassNamesFromType.class_names = [extracted_class_name];
+                is_exhaustive = true;
+                _;
+              } ->
+                let class_name =
+                  Reference.show
+                    (PyrePysaApi.ReadOnly.add_builtins_prefix
+                       pyre_api
+                       (Reference.create class_name))
+                in
+                find_children ~class_hierarchy_graph ~is_transitive ~includes_self class_name
+                |> ClassHierarchyGraph.ClassNameSet.mem extracted_class_name
+            | _ -> false)
+      |> Option.value ~default:false
 
 
 let rec parameter_matches_constraint ~pyre_api ~class_hierarchy_graph ~name_captures ~parameter
   = function
   | ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint ->
       FunctionParameter.annotation parameter
-      >>| TypeAnnotation.from_pysa_type
-      >>| matches_annotation_constraint
-            ~pyre_api
-            ~class_hierarchy_graph
-            ~name_captures
-            ~annotation_constraint
-      |> Option.value ~default:false
+      |> TypeAnnotation.from_inferred_type
+      |> matches_annotation_constraint
+           ~pyre_api
+           ~class_hierarchy_graph
+           ~name_captures
+           ~annotation_constraint
   | ModelQuery.ParameterConstraint.NameConstraint name_constraint ->
       FunctionParameter.name parameter
       >>| matches_name_constraint ~name_captures ~name_constraint
@@ -949,17 +951,17 @@ let rec matches_constraint
       matches_name_constraint ~name_captures ~name_constraint name
   | ModelQuery.Constraint.AnnotationConstraint annotation_constraint ->
       Modelable.type_annotation value
-      >>| matches_annotation_constraint
-            ~pyre_api
-            ~class_hierarchy_graph
-            ~name_captures
-            ~annotation_constraint
-      |> Option.value ~default:false
+      |> matches_annotation_constraint
+           ~pyre_api
+           ~class_hierarchy_graph
+           ~name_captures
+           ~annotation_constraint
   | ModelQuery.Constraint.ReturnConstraint annotation_constraint ->
       Modelable.return_annotations value
       |> List.exists ~f:(fun return_annotation ->
              return_annotation
-             |> TypeAnnotation.from_pysa_type
+             |> Option.some
+             |> TypeAnnotation.from_inferred_type
              |> matches_annotation_constraint
                   ~pyre_api
                   ~class_hierarchy_graph

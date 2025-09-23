@@ -877,71 +877,98 @@ end
 module TypeAnnotation : sig
   type t
 
-  val from_original_annotation
-    :  pyre_api:PyrePysaApi.ReadOnly.t ->
-    preserve_original:bool ->
-    Expression.t ->
+  module ExplicitAnnotation : sig
+    type t =
+      | Unsupported
+      | NotFound
+      | Found of string
+  end
+
+  val from_pyre1 : pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t -> Expression.t option -> t
+
+  val create
+    :  inferred_type:PyrePysaApi.PysaType.t option ->
+    explicit_annotation:ExplicitAnnotation.t ->
     t
 
-  val from_pysa_type : PyrePysaApi.PysaType.t -> t
+  val from_inferred_type : PyrePysaApi.PysaType.t option -> t
 
   val is_annotated : t -> bool
 
-  val as_type : t -> PyrePysaApi.PysaType.t
+  val inferred_type : t -> PyrePysaApi.PysaType.t option
 
-  val as_original_annotation : t -> Ast.Expression.t option
+  val explicit_annotation : t -> ExplicitAnnotation.t
 
   (* Show the original annotation, as written by the user. *)
-  val show_original_annotation : t -> string
+  val show_explicit_annotation : t -> string option
 
   (* Show the fully qualified type annotation from the type checker. *)
   val show_fully_qualified_annotation : t -> string
 end = struct
+  module ExplicitAnnotation = struct
+    type t =
+      | Unsupported
+      | NotFound
+      | Found of string
+  end
+
   type t = {
-    expression: Expression.t option;
-        (* The original annotation, as an expression. None if not supported. *)
-    type_: PyrePysaApi.PysaType.t Lazy.t;
+    explicit_annotation: ExplicitAnnotation.t Lazy.t;
+    inferred_type: PyrePysaApi.PysaType.t option Lazy.t;
   }
 
-  let from_original_annotation ~pyre_api ~preserve_original expression =
+  let from_pyre1 ~pyre_api = function
+    | Some expression ->
+        {
+          explicit_annotation = lazy (ExplicitAnnotation.Found (Expression.show expression));
+          inferred_type =
+            lazy
+              (Analysis.PyrePysaEnvironment.ReadOnly.parse_annotation pyre_api expression
+              |> PyrePysaApi.PysaType.from_pyre1_type
+              |> Option.some);
+        }
+    | None -> { explicit_annotation = lazy ExplicitAnnotation.NotFound; inferred_type = lazy None }
+
+
+  let create ~inferred_type ~explicit_annotation =
+    { explicit_annotation = lazy explicit_annotation; inferred_type = lazy inferred_type }
+
+
+  let from_inferred_type inferred_type =
     {
-      expression = Option.some_if preserve_original expression;
-      type_ =
-        lazy
-          (PyrePysaApi.ReadOnly.parse_annotation pyre_api expression
-          |> PyrePysaApi.PysaType.from_pyre1_type);
+      explicit_annotation = lazy ExplicitAnnotation.Unsupported;
+      inferred_type = lazy inferred_type;
     }
 
 
-  let from_pysa_type type_ = { expression = None; type_ = lazy type_ }
-
-  let is_annotated = function
-    | { expression = None; _ } -> failwith "is_annotated is not supported in this context"
-    | { expression = Some { Node.value = expression; _ }; _ } -> (
-        match expression with
-        | Expression.Expression.Subscript
-            {
-              base =
-                { Node.value = Name (Expression.Name.Attribute { attribute = "Annotated"; _ }); _ };
-              _;
-            } ->
-            true
-        | _ -> false)
+  let is_annotated { explicit_annotation; _ } =
+    match Lazy.force explicit_annotation with
+    | ExplicitAnnotation.Unsupported -> failwith "is_annotated is not supported in this context"
+    | ExplicitAnnotation.Found annotation ->
+        (String.is_prefix ~prefix:"typing.Annotated[" annotation
+        || String.is_prefix ~prefix:"Annotated[" annotation)
+        && String.is_suffix ~suffix:"]" annotation
+    | ExplicitAnnotation.NotFound -> false
 
 
-  let as_type { type_; _ } = Lazy.force type_
+  let inferred_type { inferred_type; _ } = Lazy.force inferred_type
 
-  let as_original_annotation { expression; _ } = expression
+  let explicit_annotation { explicit_annotation; _ } = Lazy.force explicit_annotation
 
   (* Show the original annotation, as written by the user. *)
-  let show_original_annotation = function
-    | { expression = Some expression; _ } -> Expression.show expression
-    | _ -> failwith "show_original_annotation is not supported in this context"
+  let show_explicit_annotation { explicit_annotation; _ } =
+    match Lazy.force explicit_annotation with
+    | ExplicitAnnotation.Unsupported ->
+        failwith "show_explicit_annotation is not supported in this context"
+    | ExplicitAnnotation.Found annotation -> Some annotation
+    | ExplicitAnnotation.NotFound -> None
 
 
   (* Show the parsed annotation from pyre *)
-  let show_fully_qualified_annotation { type_; _ } =
-    PyrePysaApi.PysaType.show_fully_qualified (Lazy.force type_)
+  let show_fully_qualified_annotation { inferred_type; _ } =
+    match Lazy.force inferred_type with
+    | Some inferred_type -> PyrePysaApi.PysaType.show_fully_qualified inferred_type
+    | None -> "typing.Any"
 end
 
 module Modelable = struct
@@ -957,11 +984,11 @@ module Modelable = struct
       }
     | Attribute of {
         target_name: Reference.t;
-        type_annotation: TypeAnnotation.t option Lazy.t;
+        type_annotation: TypeAnnotation.t Lazy.t;
       }
     | Global of {
         target_name: Reference.t;
-        type_annotation: TypeAnnotation.t option Lazy.t;
+        type_annotation: TypeAnnotation.t Lazy.t;
       }
 
   let create_callable ~pyre_api ~callables_to_definitions_map target =
@@ -1024,14 +1051,25 @@ module Modelable = struct
                ~include_generated_attributes:false
                ~class_name
                ~attribute
-             >>| TypeAnnotation.from_original_annotation ~pyre_api ~preserve_original:true
+             |> TypeAnnotation.from_pyre1 ~pyre_api:pyre1_api
          | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->
-             Interprocedural.PyreflyApi.ReadOnly.get_class_attribute_inferred_type
-               pyrefly_api
-               ~class_name
-               ~attribute
-             |> TypeAnnotation.from_pysa_type
-             |> Option.some)
+             let inferred_type =
+               Interprocedural.PyreflyApi.ReadOnly.get_class_attribute_inferred_type
+                 pyrefly_api
+                 ~class_name
+                 ~attribute
+               |> Option.some
+             in
+             let explicit_annotation =
+               Interprocedural.PyreflyApi.ReadOnly.get_class_attribute_explicit_annotation
+                 pyrefly_api
+                 ~class_name
+                 ~attribute
+               |> function
+               | Some annotation -> TypeAnnotation.ExplicitAnnotation.Found annotation
+               | None -> TypeAnnotation.ExplicitAnnotation.NotFound
+             in
+             TypeAnnotation.create ~inferred_type ~explicit_annotation)
     in
     Attribute { target_name; type_annotation }
 
@@ -1043,15 +1081,19 @@ module Modelable = struct
         (match pyre_api with
         | PyrePysaApi.ReadOnly.Pyre1 pyre1_api ->
             Analysis.PyrePysaEnvironment.ReadOnly.get_global_annotation pyre1_api target_name
-            >>| TypeAnnotation.from_original_annotation ~pyre_api ~preserve_original:true
+            |> TypeAnnotation.from_pyre1 ~pyre_api:pyre1_api
         | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->
             let qualifier = Option.value_exn (Reference.prefix target_name) in
             let name = Reference.last target_name in
-            Interprocedural.PyreflyApi.ReadOnly.get_global_inferred_type
-              pyrefly_api
-              ~qualifier
-              ~name
-            >>| TypeAnnotation.from_pysa_type)
+            let inferred_type =
+              Interprocedural.PyreflyApi.ReadOnly.get_global_inferred_type
+                pyrefly_api
+                ~qualifier
+                ~name
+            in
+            TypeAnnotation.create
+              ~inferred_type
+              ~explicit_annotation:TypeAnnotation.ExplicitAnnotation.Unsupported)
     in
     Global { target_name; type_annotation }
 
