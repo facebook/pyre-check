@@ -1295,6 +1295,8 @@ module GlobalVariable = struct
     location: Location.t;
   }
   [@@deriving equal, compare, show]
+
+  let _ = pp
 end
 
 module ModuleGlobalsSharedMemory =
@@ -1342,6 +1344,8 @@ module ClassField = struct
     location: Location.t option;
   }
   [@@deriving equal, compare, show]
+
+  let _ = pp
 end
 
 module ClassFieldsSharedMemory =
