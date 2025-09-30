@@ -4082,6 +4082,11 @@ module TypedDictionary = struct
     CallableParamType.Named { name = "self"; annotation = Primitive class_name; default = false }
 
 
+  let readonly_self_parameter class_name =
+    CallableParamType.Named
+      { name = "self"; annotation = PyreReadOnly (Primitive class_name); default = false }
+
+
   let field_named_parameters ?(all_default = false) ~class_name fields =
     let field_to_argument { name; annotation; required; _ } =
       Record.Callable.CallableParamType.KeywordOnly
@@ -4189,17 +4194,38 @@ module TypedDictionary = struct
     in
     let get_overloads fields =
       let overloads { name; annotation; _ } =
+        let annotation_with_none = Constructors.union [annotation; NoneType] in
+        let annotation_with_t = Union [annotation; Variable (Variable.TypeVar.create "_T")] in
         [
           {
-            Record.Callable.annotation = Constructors.union [annotation; NoneType];
+            Record.Callable.annotation = annotation_with_none;
             parameters = Defined [self_parameter class_name; key_parameter name];
           };
           {
-            annotation = Union [annotation; Variable (Variable.TypeVar.create "_T")];
+            Record.Callable.annotation = PyreReadOnly annotation_with_none;
+            parameters = Defined [readonly_self_parameter class_name; key_parameter name];
+          };
+          {
+            annotation = annotation_with_t;
             parameters =
               Defined
                 [
                   self_parameter class_name;
+                  key_parameter name;
+                  Named
+                    {
+                      name = "default";
+                      annotation = Variable (Variable.TypeVar.create "_T");
+                      default = false;
+                    };
+                ];
+          };
+          {
+            annotation = PyreReadOnly annotation_with_t;
+            parameters =
+              Defined
+                [
+                  readonly_self_parameter class_name;
                   key_parameter name;
                   Named
                     {

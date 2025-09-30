@@ -156,7 +156,7 @@ let test_typed_dictionary_attributes =
              ]
            ~class_name:"Movie"
            {|
-                from typing import overload, Optional, TypeVar, Union
+                from typing import overload, Optional, TypeVar, Union, _PyreReadOnly_ as RO
                 from typing_extensions import Literal as L
 
                 _T = TypeVar("_T")
@@ -183,11 +183,19 @@ let test_typed_dictionary_attributes =
                   @overload
                   def get(self, k: L["name"]) -> Optional[str]: ...
                   @overload
+                  def get(self: RO[Movie], k: L["name"]) -> RO[Optional[str]]: ...
+                  @overload
                   def get(self, k: L["name"], default: _T) -> Union[str, _T]: ...
+                  @overload
+                  def get(self: RO[Movie], k: L["name"], default: _T) -> RO[Union[str, _T]]: ...
                   @overload
                   def get(self, k: L["year"]) -> Optional[int]: ...
                   @overload
+                  def get(self: RO[Movie], k: L["year"]) -> RO[Optional[int]]: ...
+                  @overload
                   def get(self, k: L["year"], default: _T) -> Union[int, _T]: ...
+                  @overload
+                  def get(self: RO[Movie], k: L["year"], default: _T) -> RO[Union[int, _T]]: ...
                   @overload
                   def get(self, k: str) -> Optional[object]: ...
                   @overload
@@ -234,7 +242,7 @@ let test_typed_dictionary_attributes =
              ]
            ~class_name:"MovieNonTotal"
            {|
-                from typing import overload, Optional, TypeVar, Union
+                from typing import overload, Optional, TypeVar, Union, _PyreReadOnly_ as RO
                 from typing_extensions import Literal as L
 
                 _T = TypeVar("_T")
@@ -261,11 +269,19 @@ let test_typed_dictionary_attributes =
                   @overload
                   def get(self, k: L["name"]) -> Optional[str]: ...
                   @overload
+                  def get(self: RO[MovieNonTotal], k: L["name"]) -> RO[Optional[str]]: ...
+                  @overload
                   def get(self, k: L["name"], default: _T) -> Union[str, _T]: ...
+                  @overload
+                  def get(self: RO[MovieNonTotal], k: L["name"], default: _T) -> RO[Union[str, _T]]: ...
                   @overload
                   def get(self, k: L["year"]) -> Optional[int]: ...
                   @overload
+                  def get(self: RO[MovieNonTotal], k: L["year"]) -> RO[Optional[int]]: ...
+                  @overload
                   def get(self, k: L["year"], default: _T) -> Union[int, _T]: ...
+                  @overload
+                  def get(self: RO[MovieNonTotal], k: L["year"], default: _T) -> RO[Union[int, _T]]: ...
                   @overload
                   def get(self, k: str) -> Optional[object]: ...
                   @overload
@@ -323,7 +339,7 @@ let test_typed_dictionary_attributes =
              ]
            ~class_name:"MovieChildNonTotal"
            {|
-                from typing import overload, Optional, TypeVar, Union
+                from typing import overload, Optional, TypeVar, Union, _PyreReadOnly_ as RO
                 from typing_extensions import Literal as L
 
                 _T = TypeVar("_T")
@@ -350,11 +366,19 @@ let test_typed_dictionary_attributes =
                   @overload
                   def get(self, k: L["name"]) -> Optional[str]: ...
                   @overload
+                  def get(self: RO[MovieChildNonTotal], k: L["name"]) -> RO[Optional[str]]: ...
+                  @overload
                   def get(self, k: L["name"], default: _T) -> Union[str, _T]: ...
+                  @overload
+                  def get(self: RO[MovieChildNonTotal], k: L["name"], default: _T) -> RO[Union[str, _T]]: ...
                   @overload
                   def get(self, k: L["year"]) -> Optional[int]: ...
                   @overload
+                  def get(self: RO[MovieChildNonTotal], k: L["year"]) -> RO[Optional[int]]: ...
+                  @overload
                   def get(self, k: L["year"], default: _T) -> Union[int, _T]: ...
+                  @overload
+                  def get(self: RO[MovieChildNonTotal], k: L["year"], default: _T) -> RO[Union[int, _T]]: ...
                   @overload
                   def get(self, k: str) -> Optional[object]: ...
                   @overload
@@ -406,7 +430,7 @@ let test_typed_dictionary_attributes =
              ]
            ~class_name:"MovieChildTotal"
            {|
-                from typing import overload, Optional, TypeVar, Union
+                from typing import overload, Optional, TypeVar, Union, _PyreReadOnly_ as RO
                 from typing_extensions import Literal as L
 
                 _T = TypeVar("_T")
@@ -433,11 +457,19 @@ let test_typed_dictionary_attributes =
                   @overload
                   def get(self, k: L["name"]) -> Optional[str]: ...
                   @overload
+                  def get(self: RO[MovieChildTotal], k: L["name"]) -> RO[Optional[str]]: ...
+                  @overload
                   def get(self, k: L["name"], default: _T) -> Union[str, _T]: ...
+                  @overload
+                  def get(self: RO[MovieChildTotal], k: L["name"], default: _T) -> RO[Union[str, _T]]: ...
                   @overload
                   def get(self, k: L["year"]) -> Optional[int]: ...
                   @overload
+                  def get(self: RO[MovieChildTotal], k: L["year"]) -> RO[Optional[int]]: ...
+                  @overload
                   def get(self, k: L["year"], default: _T) -> Union[int, _T]: ...
+                  @overload
+                  def get(self: RO[MovieChildTotal], k: L["year"], default: _T) -> RO[Union[int, _T]]: ...
                   @overload
                   def get(self, k: str) -> Optional[object]: ...
                   @overload
@@ -564,7 +596,7 @@ let test_typed_dictionary_attributes =
             |}
            ~class_name:"Movie"
            {|
-                from typing import overload, Optional, TypeVar, Union
+                from typing import overload, Optional, TypeVar, Union, _PyreReadOnly_ as RO
                 from typing_extensions import Literal as L
 
                 _T = TypeVar("_T")
@@ -587,7 +619,11 @@ let test_typed_dictionary_attributes =
                   @overload
                   def get(self, k: L["name"]) -> Optional[str]: ...
                   @overload
+                  def get(self: RO[Movie], k: L["name"]) -> RO[Optional[str]]: ...
+                  @overload
                   def get(self, k: L["name"], default: _T) -> Union[str, _T]: ...
+                  @overload
+                  def get(self: RO[Movie], k: L["name"], default: _T) -> RO[Union[str, _T]]: ...
                   @overload
                   def get(self, k: str) -> Optional[object]: ...
                   @overload

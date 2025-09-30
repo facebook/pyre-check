@@ -2023,6 +2023,25 @@ let test_no_pyre_extensions =
     ]
 
 
+let test_typed_dict =
+  let assert_type_errors = assert_type_errors ~include_pyre_extensions:true in
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+        from typing import TypedDict
+        from pyre_extensions import PyreReadOnly
+        class Foo(TypedDict):
+           x: int
+
+        def test(foo: PyreReadOnly[Foo]) -> int | None:
+           return foo.get("x", None)
+      |}
+           [];
+    ]
+
+
 let () =
   "readOnly"
   >::: [
@@ -2046,5 +2065,6 @@ let () =
          test_allowlisted_generic_integer_classes;
          test_typing_PyreReadOnly;
          test_no_pyre_extensions;
+         test_typed_dict;
        ]
   |> Test.run
