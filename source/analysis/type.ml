@@ -4166,13 +4166,19 @@ module TypedDictionary = struct
 
   let common_special_methods ~class_name =
     let getitem_overloads =
-      let overload { name; annotation; _ } =
-        {
-          Record.Callable.annotation;
-          parameters = Defined [self_parameter class_name; key_parameter name];
-        }
+      let overloads { name; annotation; _ } =
+        [
+          {
+            Record.Callable.annotation;
+            parameters = Defined [self_parameter class_name; key_parameter name];
+          };
+          {
+            Record.Callable.annotation = PyreReadOnly annotation;
+            parameters = Defined [readonly_self_parameter class_name; key_parameter name];
+          };
+        ]
       in
-      List.map ~f:overload
+      List.concat_map ~f:overloads
     in
     let setitem_overloads =
       let overload { name; annotation; readonly; _ } =
