@@ -30,7 +30,6 @@ let set_up_environment
     ?filtered_sinks
     ?filtered_transforms
     ?(registered_partial_sinks = TaintConfiguration.RegisteredPartialSinks.empty)
-    ?(skip_for_pyrefly = false)
     ~context
     ~model_source
     ()
@@ -58,7 +57,6 @@ let set_up_environment
     Test.ScratchPyrePysaProject.setup
       ~context
       ~requires_type_of_expressions:false
-      ~force_pyre1:skip_for_pyrefly
       [source_file_name, source]
   in
   let pyre_api = Test.ScratchPyrePysaProject.read_only_api project in
@@ -165,7 +163,6 @@ let assert_model
     ?filtered_sinks
     ?expected_skipped_overrides
     ?registered_partial_sinks
-    ?skip_for_pyrefly
     ?pyrefly_expect
     ~context
     ~model_source
@@ -179,7 +176,6 @@ let assert_model
       ?filtered_sources
       ?filtered_sinks
       ?registered_partial_sinks
-      ?skip_for_pyrefly
       ~context
       ~model_source
       ()
@@ -2480,7 +2476,6 @@ let test_closure_models context =
           pass
     |}
     ~expect:[outcome ~kind:`Function "test.outer.inner"]
-    ~skip_for_pyrefly:true
     ();
   assert_invalid_model
     ~context
@@ -2510,7 +2505,6 @@ let test_closure_models context =
           pass
     |}
     ~expect:[outcome ~kind:`Function "test.outer.inner"]
-    ~skip_for_pyrefly:true
     ();
   assert_invalid_model
     ~context
@@ -2573,7 +2567,6 @@ let test_closure_models context =
           pass
     |}
     ~expect:[outcome ~kind:`Function "test.outer.inner"]
-    ~skip_for_pyrefly:true
     ();
   ()
 

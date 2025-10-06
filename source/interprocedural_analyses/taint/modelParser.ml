@@ -3695,12 +3695,7 @@ let create_model_from_signature
       | _ -> false
     in
     let parse_annotation ~generation_if_source taint_annotation =
-      let captured_variables =
-        match PyrePysaApi.ReadOnly.get_define_body pyre_api callable_name with
-        | Some { Node.value = { Define.captures; _ }; _ } ->
-            List.map ~f:(fun capture -> capture.Define.Capture.name) captures
-        | _ -> []
-      in
+      let captured_variables = PyrePysaApi.ReadOnly.get_callable_captures pyre_api callable_name in
       taint_annotation
       |> parse_annotations
            ~path

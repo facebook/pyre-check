@@ -511,6 +511,13 @@ module ReadOnly = struct
     global_resolution api |> GlobalResolution.get_define_body_in_project
 
 
+  let get_callable_captures api define_name =
+    match get_define_body api define_name with
+    | Some { Ast.Node.value = { Ast.Statement.Define.captures; _ }; _ } ->
+        List.map ~f:(fun capture -> capture.Ast.Statement.Define.Capture.name) captures
+    | _ -> []
+
+
   let resolve_define api = global_resolution api |> GlobalResolution.resolve_define
 
   let resolve_define_undecorated api =

@@ -188,6 +188,8 @@ module ReadOnly : sig
 
   val get_define_body : t -> Ast.Reference.t -> Ast.Statement.Define.t Ast.Node.t option
 
+  val get_callable_captures : t -> Ast.Reference.t -> string list
+
   val get_variable : t -> string -> Type.Variable.t option
 
   val resolve_define

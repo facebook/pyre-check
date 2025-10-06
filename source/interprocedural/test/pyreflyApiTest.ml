@@ -528,6 +528,7 @@ let test_fully_qualified_names _ =
         parent;
         is_overload;
         undecorated_signatures = [];
+        captured_variables = [];
         is_staticmethod = false;
         is_classmethod = false;
         is_property_getter;

@@ -108,6 +108,8 @@ module ReadOnly : sig
     method_name:string ->
     Ast.Reference.t option
 
+  val get_callable_captures : t -> Ast.Reference.t -> string list
+
   val get_methods_for_qualifier
     :  t ->
     exclude_test_modules:bool ->
@@ -311,11 +313,16 @@ module ModuleInfoFile : sig
     [@@deriving equal, show]
   end
 
+  module CapturedVariable : sig
+    type t = { name: string } [@@deriving equal, show]
+  end
+
   module FunctionDefinition : sig
     type t = {
       name: string;
       parent: ParentScope.t;
       undecorated_signatures: FunctionSignature.t list;
+      captured_variables: CapturedVariable.t list;
       is_overload: bool;
       is_staticmethod: bool;
       is_classmethod: bool;

@@ -197,9 +197,9 @@ module ReadOnly = struct
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.class_exists"
 
 
-  let get_define_body = function
-    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.get_define_body pyre_api
-    | Pyrefly _ -> failwith "unimplemented: ReadOnly.get_define_body"
+  let get_callable_captures = function
+    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.get_callable_captures pyre_api
+    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.get_callable_captures pyrefly_api
 
 
   let get_variable = function

@@ -91,6 +91,16 @@ module JsonUtil = struct
              { json; message = Format.sprintf "expected the key `%s` to contain a boolean" key })
 
 
+  let get_optional_list_member ~default json key =
+    match Yojson.Safe.Util.member key json with
+    | `List elements -> Ok elements
+    | `Null -> Ok default
+    | _ ->
+        Error
+          (FormatError.UnexpectedJsonType
+             { json; message = Format.sprintf "expected the key `%s` to contain a list" key })
+
+
   let get_int_member json key =
     match Yojson.Safe.Util.member key json with
     | `Int value -> Ok value
@@ -701,11 +711,20 @@ module ModuleInfoFile = struct
       >>| fun return_annotation -> { parameters; return_annotation }
   end
 
+  module CapturedVariable = struct
+    type t = { name: string } [@@deriving equal, show]
+
+    let from_json json =
+      let open Core.Result.Monad_infix in
+      JsonUtil.get_string_member json "name" >>| fun name -> { name }
+  end
+
   module FunctionDefinition = struct
     type t = {
       name: string;
       parent: ParentScope.t;
       undecorated_signatures: FunctionSignature.t list;
+      captured_variables: CapturedVariable.t list;
       is_overload: bool;
       is_staticmethod: bool;
       is_classmethod: bool;
@@ -729,6 +748,10 @@ module ModuleInfoFile = struct
       >>| List.map ~f:FunctionSignature.from_json
       >>= Result.all
       >>= fun undecorated_signatures ->
+      JsonUtil.get_optional_list_member ~default:[] json "captured_variables"
+      >>| List.map ~f:CapturedVariable.from_json
+      >>= Result.all
+      >>= fun captured_variables ->
       JsonUtil.get_optional_bool_member ~default:false json "is_overload"
       >>= fun is_overload ->
       JsonUtil.get_optional_bool_member ~default:false json "is_staticmethod"
@@ -751,6 +774,7 @@ module ModuleInfoFile = struct
         name;
         parent;
         undecorated_signatures;
+        captured_variables;
         is_overload;
         is_staticmethod;
         is_classmethod;
@@ -780,6 +804,7 @@ module ModuleInfoFile = struct
                 };
             };
           ];
+        captured_variables = [];
         is_overload = false;
         is_staticmethod = false;
         is_classmethod = false;
@@ -809,6 +834,7 @@ module ModuleInfoFile = struct
                 };
             };
           ];
+        captured_variables = [];
         is_overload = false;
         is_staticmethod = false;
         is_classmethod = false;
@@ -1216,6 +1242,7 @@ module CallableMetadataSharedMemory = struct
       metadata: CallableMetadata.t;
       (* This is the original name, without the fully qualified suffixes like `$2` or `@setter`. *)
       name: string;
+      captures: string list;
       overridden_base_method: GlobalCallableId.t option;
       defining_class: GlobalClassId.t option;
       local_function_id: LocalFunctionId.t;
@@ -2389,6 +2416,7 @@ module ReadWrite = struct
         | Function
             {
               name;
+              captured_variables;
               is_overload;
               is_staticmethod;
               is_classmethod;
@@ -2422,6 +2450,10 @@ module ReadWrite = struct
                 name;
                 overridden_base_method;
                 defining_class;
+                captures =
+                  List.map
+                    ~f:(fun { ModuleInfoFile.CapturedVariable.name } -> name)
+                    captured_variables;
                 local_function_id;
               };
             CallableIdToQualifiedNameSharedMemory.add
@@ -3085,6 +3117,14 @@ module ReadOnly = struct
     overridden_base_method
     >>= CallableIdToQualifiedNameSharedMemory.get callable_id_to_qualified_name_shared_memory
     >>| FullyQualifiedName.to_reference
+
+
+  let get_callable_captures { callable_metadata_shared_memory; _ } define_name =
+    CallableMetadataSharedMemory.get
+      callable_metadata_shared_memory
+      (FullyQualifiedName.from_reference_unchecked define_name)
+    |> assert_shared_memory_key_exists "missing callable metadata"
+    |> fun { CallableMetadataSharedMemory.Value.captures; _ } -> captures
 
 
   let get_methods_for_qualifier

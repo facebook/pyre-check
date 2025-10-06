@@ -126,8 +126,6 @@ module ReadOnly : sig
 
   val class_exists : t -> string -> bool
 
-  val get_define_body : t -> Ast.Reference.t -> Ast.Statement.Define.t Ast.Node.t option
-
   val get_variable : t -> string -> Type.Variable.t option
 
   val resolve_define
@@ -153,6 +151,8 @@ module ReadOnly : sig
     class_name:Ast.Reference.t ->
     method_name:string ->
     Ast.Reference.t option
+
+  val get_callable_captures : t -> Ast.Reference.t -> string list
 
   val annotation_parser : t -> Analysis.AnnotatedCallable.annotation_parser
 
