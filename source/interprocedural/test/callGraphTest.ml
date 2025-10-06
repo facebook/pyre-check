@@ -102,6 +102,8 @@ let assert_call_graph_of_define
     ~source
     ~define_name
     ~expected
+    ?(_is_migrated =
+      false (* Whether this test has been duplicated in the call graph building in Pyrefly *))
     ?(cmp = DefineCallGraphForTest.equal)
     ()
     context
@@ -230,6 +232,7 @@ let test_call_graph_of_define =
     [
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:true
            ~source:{|
      def foo():
          bar()
@@ -253,6 +256,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:true
            ~source:
              {|
      def foo(c: C):
@@ -280,6 +284,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:true
            ~source:
              {|
      def foo():
@@ -357,6 +362,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:true
            ~source:
              {|
      def foo():
@@ -418,6 +424,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:true
            ~source:
              {|
      from typing import Optional
@@ -447,6 +454,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:true
            ~source:
              {|
      from typing import Optional
@@ -874,6 +882,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:true
            ~source:
              {|
         class C:
