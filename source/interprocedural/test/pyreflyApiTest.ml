@@ -12,7 +12,7 @@ open Ast
 module ModulePath = PyreflyApi.ModulePath
 module ModuleId = PyreflyApi.ModuleId
 module ModuleQualifier = PyreflyApi.ModuleQualifier
-module ModuleInfoFile = PyreflyApi.ModuleInfoFile
+module ModuleDefinitionsFile = PyreflyApi.ModuleDefinitionsFile
 module FullyQualifiedName = PyreflyApi.FullyQualifiedName
 
 module ModuleQualifierInput = struct
@@ -43,12 +43,12 @@ let test_module_qualifiers _ =
   let open Option.Monad_infix in
   let assert_module_qualifiers ?(add_toplevel_modules = false) ~inputs ~expected () =
     let pyrefly_directory = PyrePath.create_absolute "/pyrefly" in
-    let make_pyrefly_module { ModuleQualifierInput.module_name; path; id } =
+    let make_module_definitions { ModuleQualifierInput.module_name; path; id } =
       {
         PyreflyApi.ProjectFile.Module.module_id = ModuleId.from_int id;
         module_name = Reference.create module_name;
         module_path = path;
-        info_path = None;
+        info_filename = None;
         is_test = false;
         is_interface = false;
         is_init = false;
@@ -59,7 +59,7 @@ let test_module_qualifiers _ =
         PyreflyApi.Testing.Module.module_id = ModuleId.from_int id;
         module_name = Reference.create module_name;
         source_path = source_path >>| PyrePath.create_absolute >>| ArtifactPath.create;
-        pyrefly_info_path = None;
+        pyrefly_info_filename = None;
         is_test = false;
         is_stub = false;
       }
@@ -67,7 +67,7 @@ let test_module_qualifiers _ =
     let to_string map =
       map |> Map.to_alist |> [%show: (ModuleQualifier.t * PyreflyApi.Testing.Module.t) list]
     in
-    let inputs = List.map ~f:make_pyrefly_module inputs in
+    let inputs = List.map ~f:make_module_definitions inputs in
     let expected =
       expected
       |> List.map ~f:(fun ({ ModuleQualifierExpected.qualifier; _ } as test_module) ->
@@ -516,7 +516,7 @@ let test_fully_qualified_names _ =
     assert_equal ~cmp:[%compare.equal: string list] ~printer:[%show: string list] expected actual
   in
   let create_function
-      ?(parent = ModuleInfoFile.ParentScope.TopLevel)
+      ?(parent = ModuleDefinitionsFile.ParentScope.TopLevel)
       ?(is_overload = false)
       ?(is_property_getter = false)
       ?(is_property_setter = false)
@@ -524,7 +524,7 @@ let test_fully_qualified_names _ =
     =
     PyreflyApi.Testing.Definition.Function
       {
-        ModuleInfoFile.FunctionDefinition.name;
+        ModuleDefinitionsFile.FunctionDefinition.name;
         parent;
         is_overload;
         undecorated_signatures = [];
@@ -540,20 +540,20 @@ let test_fully_qualified_names _ =
         defining_class = None;
       }
   in
-  let create_class ?(parent = ModuleInfoFile.ParentScope.TopLevel) name =
+  let create_class ?(parent = ModuleDefinitionsFile.ParentScope.TopLevel) name =
     PyreflyApi.Testing.Definition.Class
       {
-        ModuleInfoFile.ClassDefinition.name;
+        ModuleDefinitionsFile.ClassDefinition.name;
         parent;
         local_class_id = PyreflyApi.LocalClassId.from_int 0;
         bases = [];
-        mro = ModuleInfoFile.ClassMro.Resolved [];
+        mro = ModuleDefinitionsFile.ClassMro.Resolved [];
         is_synthesized = false;
         fields = [];
       }
   in
-  let class_parent ~line = ModuleInfoFile.ParentScope.Class (location_at_line line) in
-  let function_parent ~line = ModuleInfoFile.ParentScope.Function (location_at_line line) in
+  let class_parent ~line = ModuleDefinitionsFile.ParentScope.Class (location_at_line line) in
+  let function_parent ~line = ModuleDefinitionsFile.ParentScope.Function (location_at_line line) in
   assert_fully_qualified_names
     ~definitions:
       [

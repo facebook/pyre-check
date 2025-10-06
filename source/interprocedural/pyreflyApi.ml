@@ -413,8 +413,8 @@ module ModuleQualifierSharedMemoryKey = struct
     key |> ModuleQualifier.to_reference |> Analysis.SharedMemoryKeys.ReferenceKey.to_string
 end
 
-(* Path to a pyrefly module information file. *)
-module ModuleInfoPath : sig
+(* Filename for a pyrefly module information file. *)
+module ModuleInfoFilename : sig
   type t [@@deriving compare, equal, sexp, hash, show]
 
   val create : string -> t
@@ -436,7 +436,7 @@ module ProjectFile = struct
       module_id: ModuleId.t;
       module_name: Reference.t;
       module_path: ModulePath.t;
-      info_path: ModuleInfoPath.t option;
+      info_filename: ModuleInfoFilename.t option;
       is_test: bool;
       is_interface: bool;
       is_init: bool;
@@ -449,8 +449,8 @@ module ProjectFile = struct
       >>= fun module_id ->
       JsonUtil.get_string_member json "module_name"
       >>= fun module_name ->
-      JsonUtil.get_optional_string_member json "info_path"
-      >>= fun info_path ->
+      JsonUtil.get_optional_string_member json "info_filename"
+      >>= fun info_filename ->
       JsonUtil.get_object_member json "source_path"
       >>= fun source_path ->
       ModulePath.from_json (`Assoc source_path)
@@ -465,7 +465,7 @@ module ProjectFile = struct
         module_id = ModuleId.from_int module_id;
         module_name = Reference.create module_name;
         module_path;
-        info_path = Option.map ~f:ModuleInfoPath.create info_path;
+        info_filename = Option.map ~f:ModuleInfoFilename.create info_filename;
         is_test;
         is_interface;
         is_init;
@@ -516,86 +516,126 @@ module ProjectFile = struct
     | Error error -> raise (PyreflyFileFormatError { path; error = Error.FormatError error })
 end
 
-(* Information from pyrefly about a given module, stored as a `module:id.json` file. This matches
-   the `pyrefly::report::pysa::PysaModuleFile` rust type. *)
-module ModuleInfoFile = struct
-  module ClassNamesResult = struct
-    type t = {
-      class_names: GlobalClassId.t list;
-      stripped_coroutine: bool;
-      stripped_optional: bool;
-      stripped_readonly: bool;
-      unbound_type_variable: bool;
-      is_exhaustive: bool;
-    }
-    [@@deriving equal, show]
+module ClassNamesResult = struct
+  type t = {
+    class_names: GlobalClassId.t list;
+    stripped_coroutine: bool;
+    stripped_optional: bool;
+    stripped_readonly: bool;
+    unbound_type_variable: bool;
+    is_exhaustive: bool;
+  }
+  [@@deriving equal, show]
 
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      JsonUtil.get_list_member json "class_names"
-      >>| List.map ~f:GlobalClassId.from_json
-      >>= Result.all
-      >>= fun class_names ->
-      JsonUtil.get_optional_bool_member ~default:false json "stripped_coroutine"
-      >>= fun stripped_coroutine ->
-      JsonUtil.get_optional_bool_member ~default:false json "stripped_optional"
-      >>= fun stripped_optional ->
-      JsonUtil.get_optional_bool_member ~default:false json "stripped_readonly"
-      >>= fun stripped_readonly ->
-      JsonUtil.get_optional_bool_member ~default:false json "unbound_type_variable"
-      >>= fun unbound_type_variable ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_exhaustive"
-      >>| fun is_exhaustive ->
+  let from_json json =
+    let open Core.Result.Monad_infix in
+    JsonUtil.get_list_member json "class_names"
+    >>| List.map ~f:GlobalClassId.from_json
+    >>= Result.all
+    >>= fun class_names ->
+    JsonUtil.get_optional_bool_member ~default:false json "stripped_coroutine"
+    >>= fun stripped_coroutine ->
+    JsonUtil.get_optional_bool_member ~default:false json "stripped_optional"
+    >>= fun stripped_optional ->
+    JsonUtil.get_optional_bool_member ~default:false json "stripped_readonly"
+    >>= fun stripped_readonly ->
+    JsonUtil.get_optional_bool_member ~default:false json "unbound_type_variable"
+    >>= fun unbound_type_variable ->
+    JsonUtil.get_optional_bool_member ~default:false json "is_exhaustive"
+    >>| fun is_exhaustive ->
+    {
+      class_names;
+      stripped_coroutine;
+      stripped_optional;
+      stripped_readonly;
+      unbound_type_variable;
+      is_exhaustive;
+    }
+
+
+  let from_optional_json = function
+    | None -> Ok None
+    | Some json -> from_json json |> Result.map ~f:Option.some
+end
+
+module JsonType = struct
+  type t = {
+    string: string;
+    scalar_properties: ScalarTypeProperties.t;
+    class_names: ClassNamesResult.t option;
+  }
+  [@@deriving equal, show]
+
+  let from_json json =
+    let open Core.Result.Monad_infix in
+    JsonUtil.get_string_member json "string"
+    >>= fun string ->
+    JsonUtil.get_optional_bool_member ~default:false json "is_bool"
+    >>= fun is_boolean ->
+    JsonUtil.get_optional_bool_member ~default:false json "is_int"
+    >>= fun is_integer ->
+    JsonUtil.get_optional_bool_member ~default:false json "is_float"
+    >>= fun is_float ->
+    JsonUtil.get_optional_bool_member ~default:false json "is_enum"
+    >>= fun is_enumeration ->
+    JsonUtil.get_optional_member json "class_names"
+    |> ClassNamesResult.from_optional_json
+    >>| fun class_names ->
+    let scalar_properties =
+      ScalarTypeProperties.create
+        ~is_boolean
+        ~is_integer
+          (* TODO(T225700656): pyre1 considers integers to be valid floats. We preserve that
+             behavior for now. *)
+        ~is_float:(is_float || is_integer)
+        ~is_enumeration
+    in
+    { string; scalar_properties; class_names }
+
+
+  let to_pysa_type { string; scalar_properties; class_names } =
+    let class_names =
+      match class_names with
+      | Some
+          {
+            ClassNamesResult.class_names;
+            stripped_coroutine;
+            stripped_optional;
+            stripped_readonly;
+            unbound_type_variable;
+            is_exhaustive;
+          } ->
+          Some
+            {
+              PyreflyType.ClassNamesFromType.class_names =
+                List.map
+                  ~f:(fun { GlobalClassId.module_id; local_class_id } ->
+                    ModuleId.to_int module_id, LocalClassId.to_int local_class_id)
+                  class_names;
+              stripped_coroutine;
+              stripped_optional;
+              stripped_readonly;
+              unbound_type_variable;
+              is_exhaustive;
+            }
+      | None -> None
+    in
+    PysaType.from_pyrefly_type { PyreflyType.string; scalar_properties; class_names }
+
+
+  let pysa_type_none =
+    PysaType.from_pyrefly_type
       {
-        class_names;
-        stripped_coroutine;
-        stripped_optional;
-        stripped_readonly;
-        unbound_type_variable;
-        is_exhaustive;
+        PyreflyType.string = "None";
+        scalar_properties = ScalarTypeProperties.none;
+        class_names = None;
       }
+end
 
-
-    let from_optional_json = function
-      | None -> Ok None
-      | Some json -> from_json json |> Result.map ~f:Option.some
-  end
-
-  module JsonType = struct
-    type t = {
-      string: string;
-      scalar_properties: ScalarTypeProperties.t;
-      class_names: ClassNamesResult.t option;
-    }
-    [@@deriving equal, show]
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      JsonUtil.get_string_member json "string"
-      >>= fun string ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_bool"
-      >>= fun is_boolean ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_int"
-      >>= fun is_integer ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_float"
-      >>= fun is_float ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_enum"
-      >>= fun is_enumeration ->
-      JsonUtil.get_optional_member json "class_names"
-      |> ClassNamesResult.from_optional_json
-      >>| fun class_names ->
-      let scalar_properties =
-        ScalarTypeProperties.create
-          ~is_boolean
-          ~is_integer
-            (* TODO(T225700656): pyre1 considers integers to be valid floats. We preserve that
-               behavior for now. *)
-          ~is_float:(is_float || is_integer)
-          ~is_enumeration
-      in
-      { string; scalar_properties; class_names }
-  end
-
+(* Information from pyrefly about all definitions in a given module, stored as a
+   `<root>/definitions/<module>:<id>.json` file. This matches the
+   `pyrefly::report::pysa::PysaModuleDefinitions` rust type. *)
+module ModuleDefinitionsFile = struct
   module ParentScope = struct
     type t =
       | TopLevel
@@ -956,9 +996,6 @@ module ModuleInfoFile = struct
     (* TODO(T225700656): module_name and source_path are already specified in the Project module. We
        should probably remove those from the file format. *)
     module_id: ModuleId.t;
-    module_name: Reference.t;
-    source_path: ModulePath.t;
-    type_of_expression: JsonType.t Location.Map.t;
     function_definitions: FunctionDefinition.t LocalFunctionId.Map.t;
     class_definitions: ClassDefinition.t Location.Map.t;
     global_variables: JsonGlobalVariable.t list;
@@ -966,14 +1003,6 @@ module ModuleInfoFile = struct
 
   let from_json json =
     let open Core.Result.Monad_infix in
-    let parse_type_of_expression type_of_expression =
-      type_of_expression
-      |> List.map ~f:(fun (location, type_) ->
-             parse_location location
-             >>= fun location -> JsonType.from_json type_ >>| fun type_ -> location, type_)
-      |> Result.all
-      >>| Location.Map.of_alist_exn
-    in
     let parse_function_definitions function_definitions =
       function_definitions
       |> List.map ~f:(fun (local_function_id, function_definition) ->
@@ -1005,15 +1034,6 @@ module ModuleInfoFile = struct
     >>= fun () ->
     JsonUtil.get_int_member json "module_id"
     >>= fun module_id ->
-    JsonUtil.get_string_member json "module_name"
-    >>= fun module_name ->
-    JsonUtil.get_object_member json "source_path"
-    >>= fun source_path ->
-    ModulePath.from_json (`Assoc source_path)
-    >>= fun source_path ->
-    JsonUtil.get_object_member json "type_of_expression"
-    >>= parse_type_of_expression
-    >>= fun type_of_expression ->
     JsonUtil.get_object_member json "function_definitions"
     >>= parse_function_definitions
     >>= fun function_definitions ->
@@ -1025,9 +1045,6 @@ module ModuleInfoFile = struct
     >>| fun global_variables ->
     {
       module_id = ModuleId.from_int module_id;
-      module_name = Reference.create module_name;
-      source_path;
-      type_of_expression;
       function_definitions;
       class_definitions;
       global_variables;
@@ -1037,10 +1054,55 @@ module ModuleInfoFile = struct
   let from_path_exn ~pyrefly_directory path =
     let path =
       pyrefly_directory
-      |> PyrePath.append ~element:"modules"
-      |> PyrePath.append ~element:(ModuleInfoPath.raw path)
+      |> PyrePath.append ~element:"definitions"
+      |> PyrePath.append ~element:(ModuleInfoFilename.raw path)
     in
-    let () = Log.debug "Parsing pyrefly module info file %a" PyrePath.pp path in
+    let () = Log.debug "Parsing pyrefly module definitions file %a" PyrePath.pp path in
+    let json = JsonUtil.read_json_file_exn path in
+    match from_json json with
+    | Ok module_info -> module_info
+    | Error error -> raise (PyreflyFileFormatError { path; error = Error.FormatError error })
+end
+
+(* Information from pyrefly about type of expressions in a given module, stored as a
+   `<root>/type_of_expressions/<module>:<id>.json` file. This matches the
+   `pyrefly::report::pysa::PysaModuleTypeOfExpressions` rust type. *)
+module ModuleTypeOfExpressions = struct
+  type t = {
+    (* TODO(T225700656): module_name and source_path are already specified in the Project module. We
+       should probably remove those from the file format. *)
+    module_id: ModuleId.t;
+    type_of_expression: JsonType.t Location.Map.t;
+  }
+
+  let from_json json =
+    let open Core.Result.Monad_infix in
+    let parse_type_of_expression type_of_expression =
+      type_of_expression
+      |> List.map ~f:(fun (location, type_) ->
+             parse_location location
+             >>= fun location -> JsonType.from_json type_ >>| fun type_ -> location, type_)
+      |> Result.all
+      >>| Location.Map.of_alist_exn
+    in
+    JsonUtil.check_object json
+    >>= fun () ->
+    JsonUtil.check_format_version ~expected:1 json
+    >>= fun () ->
+    JsonUtil.get_int_member json "module_id"
+    >>= fun module_id ->
+    JsonUtil.get_object_member json "type_of_expression"
+    >>= parse_type_of_expression
+    >>| fun type_of_expression -> { module_id = ModuleId.from_int module_id; type_of_expression }
+
+
+  let from_path_exn ~pyrefly_directory path =
+    let path =
+      pyrefly_directory
+      |> PyrePath.append ~element:"type_of_expressions"
+      |> PyrePath.append ~element:(ModuleInfoFilename.raw path)
+    in
+    let () = Log.debug "Parsing pyrefly module type-of-expressions file %a" PyrePath.pp path in
     let json = JsonUtil.read_json_file_exn path in
     match from_json json with
     | Ok module_info -> module_info
@@ -1275,7 +1337,7 @@ module ClassMetadataSharedMemory = struct
          implicitly ['object']) *)
       parents: GlobalClassId.t list;
       (* For a given class, its resolved MRO (Method Resolution Order). *)
-      mro: ModuleInfoFile.ClassMro.t;
+      mro: ModuleDefinitionsFile.ClassMro.t;
     }
     [@@deriving show]
 
@@ -1441,7 +1503,7 @@ module ReadWrite = struct
       module_id: ModuleId.t;
       module_name: Reference.t;
       source_path: ArtifactPath.t option; (* The path of source code as seen by the analyzer. *)
-      pyrefly_info_path: ModuleInfoPath.t option;
+      pyrefly_info_filename: ModuleInfoFilename.t option;
       is_test: bool;
       is_stub: bool;
     }
@@ -1453,7 +1515,7 @@ module ReadWrite = struct
           ProjectFile.Module.module_id;
           module_name;
           module_path;
-          info_path;
+          info_filename;
           is_test;
           is_interface;
           _;
@@ -1463,7 +1525,7 @@ module ReadWrite = struct
         module_id;
         module_name;
         source_path = ModulePath.artifact_file_path ~pyrefly_directory module_path;
-        pyrefly_info_path = info_path;
+        pyrefly_info_filename = info_filename;
         is_test;
         is_stub = is_interface;
       }
@@ -1566,7 +1628,7 @@ module ReadWrite = struct
                         Module.module_id = last_module_id;
                         module_name = module_head;
                         source_path = None;
-                        pyrefly_info_path = None;
+                        pyrefly_info_filename = None;
                         is_test = false;
                         is_stub = false;
                       } );
@@ -1615,46 +1677,6 @@ module ReadWrite = struct
     qualifier_to_module_map, object_class_id
 
 
-  let create_pysa_type { ModuleInfoFile.JsonType.string; scalar_properties; class_names } =
-    let class_names =
-      match class_names with
-      | Some
-          {
-            ModuleInfoFile.ClassNamesResult.class_names;
-            stripped_coroutine;
-            stripped_optional;
-            stripped_readonly;
-            unbound_type_variable;
-            is_exhaustive;
-          } ->
-          Some
-            {
-              PyreflyType.ClassNamesFromType.class_names =
-                List.map
-                  ~f:(fun { GlobalClassId.module_id; local_class_id } ->
-                    ModuleId.to_int module_id, LocalClassId.to_int local_class_id)
-                  class_names;
-              stripped_coroutine;
-              stripped_optional;
-              stripped_readonly;
-              unbound_type_variable;
-              is_exhaustive;
-            }
-      | None -> None
-    in
-
-    PysaType.from_pyrefly_type { PyreflyType.string; scalar_properties; class_names }
-
-
-  let pysa_type_none =
-    PysaType.from_pyrefly_type
-      {
-        PyreflyType.string = "None";
-        scalar_properties = ScalarTypeProperties.none;
-        class_names = None;
-      }
-
-
   let parse_type_of_expressions
       ~scheduler
       ~scheduler_policies
@@ -1675,21 +1697,12 @@ module ReadWrite = struct
              ~preferred_chunks_per_worker:1
              ())
     in
-    let parse_module_info (module_qualifier, pyrefly_info_path) =
-      let {
-        ModuleInfoFile.type_of_expression;
-        module_id = _;
-        module_name = _;
-        source_path = _;
-        function_definitions = _;
-        class_definitions = _;
-        global_variables = _;
-      }
-        =
-        ModuleInfoFile.from_path_exn ~pyrefly_directory pyrefly_info_path
+    let parse_module_info (module_qualifier, pyrefly_info_filename) =
+      let { ModuleTypeOfExpressions.type_of_expression; module_id = _ } =
+        ModuleTypeOfExpressions.from_path_exn ~pyrefly_directory pyrefly_info_filename
       in
       Map.iteri type_of_expression ~f:(fun ~key:location ~data:type_ ->
-          let type_ = create_pysa_type type_ in
+          let type_ = JsonType.to_pysa_type type_ in
           TypeOfExpressionsSharedMemory.add
             type_of_expressions_shared_memory
             { TypeOfExpressionsSharedMemory.Key.module_qualifier; location }
@@ -1698,9 +1711,9 @@ module ReadWrite = struct
     let inputs =
       qualifier_to_module_map
       |> Map.to_alist
-      |> List.filter_map ~f:(fun (qualifier, { Module.pyrefly_info_path; _ }) ->
-             match pyrefly_info_path with
-             | Some pyrefly_info_path -> Some (qualifier, pyrefly_info_path)
+      |> List.filter_map ~f:(fun (qualifier, { Module.pyrefly_info_filename; _ }) ->
+             match pyrefly_info_filename with
+             | Some pyrefly_info_filename -> Some (qualifier, pyrefly_info_filename)
              | None -> None)
     in
     let () =
@@ -1731,7 +1744,7 @@ module ReadWrite = struct
       |> List.iter
            ~f:(fun
                 ( qualifier,
-                  { Module.module_id; source_path; pyrefly_info_path; is_test; is_stub; _ } )
+                  { Module.module_id; source_path; pyrefly_info_filename; is_test; is_stub; _ } )
               ->
              ModuleInfosSharedMemory.add
                handle
@@ -1739,7 +1752,7 @@ module ReadWrite = struct
                {
                  ModuleInfosSharedMemory.Module.module_id;
                  source_path;
-                 has_info = Option.is_some pyrefly_info_path;
+                 has_info = Option.is_some pyrefly_info_filename;
                  is_test;
                  is_stub;
                })
@@ -2024,13 +2037,13 @@ module ReadWrite = struct
   module DefinitionCollector = struct
     module Definition = struct
       type t =
-        | Function of ModuleInfoFile.FunctionDefinition.t
-        | Class of ModuleInfoFile.ClassDefinition.t
+        | Function of ModuleDefinitionsFile.FunctionDefinition.t
+        | Class of ModuleDefinitionsFile.ClassDefinition.t
       [@@deriving equal, show]
 
       let name = function
-        | Function { ModuleInfoFile.FunctionDefinition.name; _ } -> name
-        | Class { ModuleInfoFile.ClassDefinition.name; _ } -> name
+        | Function { ModuleDefinitionsFile.FunctionDefinition.name; _ } -> name
+        | Class { ModuleDefinitionsFile.ClassDefinition.name; _ } -> name
     end
 
     module QualifiedDefinition = struct
@@ -2047,17 +2060,17 @@ module ReadWrite = struct
        'foo'] for a method foo in MyClass. *)
     let rec create_local_path ~function_definitions ~class_definitions sofar parent =
       match parent with
-      | ModuleInfoFile.ParentScope.TopLevel -> sofar
-      | ModuleInfoFile.ParentScope.Class parent_location ->
-          let ({ ModuleInfoFile.ClassDefinition.parent; _ } as class_definition) =
+      | ModuleDefinitionsFile.ParentScope.TopLevel -> sofar
+      | ModuleDefinitionsFile.ParentScope.Class parent_location ->
+          let ({ ModuleDefinitionsFile.ClassDefinition.parent; _ } as class_definition) =
             Map.find_exn class_definitions parent_location
           in
           let sofar =
             { Node.location = parent_location; value = Definition.Class class_definition } :: sofar
           in
           create_local_path ~function_definitions ~class_definitions sofar parent
-      | ModuleInfoFile.ParentScope.Function parent_location ->
-          let ({ ModuleInfoFile.FunctionDefinition.parent; _ } as function_definition) =
+      | ModuleDefinitionsFile.ParentScope.Function parent_location ->
+          let ({ ModuleDefinitionsFile.FunctionDefinition.parent; _ } as function_definition) =
             Map.find_exn function_definitions (LocalFunctionId.create_function parent_location)
           in
           let sofar =
@@ -2071,7 +2084,7 @@ module ReadWrite = struct
         ~function_definitions
         ~class_definitions
         ~local_function_id
-        ({ ModuleInfoFile.FunctionDefinition.parent; _ } as function_definition)
+        ({ ModuleDefinitionsFile.FunctionDefinition.parent; _ } as function_definition)
       =
       create_local_path
         ~function_definitions
@@ -2089,7 +2102,7 @@ module ReadWrite = struct
         ~function_definitions
         ~class_definitions
         ~location
-        ({ ModuleInfoFile.ClassDefinition.parent; _ } as class_definition)
+        ({ ModuleDefinitionsFile.ClassDefinition.parent; _ } as class_definition)
       =
       create_local_path
         ~function_definitions
@@ -2177,7 +2190,7 @@ module ReadWrite = struct
             let name =
               match definition with
               | Definition.Function
-                  { ModuleInfoFile.FunctionDefinition.name; is_property_setter; _ } ->
+                  { ModuleDefinitionsFile.FunctionDefinition.name; is_property_setter; _ } ->
                   (* We need to differentiate property setters from property getters *)
                   let name =
                     if is_property_setter then
@@ -2186,7 +2199,7 @@ module ReadWrite = struct
                       name
                   in
                   name
-              | Definition.Class { ModuleInfoFile.ClassDefinition.name; _ } -> name
+              | Definition.Class { ModuleDefinitionsFile.ClassDefinition.name; _ } -> name
             in
             (* We might find multiple definitions with the same name, for instance:
              * ```
@@ -2324,7 +2337,7 @@ module ReadWrite = struct
             {
               QualifiedDefinition.definition =
                 Definition.Function
-                  (ModuleInfoFile.FunctionDefinition.create_class_toplevel ~name_location);
+                  (ModuleDefinitionsFile.FunctionDefinition.create_class_toplevel ~name_location);
               qualified_name = FullyQualifiedName.create_class_toplevel qualified_name;
               local_name =
                 Reference.combine
@@ -2340,7 +2353,7 @@ module ReadWrite = struct
       let definitions = List.rev definitions in
       {
         QualifiedDefinition.definition =
-          Definition.Function (ModuleInfoFile.FunctionDefinition.create_module_toplevel ());
+          Definition.Function (ModuleDefinitionsFile.FunctionDefinition.create_module_toplevel ());
         qualified_name = FullyQualifiedName.create_module_toplevel ~module_qualifier;
         local_name = Reference.create_from_list [Ast.Statement.toplevel_define_name];
         name_location = Location.any;
@@ -2387,10 +2400,16 @@ module ReadWrite = struct
     in
     let () = Log.info "Collecting classes and definitions..." in
     (* First step: collect classes and definitions, and assign them fully qualified names. *)
-    let collect_definitions_and_assign_names (module_qualifier, pyrefly_info_path) =
-      let { ModuleInfoFile.function_definitions; class_definitions; module_id; global_variables; _ }
+    let collect_definitions_and_assign_names (module_qualifier, pyrefly_info_filename) =
+      let {
+        ModuleDefinitionsFile.function_definitions;
+        class_definitions;
+        module_id;
+        global_variables;
+        _;
+      }
         =
-        ModuleInfoFile.from_path_exn ~pyrefly_directory pyrefly_info_path
+        ModuleDefinitionsFile.from_path_exn ~pyrefly_directory pyrefly_info_filename
       in
       let definitions =
         DefinitionCollector.Tree.from_definitions ~function_definitions ~class_definitions
@@ -2452,7 +2471,7 @@ module ReadWrite = struct
                 defining_class;
                 captures =
                   List.map
-                    ~f:(fun { ModuleInfoFile.CapturedVariable.name } -> name)
+                    ~f:(fun { ModuleDefinitionsFile.CapturedVariable.name } -> name)
                     captured_variables;
                 local_function_id;
               };
@@ -2477,11 +2496,19 @@ module ReadWrite = struct
               fields
               |> List.map
                    ~f:(fun
-                        { ModuleInfoFile.JsonClassField.name; type_; explicit_annotation; location }
+                        {
+                          ModuleDefinitionsFile.JsonClassField.name;
+                          type_;
+                          explicit_annotation;
+                          location;
+                        }
                       ->
                      ( name,
-                       { ClassField.type_ = create_pysa_type type_; explicit_annotation; location }
-                     ))
+                       {
+                         ClassField.type_ = JsonType.to_pysa_type type_;
+                         explicit_annotation;
+                         location;
+                       } ))
               |> SerializableStringMap.of_alist_exn
             in
             ClassFieldsSharedMemory.add class_fields_shared_memory qualified_name fields;
@@ -2496,8 +2523,8 @@ module ReadWrite = struct
       ModuleClassesSharedMemory.add module_classes_shared_memory module_qualifier classes;
       let global_variables =
         global_variables
-        |> List.map ~f:(fun { ModuleInfoFile.JsonGlobalVariable.name; type_; location } ->
-               name, { GlobalVariable.type_ = type_ >>| create_pysa_type; location })
+        |> List.map ~f:(fun { ModuleDefinitionsFile.JsonGlobalVariable.name; type_; location } ->
+               name, { GlobalVariable.type_ = type_ >>| JsonType.to_pysa_type; location })
         |> SerializableStringMap.of_alist_exn
       in
       ModuleGlobalsSharedMemory.add module_globals_shared_memory module_qualifier global_variables;
@@ -2520,9 +2547,9 @@ module ReadWrite = struct
     let inputs =
       qualifier_to_module_map
       |> Map.to_alist
-      |> List.filter_map ~f:(fun (qualifier, { Module.pyrefly_info_path; _ }) ->
-             match pyrefly_info_path with
-             | Some pyrefly_info_path -> Some (qualifier, pyrefly_info_path)
+      |> List.filter_map ~f:(fun (qualifier, { Module.pyrefly_info_filename; _ }) ->
+             match pyrefly_info_filename with
+             | Some pyrefly_info_filename -> Some (qualifier, pyrefly_info_filename)
              | None -> None)
     in
     let map modules =
@@ -2544,9 +2571,9 @@ module ReadWrite = struct
     let callable_undecorated_signatures_shared_memory =
       CallableUndecoratedSignaturesSharedMemory.create ()
     in
-    let parse_class_parents_and_undecorated_signatures (module_qualifier, pyrefly_info_path) =
-      let { ModuleInfoFile.function_definitions; class_definitions; module_id; _ } =
-        ModuleInfoFile.from_path_exn ~pyrefly_directory pyrefly_info_path
+    let parse_class_parents_and_undecorated_signatures (module_qualifier, pyrefly_info_filename) =
+      let { ModuleDefinitionsFile.function_definitions; class_definitions; module_id; _ } =
+        ModuleDefinitionsFile.from_path_exn ~pyrefly_directory pyrefly_info_filename
       in
       let get_function_name local_function_id =
         CallableIdToQualifiedNameSharedMemory.get
@@ -2555,7 +2582,7 @@ module ReadWrite = struct
         |> assert_shared_memory_key_exists "unknown callable id"
       in
       let fold_function_parameters (position, excluded, sofar) = function
-        | ModuleInfoFile.FunctionParameter.PosOnly { name; annotation; required } ->
+        | ModuleDefinitionsFile.FunctionParameter.PosOnly { name; annotation; required } ->
             ( position + 1,
               (match name with
               | Some name -> name :: excluded
@@ -2564,7 +2591,7 @@ module ReadWrite = struct
                 {
                   name;
                   position;
-                  annotation = create_pysa_type annotation;
+                  annotation = JsonType.to_pysa_type annotation;
                   has_default = not required;
                 }
               :: sofar )
@@ -2575,7 +2602,7 @@ module ReadWrite = struct
                 {
                   name;
                   position;
-                  annotation = create_pysa_type annotation;
+                  annotation = JsonType.to_pysa_type annotation;
                   has_default = not required;
                 }
               :: sofar )
@@ -2585,41 +2612,44 @@ module ReadWrite = struct
             ( position + 1,
               name :: excluded,
               FunctionParameter.KeywordOnly
-                { name; annotation = create_pysa_type annotation; has_default = not required }
+                { name; annotation = JsonType.to_pysa_type annotation; has_default = not required }
               :: sofar )
         | Kwargs { name; annotation } ->
             ( position + 1,
               [],
               FunctionParameter.Keywords
-                { name; annotation = create_pysa_type annotation; excluded }
+                { name; annotation = JsonType.to_pysa_type annotation; excluded }
               :: sofar )
       in
       let convert_function_signature
-          { ModuleInfoFile.FunctionSignature.parameters; return_annotation }
+          { ModuleDefinitionsFile.FunctionSignature.parameters; return_annotation }
         =
         let parameters =
           match parameters with
-          | ModuleInfoFile.FunctionParameters.List parameters ->
+          | ModuleDefinitionsFile.FunctionParameters.List parameters ->
               let parameters =
                 parameters
                 |> List.fold ~init:(0, [], []) ~f:fold_function_parameters
                 |> fun (_, _, parameters) -> parameters |> List.rev
               in
               FunctionParameters.List parameters
-          | ModuleInfoFile.FunctionParameters.Ellipsis -> FunctionParameters.Ellipsis
-          | ModuleInfoFile.FunctionParameters.ParamSpec -> FunctionParameters.ParamSpec
+          | ModuleDefinitionsFile.FunctionParameters.Ellipsis -> FunctionParameters.Ellipsis
+          | ModuleDefinitionsFile.FunctionParameters.ParamSpec -> FunctionParameters.ParamSpec
         in
-        { FunctionSignature.parameters; return_annotation = create_pysa_type return_annotation }
+        {
+          FunctionSignature.parameters;
+          return_annotation = JsonType.to_pysa_type return_annotation;
+        }
       in
       let toplevel_undecorated_signature =
         {
           FunctionSignature.parameters = FunctionParameters.List [];
-          return_annotation = pysa_type_none;
+          return_annotation = JsonType.pysa_type_none;
         }
       in
       let add_function
           ~key:local_function_id
-          ~data:{ ModuleInfoFile.FunctionDefinition.undecorated_signatures; _ }
+          ~data:{ ModuleDefinitionsFile.FunctionDefinition.undecorated_signatures; _ }
         =
         let qualified_name = get_function_name local_function_id in
         let undecorated_signatures =
@@ -2632,7 +2662,7 @@ module ReadWrite = struct
       in
       let add_undecorated_signature_for_class
           ~key:_
-          ~data:{ ModuleInfoFile.ClassDefinition.local_class_id; _ }
+          ~data:{ ModuleDefinitionsFile.ClassDefinition.local_class_id; _ }
         =
         let class_name =
           ClassIdToQualifiedNameSharedMemory.get_class_name
@@ -2710,11 +2740,11 @@ module ReadWrite = struct
       let qualifiers =
         qualifier_to_module_map
         |> Map.to_alist
-        |> List.map ~f:(fun (module_qualifier, { Module.source_path; pyrefly_info_path; _ }) ->
+        |> List.map ~f:(fun (module_qualifier, { Module.source_path; pyrefly_info_filename; _ }) ->
                {
                  QualifiersSharedMemory.Value.module_qualifier;
                  has_source = Option.is_some source_path;
-                 has_info = Option.is_some pyrefly_info_path;
+                 has_info = Option.is_some pyrefly_info_filename;
                })
       in
       let () = QualifiersSharedMemory.add handle Memory.SingletonKey.key qualifiers in
@@ -3073,11 +3103,11 @@ module ReadOnly = struct
     let get_mro_from_class_metadata { ClassMetadataSharedMemory.Metadata.mro; _ } =
       match mro with
       | _ when FullyQualifiedName.equal class_name object_class -> []
-      | ModuleInfoFile.ClassMro.Cyclic ->
+      | ModuleDefinitionsFile.ClassMro.Cyclic ->
           (* Failed to resolve the mro because the class hierarchy is cyclic. Fallback to
              [object]. *)
           [object_class]
-      | ModuleInfoFile.ClassMro.Resolved mro ->
+      | ModuleDefinitionsFile.ClassMro.Resolved mro ->
           let mro =
             List.map
               ~f:
