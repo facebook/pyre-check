@@ -91,10 +91,10 @@ module JsonUtil = struct
              { json; message = Format.sprintf "expected the key `%s` to contain a boolean" key })
 
 
-  let get_optional_list_member ~default json key =
+  let get_optional_list_member json key =
     match Yojson.Safe.Util.member key json with
     | `List elements -> Ok elements
-    | `Null -> Ok default
+    | `Null -> Ok []
     | _ ->
         Error
           (FormatError.UnexpectedJsonType
@@ -139,6 +139,19 @@ module JsonUtil = struct
   let get_object_member json key =
     match Yojson.Safe.Util.member key json with
     | `Assoc bindings -> Ok bindings
+    | _ ->
+        Error
+          (FormatError.UnexpectedJsonType
+             {
+               json;
+               message = Format.sprintf "expected an object with key `%s` containing an object" key;
+             })
+
+
+  let get_optional_object_member json key =
+    match Yojson.Safe.Util.member key json with
+    | `Assoc bindings -> Ok bindings
+    | `Null -> Ok []
     | _ ->
         Error
           (FormatError.UnexpectedJsonType
@@ -788,7 +801,7 @@ module ModuleDefinitionsFile = struct
       >>| List.map ~f:FunctionSignature.from_json
       >>= Result.all
       >>= fun undecorated_signatures ->
-      JsonUtil.get_optional_list_member ~default:[] json "captured_variables"
+      JsonUtil.get_optional_list_member json "captured_variables"
       >>| List.map ~f:CapturedVariable.from_json
       >>= Result.all
       >>= fun captured_variables ->
@@ -948,7 +961,7 @@ module ModuleDefinitionsFile = struct
       >>= fun parent ->
       JsonUtil.get_int_member json "class_id"
       >>= fun class_id ->
-      JsonUtil.get_list_member json "bases"
+      JsonUtil.get_optional_list_member json "bases"
       >>| List.map ~f:GlobalClassId.from_json
       >>= Result.all
       >>= fun bases ->
@@ -957,7 +970,7 @@ module ModuleDefinitionsFile = struct
       >>= fun mro ->
       JsonUtil.get_optional_bool_member ~default:false json "is_synthesized"
       >>= fun is_synthesized ->
-      JsonUtil.get_object_member json "fields"
+      JsonUtil.get_optional_object_member json "fields"
       >>| List.map ~f:(fun (name, json) -> JsonClassField.from_json ~name json)
       >>= Result.all
       >>| fun fields ->
