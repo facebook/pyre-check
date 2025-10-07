@@ -40,9 +40,13 @@ module Error = struct
 end
 
 let parse_location location =
-  Location.from_string location
-  |> Result.map_error ~f:(fun error ->
-         FormatError.UnexpectedJsonType { json = `String location; message = error })
+  match Location.from_string location with
+  | Ok { Location.start; stop } ->
+      (* WARNING: Pysa uses 0-indexed column numbers while Pyrefly uses 1-indexed column numbers. *)
+      let decrement_column { Location.line; column } = { Location.line; column = column - 1 } in
+      Ok { Location.start = decrement_column start; stop = decrement_column stop }
+  | Error error ->
+      Error (FormatError.UnexpectedJsonType { json = `String location; message = error })
 
 
 exception
@@ -69,6 +73,11 @@ module JsonUtil = struct
                json;
                message = Format.sprintf "expected an object with key `%s` containing a string" key;
              })
+
+
+  let as_list = function
+    | `List elements -> Ok elements
+    | json -> Error (FormatError.UnexpectedJsonType { json; message = "expected a list" })
 
 
   let get_optional_string_member json key =
@@ -349,15 +358,19 @@ module GlobalCallableId = struct
 
   let _ = pp, LocalFunctionId.show
 
+  let from_json json =
+    let open Core.Result.Monad_infix in
+    JsonUtil.get_int_member json "module_id"
+    >>= fun module_id ->
+    JsonUtil.get_string_member json "function_id"
+    >>= LocalFunctionId.from_string
+    >>| fun local_function_id -> { module_id = ModuleId.from_int module_id; local_function_id }
+
+
   let from_optional_json = function
     | Some json ->
         let open Core.Result.Monad_infix in
-        JsonUtil.get_int_member json "module_id"
-        >>= fun module_id ->
-        JsonUtil.get_string_member json "function_id"
-        >>= LocalFunctionId.from_string
-        >>| fun local_function_id ->
-        Some { module_id = ModuleId.from_int module_id; local_function_id }
+        from_json json >>| Option.some
     | None -> Ok None
 end
 
@@ -772,6 +785,19 @@ module ModuleDefinitionsFile = struct
       JsonUtil.get_string_member json "name" >>| fun name -> { name }
   end
 
+  let parse_decorator_callees bindings =
+    let open Core.Result.Monad_infix in
+    let parse_binding (key, value) =
+      parse_location key
+      >>= fun location ->
+      JsonUtil.as_list value
+      >>| List.map ~f:GlobalCallableId.from_json
+      >>= Result.all
+      >>| fun callables -> location, callables
+    in
+    List.map ~f:parse_binding bindings |> Result.all >>| Location.SerializableMap.of_alist_exn
+
+
   module FunctionDefinition = struct
     type t = {
       name: string;
@@ -788,6 +814,7 @@ module ModuleDefinitionsFile = struct
       is_class_toplevel: bool;
       overridden_base_method: GlobalCallableId.t option;
       defining_class: GlobalClassId.t option;
+      decorator_callees: GlobalCallableId.t list Location.SerializableMap.t;
     }
     [@@deriving equal, show]
 
@@ -822,7 +849,10 @@ module ModuleDefinitionsFile = struct
       >>= fun overridden_base_method ->
       JsonUtil.get_optional_member json "defining_class"
       |> GlobalClassId.from_optional_json
-      >>| fun defining_class ->
+      >>= fun defining_class ->
+      JsonUtil.get_optional_object_member json "decorator_callees"
+      >>= parse_decorator_callees
+      >>| fun decorator_callees ->
       {
         name;
         parent;
@@ -838,6 +868,7 @@ module ModuleDefinitionsFile = struct
         is_class_toplevel = false;
         overridden_base_method;
         defining_class;
+        decorator_callees;
       }
 
 
@@ -868,6 +899,7 @@ module ModuleDefinitionsFile = struct
         is_class_toplevel = false;
         overridden_base_method = None;
         defining_class = None;
+        decorator_callees = Location.SerializableMap.empty;
       }
 
 
@@ -898,6 +930,7 @@ module ModuleDefinitionsFile = struct
         is_class_toplevel = true;
         overridden_base_method = None;
         defining_class = None;
+        decorator_callees = Location.SerializableMap.empty;
       }
   end
 
@@ -950,6 +983,7 @@ module ModuleDefinitionsFile = struct
       mro: ClassMro.t;
       is_synthesized: bool;
       fields: JsonClassField.t list;
+      decorator_callees: GlobalCallableId.t list Location.SerializableMap.t;
     }
     [@@deriving equal, show]
 
@@ -973,7 +1007,10 @@ module ModuleDefinitionsFile = struct
       JsonUtil.get_optional_object_member json "fields"
       >>| List.map ~f:(fun (name, json) -> JsonClassField.from_json ~name json)
       >>= Result.all
-      >>| fun fields ->
+      >>= fun fields ->
+      JsonUtil.get_optional_object_member json "decorator_callees"
+      >>= parse_decorator_callees
+      >>| fun decorator_callees ->
       {
         name;
         parent;
@@ -982,6 +1019,7 @@ module ModuleDefinitionsFile = struct
         mro;
         is_synthesized;
         fields;
+        decorator_callees;
       }
   end
 
@@ -1321,6 +1359,8 @@ module CallableMetadataSharedMemory = struct
       overridden_base_method: GlobalCallableId.t option;
       defining_class: GlobalClassId.t option;
       local_function_id: LocalFunctionId.t;
+      (* The list of callees for each decorator *)
+      decorator_callees: GlobalCallableId.t list Location.SerializableMap.t;
     }
   end
 
@@ -1351,6 +1391,8 @@ module ClassMetadataSharedMemory = struct
       parents: GlobalClassId.t list;
       (* For a given class, its resolved MRO (Method Resolution Order). *)
       mro: ModuleDefinitionsFile.ClassMro.t;
+      (* The list of callees for each decorator *)
+      decorator_callees: GlobalCallableId.t list Location.SerializableMap.t;
     }
     [@@deriving show]
 
@@ -1428,16 +1470,22 @@ module ClassIdToQualifiedNameSharedMemory = struct
     class_id |> get handle |> assert_shared_memory_key_exists "unknown class id"
 end
 
-module CallableIdToQualifiedNameSharedMemory =
-  Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
-    (GlobalCallableIdSharedMemoryKey)
-    (struct
-      type t = FullyQualifiedName.t
+module CallableIdToQualifiedNameSharedMemory = struct
+  include
+    Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
+      (GlobalCallableIdSharedMemoryKey)
+      (struct
+        type t = FullyQualifiedName.t
 
-      let prefix = Hack_parallel.Std.Prefix.make ()
+        let prefix = Hack_parallel.Std.Prefix.make ()
 
-      let description = "pyrefly callable id to fully qualified name"
-    end)
+        let description = "pyrefly callable id to fully qualified name"
+      end)
+
+  let get_opt = get
+
+  let get handle id = get_opt handle id |> assert_shared_memory_key_exists "unknown callable id"
+end
 
 module ClassField = struct
   type t = {
@@ -2459,6 +2507,7 @@ module ReadWrite = struct
               is_class_toplevel;
               overridden_base_method;
               defining_class;
+              decorator_callees;
               _;
             } ->
             CallableMetadataSharedMemory.add
@@ -2480,20 +2529,21 @@ module ReadWrite = struct
                     parent_is_class = Option.is_some defining_class;
                   };
                 name;
+                local_function_id;
                 overridden_base_method;
                 defining_class;
                 captures =
                   List.map
                     ~f:(fun { ModuleDefinitionsFile.CapturedVariable.name } -> name)
                     captured_variables;
-                local_function_id;
+                decorator_callees;
               };
             CallableIdToQualifiedNameSharedMemory.add
               callable_id_to_qualified_name_shared_memory
               { GlobalCallableId.module_id; local_function_id }
               qualified_name;
             qualified_name :: callables, classes
-        | Class { local_class_id; is_synthesized; fields; bases; mro; _ } ->
+        | Class { local_class_id; is_synthesized; fields; bases; mro; decorator_callees; _ } ->
             ClassMetadataSharedMemory.add
               class_metadata_shared_memory
               qualified_name
@@ -2504,6 +2554,7 @@ module ReadWrite = struct
                 is_synthesized;
                 parents = bases;
                 mro;
+                decorator_callees;
               };
             let fields =
               fields
@@ -2592,7 +2643,6 @@ module ReadWrite = struct
         CallableIdToQualifiedNameSharedMemory.get
           callable_id_to_qualified_name_shared_memory
           { GlobalCallableId.module_id; local_function_id }
-        |> assert_shared_memory_key_exists "unknown callable id"
       in
       let fold_function_parameters (position, excluded, sofar) = function
         | ModuleDefinitionsFile.FunctionParameter.PosOnly { name; annotation; required } ->
@@ -3158,7 +3208,7 @@ module ReadOnly = struct
     |> assert_shared_memory_key_exists "missing callable metadata"
     |> fun { CallableMetadataSharedMemory.Value.overridden_base_method; _ } ->
     overridden_base_method
-    >>= CallableIdToQualifiedNameSharedMemory.get callable_id_to_qualified_name_shared_memory
+    >>| CallableIdToQualifiedNameSharedMemory.get callable_id_to_qualified_name_shared_memory
     >>| FullyQualifiedName.to_reference
 
 
@@ -3168,6 +3218,22 @@ module ReadOnly = struct
       (FullyQualifiedName.from_reference_unchecked define_name)
     |> assert_shared_memory_key_exists "missing callable metadata"
     |> fun { CallableMetadataSharedMemory.Value.captures; _ } -> captures
+
+
+  let get_callable_decorator_callees
+      { callable_metadata_shared_memory; callable_id_to_qualified_name_shared_memory; _ }
+      define_name
+      location
+    =
+    CallableMetadataSharedMemory.get
+      callable_metadata_shared_memory
+      (FullyQualifiedName.from_reference_unchecked define_name)
+    |> assert_shared_memory_key_exists "missing callable metadata"
+    |> (fun { CallableMetadataSharedMemory.Value.decorator_callees; _ } -> decorator_callees)
+    |> Location.SerializableMap.find_opt location
+    >>| List.map
+          ~f:(CallableIdToQualifiedNameSharedMemory.get callable_id_to_qualified_name_shared_memory)
+    >>| List.map ~f:FullyQualifiedName.to_reference
 
 
   let get_methods_for_qualifier

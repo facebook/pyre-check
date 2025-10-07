@@ -835,10 +835,10 @@ end
 module CallableDecorator = struct
   type t = {
     statement: Statement.Decorator.t;
-    callees: CallGraph.CallCallees.t Lazy.t option;
+    callees: Reference.t list Lazy.t option;
   }
 
-  let create ~pyre_api ~callables_to_definitions_map statement =
+  let create ~pyre_api ~callables_to_definitions_map ~target statement =
     let get_callees statement =
       let ({ Node.value = expression; _ } as decorator_expression) =
         Statement.Decorator.to_expression statement
@@ -851,17 +851,39 @@ module CallableDecorator = struct
             (* Regular decorator, such as `@foo` *) decorator_expression
         | _ -> decorator_expression
       in
-      let return_type =
-        (* Since this won't be used and resolving the return type could be expensive, let's pass a
-           random type. *)
-        lazy Type.Any
-      in
-      Interprocedural.CallGraph.resolve_callees_from_type_external
-        ~pyre_in_context:(PyrePysaApi.InContext.create_at_global_scope pyre_api)
-        ~callables_to_definitions_map
-        ~override_graph:None
-        ~return_type
-        callee
+      match pyre_api with
+      | PyrePysaApi.ReadOnly.Pyre1 _ ->
+          let return_type =
+            (* Since this won't be used and resolving the return type could be expensive, let's pass
+               a random type. *)
+            lazy Type.Any
+          in
+          let { Interprocedural.CallGraph.CallCallees.call_targets; new_targets; init_targets; _ } =
+            Interprocedural.CallGraph.resolve_callees_from_type_external
+              ~pyre_in_context:(PyrePysaApi.InContext.create_at_global_scope pyre_api)
+              ~callables_to_definitions_map
+              ~override_graph:None
+              ~return_type
+              callee
+          in
+          let call_targets =
+            call_targets |> List.rev_append new_targets |> List.rev_append init_targets
+          in
+          let call_target_to_fully_qualified_name call_target =
+            call_target
+            |> CallGraph.CallTarget.target
+            |> Interprocedural.Target.get_regular
+            |> Interprocedural.Target.Regular.override_to_method
+            |> Interprocedural.Target.Regular.define_name_exn
+          in
+          List.map ~f:call_target_to_fully_qualified_name call_targets
+      | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->
+          Interprocedural.PyreflyApi.ReadOnly.get_callable_decorator_callees
+            pyrefly_api
+            (Target.define_name_exn target)
+            (Node.location callee)
+          |> Option.value ~default:[]
+          |> List.map ~f:Interprocedural.PyreflyApi.target_symbolic_name
     in
     let callees = Some (lazy (get_callees statement)) in
     { statement; callees }
@@ -1030,7 +1052,7 @@ module Modelable = struct
                ~define_name
                ~decorators)
         |> List.filter_map ~f:Statement.Decorator.from_expression
-        |> List.map ~f:(CallableDecorator.create ~pyre_api ~callables_to_definitions_map))
+        |> List.map ~f:(CallableDecorator.create ~pyre_api ~callables_to_definitions_map ~target))
     in
     Callable { target; define_signature; undecorated_signatures; decorators }
 

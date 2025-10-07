@@ -110,6 +110,12 @@ module ReadOnly : sig
 
   val get_callable_captures : t -> Ast.Reference.t -> string list
 
+  val get_callable_decorator_callees
+    :  t ->
+    Ast.Reference.t ->
+    Ast.Location.t ->
+    Ast.Reference.t list option
+
   val get_methods_for_qualifier
     :  t ->
     exclude_test_modules:bool ->
@@ -336,6 +342,7 @@ module ModuleDefinitionsFile : sig
       is_class_toplevel: bool;
       overridden_base_method: GlobalCallableId.t option;
       defining_class: GlobalClassId.t option;
+      decorator_callees: GlobalCallableId.t list Ast.Location.SerializableMap.t;
     }
     [@@deriving equal, show]
   end
@@ -366,6 +373,7 @@ module ModuleDefinitionsFile : sig
       mro: ClassMro.t;
       is_synthesized: bool;
       fields: JsonClassField.t list;
+      decorator_callees: GlobalCallableId.t list Ast.Location.SerializableMap.t;
     }
     [@@deriving equal, show]
   end

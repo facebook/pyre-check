@@ -2034,7 +2034,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   (* Basic test case for `FullyQualifiedCallee`. *)
   assert_generated_annotations
@@ -2066,7 +2065,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   (* Test `FullyQualifiedCallee` when the callee is unresolvable. *)
   assert_generated_annotations
@@ -2093,7 +2091,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   (* Test `FullyQualifiedCallee` on a decorator factory. *)
   assert_generated_annotations
@@ -2125,7 +2122,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   (* Test `FullyQualifiedCallee` when there are multiple decorators. We consider it as being matched
      if one of the decorators match. *)
@@ -2161,7 +2157,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   (* Test `FullyQualifiedCallee` when the decorator is overriden. *)
   assert_generated_annotations
@@ -2196,7 +2191,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   (* Test `FullyQualifiedCallee` when the decorator is a base method. *)
   assert_generated_annotations
@@ -2230,7 +2224,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   (* Test `FullyQualifiedCallee` for class decorators. *)
   assert_generated_annotations
@@ -2268,7 +2261,7 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
+    ~skip_for_pyrefly:true (* TODO(T225700656): Improve call graph building. *)
     ();
   assert_generated_annotations
     ~source:
@@ -2299,7 +2292,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -2330,7 +2322,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.bar"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -2361,7 +2352,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -2391,7 +2381,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -2415,7 +2404,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -2446,7 +2434,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -2477,7 +2464,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -2523,7 +2509,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -2569,7 +2554,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -2616,7 +2600,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -2663,7 +2646,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -2717,7 +2699,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -2771,7 +2752,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -2825,7 +2805,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle decorator constraints. *)
     ();
   ()
 

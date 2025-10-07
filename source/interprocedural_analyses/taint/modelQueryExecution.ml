@@ -593,23 +593,6 @@ let matches_name_constraint ~name_captures ~name_constraint name =
       is_match
 
 
-let matches_callee_constraint ~name_captures ~name_constraint callees =
-  let { Interprocedural.CallGraph.CallCallees.call_targets; new_targets; init_targets; _ } =
-    callees
-  in
-  let call_targets = call_targets |> List.rev_append new_targets |> List.rev_append init_targets in
-  let call_target_to_string call_target =
-    call_target
-    |> CallGraph.CallTarget.target
-    |> Interprocedural.Target.get_regular
-    |> Interprocedural.Target.Regular.override_to_method
-    |> Interprocedural.Target.Regular.define_name_exn
-    |> Reference.show
-  in
-  List.exists call_targets ~f:(fun call_target ->
-      matches_name_constraint ~name_captures ~name_constraint (call_target_to_string call_target))
-
-
 let rec matches_decorator_constraint ~pyre_api ~name_captures ~decorator = function
   | ModelQuery.DecoratorConstraint.AnyOf constraints ->
       List.exists constraints ~f:(matches_decorator_constraint ~pyre_api ~name_captures ~decorator)
@@ -633,7 +616,8 @@ let rec matches_decorator_constraint ~pyre_api ~name_captures ~decorator = funct
             (* This is forbidden during parsing *)
             failwith "fully_qualified_callee is not supported within cls.decorator"
       in
-      matches_callee_constraint ~name_captures ~name_constraint callees
+      List.exists callees ~f:(fun callee ->
+          matches_name_constraint ~name_captures ~name_constraint (Reference.show callee))
   | ModelQuery.DecoratorConstraint.ArgumentsConstraint arguments_constraint -> (
       let { Statement.Decorator.arguments = decorator_arguments; _ } =
         CallableDecorator.statement decorator

@@ -538,6 +538,7 @@ let test_fully_qualified_names _ =
         is_class_toplevel = false;
         overridden_base_method = None;
         defining_class = None;
+        decorator_callees = Location.SerializableMap.empty;
       }
   in
   let create_class ?(parent = ModuleDefinitionsFile.ParentScope.TopLevel) name =
@@ -550,6 +551,7 @@ let test_fully_qualified_names _ =
         mro = ModuleDefinitionsFile.ClassMro.Resolved [];
         is_synthesized = false;
         fields = [];
+        decorator_callees = Location.SerializableMap.empty;
       }
   in
   let class_parent ~line = ModuleDefinitionsFile.ParentScope.Class (location_at_line line) in
