@@ -18,6 +18,7 @@
 (tests
  (names
   annotationParserTest
+  classModelsTest
   configurationTest
   domainTest
   dumpModelQueryResultsTest
@@ -39,6 +40,7 @@
   ruleCoverageTest)
  (modules
   annotationParserTest
+  classModelsTest
   configurationTest
   domainTest
   dumpModelQueryResultsTest
