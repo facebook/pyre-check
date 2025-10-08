@@ -1349,6 +1349,10 @@ let assert_shared_memory_key_exists message = function
   | None -> failwith (Format.sprintf "unexpected: %s" message)
 
 
+let strip_invalid_locations =
+  List.filter ~f:(fun { Node.location; _ } -> not (Location.equal Location.any location))
+
+
 module CallableMetadataSharedMemory = struct
   module Value = struct
     type t = {
@@ -1509,7 +1513,7 @@ module ClassFieldsSharedMemory =
       let description = "pyrefly class fields"
     end)
 
-module CallableAst = struct
+module AstResult = struct
   type 'a t =
     | Some of 'a Node.t
     | ParseError (* callable in a module that failed to parse *)
@@ -1525,7 +1529,7 @@ module CallableAstSharedMemory =
   Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
     (FullyQualifiedNameSharedMemoryKey)
     (struct
-      type t = Statement.Define.t CallableAst.t
+      type t = Statement.Define.t AstResult.t
 
       let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -1537,7 +1541,7 @@ module CallableDefineSignatureSharedMemory =
   Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
     (FullyQualifiedNameSharedMemoryKey)
     (struct
-      type t = Statement.Define.Signature.t CallableAst.t
+      type t = Statement.Define.Signature.t AstResult.t
 
       let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -1554,6 +1558,17 @@ module CallableUndecoratedSignaturesSharedMemory =
       let prefix = Hack_parallel.Std.Prefix.make ()
 
       let description = "pyrefly undecorated signatures of callables"
+    end)
+
+module ClassDecoratorsSharedMemory =
+  Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+    (FullyQualifiedNameSharedMemoryKey)
+    (struct
+      type t = Ast.Expression.t list AstResult.t
+
+      let prefix = Hack_parallel.Std.Prefix.make ()
+
+      let description = "pyrefly class decorators"
     end)
 
 (* API handle stored in the main process. The type `t` should not be sent to workers, since it's
@@ -1599,13 +1614,14 @@ module ReadWrite = struct
     type_of_expressions_shared_memory: TypeOfExpressionsSharedMemory.t;
     callable_metadata_shared_memory: CallableMetadataSharedMemory.t;
     class_metadata_shared_memory: ClassMetadataSharedMemory.t;
+    class_fields_shared_memory: ClassFieldsSharedMemory.t;
+    class_decorators_shared_memory: ClassDecoratorsSharedMemory.t;
     module_callables_shared_memory: ModuleCallablesSharedMemory.t;
     module_classes_shared_memory: ModuleClassesSharedMemory.t;
     module_globals_shared_memory: ModuleGlobalsSharedMemory.t;
     (* TODO(T225700656): this can be removed from shared memory after initialization. *)
     class_id_to_qualified_name_shared_memory: ClassIdToQualifiedNameSharedMemory.t;
     callable_id_to_qualified_name_shared_memory: CallableIdToQualifiedNameSharedMemory.t;
-    class_fields_shared_memory: ClassFieldsSharedMemory.t;
     callable_ast_shared_memory: CallableAstSharedMemory.t;
     callable_define_signature_shared_memory: CallableDefineSignatureSharedMemory.t;
     callable_undecorated_signatures_shared_memory: CallableUndecoratedSignaturesSharedMemory.t;
@@ -1829,6 +1845,7 @@ module ReadWrite = struct
       ~module_infos_shared_memory
       ~qualifier_to_module_map
       ~module_callables_shared_memory
+      ~module_classes_shared_memory
       ~callable_metadata_shared_memory
       ~class_metadata_shared_memory
     =
@@ -1836,6 +1853,7 @@ module ReadWrite = struct
     let () = Log.info "Parsing source files..." in
     let callable_ast_shared_memory = CallableAstSharedMemory.create () in
     let callable_define_signature_shared_memory = CallableDefineSignatureSharedMemory.create () in
+    let class_decorators_shared_memory = ClassDecoratorsSharedMemory.create () in
     let controls =
       Analysis.EnvironmentControls.create
         ~populate_call_graph:false
@@ -1847,8 +1865,8 @@ module ReadWrite = struct
           CallableAstSharedMemory.add callable_ast_shared_memory callable define_result;
           let signature_result =
             match define_result with
-            | CallableAst.Some { Node.value = { Statement.Define.signature; _ }; location } ->
-                CallableAst.Some { Node.value = signature; location }
+            | AstResult.Some { Node.value = { Statement.Define.signature; _ }; location } ->
+                AstResult.Some { Node.value = signature; location }
             | ParseError -> ParseError
             | TestFile -> TestFile
           in
@@ -1858,12 +1876,16 @@ module ReadWrite = struct
             signature_result;
           ())
     in
+    let store_class_decorators classes decorator_result =
+      List.iter classes ~f:(fun class_name ->
+          ClassDecoratorsSharedMemory.add class_decorators_shared_memory class_name decorator_result)
+    in
     let collect_callable_asts_from_source ~qualifier ~callables ~source =
       let location_to_callable =
         callables
         |> List.map ~f:(fun callable ->
                CallableMetadataSharedMemory.get callable_metadata_shared_memory callable
-               |> Option.value_exn ~message:"missing callable metadata for callable"
+               |> assert_shared_memory_key_exists "missing callable metadata for callable"
                |> fun { CallableMetadataSharedMemory.Value.metadata = { name_location; _ }; _ } ->
                name_location, callable)
         |> Location.Map.of_alist_exn
@@ -1875,9 +1897,6 @@ module ReadWrite = struct
           ~include_toplevels:true
           ~include_methods:true
           source
-      in
-      let strip_invalid_locations =
-        List.filter ~f:(fun { Node.location; _ } -> not (Location.equal Location.any location))
       in
       (* For a given `def ..` statement, we need to find the matching definition provided by
          Pyrefly. *)
@@ -2000,16 +2019,144 @@ module ReadWrite = struct
           ~f:
             (fun ~key:callable
                  ~data:({ Node.value = { Statement.Define.signature; _ }; location } as define) ->
-            CallableAstSharedMemory.add
-              callable_ast_shared_memory
-              callable
-              (CallableAst.Some define);
+            CallableAstSharedMemory.add callable_ast_shared_memory callable (AstResult.Some define);
             CallableDefineSignatureSharedMemory.add
               callable_define_signature_shared_memory
               callable
-              (CallableAst.Some { Node.value = signature; location });
+              (AstResult.Some { Node.value = signature; location });
             ())
           callable_to_define
+    in
+    let collect_class_decorators_from_source ~qualifier ~classes ~source =
+      let location_to_class =
+        classes
+        |> List.map ~f:(fun class_name ->
+               ClassMetadataSharedMemory.get class_metadata_shared_memory class_name
+               |> assert_shared_memory_key_exists "missing class metadata for class"
+               |> fun { ClassMetadataSharedMemory.Metadata.name_location; _ } ->
+               name_location, class_name)
+        |> Location.Map.of_alist_exn
+      in
+      let class_statements = Preprocessing.classes source in
+      (* For a given `class ..` statement, we need to find the matching definition provided by
+         Pyrefly. *)
+      let find_matching_class_for_ast
+          (location_to_class, class_to_statement)
+          ({
+             Node.value = { Statement.Class.name; base_arguments; body; _ };
+             location =
+               { Location.start = class_start; stop = class_stop } as class_statement_location;
+           } as class_statement)
+        =
+        (* Pyrefly gives us the location of the name AST node, i.e the location of 'Foo' in `class
+           Foo: ...`, but the Pyre AST does not give us the location of the name, only the location
+           of the whole `class Foo: ...` statement. Since we can't match on the exact location, we
+           try to find a class statement whose location is between the `class` keyword and the first
+           base or first statement. *)
+        let search_result =
+          let first_base_or_statement_position =
+            let base_argument_expressions =
+              List.map ~f:(fun { Expression.Call.Argument.value; _ } -> value) base_arguments
+            in
+            match
+              strip_invalid_locations base_argument_expressions, strip_invalid_locations body
+            with
+            | { Node.location = { Location.start; _ }; _ } :: _, _ -> start
+            | _, { Node.location = { Location.start; _ }; _ } :: _ -> start
+            | _ -> class_stop
+          in
+          Map.binary_search_subrange
+            location_to_class
+            ~compare:(fun ~key:{ Location.start = location; stop = _ } ~data:_ bound ->
+              Location.compare_position location bound)
+            ~lower_bound:(Maybe_bound.Excl class_start)
+            ~upper_bound:(Maybe_bound.Incl first_base_or_statement_position)
+          |> Map.to_alist
+          |> List.filter ~f:(fun ({ Location.start = name_start; stop = name_stop }, _) ->
+                 Location.compare_position class_start name_start < 0
+                 && Location.compare_position name_stop first_base_or_statement_position <= 0)
+        in
+        match search_result with
+        | [] ->
+            (* This definition is not visible by pyrefly. It might be guarded by a `if
+               TYPE_CHECKING` or `if sys.version`. *)
+            location_to_class, class_to_statement
+        | [(location, class_name)] ->
+            let location_to_class = Map.remove location_to_class location in
+            let class_to_statement =
+              Map.add_exn class_to_statement ~key:class_name ~data:class_statement
+            in
+            location_to_class, class_to_statement
+        | _ ->
+            Format.asprintf
+              "Found multiple class statements matching with class `%a` at location %a of module \
+               `%a`"
+              Reference.pp
+              name
+              Location.pp
+              class_statement_location
+              ModuleQualifier.pp
+              qualifier
+            |> failwith
+      in
+      let add_synthesized_class (location_to_class, class_to_statement) (location, class_name) =
+        let { ClassMetadataSharedMemory.Metadata.is_synthesized; _ } =
+          ClassMetadataSharedMemory.get class_metadata_shared_memory class_name
+          |> assert_shared_memory_key_exists "missing class metadata for class"
+        in
+        if is_synthesized then
+          let class_statement =
+            {
+              Statement.Class.name = FullyQualifiedName.to_reference class_name;
+              base_arguments = [];
+              parent = NestingContext.create_toplevel ();
+              body = [];
+              decorators = [];
+              top_level_unbound_names = [];
+              type_params = [];
+            }
+            |> Node.create ~location
+          in
+          let location_to_class = Map.remove location_to_class location in
+          let class_to_statement =
+            Map.add_exn class_to_statement ~key:class_name ~data:class_statement
+          in
+          location_to_class, class_to_statement
+        else
+          location_to_class, class_to_statement
+      in
+      let remaining_classes, class_to_statement =
+        List.fold
+          ~init:(location_to_class, FullyQualifiedName.Map.empty)
+          ~f:find_matching_class_for_ast
+          class_statements
+      in
+      let remaining_classes, class_to_statement =
+        List.fold
+          ~init:(remaining_classes, class_to_statement)
+          ~f:add_synthesized_class
+          (Map.to_alist remaining_classes)
+      in
+      if not (Map.is_empty remaining_classes) then
+        let location, class_name = Map.min_elt_exn remaining_classes in
+        Format.asprintf
+          "Could not find AST of class `%a` at location %a in module `%a`"
+          FullyQualifiedName.pp
+          class_name
+          Location.pp
+          location
+          ModuleQualifier.pp
+          qualifier
+        |> failwith
+      else
+        Map.iteri
+          ~f:
+            (fun ~key:class_name ~data:{ Node.value = { Statement.Class.decorators; _ }; location } ->
+            ClassDecoratorsSharedMemory.add
+              class_decorators_shared_memory
+              class_name
+              (AstResult.Some (Node.create ~location decorators)))
+          class_to_statement
     in
     let parse_module qualifier =
       let module_info =
@@ -2017,14 +2164,19 @@ module ReadWrite = struct
         |> Option.value_exn ~message:"missing module info for qualifier"
       in
       let callables = ModuleCallablesSharedMemory.get module_callables_shared_memory qualifier in
-      match module_info, callables with
-      | _, None -> ()
-      | { ModuleInfosSharedMemory.Module.source_path = None; _ }, Some _ ->
+      let classes = ModuleClassesSharedMemory.get module_classes_shared_memory qualifier in
+      match module_info, callables, classes with
+      | _, None, _ -> ()
+      | _, _, None -> ()
+      | { ModuleInfosSharedMemory.Module.source_path = None; _ }, Some _, Some _ ->
           failwith "unexpected: no source path for module with callables"
-      | { ModuleInfosSharedMemory.Module.is_test = true; _ }, Some callables ->
-          store_callable_asts callables CallableAst.TestFile
+      | { ModuleInfosSharedMemory.Module.is_test = true; _ }, Some callables, Some classes ->
+          let () = store_callable_asts callables AstResult.TestFile in
+          let () = store_class_decorators classes AstResult.TestFile in
+          ()
       | ( { ModuleInfosSharedMemory.Module.source_path = Some source_path; is_test = false; _ },
-          Some callables ) -> (
+          Some callables,
+          Some classes ) -> (
           let load_result =
             try Ok (ArtifactPath.raw source_path |> File.create |> File.content_exn) with
             | Sys_error error ->
@@ -2055,7 +2207,9 @@ module ReadWrite = struct
               (* Remove the qualifier created by pyre, it is wrong *)
               let module_path = { module_path with qualifier = Reference.empty } in
               let source = { source with module_path } in
-              collect_callable_asts_from_source ~qualifier ~callables ~source
+              let () = collect_callable_asts_from_source ~qualifier ~callables ~source in
+              let () = collect_class_decorators_from_source ~qualifier ~classes ~source in
+              ()
           | Error { Analysis.Parsing.ParseResult.Error.location; message; _ } ->
               let () =
                 Log.error
@@ -2066,7 +2220,9 @@ module ReadWrite = struct
                   location
                   message
               in
-              store_callable_asts callables CallableAst.ParseError)
+              let () = store_callable_asts callables AstResult.ParseError in
+              let () = store_class_decorators classes AstResult.ParseError in
+              ())
     in
     let scheduler_policy =
       Scheduler.Policy.from_configuration_or_default
@@ -2091,7 +2247,9 @@ module ReadWrite = struct
     in
     Log.info "Parsed source files: %.3fs" (Timer.stop_in_sec timer);
     Statistics.performance ~name:"Parsed source files" ~phase_name:"Parsing source files" ~timer ();
-    callable_ast_shared_memory, callable_define_signature_shared_memory
+    ( callable_ast_shared_memory,
+      callable_define_signature_shared_memory,
+      class_decorators_shared_memory )
 
 
   (* Logic to assign fully qualified names to classes and defines. *)
@@ -2832,7 +2990,10 @@ module ReadWrite = struct
         ~module_infos_shared_memory
     in
 
-    let callable_ast_shared_memory, callable_define_signature_shared_memory =
+    let ( callable_ast_shared_memory,
+          callable_define_signature_shared_memory,
+          class_decorators_shared_memory )
+      =
       parse_source_files
         ~scheduler
         ~scheduler_policies
@@ -2840,6 +3001,7 @@ module ReadWrite = struct
         ~module_infos_shared_memory
         ~qualifier_to_module_map
         ~module_callables_shared_memory
+        ~module_classes_shared_memory
         ~callable_metadata_shared_memory
         ~class_metadata_shared_memory
     in
@@ -2869,6 +3031,7 @@ module ReadWrite = struct
       callable_metadata_shared_memory;
       class_metadata_shared_memory;
       class_fields_shared_memory;
+      class_decorators_shared_memory;
       module_callables_shared_memory;
       module_classes_shared_memory;
       module_globals_shared_memory;
@@ -2893,6 +3056,7 @@ module ReadWrite = struct
         callable_metadata_shared_memory;
         class_metadata_shared_memory;
         class_fields_shared_memory;
+        class_decorators_shared_memory;
         module_callables_shared_memory;
         module_classes_shared_memory;
         module_globals_shared_memory;
@@ -2937,6 +3101,7 @@ module ReadWrite = struct
       in
       ClassMetadataSharedMemory.remove class_metadata_shared_memory class_name;
       ClassFieldsSharedMemory.remove class_fields_shared_memory class_name;
+      ClassDecoratorsSharedMemory.remove class_decorators_shared_memory class_name;
       ClassIdToQualifiedNameSharedMemory.remove
         class_id_to_qualified_name_shared_memory
         { GlobalClassId.module_id; local_class_id };
@@ -2988,6 +3153,7 @@ module ReadOnly = struct
     callable_metadata_shared_memory: CallableMetadataSharedMemory.t;
     class_metadata_shared_memory: ClassMetadataSharedMemory.t;
     class_fields_shared_memory: ClassFieldsSharedMemory.t;
+    class_decorators_shared_memory: ClassDecoratorsSharedMemory.t;
     module_callables_shared_memory: ModuleCallablesSharedMemory.t;
     module_classes_shared_memory: ModuleClassesSharedMemory.t;
     module_globals_shared_memory: ModuleGlobalsSharedMemory.t;
@@ -3006,6 +3172,7 @@ module ReadOnly = struct
         callable_metadata_shared_memory;
         class_metadata_shared_memory;
         class_fields_shared_memory;
+        class_decorators_shared_memory;
         module_callables_shared_memory;
         module_classes_shared_memory;
         module_globals_shared_memory;
@@ -3024,6 +3191,7 @@ module ReadOnly = struct
       callable_metadata_shared_memory;
       class_metadata_shared_memory;
       class_fields_shared_memory;
+      class_decorators_shared_memory;
       module_callables_shared_memory;
       module_classes_shared_memory;
       module_globals_shared_memory;
@@ -3283,9 +3451,9 @@ module ReadOnly = struct
       (FullyQualifiedName.from_reference_unchecked define_name)
     |> assert_shared_memory_key_exists "missing callable ast"
     |> function
-    | CallableAst.Some define -> Some define
-    | CallableAst.ParseError -> None
-    | CallableAst.TestFile -> None
+    | AstResult.Some define -> Some define
+    | AstResult.ParseError -> None
+    | AstResult.TestFile -> None
 
 
   let get_undecorated_signatures { callable_undecorated_signatures_shared_memory; _ } define_name =
@@ -3293,6 +3461,17 @@ module ReadOnly = struct
       callable_undecorated_signatures_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
     |> assert_shared_memory_key_exists "missing callable undecorated signature"
+
+
+  let get_class_decorators_opt { class_decorators_shared_memory; _ } class_name =
+    ClassDecoratorsSharedMemory.get
+      class_decorators_shared_memory
+      (FullyQualifiedName.from_reference_unchecked (Reference.create class_name))
+    |> assert_shared_memory_key_exists "missing callable ast"
+    |> function
+    | AstResult.Some { Node.value = decorators; _ } -> Some decorators
+    | AstResult.ParseError -> None
+    | AstResult.TestFile -> None
 
 
   let get_class_attributes
@@ -3667,7 +3846,7 @@ module ModelQueries = struct
               callable_define_signature_shared_memory
               callable_name
             |> assert_shared_memory_key_exists "missing signature for callable"
-            |> CallableAst.to_option
+            |> AstResult.to_option
             >>| Node.value
           in
           FullyQualifiedName.to_reference callable_name, signature

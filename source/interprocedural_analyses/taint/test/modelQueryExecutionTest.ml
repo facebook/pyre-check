@@ -2915,7 +2915,6 @@ let test_generated_annotations_class_constraint context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   ()
 
@@ -2950,7 +2949,6 @@ let test_generated_annotations_class_decorator context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -2996,7 +2994,6 @@ let test_generated_annotations_class_decorator context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -3042,7 +3039,6 @@ let test_generated_annotations_class_decorator context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   ()
 
@@ -4175,7 +4171,6 @@ let test_generated_annotations_class_any_child context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4214,7 +4209,6 @@ let test_generated_annotations_class_any_child context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4253,7 +4247,6 @@ let test_generated_annotations_class_any_child context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4292,7 +4285,6 @@ let test_generated_annotations_class_any_child context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4331,7 +4323,6 @@ let test_generated_annotations_class_any_child context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4370,7 +4361,6 @@ let test_generated_annotations_class_any_child context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4409,7 +4399,6 @@ let test_generated_annotations_class_any_child context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4448,7 +4437,6 @@ let test_generated_annotations_class_any_child context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4487,7 +4475,6 @@ let test_generated_annotations_class_any_child context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4526,7 +4513,6 @@ let test_generated_annotations_class_any_child context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   ()
 
@@ -4570,7 +4556,6 @@ let test_generated_annotations_class_any_parent context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4608,7 +4593,6 @@ let test_generated_annotations_class_any_parent context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4646,7 +4630,6 @@ let test_generated_annotations_class_any_parent context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4684,7 +4667,6 @@ let test_generated_annotations_class_any_parent context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4722,7 +4704,6 @@ let test_generated_annotations_class_any_parent context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4760,7 +4741,6 @@ let test_generated_annotations_class_any_parent context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4798,7 +4778,6 @@ let test_generated_annotations_class_any_parent context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4836,7 +4815,6 @@ let test_generated_annotations_class_any_parent context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4874,7 +4852,6 @@ let test_generated_annotations_class_any_parent context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   assert_generated_annotations
     ~source:
@@ -4912,7 +4889,6 @@ let test_generated_annotations_class_any_parent context =
       }
     ~callable:(Target.Regular.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): handle class decorator constraints. *)
     ();
   ()
 

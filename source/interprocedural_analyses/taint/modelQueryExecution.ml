@@ -766,15 +766,14 @@ let rec parameter_matches_constraint ~pyre_api ~class_hierarchy_graph ~name_capt
 
 
 let class_matches_decorator_constraint ~name_captures ~pyre_api ~decorator_constraint class_name =
-  PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
-  >>| Node.value
-  >>| (fun { decorators; _ } ->
+  (* For now, we don't support `fully_qualified_callee` within `cls.decorator()` constraints.
+   * We could do it in the future by storing the result of the call to `get_class_summary` above
+   * in `Modelable.t` *)
+  PyrePysaApi.ReadOnly.get_class_decorators_opt pyre_api class_name
+  >>| (fun decorators ->
         List.exists decorators ~f:(fun decorator ->
             Statement.Decorator.from_expression decorator
             >>| (fun decorator ->
-                  (* For now, we don't support `fully_qualified_callee` within `cls.decorator()` constraints.
-                   * We could do it in the future by storing the result of the call to `get_class_summary` above
-                   * in `Modelable.t` *)
                   matches_decorator_constraint
                     ~pyre_api
                     ~name_captures

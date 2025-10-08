@@ -425,6 +425,10 @@ module ReadOnly = struct
 
   let get_class_summary api = global_resolution api |> GlobalResolution.get_class_summary
 
+  let get_class_decorators_opt api class_name =
+    get_class_summary api class_name >>| Ast.Node.value >>| fun { decorators; _ } -> decorators
+
+
   let get_class_attributes api ~include_generated_attributes ~only_simple_assignments class_name =
     match get_class_summary api class_name with
     | Some { Ast.Node.value = class_summary; _ } ->

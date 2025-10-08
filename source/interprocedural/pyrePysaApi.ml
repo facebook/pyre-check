@@ -145,6 +145,11 @@ module ReadOnly = struct
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.get_class_summary"
 
 
+  let get_class_decorators_opt = function
+    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.get_class_decorators_opt pyre_api
+    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.get_class_decorators_opt pyrefly_api
+
+
   let get_class_attributes = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.get_class_attributes pyre_api
     | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.get_class_attributes pyrefly_api

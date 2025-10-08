@@ -134,6 +134,8 @@ module ReadOnly : sig
     Ast.Reference.t ->
     Analysis.PyrePysaEnvironment.ModelQueries.FunctionSignature.t list
 
+  val get_class_decorators_opt : t -> string -> Ast.Expression.t list option
+
   val get_class_attributes
     :  t ->
     include_generated_attributes:bool ->
