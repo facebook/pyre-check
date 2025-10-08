@@ -374,6 +374,26 @@ module GlobalCallableId = struct
     | None -> Ok None
 end
 
+module Target = struct
+  type t =
+    | Function of GlobalCallableId.t
+    | Override of GlobalCallableId.t
+    | Object of string
+  [@@deriving compare, equal, show]
+
+  let from_json json =
+    let open Core.Result.Monad_infix in
+    match json with
+    | `Assoc [("Function", global_callable_id)] ->
+        GlobalCallableId.from_json global_callable_id
+        >>| fun global_callable_id -> Function global_callable_id
+    | `Assoc [("Override", global_callable_id)] ->
+        GlobalCallableId.from_json global_callable_id
+        >>| fun global_callable_id -> Override global_callable_id
+    | `Assoc [("Object", `String object_name)] -> Ok (Object object_name)
+    | _ -> Error (FormatError.UnexpectedJsonType { json; message = "Unknown type of target" })
+end
+
 module GlobalCallableIdSharedMemoryKey = struct
   type t = GlobalCallableId.t [@@deriving compare]
 
@@ -786,12 +806,18 @@ module ModuleDefinitionsFile = struct
   end
 
   let parse_decorator_callees bindings =
+    let extract_global_callable_id_from_target_exn = function
+      | Target.Function global_callable_id -> global_callable_id
+      | target ->
+          Format.asprintf "Unexpected type of decorator callee: `%a`" Target.pp target |> failwith
+    in
     let open Core.Result.Monad_infix in
     let parse_binding (key, value) =
       parse_location key
       >>= fun location ->
       JsonUtil.as_list value
-      >>| List.map ~f:GlobalCallableId.from_json
+      >>| List.map ~f:(fun json ->
+              json |> Target.from_json |> Result.map ~f:extract_global_callable_id_from_target_exn)
       >>= Result.all
       >>| fun callables -> location, callables
     in

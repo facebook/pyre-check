@@ -196,6 +196,11 @@ module LocalClassId : sig
 end
 
 (* Exposed for testing purposes *)
+module Target : sig
+  type t [@@deriving compare, equal, show]
+end
+
+(* Exposed for testing purposes *)
 module GlobalCallableId : sig
   type t [@@deriving compare, equal, show]
 end
