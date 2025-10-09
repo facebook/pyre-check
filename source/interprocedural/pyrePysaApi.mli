@@ -14,6 +14,17 @@ open Core
 module ScalarTypeProperties = Analysis.PyrePysaEnvironment.ScalarTypeProperties
 module ClassNamesFromType = Analysis.PyrePysaEnvironment.ClassNamesFromType
 module PysaType = Analysis.PyrePysaEnvironment.PysaType
+module PyreClassSummary = Analysis.ClassSummary
+
+(* Abstraction for information about a class, provided from Pyre1 or Pyrefly and used by Pysa. See
+   `ReadOnly.ClassSummary` for more functions. *)
+module PysaClassSummary : sig
+  type t
+
+  val pyre1_find_attribute : t -> string -> PyreClassSummary.Attribute.t option
+
+  val pyre1_get_attributes : t -> PyreClassSummary.Attribute.t list
+end
 
 module ReadWrite : sig
   type t
@@ -107,7 +118,7 @@ module ReadOnly : sig
     Ast.Expression.t ->
     Type.t
 
-  val get_class_summary : t -> string -> Analysis.ClassSummary.t Ast.Node.t option
+  val get_class_summary : t -> string -> PysaClassSummary.t option
 
   val get_class_decorators_opt : t -> string -> Ast.Expression.t list option
 
@@ -158,8 +169,6 @@ module ReadOnly : sig
 
   val annotation_parser : t -> Analysis.AnnotatedCallable.annotation_parser
 
-  val typed_dictionary_field_names : t -> Type.t -> string list
-
   val less_or_equal : t -> left:Type.t -> right:Type.t -> bool
 
   val resolve_exports
@@ -184,6 +193,13 @@ module ReadOnly : sig
     Analysis.AnnotatedAttribute.instantiated option
 
   val has_transitive_successor : t -> successor:string -> string -> bool
+
+  val has_transitive_successor_ignoring_untracked
+    :  t ->
+    reflexive:bool ->
+    predecessor:string ->
+    successor:string ->
+    bool
 
   val exists_matching_class_decorator
     :  t ->
@@ -214,6 +230,20 @@ module ReadOnly : sig
     val scalar_properties : t -> PysaType.t -> ScalarTypeProperties.t
 
     val get_class_names : t -> PysaType.t -> ClassNamesFromType.t
+  end
+
+  module ClassSummary : sig
+    val has_custom_new : t -> PysaClassSummary.t -> bool
+
+    val is_dataclass : t -> PysaClassSummary.t -> bool
+
+    val is_named_tuple : t -> PysaClassSummary.t -> bool
+
+    val is_typed_dict : t -> PysaClassSummary.t -> bool
+
+    val dataclass_ordered_attributes : t -> PysaClassSummary.t -> string list
+
+    val typed_dictionary_attributes : t -> PysaClassSummary.t -> string list
   end
 
   val add_builtins_prefix : t -> Ast.Reference.t -> Ast.Reference.t

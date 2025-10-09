@@ -20,7 +20,6 @@ open Ast
 open Interprocedural
 open Domains
 module PyrePysaApi = Interprocedural.PyrePysaApi
-module PyrePysaLogic = Analysis.PyrePysaLogic
 
 module FeatureSet = struct
   type t = {
@@ -173,32 +172,10 @@ let infer ~scheduler ~scheduler_policies ~pyre_api ~user_models =
         BackwardState.assign ~weak:true ~root ~path:[] taint existing_state
     | None -> existing_state
   in
-  let get_attributes_in_alphabetical_order class_name =
-    PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
-    >>| Node.value
-    >>| PyrePysaLogic.ClassSummary.attributes ~include_generated_attributes:false ~in_test:false
-    |> Option.value ~default:Identifier.SerializableMap.empty
-  in
-  let has_attribute class_name name =
-    let attributes = get_attributes_in_alphabetical_order class_name in
-    Identifier.SerializableMap.mem name attributes
-  in
-  let get_attributes_in_declaration_order class_name =
-    let compare_by_location left right =
-      Ast.Location.compare (Node.location left) (Node.location right)
-    in
-    get_attributes_in_alphabetical_order class_name
-    |> Identifier.SerializableMap.bindings
-    |> List.unzip
-    |> snd
-    |> List.sort ~compare:compare_by_location
-  in
 
-  let compute_dataclass_models class_name =
+  let compute_dataclass_models class_name class_summary =
     let attributes =
-      get_attributes_in_declaration_order class_name
-      |> List.map ~f:(fun { Node.value = { PyrePysaLogic.ClassSummary.Attribute.name; _ }; _ } ->
-             name)
+      PyrePysaApi.ReadOnly.ClassSummary.dataclass_ordered_attributes pyre_api class_summary
     in
     let taint_in_taint_out =
       List.foldi
@@ -218,20 +195,20 @@ let infer ~scheduler ~scheduler_policies ~pyre_api ~user_models =
   in
   (* We always generate a special `_fields` attribute for NamedTuples which is a tuple containing
      field names. *)
-  let compute_named_tuple_models class_name =
+  let compute_named_tuple_models class_name class_summary =
     (* If a user-specified __new__ exist, don't override it. *)
     (* TODO(T225700656): This is not doing the right check when using pyrefly, since
        `get_class_attributes` doesn't return functions. *)
-    if has_attribute class_name "__new__" then
+    if PyrePysaApi.ReadOnly.ClassSummary.has_custom_new pyre_api class_summary then
       []
     else
       (* Should not omit this model. Otherwise the mode is "obscure", thus leading to a tito model,
          which joins the taint on every element of the tuple. *)
       [Target.create_method (Reference.create class_name) "__new__", Model.empty_model]
   in
-  let compute_typed_dict_models class_name =
+  let compute_typed_dict_models class_name class_summary =
     let fields =
-      PyrePysaApi.ReadOnly.typed_dictionary_field_names pyre_api (Type.Primitive class_name)
+      PyrePysaApi.ReadOnly.ClassSummary.typed_dictionary_attributes pyre_api class_summary
     in
     let self =
       AccessPath.Root.PositionalParameter { position = 0; name = "self"; positional_only = false }
@@ -283,34 +260,12 @@ let infer ~scheduler ~scheduler_policies ~pyre_api ~user_models =
     ]
   in
   let compute_models class_name class_summary =
-    if
-      PyrePysaApi.ReadOnly.exists_matching_class_decorator
-        pyre_api
-        ~names:["dataclasses.dataclass"; "dataclass"]
-        class_summary
-    then
-      compute_dataclass_models class_name
-    else if
-      CallResolution.has_transitive_successor_ignoring_untracked
-        ~pyre_api
-        ~reflexive:false
-        ~predecessor:class_name
-        ~successor:"typing.NamedTuple"
-    then
-      compute_named_tuple_models class_name
-    else if
-      CallResolution.has_transitive_successor_ignoring_untracked
-        ~pyre_api
-        ~reflexive:false
-        ~predecessor:class_name
-        ~successor:"TypedDictionary"
-      || CallResolution.has_transitive_successor_ignoring_untracked
-           ~pyre_api
-           ~reflexive:false
-           ~predecessor:class_name
-           ~successor:"NonTotalTypedDictionary"
-    then
-      compute_typed_dict_models class_name
+    if PyrePysaApi.ReadOnly.ClassSummary.is_dataclass pyre_api class_summary then
+      compute_dataclass_models class_name class_summary
+    else if PyrePysaApi.ReadOnly.ClassSummary.is_named_tuple pyre_api class_summary then
+      compute_named_tuple_models class_name class_summary
+    else if PyrePysaApi.ReadOnly.ClassSummary.is_typed_dict pyre_api class_summary then
+      compute_typed_dict_models class_name class_summary
     else
       []
   in

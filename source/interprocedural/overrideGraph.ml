@@ -14,7 +14,6 @@
 open Core
 open Pyre
 open Ast
-module PyrePysaLogic = Analysis.PyrePysaLogic
 
 (** Override graph in the ocaml heap, storing a mapping from a method to classes overriding it. *)
 module Heap = struct
@@ -63,7 +62,7 @@ module Heap = struct
       =
       let base_callable =
         try PyrePysaApi.ReadOnly.get_overriden_base_method pyre_api ~class_name ~method_name with
-        | PyrePysaLogic.UntrackedClass untracked_type ->
+        | Analysis.ClassHierarchy.Untracked untracked_type ->
             Log.warning
               "Found untracked type `%s` when looking for a parent of `%a.%s`. The method will be \
                considered has having no parent, which could lead to false negatives."

@@ -13,6 +13,22 @@ module Pyre1Api = Analysis.PyrePysaEnvironment
 module ScalarTypeProperties = Pyre1Api.ScalarTypeProperties
 module ClassNamesFromType = Pyre1Api.ClassNamesFromType
 module PysaType = Pyre1Api.PysaType
+module PyreClassSummary = Pyre1Api.PyreClassSummary
+
+module PysaClassSummary = struct
+  type t =
+    | Pyre1 of Pyre1Api.PysaClassSummary.t
+    | Pyrefly of PyreflyApi.PysaClassSummary.t
+
+  let pyre1_find_attribute = function
+    | Pyre1 class_summary -> Pyre1Api.PysaClassSummary.find_attribute class_summary
+    | Pyrefly _ -> failwith "unimplemented: PysaClassSummary.pyre1_find_attribute"
+
+
+  let pyre1_get_attributes = function
+    | Pyre1 class_summary -> Pyre1Api.PysaClassSummary.get_attributes class_summary
+    | Pyrefly _ -> failwith "unimplemented: PysaClassSummary.pyre1_get_attributes"
+end
 
 module ReadWrite = struct
   type t =
@@ -140,9 +156,15 @@ module ReadOnly = struct
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.parse_annotation"
 
 
-  let get_class_summary = function
-    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.get_class_summary pyre_api
-    | Pyrefly _ -> failwith "unimplemented: ReadOnly.get_class_summary"
+  let get_class_summary api class_name =
+    let open Core.Option.Monad_infix in
+    match api with
+    | Pyre1 pyre_api ->
+        Pyre1Api.ReadOnly.get_class_summary pyre_api class_name
+        >>| fun class_summary -> PysaClassSummary.Pyre1 class_summary
+    | Pyrefly pyrefly_api ->
+        PyreflyApi.ReadOnly.get_class_summary pyrefly_api class_name
+        |> fun class_summary -> Some (PysaClassSummary.Pyrefly class_summary)
 
 
   let get_class_decorators_opt = function
@@ -240,11 +262,6 @@ module ReadOnly = struct
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.annotation_parser"
 
 
-  let typed_dictionary_field_names = function
-    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.typed_dictionary_field_names pyre_api
-    | Pyrefly _ -> failwith "unimplemented: ReadOnly.typed_dictionary_field_names"
-
-
   let less_or_equal = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.less_or_equal pyre_api
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.less_or_equal"
@@ -273,6 +290,11 @@ module ReadOnly = struct
   let has_transitive_successor = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.has_transitive_successor pyre_api
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.has_transitive_successor"
+
+
+  let has_transitive_successor_ignoring_untracked = function
+    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.has_transitive_successor_ignoring_untracked pyre_api
+    | Pyrefly _ -> failwith "unimplemented: ReadOnly.has_transitive_successor_ignoring_untracked"
 
 
   let exists_matching_class_decorator = function
@@ -324,6 +346,61 @@ module ReadOnly = struct
     let get_class_names = function
       | Pyre1 pyre_api -> Pyre1Api.ReadOnly.Type.get_class_names pyre_api
       | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.Type.get_class_names pyrefly_api
+  end
+
+  module ClassSummary = struct
+    let has_custom_new api class_summary =
+      match api, class_summary with
+      | Pyre1 pyre_api, PysaClassSummary.Pyre1 class_summary ->
+          Pyre1Api.ReadOnly.ClassSummary.has_custom_new pyre_api class_summary
+      | Pyrefly pyrefly_api, PysaClassSummary.Pyrefly class_summary ->
+          PyreflyApi.ReadOnly.ClassSummary.has_custom_new pyrefly_api class_summary
+      | _ -> failwith "unexpected"
+
+
+    let is_dataclass api class_summary =
+      match api, class_summary with
+      | Pyre1 pyre_api, PysaClassSummary.Pyre1 class_summary ->
+          Pyre1Api.ReadOnly.ClassSummary.is_dataclass pyre_api class_summary
+      | Pyrefly pyrefly_api, PysaClassSummary.Pyrefly class_summary ->
+          PyreflyApi.ReadOnly.ClassSummary.is_dataclass pyrefly_api class_summary
+      | _ -> failwith "unexpected"
+
+
+    let is_named_tuple api class_summary =
+      match api, class_summary with
+      | Pyre1 pyre_api, PysaClassSummary.Pyre1 class_summary ->
+          Pyre1Api.ReadOnly.ClassSummary.is_named_tuple pyre_api class_summary
+      | Pyrefly pyrefly_api, PysaClassSummary.Pyrefly class_summary ->
+          PyreflyApi.ReadOnly.ClassSummary.is_named_tuple pyrefly_api class_summary
+      | _ -> failwith "unexpected"
+
+
+    let is_typed_dict api class_summary =
+      match api, class_summary with
+      | Pyre1 pyre_api, PysaClassSummary.Pyre1 class_summary ->
+          Pyre1Api.ReadOnly.ClassSummary.is_typed_dict pyre_api class_summary
+      | Pyrefly pyrefly_api, PysaClassSummary.Pyrefly class_summary ->
+          PyreflyApi.ReadOnly.ClassSummary.is_typed_dict pyrefly_api class_summary
+      | _ -> failwith "unexpected"
+
+
+    let dataclass_ordered_attributes api class_summary =
+      match api, class_summary with
+      | Pyre1 pyre_api, PysaClassSummary.Pyre1 class_summary ->
+          Pyre1Api.ReadOnly.ClassSummary.dataclass_ordered_attributes pyre_api class_summary
+      | Pyrefly pyrefly_api, PysaClassSummary.Pyrefly class_summary ->
+          PyreflyApi.ReadOnly.ClassSummary.dataclass_ordered_attributes pyrefly_api class_summary
+      | _ -> failwith "unexpected"
+
+
+    let typed_dictionary_attributes api class_summary =
+      match api, class_summary with
+      | Pyre1 pyre_api, PysaClassSummary.Pyre1 class_summary ->
+          Pyre1Api.ReadOnly.ClassSummary.typed_dictionary_attributes pyre_api class_summary
+      | Pyrefly pyrefly_api, PysaClassSummary.Pyrefly class_summary ->
+          PyreflyApi.ReadOnly.ClassSummary.typed_dictionary_attributes pyrefly_api class_summary
+      | _ -> failwith "unexpected"
   end
 
   let add_builtins_prefix api reference =

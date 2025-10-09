@@ -157,7 +157,8 @@ module PyreflyType = struct
   [@@deriving equal, compare, show]
 end
 
-(* Minimal abstraction for a type, provided from Pyre1 or Pyrefly and used by Pysa. *)
+(* Minimal abstraction for a type, provided from Pyre1 or Pyrefly and used by Pysa. See
+   `ReadOnly.Type` for more functions. *)
 module PysaType = struct
   (* TODO(T225700656): We currently expose the representation for Pyrefly here instead of exposing
      it in Interprocedural.Pyrefly, because the current module defines other types that depend on
@@ -194,6 +195,27 @@ module PysaType = struct
   let show_fully_qualified = function
     | Pyre1 type_ -> PyreType.show type_
     | Pyrefly { PyreflyType.string; _ } -> string
+end
+
+module PyreClassSummary = ClassSummary
+
+(* Abstraction for information about a class, provided from Pyre1 or Pyrefly and used by Pysa. See
+   `ReadOnly.ClassSummary` for more functions. *)
+module PysaClassSummary = struct
+  type nonrec t = PyreClassSummary.t Ast.Node.t
+
+  let find_attribute class_summary attribute_name =
+    class_summary
+    |> Ast.Node.value
+    |> PyreClassSummary.attributes
+    |> Ast.Identifier.SerializableMap.find_opt attribute_name
+
+
+  let get_attributes class_summary =
+    class_summary
+    |> Ast.Node.value
+    |> PyreClassSummary.attributes
+    |> Ast.Identifier.SerializableMap.data
 end
 
 let absolute_source_path_of_qualifier ~lookup_source read_only_type_environment =
@@ -432,12 +454,8 @@ module ReadOnly = struct
   let get_class_attributes api ~include_generated_attributes ~only_simple_assignments class_name =
     match get_class_summary api class_name with
     | Some { Ast.Node.value = class_summary; _ } ->
-        let attributes =
-          PyrePysaLogic.ClassSummary.attributes ~include_generated_attributes class_summary
-        in
-        let constructor_attributes =
-          PyrePysaLogic.ClassSummary.constructor_attributes class_summary
-        in
+        let attributes = PyreClassSummary.attributes ~include_generated_attributes class_summary in
+        let constructor_attributes = PyreClassSummary.constructor_attributes class_summary in
         let all_attributes =
           Ast.Identifier.SerializableMap.union
             (fun _ x _ -> Some x)
@@ -449,8 +467,7 @@ module ReadOnly = struct
             attribute_name :: accumulator
           else
             match Ast.Node.value attribute with
-            | { PyrePysaLogic.ClassSummary.Attribute.kind = Simple _; _ } ->
-                attribute_name :: accumulator
+            | { PyreClassSummary.Attribute.kind = Simple _; _ } -> attribute_name :: accumulator
             | _ -> accumulator
         in
         Some (Ast.Identifier.SerializableMap.fold get_attribute all_attributes [])
@@ -459,11 +476,8 @@ module ReadOnly = struct
 
   let get_class_attribute_annotation api ~include_generated_attributes ~class_name ~attribute =
     let get_annotation = function
-      | {
-          PyrePysaLogic.ClassSummary.Attribute.kind =
-            Simple { PyrePysaLogic.ClassSummary.Attribute.annotation; _ };
-          _;
-        } ->
+      | { PyreClassSummary.Attribute.kind = Simple { PyreClassSummary.Attribute.annotation; _ }; _ }
+        ->
           annotation
       | _ -> None
     in
@@ -471,14 +485,14 @@ module ReadOnly = struct
     >>| Ast.Node.value
     >>= fun class_summary ->
     match
-      PyrePysaLogic.ClassSummary.constructor_attributes class_summary
+      PyreClassSummary.constructor_attributes class_summary
       |> Ast.Identifier.SerializableMap.find_opt attribute
       >>| Ast.Node.value
       >>| get_annotation
     with
     | Some annotation -> annotation
     | None ->
-        PyrePysaLogic.ClassSummary.attributes ~include_generated_attributes class_summary
+        PyreClassSummary.attributes ~include_generated_attributes class_summary
         |> Ast.Identifier.SerializableMap.find_opt attribute
         >>| Ast.Node.value
         >>= get_annotation
@@ -560,13 +574,6 @@ module ReadOnly = struct
 
   let annotation_parser api = global_resolution api |> GlobalResolution.annotation_parser
 
-  let typed_dictionary_field_names api type_name =
-    GlobalResolution.get_typed_dictionary (global_resolution api) type_name
-    >>| (fun { PyreType.TypedDictionary.fields; _ } -> fields)
-    >>| List.map ~f:(fun { PyreType.TypedDictionary.name; required = _; _ } -> name)
-    |> Option.value ~default:[]
-
-
   let less_or_equal api = global_resolution api |> GlobalResolution.less_or_equal
 
   let resolve_exports api = global_resolution api |> GlobalResolution.resolve_exports
@@ -584,6 +591,24 @@ module ReadOnly = struct
 
   let has_transitive_successor api =
     global_resolution api |> GlobalResolution.has_transitive_successor
+
+
+  (* Check whether `successor` extends `predecessor`.
+   * Returns false on untracked types.
+   * Returns `reflexive` if `predecessor` and `successor` are equal. *)
+  let has_transitive_successor_ignoring_untracked api ~reflexive ~predecessor ~successor =
+    if String.equal predecessor successor then
+      reflexive
+    else
+      try has_transitive_successor api ~successor predecessor with
+      | ClassHierarchy.Untracked untracked_type ->
+          Log.warning
+            "Found untracked type `%s` when checking whether `%s` is a subclass of `%s`. This \
+             could lead to false negatives."
+            untracked_type
+            successor
+            predecessor;
+          false
 
 
   let exists_matching_class_decorator api =
@@ -730,7 +755,7 @@ module ReadOnly = struct
             in
             ScalarTypeProperties.create ~is_boolean ~is_integer ~is_float ~is_enumeration
           with
-          | PyrePysaLogic.UntrackedClass untracked_type ->
+          | ClassHierarchy.Untracked untracked_type ->
               Log.warning
                 "Found untracked type `%s` when checking the return type `%a` of a call. The \
                  return type will NOT be considered a scalar, which could lead to missing \
@@ -808,6 +833,65 @@ module ReadOnly = struct
             stripped_readonly;
             unbound_type_variable;
           }
+  end
+
+  module ClassSummary = struct
+    let has_custom_new _ class_summary =
+      class_summary
+      |> Ast.Node.value
+      |> PyreClassSummary.attributes ~include_generated_attributes:false ~in_test:false
+      |> Ast.Identifier.SerializableMap.mem "__new__"
+
+
+    let is_dataclass api class_summary =
+      exists_matching_class_decorator
+        api
+        ~names:["dataclasses.dataclass"; "dataclass"]
+        class_summary
+
+
+    let is_named_tuple api { Ast.Node.value = { PyreClassSummary.name; _ }; _ } =
+      has_transitive_successor_ignoring_untracked
+        api
+        ~reflexive:false
+        ~predecessor:(Ast.Reference.show name)
+        ~successor:"typing.NamedTuple"
+
+
+    let is_typed_dict api { Ast.Node.value = { PyreClassSummary.name; _ }; _ } =
+      has_transitive_successor_ignoring_untracked
+        api
+        ~reflexive:false
+        ~predecessor:(Ast.Reference.show name)
+        ~successor:"TypedDictionary"
+      || has_transitive_successor_ignoring_untracked
+           api
+           ~reflexive:false
+           ~predecessor:(Ast.Reference.show name)
+           ~successor:"NonTotalTypedDictionary"
+
+
+    let dataclass_ordered_attributes _ class_summary =
+      let compare_by_location left right =
+        Ast.Location.compare (Ast.Node.location left) (Ast.Node.location right)
+      in
+      class_summary
+      |> Ast.Node.value
+      |> PyreClassSummary.attributes ~include_generated_attributes:false ~in_test:false
+      |> Ast.Identifier.SerializableMap.bindings
+      |> List.unzip
+      |> snd
+      |> List.sort ~compare:compare_by_location
+      |> List.map ~f:(fun { Ast.Node.value = { PyreClassSummary.Attribute.name; _ }; _ } -> name)
+
+
+    let typed_dictionary_attributes api { Ast.Node.value = { ClassSummary.name; _ }; _ } =
+      GlobalResolution.get_typed_dictionary
+        (global_resolution api)
+        (PyreType.Primitive (Ast.Reference.show name))
+      >>| (fun { PyreType.TypedDictionary.fields; _ } -> fields)
+      >>| List.map ~f:(fun { PyreType.TypedDictionary.name; required = _; _ } -> name)
+      |> Option.value ~default:[]
   end
 
   let get_methods_for_qualifier api ~exclude_test_modules qualifier =

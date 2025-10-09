@@ -15,24 +15,6 @@ open Expression
 open Pyre
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
-(* Check whether `successor` extends `predecessor`.
- * Returns false on untracked types.
- * Returns `reflexive` if `predecessor` and `successor` are equal. *)
-let has_transitive_successor_ignoring_untracked ~pyre_api ~reflexive ~predecessor ~successor =
-  if String.equal predecessor successor then
-    reflexive
-  else
-    try PyrePysaApi.ReadOnly.has_transitive_successor pyre_api ~successor predecessor with
-    | PyrePysaLogic.UntrackedClass untracked_type ->
-        Log.warning
-          "Found untracked type `%s` when checking whether `%s` is a subclass of `%s`. This could \
-           lead to false negatives."
-          untracked_type
-          successor
-          predecessor;
-        false
-
-
 (* Evaluates to whether the provided expression is a superclass of define. *)
 let is_super ~pyre_in_context ~define expression =
   match expression.Node.value with
@@ -52,8 +34,8 @@ let is_super ~pyre_in_context ~define expression =
             in
             class_name
             >>| (fun class_name ->
-                  has_transitive_successor_ignoring_untracked
-                    ~pyre_api:(PyrePysaApi.InContext.pyre_api pyre_in_context)
+                  PyrePysaApi.ReadOnly.has_transitive_successor_ignoring_untracked
+                    (PyrePysaApi.InContext.pyre_api pyre_in_context)
                     ~reflexive:false
                     ~predecessor:class_name
                     ~successor:parent_name)
@@ -76,7 +58,7 @@ let is_nonlocal ~pyre_in_context ~define variable =
 (* Resolve an expression into a type. Untracked types are resolved into `Any`. *)
 let resolve_ignoring_untracked ~pyre_in_context expression =
   try PyrePysaApi.InContext.resolve_expression_to_type pyre_in_context expression with
-  | PyrePysaLogic.UntrackedClass untracked_type ->
+  | Analysis.ClassHierarchy.Untracked untracked_type ->
       Log.warning
         "Found untracked type `%s` when resolving the type of `%a`. This could lead to false \
          negatives."
@@ -89,7 +71,7 @@ let resolve_ignoring_untracked ~pyre_in_context expression =
 (* Resolve an attribute access into a type. Untracked types are resolved into `Any`. *)
 let resolve_attribute_access_ignoring_untracked ~pyre_in_context ~base_type ~attribute =
   try PyrePysaApi.InContext.resolve_attribute_access pyre_in_context ~base_type ~attribute with
-  | PyrePysaLogic.UntrackedClass untracked_type ->
+  | Analysis.ClassHierarchy.Untracked untracked_type ->
       Log.warning
         "Found untracked type `%s` when resolving the type of attribute `%s` in `%a`. This could \
          lead to false negatives."

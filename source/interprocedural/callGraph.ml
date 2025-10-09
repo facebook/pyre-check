@@ -2430,7 +2430,7 @@ let compute_indirect_targets ~pyre_in_context ~override_graph ~receiver_type imp
           try
             PyrePysaApi.ReadOnly.less_or_equal pyre_api ~left:candidate_type ~right:receiver_type
           with
-          | PyrePysaLogic.UntrackedClass untracked_type ->
+          | Analysis.ClassHierarchy.Untracked untracked_type ->
               Log.warning
                 "Found untracked type `%s` when comparing `%a` and `%a`. The class `%a` will be \
                  considered a subclass of `%a`, which could lead to false positives."
@@ -2903,7 +2903,7 @@ let resolve_stringify_call ~pyre_in_context ~type_of_expression_shared_memory ~c
         Repr
     | _ -> Str
   with
-  | PyrePysaLogic.UntrackedClass _ -> Str
+  | Analysis.ClassHierarchy.Untracked _ -> Str
 
 
 (* Rewrite certain calls for the interprocedural analysis (e.g, pysa).
@@ -3520,12 +3520,11 @@ let resolve_callee_ignoring_decorators
               }) -> (
             let class_name = Reference.create ~prefix:from name in
             PyrePysaApi.ReadOnly.get_class_summary pyre_api (Reference.show class_name)
-            >>| Node.value
-            >>| PyrePysaLogic.ClassSummary.attributes
-            >>= Identifier.SerializableMap.find_opt attribute
+            >>= (fun class_summary ->
+                  PyrePysaApi.PysaClassSummary.pyre1_find_attribute class_summary attribute)
             >>| Node.value
             |> function
-            | Some { kind = Method { static; signatures; _ }; _ } ->
+            | Some { Analysis.ClassSummary.Attribute.kind = Method { static; signatures; _ }; _ } ->
                 let is_class_method = contain_class_method signatures in
                 Result.Ok
                   [
@@ -3540,7 +3539,7 @@ let resolve_callee_ignoring_decorators
                 let () =
                   log
                     "Bypassing decorators - Non-method attribute `%s` for callee `%s`"
-                    (PyrePysaLogic.ClassSummary.Attribute.show_attribute attribute)
+                    (Analysis.ClassSummary.Attribute.show_attribute attribute)
                     (Expression.show callee)
                 in
                 Result.Error Unresolved.NonMethodAttribute
@@ -3580,16 +3579,12 @@ let resolve_callee_ignoring_decorators
             let find_attribute element =
               match
                 PyrePysaApi.ReadOnly.get_class_summary pyre_api element
-                >>| Node.value
-                >>| PyrePysaLogic.ClassSummary.attributes
-                >>= Identifier.SerializableMap.find_opt attribute
+                >>= (fun class_summary ->
+                      PyrePysaApi.PysaClassSummary.pyre1_find_attribute class_summary attribute)
                 >>| Node.value
               with
-              | Some
-                  {
-                    PyrePysaLogic.ClassSummary.Attribute.kind = Method { static; signatures; _ };
-                    _;
-                  } ->
+              | Some { Analysis.ClassSummary.Attribute.kind = Method { static; signatures; _ }; _ }
+                ->
                   Some (element, contain_class_method signatures, static)
               | _ -> None
             in
@@ -4902,14 +4897,12 @@ let register_callees_on_return
         |> Type.primitive_name
         >>| fun return_expression_inner_class_name ->
         PyrePysaApi.ReadOnly.get_class_summary pyre_api return_expression_inner_class_name
-        >>| Node.value
-        >>| PyrePysaLogic.ClassSummary.attributes
-        >>| Identifier.SerializableMap.data
+        >>| PyrePysaApi.PysaClassSummary.pyre1_get_attributes
         |> Option.value ~default:[]
         |> List.filter_map
-             ~f:(fun { Node.value = { PyrePysaLogic.ClassSummary.Attribute.kind; name }; _ } ->
+             ~f:(fun { Node.value = { Analysis.ClassSummary.Attribute.kind; name }; _ } ->
                match kind with
-               | PyrePysaLogic.ClassSummary.Attribute.Method _ ->
+               | Analysis.ClassSummary.Attribute.Method _ ->
                    let target =
                      Target.create_method (Reference.create return_expression_inner_class_name) name
                    in

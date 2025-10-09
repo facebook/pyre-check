@@ -14,7 +14,6 @@ let assert_class_models ~context ?user_models ~source ~expected () =
   let project =
     Test.ScratchPyrePysaProject.setup
       ~context
-      ~force_pyre1:true
       ~requires_type_of_expressions:false
       ["test.py", source]
   in

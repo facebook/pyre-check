@@ -550,6 +550,9 @@ let test_fully_qualified_names _ =
         bases = [];
         mro = ModuleDefinitionsFile.ClassMro.Resolved [];
         is_synthesized = false;
+        is_dataclass = false;
+        is_named_tuple = false;
+        is_typed_dict = false;
         fields = [];
         decorator_callees = Location.SerializableMap.empty;
       }

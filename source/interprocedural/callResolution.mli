@@ -22,16 +22,6 @@ val is_nonlocal
   Reference.t ->
   bool
 
-(* Check whether `successor` extends `predecessor`.
- * Returns false on untracked types.
- * Returns `reflexive` if `predecessor` and `successor` are equal. *)
-val has_transitive_successor_ignoring_untracked
-  :  pyre_api:PyrePysaApi.ReadOnly.t ->
-  reflexive:bool ->
-  predecessor:string ->
-  successor:string ->
-  bool
-
 (* Resolve an expression into a type. Untracked types are resolved into `Any`. *)
 val resolve_ignoring_untracked
   :  pyre_in_context:PyrePysaApi.InContext.t ->

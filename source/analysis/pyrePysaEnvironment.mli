@@ -71,7 +71,8 @@ module PyreflyType : sig
   [@@deriving equal, compare, show]
 end
 
-(* Minimal abstraction for a type, provided from Pyre1 or Pyrefly and used by Pysa. *)
+(* Minimal abstraction for a type, provided from Pyre1 or Pyrefly and used by Pysa. See
+   `ReadOnly.Type` for more functions. *)
 module PysaType : sig
   type t [@@deriving equal, compare, show]
 
@@ -87,6 +88,18 @@ module PysaType : sig
   val pp_concise : Format.formatter -> t -> unit
 
   val show_fully_qualified : t -> string
+end
+
+module PyreClassSummary = ClassSummary
+
+(* Abstraction for information about a class, provided from Pyre1 or Pyrefly and used by Pysa. See
+   `ReadOnly.ClassSummary` for more functions. *)
+module PysaClassSummary : sig
+  type t
+
+  val find_attribute : t -> string -> PyreClassSummary.Attribute.t option
+
+  val get_attributes : t -> PyreClassSummary.Attribute.t list
 end
 
 module ReadWrite : sig
@@ -154,7 +167,7 @@ module ReadOnly : sig
     Ast.Expression.t ->
     Type.t
 
-  val get_class_summary : t -> string -> ClassSummary.t Ast.Node.t option
+  val get_class_summary : t -> string -> PysaClassSummary.t option
 
   val get_class_decorators_opt : t -> string -> Ast.Expression.t list option
 
@@ -220,8 +233,6 @@ module ReadOnly : sig
 
   val annotation_parser : t -> AnnotatedCallable.annotation_parser
 
-  val typed_dictionary_field_names : t -> Type.t -> string list
-
   val less_or_equal : t -> left:Type.t -> right:Type.t -> bool
 
   val resolve_exports : t -> ?from:Ast.Reference.t -> Ast.Reference.t -> ResolvedReference.t option
@@ -242,6 +253,13 @@ module ReadOnly : sig
     AnnotatedAttribute.instantiated option
 
   val has_transitive_successor : t -> successor:string -> string -> bool
+
+  val has_transitive_successor_ignoring_untracked
+    :  t ->
+    reflexive:bool ->
+    predecessor:string ->
+    successor:string ->
+    bool
 
   val exists_matching_class_decorator
     :  t ->
@@ -293,6 +311,20 @@ module ReadOnly : sig
      * List[Dict[str, str]] -> [List]
      *)
     val get_class_names : t -> PysaType.t -> ClassNamesFromType.t
+  end
+
+  module ClassSummary : sig
+    val has_custom_new : t -> PysaClassSummary.t -> bool
+
+    val is_dataclass : t -> PysaClassSummary.t -> bool
+
+    val is_named_tuple : t -> PysaClassSummary.t -> bool
+
+    val is_typed_dict : t -> PysaClassSummary.t -> bool
+
+    val dataclass_ordered_attributes : t -> PysaClassSummary.t -> string list
+
+    val typed_dictionary_attributes : t -> PysaClassSummary.t -> string list
   end
 
   val get_methods_for_qualifier

@@ -678,6 +678,27 @@ module JsonType = struct
       }
 end
 
+module ClassFieldDeclarationKind = struct
+  type t =
+    | DeclaredByAnnotation
+    | DeclaredWithoutAnnotation
+    | AssignedInBody
+    | DefinedWithoutAssign
+    | DefinedInMethod
+  [@@deriving equal, compare, show]
+
+  let from_string = function
+    | "DeclaredByAnnotation" -> Ok DeclaredByAnnotation
+    | "DeclaredWithoutAnnotation" -> Ok DeclaredWithoutAnnotation
+    | "AssignedInBody" -> Ok AssignedInBody
+    | "DefinedWithoutAssign" -> Ok DefinedWithoutAssign
+    | "DefinedInMethod" -> Ok DefinedInMethod
+    | s ->
+        Error
+          (FormatError.UnexpectedJsonType
+             { json = `String s; message = "expected declaration kind" })
+end
+
 (* Information from pyrefly about all definitions in a given module, stored as a
    `<root>/definitions/<module>:<id>.json` file. This matches the
    `pyrefly::report::pysa::PysaModuleDefinitions` rust type. *)
@@ -983,6 +1004,7 @@ module ModuleDefinitionsFile = struct
       type_: JsonType.t;
       explicit_annotation: string option;
       location: Location.t option;
+      declaration_kind: ClassFieldDeclarationKind.t option;
     }
     [@@deriving equal, show]
 
@@ -997,7 +1019,13 @@ module ModuleDefinitionsFile = struct
       >>= (function
             | Some location -> parse_location location >>| Option.some
             | None -> Ok None)
-      >>| fun location -> { name; type_; explicit_annotation; location }
+      >>= fun location ->
+      JsonUtil.get_optional_string_member json "declaration_kind"
+      >>= (function
+            | Some declaration_kind ->
+                ClassFieldDeclarationKind.from_string declaration_kind >>| Option.some
+            | None -> Ok None)
+      >>| fun declaration_kind -> { name; type_; explicit_annotation; location; declaration_kind }
   end
 
   module ClassDefinition = struct
@@ -1008,6 +1036,9 @@ module ModuleDefinitionsFile = struct
       bases: GlobalClassId.t list;
       mro: ClassMro.t;
       is_synthesized: bool;
+      is_dataclass: bool;
+      is_named_tuple: bool;
+      is_typed_dict: bool;
       fields: JsonClassField.t list;
       decorator_callees: GlobalCallableId.t list Location.SerializableMap.t;
     }
@@ -1030,6 +1061,12 @@ module ModuleDefinitionsFile = struct
       >>= fun mro ->
       JsonUtil.get_optional_bool_member ~default:false json "is_synthesized"
       >>= fun is_synthesized ->
+      JsonUtil.get_optional_bool_member ~default:false json "is_dataclass"
+      >>= fun is_dataclass ->
+      JsonUtil.get_optional_bool_member ~default:false json "is_named_tuple"
+      >>= fun is_named_tuple ->
+      JsonUtil.get_optional_bool_member ~default:false json "is_typed_dict"
+      >>= fun is_typed_dict ->
       JsonUtil.get_optional_object_member json "fields"
       >>| List.map ~f:(fun (name, json) -> JsonClassField.from_json ~name json)
       >>= Result.all
@@ -1044,6 +1081,9 @@ module ModuleDefinitionsFile = struct
         bases;
         mro;
         is_synthesized;
+        is_dataclass;
+        is_named_tuple;
+        is_typed_dict;
         fields;
         decorator_callees;
       }
@@ -1416,6 +1456,9 @@ module ClassMetadataSharedMemory = struct
       (* True if this class was synthesized (e.g., from namedtuple), false if from actual `class X:`
          statement *)
       is_synthesized: bool;
+      is_dataclass: bool;
+      is_named_tuple: bool;
+      is_typed_dict: bool;
       (* For a given class, its list of immediate parents. Empty if the class has no parents (it is
          implicitly ['object']) *)
       parents: GlobalClassId.t list;
@@ -1522,6 +1565,7 @@ module ClassField = struct
     type_: PysaType.t;
     explicit_annotation: string option;
     location: Location.t option;
+    declaration_kind: ClassFieldDeclarationKind.t option;
   }
   [@@deriving equal, compare, show]
 
@@ -1538,6 +1582,13 @@ module ClassFieldsSharedMemory =
 
       let description = "pyrefly class fields"
     end)
+
+module PysaClassSummary = struct
+  type t = {
+    class_name: FullyQualifiedName.t;
+    metadata: ClassMetadataSharedMemory.Metadata.t;
+  }
+end
 
 module AstResult = struct
   type 'a t =
@@ -1645,7 +1696,6 @@ module ReadWrite = struct
     module_callables_shared_memory: ModuleCallablesSharedMemory.t;
     module_classes_shared_memory: ModuleClassesSharedMemory.t;
     module_globals_shared_memory: ModuleGlobalsSharedMemory.t;
-    (* TODO(T225700656): this can be removed from shared memory after initialization. *)
     class_id_to_qualified_name_shared_memory: ClassIdToQualifiedNameSharedMemory.t;
     callable_id_to_qualified_name_shared_memory: CallableIdToQualifiedNameSharedMemory.t;
     callable_ast_shared_memory: CallableAstSharedMemory.t;
@@ -2727,7 +2777,19 @@ module ReadWrite = struct
               { GlobalCallableId.module_id; local_function_id }
               qualified_name;
             qualified_name :: callables, classes
-        | Class { local_class_id; is_synthesized; fields; bases; mro; decorator_callees; _ } ->
+        | Class
+            {
+              local_class_id;
+              is_synthesized;
+              is_dataclass;
+              is_named_tuple;
+              is_typed_dict;
+              fields;
+              bases;
+              mro;
+              decorator_callees;
+              _;
+            } ->
             ClassMetadataSharedMemory.add
               class_metadata_shared_memory
               qualified_name
@@ -2736,6 +2798,9 @@ module ReadWrite = struct
                 name_location;
                 local_class_id;
                 is_synthesized;
+                is_dataclass;
+                is_named_tuple;
+                is_typed_dict;
                 parents = bases;
                 mro;
                 decorator_callees;
@@ -2749,6 +2814,7 @@ module ReadWrite = struct
                           type_;
                           explicit_annotation;
                           location;
+                          declaration_kind;
                         }
                       ->
                      ( name,
@@ -2756,6 +2822,7 @@ module ReadWrite = struct
                          ClassField.type_ = JsonType.to_pysa_type type_;
                          explicit_annotation;
                          location;
+                         declaration_kind;
                        } ))
               |> SerializableStringMap.of_alist_exn
             in
@@ -3489,6 +3556,15 @@ module ReadOnly = struct
     |> assert_shared_memory_key_exists "missing callable undecorated signature"
 
 
+  let get_class_summary { class_metadata_shared_memory; _ } class_name =
+    let class_name = FullyQualifiedName.from_reference_unchecked (Reference.create class_name) in
+    let metadata =
+      ClassMetadataSharedMemory.get class_metadata_shared_memory class_name
+      |> assert_shared_memory_key_exists "missing class metadata for class"
+    in
+    { PysaClassSummary.class_name; metadata }
+
+
   let get_class_decorators_opt { class_decorators_shared_memory; _ } class_name =
     ClassDecoratorsSharedMemory.get
       class_decorators_shared_memory
@@ -3596,6 +3672,56 @@ module ReadOnly = struct
             unbound_type_variable;
             is_exhaustive;
           }
+  end
+
+  module ClassSummary = struct
+    let has_custom_new { callable_metadata_shared_memory; _ } { PysaClassSummary.class_name; _ } =
+      (* TODO(T225700656): We don't currently store a mapping from class to methods. For now, we use
+         a dirty solution, we just check if class_name + __new__ is a valid function name. This
+         might not work in tricky cases (if the class name clashes with a module name, for
+         instance) *)
+      let class_name = FullyQualifiedName.to_reference class_name in
+      let method_name =
+        Ast.Reference.create ~prefix:class_name "__new__"
+        |> FullyQualifiedName.from_reference_unchecked
+      in
+      CallableMetadataSharedMemory.get callable_metadata_shared_memory method_name |> Option.is_some
+
+
+    let is_dataclass _ { PysaClassSummary.metadata = { is_dataclass; _ }; _ } = is_dataclass
+
+    let is_named_tuple _ { PysaClassSummary.metadata = { is_named_tuple; _ }; _ } = is_named_tuple
+
+    let is_typed_dict _ { PysaClassSummary.metadata = { is_typed_dict; _ }; _ } = is_typed_dict
+
+    let get_ordered_fields_declared_by_annotation
+        { class_fields_shared_memory; _ }
+        { PysaClassSummary.class_name; _ }
+      =
+      let fields =
+        ClassFieldsSharedMemory.get class_fields_shared_memory class_name
+        |> assert_shared_memory_key_exists "missing class fields for class"
+      in
+      let compare_by_location
+          (_, { ClassField.location = left; _ })
+          (_, { ClassField.location = right; _ })
+        =
+        Ast.Location.compare (Option.value_exn left) (Option.value_exn right)
+      in
+      fields
+      |> SerializableStringMap.to_alist
+      |> List.filter ~f:(fun (_, { ClassField.declaration_kind; _ }) ->
+             match declaration_kind with
+             | Some ClassFieldDeclarationKind.DeclaredByAnnotation -> true
+             | _ -> false)
+      |> List.filter ~f:(fun (_, { ClassField.location; _ }) -> Option.is_some location)
+      |> List.sort ~compare:compare_by_location
+      |> List.map ~f:fst
+
+
+    let dataclass_ordered_attributes = get_ordered_fields_declared_by_annotation
+
+    let typed_dictionary_attributes = get_ordered_fields_declared_by_annotation
   end
 end
 
