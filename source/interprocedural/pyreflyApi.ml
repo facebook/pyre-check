@@ -3395,6 +3395,11 @@ module ReadOnly = struct
       |> List.map ~f:FullyQualifiedName.to_reference
 
 
+  let get_qualifier_top_level_define_name _ qualifier =
+    let module_qualifier = ModuleQualifier.from_reference_unchecked qualifier in
+    FullyQualifiedName.create_module_toplevel ~module_qualifier |> FullyQualifiedName.to_reference
+
+
   let class_immediate_parents
       { class_metadata_shared_memory; class_id_to_qualified_name_shared_memory; object_class; _ }
       class_name

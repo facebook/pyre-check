@@ -110,6 +110,8 @@ module ReadOnly : sig
     Ast.Reference.t ->
     Analysis.PyrePysaEnvironment.MethodInQualifier.t list
 
+  val get_qualifier_top_level_define_name : t -> Ast.Reference.t -> Ast.Reference.t
+
   val module_exists : t -> Ast.Reference.t -> bool
 
   val parse_annotation
@@ -225,6 +227,8 @@ module ReadOnly : sig
   val all_classes : t -> scheduler:Scheduler.t -> string list
 
   val all_unannotated_globals : t -> scheduler:Scheduler.t -> Ast.Reference.t list
+
+  val ensures_qualified : t -> Ast.Source.t -> Ast.Source.t
 
   module Type : sig
     val scalar_properties : t -> PysaType.t -> ScalarTypeProperties.t

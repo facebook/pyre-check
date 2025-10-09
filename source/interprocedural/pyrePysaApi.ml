@@ -214,6 +214,11 @@ module ReadOnly = struct
         PyreflyApi.ReadOnly.get_methods_for_qualifier ~exclude_test_modules pyrefly_api qualifier
 
 
+  let get_qualifier_top_level_define_name = function
+    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.get_qualifier_top_level_define_name pyre_api
+    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.get_qualifier_top_level_define_name pyrefly_api
+
+
   let parse_reference = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.parse_reference pyre_api
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.parse_reference"
@@ -335,6 +340,12 @@ module ReadOnly = struct
   let all_unannotated_globals = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.all_unannotated_globals pyre_api
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.all_unannotated_globals"
+
+
+  let ensures_qualified api source =
+    match api with
+    | Pyre1 _ -> source
+    | Pyrefly _ -> Preprocessing.qualify source
 
 
   module Type = struct

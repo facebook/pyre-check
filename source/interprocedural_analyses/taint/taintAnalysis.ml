@@ -766,6 +766,8 @@ let run_taint_analysis
           ~scheduler
           ~scheduler_policies
           ~pyre_api
+          ~callables_to_definitions_map:
+            (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
           ~qualifiers)
   in
   let () = StepLogger.finish step_logger in

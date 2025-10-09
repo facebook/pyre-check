@@ -41,6 +41,8 @@ module Raw = struct
   }
   [@@deriving compare, equal, hash, sexp]
 
+  let empty = { relative = ""; priority = 0 }
+
   let pp formatter { relative; priority } = Format.fprintf formatter "%d/%s" priority relative
 
   (* NOTE: This comparator is expected to operate on SourceFiles that are mapped to the same module

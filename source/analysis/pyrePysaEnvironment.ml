@@ -518,6 +518,10 @@ module ReadOnly = struct
     global_resolution api |> GlobalResolution.get_define_names_for_qualifier_in_project
 
 
+  let get_qualifier_top_level_define_name _ qualifier =
+    Ast.Reference.create ~prefix:qualifier Ast.Statement.toplevel_define_name
+
+
   let parse_reference api = global_resolution api |> GlobalResolution.parse_reference
 
   let module_exists api = global_resolution api |> GlobalResolution.module_exists

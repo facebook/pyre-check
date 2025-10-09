@@ -195,6 +195,8 @@ module ReadOnly : sig
 
   val get_define_names_for_qualifier : t -> Ast.Reference.t -> Ast.Reference.t list
 
+  val get_qualifier_top_level_define_name : t -> Ast.Reference.t -> Ast.Reference.t
+
   val parse_reference : t -> Ast.Reference.t -> Type.t
 
   val module_exists : t -> Ast.Reference.t -> bool

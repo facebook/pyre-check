@@ -100,6 +100,8 @@ module ReadOnly : sig
     Ast.Reference.t ->
     Ast.Reference.t list
 
+  val get_qualifier_top_level_define_name : t -> Ast.Reference.t -> Ast.Reference.t
+
   val class_immediate_parents : t -> string -> string list
 
   val class_mro : t -> string -> string list

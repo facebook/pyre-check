@@ -604,7 +604,6 @@ let initialize
       ()
   in
   let qualifier = Reference.create (String.chop_suffix_exn handle ~suffix:".py") in
-  let source = source_from_qualifier ~pyre_api qualifier in
   let initial_callables_in_source =
     FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier
   in
@@ -735,7 +734,12 @@ let initialize
   in
 
   let global_constants =
-    GlobalConstants.Heap.from_source ~qualifier source |> GlobalConstants.SharedMemory.from_heap
+    GlobalConstants.Heap.from_qualifier
+      ~pyre_api
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      qualifier
+    |> GlobalConstants.SharedMemory.from_heap
   in
 
   (* Initialize models *)

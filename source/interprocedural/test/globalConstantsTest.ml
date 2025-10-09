@@ -7,26 +7,43 @@
 
 open Core
 open OUnit2
-open Test
 open Ast
 open Interprocedural
 
 let test_from_source context =
   let assert_global_constants ~all_sources ~test_source_qualifier ~expected =
-    let test_source =
-      let project = Test.ScratchProject.setup ~context all_sources in
-      let { ScratchProject.BuiltTypeEnvironment.sources; _ } =
-        ScratchProject.build_type_environment project
-      in
-      List.find_map_exn
-        sources
-        ~f:(fun ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) ->
-          Option.some_if (String.equal (Reference.show qualifier) test_source_qualifier) source)
+    let project =
+      Test.ScratchPyrePysaProject.setup ~context ~requires_type_of_expressions:false all_sources
+    in
+    let pyre_api = Test.ScratchPyrePysaProject.read_only_api project in
+    let configuration = Test.ScratchPyrePysaProject.configuration_of project in
+    let scheduler = Test.mock_scheduler () in
+    let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
+    let qualifiers = PyrePysaApi.ReadOnly.explicit_qualifiers pyre_api in
+    let all_initial_callables =
+      Interprocedural.FetchCallables.from_qualifiers
+        ~scheduler
+        ~scheduler_policy
+        ~configuration
+        ~pyre_api
+        ~qualifiers
+    in
+    let definitions_and_stubs =
+      Interprocedural.FetchCallables.get all_initial_callables ~definitions:true ~stubs:true
+    in
+    let callables_to_definitions_map =
+      Interprocedural.Target.CallablesSharedMemory.from_callables
+        ~scheduler
+        ~scheduler_policy
+        ~pyre_api
+        definitions_and_stubs
     in
     let global_constants =
-      GlobalConstants.Heap.from_source
-        ~qualifier:(Reference.create test_source_qualifier)
-        test_source
+      GlobalConstants.Heap.from_qualifier
+        ~pyre_api
+        ~callables_to_definitions_map:
+          (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        (Reference.create test_source_qualifier)
     in
     let expected =
       expected
@@ -91,17 +108,40 @@ let test_from_source context =
 
 let test_from_qualifiers context =
   let from_sources sources =
-    let project = Test.ScratchProject.setup ~context sources in
-    let { ScratchProject.BuiltTypeEnvironment.sources; _ } =
-      ScratchProject.build_type_environment project
+    let project =
+      Test.ScratchPyrePysaProject.setup ~context ~requires_type_of_expressions:false sources
     in
-    let pyre_api =
-      project |> ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
+    let pyre_api = Test.ScratchPyrePysaProject.read_only_api project in
+    let configuration = Test.ScratchPyrePysaProject.configuration_of project in
+    let scheduler = Test.mock_scheduler () in
+    let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
+    let qualifiers = PyrePysaApi.ReadOnly.explicit_qualifiers pyre_api in
+    let all_initial_callables =
+      Interprocedural.FetchCallables.from_qualifiers
+        ~scheduler
+        ~scheduler_policy
+        ~configuration
+        ~pyre_api
+        ~qualifiers
+    in
+    let definitions_and_stubs =
+      Interprocedural.FetchCallables.get all_initial_callables ~definitions:true ~stubs:true
+    in
+    let callables_to_definitions_map =
+      Interprocedural.Target.CallablesSharedMemory.from_callables
+        ~scheduler
+        ~scheduler_policy
+        ~pyre_api
+        definitions_and_stubs
     in
     let qualifiers =
-      List.map sources ~f:(fun { Source.module_path = { ModulePath.qualifier; _ }; _ } -> qualifier)
+      List.map sources ~f:(fun (qualifier, _) -> ModulePath.qualifier_from_relative_path qualifier)
     in
-    GlobalConstants.Heap.from_qualifiers ~pyre_api ~qualifiers
+    GlobalConstants.Heap.from_qualifiers
+      ~pyre_api
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ~qualifiers
   in
   let assert_global_constants ~sources ~expected =
     let global_constants = from_sources sources in

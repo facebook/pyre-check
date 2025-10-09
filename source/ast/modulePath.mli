@@ -12,6 +12,8 @@ module Raw : sig
   }
   [@@deriving compare, equal, hash, sexp]
 
+  val empty : t
+
   val priority_aware_compare : configuration:Configuration.Analysis.t -> t -> t -> int
 end
 
