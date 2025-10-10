@@ -80,5 +80,5 @@ val build_whole_program_dependency_graph
   initial_callables:FetchCallables.t ->
   call_graph:CallGraph.WholeProgramCallGraph.t ->
   overrides:OverrideGraph.Heap.t ->
-  decorator_resolution:CallGraph.DecoratorResolution.Results.t ->
+  ignore_decorated_targets:bool ->
   whole_program_dependency_graph

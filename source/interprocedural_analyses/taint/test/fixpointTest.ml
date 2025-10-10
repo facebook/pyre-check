@@ -36,6 +36,7 @@ let assert_fixpoint
          initial_callables;
          stubs;
          class_interval_graph_shared_memory;
+         callables_to_definitions_map;
          type_of_expression_shared_memory;
          _;
        } as test_environment)
@@ -49,7 +50,7 @@ let assert_fixpoint
       ~initial_callables
       ~call_graph:whole_program_call_graph
       ~overrides:override_graph_heap
-      ~decorator_resolution:Interprocedural.CallGraph.DecoratorResolution.Results.empty
+      ~ignore_decorated_targets:true
   in
   let state =
     TaintFixpoint.record_initial_models
@@ -61,13 +62,6 @@ let assert_fixpoint
   in
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
-  let callables_to_definitions_map =
-    Interprocedural.Target.CallablesSharedMemory.from_callables
-      ~scheduler
-      ~scheduler_policy
-      ~pyre_api
-      (Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true)
-  in
   let ({ TaintFixpoint.fixpoint_reached_iterations; _ } as fixpoint) =
     TaintFixpoint.compute
       ~scheduler

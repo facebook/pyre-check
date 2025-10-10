@@ -440,19 +440,18 @@ module DefineCallGraph : sig
   val drop_decorated_targets : t -> t
 end
 
-module DecoratorDefine : sig
-  type t = {
-    define: Ast.Statement.Define.t;
-    (* An artificial define that returns the call to the decorators. *)
-    callable: Target.t;
-    (* `Target` representation of the above define. *)
-    call_graph: DefineCallGraph.t; (* Call graph of the above define. *)
-  }
-  [@@deriving show, equal]
-end
-
 (* A map from each callable to its decorators. *)
 module CallableToDecoratorsMap : sig
+  module DecoratedDefineBody : sig
+    type t = {
+      decorated_callable: Target.t;
+      define_name: Reference.t;
+      return_expression: Expression.t;
+      attribute_access: Name.t;
+      attribute_access_location: Location.t;
+    }
+  end
+
   module SharedMemory : sig
     type t
 
@@ -482,6 +481,15 @@ module CallableToDecoratorsMap : sig
       scheduler:Scheduler.t ->
       t ->
       unit
+
+    val decorated_callable_body : ReadOnly.t -> Target.t -> DecoratedDefineBody.t option
+
+    val register_decorator_defines
+      :  t ->
+      Target.CallablesSharedMemory.t ->
+      Target.CallablesSharedMemory.t
+
+    val decorated_targets : t -> Target.t list
   end
 end
 
@@ -490,8 +498,8 @@ val call_graph_of_define
   pyre_api:PyrePysaApi.ReadOnly.t ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   attribute_targets:Target.HashSet.t ->
-  decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
   callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+  callables_to_decorators_map:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
   type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
   check_invariants:bool ->
   qualifier:Reference.t ->
@@ -527,11 +535,22 @@ val call_graph_of_callable
   pyre_api:PyrePysaApi.ReadOnly.t ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   attribute_targets:Target.HashSet.t ->
-  decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
   callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+  callables_to_decorators_map:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
   type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
   check_invariants:bool ->
   callable:Target.t ->
+  DefineCallGraph.t
+
+val call_graph_of_decorated_callable
+  :  debug:bool ->
+  pyre_api:PyrePysaApi.ReadOnly.t ->
+  override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
+  callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+  callables_to_decorators_map:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
+  type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
+  callable:Target.t ->
+  body:CallableToDecoratorsMap.DecoratedDefineBody.t ->
   DefineCallGraph.t
 
 (* The result of finding higher order function callees inside a callable. *)
@@ -599,62 +618,6 @@ val higher_order_call_graph_of_define
   maximum_parameterized_targets_at_call_site:int option ->
   HigherOrderCallGraph.t
 
-module DecoratorResolution : sig
-  type t =
-    | Decorators of DecoratorDefine.t
-    | PropertySetterUnsupported
-    | Undecorated
-      (* A callable is `Undecorated` if it does not have any decorator, or all of its decorators are
-         ignored. *)
-  [@@deriving show, equal]
-
-  (**
-   * For any target that might be decorated, return the `ResolvedExpression` for the expression that calls the decorators.
-   *
-   * For instance:
-   * ```
-   * @decorator
-   * @decorator_factory(1, 2)
-   * def foo(): pass
-   * ```
-   * would resolve into expression `decorator(decorator_factory(1, 2)(foo))`, along with its callees that are stored in `call_graph`.
-   *)
-  val resolve_exn
-    :  ?debug:bool ->
-    pyre_in_context:PyrePysaApi.InContext.t ->
-    override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
-    callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
-    type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
-    decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
-    Target.t ->
-    t
-
-  module Results : sig
-    type t
-
-    val empty : t
-
-    val resolve_batch_exn
-      :  debug:bool ->
-      pyre_api:PyrePysaApi.ReadOnly.t ->
-      scheduler:Scheduler.t ->
-      scheduler_policy:Scheduler.Policy.t ->
-      override_graph:OverrideGraph.SharedMemory.t ->
-      callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
-      type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
-      decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
-      Target.t list ->
-      t
-
-    val register_decorator_defines
-      :  decorator_resolution:t ->
-      Target.CallablesSharedMemory.t ->
-      Target.CallablesSharedMemory.t
-
-    val decorated_targets : t -> Target.t list
-  end
-end
-
 (** Whole-program call graph, stored in the ocaml heap. This is a mapping from a callable to all its
     callees. *)
 module WholeProgramCallGraph : sig
@@ -716,12 +679,11 @@ module SharedMemory : sig
     pyre_api:PyrePysaApi.ReadOnly.t ->
     resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
     callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+    callables_to_decorators_map:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
     type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
     override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
     store_shared_memory:bool ->
     attribute_targets:Target.Set.t ->
-    decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
-    decorator_resolution:DecoratorResolution.Results.t ->
     skip_analysis_targets:Target.HashSet.t ->
     check_invariants:bool ->
     definitions:Target.t list ->

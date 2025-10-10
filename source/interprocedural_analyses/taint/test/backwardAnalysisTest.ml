@@ -69,11 +69,11 @@ let assert_taint ~context source expected =
           |> Registry.object_targets
           |> Target.Set.elements
           |> Target.HashSet.of_list)
-        ~decorators:
-          (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.empty ()
-          |> Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only)
         ~callables_to_definitions_map:
           (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        ~callables_to_decorators_map:
+          (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.empty ()
+          |> Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only)
         ~type_of_expression_shared_memory
         ~qualifier
         ~callable:call_target

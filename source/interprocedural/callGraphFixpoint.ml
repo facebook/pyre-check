@@ -249,7 +249,12 @@ let build_whole_program_call_graph ~scheduler ~scheduler_policy state =
 
 let analyzed_callables { Fixpoint.state; _ } = Fixpoint.State.targets state
 
-let log_decorated_targets_if_no_returned_callables ~scheduler ~scheduler_policy ~decorators state =
+let log_decorated_targets_if_no_returned_callables
+    ~scheduler
+    ~scheduler_policy
+    ~callables_to_decorators_map
+    state
+  =
   let open Data_structures in
   let merge_decorator_counts _ left_count right_count = Some (left_count + right_count) in
   let log_and_count_if_no_returned_callables ~readonly_state so_far callable =
@@ -260,7 +265,8 @@ let log_decorated_targets_if_no_returned_callables ~scheduler ~scheduler_policy 
           if CallGraph.CallTarget.Set.is_bottom returned_callables then (
             let decorator_expressions =
               Target.set_kind Target.Normal callable
-              |> CallGraph.CallableToDecoratorsMap.SharedMemory.ReadOnly.get_decorators decorators
+              |> CallGraph.CallableToDecoratorsMap.SharedMemory.ReadOnly.get_decorators
+                   callables_to_decorators_map
               |> Option.value ~default:[]
               |> List.map ~f:Ast.Expression.show
             in
@@ -320,6 +326,7 @@ let compute
     ~resolve_module_path
     ~pyre_api
     ~callables_to_definitions_map
+    ~callables_to_decorators_map
     ~type_of_expression_shared_memory
     ~call_graph:{ CallGraph.SharedMemory.define_call_graphs; _ }
     ~dependency_graph:
@@ -332,19 +339,17 @@ let compute
     ~override_graph_shared_memory
     ~skip_analysis_targets
     ~called_when_parameter
-    ~decorator_resolution
-    ~decorators
   =
   let callables_to_definitions_map =
-    CallGraph.DecoratorResolution.Results.register_decorator_defines
-      ~decorator_resolution
+    CallGraph.CallableToDecoratorsMap.SharedMemory.register_decorator_defines
+      callables_to_decorators_map
       callables_to_definitions_map
   in
   (* Build higher order call graphs only for targets that are reachable, and decorated targets,
      which are not included in `callables_to_analyze`. *)
   let callables_to_analyze =
     List.rev_append
-      (CallGraph.DecoratorResolution.Results.decorated_targets decorator_resolution)
+      (CallGraph.CallableToDecoratorsMap.SharedMemory.decorated_targets callables_to_decorators_map)
       original_callables_to_analyze
   in
   let callables_with_call_graphs = CallGraph.SharedMemory.callables define_call_graphs in
@@ -446,7 +451,12 @@ let compute
       ~filename_prefix:"higher-order-call-graph"
       ~callables:(analyzed_callables fixpoint)
   in
-  log_decorated_targets_if_no_returned_callables ~scheduler ~scheduler_policy ~decorators state;
+  log_decorated_targets_if_no_returned_callables
+    ~scheduler
+    ~scheduler_policy
+    ~callables_to_decorators_map:
+      (CallGraph.CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
+    state;
   {
     fixpoint;
     whole_program_call_graph = build_whole_program_call_graph ~scheduler ~scheduler_policy state;

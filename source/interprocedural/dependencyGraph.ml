@@ -198,7 +198,7 @@ let build_whole_program_dependency_graph
     ~initial_callables
     ~call_graph
     ~overrides
-    ~decorator_resolution
+    ~ignore_decorated_targets
   =
   let reverse_dependency_graph = Reversed.from_overrides overrides in
   let override_targets = Target.Map.Tree.keys reverse_dependency_graph in
@@ -237,8 +237,9 @@ let build_whole_program_dependency_graph
      since this is also used to compute dependencies for the call graph fixpoint. For the taint
      fixpoint, dependencies are computed with an empty `decorator_resolution`. *)
   let callables_to_analyze =
-    List.rev_append
-      (CallGraph.DecoratorResolution.Results.decorated_targets decorator_resolution)
+    if ignore_decorated_targets then
+      List.filter ~f:(fun target -> not (Target.is_decorated target)) callables_to_analyze
+    else
       callables_to_analyze
   in
   let ({ dependency_graph; _ } as whole_program_dependency_graph) =

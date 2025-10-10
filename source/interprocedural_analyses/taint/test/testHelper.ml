@@ -484,8 +484,8 @@ module TestEnvironment = struct
     global_constants: GlobalConstants.SharedMemory.t;
     stubs_shared_memory_handle: Target.HashsetSharedMemory.t;
     callables_to_definitions_map: Interprocedural.Target.CallablesSharedMemory.t;
+    callables_to_decorators_map: Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.t;
     type_of_expression_shared_memory: Interprocedural.TypeOfExpressionSharedMemory.t;
-    decorators: Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.t;
   }
 
   let cleanup
@@ -509,8 +509,8 @@ module TestEnvironment = struct
         global_constants;
         stubs_shared_memory_handle;
         callables_to_definitions_map;
+        callables_to_decorators_map;
         type_of_expression_shared_memory = _;
-        decorators;
       }
     =
     CallGraph.SharedMemory.cleanup define_call_graphs;
@@ -525,7 +525,8 @@ module TestEnvironment = struct
     Target.HashsetSharedMemory.cleanup stubs_shared_memory_handle;
     GlobalConstants.SharedMemory.cleanup global_constants;
     Interprocedural.Target.CallablesSharedMemory.cleanup callables_to_definitions_map;
-    Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.cleanup decorators
+    Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.cleanup
+      callables_to_decorators_map
 end
 
 let set_up_decorator_preprocessing ~handle models =
@@ -744,25 +745,12 @@ let initialize
 
   (* Initialize models *)
   (* The call graph building depends on initial models for global targets. *)
-  let decorators =
+  let callables_to_decorators_map =
     CallGraph.CallableToDecoratorsMap.SharedMemory.create
       ~callables_to_definitions_map:
         (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
       ~scheduler
       ~scheduler_policy
-      definitions
-  in
-  let decorator_resolution =
-    CallGraph.DecoratorResolution.Results.resolve_batch_exn
-      ~debug:false
-      ~pyre_api
-      ~scheduler
-      ~scheduler_policy
-      ~override_graph:override_graph_shared_memory
-      ~callables_to_definitions_map:
-        (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
-      ~type_of_expression_shared_memory
-      ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       definitions
   in
   let skip_analysis_targets =
@@ -780,13 +768,13 @@ let initialize
       ~override_graph:(Some override_graph_shared_memory_read_only)
       ~store_shared_memory:true
       ~attribute_targets:(SharedModels.object_targets initial_models)
-      ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
-      ~decorator_resolution
       ~skip_analysis_targets
       ~check_invariants:true
       ~definitions
       ~callables_to_definitions_map:
         (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ~callables_to_decorators_map:
+        (CallGraph.CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
       ~type_of_expression_shared_memory
       ~create_dependency_for:Interprocedural.CallGraph.AllTargetsUseCase.CallGraphDependency
   in
@@ -797,7 +785,7 @@ let initialize
       ~initial_callables:initial_callables_in_source
       ~call_graph:whole_program_call_graph
       ~overrides:override_graph_heap
-      ~decorator_resolution
+      ~ignore_decorated_targets:false
   in
   let ({ CallGraphFixpoint.whole_program_call_graph; get_define_call_graph; _ } as
       call_graph_fixpoint_state)
@@ -812,12 +800,10 @@ let initialize
       ~dependency_graph
       ~override_graph_shared_memory
       ~callables_to_definitions_map
+      ~callables_to_decorators_map
       ~type_of_expression_shared_memory
       ~skip_analysis_targets
       ~called_when_parameter:(SharedModels.called_when_parameter ~scheduler initial_models)
-      ~decorator_resolution
-      ~decorators:
-        (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
   in
   let initial_models =
     MissingFlow.add_unknown_callee_models
@@ -851,8 +837,8 @@ let initialize
     global_constants;
     stubs_shared_memory_handle;
     callables_to_definitions_map;
+    callables_to_decorators_map;
     type_of_expression_shared_memory;
-    decorators;
   }
 
 
@@ -1038,7 +1024,7 @@ let end_to_end_integration_test path context =
         ~initial_callables
         ~call_graph:whole_program_call_graph
         ~overrides:override_graph_heap
-        ~decorator_resolution:Interprocedural.CallGraph.DecoratorResolution.Results.empty
+        ~ignore_decorated_targets:true
     in
     let initial_models =
       SharedModels.initialize_for_parameterized_callables

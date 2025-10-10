@@ -55,7 +55,7 @@ let compute_define_call_graph
         (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
       ()
   in
-  let decorators =
+  let callables_to_decorators_map =
     CallGraph.CallableToDecoratorsMap.SharedMemory.create
       ~callables_to_definitions_map:
         (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
@@ -71,9 +71,10 @@ let compute_define_call_graph
         (Some (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
       ~attribute_targets:
         (object_targets |> List.map ~f:Target.from_regular |> Target.HashSet.of_list)
-      ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       ~callables_to_definitions_map:
         (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ~callables_to_decorators_map:
+        (CallGraph.CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
       ~type_of_expression_shared_memory
       ~check_invariants:true
       ~qualifier:module_name
@@ -7691,7 +7692,6 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
   in
   let qualifier = Reference.create "test" in
   let initial_callables = FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier in
-  let pyre_in_context = PyrePysaApi.InContext.create_at_global_scope pyre_api in
   let override_graph_shared_memory =
     qualifier
     |> OverrideGraph.Heap.from_qualifier
@@ -7707,47 +7707,11 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
           callable: Target.t;
           call_graph: CallGraph.DefineCallGraphForTest.t;
         }
-      | PropertySetterUnsupported
       | Undecorated
     [@@deriving show, equal]
 
-    let from_actual = function
-      | CallGraph.DecoratorResolution.PropertySetterUnsupported -> PropertySetterUnsupported
-      | CallGraph.DecoratorResolution.Undecorated -> Undecorated
-      | CallGraph.DecoratorResolution.Decorators
-          {
-            CallGraph.DecoratorDefine.define =
-              {
-                signature = { Ast.Statement.Define.Signature.name; _ };
-                body =
-                  [
-                    {
-                      Node.value = Ast.Statement.Statement.Return { expression = Some expression; _ };
-                      _;
-                    };
-                  ];
-                _;
-              };
-            callable;
-            call_graph;
-          } ->
-          Decorators
-            {
-              return_expression = Expression.show expression;
-              define_name = Reference.show name;
-              callable;
-              call_graph = DefineCallGraph.for_test call_graph;
-            }
-      | CallGraph.DecoratorResolution.Decorators { define; _ } ->
-          Format.asprintf
-            "Expect a single return statement in define `%a`"
-            Ast.Statement.Define.pp
-            define
-          |> failwith
-
-
     let from_expected = function
-      | Result.Ok (decorator_call, callable, define_name, call_graph) ->
+      | Some (decorator_call, callable, define_name, call_graph) ->
           Decorators
             {
               return_expression = decorator_call;
@@ -7755,10 +7719,7 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
               define_name;
               call_graph = DefineCallGraphForTest.from_expected call_graph;
             }
-      | Result.Error CallGraph.DecoratorResolution.PropertySetterUnsupported ->
-          PropertySetterUnsupported
-      | Result.Error CallGraph.DecoratorResolution.Undecorated -> Undecorated
-      | Result.Error _ -> failwith "Unexpected"
+      | None -> Undecorated
   end
   in
   let definitions = FetchCallables.get_definitions initial_callables in
@@ -7778,7 +7739,7 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
         (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
       ()
   in
-  let decorators =
+  let callables_to_decorators_map =
     CallGraph.CallableToDecoratorsMap.SharedMemory.create
       ~callables_to_definitions_map:
         (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
@@ -7789,18 +7750,41 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
   let actual =
     definitions
     |> List.map ~f:(fun callable ->
+           let open Option.Monad_infix in
            (* For simplicity, don't compare the cases when there exist no decorator callees. *)
            callable
-           |> CallGraph.DecoratorResolution.resolve_exn
-                ~debug
-                ~pyre_in_context
-                ~override_graph:
-                  (Some (OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
-                ~callables_to_definitions_map:
-                  (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
-                ~type_of_expression_shared_memory
-                ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
-           |> TestResult.from_actual
+           |> CallGraph.CallableToDecoratorsMap.SharedMemory.decorated_callable_body
+                (CallGraph.CallableToDecoratorsMap.SharedMemory.read_only
+                   callables_to_decorators_map)
+           >>| (fun ({
+                       CallGraph.CallableToDecoratorsMap.DecoratedDefineBody.return_expression;
+                       define_name;
+                       decorated_callable;
+                       _;
+                     } as body) ->
+                 let call_graph =
+                   CallGraph.call_graph_of_decorated_callable
+                     ~debug
+                     ~pyre_api
+                     ~override_graph:
+                       (Some (OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
+                     ~callables_to_definitions_map:
+                       (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+                     ~type_of_expression_shared_memory
+                     ~callables_to_decorators_map:
+                       (CallGraph.CallableToDecoratorsMap.SharedMemory.read_only
+                          callables_to_decorators_map)
+                     ~callable
+                     ~body
+                 in
+                 TestResult.Decorators
+                   {
+                     return_expression = Expression.show return_expression;
+                     define_name = Reference.show define_name;
+                     callable = decorated_callable;
+                     call_graph = DefineCallGraph.for_test call_graph;
+                   })
+           |> Option.value ~default:TestResult.Undecorated
            |> fun result -> callable, result)
     |> Target.Map.of_alist_exn
   in
@@ -7841,14 +7825,11 @@ let test_resolve_decorator_callees =
   |}
            ~expected:
              [
-               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
-               ( Target.Regular.Function { name = "test.decorator"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
-               ( Target.Regular.Function { name = "test.decorator2"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+               Target.Regular.Function { name = "test.$toplevel"; kind = Normal }, None;
+               Target.Regular.Function { name = "test.decorator"; kind = Normal }, None;
+               Target.Regular.Function { name = "test.decorator2"; kind = Normal }, None;
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
-                 Result.Ok
+                 Some
                    ( "test.decorator2(test.decorator(test.foo))",
                      Target.Regular.Function { name = "test.foo"; kind = Decorated },
                      "test.foo.@decorated",
@@ -7912,10 +7893,8 @@ let test_resolve_decorator_callees =
   |}
            ~expected:
              [
-               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
-               ( Target.Regular.Function { name = "test.foo"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+               Target.Regular.Function { name = "test.$toplevel"; kind = Normal }, None;
+               Target.Regular.Function { name = "test.foo"; kind = Normal }, None;
              ]
            ();
       labeled_test_case __FUNCTION__ __LINE__
@@ -7932,12 +7911,10 @@ let test_resolve_decorator_callees =
   |}
            ~expected:
              [
-               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
-               ( Target.Regular.Function { name = "test.decorator_factory"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+               Target.Regular.Function { name = "test.$toplevel"; kind = Normal }, None;
+               Target.Regular.Function { name = "test.decorator_factory"; kind = Normal }, None;
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
-                 Result.Ok
+                 Some
                    ( "test.decorator_factory(1, 2)(test.foo)",
                      Target.Regular.Function { name = "test.foo"; kind = Decorated },
                      "test.foo.@decorated",
@@ -8000,12 +7977,10 @@ let test_resolve_decorator_callees =
   |}
            ~expected:
              [
-               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
-               ( Target.Regular.Function { name = "test.decorator_factory"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+               Target.Regular.Function { name = "test.$toplevel"; kind = Normal }, None;
+               Target.Regular.Function { name = "test.decorator_factory"; kind = Normal }, None;
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
-                 Result.Ok
+                 Some
                    ( "test.decorator_factory(1, test.bar)(test.foo)",
                      Target.Regular.Function { name = "test.foo"; kind = Decorated },
                      "test.foo.@decorated",
@@ -8090,23 +8065,22 @@ let test_resolve_decorator_callees =
   |}
            ~expected:
              [
-               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+               Target.Regular.Function { name = "test.$toplevel"; kind = Normal }, None;
                ( Target.Regular.Method
                    {
                      class_name = "test.ClassDecorator";
                      method_name = "$class_toplevel";
                      kind = Normal;
                    },
-                 Result.Error DecoratorResolution.Undecorated );
+                 None );
                ( Target.Regular.Method
                    { class_name = "test.ClassDecorator"; method_name = "__call__"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+                 None );
                ( Target.Regular.Method
                    { class_name = "test.ClassDecorator"; method_name = "__init__"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+                 None );
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
-                 Result.Ok
+                 Some
                    ( "test.ClassDecorator(test.foo)",
                      Target.Regular.Function { name = "test.foo"; kind = Decorated },
                      "test.foo.@decorated",
@@ -8188,16 +8162,15 @@ let test_resolve_decorator_callees =
   |}
            ~expected:
              [
-               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+               Target.Regular.Function { name = "test.$toplevel"; kind = Normal }, None;
                ( Target.Regular.Method
                    { class_name = "test.A"; method_name = "$class_toplevel"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+                 None );
                ( Target.Regular.Method
                    { class_name = "test.A"; method_name = "decorator"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+                 None );
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
-                 Result.Ok
+                 Some
                    ( "test.A.decorator(test.foo)",
                      Target.Regular.Function { name = "test.foo"; kind = Decorated },
                      "test.foo.@decorated",
@@ -8261,16 +8234,15 @@ let test_resolve_decorator_callees =
   |}
            ~expected:
              [
-               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+               Target.Regular.Function { name = "test.$toplevel"; kind = Normal }, None;
                ( Target.Regular.Method
                    { class_name = "test.A"; method_name = "$class_toplevel"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+                 None );
                ( Target.Regular.Method
                    { class_name = "test.A"; method_name = "decorator"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+                 None );
                ( Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal },
-                 Result.Ok
+                 Some
                    ( "test.A.decorator(test.A.foo)",
                      Target.Regular.Method
                        { class_name = "test.A"; method_name = "foo"; kind = Decorated },
@@ -8341,16 +8313,15 @@ let test_resolve_decorator_callees =
   |}
            ~expected:
              [
-               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+               Target.Regular.Function { name = "test.$toplevel"; kind = Normal }, None;
                ( Target.Regular.Method
                    { class_name = "test.A"; method_name = "$class_toplevel"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+                 None );
                ( Target.Regular.Method
                    { class_name = "test.B"; method_name = "$class_toplevel"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+                 None );
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
-                 Result.Ok
+                 Some
                    ( "test.a_or_b.decorator(test.foo)",
                      Target.Regular.Function { name = "test.foo"; kind = Decorated },
                      "test.foo.@decorated",
@@ -8418,21 +8389,20 @@ let test_resolve_decorator_callees =
   |}
            ~expected:
              [
-               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+               Target.Regular.Function { name = "test.$toplevel"; kind = Normal }, None;
                ( Target.Regular.Method
                    { class_name = "test.MyClass"; method_name = "$class_toplevel"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+                 None );
                ( Target.Regular.Method
                    { class_name = "test.MyClass"; method_name = "my_attr"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+                 None );
                ( Target.Regular.Method
                    {
                      class_name = "test.MyClass";
                      method_name = "my_attr";
                      kind = Pyre1PropertySetter;
                    },
-                 Result.Error DecoratorResolution.PropertySetterUnsupported );
+                 None );
              ]
            ();
       labeled_test_case __FUNCTION__ __LINE__
@@ -8450,16 +8420,12 @@ let test_resolve_decorator_callees =
   |}
            ~expected:
              [
-               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
-               ( Target.Regular.Function { name = "test.decorator"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
-               ( Target.Regular.Function { name = "test.decorator.inner"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
-               ( Target.Regular.Function { name = "test.main"; kind = Normal },
-                 Result.Error DecoratorResolution.Undecorated );
+               Target.Regular.Function { name = "test.$toplevel"; kind = Normal }, None;
+               Target.Regular.Function { name = "test.decorator"; kind = Normal }, None;
+               Target.Regular.Function { name = "test.decorator.inner"; kind = Normal }, None;
+               Target.Regular.Function { name = "test.main"; kind = Normal }, None;
                ( Target.Regular.Function { name = "test.main.inner"; kind = Normal },
-                 Result.Ok
+                 Some
                    ( "test.decorator(test.main.inner)",
                      Target.Regular.Function { name = "test.main.inner"; kind = Decorated },
                      "test.main.inner.@decorated",

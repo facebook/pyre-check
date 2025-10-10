@@ -92,11 +92,11 @@ let assert_taint ?models ?models_source ~context source expect =
           (Some (OverrideGraph.SharedMemory.create () |> OverrideGraph.SharedMemory.read_only))
         ~attribute_targets:
           (models |> Registry.object_targets |> Target.Set.elements |> Target.HashSet.of_list)
-        ~decorators:
-          (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.empty ()
-          |> Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only)
         ~callables_to_definitions_map:
           (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        ~callables_to_decorators_map:
+          (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.empty ()
+          |> Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only)
         ~type_of_expression_shared_memory
         ~check_invariants:true
         ~qualifier
