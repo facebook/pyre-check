@@ -527,6 +527,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:true
            ~source:
              {|
     class C:
@@ -553,6 +554,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:true
            ~source:
              {|
     class C:
@@ -580,6 +582,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:true
            ~source:
              {|
     class C:
