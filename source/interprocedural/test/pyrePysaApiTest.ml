@@ -246,7 +246,7 @@ let test_resolve_qualified_name_to_global context =
                ~is_method:true
                ~signatures:[create_signature ~return_annotation:Type.NoneType []]
                ())))
-    ~pyrefly_expect:(Some (Global.ClassAttribute { name = Reference.create "test.Foo.bar" }));
+    ~pyrefly_expect:None;
   assert_resolve
     ~context
     ["test.py", {|
@@ -495,7 +495,7 @@ let test_resolve_qualified_name_to_global context =
     ]
     "test.Foo.baz"
     ~expect:(Some (Global.UnknownClassAttribute { name = Reference.create "test.Foo.baz" }))
-    ~pyrefly_expect:(Some (Global.ClassAttribute { name = Reference.create "test.Foo.baz" }));
+    ~pyrefly_expect:None;
 
   (* Definition in type stub. *)
   assert_resolve
