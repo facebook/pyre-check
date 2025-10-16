@@ -639,6 +639,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:true
            ~source:
              {|
        class C:
@@ -673,6 +674,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:true
            ~source:{|
        def foo(x: str) -> int:
          return int(x)
@@ -704,6 +706,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:true
            ~source:
              {|
        class C:
@@ -738,6 +741,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:true
            ~source:
              {|
        from unknown import A
@@ -773,6 +777,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:true
            ~source:
              {|
        from unknown import A
