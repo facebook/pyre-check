@@ -14,6 +14,7 @@ module ScalarTypeProperties = Pyre1Api.ScalarTypeProperties
 module ClassNamesFromType = Pyre1Api.ClassNamesFromType
 module PysaType = Pyre1Api.PysaType
 module PyreClassSummary = Pyre1Api.PyreClassSummary
+module AstResult = Pyre1Api.AstResult
 
 module PysaClassSummary = struct
   type t =

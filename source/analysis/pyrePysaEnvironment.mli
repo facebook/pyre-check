@@ -102,6 +102,23 @@ module PysaClassSummary : sig
   val get_attributes : t -> PyreClassSummary.Attribute.t list
 end
 
+module AstResult : sig
+  type 'a t =
+    | Some of 'a
+    | ParseError (* callable in a module that failed to parse *)
+    | TestFile (* callable in a module marked with is_test = true *)
+    | Synthesized (* callable in a synthesized class or function *)
+    | Pyre1NotFound (* callable not found - only raised when using pyre1 *)
+
+  val to_option : 'a t -> 'a option
+
+  val value_exn : message:string -> 'a t -> 'a
+
+  val map : f:('a -> 'b) -> 'a t -> 'b t
+
+  val map_node : f:('a -> 'b) -> 'a Ast.Node.t t -> 'b Ast.Node.t t
+end
+
 module ReadWrite : sig
   type t
 
@@ -169,7 +186,7 @@ module ReadOnly : sig
 
   val get_class_summary : t -> string -> PysaClassSummary.t option
 
-  val get_class_decorators_opt : t -> string -> Ast.Expression.t list option
+  val get_class_decorators_opt : t -> string -> Ast.Expression.t list AstResult.t
 
   val get_class_attributes
     :  t ->

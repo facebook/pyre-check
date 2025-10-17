@@ -999,7 +999,7 @@ module Modelable = struct
     | Callable of {
         target: Target.t;
         (* The syntactic definition of the function, including the AST for each parameters. *)
-        define_signature: Target.CallableSignature.t Lazy.t;
+        define_signature: Target.CallableSignature.t PyrePysaApi.AstResult.t Lazy.t;
         (* The semantic (undecorated) signature(s) of the function. *)
         undecorated_signatures: PyrePysaApi.ModelQueries.FunctionSignature.t list Lazy.t;
         decorators: CallableDecorator.t list Lazy.t;
@@ -1019,19 +1019,20 @@ module Modelable = struct
         (match
            Target.CallablesSharedMemory.ReadOnly.get_signature callables_to_definitions_map target
          with
-        | Some signature -> signature
-        | None ->
+        | PyrePysaApi.AstResult.Pyre1NotFound ->
             Format.asprintf
               "unknown target `%a` in `Modelable.create_callable`"
               Target.pp_external
               target
-            |> failwith)
+            |> failwith
+        | signature -> signature)
     in
     let undecorated_signatures =
       lazy
         (match pyre_api with
         | PyrePysaApi.ReadOnly.Pyre1 pyre_api ->
             Lazy.force define_signature
+            |> PyrePysaApi.AstResult.value_exn ~message:"unreachable"
             |> fun { Target.CallableSignature.parameters; return_annotation; _ } ->
             Analysis.PyrePysaEnvironment.ModelQueries.FunctionSignature.from_pyre1_ast
               ~pyre_api
@@ -1047,12 +1048,14 @@ module Modelable = struct
       lazy
         (define_signature
         |> Lazy.force
-        |> (fun { Target.CallableSignature.define_name; decorators; _ } ->
-             PyrePysaLogic.DecoratorPreprocessing.original_decorators_from_preprocessed_signature
-               ~define_name
-               ~decorators)
-        |> List.filter_map ~f:Statement.Decorator.from_expression
-        |> List.map ~f:(CallableDecorator.create ~pyre_api ~callables_to_definitions_map ~target))
+        |> PyrePysaApi.AstResult.to_option
+        >>| (fun { Target.CallableSignature.define_name; decorators; _ } ->
+              PyrePysaLogic.DecoratorPreprocessing.original_decorators_from_preprocessed_signature
+                ~define_name
+                ~decorators)
+        >>| List.filter_map ~f:Statement.Decorator.from_expression
+        >>| List.map ~f:(CallableDecorator.create ~pyre_api ~callables_to_definitions_map ~target)
+        |> Option.value ~default:[])
     in
     Callable { target; define_signature; undecorated_signatures; decorators }
 
@@ -1176,8 +1179,10 @@ module Modelable = struct
 
   let captures = function
     | Callable { define_signature; _ } ->
-        let { Target.CallableSignature.captures; _ } = Lazy.force define_signature in
-        captures
+        Lazy.force define_signature
+        |> PyrePysaApi.AstResult.to_option
+        >>| (fun { Target.CallableSignature.captures; _ } -> captures)
+        |> Option.value ~default:[]
     | Attribute _
     | Global _ ->
         failwith "unexpected use of captures on an attribute or global"
@@ -1185,8 +1190,10 @@ module Modelable = struct
 
   let decorator_expressions_after_inlining = function
     | Callable { define_signature; _ } ->
-        let { Target.CallableSignature.decorators; _ } = Lazy.force define_signature in
-        decorators
+        Lazy.force define_signature
+        |> PyrePysaApi.AstResult.to_option
+        >>| (fun { Target.CallableSignature.decorators; _ } -> decorators)
+        |> Option.value ~default:[]
     | Attribute _
     | Global _ ->
         failwith "unexpected use of decorator_expression on an attribute or global"
@@ -1200,10 +1207,14 @@ module Modelable = struct
 
 
   let is_instance_method = function
-    | Callable { define_signature; _ } -> (
-        match Lazy.force define_signature with
-        | { Target.CallableSignature.method_kind = Some Target.MethodKind.Instance; _ } -> true
-        | _ -> false)
+    | Callable { define_signature; _ } ->
+        Lazy.force define_signature
+        |> PyrePysaApi.AstResult.to_option
+        >>| (function
+              | { Target.CallableSignature.method_kind = Some Target.MethodKind.Instance; _ } ->
+                  true
+              | _ -> false)
+        |> Option.value ~default:false
     | Attribute _
     | Global _ ->
         false

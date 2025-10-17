@@ -218,6 +218,46 @@ module PysaClassSummary = struct
     |> Ast.Identifier.SerializableMap.data
 end
 
+module AstResult = struct
+  type 'a t =
+    | Some of 'a
+    | ParseError (* callable in a module that failed to parse *)
+    | TestFile (* callable in a module marked with is_test = true *)
+    | Synthesized (* callable in a synthesized class or function *)
+    | Pyre1NotFound (* callable not found - only raised when using pyre1 *)
+
+  let to_option = function
+    | ParseError -> None
+    | TestFile -> None
+    | Synthesized -> None
+    | Pyre1NotFound -> None
+    | Some ast -> Some ast
+
+
+  let value_exn ~message = function
+    | Some value -> value
+    | ParseError -> Format.sprintf "%s (reason: parser error)" message |> failwith
+    | TestFile -> Format.sprintf "%s (reason: within a test file)" message |> failwith
+    | Synthesized -> Format.sprintf "%s (reason: synthesized function)" message |> failwith
+    | Pyre1NotFound -> Format.sprintf "%s (reason: not found)" message |> failwith
+
+
+  let map ~f = function
+    | Some ast -> Some (f ast)
+    | ParseError -> ParseError
+    | TestFile -> TestFile
+    | Synthesized -> Synthesized
+    | Pyre1NotFound -> Pyre1NotFound
+
+
+  let map_node ~f = function
+    | Some { Ast.Node.value = ast; location } -> Some { Ast.Node.value = f ast; location }
+    | ParseError -> ParseError
+    | TestFile -> TestFile
+    | Synthesized -> Synthesized
+    | Pyre1NotFound -> Pyre1NotFound
+end
+
 let absolute_source_path_of_qualifier ~lookup_source read_only_type_environment =
   let source_code_api =
     read_only_type_environment |> TypeEnvironment.ReadOnly.get_untracked_source_code_api
@@ -448,7 +488,9 @@ module ReadOnly = struct
   let get_class_summary api = global_resolution api |> GlobalResolution.get_class_summary
 
   let get_class_decorators_opt api class_name =
-    get_class_summary api class_name >>| Ast.Node.value >>| fun { decorators; _ } -> decorators
+    match get_class_summary api class_name with
+    | Some { Ast.Node.value = { PyreClassSummary.decorators; _ }; _ } -> AstResult.Some decorators
+    | None -> AstResult.Pyre1NotFound
 
 
   let get_class_attributes api ~include_generated_attributes ~only_simple_assignments class_name =

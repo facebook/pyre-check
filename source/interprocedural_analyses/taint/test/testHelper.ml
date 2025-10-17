@@ -1101,7 +1101,7 @@ let end_to_end_integration_test path context =
            ~fixpoint_state:(TaintFixpoint.State.read_only fixpoint.TaintFixpoint.state)
            ~resolve_module_path
            ~resolve_callable_location:
-             (Target.CallablesSharedMemory.ReadOnly.get_location callables_to_definitions_map)
+             (Target.CallablesSharedMemory.ReadOnly.get_location_opt callables_to_definitions_map)
            ~override_graph:override_graph_shared_memory_read_only
            ~dump_override_models:true
            ~sorted:true

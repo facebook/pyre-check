@@ -106,7 +106,7 @@ module CallGraphAnalysis = struct
       callable
       |> Target.strip_parameters
       |> Target.CallablesSharedMemory.ReadOnly.get_define callables_to_definitions_map
-      |> Option.value_exn
+      |> PyrePysaApi.AstResult.value_exn
            ~message:(Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable)
     in
     if Ast.Statement.Define.is_stub (Ast.Node.value define) then

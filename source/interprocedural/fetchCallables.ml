@@ -150,14 +150,33 @@ let from_qualifier_with_pyrefly ~pyrefly_api ~qualifier =
       qualifier
   in
   let is_stub_module = PyreflyApi.ReadOnly.is_stub_qualifier pyrefly_api qualifier in
+  let is_test_module = PyreflyApi.ReadOnly.is_test_qualifier pyrefly_api qualifier in
   let add_target result define_name =
     let target = Target.from_define_name ~pyrefly_api define_name in
-    let { PyreflyApi.CallableMetadata.is_stub = is_stub_define; is_toplevel; is_class_toplevel; _ } =
+    let {
+      PyreflyApi.CallableMetadata.is_stub = is_stub_define;
+      is_toplevel;
+      is_class_toplevel;
+      is_def_statement;
+      _;
+    }
+      =
       PyreflyApi.ReadOnly.get_callable_metadata pyrefly_api define_name
     in
     if is_stub_module && (is_toplevel || is_class_toplevel) then
+      (* Ignore top level define for stub modules (i.e, `.pyi`) *)
       result
-    else if is_stub_define then
+    else if
+      is_stub_define
+      || is_test_module
+      || ((not is_def_statement) && (not is_toplevel) && not is_class_toplevel)
+    then
+      (* Considered as stub:
+       * - Stub functions, i.e when the body is an ellipsis `def foo(): ...`
+       * - Functions in a module considered a unit test module
+       * - Synthesized functions that we don't have the code for (for instance,
+       *   generated `__init__` of a dataclass)
+       *)
       { result with stubs = target :: result.stubs }
     else
       (* TODO(T225700656): For now, all modules are considered internal. We could potentially use

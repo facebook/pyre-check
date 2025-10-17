@@ -485,21 +485,22 @@ let test_fully_qualified_names _ =
     let existing_modules = List.map modules ~f:Reference.create |> Reference.Set.of_list in
     let class_definitions =
       definitions
-      |> List.filter_map ~f:(fun (line, definition) ->
+      |> List.filter_map ~f:(fun definition ->
              match definition with
-             | PyreflyApi.Testing.Definition.Class class_definition ->
-                 Some (location_at_line line, class_definition)
+             | PyreflyApi.Testing.Definition.Class
+                 ({ ModuleDefinitionsFile.ClassDefinition.name_location; _ } as class_definition) ->
+                 Some (name_location, class_definition)
              | _ -> None)
       |> Ast.Location.Map.of_alist_exn
     in
     let function_definitions =
       definitions
-      |> List.filter_map ~f:(fun (line, definition) ->
+      |> List.filter_map ~f:(fun definition ->
              match definition with
-             | PyreflyApi.Testing.Definition.Function function_definition ->
-                 Some
-                   ( line |> location_at_line |> PyreflyApi.LocalFunctionId.create_function,
-                     function_definition )
+             | PyreflyApi.Testing.Definition.Function
+                 ({ ModuleDefinitionsFile.FunctionDefinition.local_function_id; _ } as
+                 function_definition) ->
+                 Some (local_function_id, function_definition)
              | _ -> None)
       |> PyreflyApi.LocalFunctionId.Map.of_alist_exn
     in
@@ -520,11 +521,13 @@ let test_fully_qualified_names _ =
       ?(is_overload = false)
       ?(is_property_getter = false)
       ?(is_property_setter = false)
+      ~line
       name
     =
     PyreflyApi.Testing.Definition.Function
       {
         ModuleDefinitionsFile.FunctionDefinition.name;
+        local_function_id = PyreflyApi.LocalFunctionId.create_function (location_at_line line);
         parent;
         is_overload;
         undecorated_signatures = [];
@@ -534,6 +537,7 @@ let test_fully_qualified_names _ =
         is_property_getter;
         is_property_setter;
         is_stub = false;
+        is_def_statement = true;
         is_toplevel = false;
         is_class_toplevel = false;
         overridden_base_method = None;
@@ -541,10 +545,11 @@ let test_fully_qualified_names _ =
         decorator_callees = Location.SerializableMap.empty;
       }
   in
-  let create_class ?(parent = ModuleDefinitionsFile.ParentScope.TopLevel) name =
+  let create_class ?(parent = ModuleDefinitionsFile.ParentScope.TopLevel) ~line name =
     PyreflyApi.Testing.Definition.Class
       {
         ModuleDefinitionsFile.ClassDefinition.name;
+        name_location = location_at_line line;
         parent;
         local_class_id = PyreflyApi.LocalClassId.from_int 0;
         bases = [];
@@ -562,11 +567,11 @@ let test_fully_qualified_names _ =
   assert_fully_qualified_names
     ~definitions:
       [
-        1, create_function "foo";
-        2, create_function "bar";
-        3, create_class "MyClass";
-        4, create_function ~parent:(class_parent ~line:3) "__init__";
-        5, create_function ~parent:(class_parent ~line:3) "method";
+        create_function ~line:1 "foo";
+        create_function ~line:2 "bar";
+        create_class ~line:3 "MyClass";
+        create_function ~line:4 ~parent:(class_parent ~line:3) "__init__";
+        create_function ~line:5 ~parent:(class_parent ~line:3) "method";
       ]
     ~expected:
       [
@@ -581,16 +586,17 @@ let test_fully_qualified_names _ =
     ();
   (* Multiple definitions with the same name *)
   assert_fully_qualified_names
-    ~definitions:[1, create_function "foo"; 2, create_function "foo"; 3, create_function "foo"]
+    ~definitions:
+      [create_function ~line:1 "foo"; create_function ~line:2 "foo"; create_function ~line:3 "foo"]
     ~expected:["test.$toplevel"; "test.foo"; "test.foo$2"; "test.foo$3"]
     ();
   (* Nested definitions *)
   assert_fully_qualified_names
     ~definitions:
       [
-        1, create_function "decorator";
-        2, create_function ~parent:(function_parent ~line:1) "inner";
-        3, create_function ~parent:(function_parent ~line:1) "wrapper";
+        create_function ~line:1 "decorator";
+        create_function ~line:2 ~parent:(function_parent ~line:1) "inner";
+        create_function ~line:3 ~parent:(function_parent ~line:1) "wrapper";
       ]
     ~expected:["test.$toplevel"; "test.decorator"; "test.decorator.inner"; "test.decorator.wrapper"]
     ();
@@ -598,22 +604,22 @@ let test_fully_qualified_names _ =
   assert_fully_qualified_names
     ~definitions:
       [
-        1, create_function "decorator";
-        2, create_function ~parent:(function_parent ~line:1) "inner";
-        3, create_function ~parent:(function_parent ~line:1) "inner";
+        create_function ~line:1 "decorator";
+        create_function ~line:2 ~parent:(function_parent ~line:1) "inner";
+        create_function ~line:3 ~parent:(function_parent ~line:1) "inner";
       ]
     ~expected:["test.$toplevel"; "test.decorator"; "test.decorator.inner"; "test.decorator.inner$2"]
     ();
   assert_fully_qualified_names
     ~definitions:
       [
-        1, create_function "decorator";
-        2, create_function ~parent:(function_parent ~line:1) "inner";
-        3, create_function ~parent:(function_parent ~line:2) "inner";
-        4, create_function ~parent:(function_parent ~line:2) "inner";
-        5, create_function ~parent:(function_parent ~line:1) "inner";
-        6, create_function ~parent:(function_parent ~line:5) "inner";
-        7, create_function ~parent:(function_parent ~line:5) "inner";
+        create_function ~line:1 "decorator";
+        create_function ~line:2 ~parent:(function_parent ~line:1) "inner";
+        create_function ~line:3 ~parent:(function_parent ~line:2) "inner";
+        create_function ~line:4 ~parent:(function_parent ~line:2) "inner";
+        create_function ~line:5 ~parent:(function_parent ~line:1) "inner";
+        create_function ~line:6 ~parent:(function_parent ~line:5) "inner";
+        create_function ~line:7 ~parent:(function_parent ~line:5) "inner";
       ]
     ~expected:
       [
@@ -631,10 +637,10 @@ let test_fully_qualified_names _ =
   assert_fully_qualified_names
     ~definitions:
       [
-        1, create_class "a";
-        2, create_class ~parent:(class_parent ~line:1) "b";
-        3, create_function ~parent:(class_parent ~line:2) "__init__";
-        4, create_function ~parent:(class_parent ~line:1) "__init__";
+        create_class ~line:1 "a";
+        create_class ~line:2 ~parent:(class_parent ~line:1) "b";
+        create_function ~line:3 ~parent:(class_parent ~line:2) "__init__";
+        create_function ~line:4 ~parent:(class_parent ~line:1) "__init__";
       ]
     ~expected:
       [
@@ -651,9 +657,9 @@ let test_fully_qualified_names _ =
   assert_fully_qualified_names
     ~definitions:
       [
-        1, create_class "a";
-        2, create_class ~parent:(class_parent ~line:1) "b";
-        3, create_class ~parent:(class_parent ~line:1) "b";
+        create_class ~line:1 "a";
+        create_class ~line:2 ~parent:(class_parent ~line:1) "b";
+        create_class ~line:3 ~parent:(class_parent ~line:1) "b";
       ]
     ~expected:
       [
@@ -670,10 +676,10 @@ let test_fully_qualified_names _ =
   assert_fully_qualified_names
     ~definitions:
       [
-        1, create_class "conflict";
-        2, create_function ~parent:(class_parent ~line:1) "foo";
-        3, create_class "no_conflict";
-        4, create_function ~parent:(class_parent ~line:3) "foo";
+        create_class ~line:1 "conflict";
+        create_function ~line:2 ~parent:(class_parent ~line:1) "foo";
+        create_class ~line:3 "no_conflict";
+        create_function ~line:4 ~parent:(class_parent ~line:3) "foo";
       ]
     ~modules:["test.conflict"]
     ~expected:
@@ -690,9 +696,9 @@ let test_fully_qualified_names _ =
   assert_fully_qualified_names
     ~definitions:
       [
-        1, create_class "a";
-        2, create_function ~parent:(class_parent ~line:1) "b";
-        3, create_function ~parent:(function_parent ~line:2) "c";
+        create_class ~line:1 "a";
+        create_function ~line:2 ~parent:(class_parent ~line:1) "b";
+        create_function ~line:3 ~parent:(function_parent ~line:2) "c";
       ]
     ~modules:["test.a.b"]
     ~expected:["test.$toplevel"; "test.a"; "test.a.$class_toplevel"; "test#a.b"; "test#a.b.c"]
@@ -701,9 +707,9 @@ let test_fully_qualified_names _ =
   assert_fully_qualified_names
     ~definitions:
       [
-        1, create_class "a";
-        2, create_function ~parent:(class_parent ~line:1) "__init__";
-        3, create_function "a";
+        create_class ~line:1 "a";
+        create_function ~line:2 ~parent:(class_parent ~line:1) "__init__";
+        create_function ~line:3 "a";
       ]
     ~expected:["test.$toplevel"; "test.a"; "test.a.$class_toplevel"; "test.a.__init__"; "test.a$2"]
     ();
@@ -713,9 +719,9 @@ let test_fully_qualified_names _ =
   assert_fully_qualified_names
     ~definitions:
       [
-        1, create_function "a";
-        2, create_function ~is_overload:true "a";
-        3, create_function ~is_overload:true "a";
+        create_function ~line:1 "a";
+        create_function ~line:2 ~is_overload:true "a";
+        create_function ~line:3 ~is_overload:true "a";
       ]
     ~expected:["test.$toplevel"; "test.a"; "test.a$2"; "test.a$3"]
     ();
@@ -723,9 +729,9 @@ let test_fully_qualified_names _ =
   assert_fully_qualified_names
     ~definitions:
       [
-        1, create_class "A";
-        2, create_function ~parent:(class_parent ~line:1) ~is_property_getter:true "x";
-        3, create_function ~parent:(class_parent ~line:1) ~is_property_setter:true "x";
+        create_class ~line:1 "A";
+        create_function ~line:2 ~parent:(class_parent ~line:1) ~is_property_getter:true "x";
+        create_function ~line:3 ~parent:(class_parent ~line:1) ~is_property_setter:true "x";
       ]
     ~expected:["test.$toplevel"; "test.A"; "test.A.$class_toplevel"; "test.A.x"; "test.A.x@setter"]
     ();

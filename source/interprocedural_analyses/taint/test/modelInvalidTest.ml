@@ -2888,9 +2888,7 @@ let test_invalid_decorators =
       |}
            ~model_source:{|
       def test.Foo.bar() -> TaintSource[A]: ...
-    |}
-             (* TODO(T225700656): Support models for functions with unknown decorators. *)
-           ~skip_for_pyrefly:true;
+    |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~source:
@@ -2905,8 +2903,7 @@ let test_invalid_decorators =
     |}
            ~expect:
              "The function, method or property `test.Foo.bar` is not a valid attribute - did you \
-              mean to use `def test.Foo.bar(): ...`?"
-           ~skip_for_pyrefly:true;
+              mean to use `def test.Foo.bar(): ...`?";
     ]
 
 
@@ -2974,8 +2971,7 @@ let test_invalid_callables =
       |}
            ~model_source:{|
       def test.Foo.baz() -> TaintSource[A]: ...
-    |}
-           ~skip_for_pyrefly:true;
+    |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model
            ~source:
@@ -2988,6 +2984,7 @@ let test_invalid_callables =
            ~model_source:{|
       test.Foo.baz: TaintSource[A]
     |}
+             (* This is not allowed by pyrefly. Users must use `def ..` syntax. *)
            ~skip_for_pyrefly:true;
     ]
 

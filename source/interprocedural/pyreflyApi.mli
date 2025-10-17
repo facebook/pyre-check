@@ -10,6 +10,7 @@
 
 open Core
 module PysaType = Analysis.PyrePysaEnvironment.PysaType
+module AstResult = Analysis.PyrePysaEnvironment.AstResult
 
 module FormatError : sig
   type t =
@@ -36,10 +37,21 @@ exception
     error: Error.t;
   }
 
+module NameLocation : sig
+  type t =
+    | DefineName of
+        Ast.Location.t (* Location of the name AST node, i.e location of `foo` in `def foo():` *)
+    | ModuleTopLevel
+    | ClassName of
+        Ast.Location.t (* Location of the class AST node, i.e location of `Foo` in `class Foo:` *)
+    | UnknonwnForClassField
+  [@@deriving show]
+end
+
 module CallableMetadata : sig
   type t = {
     module_qualifier: Ast.Reference.t;
-    name_location: Ast.Location.t;
+    name_location: NameLocation.t;
     is_overload: bool;
     is_staticmethod: bool;
     is_classmethod: bool;
@@ -48,6 +60,7 @@ module CallableMetadata : sig
     is_toplevel: bool;
     is_class_toplevel: bool;
     is_stub: bool; (* Is this a stub definition, e.g `def foo(): ...` *)
+    is_def_statement: bool; (* Is it defined with a `def ..():` statement? *)
     parent_is_class: bool;
   }
   [@@deriving show]
@@ -128,12 +141,14 @@ module ReadOnly : sig
     Ast.Reference.t ->
     Analysis.PyrePysaEnvironment.MethodInQualifier.t list
 
+  (* Is this a test module (i.e, unit test code that we shouldn't analyze) *)
+  val is_test_qualifier : t -> Ast.Reference.t -> bool
+
   (* Is this a stub module, i.e a `.pyi` file. *)
   val is_stub_qualifier : t -> Ast.Reference.t -> bool
 
-  (* Return the AST for the given function, or None if the source failed to parse or is a test
-     file. *)
-  val get_define_opt : t -> Ast.Reference.t -> Ast.Statement.Define.t Ast.Node.t option
+  (* Return the AST for the given function *)
+  val get_define_opt : t -> Ast.Reference.t -> Ast.Statement.Define.t Ast.Node.t AstResult.t
 
   val get_undecorated_signatures
     :  t ->
@@ -142,7 +157,7 @@ module ReadOnly : sig
 
   val get_class_summary : t -> string -> PysaClassSummary.t
 
-  val get_class_decorators_opt : t -> string -> Ast.Expression.t list option
+  val get_class_decorators_opt : t -> string -> Ast.Expression.t list AstResult.t
 
   val get_class_attributes
     :  t ->
@@ -369,6 +384,7 @@ module ModuleDefinitionsFile : sig
   module FunctionDefinition : sig
     type t = {
       name: string;
+      local_function_id: LocalFunctionId.t;
       parent: ParentScope.t;
       undecorated_signatures: FunctionSignature.t list;
       captured_variables: CapturedVariable.t list;
@@ -378,6 +394,7 @@ module ModuleDefinitionsFile : sig
       is_property_getter: bool;
       is_property_setter: bool;
       is_stub: bool;
+      is_def_statement: bool;
       is_toplevel: bool;
       is_class_toplevel: bool;
       overridden_base_method: GlobalCallableId.t option;
@@ -408,8 +425,9 @@ module ModuleDefinitionsFile : sig
   module ClassDefinition : sig
     type t = {
       name: string;
-      parent: ParentScope.t;
       local_class_id: LocalClassId.t;
+      name_location: Ast.Location.t;
+      parent: ParentScope.t;
       bases: GlobalClassId.t list;
       mro: ClassMro.t;
       is_synthesized: bool;
@@ -476,8 +494,7 @@ module Testing : sig
       qualified_name: FullyQualifiedName.t;
       local_name: Ast.Reference.t; (* a non-unique name, more user-friendly. *)
       definition: Definition.t; (* class or def *)
-      name_location: Ast.Location.t;
-      local_function_id: LocalFunctionId.t;
+      name_location: NameLocation.t;
     }
   end
 

@@ -15,6 +15,7 @@ open Ast
 module Pyre1Api = Analysis.PyrePysaEnvironment
 module PyreflyType = Pyre1Api.PyreflyType
 module PysaType = Pyre1Api.PysaType
+module AstResult = Pyre1Api.AstResult
 module ScalarTypeProperties = Pyre1Api.ScalarTypeProperties
 module FunctionParameter = Pyre1Api.ModelQueries.FunctionParameter
 module FunctionParameters = Pyre1Api.ModelQueries.FunctionParameters
@@ -299,16 +300,24 @@ end
    with (e.g., call graphs). *)
 module LocalFunctionId : sig
   type t =
+    (* Function declared with a `def` statement. *)
     | Function of Location.t
+    (* Implicit function containing all top level statement. *)
     | ModuleTopLevel
+    (* Implicit function containing the class body. *)
     | ClassTopLevel of LocalClassId.t
-  [@@deriving compare, equal, show]
+    (* Function-like class field that is not a `def` statement. *)
+    | ClassField of {
+        class_id: LocalClassId.t;
+        name: string;
+      }
+  [@@deriving compare, equal, show, sexp]
 
   val from_string : string -> (t, FormatError.t) result
 
   val create_function : Location.t -> t
 
-  val get_location_exn : t -> Location.t
+  val is_class_field : t -> bool
 
   module Map : Map.S with type Key.t = t
 end = struct
@@ -318,31 +327,34 @@ end = struct
       | Function of Location.t
       | ModuleTopLevel
       | ClassTopLevel of LocalClassId.t
+      | ClassField of {
+          class_id: LocalClassId.t;
+          name: string;
+        }
     [@@deriving compare, equal, show, sexp]
   end
 
   include T
 
   let from_string string =
-    if String.equal string "MTL" then
-      Ok ModuleTopLevel
-    else
-      match String.chop_prefix ~prefix:"F:" string with
-      | Some location ->
-          let open Core.Result.Monad_infix in
-          parse_location location >>| fun location -> Function location
-      | None -> (
-          match String.chop_prefix ~prefix:"CTL:" string with
-          | Some class_id -> Ok (ClassTopLevel (LocalClassId.of_string class_id))
-          | None -> Error (FormatError.UnparsableString string))
+    let open Core.Result.Monad_infix in
+    match String.lsplit2 string ~on:':' with
+    | None when String.equal string "MTL" -> Ok ModuleTopLevel
+    | Some ("F", location) -> parse_location location >>| fun location -> Function location
+    | Some ("CTL", class_id) -> Ok (ClassTopLevel (LocalClassId.of_string class_id))
+    | Some ("CF", class_field) -> (
+        match String.lsplit2 class_field ~on:':' with
+        | Some (class_id, name) ->
+            Ok (ClassField { class_id = LocalClassId.of_string class_id; name })
+        | None -> Error (FormatError.UnparsableString string))
+    | _ -> Error (FormatError.UnparsableString string)
 
 
   let create_function location = Function location
 
-  let get_location_exn = function
-    | Function location -> location
-    | local_function_id ->
-        Format.asprintf "Expect `Function` but got %a" pp local_function_id |> failwith
+  let is_class_field = function
+    | ClassField _ -> true
+    | _ -> false
 
 
   module Map = Map.Make (T)
@@ -848,6 +860,7 @@ module ModuleDefinitionsFile = struct
   module FunctionDefinition = struct
     type t = {
       name: string;
+      local_function_id: LocalFunctionId.t;
       parent: ParentScope.t;
       undecorated_signatures: FunctionSignature.t list;
       captured_variables: CapturedVariable.t list;
@@ -857,6 +870,7 @@ module ModuleDefinitionsFile = struct
       is_property_getter: bool;
       is_property_setter: bool;
       is_stub: bool;
+      is_def_statement: bool;
       is_toplevel: bool;
       is_class_toplevel: bool;
       overridden_base_method: GlobalCallableId.t option;
@@ -865,7 +879,7 @@ module ModuleDefinitionsFile = struct
     }
     [@@deriving equal, show]
 
-    let from_json json =
+    let from_json ~local_function_id json =
       let open Core.Result.Monad_infix in
       JsonUtil.get_string_member json "name"
       >>= fun name ->
@@ -891,6 +905,8 @@ module ModuleDefinitionsFile = struct
       >>= fun is_property_setter ->
       JsonUtil.get_optional_bool_member ~default:false json "is_stub"
       >>= fun is_stub ->
+      JsonUtil.get_optional_bool_member ~default:true json "is_def_statement"
+      >>= fun is_def_statement ->
       JsonUtil.get_optional_member json "overridden_base_method"
       |> GlobalCallableId.from_optional_json
       >>= fun overridden_base_method ->
@@ -902,6 +918,7 @@ module ModuleDefinitionsFile = struct
       >>| fun decorator_callees ->
       {
         name;
+        local_function_id;
         parent;
         undecorated_signatures;
         captured_variables;
@@ -911,6 +928,7 @@ module ModuleDefinitionsFile = struct
         is_property_getter;
         is_property_setter;
         is_stub;
+        is_def_statement;
         is_toplevel = false;
         is_class_toplevel = false;
         overridden_base_method;
@@ -922,6 +940,7 @@ module ModuleDefinitionsFile = struct
     let create_module_toplevel () =
       {
         name = Ast.Statement.toplevel_define_name;
+        local_function_id = LocalFunctionId.ModuleTopLevel;
         parent = ParentScope.TopLevel;
         undecorated_signatures =
           [
@@ -942,6 +961,7 @@ module ModuleDefinitionsFile = struct
         is_property_getter = false;
         is_property_setter = false;
         is_stub = false;
+        is_def_statement = false;
         is_toplevel = true;
         is_class_toplevel = false;
         overridden_base_method = None;
@@ -950,9 +970,10 @@ module ModuleDefinitionsFile = struct
       }
 
 
-    let create_class_toplevel ~name_location =
+    let create_class_toplevel ~name_location ~local_class_id =
       {
         name = Ast.Statement.class_toplevel_define_name;
+        local_function_id = LocalFunctionId.ClassTopLevel local_class_id;
         parent = ParentScope.Class name_location;
         undecorated_signatures =
           [
@@ -973,6 +994,7 @@ module ModuleDefinitionsFile = struct
         is_property_getter = false;
         is_property_setter = false;
         is_stub = false;
+        is_def_statement = false;
         is_toplevel = false;
         is_class_toplevel = true;
         overridden_base_method = None;
@@ -1031,8 +1053,9 @@ module ModuleDefinitionsFile = struct
   module ClassDefinition = struct
     type t = {
       name: string;
-      parent: ParentScope.t;
       local_class_id: LocalClassId.t;
+      name_location: Location.t;
+      parent: ParentScope.t;
       bases: GlobalClassId.t list;
       mro: ClassMro.t;
       is_synthesized: bool;
@@ -1044,7 +1067,7 @@ module ModuleDefinitionsFile = struct
     }
     [@@deriving equal, show]
 
-    let from_json json =
+    let from_json ~name_location json =
       let open Core.Result.Monad_infix in
       JsonUtil.get_string_member json "name"
       >>= fun name ->
@@ -1076,8 +1099,9 @@ module ModuleDefinitionsFile = struct
       >>| fun decorator_callees ->
       {
         name;
-        parent;
         local_class_id = LocalClassId.from_int class_id;
+        name_location;
+        parent;
         bases;
         mro;
         is_synthesized;
@@ -1125,7 +1149,7 @@ module ModuleDefinitionsFile = struct
       |> List.map ~f:(fun (local_function_id, function_definition) ->
              LocalFunctionId.from_string local_function_id
              >>= fun local_function_id ->
-             FunctionDefinition.from_json function_definition
+             FunctionDefinition.from_json ~local_function_id function_definition
              >>| fun function_definition -> local_function_id, function_definition)
       |> Result.all
       >>| LocalFunctionId.Map.of_alist_exn
@@ -1135,7 +1159,7 @@ module ModuleDefinitionsFile = struct
       |> List.map ~f:(fun (location, class_definition) ->
              parse_location location
              >>= fun location ->
-             ClassDefinition.from_json class_definition
+             ClassDefinition.from_json ~name_location:location class_definition
              >>| fun class_definition -> location, class_definition)
       |> Result.all
       >>| Location.Map.of_alist_exn
@@ -1388,15 +1412,23 @@ module FullyQualifiedNameSharedMemoryKey = struct
     key |> FullyQualifiedName.to_reference |> Analysis.SharedMemoryKeys.ReferenceKey.to_string
 end
 
+module NameLocation = struct
+  type t =
+    | DefineName of
+        Location.t (* Location of the name AST node, i.e location of `foo` in `def foo():` *)
+    | ModuleTopLevel
+    | ClassName of
+        Location.t (* Location of the class AST node, i.e location of `Foo` in `class Foo:` *)
+    | UnknonwnForClassField
+  [@@deriving show]
+end
+
 module CallableMetadata = struct
   type t = {
     (* TODO(T225700656): This should be ModuleQualifier.t, but it is a Reference.t because it is
        exposed publicly. *)
     module_qualifier: Reference.t;
-    (* Location of the name AST node, i.e location of `foo` in `def foo():` *)
-    (* This will be `Location.any` for the top level define. *)
-    (* This is the location of the class name for the class top level define. *)
-    name_location: Location.t;
+    name_location: NameLocation.t;
     is_overload: bool;
     is_staticmethod: bool;
     is_classmethod: bool;
@@ -1405,6 +1437,7 @@ module CallableMetadata = struct
     is_toplevel: bool;
     is_class_toplevel: bool;
     is_stub: bool;
+    is_def_statement: bool;
     parent_is_class: bool;
   }
   [@@deriving show]
@@ -1423,12 +1456,12 @@ module CallableMetadataSharedMemory = struct
   module Value = struct
     type t = {
       metadata: CallableMetadata.t;
+      local_function_id: LocalFunctionId.t;
       (* This is the original name, without the fully qualified suffixes like `$2` or `@setter`. *)
       name: string;
       captures: string list;
       overridden_base_method: GlobalCallableId.t option;
       defining_class: GlobalClassId.t option;
-      local_function_id: LocalFunctionId.t;
       (* The list of callees for each decorator *)
       decorator_callees: GlobalCallableId.t list Location.SerializableMap.t;
     }
@@ -1590,23 +1623,11 @@ module PysaClassSummary = struct
   }
 end
 
-module AstResult = struct
-  type 'a t =
-    | Some of 'a Node.t
-    | ParseError (* callable in a module that failed to parse *)
-    | TestFile (* Callable in a module marked with is_test = true *)
-
-  let to_option = function
-    | ParseError -> None
-    | TestFile -> None
-    | Some ast -> Some ast
-end
-
 module CallableAstSharedMemory =
   Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
     (FullyQualifiedNameSharedMemoryKey)
     (struct
-      type t = Statement.Define.t AstResult.t
+      type t = Statement.Define.t Ast.Node.t AstResult.t
 
       let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -1618,7 +1639,7 @@ module CallableDefineSignatureSharedMemory =
   Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
     (FullyQualifiedNameSharedMemoryKey)
     (struct
-      type t = Statement.Define.Signature.t AstResult.t
+      type t = Statement.Define.Signature.t Ast.Node.t AstResult.t
 
       let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -1940,11 +1961,7 @@ module ReadWrite = struct
       List.iter callables ~f:(fun callable ->
           CallableAstSharedMemory.add callable_ast_shared_memory callable define_result;
           let signature_result =
-            match define_result with
-            | AstResult.Some { Node.value = { Statement.Define.signature; _ }; location } ->
-                AstResult.Some { Node.value = signature; location }
-            | ParseError -> ParseError
-            | TestFile -> TestFile
+            AstResult.map_node ~f:(fun { Statement.Define.signature; _ } -> signature) define_result
           in
           CallableDefineSignatureSharedMemory.add
             callable_define_signature_shared_memory
@@ -1957,38 +1974,49 @@ module ReadWrite = struct
           ClassDecoratorsSharedMemory.add class_decorators_shared_memory class_name decorator_result)
     in
     let collect_callable_asts_from_source ~qualifier ~callables ~source =
-      let location_to_callable =
-        callables
-        |> List.map ~f:(fun callable ->
-               CallableMetadataSharedMemory.get callable_metadata_shared_memory callable
-               |> assert_shared_memory_key_exists "missing callable metadata for callable"
-               |> fun { CallableMetadataSharedMemory.Value.metadata = { name_location; _ }; _ } ->
-               name_location, callable)
-        |> Location.Map.of_alist_exn
+      let callables_with_locations, callables_without_locations =
+        List.partition_map
+          ~f:(fun callable ->
+            let {
+              CallableMetadataSharedMemory.Value.metadata = { name_location; _ };
+              local_function_id;
+              _;
+            }
+              =
+              CallableMetadataSharedMemory.get callable_metadata_shared_memory callable
+              |> assert_shared_memory_key_exists "missing callable metadata for callable"
+            in
+            match local_function_id, name_location with
+            | LocalFunctionId.Function _, NameLocation.DefineName location ->
+                Either.First (location, callable)
+            | LocalFunctionId.ModuleTopLevel, _ -> Either.Second (local_function_id, callable)
+            | LocalFunctionId.ClassTopLevel _, NameLocation.ClassName location ->
+                Either.First (location, callable)
+            | LocalFunctionId.ClassField _, NameLocation.UnknonwnForClassField ->
+                Either.Second (local_function_id, callable)
+            | _ -> failwith "unreachable")
+          callables
       in
-      let defines =
-        Preprocessing.defines
-          ~include_stubs:true
-          ~include_nested:true
-          ~include_toplevels:true
-          ~include_methods:true
-          source
-      in
+      let location_to_callable = Location.Map.of_alist_exn callables_with_locations in
+      let id_to_callable = LocalFunctionId.Map.of_alist_exn callables_without_locations in
       (* For a given `def ..` statement, we need to find the matching definition provided by
          Pyrefly. *)
       let find_define_callable
-          (location_to_callable, callable_to_define)
+          (location_to_callable, id_to_callable, callable_to_define)
           ({
              Node.value = { Statement.Define.signature = { name; parameters; _ }; body; _ };
              location = { Location.start = define_start; stop = define_stop } as define_location;
            } as define)
         =
-        let search_result =
-          if Reference.equal name (Reference.create_from_list [Statement.toplevel_define_name]) then
-            Map.find location_to_callable Location.any
-            >>| (fun callable -> [Location.any, callable])
-            |> Option.value ~default:[]
-          else
+        if Reference.equal name (Reference.create_from_list [Statement.toplevel_define_name]) then
+          let callable = Map.find_exn id_to_callable LocalFunctionId.ModuleTopLevel in
+          let id_to_callable = Map.remove id_to_callable LocalFunctionId.ModuleTopLevel in
+          let callable_to_define =
+            Map.add_exn callable_to_define ~key:callable ~data:(AstResult.Some define)
+          in
+          location_to_callable, id_to_callable, callable_to_define
+        else
+          let search_result =
             (* Pyrefly gives us the location of the name AST node, i.e the location of 'foo' in `def
                foo(): ...`, but the Pyre AST does not give us the location of the name, only the
                location of the whole `def foo(): ...` statement. Since we can't match on the exact
@@ -2002,7 +2030,7 @@ module ReadWrite = struct
             in
             Map.binary_search_subrange
               location_to_callable
-              ~compare:(fun ~key:{ Location.start = location; stop = _ } ~data:_ bound ->
+              ~compare:(fun ~key:{ Location.start = location; _ } ~data:_ bound ->
                 Location.compare_position location bound)
               ~lower_bound:(Maybe_bound.Excl define_start)
               ~upper_bound:(Maybe_bound.Incl first_parameter_or_statement_position)
@@ -2010,37 +2038,42 @@ module ReadWrite = struct
             |> List.filter ~f:(fun ({ Location.start = name_start; stop = name_stop }, _) ->
                    Location.compare_position define_start name_start < 0
                    && Location.compare_position name_stop first_parameter_or_statement_position <= 0)
-        in
-        match search_result with
-        | [] ->
-            (* This definition is not visible by pyrefly. It might be guarded by a `if
-               TYPE_CHECKING` or `if sys.version`. *)
-            location_to_callable, callable_to_define
-        | [(location, callable)] ->
-            let location_to_callable = Map.remove location_to_callable location in
-            let define = Preprocessing.drop_nested_body define in
-            let callable_to_define = Map.add_exn callable_to_define ~key:callable ~data:define in
-            location_to_callable, callable_to_define
-        | _ ->
-            Format.asprintf
-              "Found multiple definitions matching with define `%a` at location %a of module `%a`"
-              Reference.pp
-              name
-              Location.pp
-              define_location
-              ModuleQualifier.pp
-              qualifier
-            |> failwith
+          in
+          match search_result with
+          | [] ->
+              (* This definition is not visible by pyrefly. It might be guarded by a `if
+                 TYPE_CHECKING` or `if sys.version`. *)
+              location_to_callable, id_to_callable, callable_to_define
+          | [(location, callable)] ->
+              let location_to_callable = Map.remove location_to_callable location in
+              let callable_to_define =
+                Map.add_exn callable_to_define ~key:callable ~data:(AstResult.Some define)
+              in
+              location_to_callable, id_to_callable, callable_to_define
+          | _ ->
+              Format.asprintf
+                "Found multiple definitions matching with define `%a` at location %a of module `%a`"
+                Reference.pp
+                name
+                Location.pp
+                define_location
+                ModuleQualifier.pp
+                qualifier
+              |> failwith
       in
       (* We create an implicit function containing all statements in the body of each class, called
          the "class top level define". However, some classes are synthesized out of thin air (for
          instance, `X = namedtuple('X')` creates a class `X`). Those won't have a top level define
-         in the source. Let's create a dummy definition for those. *)
+         in the source. Assign `AstResult.Synthesized` for those. *)
       let add_toplevel_define_for_synthesized_class
-          (location_to_callable, callable_to_define)
+          (location_to_callable, id_to_callable, callable_to_define)
           (location, callable)
         =
         if String.equal (FullyQualifiedName.last callable) Statement.class_toplevel_define_name then
+          (* We create an implicit function containing all statements in the body of each class,
+             called the "class top level define". However, some classes are synthesized out of thin
+             air (for instance, `X = namedtuple('X')` creates a class `X`). Those won't have a top
+             level define in the source. Let's create a dummy definition for those. *)
           let class_name = Option.value_exn (FullyQualifiedName.prefix callable) in
           let { ClassMetadataSharedMemory.Metadata.is_synthesized; _ } =
             ClassMetadataSharedMemory.get class_metadata_shared_memory class_name
@@ -2050,56 +2083,84 @@ module ReadWrite = struct
           if is_synthesized then
             let location_to_callable = Map.remove location_to_callable location in
             let callable_to_define =
-              Map.add_exn
-                callable_to_define
-                ~key:callable
-                ~data:
-                  (Statement.Define.create_class_toplevel
-                     ~unbound_names:[]
-                     ~module_name:Reference.empty
-                     ~local_context:(NestingContext.create_toplevel ())
-                     ~statements:[]
-                  |> Node.create ~location)
+              Map.add_exn callable_to_define ~key:callable ~data:AstResult.Synthesized
             in
-            location_to_callable, callable_to_define
+            location_to_callable, id_to_callable, callable_to_define
           else
-            location_to_callable, callable_to_define
+            location_to_callable, id_to_callable, callable_to_define
         else
-          location_to_callable, callable_to_define
+          location_to_callable, id_to_callable, callable_to_define
       in
-      let remaining_callables, callable_to_define =
+      (* Function-like class fields (for instance, the generated `__init__` of dataclasses, or
+         function-declared attributes like `foo: Callable[..., int]`) don't have a location. Assign
+         `AstResult.Synthesized` for those. *)
+      let add_synthesized_class_fields
+          (location_to_callable, id_to_callable, callable_to_define)
+          (local_function_id, callable)
+        =
+        if LocalFunctionId.is_class_field local_function_id then
+          let id_to_callable = Map.remove id_to_callable local_function_id in
+          let callable_to_define =
+            Map.add_exn callable_to_define ~key:callable ~data:AstResult.Synthesized
+          in
+          location_to_callable, id_to_callable, callable_to_define
+        else
+          location_to_callable, id_to_callable, callable_to_define
+      in
+      let defines =
+        Preprocessing.defines
+          ~include_stubs:true
+          ~include_nested:true
+          ~include_toplevels:true
+          ~include_methods:true
+          source
+      in
+      let location_to_callable, id_to_callable, callable_to_define =
         List.fold
-          ~init:(location_to_callable, FullyQualifiedName.Map.empty)
+          ~init:(location_to_callable, id_to_callable, FullyQualifiedName.Map.empty)
           ~f:find_define_callable
           defines
       in
-      let remaining_callables, callable_to_define =
+      let location_to_callable, id_to_callable, callable_to_define =
         List.fold
-          ~init:(remaining_callables, callable_to_define)
+          ~init:(location_to_callable, id_to_callable, callable_to_define)
           ~f:add_toplevel_define_for_synthesized_class
-          (Map.to_alist remaining_callables)
+          (Map.to_alist location_to_callable)
       in
-      if not (Map.is_empty remaining_callables) then
-        let location, callable = Map.min_elt_exn remaining_callables in
+      let location_to_callable, id_to_callable, callable_to_define =
+        List.fold
+          ~init:(location_to_callable, id_to_callable, callable_to_define)
+          ~f:add_synthesized_class_fields
+          (Map.to_alist id_to_callable)
+      in
+      if not (Map.is_empty location_to_callable && Map.is_empty id_to_callable) then
+        let id_or_location, callable =
+          if not (Map.is_empty location_to_callable) then
+            Map.min_elt_exn location_to_callable
+            |> fun (location, callable) -> Location.show location, callable
+          else
+            Map.min_elt_exn id_to_callable
+            |> fun (local_function_id, callable) -> LocalFunctionId.show local_function_id, callable
+        in
         Format.asprintf
-          "Could not find AST of function `%a` at location %a in module `%a`"
+          "Could not find AST of function `%a` at `%s` in module `%a`"
           FullyQualifiedName.pp
           callable
-          Location.pp
-          location
+          id_or_location
           ModuleQualifier.pp
           qualifier
         |> failwith
       else
         Map.iteri
-          ~f:
-            (fun ~key:callable
-                 ~data:({ Node.value = { Statement.Define.signature; _ }; location } as define) ->
-            CallableAstSharedMemory.add callable_ast_shared_memory callable (AstResult.Some define);
+          ~f:(fun ~key:callable ~data:define_result ->
+            let define_result = AstResult.map ~f:Preprocessing.drop_nested_body define_result in
+            CallableAstSharedMemory.add callable_ast_shared_memory callable define_result;
             CallableDefineSignatureSharedMemory.add
               callable_define_signature_shared_memory
               callable
-              (AstResult.Some { Node.value = signature; location });
+              (AstResult.map_node
+                 ~f:(fun { Statement.Define.signature; _ } -> signature)
+                 define_result);
             ())
           callable_to_define
     in
@@ -2113,7 +2174,6 @@ module ReadWrite = struct
                name_location, class_name)
         |> Location.Map.of_alist_exn
       in
-      let class_statements = Preprocessing.classes source in
       (* For a given `class ..` statement, we need to find the matching definition provided by
          Pyrefly. *)
       let find_matching_class_for_ast
@@ -2201,6 +2261,7 @@ module ReadWrite = struct
         else
           location_to_class, class_to_statement
       in
+      let class_statements = Preprocessing.classes source in
       let remaining_classes, class_to_statement =
         List.fold
           ~init:(location_to_class, FullyQualifiedName.Map.empty)
@@ -2226,12 +2287,11 @@ module ReadWrite = struct
         |> failwith
       else
         Map.iteri
-          ~f:
-            (fun ~key:class_name ~data:{ Node.value = { Statement.Class.decorators; _ }; location } ->
+          ~f:(fun ~key:class_name ~data:{ Node.value = { Statement.Class.decorators; _ }; _ } ->
             ClassDecoratorsSharedMemory.add
               class_decorators_shared_memory
               class_name
-              (AstResult.Some (Node.create ~location decorators)))
+              (AstResult.Some decorators))
           class_to_statement
     in
     let parse_module qualifier =
@@ -2341,13 +2401,37 @@ module ReadWrite = struct
         | Class { ModuleDefinitionsFile.ClassDefinition.name; _ } -> name
     end
 
+    module ScopeId = struct
+      module T = struct
+        type t =
+          | Location of Location.t
+          | Synthesized of LocalFunctionId.t
+        [@@deriving compare, equal, show, sexp]
+
+        let of_definition = function
+          | Definition.Function
+              {
+                ModuleDefinitionsFile.FunctionDefinition.local_function_id =
+                  LocalFunctionId.Function location;
+                _;
+              } ->
+              Location location
+          | Definition.Function { ModuleDefinitionsFile.FunctionDefinition.local_function_id; _ } ->
+              Synthesized local_function_id
+          | Definition.Class { ModuleDefinitionsFile.ClassDefinition.name_location; _ } ->
+              Location name_location
+      end
+
+      include T
+      module Map = Map.Make (T)
+    end
+
     module QualifiedDefinition = struct
       type t = {
         qualified_name: FullyQualifiedName.t;
         local_name: Reference.t; (* a non-unique name, more user-friendly. *)
         definition: Definition.t;
-        name_location: Location.t;
-        local_function_id: LocalFunctionId.t;
+        name_location: NameLocation.t;
       }
     end
 
@@ -2360,49 +2444,37 @@ module ReadWrite = struct
           let ({ ModuleDefinitionsFile.ClassDefinition.parent; _ } as class_definition) =
             Map.find_exn class_definitions parent_location
           in
-          let sofar =
-            { Node.location = parent_location; value = Definition.Class class_definition } :: sofar
-          in
+          let sofar = Definition.Class class_definition :: sofar in
           create_local_path ~function_definitions ~class_definitions sofar parent
       | ModuleDefinitionsFile.ParentScope.Function parent_location ->
           let ({ ModuleDefinitionsFile.FunctionDefinition.parent; _ } as function_definition) =
             Map.find_exn function_definitions (LocalFunctionId.create_function parent_location)
           in
-          let sofar =
-            { Node.location = parent_location; value = Definition.Function function_definition }
-            :: sofar
-          in
+          let sofar = Definition.Function function_definition :: sofar in
           create_local_path ~function_definitions ~class_definitions sofar parent
 
 
     let local_path_of_function
         ~function_definitions
         ~class_definitions
-        ~local_function_id
         ({ ModuleDefinitionsFile.FunctionDefinition.parent; _ } as function_definition)
       =
       create_local_path
         ~function_definitions
         ~class_definitions
-        [
-          {
-            Node.location = LocalFunctionId.get_location_exn local_function_id;
-            value = Definition.Function function_definition;
-          };
-        ]
+        [Definition.Function function_definition]
         parent
 
 
     let local_path_of_class
         ~function_definitions
         ~class_definitions
-        ~location
         ({ ModuleDefinitionsFile.ClassDefinition.parent; _ } as class_definition)
       =
       create_local_path
         ~function_definitions
         ~class_definitions
-        [{ Node.location; value = Definition.Class class_definition }]
+        [Definition.Class class_definition]
         parent
 
 
@@ -2413,20 +2485,20 @@ module ReadWrite = struct
       module Node = struct
         type 'a t = {
           value: 'a;
-          children: 'a t Location.Map.t;
+          children: 'a t ScopeId.Map.t;
         }
       end
 
-      type 'a t = { children: 'a Node.t Location.Map.t }
+      type 'a t = { children: 'a ScopeId.Map.t }
 
-      let empty = { children = Location.Map.empty }
+      let empty = { children = ScopeId.Map.empty }
 
       let add_local_path path { children } =
         let rec add_to_children children = function
           | [] -> children
-          | { Ast.Node.location; value } :: tail ->
-              Map.update children location ~f:(function
-                  | None -> { value; children = add_to_children Location.Map.empty tail }
+          | value :: tail ->
+              Map.update children (ScopeId.of_definition value) ~f:(function
+                  | None -> { value; children = add_to_children ScopeId.Map.empty tail }
                   | Some { Node.value = existing_value; children = existing_children } ->
                       if not (Definition.equal existing_value value) then
                         failwith "Found multiple definitions with the same location"
@@ -2443,25 +2515,17 @@ module ReadWrite = struct
         let tree =
           Map.fold
             ~init:empty
-            ~f:(fun ~key:location ~data:class_definition sofar ->
+            ~f:(fun ~key:_ ~data:class_definition sofar ->
               add_local_path
-                (local_path_of_class
-                   ~function_definitions
-                   ~class_definitions
-                   ~location
-                   class_definition)
+                (local_path_of_class ~function_definitions ~class_definitions class_definition)
                 sofar)
             class_definitions
         in
         Map.fold
           ~init:tree
-          ~f:(fun ~key:local_function_id ~data:function_definition sofar ->
+          ~f:(fun ~key:_ ~data:function_definition sofar ->
             add_local_path
-              (local_path_of_function
-                 ~function_definitions
-                 ~class_definitions
-                 ~local_function_id
-                 function_definition)
+              (local_path_of_function ~function_definitions ~class_definitions function_definition)
               sofar)
           function_definitions
 
@@ -2528,7 +2592,7 @@ module ReadWrite = struct
           |> Map.to_alist ~key_order:`Increasing
           |> List.fold ~init:(name_indices, []) ~f:add_definition
           |> snd
-          |> Location.Map.of_alist_exn
+          |> ScopeId.Map.of_alist_exn
         in
         { children = qualify_children children }
 
@@ -2580,11 +2644,21 @@ module ReadWrite = struct
 
 
       let collect_definitions ~module_qualifier { children } =
+        let get_name_location = function
+          | Definition.Function { local_function_id = LocalFunctionId.Function location; _ } ->
+              NameLocation.DefineName location
+          | Definition.Function { local_function_id = LocalFunctionId.ModuleTopLevel; _ } ->
+              NameLocation.ModuleTopLevel
+          | Definition.Function { local_function_id = LocalFunctionId.ClassTopLevel _; _ } ->
+              failwith "unreachable"
+          | Definition.Function { local_function_id = LocalFunctionId.ClassField _; _ } ->
+              NameLocation.UnknonwnForClassField
+          | Definition.Class { name_location; _ } -> NameLocation.ClassName name_location
+        in
         let rec add_definition
             sofar
             ~parent_qualified_name
             ~parent_local_name
-            ~location
             {
               Node.value = { QualifiedNode.definition; unique_name; name_overlaps_module };
               children;
@@ -2599,23 +2673,21 @@ module ReadWrite = struct
                   ~local_name:(List.rev (unique_name :: parent_qualified_name))
                   ~add_module_separator:name_overlaps_module;
               local_name = Reference.create_from_list (List.rev (symbol_name :: parent_local_name));
+              name_location = get_name_location definition;
               definition;
-              name_location = location;
-              local_function_id = LocalFunctionId.create_function location;
             }
             :: sofar
           in
-          Map.fold children ~init:sofar ~f:(fun ~key:location ~data:node sofar ->
+          Map.fold children ~init:sofar ~f:(fun ~key:_ ~data:node sofar ->
               add_definition
                 sofar
                 ~parent_qualified_name:(unique_name :: parent_qualified_name)
                 ~parent_local_name:(symbol_name :: parent_local_name)
-                ~location
                 node)
         in
         let definitions =
-          Map.fold children ~init:[] ~f:(fun ~key:location ~data:node sofar ->
-              add_definition sofar ~parent_qualified_name:[] ~parent_local_name:[] ~location node)
+          Map.fold children ~init:[] ~f:(fun ~key:_ ~data:node sofar ->
+              add_definition sofar ~parent_qualified_name:[] ~parent_local_name:[] node)
         in
         List.rev definitions
     end
@@ -2623,23 +2695,24 @@ module ReadWrite = struct
     let add_toplevel_defines ~module_qualifier definitions =
       let add_toplevel
           sofar
-          ({ QualifiedDefinition.definition; qualified_name; local_name; name_location; _ } as
+          ({ QualifiedDefinition.definition; qualified_name; local_name; _ } as
           qualified_definition)
         =
         let sofar = qualified_definition :: sofar in
         match definition with
-        | Definition.Class { local_class_id; _ } ->
+        | Definition.Class { local_class_id; name_location; _ } ->
             {
               QualifiedDefinition.definition =
                 Definition.Function
-                  (ModuleDefinitionsFile.FunctionDefinition.create_class_toplevel ~name_location);
+                  (ModuleDefinitionsFile.FunctionDefinition.create_class_toplevel
+                     ~name_location
+                     ~local_class_id);
               qualified_name = FullyQualifiedName.create_class_toplevel qualified_name;
               local_name =
                 Reference.combine
                   local_name
                   (Reference.create_from_list [Ast.Statement.class_toplevel_define_name]);
-              name_location;
-              local_function_id = LocalFunctionId.ClassTopLevel local_class_id;
+              name_location = NameLocation.ClassName name_location;
             }
             :: sofar
         | _ -> sofar
@@ -2651,8 +2724,7 @@ module ReadWrite = struct
           Definition.Function (ModuleDefinitionsFile.FunctionDefinition.create_module_toplevel ());
         qualified_name = FullyQualifiedName.create_module_toplevel ~module_qualifier;
         local_name = Reference.create_from_list [Ast.Statement.toplevel_define_name];
-        name_location = Location.any;
-        local_function_id = LocalFunctionId.ModuleTopLevel;
+        name_location = NameLocation.ModuleTopLevel;
       }
       :: definitions
   end
@@ -2718,18 +2790,13 @@ module ReadWrite = struct
       in
       let store_definition
           (callables, classes)
-          {
-            DefinitionCollector.QualifiedDefinition.qualified_name;
-            definition;
-            name_location;
-            local_function_id;
-            _;
-          }
+          { DefinitionCollector.QualifiedDefinition.qualified_name; definition; name_location; _ }
         =
         match definition with
         | Function
             {
               name;
+              local_function_id;
               captured_variables;
               is_overload;
               is_staticmethod;
@@ -2737,6 +2804,7 @@ module ReadWrite = struct
               is_property_getter;
               is_property_setter;
               is_stub;
+              is_def_statement;
               is_toplevel;
               is_class_toplevel;
               overridden_base_method;
@@ -2760,6 +2828,7 @@ module ReadWrite = struct
                     is_toplevel;
                     is_class_toplevel;
                     is_stub;
+                    is_def_statement;
                     parent_is_class = Option.is_some defining_class;
                   };
                 name;
@@ -2780,6 +2849,7 @@ module ReadWrite = struct
         | Class
             {
               local_class_id;
+              name_location;
               is_synthesized;
               is_dataclass;
               is_named_tuple;
@@ -3548,10 +3618,6 @@ module ReadOnly = struct
       callable_ast_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
     |> assert_shared_memory_key_exists "missing callable ast"
-    |> function
-    | AstResult.Some define -> Some define
-    | AstResult.ParseError -> None
-    | AstResult.TestFile -> None
 
 
   let get_undecorated_signatures { callable_undecorated_signatures_shared_memory; _ } define_name =
@@ -3575,10 +3641,6 @@ module ReadOnly = struct
       class_decorators_shared_memory
       (FullyQualifiedName.from_reference_unchecked (Reference.create class_name))
     |> assert_shared_memory_key_exists "missing callable ast"
-    |> function
-    | AstResult.Some { Node.value = decorators; _ } -> Some decorators
-    | AstResult.ParseError -> None
-    | AstResult.TestFile -> None
 
 
   let get_class_attributes
@@ -3690,7 +3752,11 @@ module ReadOnly = struct
         Ast.Reference.create ~prefix:class_name "__new__"
         |> FullyQualifiedName.from_reference_unchecked
       in
-      CallableMetadataSharedMemory.get callable_metadata_shared_memory method_name |> Option.is_some
+      CallableMetadataSharedMemory.get callable_metadata_shared_memory method_name
+      |> function
+      | None -> false
+      | Some { CallableMetadataSharedMemory.Value.metadata = { is_def_statement; _ }; _ } ->
+          is_def_statement
 
 
     let is_dataclass _ { PysaClassSummary.metadata = { is_dataclass; _ }; _ } = is_dataclass

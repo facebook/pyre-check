@@ -19,6 +19,7 @@ open Statement
 open Pyre
 module TaintAccessPath = Analysis.TaintAccessPath
 module PyrePysaLogic = Analysis.PyrePysaLogic
+module AstResult = PyrePysaApi.AstResult
 
 type kind =
   | Normal
@@ -750,17 +751,26 @@ let get_signature_and_definition ~pyre_api callable =
   match pyre_api with
   | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->
       PyreflyApi.ReadOnly.get_define_opt pyrefly_api define_name
-      >>| fun define ->
-      let metadata = PyreflyApi.ReadOnly.get_callable_metadata pyrefly_api define_name in
-      let signature = CallableSignature.from_define_for_pyrefly ~define_name ~metadata define in
-      signature, define
-  | PyrePysaApi.ReadOnly.Pyre1 pyre1_api ->
-      get_definitions ~pyre1_api ~warn_multiple_definitions:false define_name
-      >>= fun { qualifier; callables; _ } ->
-      Map.find_opt callable callables
-      >>| fun define ->
-      let signature = CallableSignature.from_define_for_pyre1 ~target:callable ~qualifier define in
-      signature, define
+      |> AstResult.map ~f:(fun define ->
+             let metadata = PyreflyApi.ReadOnly.get_callable_metadata pyrefly_api define_name in
+             let signature =
+               CallableSignature.from_define_for_pyrefly ~define_name ~metadata define
+             in
+             signature, define)
+  | PyrePysaApi.ReadOnly.Pyre1 pyre1_api -> (
+      let ast_result =
+        get_definitions ~pyre1_api ~warn_multiple_definitions:false define_name
+        >>= fun { qualifier; callables; _ } ->
+        Map.find_opt callable callables
+        >>| fun define ->
+        let signature =
+          CallableSignature.from_define_for_pyre1 ~target:callable ~qualifier define
+        in
+        signature, define
+      in
+      match ast_result with
+      | Some result -> AstResult.Some result
+      | None -> AstResult.Pyre1NotFound)
 
 
 let get_signature_and_definition_for_test = get_signature_and_definition
@@ -779,7 +789,7 @@ module CallablesSharedMemory = struct
     Hack_parallel.Std.SharedMemory.FirstClassWithKeys.Make
       (SharedMemoryKey)
       (struct
-        type t = DefineAndQualifier.t
+        type t = DefineAndQualifier.t AstResult.t
 
         let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -790,7 +800,7 @@ module CallablesSharedMemory = struct
     Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
       (SharedMemoryKey)
       (struct
-        type t = CallableSignature.t
+        type t = CallableSignature.t AstResult.t
 
         let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -808,22 +818,33 @@ module CallablesSharedMemory = struct
       signatures: SignaturesSharedMemory.t;
     }
 
-    let get_define { defines; _ } = DefinesSharedMemory.ReadOnly.get ~cache:true defines
+    let option_to_ast_result = function
+      | Some ast_result -> ast_result
+      | None -> AstResult.Pyre1NotFound
+
+
+    let get_define { defines; _ } target =
+      DefinesSharedMemory.ReadOnly.get ~cache:true defines target |> option_to_ast_result
+
 
     let get_location { signatures; _ } target =
       target
       |> strip_parameters
       |> SignaturesSharedMemory.get signatures
-      >>| fun { CallableSignature.qualifier; location; _ } ->
-      Location.with_module ~module_reference:qualifier location
+      |> option_to_ast_result
+      |> AstResult.map ~f:(fun { CallableSignature.qualifier; location; _ } ->
+             Location.with_module ~module_reference:qualifier location)
 
 
-    let get_signature { signatures; _ } target = SignaturesSharedMemory.get signatures target
+    let get_location_opt handle target = get_location handle target |> AstResult.to_option
 
-    let get_qualifier { signatures; _ } target =
-      match SignaturesSharedMemory.get signatures target with
-      | Some { CallableSignature.qualifier; _ } -> Some qualifier
-      | None -> None
+    let get_signature { signatures; _ } target =
+      SignaturesSharedMemory.get signatures target |> option_to_ast_result
+
+
+    let get_qualifier handle target =
+      get_signature handle target
+      |> AstResult.map ~f:(fun { CallableSignature.qualifier; _ } -> qualifier)
 
 
     (* Return `is_class_method` and `is_static_method`. *)
@@ -834,6 +855,7 @@ module CallablesSharedMemory = struct
         method_target
         |> from_regular
         |> SignaturesSharedMemory.get signatures
+        >>= AstResult.to_option
         >>= fun { CallableSignature.method_kind; _ } -> method_kind
       in
       match method_kind, method_target with
@@ -844,16 +866,21 @@ module CallablesSharedMemory = struct
       | None, _ -> false, false
 
 
-    let is_stub { signatures; _ } target =
-      match SignaturesSharedMemory.get signatures target with
-      | Some { CallableSignature.is_stub; _ } -> Some is_stub
-      | None -> None
+    let is_stub_like { signatures; _ } target =
+      SignaturesSharedMemory.get signatures target
+      |> option_to_ast_result
+      |> function
+      | AstResult.Some { CallableSignature.is_stub; _ } -> Some is_stub
+      | AstResult.ParseError -> Some true
+      | AstResult.TestFile -> Some true
+      | AstResult.Synthesized -> Some true
+      | AstResult.Pyre1NotFound -> None
 
 
     let get_captures { signatures; _ } target =
-      match SignaturesSharedMemory.get signatures target with
-      | Some { CallableSignature.captures; _ } -> Some captures
-      | None -> None
+      SignaturesSharedMemory.get signatures target
+      |> option_to_ast_result
+      |> AstResult.map ~f:(fun { CallableSignature.captures; _ } -> captures)
 
 
     (* Return the function or method target from a reference *)
@@ -902,13 +929,19 @@ module CallablesSharedMemory = struct
              performance by avoiding the copy, and directly use
              `PyreflyApi.ReadOnly.get_define_opt`. *)
           match get_signature_and_definition ~pyre_api target with
-          | Some (({ CallableSignature.qualifier; _ } as signature), define) ->
+          | AstResult.Pyre1NotFound -> define_shared_memory
+          | signature_and_definition ->
+              let signature =
+                AstResult.map ~f:(fun (signature, _) -> signature) signature_and_definition
+              in
+              let define_and_qualifier =
+                AstResult.map
+                  ~f:(fun ({ CallableSignature.qualifier; _ }, define) ->
+                    { DefineAndQualifier.qualifier; define })
+                  signature_and_definition
+              in
               SignaturesSharedMemory.add signature_shared_memory target signature;
-              DefinesSharedMemory.AddOnly.add
-                define_shared_memory
-                target
-                { DefineAndQualifier.qualifier; define }
-          | None -> define_shared_memory)
+              DefinesSharedMemory.AddOnly.add define_shared_memory target define_and_qualifier)
     in
     let define_shared_memory_add_only =
       Scheduler.map_reduce
@@ -930,12 +963,12 @@ module CallablesSharedMemory = struct
   let add_alist_sequential { defines; signatures } entries =
     let () =
       List.iter entries ~f:(fun (target, signature, _) ->
-          SignaturesSharedMemory.add signatures target signature)
+          SignaturesSharedMemory.add signatures target (AstResult.Some signature))
     in
     let defines =
       entries
       |> List.map ~f:(fun (target, { CallableSignature.qualifier; _ }, define) ->
-             target, { DefineAndQualifier.qualifier; define })
+             target, AstResult.Some { DefineAndQualifier.qualifier; define })
       |> DefinesSharedMemory.add_alist_sequential defines
     in
     { defines; signatures }

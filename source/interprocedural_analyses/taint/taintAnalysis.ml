@@ -1119,7 +1119,7 @@ let run_taint_analysis
           ~local_root
           ~resolve_module_path
           ~resolve_callable_location:
-            (Target.CallablesSharedMemory.ReadOnly.get_location callables_to_definitions_map)
+            (Target.CallablesSharedMemory.ReadOnly.get_location_opt callables_to_definitions_map)
           ~override_graph:override_graph_shared_memory_read_only
           ~callables
           ~skipped_overrides

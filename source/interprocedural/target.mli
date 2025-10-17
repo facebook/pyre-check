@@ -7,6 +7,7 @@
 
 open Ast
 open Statement
+module AstResult = PyrePysaApi.AstResult
 
 type kind =
   | Normal
@@ -293,7 +294,7 @@ end
 val get_signature_and_definition_for_test
   :  pyre_api:PyrePysaApi.ReadOnly.t ->
   t ->
-  (CallableSignature.t * Define.t Node.t) option
+  (CallableSignature.t * Define.t Node.t) AstResult.t
 
 module CallablesSharedMemory : sig
   type target = t
@@ -310,19 +311,21 @@ module CallablesSharedMemory : sig
   module ReadOnly : sig
     type t
 
-    val get_define : t -> target -> DefineAndQualifier.t option
+    val get_define : t -> target -> DefineAndQualifier.t AstResult.t
 
-    val get_location : t -> target -> Ast.Location.WithModule.t option
+    val get_location : t -> target -> Ast.Location.WithModule.t AstResult.t
 
-    val get_signature : t -> target -> CallableSignature.t option
+    val get_location_opt : t -> target -> Ast.Location.WithModule.t option
 
-    val get_qualifier : t -> target -> Reference.t option
+    val get_signature : t -> target -> CallableSignature.t AstResult.t
+
+    val get_qualifier : t -> target -> Reference.t AstResult.t
 
     val get_method_kind : t -> target -> bool * bool
 
-    val is_stub : t -> target -> bool option
+    val is_stub_like : t -> target -> bool option
 
-    val get_captures : t -> target -> Define.Capture.t list option
+    val get_captures : t -> target -> Define.Capture.t list AstResult.t
 
     val callable_from_reference : t -> Reference.t -> target option
 

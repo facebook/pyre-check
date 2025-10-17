@@ -15,6 +15,7 @@ module ScalarTypeProperties = Analysis.PyrePysaEnvironment.ScalarTypeProperties
 module ClassNamesFromType = Analysis.PyrePysaEnvironment.ClassNamesFromType
 module PysaType = Analysis.PyrePysaEnvironment.PysaType
 module PyreClassSummary = Analysis.ClassSummary
+module AstResult = Analysis.PyrePysaEnvironment.AstResult
 
 (* Abstraction for information about a class, provided from Pyre1 or Pyrefly and used by Pysa. See
    `ReadOnly.ClassSummary` for more functions. *)
@@ -122,7 +123,7 @@ module ReadOnly : sig
 
   val get_class_summary : t -> string -> PysaClassSummary.t option
 
-  val get_class_decorators_opt : t -> string -> Ast.Expression.t list option
+  val get_class_decorators_opt : t -> string -> Ast.Expression.t list AstResult.t
 
   val get_class_attributes
     :  t ->

@@ -592,10 +592,7 @@ let add_obscure_sink ~callables_to_definitions_map ~call_target model =
       match
         Target.CallablesSharedMemory.ReadOnly.get_signature callables_to_definitions_map real_target
       with
-      | None ->
-          let () = Log.warning "Found no definition for %a" Target.pp_pretty real_target in
-          model
-      | Some { Target.CallableSignature.parameters; _ } ->
+      | Interprocedural.PyrePysaApi.AstResult.Some { Target.CallableSignature.parameters; _ } ->
           let open Domains in
           let sink =
             BackwardTaint.singleton CallInfo.declaration (Sinks.NamedSink "Obscure") Frame.initial
@@ -608,7 +605,10 @@ let add_obscure_sink ~callables_to_definitions_map ~call_target model =
           let sink_taint =
             List.fold_left ~init:model.backward.sink_taint ~f:add_parameter_sink parameters
           in
-          { model with backward = { model.backward with sink_taint } })
+          { model with backward = { model.backward with sink_taint } }
+      | _ ->
+          let () = Log.warning "Found no definition for %a" Target.pp_pretty real_target in
+          model)
 
 
 let join left right =

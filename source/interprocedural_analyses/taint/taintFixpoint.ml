@@ -19,6 +19,7 @@ open Core
 open Pyre
 module PyrePysaApi = Interprocedural.PyrePysaApi
 module PyrePysaLogic = Analysis.PyrePysaLogic
+module AstResult = Interprocedural.PyrePysaApi.AstResult
 
 module Context = struct
   type t = {
@@ -234,7 +235,12 @@ module Analysis = struct
       |> Interprocedural.Target.strip_parameters
       |> Interprocedural.Target.CallablesSharedMemory.ReadOnly.get_define
            callables_to_definitions_map
-      |> Option.value_exn
+      |> AstResult.value_exn
+           ~message:
+             (Format.asprintf
+                "No definition found for `%a`"
+                Interprocedural.Target.pp_pretty
+                callable)
     in
     let define_qualifier = Ast.Reference.delocalize name in
     let open Ast in

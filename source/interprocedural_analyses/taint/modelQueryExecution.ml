@@ -770,6 +770,7 @@ let class_matches_decorator_constraint ~name_captures ~pyre_api ~decorator_const
    * We could do it in the future by storing the result of the call to `get_class_summary` above
    * in `Modelable.t` *)
   PyrePysaApi.ReadOnly.get_class_decorators_opt pyre_api class_name
+  |> PyrePysaApi.AstResult.to_option
   >>| (fun decorators ->
         List.exists decorators ~f:(fun decorator ->
             Statement.Decorator.from_expression decorator
