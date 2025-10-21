@@ -103,8 +103,7 @@ let assert_call_graph_of_define
     ~source
     ~define_name
     ~expected
-    ?(_is_migrated =
-      false (* Whether this test has been duplicated in the call graph building in Pyrefly *))
+    ~_is_migrated (* Whether this test has been duplicated in the call graph building in Pyrefly *)
     ?(cmp = DefineCallGraphForTest.equal)
     ()
     context
@@ -1016,6 +1015,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:{|
         def foo():
           1 > 2
@@ -1040,6 +1040,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       class C:
@@ -1067,6 +1068,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from functools import partial
@@ -1136,6 +1138,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from builtins import to_callable_target
@@ -1200,6 +1203,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from builtins import to_callable_target
@@ -1237,6 +1241,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:{|
       def foo(x=bar()):
         pass
@@ -1260,6 +1265,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       class C:
@@ -1311,6 +1317,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       class C:
@@ -1342,6 +1349,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       class C:
@@ -1410,6 +1418,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       def hof(f, arg) -> bool:
@@ -1462,6 +1471,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       def hof(f, g, arg) -> bool:
@@ -1538,6 +1548,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       _magic_enum = property
@@ -1589,6 +1600,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:{|
       def test():
         return map(lambda x: x, [0])
@@ -1627,6 +1639,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
         class Builder:
@@ -1707,6 +1720,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from functools import lru_cache
@@ -1736,6 +1750,7 @@ let test_call_graph_of_define =
       (* Imprecise call graph due to `@lru_cache` and inner functions. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from functools import lru_cache
@@ -1768,6 +1783,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from functools import lru_cache
@@ -1813,6 +1829,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
     class C:
@@ -1889,6 +1906,7 @@ let test_call_graph_of_define =
       (* Ensure we don't infinite loop when resolving callable classes. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
     from typing import Any, Target
@@ -1916,6 +1934,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:
              {|
@@ -2016,6 +2035,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
         from typing import Protocol
@@ -2169,6 +2189,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
         class C:
@@ -2224,6 +2245,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
        import typing
@@ -2332,6 +2354,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       def outer(x: int) -> None:
@@ -2365,6 +2388,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       class Foo:
@@ -2401,6 +2425,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
      class C:
@@ -2444,6 +2469,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
      class C:
@@ -2467,6 +2493,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
      def foo() -> None:
@@ -2504,6 +2531,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
      def foo() -> None:
@@ -2555,6 +2583,7 @@ let test_call_graph_of_define =
       (* TODO(T105570363): Resolve calls with mixed function and methods. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:
              {|
@@ -2624,6 +2653,7 @@ let test_call_graph_of_define =
       (* TODO(T105570363): Resolve calls with mixed function and constructors. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:
              {|
@@ -2692,6 +2722,7 @@ let test_call_graph_of_define =
       (* Well-typed decorators are 'safely' ignored (when not inlined). *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from typing import Callable, TypeVar
@@ -2731,6 +2762,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from typing import Callable, TypeVar
@@ -2775,6 +2807,7 @@ let test_call_graph_of_define =
       (* Partially-typed decorators are 'safely' ignored (when not inlined). *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from typing import Callable, TypeVar
@@ -2811,6 +2844,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from typing import Callable, TypeVar
@@ -2851,6 +2885,7 @@ let test_call_graph_of_define =
       (* Untyped decorators are 'safely' ignored (when not inlined). *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       def timer(name: str):
@@ -2879,6 +2914,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       def timer(name: str):
@@ -2911,6 +2947,7 @@ let test_call_graph_of_define =
       (* Well-typed decorators with @classmethod or @staticmethod. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from typing import Callable, TypeVar
@@ -2956,6 +2993,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from typing import Callable, TypeVar
@@ -2999,6 +3037,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from typing import Callable, TypeVar
@@ -3046,6 +3085,7 @@ let test_call_graph_of_define =
       (* Decorators with type errors. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from typing import Callable, TypeVar
@@ -3083,6 +3123,7 @@ let test_call_graph_of_define =
       (* Resolving __call__ via __getattr__ when a union including self type is involved. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from __future__ import annotations
@@ -3112,6 +3153,7 @@ let test_call_graph_of_define =
       (* Detecting a __call__ picked up via __getattr__ redirection *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from __future__ import annotations
@@ -3165,6 +3207,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~object_targets:[Target.Regular.Object "test.Token.token"]
            ~source:
              {|
@@ -3198,6 +3241,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~object_targets:
              [Target.Regular.Object "test.A.attribute"; Target.Regular.Object "test.C.attribute"]
            ~source:
@@ -3240,6 +3284,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~object_targets:[Target.Regular.Object "test.Token.token"]
            ~source:
              {|
@@ -3275,6 +3320,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~object_targets:[Target.Regular.Object "test.Token.token"]
            ~source:
              {|
@@ -3314,6 +3360,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~object_targets:[Target.Regular.Object "test.Token.token"]
            ~source:
              {|
@@ -3342,6 +3389,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       class Test:
@@ -3356,6 +3404,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:{|
       x = "x"
 
@@ -3379,6 +3428,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       def foo(a: int, b: float, c: str, d: typing.List[int], e):
@@ -3486,6 +3536,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       def bar(x):
@@ -3527,6 +3578,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:{|
       def foo(x: object):
         return f"{x}"
@@ -3554,6 +3606,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:{|
       def foo(x: object):
         return f"{x}:{x}"
@@ -3593,6 +3646,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:{|
       def foo(x: Any):
         return f"{x}"
@@ -3611,6 +3665,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       class A:
@@ -3658,6 +3713,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:{|
       def foo(e: Exception):
@@ -3732,6 +3788,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       def foo(error_type: typing.Union[str, typing.Type[Exception]]):
@@ -3763,6 +3820,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       def foo(error_type: typing.Type[Exception]):
@@ -3794,6 +3852,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:
              {|
@@ -3845,6 +3904,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:
              {|
@@ -3890,6 +3950,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:{|
       def foo(e: Exception):
@@ -3930,6 +3991,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
      def foo():
@@ -4002,6 +4064,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
      def foo(x=None, y=None):
@@ -4057,6 +4120,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from typing import Union
@@ -4169,6 +4233,7 @@ let test_call_graph_of_define =
       (* Test the return type when using type variables. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
        import typing
@@ -4213,6 +4278,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
        import typing
@@ -4240,6 +4306,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
        from typing import Union, overload
@@ -4275,6 +4342,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
        import typing
@@ -4305,6 +4373,7 @@ let test_call_graph_of_define =
       (* Nested defines. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
        def baz(x: int) -> int:
@@ -4333,6 +4402,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
        def baz(x: int) -> int:
@@ -4364,6 +4434,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
        def decorator(function):
@@ -4430,6 +4501,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
        def decorator(function):
@@ -4495,6 +4567,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from abc import abstractclassmethod
@@ -4646,6 +4719,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from typing import Generic, TypeVar
@@ -4755,6 +4829,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from typing import Generic, TypeVar
@@ -4795,6 +4870,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
        def foo(l: typing.AsyncIterator[int | str]):
@@ -4840,6 +4916,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
        class A:
@@ -5214,6 +5291,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
        class A:
@@ -5278,6 +5356,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       class Object:
@@ -5367,6 +5446,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       class Object:
@@ -5394,6 +5474,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~object_targets:[Target.Regular.Object "test.A.B"]
            ~source:
              {|
@@ -5444,6 +5525,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~object_targets:[Target.Regular.Object "test.A.B"]
            ~source:
              {|
@@ -5492,6 +5574,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:{|
       x = ""
       def foo():
@@ -5515,6 +5598,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       def outer():
@@ -5540,6 +5624,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       def outer():
@@ -5564,6 +5649,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:{|
      def foo():
        return bar
@@ -5585,6 +5671,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:{|
      def foo():
        yield bar
@@ -5606,6 +5693,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
      class C:
@@ -5618,6 +5706,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:{|
      def foo():
        def inner(): ...
@@ -5639,6 +5728,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
      from typing import Callable, Any
@@ -5692,6 +5782,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from typing import Callable, Any
@@ -5740,6 +5831,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from typing import Callable, Optional
@@ -5775,6 +5867,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from typing import Callable, List
@@ -5810,6 +5903,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from typing import Callable, Sequence
@@ -5845,6 +5939,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from typing import Callable, Set
@@ -5880,6 +5975,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
       from typing import Callable
@@ -5970,6 +6066,7 @@ let test_call_graph_of_define_foo_and_bar =
     [
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source
            ~define_name:"test.foo"
            ~expected:
@@ -6101,6 +6198,7 @@ let test_call_graph_of_define_foo_and_bar =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source
            ~define_name:"test.bar"
            ~expected:
@@ -6141,6 +6239,7 @@ let test_call_graph_of_define_foo_and_bar =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:{|
      def foo():
        return bar
@@ -6162,6 +6261,7 @@ let test_call_graph_of_define_foo_and_bar =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:{|
      def foo():
        yield bar
@@ -6183,6 +6283,7 @@ let test_call_graph_of_define_foo_and_bar =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
      def foo(x):
@@ -6230,6 +6331,7 @@ let test_call_graph_of_define_foo_and_bar =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
      def decorator(f):
@@ -6321,6 +6423,7 @@ let test_call_graph_of_define_foo_and_bar =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
      def decorator(f):
@@ -6350,6 +6453,7 @@ let test_call_graph_of_define_foo_and_bar =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
      class A:
@@ -6421,6 +6525,7 @@ let test_call_graph_of_define_foo_and_bar =
        * the callee has a body and is annotated. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
      class A:
@@ -6468,6 +6573,7 @@ let test_call_graph_of_define_foo_and_bar =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
      from typing import Optional
@@ -6516,6 +6622,7 @@ let test_call_graph_of_define_foo_and_bar =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~_is_migrated:false
            ~source:
              {|
      from typing import Optional

@@ -2408,6 +2408,8 @@ module ReadWrite = struct
           | Synthesized of LocalFunctionId.t
         [@@deriving compare, equal, show, sexp]
 
+        let _ = pp
+
         let of_definition = function
           | Definition.Function
               {
