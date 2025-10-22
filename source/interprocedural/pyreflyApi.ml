@@ -1439,6 +1439,7 @@ module CallableMetadata = struct
     is_stub: bool;
     is_def_statement: bool;
     parent_is_class: bool;
+    captures: string list;
   }
   [@@deriving show]
 end
@@ -1459,7 +1460,6 @@ module CallableMetadataSharedMemory = struct
       local_function_id: LocalFunctionId.t;
       (* This is the original name, without the fully qualified suffixes like `$2` or `@setter`. *)
       name: string;
-      captures: string list;
       overridden_base_method: GlobalCallableId.t option;
       defining_class: GlobalClassId.t option;
       (* The list of callees for each decorator *)
@@ -2775,15 +2775,15 @@ module ReadWrite = struct
                     is_stub;
                     is_def_statement;
                     parent_is_class = Option.is_some defining_class;
+                    captures =
+                      List.map
+                        ~f:(fun { ModuleDefinitionsFile.CapturedVariable.name } -> name)
+                        captured_variables;
                   };
                 name;
                 local_function_id;
                 overridden_base_method;
                 defining_class;
-                captures =
-                  List.map
-                    ~f:(fun { ModuleDefinitionsFile.CapturedVariable.name } -> name)
-                    captured_variables;
                 decorator_callees;
               };
             CallableIdToQualifiedNameSharedMemory.add
@@ -3543,7 +3543,7 @@ module ReadOnly = struct
       callable_metadata_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
     |> assert_shared_memory_key_exists "missing callable metadata"
-    |> fun { CallableMetadataSharedMemory.Value.captures; _ } -> captures
+    |> fun { CallableMetadataSharedMemory.Value.metadata = { captures; _ }; _ } -> captures
 
 
   let get_callable_decorator_callees

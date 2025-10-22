@@ -1003,6 +1003,7 @@ module Modelable = struct
         (* The semantic (undecorated) signature(s) of the function. *)
         undecorated_signatures: PyrePysaApi.ModelQueries.FunctionSignature.t list Lazy.t;
         decorators: CallableDecorator.t list Lazy.t;
+        captures: string list Lazy.t;
       }
     | Attribute of {
         target_name: Reference.t;
@@ -1057,7 +1058,18 @@ module Modelable = struct
         >>| List.map ~f:(CallableDecorator.create ~pyre_api ~callables_to_definitions_map ~target)
         |> Option.value ~default:[])
     in
-    Callable { target; define_signature; undecorated_signatures; decorators }
+    let captures =
+      lazy
+        (match pyre_api with
+        | PyrePysaApi.ReadOnly.Pyre1 _ ->
+            Lazy.force define_signature
+            |> PyrePysaApi.AstResult.to_option
+            >>| (fun { Target.CallableSignature.captures; _ } -> captures)
+            |> Option.value ~default:[]
+        | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->
+            PyreflyApi.ReadOnly.get_callable_captures pyrefly_api (Target.define_name_exn target))
+    in
+    Callable { target; define_signature; undecorated_signatures; decorators; captures }
 
 
   let create_attribute ~pyre_api target =
@@ -1178,11 +1190,7 @@ module Modelable = struct
 
 
   let captures = function
-    | Callable { define_signature; _ } ->
-        Lazy.force define_signature
-        |> PyrePysaApi.AstResult.to_option
-        >>| (fun { Target.CallableSignature.captures; _ } -> captures)
-        |> Option.value ~default:[]
+    | Callable { captures; _ } -> Lazy.force captures
     | Attribute _
     | Global _ ->
         failwith "unexpected use of captures on an attribute or global"

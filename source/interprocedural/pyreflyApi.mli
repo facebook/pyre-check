@@ -62,6 +62,7 @@ module CallableMetadata : sig
     is_stub: bool; (* Is this a stub definition, e.g `def foo(): ...` *)
     is_def_statement: bool; (* Is it defined with a `def ..():` statement? *)
     parent_is_class: bool;
+    captures: string list;
   }
   [@@deriving show]
 end

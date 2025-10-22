@@ -673,7 +673,7 @@ module CallableSignature = struct
     parameters: Expression.Parameter.t list;
     return_annotation: Expression.t option;
     decorators: Expression.t list;
-    captures: Define.Capture.t list;
+    captures: string list;
     method_kind: MethodKind.t option;
     is_stub: bool;
   }
@@ -701,7 +701,7 @@ module CallableSignature = struct
       parameters = define.Node.value.signature.parameters;
       return_annotation = define.Node.value.signature.return_annotation;
       decorators = define.Node.value.signature.decorators;
-      captures = define.Node.value.captures;
+      captures = List.map ~f:(fun { name; _ } -> name) define.Node.value.captures;
       method_kind;
       is_stub = Define.is_stub define.Node.value;
     }
@@ -716,6 +716,7 @@ module CallableSignature = struct
           is_staticmethod;
           is_stub;
           parent_is_class;
+          captures;
           _;
         }
       {
@@ -740,7 +741,7 @@ module CallableSignature = struct
       parameters;
       return_annotation;
       decorators;
-      captures = [];
+      captures;
       method_kind;
       is_stub;
     }

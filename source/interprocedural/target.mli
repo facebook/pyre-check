@@ -282,7 +282,7 @@ module CallableSignature : sig
     parameters: Expression.Parameter.t list;
     return_annotation: Expression.t option;
     decorators: Expression.t list;
-    captures: Define.Capture.t list;
+    captures: string list;
     method_kind: MethodKind.t option;
     is_stub: bool;
   }
@@ -325,7 +325,7 @@ module CallablesSharedMemory : sig
 
     val is_stub_like : t -> target -> bool option
 
-    val get_captures : t -> target -> Define.Capture.t list AstResult.t
+    val get_captures : t -> target -> string list AstResult.t
 
     val callable_from_reference : t -> Reference.t -> target option
 
