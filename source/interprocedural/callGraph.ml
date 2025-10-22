@@ -165,8 +165,8 @@ module CallableToDecoratorsMap = struct
       "overrides.override";
       "overrides.overrides";
     ]
-    @ Target.class_method_decorators
-    @ Target.static_method_decorators
+    @ CallablesSharedMemory.class_method_decorators
+    @ CallablesSharedMemory.static_method_decorators
     @ Recognized.ignored_decorators_for_higher_order
     |> SerializableStringSet.of_list
 
@@ -193,11 +193,11 @@ module CallableToDecoratorsMap = struct
   let collect_decorators ~callables_to_definitions_map callable =
     callable
     |> Option.some_if (Target.is_normal callable)
-    >>| Target.CallablesSharedMemory.ReadOnly.get_signature callables_to_definitions_map
+    >>| CallablesSharedMemory.ReadOnly.get_signature callables_to_definitions_map
     >>= function
     | Some
         {
-          Target.CallableSignature.decorators = AstResult.Some decorators;
+          CallablesSharedMemory.CallableSignature.decorators = AstResult.Some decorators;
           location = AstResult.Some define_location;
           _;
         } ->
@@ -315,7 +315,7 @@ module CallableToDecoratorsMap = struct
     (* We assume `DecoratorPreprocessing.setup_preprocessing` is called before since we use its
        shared memory here. *)
     let create ~callables_to_definitions_map ~scheduler ~scheduler_policy callables =
-      (* TODO(T240882988): This ends up copying decorators from `Target.CallablesSharedMemory` to
+      (* TODO(T240882988): This ends up copying decorators from `CallablesSharedMemory` to
          `CallableToDecoratorsMap.SharedMemory`. Instead, we could just store the
          `callables_to_definitions_map` handle and a set of targets with decorators. *)
       let shared_memory = T.create () in
@@ -462,12 +462,12 @@ module CallableToDecoratorsMap = struct
              in
              let decorated_callable = Target.set_kind Target.Decorated callable in
              ( decorated_callable,
-               Target.CallableSignature.from_define_for_pyre1
+               CallablesSharedMemory.CallableSignature.from_define_for_pyre1
                  ~target:callable
                  ~qualifier:artificial_decorator_defines
                  define,
                define ))
-      |> Target.CallablesSharedMemory.add_alist_sequential callables_to_definitions_map
+      |> CallablesSharedMemory.ReadWrite.add_alist_sequential callables_to_definitions_map
 
 
     let decorated_targets decorators =
@@ -2075,7 +2075,7 @@ struct
     let bindings = ["callable", `String (Target.external_name callable)] in
     let resolve_module_path = Option.value ~default:(fun _ -> None) resolve_module_path in
     callable
-    |> Target.CallablesSharedMemory.ReadOnly.get_qualifier callables_to_definitions_map
+    |> CallablesSharedMemory.ReadOnly.get_qualifier callables_to_definitions_map
     >>= resolve_module_path
     >>| (function
           | { RepositoryPath.filename = Some filename; _ } ->
@@ -2650,9 +2650,7 @@ let rec resolve_callees_from_type
             List.map
               ~f:(fun target ->
                 let is_class_method, is_static_method =
-                  Target.CallablesSharedMemory.ReadOnly.get_method_kind
-                    callables_to_definitions_map
-                    target
+                  CallablesSharedMemory.ReadOnly.get_method_kind callables_to_definitions_map target
                 in
                 CallTarget.create_with_default_index
                   ~implicit_dunder_call:dunder_call
@@ -2666,16 +2664,12 @@ let rec resolve_callees_from_type
           CallCallees.create ~call_targets:targets ()
       | None -> (
           let target =
-            Target.CallablesSharedMemory.ReadOnly.callable_from_reference
-              callables_to_definitions_map
-              name
+            CallablesSharedMemory.ReadOnly.callable_from_reference callables_to_definitions_map name
           in
           match target with
           | Some target ->
               let is_class_method, is_static_method =
-                Target.CallablesSharedMemory.ReadOnly.get_method_kind
-                  callables_to_definitions_map
-                  target
+                CallablesSharedMemory.ReadOnly.get_method_kind callables_to_definitions_map target
               in
               CallCallees.create
                 ~call_targets:
@@ -2791,9 +2785,7 @@ let rec resolve_callees_from_type
                   Target.create_method (Reference.create primitive_callable_name) "__call__"
                 in
                 let is_class_method, is_static_method =
-                  Target.CallablesSharedMemory.ReadOnly.get_method_kind
-                    callables_to_definitions_map
-                    target
+                  CallablesSharedMemory.ReadOnly.get_method_kind callables_to_definitions_map target
                 in
                 CallCallees.create
                   ~call_targets:
@@ -3628,7 +3620,9 @@ let resolve_callee_ignoring_decorators
   let contain_class_method signatures =
     signatures
     |> List.exists ~f:(fun signature ->
-           List.exists Target.class_method_decorators ~f:(Define.Signature.has_decorator signature))
+           List.exists
+             CallablesSharedMemory.class_method_decorators
+             ~f:(Define.Signature.has_decorator signature))
   in
   let log format =
     if debug then
@@ -4305,10 +4299,10 @@ let resolve_callees
         } -> (
             match regular_callees.call_targets with
             | [callee] when Target.is_function_or_method callee.target ->
-                Target.CallablesSharedMemory.ReadOnly.get_signature
+                CallablesSharedMemory.ReadOnly.get_signature
                   callables_to_definitions_map
                   callee.target
-                >>| (fun { Target.CallableSignature.parameters; is_stub_like; _ } ->
+                >>| (fun { CallablesSharedMemory.CallableSignature.parameters; is_stub_like; _ } ->
                       is_stub_like
                       ||
                       match parameters with
@@ -4506,7 +4500,7 @@ module CallGraphBuilder = struct
       override_graph: OverrideGraph.SharedMemory.ReadOnly.t option;
       missing_flow_type_analysis: MissingFlowTypeAnalysis.t option;
       attribute_targets: Target.HashSet.t;
-      callables_to_definitions_map: Target.CallablesSharedMemory.ReadOnly.t;
+      callables_to_definitions_map: CallablesSharedMemory.ReadOnly.t;
       callables_to_decorators_map: CallableToDecoratorsMap.SharedMemory.ReadOnly.t;
       type_of_expression_shared_memory: TypeOfExpressionSharedMemory.t;
       expression_identifier_invariant: ExpressionIdentifierInvariant.t option;
@@ -5287,9 +5281,7 @@ module HigherOrderCallGraph = struct
                | None -> root
              in
              let is_class_method, is_static_method =
-               Target.CallablesSharedMemory.ReadOnly.get_method_kind
-                 callables_to_definitions_map
-                 target
+               CallablesSharedMemory.ReadOnly.get_method_kind callables_to_definitions_map target
              in
              ( root,
                target
@@ -5328,7 +5320,7 @@ module HigherOrderCallGraph = struct
 
     val callable : Target.t
 
-    val callables_to_definitions_map : Target.CallablesSharedMemory.ReadOnly.t
+    val callables_to_definitions_map : CallablesSharedMemory.ReadOnly.t
 
     val type_of_expression_shared_memory : TypeOfExpressionSharedMemory.t
 
@@ -5538,11 +5530,9 @@ module HigherOrderCallGraph = struct
           None
         else
           match
-            Target.CallablesSharedMemory.ReadOnly.get_signature
-              Context.callables_to_definitions_map
-              target
+            CallablesSharedMemory.ReadOnly.get_signature Context.callables_to_definitions_map target
           with
-          | Some { Target.CallableSignature.is_stub_like; parameters; _ } ->
+          | Some { CallablesSharedMemory.CallableSignature.is_stub_like; parameters; _ } ->
               if is_stub_like then
                 let () = log "Callable `%a` is a stub" Target.pp_pretty_with_kind target in
                 None
@@ -5704,7 +5694,7 @@ module HigherOrderCallGraph = struct
       let stub_targets =
         List.filter_map call_targets_from_callee ~f:(fun { CallTarget.target; _ } ->
             let is_stub =
-              Target.CallablesSharedMemory.ReadOnly.is_stub_like
+              CallablesSharedMemory.ReadOnly.is_stub_like
                 Context.callables_to_definitions_map
                 target
               |> Option.value ~default:false
@@ -6348,7 +6338,7 @@ module HigherOrderCallGraph = struct
                           |> CallTarget.target
                           |> (* Since `Define` statements inside another `Define` are stripped out
                                 (to avoid bloat), use this API to query the definition. *)
-                          Target.CallablesSharedMemory.ReadOnly.get_captures
+                          CallablesSharedMemory.ReadOnly.get_captures
                             Context.callables_to_definitions_map
                       | _ ->
                           Format.asprintf
@@ -6704,8 +6694,8 @@ let call_graph_of_callable
     ~check_invariants
     ~callable
   =
-  match Target.CallablesSharedMemory.ReadOnly.get_define callables_to_definitions_map callable with
-  | Some { Target.CallablesSharedMemory.DefineAndQualifier.qualifier; define } ->
+  match CallablesSharedMemory.ReadOnly.get_define callables_to_definitions_map callable with
+  | Some { CallablesSharedMemory.DefineAndQualifier.qualifier; define } ->
       call_graph_of_define
         ~static_analysis_configuration
         ~pyre_api
@@ -6797,7 +6787,7 @@ let call_graph_of_decorated_callable
     in
     if should_add_callable then
       let is_class_method, is_static_method =
-        Target.CallablesSharedMemory.ReadOnly.get_method_kind callables_to_definitions_map callee
+        CallablesSharedMemory.ReadOnly.get_method_kind callables_to_definitions_map callee
       in
       call_graph :=
         DefineCallGraph.set_attribute_access_callees

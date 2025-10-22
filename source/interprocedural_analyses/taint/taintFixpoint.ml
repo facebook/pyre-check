@@ -31,7 +31,7 @@ module Context = struct
       Interprocedural.Target.t -> Interprocedural.CallGraph.DefineCallGraph.t option;
     global_constants: Interprocedural.GlobalConstants.SharedMemory.ReadOnly.t;
     type_of_expression_shared_memory: Interprocedural.TypeOfExpressionSharedMemory.t;
-    callables_to_definitions_map: Interprocedural.Target.CallablesSharedMemory.ReadOnly.t;
+    callables_to_definitions_map: Interprocedural.CallablesSharedMemory.ReadOnly.t;
   }
 end
 
@@ -227,14 +227,13 @@ module Analysis = struct
       Log.log ~section:`Interprocedural "Analyzing %a" Interprocedural.Target.pp_pretty callable
     in
     let {
-      Interprocedural.Target.CallablesSharedMemory.DefineAndQualifier.qualifier;
+      Interprocedural.CallablesSharedMemory.DefineAndQualifier.qualifier;
       define = { Ast.Node.value = { Ast.Statement.Define.signature = { name; _ }; _ }; _ } as define;
     }
       =
       callable
       |> Interprocedural.Target.strip_parameters
-      |> Interprocedural.Target.CallablesSharedMemory.ReadOnly.get_define
-           callables_to_definitions_map
+      |> Interprocedural.CallablesSharedMemory.ReadOnly.get_define callables_to_definitions_map
       |> AstResult.value_exn
            ~message:
              (Format.asprintf

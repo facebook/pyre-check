@@ -42,8 +42,8 @@ let test_get_module_and_definition context =
     let actual =
       target
       |> Target.from_regular
-      |> Target.get_signature_and_definition_for_test ~pyre_api
-      >>= fun ({ Target.CallableSignature.qualifier; _ }, define) ->
+      |> CallablesSharedMemory.get_signature_and_definition_for_test ~pyre_api
+      >>= fun ({ CallablesSharedMemory.CallableSignature.qualifier; _ }, define) ->
       PyrePysaApi.AstResult.to_option define
       >>| (fun { Node.value = { Statement.Define.body; _ }; _ } -> body)
       >>| fun define -> qualifier, define

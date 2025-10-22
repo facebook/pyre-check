@@ -57,7 +57,7 @@ let assert_generated_annotations
     Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
   in
   let callables_to_definitions_map =
-    Interprocedural.Target.CallablesSharedMemory.from_callables
+    Interprocedural.CallablesSharedMemory.ReadWrite.from_callables
       ~scheduler
       ~scheduler_policy
       ~pyre_api
@@ -81,17 +81,17 @@ let assert_generated_annotations
       ~verbose:false
       ~pyre_api
       ~callables_to_definitions_map:
-        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~class_hierarchy_graph
       ~modelable:
         (ModelQueryExecution.CallableQueryExecutor.make_modelable
            ~pyre_api
            ~callables_to_definitions_map:
-             (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+             (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
            (Target.from_regular callable))
       query
   in
-  Target.CallablesSharedMemory.cleanup callables_to_definitions_map;
+  Interprocedural.CallablesSharedMemory.ReadWrite.cleanup callables_to_definitions_map;
   assert_equal
     ~cmp:(List.equal equal_query_element)
     ~printer:(List.to_string ~f:show_query_element)
@@ -126,7 +126,7 @@ let assert_generated_annotations_for_attributes
     Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
   in
   let callables_to_definitions_map =
-    Interprocedural.Target.CallablesSharedMemory.from_callables
+    Interprocedural.CallablesSharedMemory.ReadWrite.from_callables
       ~scheduler
       ~scheduler_policy
       ~pyre_api
@@ -146,17 +146,17 @@ let assert_generated_annotations_for_attributes
       ~verbose:false
       ~pyre_api
       ~callables_to_definitions_map:
-        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~class_hierarchy_graph
       ~modelable:
         (ModelQueryExecution.AttributeQueryExecutor.make_modelable
            ~pyre_api
            ~callables_to_definitions_map:
-             (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+             (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
            target)
       query
   in
-  Target.CallablesSharedMemory.cleanup callables_to_definitions_map;
+  Interprocedural.CallablesSharedMemory.ReadWrite.cleanup callables_to_definitions_map;
   assert_equal
     ~cmp:(List.equal ModelParseResult.TaintAnnotation.equal)
     ~printer:(List.to_string ~f:ModelParseResult.TaintAnnotation.show)
@@ -189,7 +189,7 @@ let assert_generated_annotations_for_globals
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
   let callables_to_definitions_map =
-    Interprocedural.Target.CallablesSharedMemory.from_callables
+    Interprocedural.CallablesSharedMemory.ReadWrite.from_callables
       ~scheduler
       ~scheduler_policy
       ~pyre_api
@@ -209,17 +209,17 @@ let assert_generated_annotations_for_globals
       ~verbose:false
       ~pyre_api
       ~callables_to_definitions_map:
-        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~class_hierarchy_graph
       ~modelable:
         (ModelQueryExecution.GlobalVariableQueryExecutor.make_modelable
            ~pyre_api
            ~callables_to_definitions_map:
-             (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+             (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
            target)
       query
   in
-  Target.CallablesSharedMemory.cleanup callables_to_definitions_map;
+  Interprocedural.CallablesSharedMemory.ReadWrite.cleanup callables_to_definitions_map;
   assert_equal
     ~cmp:(List.equal ModelParseResult.TaintAnnotation.equal)
     ~printer:(List.to_string ~f:ModelParseResult.TaintAnnotation.show)
@@ -5379,7 +5379,7 @@ let test_generated_cache context =
       Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
     in
     let callables_to_definitions_map =
-      Interprocedural.Target.CallablesSharedMemory.from_callables
+      Interprocedural.CallablesSharedMemory.ReadWrite.from_callables
         ~scheduler
         ~scheduler_policy
         ~pyre_api
@@ -5398,7 +5398,7 @@ let test_generated_cache context =
         ~verbose:false
         ~pyre_api
         ~callables_to_definitions_map:
-          (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+          (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
         ~class_hierarchy_graph
         ~targets:(List.map regular_callables ~f:Target.from_regular)
         queries
@@ -5414,7 +5414,7 @@ let test_generated_cache context =
             ~target:(Target.from_regular target))
         expected
     in
-    Target.CallablesSharedMemory.cleanup callables_to_definitions_map;
+    Interprocedural.CallablesSharedMemory.ReadWrite.cleanup callables_to_definitions_map;
     assert_equal
       ~cmp:ModelQueryExecution.ReadWriteCache.equal
       ~printer:ModelQueryExecution.ReadWriteCache.show

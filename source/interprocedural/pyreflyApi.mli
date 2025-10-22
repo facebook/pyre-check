@@ -182,6 +182,8 @@ module ReadOnly : sig
 
   val get_global_inferred_type : t -> qualifier:Ast.Reference.t -> name:string -> PysaType.t option
 
+  val target_from_define_name : t -> Ast.Reference.t -> Target.t
+
   module Type : sig
     val scalar_properties : t -> PysaType.t -> Analysis.PyrePysaEnvironment.ScalarTypeProperties.t
 
@@ -236,11 +238,6 @@ module LocalClassId : sig
   type t [@@deriving compare, equal, show]
 
   val from_int : int -> t
-end
-
-(* Exposed for testing purposes *)
-module Target : sig
-  type t [@@deriving compare, equal, show]
 end
 
 (* Exposed for testing purposes *)

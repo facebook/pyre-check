@@ -590,12 +590,12 @@ let add_obscure_sink ~callables_to_definitions_map ~call_target model =
   | None -> model
   | Some real_target -> (
       match
-        Target.CallablesSharedMemory.ReadOnly.get_signature callables_to_definitions_map real_target
+        CallablesSharedMemory.ReadOnly.get_signature callables_to_definitions_map real_target
       with
       | Some
           {
-            Target.CallableSignature.parameters =
-              Interprocedural.PyrePysaApi.AstResult.Some parameters;
+            CallablesSharedMemory.CallableSignature.parameters =
+              PyrePysaApi.AstResult.Some parameters;
             _;
           } ->
           let open Domains in

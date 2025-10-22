@@ -999,7 +999,7 @@ module Modelable = struct
     | Callable of {
         target: Target.t;
         (* The syntactic definition of the function, including the AST for each parameters. *)
-        define_signature: Target.CallableSignature.t Lazy.t;
+        define_signature: CallablesSharedMemory.CallableSignature.t Lazy.t;
         (* The semantic (undecorated) signature(s) of the function. *)
         undecorated_signatures: PyrePysaApi.ModelQueries.FunctionSignature.t list Lazy.t;
         decorators: CallableDecorator.t list Lazy.t;
@@ -1017,9 +1017,7 @@ module Modelable = struct
   let create_callable ~pyre_api ~callables_to_definitions_map target =
     let define_signature =
       lazy
-        (match
-           Target.CallablesSharedMemory.ReadOnly.get_signature callables_to_definitions_map target
-         with
+        (match CallablesSharedMemory.ReadOnly.get_signature callables_to_definitions_map target with
         | None ->
             Format.asprintf
               "unknown target `%a` in `Modelable.create_callable`"
@@ -1033,7 +1031,7 @@ module Modelable = struct
         (match pyre_api with
         | PyrePysaApi.ReadOnly.Pyre1 pyre_api ->
             Lazy.force define_signature
-            |> fun { Target.CallableSignature.parameters; return_annotation; _ } ->
+            |> fun { CallablesSharedMemory.CallableSignature.parameters; return_annotation; _ } ->
             Analysis.PyrePysaEnvironment.ModelQueries.FunctionSignature.from_pyre1_ast
               ~pyre_api
               ~parameters:(PyrePysaApi.AstResult.value_exn ~message:"unreachable" parameters)
@@ -1049,7 +1047,7 @@ module Modelable = struct
       lazy
         (define_signature
         |> Lazy.force
-        |> (fun { Target.CallableSignature.define_name; decorators; _ } ->
+        |> (fun { CallablesSharedMemory.CallableSignature.define_name; decorators; _ } ->
              PyrePysaApi.AstResult.to_option decorators
              >>| fun decorators ->
              PyrePysaLogic.DecoratorPreprocessing.original_decorators_from_preprocessed_signature
@@ -1063,7 +1061,8 @@ module Modelable = struct
       lazy
         (match pyre_api with
         | PyrePysaApi.ReadOnly.Pyre1 _ ->
-            Lazy.force define_signature |> fun { Target.CallableSignature.captures; _ } -> captures
+            Lazy.force define_signature
+            |> fun { CallablesSharedMemory.CallableSignature.captures; _ } -> captures
         | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->
             PyreflyApi.ReadOnly.get_callable_captures pyrefly_api (Target.define_name_exn target))
     in
@@ -1197,7 +1196,7 @@ module Modelable = struct
   let decorator_expressions_after_inlining = function
     | Callable { define_signature; _ } ->
         Lazy.force define_signature
-        |> (fun { Target.CallableSignature.decorators; _ } -> decorators)
+        |> (fun { CallablesSharedMemory.CallableSignature.decorators; _ } -> decorators)
         |> PyrePysaApi.AstResult.to_option
         |> Option.value ~default:[]
     | Attribute _
@@ -1215,7 +1214,7 @@ module Modelable = struct
   let is_instance_method = function
     | Callable { define_signature; _ } ->
         Lazy.force define_signature
-        |> (fun { Target.CallableSignature.method_kind; _ } -> method_kind)
+        |> (fun { CallablesSharedMemory.CallableSignature.method_kind; _ } -> method_kind)
         >>| (function
               | Target.MethodKind.Instance -> true
               | _ -> false)

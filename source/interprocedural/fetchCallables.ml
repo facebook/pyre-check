@@ -152,7 +152,7 @@ let from_qualifier_with_pyrefly ~pyrefly_api ~qualifier =
   let is_stub_module = PyreflyApi.ReadOnly.is_stub_qualifier pyrefly_api qualifier in
   let is_test_module = PyreflyApi.ReadOnly.is_test_qualifier pyrefly_api qualifier in
   let add_target result define_name =
-    let target = Target.from_define_name ~pyrefly_api define_name in
+    let target = PyreflyApi.ReadOnly.target_from_define_name pyrefly_api define_name in
     let {
       PyreflyApi.CallableMetadata.is_stub = is_stub_define;
       is_toplevel;

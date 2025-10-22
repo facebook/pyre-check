@@ -687,7 +687,7 @@ let run_taint_analysis
       ()
   in
   let callables_to_definitions_map =
-    Interprocedural.Target.CallablesSharedMemory.from_callables
+    Interprocedural.CallablesSharedMemory.ReadWrite.from_callables
       ~scheduler
       ~scheduler_policy:
         (Scheduler.Policy.from_configuration_or_default
@@ -715,7 +715,7 @@ let run_taint_analysis
       ~taint_configuration_shared_memory
       ~class_hierarchy_graph
       ~callables_to_definitions_map:
-        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~initial_callables
   in
 
@@ -767,7 +767,7 @@ let run_taint_analysis
           ~scheduler_policies
           ~pyre_api
           ~callables_to_definitions_map:
-            (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+            (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
           ~qualifiers)
   in
   let () = StepLogger.finish step_logger in
@@ -790,7 +790,7 @@ let run_taint_analysis
     let callables_to_decorators_map =
       Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.create
         ~callables_to_definitions_map:
-          (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+          (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
         ~scheduler
         ~scheduler_policy:
           (Scheduler.Policy.from_configuration_or_default
@@ -813,7 +813,7 @@ let run_taint_analysis
   let type_of_expression_shared_memory =
     Interprocedural.TypeOfExpressionSharedMemory.create
       ~callables_to_definitions_map:
-        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ()
   in
 
@@ -850,7 +850,7 @@ let run_taint_analysis
           ~check_invariants:(TaintConfiguration.runtime_check_invariants ())
           ~definitions
           ~callables_to_definitions_map:
-            (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+            (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
           ~callables_to_decorators_map:
             (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only
                callables_to_decorators_map)
@@ -1058,7 +1058,7 @@ let run_taint_analysis
           global_constants = Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
           type_of_expression_shared_memory;
           callables_to_definitions_map =
-            Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map;
+            Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map;
         }
       ~callables_to_analyze
       ~max_iterations:150
@@ -1077,7 +1077,7 @@ let run_taint_analysis
         ~scheduler
         ~scheduler_policies
         ~callables_to_definitions_map:
-          (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+          (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
         ~resolve_module_path
         ~callables_to_analyze
         ~all_callables
@@ -1116,7 +1116,7 @@ let run_taint_analysis
     match save_results_to with
     | Some result_directory ->
         let callables_to_definitions_map =
-          Target.CallablesSharedMemory.read_only callables_to_definitions_map
+          Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map
         in
         TaintReporting.save_results_to_directory
           ~scheduler
@@ -1126,7 +1126,8 @@ let run_taint_analysis
           ~local_root
           ~resolve_module_path
           ~resolve_callable_location:
-            (Target.CallablesSharedMemory.ReadOnly.get_location_opt callables_to_definitions_map)
+            (Interprocedural.CallablesSharedMemory.ReadOnly.get_location_opt
+               callables_to_definitions_map)
           ~override_graph:override_graph_shared_memory_read_only
           ~callables
           ~skipped_overrides

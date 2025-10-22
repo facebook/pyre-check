@@ -7,7 +7,6 @@
 
 open Ast
 open Statement
-module AstResult = PyrePysaApi.AstResult
 
 type kind =
   | Normal
@@ -122,8 +121,6 @@ val create_override_from_reference : ?kind:kind -> Reference.t -> t
 val create_object : Reference.t -> t
 
 val from_define : define_name:Ast.Reference.t -> define:Define.t -> t
-
-val from_define_name : pyrefly_api:PyreflyApi.ReadOnly.t -> Reference.t -> t
 
 val from_regular : Regular.t -> t
 
@@ -271,83 +268,3 @@ module MethodKind : sig
     | Class
     | Instance
 end
-
-module CallableSignature : sig
-  type target = t
-
-  type t = {
-    qualifier: Reference.t;
-    define_name: Reference.t;
-    location: Location.t AstResult.t;
-    parameters: Expression.Parameter.t list AstResult.t;
-    return_annotation: Expression.t option AstResult.t;
-    decorators: Expression.t list AstResult.t;
-    captures: string list;
-    method_kind: MethodKind.t option;
-    is_stub_like: bool;
-  }
-
-  val from_define_for_pyre1 : target:target -> qualifier:Reference.t -> Define.t Node.t -> t
-end
-
-(* Exposed for testing purposes only. *)
-val get_signature_and_definition_for_test
-  :  pyre_api:PyrePysaApi.ReadOnly.t ->
-  t ->
-  (CallableSignature.t * Define.t Node.t AstResult.t) option
-
-module CallablesSharedMemory : sig
-  type target = t
-
-  type t
-
-  module DefineAndQualifier : sig
-    type t = {
-      qualifier: Reference.t;
-      define: Define.t Node.t;
-    }
-  end
-
-  module ReadOnly : sig
-    type t
-
-    val get_define : t -> target -> DefineAndQualifier.t AstResult.t
-
-    val get_location : t -> target -> Ast.Location.WithModule.t AstResult.t
-
-    val get_location_opt : t -> target -> Ast.Location.WithModule.t option
-
-    val get_signature : t -> target -> CallableSignature.t option
-
-    val get_qualifier : t -> target -> Reference.t option
-
-    val get_method_kind : t -> target -> bool * bool
-
-    val is_stub_like : t -> target -> bool option
-
-    val get_captures : t -> target -> string list option
-
-    val callable_from_reference : t -> Reference.t -> target option
-
-    val mem : t -> target -> bool
-  end
-
-  val empty : unit -> t
-
-  val from_callables
-    :  scheduler:Scheduler.t ->
-    scheduler_policy:Scheduler.Policy.t ->
-    pyre_api:PyrePysaApi.ReadOnly.t ->
-    target list ->
-    t
-
-  val read_only : t -> ReadOnly.t
-
-  val cleanup : t -> unit
-
-  val add_alist_sequential : t -> (target * CallableSignature.t * Define.t Node.t) list -> t
-end
-
-val class_method_decorators : string list
-
-val static_method_decorators : string list

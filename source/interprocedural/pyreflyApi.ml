@@ -386,7 +386,7 @@ module GlobalCallableId = struct
     | None -> Ok None
 end
 
-module Target = struct
+module PyreflyTarget = struct
   type t =
     | Function of GlobalCallableId.t
     | Override of GlobalCallableId.t
@@ -840,9 +840,10 @@ module ModuleDefinitionsFile = struct
 
   let parse_decorator_callees bindings =
     let extract_global_callable_id_from_target_exn = function
-      | Target.Function global_callable_id -> global_callable_id
+      | PyreflyTarget.Function global_callable_id -> global_callable_id
       | target ->
-          Format.asprintf "Unexpected type of decorator callee: `%a`" Target.pp target |> failwith
+          Format.asprintf "Unexpected type of decorator callee: `%a`" PyreflyTarget.pp target
+          |> failwith
     in
     let open Core.Result.Monad_infix in
     let parse_binding (key, value) =
@@ -850,7 +851,9 @@ module ModuleDefinitionsFile = struct
       >>= fun location ->
       JsonUtil.as_list value
       >>| List.map ~f:(fun json ->
-              json |> Target.from_json |> Result.map ~f:extract_global_callable_id_from_target_exn)
+              json
+              |> PyreflyTarget.from_json
+              |> Result.map ~f:extract_global_callable_id_from_target_exn)
       >>= Result.all
       >>| fun callables -> location, callables
     in
@@ -3679,6 +3682,22 @@ module ReadOnly = struct
     |> SerializableStringMap.find_opt name
     |> assert_shared_memory_key_exists "missing global variable"
     |> fun { GlobalVariable.type_; _ } -> type_
+
+
+  let target_from_define_name api name =
+    let { CallableMetadata.is_property_setter; parent_is_class; _ } =
+      get_callable_metadata api name
+    in
+    let kind =
+      if is_property_setter then
+        Target.PyreflyPropertySetter
+      else
+        Target.Normal
+    in
+    if parent_is_class then
+      Target.create_method_from_reference ~kind name
+    else
+      Target.create_function ~kind name
 
 
   module Type = struct

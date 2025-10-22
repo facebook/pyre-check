@@ -151,7 +151,7 @@ val remove_obscureness : t -> t
 val remove_sinks : t -> t
 
 val add_obscure_sink
-  :  callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+  :  callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
   call_target:Target.t ->
   t ->
   t

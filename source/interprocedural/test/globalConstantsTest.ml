@@ -32,7 +32,7 @@ let test_from_source context =
       Interprocedural.FetchCallables.get all_initial_callables ~definitions:true ~stubs:true
     in
     let callables_to_definitions_map =
-      Interprocedural.Target.CallablesSharedMemory.from_callables
+      CallablesSharedMemory.ReadWrite.from_callables
         ~scheduler
         ~scheduler_policy
         ~pyre_api
@@ -42,7 +42,7 @@ let test_from_source context =
       GlobalConstants.Heap.from_qualifier
         ~pyre_api
         ~callables_to_definitions_map:
-          (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+          (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
         (Reference.create test_source_qualifier)
     in
     let expected =
@@ -128,7 +128,7 @@ let test_from_qualifiers context =
       Interprocedural.FetchCallables.get all_initial_callables ~definitions:true ~stubs:true
     in
     let callables_to_definitions_map =
-      Interprocedural.Target.CallablesSharedMemory.from_callables
+      CallablesSharedMemory.ReadWrite.from_callables
         ~scheduler
         ~scheduler_policy
         ~pyre_api
@@ -140,7 +140,7 @@ let test_from_qualifiers context =
     GlobalConstants.Heap.from_qualifiers
       ~pyre_api
       ~callables_to_definitions_map:
-        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~qualifiers
   in
   let assert_global_constants ~sources ~expected =

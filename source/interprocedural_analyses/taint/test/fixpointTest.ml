@@ -83,7 +83,7 @@ let assert_fixpoint
           global_constants = Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
           type_of_expression_shared_memory;
           callables_to_definitions_map =
-            Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map;
+            Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map;
         }
       ~callables_to_analyze
       ~max_iterations:100

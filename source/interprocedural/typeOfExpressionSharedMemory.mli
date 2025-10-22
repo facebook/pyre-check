@@ -7,7 +7,7 @@
 
 type t
 
-val create : callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t -> unit -> t
+val create : callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t -> unit -> t
 
 (* Compute the type of the given expression, or retrieve its type from the cache. `callable` is the
    callable whose source code contains the given expression. *)

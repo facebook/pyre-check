@@ -141,7 +141,7 @@ let rec resolve_ignoring_errors ~pyre_in_context ~callables_to_definitions_map e
           function_name
           |> Reference.delocalize
           |> Target.create_function
-          |> Target.CallablesSharedMemory.ReadOnly.mem callables_to_definitions_map
+          |> CallablesSharedMemory.ReadOnly.mem callables_to_definitions_map
         then
           (* Treat nested functions as named callables, only if `function_name` refers to functions
              / methods that have bodies. *)

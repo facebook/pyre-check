@@ -64,9 +64,9 @@ module Heap = struct
     qualifier
     |> PyrePysaApi.ReadOnly.get_qualifier_top_level_define_name pyre_api
     |> Target.create_function
-    |> Target.CallablesSharedMemory.ReadOnly.get_define callables_to_definitions_map
+    |> CallablesSharedMemory.ReadOnly.get_define callables_to_definitions_map
     |> AstResult.to_option
-    >>| (fun { Target.CallablesSharedMemory.DefineAndQualifier.define; _ } -> define)
+    >>| (fun { CallablesSharedMemory.DefineAndQualifier.define; _ } -> define)
     >>| Ast.Node.value
     >>| (fun { Ast.Statement.Define.body; _ } -> body)
     |> Option.value ~default:[]

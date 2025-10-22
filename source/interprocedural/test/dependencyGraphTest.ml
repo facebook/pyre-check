@@ -63,7 +63,7 @@ let create_call_graph ?(other_sources = []) ~context source_text =
     Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
   in
   let callables_to_definitions_map =
-    Interprocedural.Target.CallablesSharedMemory.from_callables
+    Interprocedural.CallablesSharedMemory.ReadWrite.from_callables
       ~scheduler
       ~scheduler_policy
       ~pyre_api
@@ -72,7 +72,7 @@ let create_call_graph ?(other_sources = []) ~context source_text =
   let type_of_expression_shared_memory =
     Interprocedural.TypeOfExpressionSharedMemory.create
       ~callables_to_definitions_map:
-        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ()
   in
   let fold call_graph callable =
@@ -84,7 +84,7 @@ let create_call_graph ?(other_sources = []) ~context source_text =
           (Some (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
         ~attribute_targets:(Target.HashSet.create ())
         ~callables_to_definitions_map:
-          (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+          (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
         ~callables_to_decorators_map:
           (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.empty ()
           |> Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only)
@@ -98,7 +98,7 @@ let create_call_graph ?(other_sources = []) ~context source_text =
   in
   let call_graph = List.fold ~init:CallGraph.WholeProgramCallGraph.empty ~f:fold definitions in
   let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory in
-  let () = Target.CallablesSharedMemory.cleanup callables_to_definitions_map in
+  let () = Interprocedural.CallablesSharedMemory.ReadWrite.cleanup callables_to_definitions_map in
   call_graph
 
 

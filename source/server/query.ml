@@ -739,7 +739,7 @@ let rec process_request_exn
             ()
         in
         let callables_to_definitions_map =
-          Interprocedural.Target.CallablesSharedMemory.from_callables
+          Interprocedural.CallablesSharedMemory.ReadWrite.from_callables
             ~scheduler
             ~scheduler_policy:
               (Scheduler.Policy.fixed_chunk_count
@@ -759,7 +759,7 @@ let rec process_request_exn
         ~scheduler_policies:Configuration.SchedulerPolicies.empty
         ~class_hierarchy_graph
         ~callables_to_definitions_map:
-          (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+          (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
         ~source_sink_filter:None
         ~verbose:false
         ~error_on_unexpected_models:true

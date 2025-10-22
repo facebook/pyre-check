@@ -807,10 +807,10 @@ let find_base_methods
   =
   let find_instance_method parent_class =
     let base_method = Target.create_method ~kind (Reference.create parent_class) method_name in
-    match
-      Target.CallablesSharedMemory.ReadOnly.get_signature callables_to_definitions_map base_method
-    with
-    | Some { Target.CallableSignature.method_kind = Some Target.MethodKind.Instance; _ } ->
+    match CallablesSharedMemory.ReadOnly.get_signature callables_to_definitions_map base_method with
+    | Some
+        { CallablesSharedMemory.CallableSignature.method_kind = Some Target.MethodKind.Instance; _ }
+      ->
         Some base_method
     | _ -> None
   in
@@ -1181,7 +1181,7 @@ module type QUERY_KIND = sig
 
   val make_modelable
     :  pyre_api:PyrePysaApi.ReadOnly.t ->
-    callables_to_definitions_map:Interprocedural.Target.CallablesSharedMemory.ReadOnly.t ->
+    callables_to_definitions_map:Interprocedural.CallablesSharedMemory.ReadOnly.t ->
     Target.t ->
     Modelable.t
 

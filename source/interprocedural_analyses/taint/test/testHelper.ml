@@ -483,7 +483,7 @@ module TestEnvironment = struct
     class_interval_graph_shared_memory: ClassIntervalSetGraph.SharedMemory.t;
     global_constants: GlobalConstants.SharedMemory.t;
     stubs_shared_memory_handle: Target.HashsetSharedMemory.t;
-    callables_to_definitions_map: Interprocedural.Target.CallablesSharedMemory.t;
+    callables_to_definitions_map: Interprocedural.CallablesSharedMemory.ReadWrite.t;
     callables_to_decorators_map: Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.t;
     type_of_expression_shared_memory: Interprocedural.TypeOfExpressionSharedMemory.t;
   }
@@ -524,7 +524,7 @@ module TestEnvironment = struct
       class_interval_graph;
     Target.HashsetSharedMemory.cleanup stubs_shared_memory_handle;
     GlobalConstants.SharedMemory.cleanup global_constants;
-    Interprocedural.Target.CallablesSharedMemory.cleanup callables_to_definitions_map;
+    Interprocedural.CallablesSharedMemory.ReadWrite.cleanup callables_to_definitions_map;
     Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.cleanup
       callables_to_decorators_map
 end
@@ -628,7 +628,7 @@ let initialize
     Interprocedural.FetchCallables.get all_initial_callables ~definitions:true ~stubs:true
   in
   let callables_to_definitions_map =
-    Interprocedural.Target.CallablesSharedMemory.from_callables
+    Interprocedural.CallablesSharedMemory.ReadWrite.from_callables
       ~scheduler
       ~scheduler_policy
       ~pyre_api
@@ -637,7 +637,7 @@ let initialize
   let type_of_expression_shared_memory =
     Interprocedural.TypeOfExpressionSharedMemory.create
       ~callables_to_definitions_map:
-        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ()
   in
   let user_models, model_query_results =
@@ -679,7 +679,8 @@ let initialize
             ~scheduler_policies:Configuration.SchedulerPolicies.empty
             ~class_hierarchy_graph
             ~callables_to_definitions_map:
-              (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+              (Interprocedural.CallablesSharedMemory.ReadOnly.read_only
+                 callables_to_definitions_map)
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~verbose:false
             ~error_on_unexpected_models:true
@@ -704,7 +705,8 @@ let initialize
             ~scheduler
             ~static_analysis_configuration
             ~callables_to_definitions_map:
-              (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+              (Interprocedural.CallablesSharedMemory.ReadOnly.read_only
+                 callables_to_definitions_map)
             ~stubs:(Target.HashSet.of_list stubs)
             ~initial_models:models
         in
@@ -738,7 +740,7 @@ let initialize
     GlobalConstants.Heap.from_qualifier
       ~pyre_api
       ~callables_to_definitions_map:
-        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       qualifier
     |> GlobalConstants.SharedMemory.from_heap
   in
@@ -748,7 +750,7 @@ let initialize
   let callables_to_decorators_map =
     CallGraph.CallableToDecoratorsMap.SharedMemory.create
       ~callables_to_definitions_map:
-        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~scheduler
       ~scheduler_policy
       definitions
@@ -772,7 +774,7 @@ let initialize
       ~check_invariants:true
       ~definitions
       ~callables_to_definitions_map:
-        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~callables_to_decorators_map:
         (CallGraph.CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
       ~type_of_expression_shared_memory
@@ -1064,11 +1066,11 @@ let end_to_end_integration_test path context =
             type_of_expression_shared_memory =
               Interprocedural.TypeOfExpressionSharedMemory.create
                 ~callables_to_definitions_map:
-                  (Interprocedural.Target.CallablesSharedMemory.read_only
+                  (Interprocedural.CallablesSharedMemory.ReadOnly.read_only
                      callables_to_definitions_map)
                 ();
             callables_to_definitions_map =
-              Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map;
+              Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map;
           }
         ~callables_to_analyze
         ~max_iterations:100
@@ -1091,7 +1093,7 @@ let end_to_end_integration_test path context =
     in
     let serialized_models =
       let callables_to_definitions_map =
-        Target.CallablesSharedMemory.read_only callables_to_definitions_map
+        Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map
       in
       callables_to_analyze
       |> List.rev_append (TaintFixpoint.SharedModels.targets initial_models)
@@ -1101,7 +1103,8 @@ let end_to_end_integration_test path context =
            ~fixpoint_state:(TaintFixpoint.State.read_only fixpoint.TaintFixpoint.state)
            ~resolve_module_path
            ~resolve_callable_location:
-             (Target.CallablesSharedMemory.ReadOnly.get_location_opt callables_to_definitions_map)
+             (Interprocedural.CallablesSharedMemory.ReadOnly.get_location_opt
+                callables_to_definitions_map)
            ~override_graph:override_graph_shared_memory_read_only
            ~dump_override_models:true
            ~sorted:true

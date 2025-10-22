@@ -34,7 +34,7 @@ module T =
 
 type t = {
   handle: T.t;
-  callables_to_definitions_map: Target.CallablesSharedMemory.ReadOnly.t;
+  callables_to_definitions_map: CallablesSharedMemory.ReadOnly.t;
 }
 
 let create ~callables_to_definitions_map () = { handle = T.create (); callables_to_definitions_map }

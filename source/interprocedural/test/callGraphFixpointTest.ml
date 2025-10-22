@@ -62,7 +62,7 @@ let assert_higher_order_call_graph_fixpoint
     Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
   in
   let callables_to_definitions_map =
-    Interprocedural.Target.CallablesSharedMemory.from_callables
+    CallablesSharedMemory.ReadWrite.from_callables
       ~scheduler
       ~scheduler_policy
       ~pyre_api
@@ -71,13 +71,13 @@ let assert_higher_order_call_graph_fixpoint
   let type_of_expression_shared_memory =
     Interprocedural.TypeOfExpressionSharedMemory.create
       ~callables_to_definitions_map:
-        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ()
   in
   let callables_to_decorators_map =
     CallGraph.CallableToDecoratorsMap.SharedMemory.create
       ~callables_to_definitions_map:
-        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~scheduler
       ~scheduler_policy
       definitions
@@ -94,7 +94,7 @@ let assert_higher_order_call_graph_fixpoint
       ~skip_analysis_targets
       ~definitions
       ~callables_to_definitions_map:
-        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~callables_to_decorators_map:
         (CallGraph.CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
       ~type_of_expression_shared_memory
@@ -152,7 +152,7 @@ let assert_higher_order_call_graph_fixpoint
   OverrideGraph.SharedMemory.cleanup override_graph_shared_memory;
   SharedMemory.cleanup define_call_graphs;
   CallGraphFixpoint.cleanup ~keep_models:false fixpoint_state.CallGraphFixpoint.fixpoint;
-  Target.CallablesSharedMemory.cleanup callables_to_definitions_map;
+  CallablesSharedMemory.ReadWrite.cleanup callables_to_definitions_map;
   ()
 
 

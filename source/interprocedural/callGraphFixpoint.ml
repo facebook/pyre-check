@@ -12,7 +12,7 @@ module CallGraphAnalysis = struct
     type t = {
       pyre_api: PyrePysaApi.ReadOnly.t;
       define_call_graphs: CallGraph.SharedMemory.ReadOnly.t;
-      callables_to_definitions_map: Target.CallablesSharedMemory.ReadOnly.t;
+      callables_to_definitions_map: CallablesSharedMemory.ReadOnly.t;
       type_of_expression_shared_memory: TypeOfExpressionSharedMemory.t;
       skip_analysis_targets: Target.HashSet.t;
       called_when_parameter: Target.HashSet.t;
@@ -102,10 +102,10 @@ module CallGraphAnalysis = struct
       ~previous_model:_
       ~get_callee_model
     =
-    let { Target.CallablesSharedMemory.DefineAndQualifier.qualifier; define } =
+    let { CallablesSharedMemory.DefineAndQualifier.qualifier; define } =
       callable
       |> Target.strip_parameters
-      |> Target.CallablesSharedMemory.ReadOnly.get_define callables_to_definitions_map
+      |> CallablesSharedMemory.ReadOnly.get_define callables_to_definitions_map
       |> PyrePysaApi.AstResult.value_exn
            ~message:(Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable)
     in
@@ -171,7 +171,7 @@ module CallGraphAnalysis = struct
         |> Target.Set.filter (fun callable ->
                callable
                |> Target.strip_parameters
-               |> Target.CallablesSharedMemory.ReadOnly.mem callables_to_definitions_map)
+               |> CallablesSharedMemory.ReadOnly.mem callables_to_definitions_map)
       in
       if CallGraph.debug_higher_order_call_graph (Ast.Node.value define) then (
         Log.dump
@@ -411,7 +411,7 @@ let compute
           CallGraphAnalysis.Context.pyre_api;
           define_call_graphs = CallGraph.SharedMemory.read_only define_call_graphs;
           callables_to_definitions_map =
-            Target.CallablesSharedMemory.read_only callables_to_definitions_map;
+            CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map;
           type_of_expression_shared_memory;
           skip_analysis_targets;
           called_when_parameter;
@@ -444,7 +444,7 @@ let compute
       ~scheduler
       ~static_analysis_configuration
       ~callables_to_definitions_map:
-        (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~resolve_module_path
       ~get_call_graph:(get_model_from_readonly_state ~readonly_state)
       ~json_kind:NewlineDelimitedJson.Kind.HigherOrderCallGraph

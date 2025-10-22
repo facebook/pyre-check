@@ -19,7 +19,7 @@ val compute
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) option ->
   pyre_api:PyrePysaApi.ReadOnly.t ->
-  callables_to_definitions_map:Target.CallablesSharedMemory.t ->
+  callables_to_definitions_map:CallablesSharedMemory.ReadWrite.t ->
   callables_to_decorators_map:CallGraph.CallableToDecoratorsMap.SharedMemory.t ->
   type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
   call_graph:CallGraph.SharedMemory.call_graphs ->
