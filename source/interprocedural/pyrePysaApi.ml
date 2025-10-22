@@ -58,7 +58,6 @@ module ReadWrite = struct
              ~scheduler
              ~scheduler_policies
              ~configuration
-             ~store_type_of_expressions:true
              pyrefly_results)
     | None ->
         Pyre1
@@ -95,7 +94,18 @@ module ReadWrite = struct
 
   let purge_sources_from_shared_memory = function
     | Pyre1 pyre_api -> Pyre1Api.ReadWrite.purge_sources_from_shared_memory pyre_api
-    | Pyrefly _ -> failwith "unimplemented: ReadWrite.purge_sources_from_shared_memory"
+    | Pyrefly _ -> () (* Nothing to do, whole source AST are not stored in shared memory. *)
+
+
+  let parse_type_of_expressions api ~scheduler ~scheduler_policies =
+    match api with
+    | Pyre1 _ -> api (* Nothing to do, types are inferred when requested. *)
+    | Pyrefly pyrefly_api ->
+        Pyrefly
+          (PyreflyApi.ReadWrite.parse_type_of_expressions
+             pyrefly_api
+             ~scheduler
+             ~scheduler_policies)
 end
 
 module ReadOnly = struct

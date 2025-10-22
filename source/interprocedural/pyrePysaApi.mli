@@ -61,6 +61,12 @@ module ReadWrite : sig
   val save : t -> unit
 
   val purge_sources_from_shared_memory : t -> unit
+
+  val parse_type_of_expressions
+    :  t ->
+    scheduler:Scheduler.t ->
+    scheduler_policies:Configuration.SchedulerPolicies.t ->
+    t
 end
 
 module ReadOnly : sig

@@ -3574,13 +3574,21 @@ module ScratchPyreflyProject = struct
         Interprocedural.PyreflyApi.ReadWrite.create_from_directory
           ~scheduler:(Scheduler.create_sequential ())
           ~scheduler_policies:Configuration.SchedulerPolicies.empty
-          ~store_type_of_expressions:requires_type_of_expressions
           ~configuration
           result_directory
       with
       | Interprocedural.PyreflyApi.PyreflyFileFormatError { path; error } ->
           failwith
             (Format.asprintf "%a: %a" PyrePath.pp path Interprocedural.PyreflyApi.Error.pp error)
+    in
+    let api =
+      if requires_type_of_expressions then
+        Interprocedural.PyreflyApi.ReadWrite.parse_type_of_expressions
+          api
+          ~scheduler:(Scheduler.create_sequential ())
+          ~scheduler_policies:Configuration.SchedulerPolicies.empty
+      else
+        api
     in
     let () =
       (* Clean shared memory up after the test *)

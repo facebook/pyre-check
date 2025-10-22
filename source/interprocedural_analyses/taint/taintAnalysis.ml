@@ -990,6 +990,13 @@ let run_taint_analysis
       ~call_graph_fixpoint:higher_order_call_graph_fixpoint
   in
 
+  let pyre_read_write_api =
+    PyrePysaApi.ReadWrite.parse_type_of_expressions
+      pyre_read_write_api
+      ~scheduler
+      ~scheduler_policies
+  in
+
   let () = PyrePysaApi.ReadWrite.purge_sources_from_shared_memory pyre_read_write_api in
 
   let initial_models =

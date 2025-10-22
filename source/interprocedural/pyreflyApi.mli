@@ -79,8 +79,13 @@ module ReadWrite : sig
     :  scheduler:Scheduler.t ->
     scheduler_policies:Configuration.SchedulerPolicies.t ->
     configuration:Configuration.Analysis.t ->
-    store_type_of_expressions:bool ->
     PyrePath.t ->
+    t
+
+  val parse_type_of_expressions
+    :  t ->
+    scheduler:Scheduler.t ->
+    scheduler_policies:Configuration.SchedulerPolicies.t ->
     t
 
   val cleanup : t -> scheduler:Scheduler.t -> unit
