@@ -194,13 +194,19 @@ module CallableToDecoratorsMap = struct
     callable
     |> Option.some_if (Target.is_normal callable)
     >>| Target.CallablesSharedMemory.ReadOnly.get_signature callables_to_definitions_map
-    >>= AstResult.to_option
-    >>= fun { Target.CallableSignature.decorators; location = define_location; _ } ->
-    let decorators = decorators |> List.filter ~f:filter_decorator |> List.rev in
-    if List.is_empty decorators then
-      None
-    else
-      Some { Decorators.decorators; define_location }
+    >>= function
+    | Some
+        {
+          Target.CallableSignature.decorators = AstResult.Some decorators;
+          location = AstResult.Some define_location;
+          _;
+        } ->
+        let decorators = decorators |> List.filter ~f:filter_decorator |> List.rev in
+        if List.is_empty decorators then
+          None
+        else
+          Some { Decorators.decorators; define_location }
+    | _ -> None
 
 
   module SharedMemory = struct
@@ -2070,7 +2076,6 @@ struct
     let resolve_module_path = Option.value ~default:(fun _ -> None) resolve_module_path in
     callable
     |> Target.CallablesSharedMemory.ReadOnly.get_qualifier callables_to_definitions_map
-    |> AstResult.to_option
     >>= resolve_module_path
     >>| (function
           | { RepositoryPath.filename = Some filename; _ } ->
@@ -4303,10 +4308,13 @@ let resolve_callees
                 Target.CallablesSharedMemory.ReadOnly.get_signature
                   callables_to_definitions_map
                   callee.target
-                |> AstResult.to_option
-                >>| (fun { Target.CallableSignature.parameters; is_stub; _ } ->
-                      is_stub
-                      || not (List.exists parameters ~f:(parameter_has_annotation callable_class)))
+                >>| (fun { Target.CallableSignature.parameters; is_stub_like; _ } ->
+                      is_stub_like
+                      ||
+                      match parameters with
+                      | AstResult.Some parameters ->
+                          not (List.exists parameters ~f:(parameter_has_annotation callable_class))
+                      | _ -> true)
                 |> Option.value ~default:true
             | _ -> true)
         | _ -> true
@@ -5534,16 +5542,16 @@ module HigherOrderCallGraph = struct
               Context.callables_to_definitions_map
               target
           with
-          | AstResult.Some { Target.CallableSignature.is_stub; parameters; _ } ->
-              if is_stub then
+          | Some { Target.CallableSignature.is_stub_like; parameters; _ } ->
+              if is_stub_like then
                 let () = log "Callable `%a` is a stub" Target.pp_pretty_with_kind target in
                 None
               else
-                Some
-                  (parameters
-                  |> TaintAccessPath.normalize_parameters
-                  |> List.map ~f:(fun { TaintAccessPath.NormalizedParameter.root; _ } -> root))
-          | _ ->
+                parameters
+                |> AstResult.to_option
+                >>| TaintAccessPath.normalize_parameters
+                >>| List.map ~f:(fun { TaintAccessPath.NormalizedParameter.root; _ } -> root)
+          | None ->
               log "Cannot find define for callable `%a`" Target.pp_pretty_with_kind target;
               None
       in
@@ -6342,7 +6350,6 @@ module HigherOrderCallGraph = struct
                                 (to avoid bloat), use this API to query the definition. *)
                           Target.CallablesSharedMemory.ReadOnly.get_captures
                             Context.callables_to_definitions_map
-                          |> AstResult.to_option
                       | _ ->
                           Format.asprintf
                             "Expect a single `define_target` but got `[%s]`"

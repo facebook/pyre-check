@@ -43,10 +43,10 @@ let test_get_module_and_definition context =
       target
       |> Target.from_regular
       |> Target.get_signature_and_definition_for_test ~pyre_api
-      |> PyrePysaApi.AstResult.to_option
-      >>| fun ( { Target.CallableSignature.qualifier; _ },
-                { Node.value = { Statement.Define.body; _ }; _ } ) ->
-      qualifier, body
+      >>= fun ({ Target.CallableSignature.qualifier; _ }, define) ->
+      PyrePysaApi.AstResult.to_option define
+      >>| (fun { Node.value = { Statement.Define.body; _ }; _ } -> body)
+      >>| fun define -> qualifier, define
     in
     let equal (first_qualifier, first_body) (second_qualifier, second_body) =
       Reference.equal first_qualifier second_qualifier

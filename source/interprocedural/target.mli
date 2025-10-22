@@ -277,14 +277,14 @@ module CallableSignature : sig
 
   type t = {
     qualifier: Reference.t;
-    location: Location.t;
     define_name: Reference.t;
-    parameters: Expression.Parameter.t list;
-    return_annotation: Expression.t option;
-    decorators: Expression.t list;
+    location: Location.t AstResult.t;
+    parameters: Expression.Parameter.t list AstResult.t;
+    return_annotation: Expression.t option AstResult.t;
+    decorators: Expression.t list AstResult.t;
     captures: string list;
     method_kind: MethodKind.t option;
-    is_stub: bool;
+    is_stub_like: bool;
   }
 
   val from_define_for_pyre1 : target:target -> qualifier:Reference.t -> Define.t Node.t -> t
@@ -294,7 +294,7 @@ end
 val get_signature_and_definition_for_test
   :  pyre_api:PyrePysaApi.ReadOnly.t ->
   t ->
-  (CallableSignature.t * Define.t Node.t) AstResult.t
+  (CallableSignature.t * Define.t Node.t AstResult.t) option
 
 module CallablesSharedMemory : sig
   type target = t
@@ -317,15 +317,15 @@ module CallablesSharedMemory : sig
 
     val get_location_opt : t -> target -> Ast.Location.WithModule.t option
 
-    val get_signature : t -> target -> CallableSignature.t AstResult.t
+    val get_signature : t -> target -> CallableSignature.t option
 
-    val get_qualifier : t -> target -> Reference.t AstResult.t
+    val get_qualifier : t -> target -> Reference.t option
 
     val get_method_kind : t -> target -> bool * bool
 
     val is_stub_like : t -> target -> bool option
 
-    val get_captures : t -> target -> string list AstResult.t
+    val get_captures : t -> target -> string list option
 
     val callable_from_reference : t -> Reference.t -> target option
 
