@@ -6,11 +6,10 @@
  *)
 
 open Ast
-open Expression
 
 (** Represents type information about the return type of a call. *)
 module ReturnType : sig
-  type t = PyrePysaApi.ScalarTypeProperties.t [@@deriving equal, show]
+  type t = Analysis.PyrePysaEnvironment.ScalarTypeProperties.t [@@deriving equal, show]
 
   val unknown : t
 
@@ -21,6 +20,12 @@ module ReturnType : sig
   val integer : t
 
   val to_json : t -> Yojson.Safe.t
+end
+
+module Indexer : sig
+  type t
+
+  val create : unit -> t
 end
 
 (** A specific target of a given call, with extra information. *)
@@ -44,19 +49,7 @@ module CallTarget : sig
   }
   [@@deriving equal, show, compare]
 
-  module Set : sig
-    type call_target = t
-
-    type t [@@deriving show, equal]
-
-    val of_list : call_target list -> t
-
-    val join : t -> t -> t
-
-    val bottom : t
-
-    val is_bottom : t -> bool
-  end
+  module Set : Abstract.SetDomain.S with type element = t
 
   val target : t -> Target.t
 
@@ -84,6 +77,10 @@ module CallTarget : sig
     t
 
   val to_json : t -> Yojson.Safe.t
+
+  val map_target : f:(Target.t -> Target.t) -> t -> t
+
+  val regenerate_index : indexer:Indexer.t -> t -> t
 end
 
 module ImplicitArgument : sig
@@ -126,6 +123,8 @@ module Unresolved : sig
   [@@deriving equal, show]
 
   val is_unresolved : t -> bool
+
+  val join : t -> t -> t
 end
 
 (** Information about an argument being a callable. *)
@@ -140,6 +139,8 @@ module HigherOrderParameter : sig
   [@@deriving equal, show]
 
   val to_json : t -> Yojson.Safe.t
+
+  val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
 
 (** Mapping from a parameter index to its HigherOrderParameter, if any. *)
@@ -154,9 +155,17 @@ module HigherOrderParameterMap : sig
 
   val to_list : t -> HigherOrderParameter.t list
 
+  val find_opt : t -> int -> HigherOrderParameter.t option
+
+  val add : t -> HigherOrderParameter.t -> t
+
+  val join : t -> t -> t
+
   val first_index : t -> HigherOrderParameter.t option
 
   val to_json : t -> Yojson.Safe.t
+
+  val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
 
 module ShimTarget : sig
@@ -168,6 +177,8 @@ module ShimTarget : sig
   [@@deriving equal, show]
 
   val to_json : t -> Yojson.Safe.t
+
+  val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
 
 (** An aggregate of all possible callees at a call site. *)
@@ -214,7 +225,16 @@ module CallCallees : sig
   (* When `debug` is true, log the message. *)
   val unresolved : ?debug:bool -> reason:Unresolved.reason -> message:string Lazy.t -> unit -> t
 
+  val default_to_unresolved
+    :  ?debug:bool ->
+    reason:Unresolved.reason ->
+    message:string Lazy.t ->
+    t option ->
+    t
+
   val is_partially_resolved : t -> bool
+
+  val join : t -> t -> t
 
   val pp_option : Format.formatter -> t option -> unit
 
@@ -229,6 +249,12 @@ module CallCallees : sig
   val is_object_init : CallTarget.t list -> bool
 
   val to_json : t -> Yojson.Safe.t
+
+  val map_target : f:(Target.t -> Target.t) -> t -> t
+
+  val should_redirect_to_decorated : t -> bool
+
+  val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
 
 (** An aggregrate of all possible callees for a given attribute access. *)
@@ -259,6 +285,8 @@ module AttributeAccessCallees : sig
   val empty : t
 
   val to_json : t -> Yojson.Safe.t
+
+  val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
 
 (** An aggregate of all possible callees for a given identifier expression, i.e `foo`. *)
@@ -283,6 +311,8 @@ module IdentifierCallees : sig
     t
 
   val to_json : t -> Yojson.Safe.t
+
+  val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
 
 (** Artificial callees for distinguishing f-strings within a function. *)
@@ -292,6 +322,8 @@ module FormatStringArtificialCallees : sig
   val from_f_string_targets : CallTarget.t list -> t
 
   val to_json : t -> Yojson.Safe.t
+
+  val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
 
 (** Implicit callees for any expression that is stringified. *)
@@ -301,6 +333,8 @@ module FormatStringStringifyCallees : sig
   val from_stringify_targets : CallTarget.t list -> t
 
   val to_json : t -> Yojson.Safe.t
+
+  val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
 
 module DefineCallees : sig
@@ -317,6 +351,8 @@ module DefineCallees : sig
     t
 
   val to_json : t -> Yojson.Safe.t
+
+  val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
 
 (* Artificial callees on returned expressions. *)
@@ -330,6 +366,8 @@ module ReturnShimCallees : sig
     arguments: argument_mapping list;
   }
   [@@deriving equal, show]
+
+  val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
 
 (** An aggregate of all possible callees for an arbitrary expression. *)
@@ -363,17 +401,9 @@ module ExpressionCallees : sig
   val dedup_and_sort : t -> t
 
   val equal_ignoring_types : t -> t -> bool
-end
 
-(* Exposed for rare use cases, such as resolving the callees of decorators. *)
-val resolve_callees_from_type_external
-  :  pyre_in_context:PyrePysaApi.InContext.t ->
-  callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
-  override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
-  return_type:Type.t lazy_t ->
-  ?dunder_call:bool ->
-  Expression.t ->
-  CallCallees.t
+  val regenerate_call_indices : indexer:Indexer.t -> t -> t
+end
 
 (** The call graph of a function or method definition. This is for testing purpose only. *)
 module DefineCallGraphForTest : sig
@@ -399,12 +429,18 @@ module DefineCallGraph : sig
 
   val empty : t
 
+  val is_empty : t -> bool
+
   val equal_ignoring_types : t -> t -> bool
 
   (** Return all callees of the call graph, depending on the use case. *)
   val all_targets : use_case:AllTargetsUseCase.t -> t -> Target.t list
 
   val for_test : t -> DefineCallGraphForTest.t
+
+  val copy : t -> t
+
+  val merge : t -> t -> t
 
   val resolve_call
     :  t ->
@@ -434,189 +470,125 @@ module DefineCallGraph : sig
     location:Ast.Location.t ->
     FormatStringStringifyCallees.t option
 
+  val resolve_define : t -> define_location:Location.t -> DefineCallees.t option
+
   val resolve_return : t -> statement_location:Location.t -> ReturnShimCallees.t option
+
+  val add_call_callees
+    :  debug:bool ->
+    caller:Target.t ->
+    location:Ast.Location.t ->
+    call:Ast.Expression.Call.t ->
+    callees:CallCallees.t ->
+    t ->
+    t
+
+  val add_identifier_callees
+    :  debug:bool ->
+    caller:Target.t ->
+    location:Ast.Location.t ->
+    identifier:string ->
+    callees:IdentifierCallees.t ->
+    t ->
+    t
+
+  val add_define_callees
+    :  debug:bool ->
+    caller:Target.t ->
+    define:Ast.Statement.Define.t ->
+    define_location:Ast.Location.t ->
+    callees:DefineCallees.t ->
+    t ->
+    t
+
+  val add_return_callees
+    :  debug:bool ->
+    caller:Target.t ->
+    return_expression:Ast.Expression.Expression.t ->
+    statement_location:Ast.Location.t ->
+    callees:ReturnShimCallees.t ->
+    t ->
+    t
+
+  val set_call_callees
+    :  location:Ast.Location.t ->
+    call:Ast.Expression.Call.t ->
+    callees:CallCallees.t ->
+    t ->
+    t
+
+  val set_identifier_callees
+    :  location:Ast.Location.t ->
+    identifier:string ->
+    identifier_callees:IdentifierCallees.t ->
+    t ->
+    t
+
+  val add_attribute_access_callees
+    :  debug:bool ->
+    caller:Target.t ->
+    location:Ast.Location.t ->
+    attribute_access:Ast.Expression.Name.Attribute.t ->
+    callees:AttributeAccessCallees.t ->
+    t ->
+    t
+
+  val set_attribute_access_callees
+    :  location:Ast.Location.t ->
+    attribute_access:Ast.Expression.Name.Attribute.t ->
+    callees:AttributeAccessCallees.t ->
+    t ->
+    t
+
+  val add_format_string_articifial_callees
+    :  debug:bool ->
+    caller:Target.t ->
+    location:Ast.Location.t ->
+    format_string:Ast.Expression.Expression.expression ->
+    callees:FormatStringArtificialCallees.t ->
+    t ->
+    t
+
+  val add_format_string_stringify_callees
+    :  debug:bool ->
+    caller:Target.t ->
+    location:Ast.Location.t ->
+    substring:Ast.Expression.Expression.expression ->
+    callees:FormatStringStringifyCallees.t ->
+    t ->
+    t
+
+  val set_define_callees : define_location:Ast.Location.t -> callees:DefineCallees.t -> t -> t
+
+  val filter_empty_attribute_access : t -> t
+
+  val map_target
+    :  f:(Target.t -> Target.t) ->
+    map_call_if:(CallCallees.t -> bool) ->
+    map_return_if:(ReturnShimCallees.t -> bool) ->
+    t ->
+    t
 
   (* Ensure the taint analysis does not use these targets. *)
   val drop_decorated_targets : t -> t
-end
 
-(* A map from each callable to its decorators. *)
-module CallableToDecoratorsMap : sig
-  module DecoratedDefineBody : sig
-    type t = {
-      decorated_callable: Target.t;
-      define_name: Reference.t;
-      return_expression: Expression.t;
-      attribute_access: Name.t;
-      attribute_access_location: Location.t;
-    }
-  end
+  val dedup_and_sort : t -> t
 
-  module SharedMemory : sig
-    type t
+  val regenerate_call_indices : indexer:Indexer.t -> t -> t
 
-    module ReadOnly : sig
-      type t
-
-      val get_decorators : t -> Target.t -> Expression.t list option
-    end
-
-    val read_only : t -> ReadOnly.t
-
-    val empty : unit -> t
-
-    (* We assume `DecoratorPreprocessing.setup_preprocessing` is called before since we use its
-       shared memory here. *)
-    val create
-      :  callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
-      scheduler:Scheduler.t ->
-      scheduler_policy:Scheduler.Policy.t ->
-      Target.t list ->
-      t
-
-    val cleanup : t -> unit
-
-    val save_decorator_counts_to_directory
-      :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
-      scheduler:Scheduler.t ->
-      t ->
-      unit
-
-    val decorated_callable_body : ReadOnly.t -> Target.t -> DecoratedDefineBody.t option
-
-    val register_decorator_defines
-      :  t ->
-      CallablesSharedMemory.ReadWrite.t ->
-      CallablesSharedMemory.ReadWrite.t
-
-    val decorated_targets : t -> Target.t list
-  end
-end
-
-val call_graph_of_define
-  :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  pyre_api:PyrePysaApi.ReadOnly.t ->
-  override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
-  attribute_targets:Target.HashSet.t ->
-  callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
-  callables_to_decorators_map:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
-  type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
-  check_invariants:bool ->
-  qualifier:Reference.t ->
-  callable:Target.t ->
-  define:Ast.Statement.Define.t Node.t ->
-  DefineCallGraph.t
-
-(* This must be called *once* before analyzing a statement in a control flow graph. *)
-val preprocess_statement
-  :  pyre_in_context:PyrePysaApi.InContext.t ->
-  type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
-  callable:Target.t ->
-  Ast.Statement.t ->
-  Ast.Statement.t
-
-(* This must be called *once* before analyzing a generator. *)
-val preprocess_generator
-  :  pyre_in_context:PyrePysaApi.InContext.t ->
-  type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
-  callable:Target.t ->
-  Ast.Expression.Comprehension.Generator.t ->
-  Ast.Statement.Assign.t * PyrePysaApi.InContext.t
-
-val preprocess_parameter_default_value
-  :  pyre_in_context:PyrePysaApi.InContext.t ->
-  type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
-  callable:Target.t ->
-  Ast.Expression.t ->
-  Ast.Expression.t
-
-val call_graph_of_callable
-  :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  pyre_api:PyrePysaApi.ReadOnly.t ->
-  override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
-  attribute_targets:Target.HashSet.t ->
-  callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
-  callables_to_decorators_map:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
-  type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
-  check_invariants:bool ->
-  callable:Target.t ->
-  DefineCallGraph.t
-
-val call_graph_of_decorated_callable
-  :  debug:bool ->
-  pyre_api:PyrePysaApi.ReadOnly.t ->
-  override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
-  callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
-  callables_to_decorators_map:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
-  type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
-  callable:Target.t ->
-  body:CallableToDecoratorsMap.DecoratedDefineBody.t ->
-  DefineCallGraph.t
-
-(* The result of finding higher order function callees inside a callable. *)
-module HigherOrderCallGraph : sig
-  type t = {
-    returned_callables: CallTarget.Set.t;
-    call_graph: DefineCallGraph.t;
-        (* Higher order function callees (i.e., parameterized targets) and potentially regular
-           callees. *)
-  }
-  [@@deriving equal, show]
-
-  val empty : t
-
-  val merge : t -> t -> t
+  val to_json : t -> Yojson.Safe.t
 
   val save_to_directory
     :  scheduler:Scheduler.t ->
     static_analysis_configuration:Configuration.StaticAnalysis.t ->
-    callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
-    resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
+    resolve_qualifier:(Target.t -> Ast.Reference.t option) ->
+    resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) option ->
     get_call_graph:(Target.t -> t option) ->
     json_kind:NewlineDelimitedJson.Kind.t ->
     filename_prefix:string ->
     callables:Target.t list ->
     unit
-
-  val is_empty : t -> bool
-
-  val to_json_alist : t -> (string * Yojson.Safe.t) list
-
-  module State : sig
-    type t
-
-    val empty : t
-
-    val initialize_from_roots
-      :  callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
-      (Analysis.TaintAccessPath.Root.t * Target.t) list ->
-      t
-
-    val initialize_from_callable
-      :  callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
-      Target.t ->
-      t
-  end
 end
-
-val debug_higher_order_call_graph : Ast.Statement.Define.t -> bool
-
-val higher_order_call_graph_of_define
-  :  define_call_graph:DefineCallGraph.t ->
-  pyre_api:PyrePysaApi.ReadOnly.t ->
-  callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
-  type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
-  skip_analysis_targets:Target.HashSet.t ->
-  called_when_parameter:Target.HashSet.t ->
-  qualifier:Reference.t ->
-  callable:Target.t ->
-  define:Ast.Statement.Define.t Node.t ->
-  initial_state:HigherOrderCallGraph.State.t ->
-  get_callee_model:(Target.t -> HigherOrderCallGraph.t option) ->
-  profiler:CallGraphProfiler.t ->
-  maximum_target_depth:int ->
-  maximum_parameterized_targets_at_call_site:int option ->
-  HigherOrderCallGraph.t
 
 (** Whole-program call graph, stored in the ocaml heap. This is a mapping from a callable to all its
     callees. *)
@@ -651,11 +623,27 @@ module SharedMemory : sig
     val get : t -> cache:bool -> callable:Target.t -> DefineCallGraph.t option
   end
 
-  val callables : t -> Target.t list
+  module AddOnly : sig
+    type t
+
+    val create_empty : t -> t
+
+    val add : t -> Target.t -> DefineCallGraph.t -> t
+
+    val merge_same_handle_disjoint_keys : smaller:t -> larger:t -> t
+  end
+
+  val create : unit -> t
+
+  val add_only : t -> AddOnly.t
+
+  val from_add_only : AddOnly.t -> t
 
   val read_only : t -> ReadOnly.t
 
   val cleanup : t -> unit
+
+  val callables : t -> Target.t list
 
   val save_to_cache : t -> unit
 
@@ -665,28 +653,25 @@ module SharedMemory : sig
     whole_program_call_graph: WholeProgramCallGraph.t;
     define_call_graphs: t;
   }
+end
 
-  val default_scheduler_policy : Scheduler.Policy.t
+module MakeSaveCallGraph (CallGraph : sig
+  type t
 
-  (** Build the whole call graph of the program.
+  val name : string
 
-      The overrides must be computed first because we depend on a global shared memory graph to
-      include overrides in the call graph. Without it, we'll underanalyze and have an inconsistent
-      fixpoint. *)
-  val build_whole_program_call_graph
+  val is_empty : t -> bool
+
+  val to_json_alist : t -> (string * Yojson.Safe.t) list
+end) : sig
+  val save_to_directory
     :  scheduler:Scheduler.t ->
     static_analysis_configuration:Configuration.StaticAnalysis.t ->
-    pyre_api:PyrePysaApi.ReadOnly.t ->
-    resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
-    callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
-    callables_to_decorators_map:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
-    type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
-    override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
-    store_shared_memory:bool ->
-    attribute_targets:Target.Set.t ->
-    skip_analysis_targets:Target.HashSet.t ->
-    check_invariants:bool ->
-    definitions:Target.t list ->
-    create_dependency_for:AllTargetsUseCase.t ->
-    call_graphs
+    resolve_qualifier:(Target.t -> Ast.Reference.t option) ->
+    resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) option ->
+    get_call_graph:(Target.t -> CallGraph.t option) ->
+    json_kind:NewlineDelimitedJson.Kind.t ->
+    filename_prefix:string ->
+    callables:Target.t list ->
+    unit
 end

@@ -56,7 +56,7 @@ let compute_define_call_graph
       ()
   in
   let callables_to_decorators_map =
-    CallGraph.CallableToDecoratorsMap.SharedMemory.create
+    CallableToDecoratorsMap.SharedMemory.create
       ~callables_to_definitions_map:
         (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~scheduler
@@ -64,7 +64,7 @@ let compute_define_call_graph
       definitions
   in
   let call_graph =
-    CallGraph.call_graph_of_define
+    CallGraphBuilder.call_graph_of_define
       ~static_analysis_configuration
       ~pyre_api
       ~override_graph:
@@ -74,7 +74,7 @@ let compute_define_call_graph
       ~callables_to_definitions_map:
         (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~callables_to_decorators_map:
-        (CallGraph.CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
+        (CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
       ~type_of_expression_shared_memory
       ~check_invariants:true
       ~qualifier:module_name
@@ -143,7 +143,7 @@ let assert_call_graph_of_define
 
 let assert_higher_order_call_graph_of_define
     ?(object_targets = [])
-    ?(initial_state = CallGraph.HigherOrderCallGraph.State.empty)
+    ?(initial_state = CallGraphBuilder.HigherOrderCallGraph.State.empty)
     ?(called_when_parameter = Target.HashSet.create ())
     ?(maximum_parameterized_targets_at_call_site =
       Configuration.StaticAnalysis.default_maximum_parameterized_targets_at_call_site)
@@ -200,7 +200,7 @@ let assert_higher_order_call_graph_of_define
       ~maximum_target_depth
   in
   let actual =
-    CallGraph.higher_order_call_graph_of_define
+    CallGraphBuilder.higher_order_call_graph_of_define
       ~define_call_graph
       ~pyre_api
       ~callables_to_definitions_map:
@@ -7088,7 +7088,7 @@ let test_higher_order_call_graph_of_define =
            ~initial_state:
              (let callables_to_definitions_map = CallablesSharedMemory.ReadWrite.empty () in
               let initial_state =
-                CallGraph.HigherOrderCallGraph.State.initialize_from_roots
+                CallGraphBuilder.HigherOrderCallGraph.State.initialize_from_roots
                   ~callables_to_definitions_map:
                     (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
                   [
@@ -7860,7 +7860,7 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
       ()
   in
   let callables_to_decorators_map =
-    CallGraph.CallableToDecoratorsMap.SharedMemory.create
+    CallableToDecoratorsMap.SharedMemory.create
       ~callables_to_definitions_map:
         (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~scheduler
@@ -7873,17 +7873,16 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
            let open Option.Monad_infix in
            (* For simplicity, don't compare the cases when there exist no decorator callees. *)
            callable
-           |> CallGraph.CallableToDecoratorsMap.SharedMemory.decorated_callable_body
-                (CallGraph.CallableToDecoratorsMap.SharedMemory.read_only
-                   callables_to_decorators_map)
+           |> CallableToDecoratorsMap.SharedMemory.decorated_callable_body
+                (CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
            >>| (fun ({
-                       CallGraph.CallableToDecoratorsMap.DecoratedDefineBody.return_expression;
+                       CallableToDecoratorsMap.DecoratedDefineBody.return_expression;
                        define_name;
                        decorated_callable;
                        _;
                      } as body) ->
                  let call_graph =
-                   CallGraph.call_graph_of_decorated_callable
+                   CallGraphBuilder.call_graph_of_decorated_callable
                      ~debug
                      ~pyre_api
                      ~override_graph:
@@ -7892,8 +7891,7 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
                        (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
                      ~type_of_expression_shared_memory
                      ~callables_to_decorators_map:
-                       (CallGraph.CallableToDecoratorsMap.SharedMemory.read_only
-                          callables_to_decorators_map)
+                       (CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
                      ~callable
                      ~body
                  in

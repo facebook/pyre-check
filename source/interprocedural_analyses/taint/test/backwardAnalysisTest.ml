@@ -59,7 +59,7 @@ let assert_taint ~context source expected =
     let call_target = Target.from_define ~define_name ~define:(Ast.Node.value define) in
     let () = Log.log ~section:`Taint "Analyzing %a" Target.pp call_target in
     let call_graph_of_define =
-      CallGraph.call_graph_of_define
+      CallGraphBuilder.call_graph_of_define
         ~static_analysis_configuration
         ~pyre_api
         ~override_graph:
@@ -72,8 +72,8 @@ let assert_taint ~context source expected =
         ~callables_to_definitions_map:
           (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
         ~callables_to_decorators_map:
-          (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.empty ()
-          |> Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only)
+          (Interprocedural.CallableToDecoratorsMap.SharedMemory.empty ()
+          |> Interprocedural.CallableToDecoratorsMap.SharedMemory.read_only)
         ~type_of_expression_shared_memory
         ~qualifier
         ~callable:call_target

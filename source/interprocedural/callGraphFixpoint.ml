@@ -24,9 +24,9 @@ module CallGraphAnalysis = struct
   type context = Context.t
 
   module Model = struct
-    type t = CallGraph.HigherOrderCallGraph.t [@@deriving show]
+    type t = CallGraphBuilder.HigherOrderCallGraph.t [@@deriving show]
 
-    let join ~iteration:_ = CallGraph.HigherOrderCallGraph.merge
+    let join ~iteration:_ = CallGraphBuilder.HigherOrderCallGraph.merge
 
     (* TODO(T218941022): The current widening is not sound, since we only return the right hand
        side. This can lead to unsoundness (missing call edges), although we haven't seen concrete
@@ -35,19 +35,24 @@ module CallGraphAnalysis = struct
 
     (* Since this is only used to determine if we have reached a fixpoint, it is fine to only check
        the equality. *)
-    let less_or_equal ~callable:_ ~left ~right = CallGraph.HigherOrderCallGraph.equal left right
+    let less_or_equal ~callable:_ ~left ~right =
+      CallGraphBuilder.HigherOrderCallGraph.equal left right
+
 
     (* For an `Override` target, it make senses to let it return its overriding targets' returned
        callables, but it does not make sense to let its call graph be the union. *)
     let for_override_model ~callable:_ model =
-      { model with CallGraph.HigherOrderCallGraph.call_graph = CallGraph.DefineCallGraph.empty }
+      {
+        model with
+        CallGraphBuilder.HigherOrderCallGraph.call_graph = CallGraph.DefineCallGraph.empty;
+      }
 
 
     let for_new_dependency ~get_model callable =
       callable
       |> Target.strip_parameters
       |> get_model
-      |> Option.value ~default:CallGraph.HigherOrderCallGraph.empty
+      |> Option.value ~default:CallGraphBuilder.HigherOrderCallGraph.empty
   end
 
   module Result = struct
@@ -58,7 +63,7 @@ module CallGraphAnalysis = struct
 
   let empty_model =
     {
-      CallGraph.HigherOrderCallGraph.returned_callables = CallGraph.CallTarget.Set.bottom;
+      CallGraphBuilder.HigherOrderCallGraph.returned_callables = CallGraph.CallTarget.Set.bottom;
       call_graph = CallGraph.DefineCallGraph.empty;
     }
 
@@ -128,13 +133,13 @@ module CallGraphAnalysis = struct
         else
           CallGraphProfiler.disabled
       in
-      let ({ CallGraph.HigherOrderCallGraph.call_graph; _ } as model) =
+      let ({ CallGraphBuilder.HigherOrderCallGraph.call_graph; _ } as model) =
         Alarm.with_alarm
           ~max_time_in_seconds:60
           ~event_name:"Building higher order call graph"
           ~callable:(Target.show_pretty callable)
           (fun () ->
-            CallGraph.higher_order_call_graph_of_define
+            CallGraphBuilder.higher_order_call_graph_of_define
               ~define_call_graph
               ~pyre_api
               ~callables_to_definitions_map
@@ -145,7 +150,7 @@ module CallGraphAnalysis = struct
               ~callable
               ~define
               ~initial_state:
-                (CallGraph.HigherOrderCallGraph.State.initialize_from_callable
+                (CallGraphBuilder.HigherOrderCallGraph.State.initialize_from_callable
                    ~callables_to_definitions_map
                    callable)
               ~get_callee_model
@@ -173,13 +178,13 @@ module CallGraphAnalysis = struct
                |> Target.strip_parameters
                |> CallablesSharedMemory.ReadOnly.mem callables_to_definitions_map)
       in
-      if CallGraph.debug_higher_order_call_graph (Ast.Node.value define) then (
+      if CallGraphBuilder.debug_higher_order_call_graph (Ast.Node.value define) then (
         Log.dump
           "Returned callables for `%a`: `%a`"
           Target.pp_pretty_with_kind
           callable
           CallGraph.CallTarget.Set.pp
-          model.CallGraph.HigherOrderCallGraph.returned_callables;
+          model.CallGraphBuilder.HigherOrderCallGraph.returned_callables;
         Log.dump
           "Additional dependencies for `%a`: `%a`"
           Ast.Reference.pp
@@ -219,7 +224,7 @@ let get_define_call_graph ~readonly_state callable =
   let open Option in
   callable
   |> get_model_from_readonly_state ~readonly_state
-  >>| fun { CallGraph.HigherOrderCallGraph.call_graph; _ } -> call_graph
+  >>| fun { CallGraphBuilder.HigherOrderCallGraph.call_graph; _ } -> call_graph
 
 
 let build_whole_program_call_graph ~scheduler ~scheduler_policy state =
@@ -261,11 +266,11 @@ let log_decorated_targets_if_no_returned_callables
     let open Option in
     callable
     |> get_model_from_readonly_state ~readonly_state
-    >>| (fun { CallGraph.HigherOrderCallGraph.returned_callables; _ } ->
+    >>| (fun { CallGraphBuilder.HigherOrderCallGraph.returned_callables; _ } ->
           if CallGraph.CallTarget.Set.is_bottom returned_callables then (
             let decorator_expressions =
               Target.set_kind Target.Normal callable
-              |> CallGraph.CallableToDecoratorsMap.SharedMemory.ReadOnly.get_decorators
+              |> CallableToDecoratorsMap.SharedMemory.ReadOnly.get_decorators
                    callables_to_decorators_map
               |> Option.value ~default:[]
               |> List.map ~f:Ast.Expression.show
@@ -341,15 +346,18 @@ let compute
     ~called_when_parameter
   =
   let callables_to_definitions_map =
-    CallGraph.CallableToDecoratorsMap.SharedMemory.register_decorator_defines
+    CallableToDecoratorsMap.SharedMemory.register_decorator_defines
       callables_to_decorators_map
       callables_to_definitions_map
+  in
+  let callables_to_definitions_map =
+    CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map
   in
   (* Build higher order call graphs only for targets that are reachable, and decorated targets,
      which are not included in `callables_to_analyze`. *)
   let callables_to_analyze =
     List.rev_append
-      (CallGraph.CallableToDecoratorsMap.SharedMemory.decorated_targets callables_to_decorators_map)
+      (CallableToDecoratorsMap.SharedMemory.decorated_targets callables_to_decorators_map)
       original_callables_to_analyze
   in
   let callables_with_call_graphs = CallGraph.SharedMemory.callables define_call_graphs in
@@ -374,7 +382,7 @@ let compute
             initial_models
             callable
             {
-              CallGraph.HigherOrderCallGraph.empty with
+              CallGraphBuilder.HigherOrderCallGraph.empty with
               call_graph = initial_call_graph ~define_call_graphs callable;
             })
     in
@@ -410,8 +418,7 @@ let compute
         {
           CallGraphAnalysis.Context.pyre_api;
           define_call_graphs = CallGraph.SharedMemory.read_only define_call_graphs;
-          callables_to_definitions_map =
-            CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map;
+          callables_to_definitions_map;
           type_of_expression_shared_memory;
           skip_analysis_targets;
           called_when_parameter;
@@ -426,11 +433,11 @@ let compute
   in
   let drop_decorated_targets
       ~target:_
-      ~model:({ CallGraph.HigherOrderCallGraph.call_graph; _ } as model)
+      ~model:({ CallGraphBuilder.HigherOrderCallGraph.call_graph; _ } as model)
     =
     {
       model with
-      CallGraph.HigherOrderCallGraph.call_graph =
+      CallGraphBuilder.HigherOrderCallGraph.call_graph =
         CallGraph.DefineCallGraph.drop_decorated_targets call_graph;
     }
   in
@@ -440,11 +447,10 @@ let compute
   let fixpoint = { fixpoint with state } in
   let readonly_state = Fixpoint.State.read_only state in
   let () =
-    CallGraph.HigherOrderCallGraph.save_to_directory
+    CallGraphBuilder.HigherOrderCallGraph.save_to_directory
       ~scheduler
       ~static_analysis_configuration
-      ~callables_to_definitions_map:
-        (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
+      ~resolve_qualifier:(CallablesSharedMemory.ReadOnly.get_qualifier callables_to_definitions_map)
       ~resolve_module_path
       ~get_call_graph:(get_model_from_readonly_state ~readonly_state)
       ~json_kind:NewlineDelimitedJson.Kind.HigherOrderCallGraph
@@ -455,7 +461,7 @@ let compute
     ~scheduler
     ~scheduler_policy
     ~callables_to_decorators_map:
-      (CallGraph.CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
+      (CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
     state;
   {
     fixpoint;

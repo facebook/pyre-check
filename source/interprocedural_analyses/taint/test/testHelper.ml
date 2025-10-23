@@ -484,7 +484,7 @@ module TestEnvironment = struct
     global_constants: GlobalConstants.SharedMemory.t;
     stubs_shared_memory_handle: Target.HashsetSharedMemory.t;
     callables_to_definitions_map: Interprocedural.CallablesSharedMemory.ReadWrite.t;
-    callables_to_decorators_map: Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.t;
+    callables_to_decorators_map: Interprocedural.CallableToDecoratorsMap.SharedMemory.t;
     type_of_expression_shared_memory: Interprocedural.TypeOfExpressionSharedMemory.t;
   }
 
@@ -525,8 +525,7 @@ module TestEnvironment = struct
     Target.HashsetSharedMemory.cleanup stubs_shared_memory_handle;
     GlobalConstants.SharedMemory.cleanup global_constants;
     Interprocedural.CallablesSharedMemory.ReadWrite.cleanup callables_to_definitions_map;
-    Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.cleanup
-      callables_to_decorators_map
+    Interprocedural.CallableToDecoratorsMap.SharedMemory.cleanup callables_to_decorators_map
 end
 
 let set_up_decorator_preprocessing ~handle models =
@@ -748,7 +747,7 @@ let initialize
   (* Initialize models *)
   (* The call graph building depends on initial models for global targets. *)
   let callables_to_decorators_map =
-    CallGraph.CallableToDecoratorsMap.SharedMemory.create
+    Interprocedural.CallableToDecoratorsMap.SharedMemory.create
       ~callables_to_definitions_map:
         (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~scheduler
@@ -762,7 +761,7 @@ let initialize
     |> Target.HashSet.of_list
   in
   let ({ CallGraph.SharedMemory.whole_program_call_graph; define_call_graphs } as call_graph) =
-    CallGraph.SharedMemory.build_whole_program_call_graph
+    CallGraphBuilder.build_whole_program_call_graph
       ~scheduler
       ~static_analysis_configuration
       ~pyre_api
@@ -776,7 +775,7 @@ let initialize
       ~callables_to_definitions_map:
         (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~callables_to_decorators_map:
-        (CallGraph.CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
+        (Interprocedural.CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
       ~type_of_expression_shared_memory
       ~create_dependency_for:Interprocedural.CallGraph.AllTargetsUseCase.CallGraphDependency
   in
@@ -953,11 +952,12 @@ let end_to_end_integration_test path context =
         |> List.dedup_and_sort ~compare:Target.compare
         |> List.filter_map ~f:(fun callable ->
                match CallGraphFixpoint.get_model call_graph_fixpoint_state callable with
-               | Some call_graph when not (CallGraph.HigherOrderCallGraph.is_empty call_graph) ->
+               | Some call_graph
+                 when not (CallGraphBuilder.HigherOrderCallGraph.is_empty call_graph) ->
                    let json =
                      `Assoc
                        (("callable", `String (Target.show_pretty callable))
-                       :: CallGraph.HigherOrderCallGraph.to_json_alist call_graph)
+                       :: CallGraphBuilder.HigherOrderCallGraph.to_json_alist call_graph)
                    in
                    Some (Yojson.Safe.pretty_to_string json)
                | _ -> None)

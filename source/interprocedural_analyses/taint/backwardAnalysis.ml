@@ -34,6 +34,7 @@ open Expression
 open Pyre
 open Domains
 module CallGraph = Interprocedural.CallGraph
+module CallGraphBuilder = Interprocedural.CallGraphBuilder
 module AccessPath = Analysis.TaintAccessPath
 module PyrePysaApi = Interprocedural.PyrePysaApi
 module PyrePysaLogic = Analysis.PyrePysaLogic
@@ -1541,7 +1542,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ({ Comprehension.Generator.conditions; _ } as generator)
       =
       let { Statement.Assign.target; value; _ }, inner_pyre_context =
-        CallGraph.preprocess_generator
+        CallGraphBuilder.preprocess_generator
           ~pyre_in_context:outer_pyre_context
           ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
           ~callable:FunctionContext.callable
@@ -2825,7 +2826,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let analyze_statement ~pyre_in_context state ({ Node.location; _ } as statement) =
     let statement =
-      CallGraph.preprocess_statement
+      CallGraphBuilder.preprocess_statement
         ~pyre_in_context
         ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
         ~callable:FunctionContext.callable

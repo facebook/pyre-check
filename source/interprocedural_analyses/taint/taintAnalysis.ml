@@ -532,7 +532,7 @@ let cleanup_shared_memory_after_call_graph_fixpoint
     ~original_define_call_graphs
     ~call_graph_fixpoint
   =
-  Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.cleanup callables_to_decorators_map;
+  Interprocedural.CallableToDecoratorsMap.SharedMemory.cleanup callables_to_decorators_map;
   Interprocedural.CallGraph.SharedMemory.cleanup original_define_call_graphs;
   Interprocedural.CallGraphFixpoint.cleanup ~keep_models:true call_graph_fixpoint
 
@@ -788,7 +788,7 @@ let run_taint_analysis
         ()
     in
     let callables_to_decorators_map =
-      Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.create
+      Interprocedural.CallableToDecoratorsMap.SharedMemory.create
         ~callables_to_definitions_map:
           (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
         ~scheduler
@@ -796,12 +796,11 @@ let run_taint_analysis
           (Scheduler.Policy.from_configuration_or_default
              scheduler_policies
              Configuration.ScheduleIdentifier.CallableToDecoratorsMap
-             ~default:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy)
+             ~default:Interprocedural.CallGraphBuilder.default_scheduler_policy)
         definitions
     in
     let () =
-      Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory
-      .save_decorator_counts_to_directory
+      Interprocedural.CallableToDecoratorsMap.SharedMemory.save_decorator_counts_to_directory
         ~static_analysis_configuration
         ~scheduler
         callables_to_decorators_map
@@ -838,7 +837,7 @@ let run_taint_analysis
       ~definitions
       cache
       (fun ~attribute_targets ~skip_analysis_targets ~definitions () ->
-        Interprocedural.CallGraph.SharedMemory.build_whole_program_call_graph
+        Interprocedural.CallGraphBuilder.build_whole_program_call_graph
           ~scheduler
           ~static_analysis_configuration
           ~pyre_api
@@ -852,7 +851,7 @@ let run_taint_analysis
           ~callables_to_definitions_map:
             (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
           ~callables_to_decorators_map:
-            (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only
+            (Interprocedural.CallableToDecoratorsMap.SharedMemory.read_only
                callables_to_decorators_map)
           ~type_of_expression_shared_memory
           ~create_dependency_for:Interprocedural.CallGraph.AllTargetsUseCase.CallGraphDependency)

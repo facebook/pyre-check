@@ -7,6 +7,7 @@
 
 open Interprocedural
 open CallGraph
+open CallGraphBuilder
 module AccessPath = Analysis.TaintAccessPath
 
 module HigherOrderCallGraphForTest = struct

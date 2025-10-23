@@ -20,7 +20,7 @@ val compute
   resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) option ->
   pyre_api:PyrePysaApi.ReadOnly.t ->
   callables_to_definitions_map:CallablesSharedMemory.ReadWrite.t ->
-  callables_to_decorators_map:CallGraph.CallableToDecoratorsMap.SharedMemory.t ->
+  callables_to_decorators_map:CallableToDecoratorsMap.SharedMemory.t ->
   type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
   call_graph:CallGraph.SharedMemory.call_graphs ->
   dependency_graph:DependencyGraph.whole_program_dependency_graph ->
@@ -31,6 +31,6 @@ val compute
 
 val analyzed_callables : fixpoint -> Target.t list
 
-val get_model : t -> Target.t -> CallGraph.HigherOrderCallGraph.t option
+val get_model : t -> Target.t -> CallGraphBuilder.HigherOrderCallGraph.t option
 
 val cleanup : keep_models:bool -> fixpoint -> unit

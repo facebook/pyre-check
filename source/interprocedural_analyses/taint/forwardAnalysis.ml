@@ -40,6 +40,7 @@ open Expression
 open Pyre
 open Domains
 module CallGraph = Interprocedural.CallGraph
+module CallGraphBuilder = Interprocedural.CallGraphBuilder
 module CallResolution = Interprocedural.CallResolution
 module AccessPath = Analysis.TaintAccessPath
 module PyrePysaApi = Interprocedural.PyrePysaApi
@@ -1271,7 +1272,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ({ Comprehension.Generator.conditions; _ } as generator)
       =
       let { Statement.Assign.target; value; _ }, inner_pyre_context =
-        CallGraph.preprocess_generator
+        CallGraphBuilder.preprocess_generator
           ~pyre_in_context
           ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
           ~callable:FunctionContext.callable
@@ -3186,7 +3187,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let analyze_statement ~pyre_in_context ({ Node.location; _ } as statement) state =
     let statement =
-      CallGraph.preprocess_statement
+      CallGraphBuilder.preprocess_statement
         ~pyre_in_context
         ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
         ~callable:FunctionContext.callable
@@ -3358,7 +3359,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | None -> ForwardState.Tree.bottom, state
         | Some expression ->
             let expression =
-              CallGraph.preprocess_parameter_default_value
+              CallGraphBuilder.preprocess_parameter_default_value
                 ~pyre_in_context
                 ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
                 ~callable:FunctionContext.callable

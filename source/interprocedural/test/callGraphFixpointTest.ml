@@ -10,6 +10,7 @@ open OUnit2
 open Test
 open Interprocedural
 open CallGraph
+open CallGraphBuilder
 open CallGraphTestHelper
 
 module Expected = struct
@@ -75,7 +76,7 @@ let assert_higher_order_call_graph_fixpoint
       ()
   in
   let callables_to_decorators_map =
-    CallGraph.CallableToDecoratorsMap.SharedMemory.create
+    CallableToDecoratorsMap.SharedMemory.create
       ~callables_to_definitions_map:
         (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~scheduler
@@ -83,7 +84,7 @@ let assert_higher_order_call_graph_fixpoint
       definitions
   in
   let ({ SharedMemory.whole_program_call_graph; define_call_graphs } as call_graph) =
-    SharedMemory.build_whole_program_call_graph
+    CallGraphBuilder.build_whole_program_call_graph
       ~scheduler
       ~static_analysis_configuration
       ~pyre_api
@@ -96,7 +97,7 @@ let assert_higher_order_call_graph_fixpoint
       ~callables_to_definitions_map:
         (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~callables_to_decorators_map:
-        (CallGraph.CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
+        (CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
       ~type_of_expression_shared_memory
       ~check_invariants:true
       ~create_dependency_for:Interprocedural.CallGraph.AllTargetsUseCase.CallGraphDependency

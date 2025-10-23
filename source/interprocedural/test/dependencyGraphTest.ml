@@ -77,7 +77,7 @@ let create_call_graph ?(other_sources = []) ~context source_text =
   in
   let fold call_graph callable =
     let callees =
-      CallGraph.call_graph_of_callable
+      CallGraphBuilder.call_graph_of_callable
         ~static_analysis_configuration
         ~pyre_api
         ~override_graph:
@@ -86,8 +86,8 @@ let create_call_graph ?(other_sources = []) ~context source_text =
         ~callables_to_definitions_map:
           (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
         ~callables_to_decorators_map:
-          (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.empty ()
-          |> Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only)
+          (Interprocedural.CallableToDecoratorsMap.SharedMemory.empty ()
+          |> Interprocedural.CallableToDecoratorsMap.SharedMemory.read_only)
         ~type_of_expression_shared_memory
         ~check_invariants:true
         ~callable

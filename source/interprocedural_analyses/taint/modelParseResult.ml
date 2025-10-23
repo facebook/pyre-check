@@ -859,7 +859,7 @@ module CallableDecorator = struct
             lazy Type.Any
           in
           let { Interprocedural.CallGraph.CallCallees.call_targets; new_targets; init_targets; _ } =
-            Interprocedural.CallGraph.resolve_callees_from_type_external
+            Interprocedural.CallGraphBuilder.resolve_callees_from_type_external
               ~pyre_in_context:(PyrePysaApi.InContext.create_at_global_scope pyre_api)
               ~callables_to_definitions_map
               ~override_graph:None
