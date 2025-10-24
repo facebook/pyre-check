@@ -1179,5 +1179,4 @@ let setup_single_py_file
       [file_name, source]
   in
   let pyre_api = Test.ScratchPyrePysaProject.read_only_api project in
-  let test_source = source_from_qualifier ~pyre_api test_module_name in
-  test_source, test_module_name, pyre_api, Test.ScratchPyrePysaProject.configuration_of project
+  test_module_name, pyre_api, Test.ScratchPyrePysaProject.configuration_of project

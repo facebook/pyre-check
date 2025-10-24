@@ -2258,6 +2258,7 @@ module CallGraphBuilder = struct
           DefineCallGraph.add_define_callees
             ~debug
             ~caller:callable
+            ~on_existing_callees:DefineCallGraph.OnExistingCallees.WarnThenJoin
             ~define
             ~define_location:location
             ~callees:
@@ -2292,6 +2293,7 @@ module CallGraphBuilder = struct
       DefineCallGraph.add_call_callees
         ~debug
         ~caller:callable
+        ~on_existing_callees:DefineCallGraph.OnExistingCallees.WarnThenJoin
         ~location
         ~call
         ~callees
@@ -2325,6 +2327,7 @@ module CallGraphBuilder = struct
             DefineCallGraph.add_attribute_access_callees
               ~debug
               ~caller:callable
+              ~on_existing_callees:DefineCallGraph.OnExistingCallees.WarnThenJoin
               ~location
               ~attribute_access:{ Name.Attribute.base; attribute; origin }
               ~callees
@@ -2368,6 +2371,7 @@ module CallGraphBuilder = struct
             DefineCallGraph.add_attribute_access_callees
               ~debug
               ~caller:callable
+              ~on_existing_callees:DefineCallGraph.OnExistingCallees.WarnThenJoin
               ~location
               ~attribute_access:{ Name.Attribute.base = self; attribute; origin }
               ~callees
@@ -2430,6 +2434,7 @@ module CallGraphBuilder = struct
           DefineCallGraph.add_attribute_access_callees
             ~debug
             ~caller:callable
+            ~on_existing_callees:DefineCallGraph.OnExistingCallees.WarnThenJoin
             ~location
             ~attribute_access
             ~callees
@@ -2442,6 +2447,7 @@ module CallGraphBuilder = struct
                 DefineCallGraph.add_identifier_callees
                   ~debug
                   ~caller:callable
+                  ~on_existing_callees:DefineCallGraph.OnExistingCallees.WarnThenJoin
                   ~location
                   ~identifier
                   ~callees
@@ -2484,6 +2490,7 @@ module CallGraphBuilder = struct
         ~debug
         ~location
         ~caller:callable
+        ~on_existing_callees:DefineCallGraph.OnExistingCallees.WarnThenJoin
         ~format_string:(Expression.FormatString substrings)
         ~callees:(FormatStringArtificialCallees.from_f_string_targets [artificial_target])
         !callees_at_location;
@@ -2537,6 +2544,7 @@ module CallGraphBuilder = struct
                     ~debug
                     ~caller:callable
                     ~location:expression_location
+                    ~on_existing_callees:DefineCallGraph.OnExistingCallees.WarnThenJoin
                     ~substring:(Node.value expression)
                     ~callees:(FormatStringStringifyCallees.from_stringify_targets call_targets)
                     !callees_at_location
@@ -2725,6 +2733,7 @@ let register_callees_on_return
         DefineCallGraph.add_return_callees
           ~debug
           ~caller:callable
+          ~on_existing_callees:DefineCallGraph.OnExistingCallees.WarnThenJoin
           ~return_expression
           ~statement_location
           ~callees:
@@ -3601,6 +3610,7 @@ module HigherOrderCallGraph = struct
       track_apply_call_step StoreCallCallees (fun () ->
           Context.output_define_call_graph :=
             DefineCallGraph.set_call_callees
+              ~error_if_new:true
               ~location
               ~call
               ~callees:
@@ -3785,6 +3795,7 @@ module HigherOrderCallGraph = struct
                     in
                     Context.output_define_call_graph :=
                       DefineCallGraph.set_identifier_callees
+                        ~error_if_new:true
                         ~identifier
                         ~location
                         ~identifier_callees:
@@ -3835,6 +3846,7 @@ module HigherOrderCallGraph = struct
                     in
                     Context.output_define_call_graph :=
                       DefineCallGraph.set_attribute_access_callees
+                        ~error_if_new:false (* empty attribute accesses are stripped *)
                         ~location
                         ~attribute_access
                         ~callees:
@@ -3987,6 +3999,7 @@ module HigherOrderCallGraph = struct
                     let () =
                       Context.output_define_call_graph :=
                         DefineCallGraph.set_define_callees
+                          ~error_if_new:true
                           ~define_location
                           ~callees:
                             { DefineCallees.define_targets = result_targets; decorated_targets }
@@ -4093,6 +4106,7 @@ module HigherOrderCallGraph = struct
                       DefineCallGraph.add_return_callees
                         ~debug:Context.debug
                         ~caller:Context.callable
+                        ~on_existing_callees:DefineCallGraph.OnExistingCallees.WarnThenJoin
                         ~return_expression:expression
                         ~statement_location:statement.Node.location
                         ~callees
@@ -4455,6 +4469,7 @@ let call_graph_of_decorated_callable
       in
       call_graph :=
         DefineCallGraph.set_attribute_access_callees
+          ~error_if_new:false (* empty attribute accesses are stripped *)
           ~location:attribute_access_location
           ~attribute_access
           ~callees:
@@ -4498,12 +4513,11 @@ let default_scheduler_policy =
     The overrides must be computed first because we depend on a global shared memory graph to
     include overrides in the call graph. Without it, we'll underanalyze and have an inconsistent
     fixpoint. *)
-let build_whole_program_call_graph
+let build_whole_program_call_graph_for_pyre1
     ~scheduler
     ~static_analysis_configuration:
       ({ Configuration.StaticAnalysis.scheduler_policies; _ } as static_analysis_configuration)
     ~pyre_api
-    ~resolve_module_path
     ~callables_to_definitions_map
     ~callables_to_decorators_map
     ~type_of_expression_shared_memory
@@ -4667,8 +4681,91 @@ let build_whole_program_call_graph
       ()
   in
   let define_call_graphs = CallGraph.SharedMemory.from_add_only define_call_graphs in
-  let define_call_graphs_read_only = CallGraph.SharedMemory.read_only define_call_graphs in
+  { CallGraph.SharedMemory.whole_program_call_graph; define_call_graphs }
+
+
+let build_whole_program_call_graph_for_pyrefly
+    ~scheduler
+    ~scheduler_policies
+    ~pyrefly_api
+    ~callables_to_decorators_map
+    ~store_shared_memory
+    ~attribute_targets
+    ~skip_analysis_targets
+    ~definitions
+    ~create_dependency_for
+  =
+  let transform_call_graph _ _ call_graph =
+    let call_indexer = CallGraph.Indexer.create () in
+    call_graph
+    |> DefineCallGraph.filter_empty_attribute_access
+    |> DefineCallGraph.map_target
+         ~f:(CallableToDecoratorsMap.SharedMemory.redirect_to_decorated callables_to_decorators_map)
+         ~map_call_if:CallCallees.should_redirect_to_decorated
+         ~map_return_if:(fun _ -> false)
+    |> DefineCallGraph.dedup_and_sort
+    |> DefineCallGraph.regenerate_call_indices ~indexer:call_indexer
+  in
+  PyreflyApi.ReadOnly.parse_call_graphs
+    pyrefly_api
+    ~scheduler
+    ~scheduler_policies
+    ~store_shared_memory
+    ~attribute_targets
+    ~skip_analysis_targets
+    ~definitions
+    ~create_dependency_for
+    ~transform_call_graph
+
+
+let build_whole_program_call_graph
+    ~scheduler
+    ~static_analysis_configuration:
+      ({ Configuration.StaticAnalysis.scheduler_policies; _ } as static_analysis_configuration)
+    ~pyre_api
+    ~resolve_module_path
+    ~callables_to_definitions_map
+    ~callables_to_decorators_map
+    ~type_of_expression_shared_memory
+    ~override_graph
+    ~store_shared_memory
+    ~attribute_targets
+    ~skip_analysis_targets
+    ~check_invariants
+    ~definitions
+    ~create_dependency_for
+  =
+  let { CallGraph.SharedMemory.whole_program_call_graph; define_call_graphs } =
+    match pyre_api with
+    | PyrePysaApi.ReadOnly.Pyre1 _ ->
+        build_whole_program_call_graph_for_pyre1
+          ~scheduler
+          ~static_analysis_configuration
+          ~pyre_api
+          ~callables_to_definitions_map
+          ~callables_to_decorators_map
+          ~type_of_expression_shared_memory
+          ~override_graph
+          ~store_shared_memory
+          ~attribute_targets
+          ~skip_analysis_targets
+          ~check_invariants
+          ~definitions
+          ~create_dependency_for
+    | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->
+        build_whole_program_call_graph_for_pyrefly
+          ~scheduler
+          ~scheduler_policies
+          ~pyrefly_api
+          ~callables_to_decorators_map
+          ~store_shared_memory
+          ~attribute_targets
+          ~skip_analysis_targets
+          ~definitions
+          ~create_dependency_for
+  in
   let () =
+    let define_call_graphs_read_only = CallGraph.SharedMemory.read_only define_call_graphs in
     DefineCallGraph.save_to_directory
       ~scheduler
       ~static_analysis_configuration

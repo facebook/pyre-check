@@ -182,7 +182,20 @@ module ReadOnly : sig
 
   val get_global_inferred_type : t -> qualifier:Ast.Reference.t -> name:string -> PysaType.t option
 
-  val target_from_define_name : t -> Ast.Reference.t -> Target.t
+  val target_from_define_name : t -> override:bool -> Ast.Reference.t -> Target.t
+
+  val parse_call_graphs
+    :  t ->
+    scheduler:Scheduler.t ->
+    scheduler_policies:Configuration.SchedulerPolicies.t ->
+    store_shared_memory:bool ->
+    attribute_targets:Target.Set.t ->
+    skip_analysis_targets:Target.HashSet.t ->
+    definitions:Target.t list ->
+    create_dependency_for:CallGraph.AllTargetsUseCase.t ->
+    transform_call_graph:
+      (t -> Target.t -> CallGraph.DefineCallGraph.t -> CallGraph.DefineCallGraph.t) ->
+    CallGraph.SharedMemory.call_graphs
 
   module Type : sig
     val scalar_properties : t -> PysaType.t -> Analysis.PyrePysaEnvironment.ScalarTypeProperties.t
@@ -206,6 +219,8 @@ module ReadOnly : sig
 end
 
 val add_builtins_prefix : Ast.Reference.t -> Ast.Reference.t
+
+val strip_builtins_prefix : Ast.Reference.t -> Ast.Reference.t
 
 val target_symbolic_name : Ast.Reference.t -> Ast.Reference.t
 

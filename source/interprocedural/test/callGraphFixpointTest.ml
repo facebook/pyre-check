@@ -31,7 +31,7 @@ let assert_higher_order_call_graph_fixpoint
     ()
     context
   =
-  let _, _, pyre_api, configuration =
+  let _, pyre_api, configuration =
     TestHelper.setup_single_py_file
       ~force_pyre1:true
       ~requires_type_of_expressions:false

@@ -632,9 +632,11 @@ module ScheduleIdentifier = struct
     | CallableToDecoratorsMap
     | CallablesSharedMemory
     | PyreflyParseSources
-    | ParsePyreflyModuleInfo
+    | PyreflyParseModuleInfo
     | PyreflyCollectDefinitions
     | PyreflyParseClassParents
+    | PyreflyParseTypeOfExpressions
+    | PyreflyParseCallGraphs
   [@@deriving sexp, compare, hash]
 
   let of_string = function
@@ -656,9 +658,11 @@ module ScheduleIdentifier = struct
     | "taint_file_coverage" -> Some TaintFileCoverage
     | "taint_kind_coverage" -> Some TaintKindCoverage
     | "pyrefly_parse_sources" -> Some PyreflyParseSources
-    | "parse_pyrefly_module_info" -> Some ParsePyreflyModuleInfo
+    | "pyrefly_parse_module_info" -> Some PyreflyParseModuleInfo
     | "pyrefly_collect_definitions" -> Some PyreflyCollectDefinitions
     | "pyrefly_parse_class_parents" -> Some PyreflyParseClassParents
+    | "pyrefly_parse_type_of_expressions" -> Some PyreflyParseTypeOfExpressions
+    | "pyrefly_parse_call_graphs" -> Some PyreflyParseCallGraphs
     | _ -> None
 
 
@@ -686,9 +690,11 @@ module ScheduleIdentifier = struct
     | CallableToDecoratorsMap -> "callable_to_decorators_map"
     | CallablesSharedMemory -> "callables_to_definitions_map"
     | PyreflyParseSources -> "pyrefly_parse_sources"
-    | ParsePyreflyModuleInfo -> "parse_pyrefly_module_info"
+    | PyreflyParseModuleInfo -> "pyrefly_parse_module_info"
     | PyreflyCollectDefinitions -> "pyrefly_collect_definitions"
     | PyreflyParseClassParents -> "pyrefly_parse_class_parents"
+    | PyreflyParseTypeOfExpressions -> "pyrefly_parse_type_of_expressions"
+    | PyreflyParseCallGraphs -> "pyrefly_parse_call_graphs"
 end
 
 module SchedulerPolicies = struct

@@ -474,9 +474,28 @@ module DefineCallGraph : sig
 
   val resolve_return : t -> statement_location:Location.t -> ReturnShimCallees.t option
 
+  module OnExistingCallees : sig
+    type t =
+      | WarnThenJoin
+      | Join
+      | Fail
+      | Replace
+  end
+
+  val add_callees
+    :  debug:bool ->
+    caller:Target.t ->
+    on_existing_callees:OnExistingCallees.t ->
+    expression_for_logging:Expression.t option ->
+    expression_identifier:ExpressionIdentifier.t ->
+    callees:ExpressionCallees.t ->
+    t ->
+    t
+
   val add_call_callees
     :  debug:bool ->
     caller:Target.t ->
+    on_existing_callees:OnExistingCallees.t ->
     location:Ast.Location.t ->
     call:Ast.Expression.Call.t ->
     callees:CallCallees.t ->
@@ -486,6 +505,7 @@ module DefineCallGraph : sig
   val add_identifier_callees
     :  debug:bool ->
     caller:Target.t ->
+    on_existing_callees:OnExistingCallees.t ->
     location:Ast.Location.t ->
     identifier:string ->
     callees:IdentifierCallees.t ->
@@ -495,6 +515,7 @@ module DefineCallGraph : sig
   val add_define_callees
     :  debug:bool ->
     caller:Target.t ->
+    on_existing_callees:OnExistingCallees.t ->
     define:Ast.Statement.Define.t ->
     define_location:Ast.Location.t ->
     callees:DefineCallees.t ->
@@ -504,37 +525,18 @@ module DefineCallGraph : sig
   val add_return_callees
     :  debug:bool ->
     caller:Target.t ->
+    on_existing_callees:OnExistingCallees.t ->
     return_expression:Ast.Expression.Expression.t ->
     statement_location:Ast.Location.t ->
     callees:ReturnShimCallees.t ->
     t ->
     t
 
-  val set_call_callees
-    :  location:Ast.Location.t ->
-    call:Ast.Expression.Call.t ->
-    callees:CallCallees.t ->
-    t ->
-    t
-
-  val set_identifier_callees
-    :  location:Ast.Location.t ->
-    identifier:string ->
-    identifier_callees:IdentifierCallees.t ->
-    t ->
-    t
-
   val add_attribute_access_callees
     :  debug:bool ->
     caller:Target.t ->
+    on_existing_callees:OnExistingCallees.t ->
     location:Ast.Location.t ->
-    attribute_access:Ast.Expression.Name.Attribute.t ->
-    callees:AttributeAccessCallees.t ->
-    t ->
-    t
-
-  val set_attribute_access_callees
-    :  location:Ast.Location.t ->
     attribute_access:Ast.Expression.Name.Attribute.t ->
     callees:AttributeAccessCallees.t ->
     t ->
@@ -543,6 +545,7 @@ module DefineCallGraph : sig
   val add_format_string_articifial_callees
     :  debug:bool ->
     caller:Target.t ->
+    on_existing_callees:OnExistingCallees.t ->
     location:Ast.Location.t ->
     format_string:Ast.Expression.Expression.expression ->
     callees:FormatStringArtificialCallees.t ->
@@ -552,13 +555,43 @@ module DefineCallGraph : sig
   val add_format_string_stringify_callees
     :  debug:bool ->
     caller:Target.t ->
+    on_existing_callees:OnExistingCallees.t ->
     location:Ast.Location.t ->
     substring:Ast.Expression.Expression.expression ->
     callees:FormatStringStringifyCallees.t ->
     t ->
     t
 
-  val set_define_callees : define_location:Ast.Location.t -> callees:DefineCallees.t -> t -> t
+  val set_attribute_access_callees
+    :  error_if_new:bool ->
+    location:Ast.Location.t ->
+    attribute_access:Ast.Expression.Name.Attribute.t ->
+    callees:AttributeAccessCallees.t ->
+    t ->
+    t
+
+  val set_call_callees
+    :  error_if_new:bool ->
+    location:Ast.Location.t ->
+    call:Ast.Expression.Call.t ->
+    callees:CallCallees.t ->
+    t ->
+    t
+
+  val set_identifier_callees
+    :  error_if_new:bool ->
+    location:Ast.Location.t ->
+    identifier:string ->
+    identifier_callees:IdentifierCallees.t ->
+    t ->
+    t
+
+  val set_define_callees
+    :  error_if_new:bool ->
+    define_location:Ast.Location.t ->
+    callees:DefineCallees.t ->
+    t ->
+    t
 
   val filter_empty_attribute_access : t -> t
 

@@ -1721,68 +1721,103 @@ module DefineCallGraph = struct
         | None, None -> None)
 
 
-  let add_callees ~debug ~caller ~expression_identifier ~callees ~expression_for_logging =
+  module OnExistingCallees = struct
+    type t =
+      | WarnThenJoin
+      | Join
+      | Fail
+      | Replace
+  end
+
+  let add_callees
+      ~debug
+      ~caller
+      ~on_existing_callees
+      ~expression_for_logging
+      ~expression_identifier
+      ~callees
+    =
     let () =
-      log
-        ~debug
-        "Resolved callees at `%a` for expression `%a`:@,%a "
-        Location.pp
-        (ExpressionIdentifier.location expression_identifier)
-        Expression.pp
-        expression_for_logging
-        ExpressionCallees.pp
-        callees
+      match expression_for_logging with
+      | Some expression_for_logging ->
+          log
+            ~debug
+            "Resolved callees at `%a` for expression `%a`:@,%a "
+            Location.pp
+            (ExpressionIdentifier.location expression_identifier)
+            Expression.pp
+            expression_for_logging
+            ExpressionCallees.pp
+            callees
+      | None -> ()
     in
     ExpressionIdentifier.Map.update expression_identifier (function
         | None -> Some callees
         | Some existing_callees when ExpressionCallees.equal existing_callees callees ->
             Some existing_callees
-        | Some existing_callees ->
-            (* TODO(T228078886): We should error here since it means we are visiting the same
-               expression twice and getting different results. However, this is hard to fix due to
-               the amount of AST lowering we perform. Let's just give a warning for now. *)
-            Log.warning
-              "Invariant error: When trying to add callees for expression %a in callable %a, found \
-               different existing callees. This bug in Pysa might introduce false positives."
-              Target.pp_external
-              caller
-              ExpressionIdentifier.pp_json_key
-              expression_identifier;
-            Some (ExpressionCallees.join existing_callees callees))
+        | Some existing_callees -> (
+            match on_existing_callees with
+            | OnExistingCallees.WarnThenJoin ->
+                (* TODO(T228078886): We should error here since it means we are visiting the same
+                   expression twice and getting different results. However, this is hard to fix due
+                   to the amount of AST lowering we perform. Let's just give a warning for now. *)
+                Log.warning
+                  "Invariant error: When trying to add callees for expression %a in callable %a, \
+                   found different existing callees. This bug in Pysa might introduce false \
+                   positives."
+                  Target.pp_external
+                  caller
+                  ExpressionIdentifier.pp_json_key
+                  expression_identifier;
+                Some (ExpressionCallees.join existing_callees callees)
+            | OnExistingCallees.Join -> Some (ExpressionCallees.join existing_callees callees)
+            | OnExistingCallees.Fail ->
+                Format.asprintf
+                  "Invariant error: When trying to add callees for expression %a in callable %a, \
+                   found different existing callees."
+                  Target.pp_external
+                  caller
+                  ExpressionIdentifier.pp_json_key
+                  expression_identifier
+                |> failwith
+            | OnExistingCallees.Replace -> Some callees))
 
 
-  let set_callees ~error_if_existing_empty ~expression_identifier ~callees =
+  let set_callees ~error_if_new ~expression_identifier ~callees =
     ExpressionIdentifier.Map.update expression_identifier (function
         | None ->
-            if error_if_existing_empty then
-              failwith "unexpected: no existing call graph edge"
+            if error_if_new then
+              failwith "unexpected: no pre-existing call graph edge"
             else
               Some callees
         | Some _ -> Some callees)
 
 
-  let add_call_callees ~debug ~caller ~location ~call ~callees =
+  let add_call_callees ~debug ~caller ~on_existing_callees ~location ~call ~callees =
     add_callees
       ~debug
       ~caller
+      ~on_existing_callees
       ~expression_identifier:(ExpressionIdentifier.of_call ~location call)
-      ~expression_for_logging:(Node.create_with_default_location (Expression.Call call))
+      ~expression_for_logging:(Some (Node.create_with_default_location (Expression.Call call)))
       ~callees:(ExpressionCallees.from_call callees)
 
 
-  let add_identifier_callees ~debug ~caller ~location ~identifier ~callees =
+  let add_identifier_callees ~debug ~caller ~on_existing_callees ~location ~identifier ~callees =
     add_callees
       ~debug
       ~caller
+      ~on_existing_callees
       ~expression_identifier:(ExpressionIdentifier.of_identifier ~location identifier)
       ~expression_for_logging:
-        (Node.create_with_default_location (Expression.Name (Name.Identifier identifier)))
+        (Some (Node.create_with_default_location (Expression.Name (Name.Identifier identifier))))
       ~callees:(ExpressionCallees.from_identifier callees)
 
 
   let add_define_callees
       ~debug
       ~caller
+      ~on_existing_callees
       ~define:{ Define.signature = { name; _ }; _ }
       ~define_location
       ~callees
@@ -1790,74 +1825,109 @@ module DefineCallGraph = struct
     add_callees
       ~debug
       ~caller
+      ~on_existing_callees
       ~expression_identifier:(ExpressionIdentifier.of_define_statement define_location)
       ~expression_for_logging:
-        (Node.create_with_default_location
-           (Expression.Name (Name.Identifier (Format.asprintf "def %a(): ..." Reference.pp name))))
+        (Some
+           (Node.create_with_default_location
+              (Expression.Name (Name.Identifier (Format.asprintf "def %a(): ..." Reference.pp name)))))
       ~callees:(ExpressionCallees.from_define callees)
 
 
-  let add_return_callees ~debug ~caller ~return_expression ~statement_location ~callees =
+  let add_return_callees
+      ~debug
+      ~caller
+      ~on_existing_callees
+      ~return_expression
+      ~statement_location
+      ~callees
+    =
     add_callees
       ~debug
       ~caller
+      ~on_existing_callees
       ~expression_identifier:(ExpressionIdentifier.of_return_statement statement_location)
-      ~expression_for_logging:return_expression
+      ~expression_for_logging:(Some return_expression)
       ~callees:(ExpressionCallees.from_return callees)
 
 
-  let set_call_callees ~location ~call ~callees =
+  let set_call_callees ~error_if_new ~location ~call ~callees =
     set_callees
-      ~error_if_existing_empty:true
+      ~error_if_new
       ~expression_identifier:(ExpressionIdentifier.of_call ~location call)
       ~callees:(ExpressionCallees.from_call callees)
 
 
-  let set_identifier_callees ~location ~identifier ~identifier_callees =
+  let set_identifier_callees ~error_if_new ~location ~identifier ~identifier_callees =
     set_callees
-      ~error_if_existing_empty:true
+      ~error_if_new
       ~expression_identifier:(ExpressionIdentifier.of_identifier ~location identifier)
       ~callees:(ExpressionCallees.from_identifier identifier_callees)
 
 
-  let add_attribute_access_callees ~debug ~caller ~location ~attribute_access ~callees =
+  let add_attribute_access_callees
+      ~debug
+      ~caller
+      ~on_existing_callees
+      ~location
+      ~attribute_access
+      ~callees
+    =
     add_callees
       ~debug
       ~caller
+      ~on_existing_callees
       ~expression_identifier:(ExpressionIdentifier.of_attribute_access ~location attribute_access)
       ~expression_for_logging:
-        (Node.create_with_default_location (Expression.Name (Name.Attribute attribute_access)))
+        (Some
+           (Node.create_with_default_location (Expression.Name (Name.Attribute attribute_access))))
       ~callees:(ExpressionCallees.from_attribute_access callees)
 
 
-  let set_attribute_access_callees ~location ~attribute_access ~callees =
+  let set_attribute_access_callees ~error_if_new ~location ~attribute_access ~callees =
     set_callees
-      ~error_if_existing_empty:false (* empty attribute accesses are stripped *)
+      ~error_if_new
       ~expression_identifier:(ExpressionIdentifier.of_attribute_access ~location attribute_access)
       ~callees:(ExpressionCallees.from_attribute_access callees)
 
 
-  let add_format_string_articifial_callees ~debug ~caller ~location ~format_string ~callees =
+  let add_format_string_articifial_callees
+      ~debug
+      ~caller
+      ~on_existing_callees
+      ~location
+      ~format_string
+      ~callees
+    =
     add_callees
       ~debug
       ~caller
+      ~on_existing_callees
       ~expression_identifier:(ExpressionIdentifier.of_format_string_artificial ~location)
-      ~expression_for_logging:(Node.create_with_default_location format_string)
+      ~expression_for_logging:(Some (Node.create_with_default_location format_string))
       ~callees:(ExpressionCallees.from_format_string_artificial callees)
 
 
-  let add_format_string_stringify_callees ~debug ~caller ~location ~substring ~callees =
+  let add_format_string_stringify_callees
+      ~debug
+      ~caller
+      ~on_existing_callees
+      ~location
+      ~substring
+      ~callees
+    =
     add_callees
       ~debug
       ~caller
+      ~on_existing_callees
       ~expression_identifier:(ExpressionIdentifier.of_format_string_stringify ~location)
-      ~expression_for_logging:(Node.create_with_default_location substring)
+      ~expression_for_logging:(Some (Node.create_with_default_location substring))
       ~callees:(ExpressionCallees.from_format_string_stringify callees)
 
 
-  let set_define_callees ~define_location ~callees =
+  let set_define_callees ~error_if_new ~define_location ~callees =
     set_callees
-      ~error_if_existing_empty:true
+      ~error_if_new
       ~expression_identifier:(ExpressionIdentifier.of_define_statement define_location)
       ~callees:(ExpressionCallees.from_define callees)
 
