@@ -51,6 +51,8 @@ module SharedMemory : sig
 
   val redirect_to_decorated : ReadOnly.t -> Target.t -> Target.t
 
+  val redirect_to_decorated_opt : ReadOnly.t -> Target.t -> Target.t option
+
   val decorated_callable_body : ReadOnly.t -> Target.t -> DecoratedDefineBody.t option
 
   val register_decorator_defines

@@ -193,6 +193,7 @@ module ReadOnly : sig
     skip_analysis_targets:Target.HashSet.t ->
     definitions:Target.t list ->
     create_dependency_for:CallGraph.AllTargetsUseCase.t ->
+    redirect_to_decorated:(Target.t -> Target.t option) ->
     transform_call_graph:
       (t -> Target.t -> CallGraph.DefineCallGraph.t -> CallGraph.DefineCallGraph.t) ->
     CallGraph.SharedMemory.call_graphs

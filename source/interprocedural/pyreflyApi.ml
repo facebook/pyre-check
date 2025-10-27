@@ -311,6 +311,9 @@ module LocalFunctionId : sig
         class_id: LocalClassId.t;
         name: string;
       }
+    (* Decorated target, which represents an artificial function containing all decorators of a
+       function, inlined as an expression. For e.g, `@foo` on `def bar()` -> `return foo(bar)` *)
+    | FunctionDecoratedTarget of Location.t
   [@@deriving compare, equal, show, sexp]
 
   val from_string : string -> (t, FormatError.t) result
@@ -331,6 +334,7 @@ end = struct
           class_id: LocalClassId.t;
           name: string;
         }
+      | FunctionDecoratedTarget of Location.t
     [@@deriving compare, equal, show, sexp]
   end
 
@@ -347,6 +351,8 @@ end = struct
         | Some (class_id, name) ->
             Ok (ClassField { class_id = LocalClassId.of_string class_id; name })
         | None -> Error (FormatError.UnparsableString string))
+    | Some ("FDT", location) ->
+        parse_location location >>| fun location -> FunctionDecoratedTarget location
     | _ -> Error (FormatError.UnparsableString string)
 
 
@@ -2805,6 +2811,9 @@ module ReadWrite = struct
               failwith "unreachable"
           | Definition.Function { local_function_id = LocalFunctionId.ClassField _; _ } ->
               NameLocation.UnknonwnForClassField
+          | Definition.Function { local_function_id = LocalFunctionId.FunctionDecoratedTarget _; _ }
+            ->
+              failwith "unexpected decorated target in function definitions"
           | Definition.Class { name_location; _ } -> NameLocation.ClassName name_location
         in
         let rec add_definition
@@ -4036,6 +4045,7 @@ module ReadOnly = struct
       ~skip_analysis_targets
       ~definitions
       ~create_dependency_for
+      ~redirect_to_decorated
       ~transform_call_graph
     =
     let timer = Timer.start () in
@@ -4064,11 +4074,39 @@ module ReadOnly = struct
             |> CallableMetadataSharedMemory.get callable_metadata_shared_memory
             |> assert_shared_memory_key_exists "missing callable metadata"
           in
-          Map.update
-            module_definitions_map
-            (ModuleQualifier.from_reference_unchecked module_qualifier)
-            ~f:(fun sofar ->
-              { CallableWithId.callable; local_function_id } :: Option.value ~default:[] sofar)
+          let module_definitions_map =
+            Map.update
+              module_definitions_map
+              (ModuleQualifier.from_reference_unchecked module_qualifier)
+              ~f:(fun sofar ->
+                { CallableWithId.callable; local_function_id } :: Option.value ~default:[] sofar)
+          in
+          let module_definitions_map =
+            match redirect_to_decorated callable with
+            | Some decorated_target ->
+                let decorated_function_id =
+                  match local_function_id with
+                  | LocalFunctionId.Function position ->
+                      LocalFunctionId.FunctionDecoratedTarget position
+                  | _ ->
+                      Format.asprintf
+                        "Unexpected local function id for decorated function: `%a`"
+                        LocalFunctionId.pp
+                        local_function_id
+                      |> failwith
+                in
+                Map.update
+                  module_definitions_map
+                  (ModuleQualifier.from_reference_unchecked module_qualifier)
+                  ~f:(fun sofar ->
+                    {
+                      CallableWithId.callable = decorated_target;
+                      local_function_id = decorated_function_id;
+                    }
+                    :: Option.value ~default:[] sofar)
+            | None -> module_definitions_map
+          in
+          module_definitions_map
       in
       List.fold ~init:ModuleQualifier.Map.empty ~f:fold_definition definitions
     in

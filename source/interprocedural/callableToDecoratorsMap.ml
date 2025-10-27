@@ -271,6 +271,13 @@ module SharedMemory = struct
       callable
 
 
+  let redirect_to_decorated_opt decorators callable =
+    if is_decorated decorators callable then
+      Some (Target.set_kind Target.Decorated callable)
+    else
+      None
+
+
   (**
      * For any target that might be decorated, return the expression that calls the decorators.
      *

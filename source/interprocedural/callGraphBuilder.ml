@@ -4715,6 +4715,8 @@ let build_whole_program_call_graph_for_pyrefly
     ~skip_analysis_targets
     ~definitions
     ~create_dependency_for
+    ~redirect_to_decorated:
+      (CallableToDecoratorsMap.SharedMemory.redirect_to_decorated_opt callables_to_decorators_map)
     ~transform_call_graph
 
 
