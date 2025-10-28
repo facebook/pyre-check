@@ -242,6 +242,36 @@ module ModelQueries : sig
     (Ast.Reference.t * Ast.Statement.Define.Signature.t option) list option
 end
 
+module InContext : sig
+  type t
+
+  val create_at_global_scope : ReadOnly.t -> t
+
+  val create_at_statement_key : ReadOnly.t -> define_name:Ast.Reference.t -> statement_key:int -> t
+
+  val pyre_api : t -> ReadOnly.t
+
+  val is_global : t -> reference:Ast.Reference.t -> bool
+
+  val resolve_reference : t -> Ast.Reference.t -> Type.t
+
+  val resolve_assignment : t -> Ast.Statement.Assign.t -> t
+
+  val resolve_expression_to_type : t -> Ast.Expression.t -> Type.t
+
+  val resolve_attribute_access : t -> base_type:Type.t -> attribute:string -> Type.t
+
+  val fallback_attribute
+    :  t ->
+    ?accessed_through_class:bool ->
+    ?type_for_lookup:Type.t option ->
+    name:string ->
+    string ->
+    Analysis.AnnotatedAttribute.instantiated option
+
+  val resolve_generators : t -> Ast.Expression.Comprehension.Generator.t list -> t
+end
+
 (* Exposed for testing purposes *)
 module ModuleId : sig
   type t [@@deriving compare, equal, show]

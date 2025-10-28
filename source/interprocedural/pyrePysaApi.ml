@@ -443,11 +443,12 @@ end
 module InContext = struct
   type t =
     | Pyre1 of Pyre1Api.InContext.t
-    | Pyrefly of unit
+    | Pyrefly of PyreflyApi.InContext.t
 
   let create_at_global_scope = function
     | ReadOnly.Pyre1 pyre_api -> Pyre1 (Pyre1Api.InContext.create_at_global_scope pyre_api)
-    | ReadOnly.Pyrefly _ -> Pyrefly ()
+    | ReadOnly.Pyrefly pyrefly_api ->
+        Pyrefly (PyreflyApi.InContext.create_at_global_scope pyrefly_api)
 
 
   let create_at_statement_key api ~define_name ~define ~statement_key =
@@ -455,49 +456,53 @@ module InContext = struct
     | ReadOnly.Pyre1 pyre_api ->
         Pyre1
           (Pyre1Api.InContext.create_at_statement_key pyre_api ~define_name ~define ~statement_key)
-    | ReadOnly.Pyrefly _ -> failwith "unimplemented: InContext.create_at_statement_key"
+    | ReadOnly.Pyrefly pyrefly_api ->
+        Pyrefly
+          (PyreflyApi.InContext.create_at_statement_key pyrefly_api ~define_name ~statement_key)
 
 
   let pyre_api = function
     | Pyre1 pyre_context -> ReadOnly.Pyre1 (Pyre1Api.InContext.pyre_api pyre_context)
-    | Pyrefly _ -> failwith "unimplemented: InContext.pyre_api"
+    | Pyrefly pyrefly_context -> ReadOnly.Pyrefly (PyreflyApi.InContext.pyre_api pyrefly_context)
 
 
   let is_global = function
     | Pyre1 pyre_context -> Pyre1Api.InContext.is_global pyre_context
-    | Pyrefly _ -> failwith "unimplemented: InContext.is_global"
+    | Pyrefly pyrefly_context -> PyreflyApi.InContext.is_global pyrefly_context
 
 
   let resolve_reference = function
     | Pyre1 pyre_context -> Pyre1Api.InContext.resolve_reference pyre_context
-    | Pyrefly _ -> failwith "unimplemented: InContext.resolve_reference"
+    | Pyrefly pyrefly_context -> PyreflyApi.InContext.resolve_reference pyrefly_context
 
 
   let resolve_assignment api assign =
     match api with
     | Pyre1 pyre_context -> Pyre1 (Pyre1Api.InContext.resolve_assignment pyre_context assign)
-    | Pyrefly _ -> failwith "unimplemented: InContext.resolve_assignment"
+    | Pyrefly pyrefly_context ->
+        Pyrefly (PyreflyApi.InContext.resolve_assignment pyrefly_context assign)
 
 
   let resolve_expression_to_type = function
     | Pyre1 pyre_context -> Pyre1Api.InContext.resolve_expression_to_type pyre_context
-    | Pyrefly _ -> failwith "unimplemented: InContext.resolve_expression_to_type"
+    | Pyrefly pyrefly_context -> PyreflyApi.InContext.resolve_expression_to_type pyrefly_context
 
 
   let resolve_attribute_access = function
     | Pyre1 pyre_context -> Pyre1Api.InContext.resolve_attribute_access pyre_context
-    | Pyrefly _ -> failwith "unimplemented: InContext.resolve_attribute_access"
+    | Pyrefly pyrefly_context -> PyreflyApi.InContext.resolve_attribute_access pyrefly_context
 
 
   let fallback_attribute = function
     | Pyre1 pyre_context -> Pyre1Api.InContext.fallback_attribute pyre_context
-    | Pyrefly _ -> failwith "unimplemented: InContext.fallback_attribute"
+    | Pyrefly pyrefly_context -> PyreflyApi.InContext.fallback_attribute pyrefly_context
 
 
   let resolve_generators api generators =
     match api with
     | Pyre1 pyre_context -> Pyre1 (Pyre1Api.InContext.resolve_generators pyre_context generators)
-    | Pyrefly _ -> failwith "unimplemented: InContext.resolve_generators"
+    | Pyrefly pyrefly_context ->
+        Pyrefly (PyreflyApi.InContext.resolve_generators pyrefly_context generators)
 end
 
 module ModelQueries = struct

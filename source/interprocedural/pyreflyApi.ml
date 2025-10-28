@@ -4605,6 +4605,57 @@ module ModelQueries = struct
     | None -> None
 end
 
+module InContext = struct
+  type t =
+    | GlobalScope of { api: ReadOnly.t }
+    | StatementScope of {
+        api: ReadOnly.t;
+        (* Define name of the function. Note that this might be a decorated target, which is not
+           visible by pyrefly. *)
+        define_name: Ast.Reference.t;
+        statement_key: int;
+      }
+
+  let create_at_global_scope api = GlobalScope { api }
+
+  let create_at_statement_key api ~define_name ~statement_key =
+    StatementScope { api; define_name; statement_key }
+
+
+  let pyre_api = function
+    | GlobalScope { api } -> api
+    | StatementScope { api; _ } -> api
+
+
+  let is_global _ ~reference:_ =
+    (* TODO(T225700656): Support is_global *)
+    failwith "unimplemented: PyreflyApi.InContext.is_global"
+
+
+  let resolve_reference _ _ =
+    (* TODO(T225700656): Support resolve_reference *)
+    failwith "unimplemented: PyreflyApi.InContext.resolve_reference"
+
+
+  let resolve_assignment api _ = api
+
+  let resolve_generators api _ = api
+
+  let resolve_expression_to_type _ _ =
+    (* TODO(T225700656): Support resolve_expression_to_type *)
+    failwith "unimplemented: PyreflyApi.InContext.resolve_expression_to_type"
+
+
+  let resolve_attribute_access _ ~base_type:_ ~attribute:_ =
+    (* TODO(T225700656): Support resolve_attribute_access *)
+    failwith "unimplemented: PyreflyApi.InContext.resolve_attribute_access"
+
+
+  let fallback_attribute _ ?accessed_through_class:_ ?type_for_lookup:_ ~name:_ _ =
+    (* TODO(T225700656): Support fallback_attribute *)
+    failwith "unimplemented: PyreflyApi.InContext.fallback_attribute"
+end
+
 (* Exposed for testing purposes *)
 module Testing = struct
   module Module = ReadWrite.Module
