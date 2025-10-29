@@ -2676,7 +2676,7 @@ let test_call_graph_of_define =
       (* TODO(T105570363): Resolve calls with mixed function and methods. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:
              {|
@@ -2749,7 +2749,7 @@ let test_call_graph_of_define =
       (* TODO(T105570363): Resolve calls with mixed function and constructors. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:
              {|
