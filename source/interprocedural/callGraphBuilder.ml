@@ -1834,8 +1834,7 @@ let resolve_identifier ~define_name ~pyre_in_context ~identifier =
         {
           IdentifierCallees.global_targets;
           nonlocal_targets;
-          callable_targets;
-          decorated_targets = [];
+          if_called = CallCallees.create ~call_targets:callable_targets ();
         }
 
 
@@ -2069,8 +2068,7 @@ let resolve_attribute_access
     AttributeAccessCallees.property_targets;
     global_targets;
     is_attribute;
-    callable_targets;
-    decorated_targets = [];
+    if_called = CallCallees.create ~call_targets:callable_targets ();
   }
 
 
@@ -3469,6 +3467,8 @@ module HigherOrderCallGraph = struct
              higher_order_parameters = original_higher_order_parameters;
              unresolved;
              init_targets = original_init_targets;
+             (* TODO(T243083593): Resolve decorated targets for __new__ *)
+             new_targets = _;
              shim_target = original_shim_target;
              _;
            } as original_call_callees)
@@ -3784,14 +3784,32 @@ module HigherOrderCallGraph = struct
             let global_callables =
               Context.input_define_call_graph
               |> DefineCallGraph.resolve_identifier ~location ~identifier
-              >>| (fun ({ IdentifierCallees.callable_targets; _ } as identifier_callees) ->
+              >>| (fun ({
+                          IdentifierCallees.if_called =
+                            {
+                              CallCallees.call_targets = original_call_targets;
+                              init_targets = original_init_targets;
+                              (* TODO(T243083593): Resolve decorated targets for __new__ *)
+                              new_targets = _;
+                              _;
+                            } as if_called;
+                          _;
+                        } as identifier_callees) ->
                     let {
-                      AnalyzeDecoratedTargetsResult.decorated_targets;
-                      non_decorated_targets;
-                      result_targets;
+                      AnalyzeDecoratedTargetsResult.decorated_targets = decorated_call_targets;
+                      non_decorated_targets = non_decorated_call_targets;
+                      result_targets = result_call_targets;
                     }
                       =
-                      resolve_decorated_targets callable_targets
+                      resolve_decorated_targets original_call_targets
+                    in
+                    let {
+                      AnalyzeDecoratedTargetsResult.decorated_targets = decorated_init_targets;
+                      non_decorated_targets = non_decorated_init_targets;
+                      result_targets = _;
+                    }
+                      =
+                      resolve_decorated_targets original_init_targets
                     in
                     Context.output_define_call_graph :=
                       DefineCallGraph.set_identifier_callees
@@ -3801,11 +3819,19 @@ module HigherOrderCallGraph = struct
                         ~identifier_callees:
                           {
                             identifier_callees with
-                            callable_targets = non_decorated_targets;
-                            decorated_targets;
+                            if_called =
+                              {
+                                if_called with
+                                CallGraph.CallCallees.call_targets = non_decorated_call_targets;
+                                init_targets = non_decorated_init_targets;
+                                decorated_targets =
+                                  decorated_call_targets
+                                  |> List.rev_append decorated_init_targets
+                                  |> List.dedup_and_sort ~compare:CallTarget.compare;
+                              };
                           }
                         !Context.output_define_call_graph;
-                    CallTarget.Set.of_list result_targets)
+                    CallTarget.Set.of_list result_call_targets)
               |> Option.value ~default:CallTarget.Set.bottom
             in
             let callables_from_variable =
@@ -3817,8 +3843,15 @@ module HigherOrderCallGraph = struct
               Context.input_define_call_graph
               |> DefineCallGraph.resolve_attribute_access ~location ~attribute_access
               >>| (fun ({
-                          AttributeAccessCallees.callable_targets;
-                          property_targets;
+                          AttributeAccessCallees.property_targets;
+                          if_called =
+                            {
+                              CallCallees.call_targets = original_call_targets;
+                              init_targets = original_init_targets;
+                              (* TODO(T243083593): Resolve decorated targets for __new__ *)
+                              new_targets = _;
+                              _;
+                            } as if_called;
                           is_attribute =
                             _
                             (* This is irrelevant. Regardless of whether this could potentially be
@@ -3827,12 +3860,20 @@ module HigherOrderCallGraph = struct
                           _;
                         } as attribute_access_callees) ->
                     let {
-                      AnalyzeDecoratedTargetsResult.decorated_targets = decorated_callable_targets;
-                      non_decorated_targets = non_decorated_callable_targets;
-                      result_targets = result_callable_targets;
+                      AnalyzeDecoratedTargetsResult.decorated_targets = decorated_call_targets;
+                      non_decorated_targets = non_decorated_call_targets;
+                      result_targets = result_call_targets;
                     }
                       =
-                      resolve_decorated_targets callable_targets
+                      resolve_decorated_targets original_call_targets
+                    in
+                    let {
+                      AnalyzeDecoratedTargetsResult.decorated_targets = decorated_init_targets;
+                      non_decorated_targets = non_decorated_init_targets;
+                      result_targets = _;
+                    }
+                      =
+                      resolve_decorated_targets original_init_targets
                     in
                     let {
                       AnalyzeDecoratedTargetsResult.decorated_targets = decorated_property_targets;
@@ -3852,10 +3893,18 @@ module HigherOrderCallGraph = struct
                         ~callees:
                           {
                             attribute_access_callees with
-                            callable_targets = non_decorated_callable_targets;
                             property_targets = result_property_targets;
-                            decorated_targets =
-                              List.rev_append decorated_callable_targets decorated_property_targets;
+                            if_called =
+                              {
+                                if_called with
+                                CallGraph.CallCallees.call_targets = non_decorated_call_targets;
+                                init_targets = non_decorated_init_targets;
+                                decorated_targets =
+                                  decorated_property_targets
+                                  |> List.rev_append decorated_call_targets
+                                  |> List.rev_append decorated_init_targets
+                                  |> List.dedup_and_sort ~compare:CallTarget.compare;
+                              };
                           }
                         !Context.output_define_call_graph;
                     (* TODO(T222400916): We need to simulate the call to the property targets (by
@@ -3863,7 +3912,7 @@ module HigherOrderCallGraph = struct
                     (* We should NOT return the property targets here. If method `A.foo` is a
                        property, then accessing the property `A().foo` means calling the getter, but
                        the result of the access is not the getter itself. *)
-                    CallTarget.Set.of_list result_callable_targets)
+                    CallTarget.Set.of_list result_call_targets)
               |> Option.value ~default:CallTarget.Set.bottom
             in
             callables, state
@@ -4459,8 +4508,12 @@ let call_graph_of_decorated_callable
       |> DefineCallGraph.resolve_attribute_access
            ~location:attribute_access_location
            ~attribute_access
-      >>| (fun { AttributeAccessCallees.callable_targets; property_targets; _ } ->
-            List.is_empty callable_targets && List.is_empty property_targets)
+      >>| (fun {
+                 AttributeAccessCallees.if_called =
+                   { CallCallees.call_targets = callable_targets; _ };
+                 property_targets;
+                 _;
+               } -> List.is_empty callable_targets && List.is_empty property_targets)
       |> Option.value ~default:true
     in
     if should_add_callable then
@@ -4474,19 +4527,22 @@ let call_graph_of_decorated_callable
           ~attribute_access
           ~callees:
             (AttributeAccessCallees.create
-               ~callable_targets:
-                 [
-                   CallTarget.create
-                     ~implicit_receiver:
-                       (is_implicit_receiver
-                          ~is_static_method
+               ~if_called:
+                 (CallCallees.create
+                    ~call_targets:
+                      [
+                        CallTarget.create
+                          ~implicit_receiver:
+                            (is_implicit_receiver
+                               ~is_static_method
+                               ~is_class_method
+                               ~explicit_receiver:false
+                               callee)
                           ~is_class_method
-                          ~explicit_receiver:false
-                          callee)
-                     ~is_class_method
-                     ~is_static_method
-                     callee;
-                 ]
+                          ~is_static_method
+                          callee;
+                      ]
+                    ())
                ())
           !call_graph
   in

@@ -57,14 +57,16 @@ Higher order call graphs
     },
     "36:0-37:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test1_alarm1": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_any_decorator.test1_alarm1",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_any_decorator.test1_alarm1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -86,14 +88,16 @@ Higher order call graphs
     },
     "41:0-42:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test1_noalarm1": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_any_decorator.test1_noalarm1",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_any_decorator.test1_noalarm1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -115,14 +119,16 @@ Higher order call graphs
     },
     "46:0-47:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test2_alarm1": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_any_decorator.test2_alarm1",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_any_decorator.test2_alarm1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -144,14 +150,16 @@ Higher order call graphs
     },
     "51:0-52:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test2_noalarm1": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_any_decorator.test2_noalarm1",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_any_decorator.test2_noalarm1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -184,14 +192,16 @@ Higher order call graphs
     },
     "59:0-60:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test3_alarm1": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_any_decorator.test3_alarm1",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_any_decorator.test3_alarm1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -224,14 +234,16 @@ Higher order call graphs
     },
     "64:0-65:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test3_alarm2": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_any_decorator.test3_alarm2",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_any_decorator.test3_alarm2",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -264,14 +276,16 @@ Higher order call graphs
     },
     "69:0-70:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test3_alarm3": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_any_decorator.test3_alarm3",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_any_decorator.test3_alarm3",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -304,14 +318,16 @@ Higher order call graphs
     },
     "74:0-75:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test3_noalarm1": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_any_decorator.test3_noalarm1",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_any_decorator.test3_noalarm1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -344,14 +360,16 @@ Higher order call graphs
     },
     "79:0-80:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test3_noalarm2": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_any_decorator.test3_noalarm2",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_any_decorator.test3_noalarm2",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -384,14 +402,16 @@ Higher order call graphs
     },
     "84:0-85:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test4_alarm1": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_any_decorator.test4_alarm1",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_any_decorator.test4_alarm1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -424,14 +444,16 @@ Higher order call graphs
     },
     "89:0-90:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test4_noalarm1": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_any_decorator.test4_noalarm1",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_any_decorator.test4_noalarm1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -464,14 +486,16 @@ Higher order call graphs
     },
     "94:0-95:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test4_noalarm2": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_any_decorator.test4_noalarm2",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_any_decorator.test4_noalarm2",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -504,14 +528,16 @@ Higher order call graphs
     },
     "99:0-100:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test4_noalarm3": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_any_decorator.test4_noalarm3",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_any_decorator.test4_noalarm3",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -544,14 +570,16 @@ Higher order call graphs
     },
     "104:0-105:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test5_alarm1": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_any_decorator.test5_alarm1",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_any_decorator.test5_alarm1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -584,14 +612,16 @@ Higher order call graphs
     },
     "109:0-110:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test5_alarm2": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_any_decorator.test5_alarm2",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_any_decorator.test5_alarm2",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -624,14 +654,16 @@ Higher order call graphs
     },
     "114:0-115:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test5_noalarm1": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_any_decorator.test5_noalarm1",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_any_decorator.test5_noalarm1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -664,14 +696,16 @@ Higher order call graphs
     },
     "119:0-120:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test5_noalarm2": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_any_decorator.test5_noalarm2",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_any_decorator.test5_noalarm2",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -695,14 +729,16 @@ Higher order call graphs
     },
     "132:0-133:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test_local_variable_method_decorator": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_any_decorator.test_local_variable_method_decorator",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_any_decorator.test_local_variable_method_decorator",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }

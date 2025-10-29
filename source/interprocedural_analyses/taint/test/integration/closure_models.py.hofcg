@@ -487,10 +487,16 @@ Higher order call graphs
     },
     "69:14-69:19|artificial-attribute-access|qualification:closure_models.outer": {
       "attribute_access": {
-        "callables": [
-          { "target": "closure_models.outer", "index": 0, "return_type": [] }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.outer",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "72:4-72:43": {
@@ -683,26 +689,30 @@ Higher order call graphs
     },
     "123:4-124:29|artificial-attribute-access|for-decorated-target-callee:closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "123:4-124:29|artificial-attribute-access|for-decorated-target-callee:closure_models.test_dsl_decorator_source": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "closure_models.test_dsl_decorator_source",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.test_dsl_decorator_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }

@@ -3993,12 +3993,7 @@ module ReadOnly = struct
     let instantiate_identifier_callees { JsonIdentifierCallees.if_called } =
       (* TODO(T225700656): Support global targets, non local targets. *)
       let if_called = instantiate_call_callees if_called in
-      {
-        IdentifierCallees.global_targets = [];
-        nonlocal_targets = [];
-        callable_targets = if_called.call_targets;
-        decorated_targets = [];
-      }
+      { IdentifierCallees.global_targets = []; nonlocal_targets = []; if_called }
     in
     let instantiate_attribute_access_callees
         { JsonAttributeAccessCallees.if_called; property_setters; property_getters }
@@ -4010,8 +4005,7 @@ module ReadOnly = struct
           List.map ~f:instantiate_call_target (List.append property_setters property_getters);
         global_targets = [];
         is_attribute = false;
-        callable_targets = if_called.call_targets;
-        decorated_targets = [];
+        if_called;
       }
     in
     let instantiate_expression_callees = function

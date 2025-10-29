@@ -382,22 +382,28 @@ let test_call_graph_of_define =
                ( "4:8-4:11|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            ~return_type:(Some ReturnType.bool)
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 ~return_type:(Some ReturnType.bool)
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
                ( "6:8-6:11|artificial-attribute-access|qualification:test.baz",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            ~return_type:(Some ReturnType.integer)
-                            (Target.Regular.Function { name = "test.baz"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 ~return_type:(Some ReturnType.integer)
+                                 (Target.Regular.Function { name = "test.baz"; kind = Normal });
+                             ]
+                           ())
                       ()) );
                ( "3:5-3:10|artificial-call|comparison",
                  ExpressionCallees.from_call
@@ -472,11 +478,14 @@ let test_call_graph_of_define =
                ( "4:8-4:11|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
                ( "7:2-7:5",
                  ExpressionCallees.from_call
@@ -919,8 +928,7 @@ let test_call_graph_of_define =
                        ];
                      global_targets = [];
                      is_attribute = false;
-                     callable_targets = [];
-                     decorated_targets = [];
+                     if_called = CallCallees.empty;
                    } );
                ( "8:8-8:11",
                  ExpressionCallees.from_attribute_access
@@ -935,8 +943,7 @@ let test_call_graph_of_define =
                        ];
                      global_targets = [];
                      is_attribute = false;
-                     callable_targets = [];
-                     decorated_targets = [];
+                     if_called = CallCallees.empty;
                    } );
              ]
            ();
@@ -1160,11 +1167,14 @@ let test_call_graph_of_define =
                ( "7:10-7:11|artificial-attribute-access|qualification:test.f",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.f"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.f"; kind = Normal });
+                             ]
+                           ())
                       ()) );
                ( "7:2-7:15",
                  ExpressionCallees.from_call
@@ -1232,13 +1242,16 @@ let test_call_graph_of_define =
                ( "9:2-9:17|artificial-attribute-access|qualification:test.callable_target",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            ~return_type:(Some ReturnType.integer)
-                            (Target.Regular.Function
-                               { name = "test.callable_target"; kind = Decorated });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 ~return_type:(Some ReturnType.integer)
+                                 (Target.Regular.Function
+                                    { name = "test.callable_target"; kind = Decorated });
+                             ]
+                           ())
                       ()) );
                ( "9:2-9:35",
                  ExpressionCallees.from_call
@@ -1536,12 +1549,15 @@ let test_call_graph_of_define =
                ( "9:6-9:9|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            ~return_type:(Some ReturnType.integer)
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 ~return_type:(Some ReturnType.integer)
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ();
@@ -1603,22 +1619,28 @@ let test_call_graph_of_define =
                ( "13:6-13:9|artificial-attribute-access|qualification:test.foo",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            ~return_type:(Some ReturnType.integer)
-                            (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 ~return_type:(Some ReturnType.integer)
+                                 (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                             ]
+                           ())
                       ()) );
                ( "13:11-13:14|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            ~return_type:(Some ReturnType.integer)
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 ~return_type:(Some ReturnType.integer)
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ();
@@ -2084,8 +2106,7 @@ let test_call_graph_of_define =
                        ];
                      global_targets = [];
                      is_attribute = false;
-                     callable_targets = [];
-                     decorated_targets = [];
+                     if_called = CallCallees.empty;
                    } );
                ( "11:2-11:7",
                  ExpressionCallees.from_attribute_access
@@ -2104,8 +2125,7 @@ let test_call_graph_of_define =
                        ];
                      global_targets = [];
                      is_attribute = false;
-                     callable_targets = [];
-                     decorated_targets = [];
+                     if_called = CallCallees.empty;
                    } );
              ]
            ();
@@ -2195,8 +2215,7 @@ let test_call_graph_of_define =
                        ];
                      global_targets = [];
                      is_attribute = false;
-                     callable_targets = [];
-                     decorated_targets = [];
+                     if_called = CallCallees.empty;
                    } );
                ( "17:6-17:16",
                  ExpressionCallees.from_attribute_access
@@ -2212,8 +2231,7 @@ let test_call_graph_of_define =
                        ];
                      global_targets = [];
                      is_attribute = true;
-                     callable_targets = [];
-                     decorated_targets = [];
+                     if_called = CallCallees.empty;
                    } );
              ]
            ();
@@ -2258,8 +2276,7 @@ let test_call_graph_of_define =
                        ];
                      global_targets = [];
                      is_attribute = false;
-                     callable_targets = [];
-                     decorated_targets = [];
+                     if_called = CallCallees.empty;
                    } );
              ]
            ();
@@ -2708,11 +2725,14 @@ let test_call_graph_of_define =
                ( "10:21-10:24|artificial-attribute-access|qualification:test.baz",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.baz"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.baz"; kind = Normal });
+                             ]
+                           ())
                       ()) );
                ( "11:4-11:7",
                  ExpressionCallees.from_call
@@ -2777,11 +2797,14 @@ let test_call_graph_of_define =
                ( "9:17-9:20|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
                ( "10:4-10:7",
                  ExpressionCallees.from_call
@@ -3310,8 +3333,7 @@ let test_call_graph_of_define =
                            (Target.Regular.Object "test.Token.token");
                        ];
                      is_attribute = true;
-                     callable_targets = [];
-                     decorated_targets = [];
+                     if_called = CallCallees.empty;
                    } );
              ]
            ();
@@ -3353,8 +3375,7 @@ let test_call_graph_of_define =
                            (Target.Regular.Object "test.C.attribute");
                        ];
                      is_attribute = true;
-                     callable_targets = [];
-                     decorated_targets = [];
+                     if_called = CallCallees.empty;
                    } );
              ]
            ();
@@ -3389,8 +3410,7 @@ let test_call_graph_of_define =
                            (Target.Regular.Object "test.Token.token");
                        ];
                      is_attribute = true;
-                     callable_targets = [];
-                     decorated_targets = [];
+                     if_called = CallCallees.empty;
                    } );
              ]
            ();
@@ -3429,8 +3449,7 @@ let test_call_graph_of_define =
                            (Target.Regular.Object "test.Token.token");
                        ];
                      is_attribute = true;
-                     callable_targets = [];
-                     decorated_targets = [];
+                     if_called = CallCallees.empty;
                    } );
              ]
            ();
@@ -3973,8 +3992,7 @@ let test_call_graph_of_define =
                        ];
                      global_targets = [];
                      is_attribute = false;
-                     callable_targets = [];
-                     decorated_targets = [];
+                     if_called = CallCallees.empty;
                    } );
              ]
            ();
@@ -4019,8 +4037,7 @@ let test_call_graph_of_define =
                        ];
                      global_targets = [];
                      is_attribute = false;
-                     callable_targets = [];
-                     decorated_targets = [];
+                     if_called = CallCallees.empty;
                    } );
              ]
            ();
@@ -5581,8 +5598,7 @@ let test_call_graph_of_define =
                            (Target.Regular.Object "test.A.B");
                        ];
                      is_attribute = true;
-                     callable_targets = [];
-                     decorated_targets = [];
+                     if_called = CallCallees.empty;
                    } );
                ( "13:4-13:18",
                  ExpressionCallees.from_call
@@ -5630,8 +5646,7 @@ let test_call_graph_of_define =
                            (Target.Regular.Object "test.A.B");
                        ];
                      is_attribute = true;
-                     callable_targets = [];
-                     decorated_targets = [];
+                     if_called = CallCallees.empty;
                    } );
                ( "11:4-11:18",
                  ExpressionCallees.from_call
@@ -5737,11 +5752,14 @@ let test_call_graph_of_define =
                ( "3:9-3:12|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ();
@@ -5759,11 +5777,14 @@ let test_call_graph_of_define =
                ( "3:8-3:11|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ();
@@ -6327,11 +6348,14 @@ let test_call_graph_of_define_foo_and_bar =
                ( "3:9-3:12|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ();
@@ -6349,11 +6373,14 @@ let test_call_graph_of_define_foo_and_bar =
                ( "3:8-3:11|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ();
@@ -6397,11 +6424,14 @@ let test_call_graph_of_define_foo_and_bar =
                ( "7:6-7:9|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ();
@@ -6456,11 +6486,14 @@ let test_call_graph_of_define_foo_and_bar =
                ( "16:20-16:24|artificial-attribute-access|qualification:test.foo1",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.foo1"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.foo1"; kind = Normal });
+                             ]
+                           ())
                       ()) );
                ( "18:11-18:25",
                  ExpressionCallees.from_call
@@ -6489,11 +6522,14 @@ let test_call_graph_of_define_foo_and_bar =
                ( "18:20-18:24|artificial-attribute-access|qualification:test.foo2",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.foo2"; kind = Decorated });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.foo2"; kind = Decorated });
+                             ]
+                           ())
                       ()) );
              ]
            ();
@@ -6769,11 +6805,14 @@ let test_higher_order_call_graph_of_define =
                ( "3:8-3:11|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ~expected_returned_callables:[]
@@ -6792,11 +6831,14 @@ let test_higher_order_call_graph_of_define =
                ( "3:8-3:11|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ~expected_returned_callables:
@@ -6819,11 +6861,14 @@ let test_higher_order_call_graph_of_define =
                ( "3:9-3:12|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ~expected_returned_callables:
@@ -6847,11 +6892,14 @@ let test_higher_order_call_graph_of_define =
                ( "3:15-3:18|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ~expected_returned_callables:
@@ -6897,20 +6945,26 @@ let test_higher_order_call_graph_of_define =
                ( "3:6-3:9|artificial-attribute-access|qualification:test.foo",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                             ]
+                           ())
                       ()) );
                ( "3:11-3:14|artificial-attribute-access|qualification:test.baz",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.baz"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.baz"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ~expected_returned_callables:[]
@@ -6950,11 +7004,14 @@ let test_higher_order_call_graph_of_define =
                ( "7:6-7:9|artificial-attribute-access|qualification:test.baz",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.baz"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.baz"; kind = Normal });
+                             ]
+                           ())
                       ()) );
                ( "8:2-8:11",
                  ExpressionCallees.from_call
@@ -7009,11 +7066,14 @@ let test_higher_order_call_graph_of_define =
                ( "8:6-8:9|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
                ( "9:2-9:17",
                  ExpressionCallees.from_call
@@ -7041,11 +7101,14 @@ let test_higher_order_call_graph_of_define =
                ( "9:13-9:16|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ~expected_returned_callables:[]
@@ -7081,11 +7144,14 @@ let test_higher_order_call_graph_of_define =
                ( "12:7-12:10|artificial-attribute-access|qualification:test.baz",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.baz"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.baz"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ~expected_returned_callables:[]
@@ -7124,11 +7190,14 @@ let test_higher_order_call_graph_of_define =
                ( "7:8-7:11|artificial-attribute-access|qualification:test.baz",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.baz"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.baz"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ~expected_returned_callables:[]
@@ -7209,11 +7278,14 @@ let test_higher_order_call_graph_of_define =
                ( "7:13-7:16|artificial-attribute-access|qualification:test.baz",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.baz"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.baz"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ~expected_returned_callables:[]
@@ -7296,11 +7368,14 @@ let test_higher_order_call_graph_of_define =
                ( "5:6-5:9|artificial-attribute-access|qualification:test.foo",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ~expected_returned_callables:
@@ -7328,11 +7403,14 @@ let test_higher_order_call_graph_of_define =
                ( "8:8-8:11|artificial-attribute-access|qualification:test.foo",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ~expected_returned_callables:[]
@@ -7379,11 +7457,14 @@ let test_higher_order_call_graph_of_define =
                ( "6:9-6:12|artificial-attribute-access|qualification:test.foo",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                             ]
+                           ())
                       ()) );
                ( "7:9-7:13|artificial-call|subscript-get-item",
                  ExpressionCallees.from_call
@@ -7442,11 +7523,14 @@ let test_higher_order_call_graph_of_define =
                ( "6:13-6:16|artificial-attribute-access|qualification:test.foo",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                             ]
+                           ())
                       ()) );
                ( "7:9-7:17|artificial-call|subscript-get-item",
                  ExpressionCallees.from_call
@@ -7480,11 +7564,14 @@ let test_higher_order_call_graph_of_define =
                ( "5:6-5:9|artificial-attribute-access|qualification:test.foo",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ~expected_returned_callables:[]
@@ -7539,20 +7626,26 @@ let test_higher_order_call_graph_of_define =
                ( "9:16-9:19|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
                ( "9:24-9:27|artificial-attribute-access|qualification:test.baz",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.baz"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.baz"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ~expected_returned_callables:[]
@@ -7740,20 +7833,26 @@ let test_higher_order_call_graph_of_define =
                ( "9:6-9:9|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
                ( "11:8-11:11|artificial-attribute-access|qualification:test.baz",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.baz"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.baz"; kind = Normal });
+                             ]
+                           ())
                       ()) );
                ( "12:9-12:15",
                  ExpressionCallees.from_call
@@ -7824,11 +7923,14 @@ let test_higher_order_call_graph_of_define =
                ( "7:6-7:9|artificial-attribute-access|qualification:test.bar",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                        ]
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                             ]
+                           ())
                       ()) );
              ]
            ~expected_returned_callables:[]
@@ -8031,11 +8133,15 @@ let test_resolve_decorator_callees =
                        ( "12:0-13:10|artificial-attribute-access|for-decorated-target-callee:test.foo",
                          ExpressionCallees.from_attribute_access
                            (AttributeAccessCallees.create
-                              ~callable_targets:
-                                [
-                                  CallTarget.create_regular
-                                    (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                                ]
+                              ~if_called:
+                                (CallCallees.create
+                                   ~call_targets:
+                                     [
+                                       CallTarget.create_regular
+                                         (Target.Regular.Function
+                                            { name = "test.foo"; kind = Normal });
+                                     ]
+                                   ())
                               ()) );
                        ( "10:1-10:11|artificial-call|for-decorated-target",
                          ExpressionCallees.from_call
@@ -8116,11 +8222,15 @@ let test_resolve_decorator_callees =
                        ( "7:0-8:10|artificial-attribute-access|for-decorated-target-callee:test.foo",
                          ExpressionCallees.from_attribute_access
                            (AttributeAccessCallees.create
-                              ~callable_targets:
-                                [
-                                  CallTarget.create_regular
-                                    (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                                ]
+                              ~if_called:
+                                (CallCallees.create
+                                   ~call_targets:
+                                     [
+                                       CallTarget.create_regular
+                                         (Target.Regular.Function
+                                            { name = "test.foo"; kind = Normal });
+                                     ]
+                                   ())
                               ()) );
                        ( "6:1-6:24",
                          ExpressionCallees.from_call
@@ -8182,20 +8292,28 @@ let test_resolve_decorator_callees =
                        ( "9:0-10:10|artificial-attribute-access|for-decorated-target-callee:test.foo",
                          ExpressionCallees.from_attribute_access
                            (AttributeAccessCallees.create
-                              ~callable_targets:
-                                [
-                                  CallTarget.create_regular
-                                    (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                                ]
+                              ~if_called:
+                                (CallCallees.create
+                                   ~call_targets:
+                                     [
+                                       CallTarget.create_regular
+                                         (Target.Regular.Function
+                                            { name = "test.foo"; kind = Normal });
+                                     ]
+                                   ())
                               ()) );
                        ( "8:22-8:25|artificial-attribute-access|qualification:test.bar",
                          ExpressionCallees.from_attribute_access
                            (AttributeAccessCallees.create
-                              ~callable_targets:
-                                [
-                                  CallTarget.create_regular
-                                    (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                                ]
+                              ~if_called:
+                                (CallCallees.create
+                                   ~call_targets:
+                                     [
+                                       CallTarget.create_regular
+                                         (Target.Regular.Function
+                                            { name = "test.bar"; kind = Normal });
+                                     ]
+                                   ())
                               ()) );
                        ( "8:1-8:26",
                          ExpressionCallees.from_call
@@ -8282,11 +8400,15 @@ let test_resolve_decorator_callees =
                        ( "8:0-9:10|artificial-attribute-access|for-decorated-target-callee:test.foo",
                          ExpressionCallees.from_attribute_access
                            (AttributeAccessCallees.create
-                              ~callable_targets:
-                                [
-                                  CallTarget.create_regular
-                                    (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                                ]
+                              ~if_called:
+                                (CallCallees.create
+                                   ~call_targets:
+                                     [
+                                       CallTarget.create_regular
+                                         (Target.Regular.Function
+                                            { name = "test.foo"; kind = Normal });
+                                     ]
+                                   ())
                               ()) );
                        ( "7:1-7:15|artificial-call|for-decorated-target",
                          ExpressionCallees.from_call
@@ -8372,11 +8494,15 @@ let test_resolve_decorator_callees =
                        ( "9:0-10:10|artificial-attribute-access|for-decorated-target-callee:test.foo",
                          ExpressionCallees.from_attribute_access
                            (AttributeAccessCallees.create
-                              ~callable_targets:
-                                [
-                                  CallTarget.create_regular
-                                    (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                                ]
+                              ~if_called:
+                                (CallCallees.create
+                                   ~call_targets:
+                                     [
+                                       CallTarget.create_regular
+                                         (Target.Regular.Function
+                                            { name = "test.foo"; kind = Normal });
+                                     ]
+                                   ())
                               ()) );
                        ( "8:1-8:12|artificial-call|for-decorated-target",
                          ExpressionCallees.from_call
@@ -8478,13 +8604,20 @@ let test_resolve_decorator_callees =
                        ( "9:2-10:12|artificial-attribute-access|for-decorated-target-callee:test.A.foo",
                          ExpressionCallees.from_attribute_access
                            (AttributeAccessCallees.create
-                              ~callable_targets:
-                                [
-                                  CallTarget.create_regular
-                                    ~implicit_receiver:true
-                                    (Target.Regular.Method
-                                       { class_name = "test.A"; method_name = "foo"; kind = Normal });
-                                ]
+                              ~if_called:
+                                (CallCallees.create
+                                   ~call_targets:
+                                     [
+                                       CallTarget.create_regular
+                                         ~implicit_receiver:true
+                                         (Target.Regular.Method
+                                            {
+                                              class_name = "test.A";
+                                              method_name = "foo";
+                                              kind = Normal;
+                                            });
+                                     ]
+                                   ())
                               ()) );
                      ] ) );
              ]
@@ -8523,11 +8656,15 @@ let test_resolve_decorator_callees =
                        ( "11:0-12:10|artificial-attribute-access|for-decorated-target-callee:test.foo",
                          ExpressionCallees.from_attribute_access
                            (AttributeAccessCallees.create
-                              ~callable_targets:
-                                [
-                                  CallTarget.create_regular
-                                    (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                                ]
+                              ~if_called:
+                                (CallCallees.create
+                                   ~call_targets:
+                                     [
+                                       CallTarget.create_regular
+                                         (Target.Regular.Function
+                                            { name = "test.foo"; kind = Normal });
+                                     ]
+                                   ())
                               ()) );
                        ( "10:1-10:17|artificial-call|for-decorated-target",
                          ExpressionCallees.from_call
@@ -8637,21 +8774,28 @@ let test_resolve_decorator_callees =
                        ( "8:2-9:10|artificial-attribute-access|for-decorated-target-callee:test.main",
                          ExpressionCallees.from_attribute_access
                            (AttributeAccessCallees.create
-                              ~callable_targets:
-                                [
-                                  CallTarget.create_regular
-                                    (Target.Regular.Function { name = "test.main"; kind = Normal });
-                                ]
+                              ~if_called:
+                                (CallCallees.create
+                                   ~call_targets:
+                                     [
+                                       CallTarget.create_regular
+                                         (Target.Regular.Function
+                                            { name = "test.main"; kind = Normal });
+                                     ]
+                                   ())
                               ()) );
                        ( "8:2-9:10|artificial-attribute-access|for-decorated-target-callee:test.main.inner",
                          ExpressionCallees.from_attribute_access
                            (AttributeAccessCallees.create
-                              ~callable_targets:
-                                [
-                                  CallTarget.create_regular
-                                    (Target.Regular.Function
-                                       { name = "test.main.inner"; kind = Normal });
-                                ]
+                              ~if_called:
+                                (CallCallees.create
+                                   ~call_targets:
+                                     [
+                                       CallTarget.create_regular
+                                         (Target.Regular.Function
+                                            { name = "test.main.inner"; kind = Normal });
+                                     ]
+                                   ())
                               ()) );
                      ] ) );
              ]

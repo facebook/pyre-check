@@ -271,14 +271,16 @@ Higher order call graphs
     },
     "70:14-70:22|artificial-attribute-access|qualification:higher_order_functions.has_tito": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "higher_order_functions.has_tito",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.has_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -317,14 +319,16 @@ Higher order call graphs
     },
     "65:17-65:25|artificial-attribute-access|qualification:higher_order_functions.has_tito": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "higher_order_functions.has_tito",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.has_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -519,14 +523,16 @@ Higher order call graphs
     },
     "139:34-139:38|artificial-attribute-access|qualification:higher_order_functions.safe": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "higher_order_functions.safe",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.safe",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "141:4-141:49": {
@@ -542,14 +548,16 @@ Higher order call graphs
     },
     "141:34-141:38|artificial-attribute-access|qualification:higher_order_functions.safe": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "higher_order_functions.safe",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.safe",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "143:4-143:48": {
@@ -565,14 +573,16 @@ Higher order call graphs
     },
     "143:22-143:26|artificial-attribute-access|qualification:higher_order_functions.safe": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "higher_order_functions.safe",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.safe",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "144:4-144:49": {
@@ -588,14 +598,16 @@ Higher order call graphs
     },
     "144:22-144:26|artificial-attribute-access|qualification:higher_order_functions.safe": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "higher_order_functions.safe",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.safe",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -624,14 +636,16 @@ Higher order call graphs
     },
     "130:47-130:51|artificial-attribute-access|qualification:higher_order_functions.safe": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "higher_order_functions.safe",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.safe",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "132:4-132:63": {
@@ -654,14 +668,16 @@ Higher order call graphs
     },
     "132:47-132:51|artificial-attribute-access|qualification:higher_order_functions.safe": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "higher_order_functions.safe",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.safe",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "134:4-134:62": {
@@ -684,14 +700,16 @@ Higher order call graphs
     },
     "134:33-134:37|artificial-attribute-access|qualification:higher_order_functions.safe": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "higher_order_functions.safe",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.safe",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "135:4-135:63": {
@@ -714,14 +732,16 @@ Higher order call graphs
     },
     "135:33-135:37|artificial-attribute-access|qualification:higher_order_functions.safe": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "higher_order_functions.safe",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.safe",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -865,14 +885,16 @@ Higher order call graphs
     },
     "22:26-22:38|artificial-attribute-access|qualification:higher_order_functions.goes_to_sink": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "higher_order_functions.goes_to_sink",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.goes_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "22:40-22:54": {
@@ -901,14 +923,16 @@ Higher order call graphs
     },
     "52:35-52:47|artificial-attribute-access|qualification:higher_order_functions.goes_to_sink": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "higher_order_functions.goes_to_sink",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.goes_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "52:49-52:63": {
@@ -1005,14 +1029,16 @@ Higher order call graphs
     },
     "57:33-57:41|artificial-attribute-access|qualification:higher_order_functions.has_tito": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "higher_order_functions.has_tito",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.has_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }

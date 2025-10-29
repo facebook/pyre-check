@@ -485,15 +485,17 @@ Higher order call graphs
     },
     "90:4-95:14|artificial-attribute-access|for-decorated-target-callee:call_graph.CallableKindConfusion.foo": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "call_graph.CallableKindConfusion.foo",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "call_graph.CallableKindConfusion.foo",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }

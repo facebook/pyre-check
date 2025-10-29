@@ -210,6 +210,8 @@ module CallCallees : sig
   }
   [@@deriving equal, show]
 
+  val empty : t
+
   val create
     :  ?call_targets:CallTarget.t list ->
     ?new_targets:CallTarget.t list ->
@@ -266,19 +268,15 @@ module AttributeAccessCallees : sig
      * For instance, if the object has type `Union[A, B]` where only `A` defines a property. *)
     is_attribute: bool;
     (* Function-typed runtime values that the attribute access may evaluate into. *)
-    callable_targets: CallTarget.t list;
-    (* Call targets for the calls to artificially created callables that call the decorators. Only
-       used by call graph building. *)
-    decorated_targets: CallTarget.t list;
+    if_called: CallCallees.t;
   }
   [@@deriving equal, show]
 
   val create
     :  ?property_targets:CallTarget.t list ->
     ?global_targets:CallTarget.t list ->
-    ?callable_targets:CallTarget.t list ->
+    ?if_called:CallCallees.t ->
     ?is_attribute:bool ->
-    ?decorated_targets:CallTarget.t list ->
     unit ->
     t
 
@@ -294,19 +292,14 @@ module IdentifierCallees : sig
   type t = {
     global_targets: CallTarget.t list;
     nonlocal_targets: CallTarget.t list;
-    (* Function-typed runtime values that the identifier may evaluate into. *)
-    callable_targets: CallTarget.t list;
-    (* Call targets for the calls to artificially created callables that call the decorators. Only
-       used by call graph building. *)
-    decorated_targets: CallTarget.t list;
+    if_called: CallCallees.t;
   }
   [@@deriving equal, show]
 
   val create
     :  ?global_targets:CallTarget.t list ->
     ?nonlocal_targets:CallTarget.t list ->
-    ?callable_targets:CallTarget.t list ->
-    ?decorated_targets:CallTarget.t list ->
+    ?if_called:CallCallees.t ->
     unit ->
     t
 

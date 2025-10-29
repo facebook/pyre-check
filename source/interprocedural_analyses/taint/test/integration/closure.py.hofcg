@@ -209,26 +209,30 @@ Higher order call graphs
     },
     "381:4-382:24|artificial-attribute-access|for-decorated-target-callee:closure.async_nonlocal_closure_tito_with_decorator": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "closure.async_nonlocal_closure_tito_with_decorator",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure.async_nonlocal_closure_tito_with_decorator",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "381:4-382:24|artificial-attribute-access|for-decorated-target-callee:closure.async_nonlocal_closure_tito_with_decorator.inner": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "closure.async_nonlocal_closure_tito_with_decorator.inner",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure.async_nonlocal_closure_tito_with_decorator.inner",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }

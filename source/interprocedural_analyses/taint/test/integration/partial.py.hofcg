@@ -229,14 +229,16 @@ Higher order call graphs
     },
     "71:35-71:50|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "partial.a_flows_to_sink",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -299,10 +301,16 @@ Higher order call graphs
     },
     "95:35-95:46|artificial-attribute-access|qualification:partial.sink_on_foo": {
       "attribute_access": {
-        "callables": [
-          { "target": "partial.sink_on_foo", "index": 0, "return_type": [] }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.sink_on_foo",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "95:54-95:60|artificial-call|subscript-get-item": {
@@ -378,10 +386,16 @@ Higher order call graphs
     },
     "100:35-100:46|artificial-attribute-access|qualification:partial.sink_on_foo": {
       "attribute_access": {
-        "callables": [
-          { "target": "partial.sink_on_foo", "index": 0, "return_type": [] }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.sink_on_foo",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "100:54-100:60|artificial-call|subscript-get-item": {
@@ -454,14 +468,16 @@ Higher order call graphs
     },
     "67:35-67:50|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "partial.a_flows_to_sink",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "67:61-67:75": {
@@ -518,14 +534,16 @@ Higher order call graphs
     },
     "88:35-88:50|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "partial.a_flows_to_sink",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -585,14 +603,16 @@ Higher order call graphs
     },
     "63:35-63:50|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "partial.a_flows_to_sink",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "63:58-63:72": {
@@ -659,10 +679,16 @@ Higher order call graphs
     },
     "104:35-104:46|artificial-attribute-access|qualification:partial.sink_on_foo": {
       "attribute_access": {
-        "callables": [
-          { "target": "partial.sink_on_foo", "index": 0, "return_type": [] }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.sink_on_foo",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "104:54-104:81": {
@@ -743,10 +769,16 @@ Higher order call graphs
     },
     "105:35-105:46|artificial-attribute-access|qualification:partial.sink_on_foo": {
       "attribute_access": {
-        "callables": [
-          { "target": "partial.sink_on_foo", "index": 0, "return_type": [] }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.sink_on_foo",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "105:54-105:81": {
@@ -909,14 +941,16 @@ Higher order call graphs
     },
     "40:22-40:37|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "partial.a_flows_to_sink",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -973,14 +1007,16 @@ Higher order call graphs
     },
     "45:22-45:37|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "partial.a_flows_to_sink",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -1037,14 +1073,16 @@ Higher order call graphs
     },
     "50:22-50:37|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "partial.a_flows_to_sink",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -1096,14 +1134,16 @@ Higher order call graphs
     },
     "35:22-35:37|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "partial.a_flows_to_sink",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -1167,15 +1207,17 @@ Higher order call graphs
     },
     "150:4-152:18|artificial-attribute-access|for-decorated-target-callee:partial.NestedDefineConstructor.__init__": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "partial.NestedDefineConstructor.__init__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.NestedDefineConstructor.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -1272,15 +1314,17 @@ Higher order call graphs
     },
     "122:4-124:18|artificial-attribute-access|for-decorated-target-callee:partial.PartialConstructor.__init__": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "partial.PartialConstructor.__init__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.PartialConstructor.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }

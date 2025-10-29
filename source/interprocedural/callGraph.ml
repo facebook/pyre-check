@@ -614,6 +614,21 @@ module CallCallees = struct
   }
   [@@deriving equal, show { with_path = false }]
 
+  let empty =
+    {
+      call_targets = [];
+      new_targets = [];
+      init_targets = [];
+      decorated_targets = [];
+      higher_order_parameters = HigherOrderParameterMap.empty;
+      shim_target = None;
+      unresolved = Unresolved.False;
+      recognized_call = RecognizedCall.False;
+    }
+
+
+  let is_empty = equal empty
+
   let create
       ?(call_targets = [])
       ?(new_targets = [])
@@ -758,10 +773,15 @@ module CallCallees = struct
         _;
       }
     =
+    let include_decorated_targets =
+      match use_case with
+      | AllTargetsUseCase.TaintAnalysisDependency -> false
+      | _ -> true
+    in
     call_targets
     |> List.rev_append new_targets
     |> List.rev_append init_targets
-    |> List.rev_append decorated_targets
+    |> (if include_decorated_targets then List.rev_append decorated_targets else Fn.id)
     |> List.map ~f:CallTarget.target
     |> List.rev_append (HigherOrderParameterMap.all_targets ~use_case higher_order_parameters)
     |> List.rev_append (shim_target >>| ShimTarget.all_targets ~use_case |> Option.value ~default:[])
@@ -981,10 +1001,7 @@ module AttributeAccessCallees = struct
      * For instance, if the object has type `Union[A, B]` where only `A` defines a property. *)
     is_attribute: bool;
     (* Function-typed runtime values that the attribute access may evaluate into. *)
-    callable_targets: CallTarget.t list;
-    (* Call targets for the calls to artificially created callables that call the decorators. Only
-       used by call graph building. *)
-    decorated_targets: CallTarget.t list;
+    if_called: CallCallees.t;
   }
   [@@deriving equal, show { with_path = false }]
 
@@ -993,8 +1010,7 @@ module AttributeAccessCallees = struct
       property_targets = [];
       global_targets = [];
       is_attribute = true;
-      callable_targets = [];
-      decorated_targets = [];
+      if_called = CallCallees.empty;
     }
 
 
@@ -1003,23 +1019,19 @@ module AttributeAccessCallees = struct
   let create
       ?(property_targets = empty.property_targets)
       ?(global_targets = empty.global_targets)
-      ?(callable_targets = empty.callable_targets)
+      ?(if_called = CallCallees.empty)
       ?(is_attribute = empty.is_attribute)
-      ?(decorated_targets = empty.decorated_targets)
       ()
     =
-    { property_targets; global_targets; is_attribute; callable_targets; decorated_targets }
+    { property_targets; global_targets; is_attribute; if_called }
 
 
-  let dedup_and_sort
-      { property_targets; global_targets; is_attribute; callable_targets; decorated_targets }
-    =
+  let dedup_and_sort { property_targets; global_targets; is_attribute; if_called } =
     {
       property_targets = CallTarget.dedup_and_sort property_targets;
       global_targets = CallTarget.dedup_and_sort global_targets;
       is_attribute;
-      callable_targets = CallTarget.dedup_and_sort callable_targets;
-      decorated_targets = CallTarget.dedup_and_sort decorated_targets;
+      if_called = CallCallees.dedup_and_sort if_called;
     }
 
 
@@ -1028,41 +1040,35 @@ module AttributeAccessCallees = struct
         property_targets = left_property_targets;
         global_targets = left_global_targets;
         is_attribute = left_is_attribute;
-        callable_targets = left_callable_targets;
-        decorated_targets = left_decorated_targets;
+        if_called = left_if_called;
       }
       {
         property_targets = right_property_targets;
         global_targets = right_global_targets;
         is_attribute = right_is_attribute;
-        callable_targets = right_callable_targets;
-        decorated_targets = right_decorated_targets;
+        if_called = right_if_called;
       }
     =
     {
       property_targets = List.rev_append left_property_targets right_property_targets;
       global_targets = List.rev_append left_global_targets right_global_targets;
       is_attribute = left_is_attribute || right_is_attribute;
-      callable_targets = List.rev_append left_callable_targets right_callable_targets;
-      decorated_targets = List.rev_append left_decorated_targets right_decorated_targets;
+      if_called = CallCallees.join left_if_called right_if_called;
     }
 
 
-  let all_targets
-      ~use_case
-      { property_targets; global_targets; callable_targets; is_attribute = _; decorated_targets }
-    =
-    (match use_case with
+  let all_targets ~use_case { property_targets; global_targets; if_called; is_attribute = _ } =
+    match use_case with
     | AllTargetsUseCase.CallGraphDependency ->
+        CallCallees.all_targets ~use_case if_called
         (* A property could (in theory) return a callable. *)
-        List.rev_append property_targets decorated_targets
-    | AllTargetsUseCase.TaintAnalysisDependency -> List.rev_append property_targets global_targets
+        |> List.rev_append (List.map ~f:CallTarget.target property_targets)
+    | AllTargetsUseCase.TaintAnalysisDependency ->
+        List.rev_append property_targets global_targets |> List.map ~f:CallTarget.target
     | AllTargetsUseCase.Everything ->
-        global_targets
-        |> List.rev_append property_targets
-        |> List.rev_append callable_targets
-        |> List.rev_append decorated_targets)
-    |> List.map ~f:CallTarget.target
+        CallCallees.all_targets ~use_case if_called
+        |> List.rev_append (List.map ~f:CallTarget.target global_targets)
+        |> List.rev_append (List.map ~f:CallTarget.target property_targets)
 
 
   let equal_ignoring_types
@@ -1070,45 +1076,39 @@ module AttributeAccessCallees = struct
         property_targets = property_targets_left;
         global_targets = global_targets_left;
         is_attribute = is_attribute_left;
-        callable_targets = callable_targets_left;
-        decorated_targets = decorated_targets_left;
+        if_called = if_called_left;
       }
       {
         property_targets = property_targets_right;
         global_targets = global_targets_right;
         is_attribute = is_attribute_right;
-        callable_targets = callable_targets_right;
-        decorated_targets = decorated_targets_right;
+        if_called = if_called_right;
       }
     =
     List.equal CallTarget.equal_ignoring_types property_targets_left property_targets_right
     && List.equal CallTarget.equal_ignoring_types global_targets_left global_targets_right
     && Bool.equal is_attribute_left is_attribute_right
-    && List.equal CallTarget.equal_ignoring_types callable_targets_left callable_targets_right
-    && List.equal CallTarget.equal_ignoring_types decorated_targets_left decorated_targets_right
+    && CallCallees.equal_ignoring_types if_called_left if_called_right
 
 
-  let to_json
-      { property_targets; global_targets; is_attribute; callable_targets; decorated_targets }
-    =
+  let to_json { property_targets; global_targets; is_attribute; if_called } =
     []
     |> JsonHelper.add_list "properties" property_targets CallTarget.to_json
     |> JsonHelper.add_list "globals" global_targets CallTarget.to_json
-    |> JsonHelper.add_list "callables" callable_targets CallTarget.to_json
-    |> JsonHelper.add_list "decorated_targets" decorated_targets CallTarget.to_json
     |> JsonHelper.add_flag_if "is_attribute" (`Bool true) is_attribute
+    |> JsonHelper.add_flag_if
+         "if_called"
+         (CallCallees.to_json if_called)
+         (not (CallCallees.is_empty if_called))
     |> fun bindings -> `Assoc (List.rev bindings)
 
 
-  let map_target ~f ({ callable_targets; _ } as attribute_callees) =
-    {
-      attribute_callees with
-      callable_targets = List.map ~f:(CallTarget.map_target ~f) callable_targets;
-    }
+  let map_target ~f ({ if_called; _ } as attribute_callees) =
+    { attribute_callees with if_called = CallCallees.map_target ~f if_called }
 
 
-  let drop_decorated_targets attribute_access_callees =
-    { attribute_access_callees with decorated_targets = [] }
+  let drop_decorated_targets ({ if_called; _ } as attribute_access_callees) =
+    { attribute_access_callees with if_called = CallCallees.drop_decorated_targets if_called }
 
 
   let regenerate_call_indices
@@ -1116,9 +1116,8 @@ module AttributeAccessCallees = struct
       ({
          property_targets;
          global_targets;
-         callable_targets =
-           _ (* No need to regenerate because they will not be used in taint analysis. *);
-         _;
+         if_called = _ (* No need to regenerate because they will not be used in taint analysis. *);
+         is_attribute = _;
        } as attribute_callees)
     =
     {
@@ -1134,29 +1133,19 @@ module IdentifierCallees = struct
     global_targets: CallTarget.t list;
     nonlocal_targets: CallTarget.t list;
     (* Function-typed runtime values that the identifier may evaluate into. *)
-    callable_targets: CallTarget.t list;
-    (* Call targets for the calls to artificially created callables that call the decorators. Only
-       used by call graph building. *)
-    decorated_targets: CallTarget.t list;
+    if_called: CallCallees.t;
   }
   [@@deriving equal, show { with_path = false }]
 
-  let create
-      ?(global_targets = [])
-      ?(nonlocal_targets = [])
-      ?(callable_targets = [])
-      ?(decorated_targets = [])
-      ()
-    =
-    { global_targets; nonlocal_targets; callable_targets; decorated_targets }
+  let create ?(global_targets = []) ?(nonlocal_targets = []) ?(if_called = CallCallees.empty) () =
+    { global_targets; nonlocal_targets; if_called }
 
 
-  let dedup_and_sort { global_targets; nonlocal_targets; callable_targets; decorated_targets } =
+  let dedup_and_sort { global_targets; nonlocal_targets; if_called } =
     {
       global_targets = CallTarget.dedup_and_sort global_targets;
       nonlocal_targets = CallTarget.dedup_and_sort nonlocal_targets;
-      callable_targets = CallTarget.dedup_and_sort callable_targets;
-      decorated_targets = CallTarget.dedup_and_sort decorated_targets;
+      if_called = CallCallees.dedup_and_sort if_called;
     }
 
 
@@ -1164,65 +1153,56 @@ module IdentifierCallees = struct
       {
         global_targets = left_global_targets;
         nonlocal_targets = left_nonlocal_targets;
-        callable_targets = left_callable_targets;
-        decorated_targets = left_decorated_targets;
+        if_called = left_if_called;
       }
       {
         global_targets = right_global_targets;
         nonlocal_targets = right_nonlocal_targets;
-        callable_targets = right_callable_targets;
-        decorated_targets = right_decorated_targets;
+        if_called = right_if_called;
       }
     =
     {
       global_targets = List.rev_append left_global_targets right_global_targets;
       nonlocal_targets = List.rev_append left_nonlocal_targets right_nonlocal_targets;
-      callable_targets = List.rev_append left_callable_targets right_callable_targets;
-      decorated_targets = List.rev_append left_decorated_targets right_decorated_targets;
+      if_called = CallCallees.join left_if_called right_if_called;
     }
 
 
-  let all_targets
-      ~use_case
-      { global_targets; nonlocal_targets; callable_targets; decorated_targets }
-    =
-    (match use_case with
-    | AllTargetsUseCase.CallGraphDependency -> decorated_targets
+  let all_targets ~use_case { global_targets; nonlocal_targets; if_called } =
+    match use_case with
+    | AllTargetsUseCase.CallGraphDependency -> CallCallees.all_targets ~use_case if_called
     | AllTargetsUseCase.TaintAnalysisDependency -> []
     | AllTargetsUseCase.Everything ->
-        nonlocal_targets
-        |> List.rev_append global_targets
-        |> List.rev_append callable_targets
-        |> List.rev_append decorated_targets)
-    |> List.map ~f:CallTarget.target
+        CallCallees.all_targets ~use_case if_called
+        |> List.rev_append (List.map ~f:CallTarget.target nonlocal_targets)
+        |> List.rev_append (List.map ~f:CallTarget.target global_targets)
 
 
-  let to_json { global_targets; nonlocal_targets; callable_targets; decorated_targets } =
+  let to_json { global_targets; nonlocal_targets; if_called } =
     []
     |> JsonHelper.add_list "globals" global_targets CallTarget.to_json
     |> JsonHelper.add_list "nonlocals" nonlocal_targets CallTarget.to_json
-    |> JsonHelper.add_list "callables" callable_targets CallTarget.to_json
-    |> JsonHelper.add_list "decorated_targets" decorated_targets CallTarget.to_json
+    |> JsonHelper.add_flag_if
+         "if_called"
+         (CallCallees.to_json if_called)
+         (not (CallCallees.is_empty if_called))
     |> fun bindings -> `Assoc (List.rev bindings)
 
 
-  let map_target ~f ({ callable_targets; _ } as identifier_callees) =
+  let map_target ~f ({ if_called; _ } as identifier_callees) =
+    { identifier_callees with if_called = CallCallees.map_target ~f if_called }
+
+
+  let drop_decorated_targets ({ if_called; _ } as identifier_callees) =
+    { identifier_callees with if_called = CallCallees.drop_decorated_targets if_called }
+
+
+  let regenerate_call_indices ~indexer { global_targets; nonlocal_targets; if_called } =
     {
-      identifier_callees with
-      callable_targets = List.map ~f:(CallTarget.map_target ~f) callable_targets;
-    }
-
-
-  let drop_decorated_targets identifier_callees = { identifier_callees with decorated_targets = [] }
-
-  let regenerate_call_indices
-      ~indexer
-      ({ global_targets; nonlocal_targets; callable_targets = _; _ } as identifier_callees)
-    =
-    {
-      identifier_callees with
       global_targets = List.map ~f:(CallTarget.regenerate_index ~indexer) global_targets;
       nonlocal_targets = List.map ~f:(CallTarget.regenerate_index ~indexer) nonlocal_targets;
+      (* Those are not used in the taint analysis, therefore they don't need indices. *)
+      if_called;
     }
 end
 

@@ -1397,14 +1397,16 @@ Higher order call graphs
     },
     "360:0-392:38|artificial-attribute-access|for-decorated-target-callee:taint_broadening.model_broadening_no_collapse_sink_width": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "taint_broadening.model_broadening_no_collapse_sink_width",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "taint_broadening.model_broadening_no_collapse_sink_width",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -2038,14 +2040,16 @@ Higher order call graphs
     },
     "322:0-356:17|artificial-attribute-access|for-decorated-target-callee:taint_broadening.model_broadening_no_collapse_source_width": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "taint_broadening.model_broadening_no_collapse_source_width",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "taint_broadening.model_broadening_no_collapse_source_width",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -3481,14 +3485,16 @@ Higher order call graphs
     },
     "396:0-411:17|artificial-attribute-access|for-decorated-target-callee:taint_broadening.tito_no_broadening_input_and_output_paths": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "taint_broadening.tito_no_broadening_input_and_output_paths",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "taint_broadening.tito_no_broadening_input_and_output_paths",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }

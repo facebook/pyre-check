@@ -32,26 +32,30 @@ Higher order call graphs
     },
     "53:12-53:16|artificial-attribute-access|qualification:functions_as_locals.barA": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "functions_as_locals.barA",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "functions_as_locals.barA",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "55:12-55:16|artificial-attribute-access|qualification:functions_as_locals.barB": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "functions_as_locals.barB",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "functions_as_locals.barB",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "57:4-57:24": {
@@ -154,14 +158,16 @@ Higher order call graphs
     },
     "16:8-16:11|artificial-attribute-access|qualification:functions_as_locals.foo": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "functions_as_locals.foo",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "functions_as_locals.foo",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "17:4-17:10": {
@@ -233,14 +239,16 @@ Higher order call graphs
   "calls": {
     "22:8-22:11|artificial-attribute-access|qualification:functions_as_locals.foo": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "functions_as_locals.foo",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "functions_as_locals.foo",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "23:4-23:10": {

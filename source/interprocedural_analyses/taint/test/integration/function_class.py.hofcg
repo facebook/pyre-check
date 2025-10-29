@@ -6,10 +6,16 @@ Higher order call graphs
   "calls": {
     "15:4-15:5|artificial-attribute-access|qualification:function_class.test": {
       "attribute_access": {
-        "callables": [
-          { "target": "function_class.test", "index": 0, "return_type": [] }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "function_class.test",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "15:4-15:7": {

@@ -44,14 +44,16 @@ Higher order call graphs
     },
     "14:0-15:17|artificial-attribute-access|for-decorated-target-callee:shims.async_callable": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "shims.async_callable",
-            "index": 0,
-            "return_type": [ "float", "integer" ]
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "shims.async_callable",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
       }
     }
   }
@@ -62,14 +64,16 @@ Higher order call graphs
   "calls": {
     "19:4-19:18|artificial-attribute-access|qualification:shims.async_callable": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "shims.async_callable@decorated",
-            "index": 0,
-            "return_type": [ "float", "integer" ]
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "shims.async_callable@decorated",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
       }
     },
     "19:4-19:36": {
@@ -100,14 +104,16 @@ Higher order call graphs
     },
     "20:4-20:18|artificial-attribute-access|qualification:shims.async_callable": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "shims.async_callable@decorated",
-            "index": 0,
-            "return_type": [ "float", "integer" ]
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "shims.async_callable@decorated",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
       }
     },
     "20:4-20:49": {
@@ -145,14 +151,16 @@ Higher order call graphs
     },
     "21:4-21:18|artificial-attribute-access|qualification:shims.async_callable": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "shims.async_callable@decorated",
-            "index": 0,
-            "return_type": [ "float", "integer" ]
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "shims.async_callable@decorated",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
       }
     },
     "21:4-21:49": {
@@ -196,14 +204,16 @@ Higher order call graphs
   "calls": {
     "25:4-25:18|artificial-attribute-access|qualification:shims.async_callable": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "shims.async_callable@decorated",
-            "index": 0,
-            "return_type": [ "float", "integer" ]
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "shims.async_callable@decorated",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
       }
     },
     "25:4-25:39": {
@@ -234,14 +244,16 @@ Higher order call graphs
     },
     "26:4-26:18|artificial-attribute-access|qualification:shims.async_callable": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "shims.async_callable@decorated",
-            "index": 0,
-            "return_type": [ "float", "integer" ]
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "shims.async_callable@decorated",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
       }
     },
     "26:4-26:52": {
@@ -279,14 +291,16 @@ Higher order call graphs
     },
     "27:4-27:18|artificial-attribute-access|qualification:shims.async_callable": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "shims.async_callable@decorated",
-            "index": 0,
-            "return_type": [ "float", "integer" ]
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "shims.async_callable@decorated",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
       }
     },
     "27:4-27:52": {

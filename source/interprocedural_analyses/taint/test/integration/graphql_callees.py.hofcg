@@ -68,14 +68,16 @@ Higher order call graphs
     },
     "34:0-36:21|artificial-attribute-access|for-decorated-target-callee:graphql_callees.return_graphql_entrypoint_1": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "graphql_callees.return_graphql_entrypoint_1",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "graphql_callees.return_graphql_entrypoint_1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -148,14 +150,16 @@ Higher order call graphs
     },
     "40:0-42:44|artificial-attribute-access|for-decorated-target-callee:graphql_callees.return_graphql_entrypoint_2": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "graphql_callees.return_graphql_entrypoint_2",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "graphql_callees.return_graphql_entrypoint_2",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -201,14 +205,16 @@ Higher order call graphs
     },
     "46:0-48:21|artificial-attribute-access|for-decorated-target-callee:graphql_callees.return_graphql_entrypoint_3": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "graphql_callees.return_graphql_entrypoint_3",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "graphql_callees.return_graphql_entrypoint_3",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -281,14 +287,16 @@ Higher order call graphs
     },
     "52:0-55:23|artificial-attribute-access|for-decorated-target-callee:graphql_callees.return_graphql_entrypoint_strip_list": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "graphql_callees.return_graphql_entrypoint_strip_list",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "graphql_callees.return_graphql_entrypoint_strip_list",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -334,14 +342,16 @@ Higher order call graphs
     },
     "59:0-63:22|artificial-attribute-access|for-decorated-target-callee:graphql_callees.return_graphql_entrypoint_strip_list_with_sink": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "graphql_callees.return_graphql_entrypoint_strip_list_with_sink",
-            "index": 0,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "graphql_callees.return_graphql_entrypoint_strip_list_with_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -383,15 +393,17 @@ Higher order call graphs
     },
     "21:4-22:24|artificial-attribute-access|for-decorated-target-callee:graphql_callees.GraphQLEntrypoint.callee": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "graphql_callees.GraphQLEntrypoint.callee",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "graphql_callees.GraphQLEntrypoint.callee",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }

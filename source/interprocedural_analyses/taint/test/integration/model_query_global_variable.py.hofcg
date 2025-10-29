@@ -128,14 +128,16 @@ Higher order call graphs
     },
     "52:58-52:61|artificial-attribute-access|qualification:model_query_global_variable.fun": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_global_variable.fun",
-            "index": 0,
-            "return_type": [ "float", "integer" ]
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_global_variable.fun",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
       }
     },
     "54:0-54:23|identifier|$local_model_query_global_variable$untyped_global_callable": {
@@ -192,14 +194,16 @@ Higher order call graphs
     },
     "57:30-57:33|artificial-attribute-access|qualification:model_query_global_variable.fun": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "model_query_global_variable.fun",
-            "index": 0,
-            "return_type": [ "float", "integer" ]
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_global_variable.fun",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
       }
     }
   }

@@ -44,14 +44,16 @@ Higher order call graphs
     },
     "10:0-11:19|artificial-attribute-access|for-decorated-target-callee:recognized_callable_targets.callable_target": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "recognized_callable_targets.callable_target",
-            "index": 0,
-            "return_type": [ "float", "integer" ]
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "recognized_callable_targets.callable_target",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
       }
     }
   }
@@ -69,14 +71,16 @@ Higher order call graphs
     },
     "16:4-16:19|artificial-attribute-access|qualification:recognized_callable_targets.callable_target": {
       "attribute_access": {
-        "callables": [
-          {
-            "target": "recognized_callable_targets.callable_target@decorated",
-            "index": 0,
-            "return_type": [ "float", "integer" ]
-          }
-        ],
-        "is_attribute": true
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "recognized_callable_targets.callable_target@decorated",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
       }
     },
     "16:4-16:37": {
