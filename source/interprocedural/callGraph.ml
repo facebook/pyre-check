@@ -343,6 +343,19 @@ module Unresolved = struct
     | False, False -> False
 
 
+  let reason_from_string = function
+    | "UnrecognizedCallee" -> Some UnrecognizedCallee
+    | "AnonymousCallableType" -> Some AnonymousCallableType
+    | "UnknownCallableFromType" -> Some UnknownCallableFromType
+    | "UnknownConstructorCallable" -> Some UnknownConstructorCallable
+    | "AnyTopCallableClass" -> Some AnyTopCallableClass
+    | "UnknownCallableProtocol" -> Some UnknownCallableProtocol
+    | "UnknownCallableClass" -> Some UnknownCallableClass
+    | "LambdaArgument" -> Some LambdaArgument
+    | "NoRecordInCallGraph" -> Some NoRecordInCallGraph
+    | _ -> None
+
+
   let to_json = function
     | True reason -> reason_to_yojson reason
     | False -> `Bool false

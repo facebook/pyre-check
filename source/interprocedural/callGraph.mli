@@ -125,6 +125,8 @@ module Unresolved : sig
   val is_unresolved : t -> bool
 
   val join : t -> t -> t
+
+  val reason_from_string : string -> reason option
 end
 
 (** Information about an argument being a callable. *)
