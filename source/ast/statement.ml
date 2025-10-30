@@ -665,6 +665,8 @@ and Define : sig
   val has_decorator : ?match_prefix:bool -> t -> string -> bool
 
   val has_return_annotation : t -> bool
+
+  val location_with_decorators : t Node.t -> Location.t
 end = struct
   module Signature = struct
     type t = {
@@ -1094,6 +1096,21 @@ end = struct
   let dump_perf define = contains_call define "pyre_dump_perf"
 
   let show_json define = define |> to_yojson |> Yojson.Safe.pretty_to_string
+
+  let location_with_decorators
+      {
+        Node.location = { Location.start = define_start; stop };
+        value = { signature = { Signature.decorators; _ }; _ };
+      }
+    =
+    let start =
+      match decorators with
+      | [] -> define_start
+      | { Node.location = { Location.start = { Location.line; column }; _ }; _ } :: _ ->
+          (* Decrement the column to get the position of the `@` symbol. *)
+          { Location.line; column = (if column >= 1 then column - 1 else column) }
+    in
+    { Location.start; stop }
 end
 
 and For : sig

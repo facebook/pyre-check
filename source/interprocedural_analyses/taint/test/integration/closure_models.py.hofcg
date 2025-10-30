@@ -640,7 +640,7 @@ Higher order call graphs
   "callable": "closure_models.test_dsl_decorator_source",
   "returned_callables": [],
   "calls": {
-    "123:4-124:29": {
+    "122:4-124:29": {
       "define": {
         "define_targets": [
           {

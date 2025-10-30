@@ -48,7 +48,7 @@ Higher order call graphs
   "callable": "entrypoint.entrypoint_into_lambda",
   "returned_callables": [],
   "calls": {
-    "62:4-63:22": {
+    "61:4-63:22": {
       "define": {
         "define_targets": [
           {

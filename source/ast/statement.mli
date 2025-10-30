@@ -338,6 +338,8 @@ and Define : sig
     local_context:NestingContext.t ->
     statements:Statement.t list ->
     t
+
+  val location_with_decorators : t Node.t -> Location.t
 end
 
 and For : sig

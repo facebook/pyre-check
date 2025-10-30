@@ -2047,7 +2047,7 @@ let test_call_graph_of_define =
            ~define_name:"test.foo"
            ~expected:
              [
-               ( "6:2-7:12",
+               ( "5:2-7:12",
                  ExpressionCallees.from_define
                    (DefineCallees.create
                       ~define_targets:

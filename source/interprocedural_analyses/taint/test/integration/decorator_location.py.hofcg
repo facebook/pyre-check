@@ -315,7 +315,7 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "128:4-129:33": {
+    "127:4-129:33": {
       "define": {
         "define_targets": [
           {
@@ -620,7 +620,7 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "107:4-110:38": {
+    "106:4-110:38": {
       "define": {
         "define_targets": [
           {
@@ -908,7 +908,7 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "128:4-129:33": {
+    "127:4-129:33": {
       "define": {
         "define_targets": [
           {
@@ -948,7 +948,7 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "107:4-110:38": {
+    "106:4-110:38": {
       "define": {
         "define_targets": [
           {

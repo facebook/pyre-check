@@ -2250,6 +2250,9 @@ module CallGraphBuilder = struct
              } as define);
         location;
       } ->
+        (* Pyre1 does not include decorators in the define location, but Pyrefly does. Let's be
+           consistent. *)
+        let define_location = Define.location_with_decorators { Node.location; value = define } in
         let delocalized_name = Reference.delocalize name in
         let target = Target.from_define ~define_name:delocalized_name ~define in
         callees_at_location :=
@@ -2258,7 +2261,7 @@ module CallGraphBuilder = struct
             ~caller:callable
             ~on_existing_callees:DefineCallGraph.OnExistingCallees.WarnThenJoin
             ~define
-            ~define_location:location
+            ~define_location
             ~callees:
               { DefineCallees.define_targets = [CallTarget.create target]; decorated_targets = [] }
             !callees_at_location
@@ -4031,8 +4034,11 @@ module HigherOrderCallGraph = struct
                 let strong_update = TaintAccessPath.Path.is_empty path in
                 store_callees ~weak:(not strong_update) ~root ~callees:CallTarget.Set.bottom state)
         | Assert { test; _ } -> analyze_expression ~pyre_in_context ~state ~expression:test |> snd
-        | Define { Define.signature = { name; _ }; _ } ->
-            let define_location = Node.location statement in
+        | Define ({ Define.signature = { name; _ }; _ } as define) ->
+            let define_location =
+              Define.location_with_decorators
+                { Node.location = Node.location statement; value = define }
+            in
             let callees_without_captures, captures =
               Context.input_define_call_graph
               |> DefineCallGraph.resolve_define ~define_location

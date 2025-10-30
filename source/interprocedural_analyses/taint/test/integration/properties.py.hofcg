@@ -39,7 +39,7 @@ Higher order call graphs
   "callable": "properties.function_with_nested_properties",
   "returned_callables": [],
   "calls": {
-    "227:4-229:16": {
+    "226:4-229:16": {
       "define": {
         "define_targets": [
           {
@@ -50,7 +50,7 @@ Higher order call graphs
         ]
       }
     },
-    "232:4-234:13": {
+    "231:4-234:13": {
       "define": {
         "define_targets": [
           {

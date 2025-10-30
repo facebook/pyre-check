@@ -2086,7 +2086,7 @@ let test_higher_order_call_graph_fixpoint =
                                        ]);
                               ]
                             ()) );
-                     ( "8:2-9:10",
+                     ( "7:2-9:10",
                        ExpressionCallees.from_define
                          (DefineCallees.create
                             ~define_targets:
@@ -2159,7 +2159,7 @@ let test_higher_order_call_graph_fixpoint =
                                        ]);
                               ]
                             ()) );
-                     ( "10:2-11:10",
+                     ( "9:2-11:10",
                        ExpressionCallees.from_define
                          (DefineCallees.create
                             ~define_targets:
