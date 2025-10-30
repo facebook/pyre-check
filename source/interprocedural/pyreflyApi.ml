@@ -1456,11 +1456,25 @@ module ModuleCallGraphs = struct
       >>| fun if_called -> { if_called }
   end
 
+  module JsonDefineCallees = struct
+    type t = { define_targets: JsonCallTarget.t list }
+
+    let from_json json =
+      let open Core.Result.Monad_infix in
+      let parse_call_target_list targets =
+        targets |> List.map ~f:JsonCallTarget.from_json |> Result.all
+      in
+      JsonUtil.get_list_member json "define_targets"
+      >>= parse_call_target_list
+      >>| fun define_targets -> { define_targets }
+  end
+
   module JsonExpressionCallees = struct
     type t =
       | Call of JsonCallCallees.t
       | Identifier of JsonIdentifierCallees.t
       | AttributeAccess of JsonAttributeAccessCallees.t
+      | Define of JsonDefineCallees.t
 
     let from_json json =
       let open Core.Result.Monad_infix in
@@ -1473,6 +1487,8 @@ module ModuleCallGraphs = struct
       | `Assoc [("AttributeAccess", attribute_access_callees)] ->
           JsonAttributeAccessCallees.from_json attribute_access_callees
           >>| fun attribute_access_callees -> AttributeAccess attribute_access_callees
+      | `Assoc [("Define", define_callees)] ->
+          JsonDefineCallees.from_json define_callees >>| fun define_callees -> Define define_callees
       | _ ->
           Error (FormatError.UnexpectedJsonType { json; message = "expected expression callees" })
   end
@@ -4099,6 +4115,12 @@ module ReadOnly = struct
         if_called;
       }
     in
+    let instantiate_define_callees { JsonDefineCallees.define_targets } =
+      {
+        CallGraph.DefineCallees.define_targets = List.map ~f:instantiate_call_target define_targets;
+        decorated_targets = [];
+      }
+    in
     let instantiate_expression_callees = function
       | JsonExpressionCallees.Call callees ->
           ExpressionCallees.Call (instantiate_call_callees callees)
@@ -4106,6 +4128,8 @@ module ReadOnly = struct
           ExpressionCallees.Identifier (instantiate_identifier_callees callees)
       | JsonExpressionCallees.AttributeAccess callees ->
           ExpressionCallees.AttributeAccess (instantiate_attribute_access_callees callees)
+      | JsonExpressionCallees.Define callees ->
+          ExpressionCallees.Define (instantiate_define_callees callees)
     in
     let instantiate_call_edge ~key:location ~data:callees call_graph =
       let callees = instantiate_expression_callees callees in

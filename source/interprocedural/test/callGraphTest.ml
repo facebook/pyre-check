@@ -2032,6 +2032,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~skip_for_pyrefly:false
            ~_migrated_to_pyrefly:false
            ~source:
              {|
@@ -2072,6 +2073,29 @@ let test_call_graph_of_define =
                                  method_name = "__call__";
                                  kind = Normal;
                                });
+                        ]
+                      ()) );
+             ]
+           ~pyrefly_expected:
+             [
+               ( "5:2-7:12",
+                 ExpressionCallees.from_define
+                   (DefineCallees.create
+                      ~define_targets:
+                        [
+                          CallTarget.create_regular
+                            ~return_type:None
+                            (Target.Regular.Function { name = "test.foo.inner"; kind = Decorated });
+                        ]
+                      ()) );
+               ( "9:2-9:9",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~return_type:(Some ReturnType.integer)
+                            (Target.Regular.Function { name = "test.foo.inner"; kind = Decorated });
                         ]
                       ()) );
              ]
@@ -2598,6 +2622,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~skip_for_pyrefly:false
            ~_migrated_to_pyrefly:true
            ~source:
              {|
@@ -2632,6 +2657,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~skip_for_pyrefly:false
            ~_migrated_to_pyrefly:true
            ~source:
              {|
