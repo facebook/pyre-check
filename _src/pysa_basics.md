@@ -1,11 +1,14 @@
 ---
 id: pysa-basics
-title: Pysa Overview
+title: Pysa (Static Analysis for Security)
 sidebar_label: Overview
 ---
 
 import Internal from './fb/pysa_basics_internal.md';
 import YouTube from 'react-youtube';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+<img alt="Pysa Logo" style={{width: '400px'}} src={useBaseUrl('img/pysa.png')} />
 
 Pyre has applications beyond type checking python code: it can also run static
 analysis, more specifically called **Taint Analysis**, to identify potential security issues.
