@@ -66,6 +66,7 @@ class PartialConfigurationTest(unittest.TestCase):
                 number_of_workers=43,
                 enable_unawaited_awaitable_analysis=True,
                 include_suppressed_errors=True,
+                only_privacy_errors=False,
             )
         )
         self.assertEqual(configuration.binary, "binary")
@@ -102,6 +103,7 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.enable_strict_any_check, None)
         self.assertEqual(configuration.enable_unawaited_awaitable_analysis, True)
         self.assertEqual(configuration.include_suppressed_errors, True)
+        self.assertEqual(configuration.only_privacy_errors, False)
 
     def test_create_from_string_success(self) -> None:
         self.assertEqual(
@@ -431,7 +433,13 @@ class PartialConfigurationTest(unittest.TestCase):
             True,
         )
         self.assertEqual(
-            PartialConfiguration.from_dict({}).include_suppressed_errors,
+            PartialConfiguration.from_dict(
+                {"only_privacy_errors": True}
+            ).only_privacy_errors,
+            True,
+        )
+        self.assertEqual(
+            PartialConfiguration.from_dict({}).only_privacy_errors,
             None,
         )
 
@@ -632,6 +640,7 @@ class ConfigurationTest(testslide.TestCase):
                 number_of_workers=3,
                 max_number_of_workers=10,
                 oncall="oncall",
+                only_privacy_errors=True,
                 other_critical_files=["critical"],
                 python_version=PythonVersion(major=3, minor=6, micro=7),
                 system_platform="darwin",
@@ -669,6 +678,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.number_of_workers, 3)
         self.assertEqual(configuration.max_number_of_workers, 10)
         self.assertEqual(configuration.oncall, "oncall")
+        self.assertEqual(configuration.only_privacy_errors, True)
         self.assertListEqual(list(configuration.other_critical_files), ["critical"])
         self.assertListEqual(
             list(configuration.search_path), [SimpleRawElement("search_path")]

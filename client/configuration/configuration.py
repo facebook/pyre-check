@@ -135,6 +135,7 @@ class PartialConfiguration:
     number_of_workers: Optional[int] = None
     max_number_of_workers: Optional[int] = None
     oncall: Optional[str] = None
+    only_privacy_errors: Optional[bool] = None
     other_critical_files: Sequence[str] = field(
         default_factory=list,
         metadata={"merge_policy": dataclasses_merge.Policy.PREPEND},
@@ -220,6 +221,7 @@ class PartialConfiguration:
             number_of_workers=arguments.number_of_workers,
             max_number_of_workers=arguments.max_number_of_workers,
             oncall=None,
+            only_privacy_errors=arguments.only_privacy_errors,
             other_critical_files=[],
             pysa_version_hash=None,
             python_version=(
@@ -468,6 +470,9 @@ class PartialConfiguration:
                     configuration_json, "max_workers", int
                 ),
                 oncall=ensure_option_type(configuration_json, "oncall", str),
+                only_privacy_errors=ensure_option_type(
+                    configuration_json, "only_privacy_errors", bool
+                ),
                 other_critical_files=ensure_string_list(
                     configuration_json, "critical_files"
                 ),
@@ -624,6 +629,7 @@ class Configuration:
     number_of_workers: Optional[int] = None
     max_number_of_workers: Optional[int] = None
     oncall: Optional[str] = None
+    only_privacy_errors: Optional[bool] = None
     other_critical_files: Sequence[str] = field(default_factory=list)
     pysa_version_hash: Optional[str] = None
     python_version: Optional[python_version_module.PythonVersion] = None
@@ -687,6 +693,7 @@ class Configuration:
             number_of_workers=partial_configuration.number_of_workers,
             max_number_of_workers=partial_configuration.max_number_of_workers,
             oncall=partial_configuration.oncall,
+            only_privacy_errors=partial_configuration.only_privacy_errors,
             other_critical_files=partial_configuration.other_critical_files,
             pysa_version_hash=partial_configuration.pysa_version_hash,
             python_version=partial_configuration.python_version,
