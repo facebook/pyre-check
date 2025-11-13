@@ -267,6 +267,10 @@ def run(
         commands.ExitCode.FOUND_ERRORS,
     ):
         incremental.display_type_errors(
-            check_result.errors, output=check_arguments.output
+            check_result.errors,
+            output=check_arguments.output,
+            filter=incremental.privacy_error_filter
+            if configuration.get_only_privacy_errors()
+            else None,
         )
     return check_result.exit_code

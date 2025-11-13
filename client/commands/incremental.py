@@ -19,7 +19,7 @@ import enum
 import json
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 from .. import (
     backend_arguments,
@@ -121,9 +121,21 @@ def _read_type_errors(socket_path: Path) -> TypeErrors:
         return parse_type_error_response(input_channel.readline())
 
 
-def display_type_errors(errors: List[error.Error], output: str) -> None:
+def privacy_error_filter(error: error.Error) -> bool:
+    return error.code >= 3000
+
+
+def display_type_errors(
+    errors: List[error.Error],
+    output: str,
+    filter: Optional[Callable[[error.Error], bool]],
+) -> None:
     error.print_errors(
-        [error.relativize_path(against=Path.cwd()) for error in errors],
+        [
+            error.relativize_path(against=Path.cwd())
+            for error in errors
+            if filter is None or filter(error)
+        ],
         output=output,
     )
 
@@ -132,12 +144,13 @@ def _show_progress_log_and_display_type_errors(
     log_path: Path,
     socket_path: Path,
     output: str,
+    error_filter: Optional[Callable[[error.Error], bool]],
     remote_logging: Optional[backend_arguments.RemoteLogging],
 ) -> commands.ExitCode:
     LOG.info("Waiting for server...")
     with start.background_logging(log_path):
         type_errors = _read_type_errors(socket_path)
-        display_type_errors(type_errors.errors, output=output)
+        display_type_errors(type_errors.errors, output=output, filter=error_filter)
         if type_errors.build_failure is not None:
             LOG.warning("You may be seeing stale type checking results. Reason:")
             LOG.warning(type_errors.build_failure)
@@ -168,9 +181,16 @@ def run_incremental(
         configuration.get_remote_logger(),
         incremental_arguments.start_arguments.get_log_identifier(),
     )
+    error_filter = (
+        privacy_error_filter if configuration.get_only_privacy_errors() else None
+    )
     try:
         exit_code = _show_progress_log_and_display_type_errors(
-            log_path, socket_path, output, remote_logging
+            log_path,
+            socket_path,
+            output,
+            error_filter,
+            remote_logging,
         )
         return ExitStatus(
             exit_code=exit_code, connected_to=ServerStatus.ALREADY_RUNNING
@@ -188,7 +208,7 @@ def run_incremental(
             f"`pyre start` failed with non-zero exit code: {start_status}"
         )
     exit_code = _show_progress_log_and_display_type_errors(
-        log_path, socket_path, output, remote_logging
+        log_path, socket_path, output, error_filter, remote_logging
     )
     return ExitStatus(exit_code=exit_code, connected_to=ServerStatus.NEWLY_STARTED)
 
