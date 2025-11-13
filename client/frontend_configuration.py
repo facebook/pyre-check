@@ -167,10 +167,6 @@ class Base(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def uses_buck2(self) -> bool:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
     def get_buck_mode(self) -> Optional[str]:
         raise NotImplementedError()
 
@@ -377,9 +373,6 @@ class OpenSource(Base):
     ) -> Optional[List[str]]:
         targets = self.configuration.targets
         return list(targets) if targets is not None else None
-
-    def uses_buck2(self) -> bool:
-        return self.configuration.use_buck2
 
     def get_buck_mode(self) -> Optional[str]:
         mode = self.configuration.buck_mode

@@ -390,7 +390,6 @@ def pyre(
         shared_memory_hash_table_power=shared_memory_hash_table_power,
         number_of_workers=number_of_workers,
         max_number_of_workers=max_number_of_workers,
-        use_buck2=None,
     )
     context.ensure_object(dict)
     context.obj["arguments"] = arguments

@@ -64,7 +64,6 @@ class PartialConfigurationTest(unittest.TestCase):
                 system_platform="darwin",
                 shared_memory_heap_size=42,
                 number_of_workers=43,
-                use_buck2=True,
                 enable_unawaited_awaitable_analysis=True,
                 include_suppressed_errors=True,
             )
@@ -98,7 +97,6 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.site_roots, None)
         self.assertEqual(configuration.number_of_workers, 43)
         self.assertEqual(configuration.max_number_of_workers, None)
-        self.assertEqual(configuration.use_buck2, True)
         self.assertEqual(configuration.enable_readonly_analysis, None)
         self.assertEqual(configuration.enable_strict_override_check, None)
         self.assertEqual(configuration.enable_strict_any_check, None)
@@ -311,11 +309,6 @@ class PartialConfigurationTest(unittest.TestCase):
             SharedMemory(hash_table_power=3),
         )
 
-        self.assertEqual(
-            PartialConfiguration.from_dict({"use_buck2": False}).use_buck2,
-            False,
-        )
-
         self.assertIsNone(PartialConfiguration.from_dict({}).source_directories)
         source_directories = PartialConfiguration.from_dict(
             {"source_directories": ["foo", "bar"]}
@@ -491,7 +484,6 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"site_package_search_strategy": False}))
         assert_raises(json.dumps({"site_roots": 42}))
         assert_raises(json.dumps({"unwatched_dependency": {"change_indicator": "abc"}}))
-        assert_raises(json.dumps({"use_buck2": {}}))
 
     def test_expand_relative_paths(self) -> None:
         self.assertEqual(
@@ -654,7 +646,6 @@ class ConfigurationTest(testslide.TestCase):
                 targets=None,
                 typeshed="typeshed",
                 unwatched_dependency=None,
-                use_buck2=None,
                 version_hash="abc",
             ),
         )
@@ -701,7 +692,6 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.targets, None)
         self.assertEqual(configuration.typeshed, "typeshed")
         self.assertEqual(configuration.unwatched_dependency, None)
-        self.assertEqual(configuration.use_buck2, True)
         self.assertEqual(configuration.version_hash, "abc")
 
     def test_get_default_site_roots(self) -> None:
