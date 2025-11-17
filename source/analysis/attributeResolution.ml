@@ -3587,9 +3587,7 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
                 in
                 Type.Callable (Type.Callable.map_parameters callable ~f:(fun _ -> parameters))
                 |> Result.return
-            | name, Callable callable
-              when String.equal name "contextlib.asynccontextmanager"
-                   || Set.mem Recognized.asyncio_contextmanager_decorators name ->
+            | "contextlib.asynccontextmanager", Callable callable ->
                 let process_overload ({ Type.Callable.annotation; _ } as overload) =
                   let joined =
                     let order = self#full_order ~cycle_detections in
