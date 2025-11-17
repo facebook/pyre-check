@@ -323,6 +323,17 @@ module Unresolved = struct
     | UnknownCallableClass
     | LambdaArgument
     | NoRecordInCallGraph
+    (* reasons from pyrefly *)
+    | UnexpectedPyreflyTarget
+    | EmptyPyreflyTarget
+    | UnknownClassField
+    | UnsupportedFunctionTarget
+    | UnexpectedDefiningClass
+    | UnexpectedInitMethod
+    | UnexpectedNewMethod
+    | UnexpectedCalleeExpression
+    | UnresolvedMagicDunderAttr
+    | Mixed
   [@@deriving equal, show, to_yojson]
 
   type t =
@@ -353,6 +364,16 @@ module Unresolved = struct
     | "UnknownCallableClass" -> Some UnknownCallableClass
     | "LambdaArgument" -> Some LambdaArgument
     | "NoRecordInCallGraph" -> Some NoRecordInCallGraph
+    | "UnexpectedPyreflyTarget" -> Some UnexpectedPyreflyTarget
+    | "EmptyPyreflyTarget" -> Some EmptyPyreflyTarget
+    | "UnknownClassField" -> Some UnknownClassField
+    | "UnsupportedFunctionTarget" -> Some UnsupportedFunctionTarget
+    | "UnexpectedDefiningClass" -> Some UnexpectedDefiningClass
+    | "UnexpectedInitMethod" -> Some UnexpectedInitMethod
+    | "UnexpectedNewMethod" -> Some UnexpectedNewMethod
+    | "UnexpectedCalleeExpression" -> Some UnexpectedCalleeExpression
+    | "UnresolvedMagicDunderAttr" -> Some UnresolvedMagicDunderAttr
+    | "Mixed" -> Some Mixed
     | _ -> None
 
 

@@ -116,6 +116,17 @@ module Unresolved : sig
     | UnknownCallableClass
     | LambdaArgument
     | NoRecordInCallGraph
+    (* reasons from pyrefly *)
+    | UnexpectedPyreflyTarget
+    | EmptyPyreflyTarget
+    | UnknownClassField
+    | UnsupportedFunctionTarget
+    | UnexpectedDefiningClass
+    | UnexpectedInitMethod
+    | UnexpectedNewMethod
+    | UnexpectedCalleeExpression
+    | UnresolvedMagicDunderAttr
+    | Mixed
 
   type t =
     | True of reason

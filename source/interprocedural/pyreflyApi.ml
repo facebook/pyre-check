@@ -1500,11 +1500,16 @@ module ModuleCallGraphs = struct
       let open Core.Result.Monad_infix in
       json
       |> JsonUtil.check_object
-      >>| List.map ~f:(fun (location, expression_callees) ->
-              parse_location location
-              >>= fun location ->
-              JsonExpressionCallees.from_json expression_callees
-              >>| fun expression_callees -> location, expression_callees)
+      >>| List.filter_map ~f:(fun (location, expression_callees) ->
+              (* TODO: Handle expression identifiers *)
+              if String.contains location '|' then
+                None
+              else
+                parse_location location
+                >>= (fun location ->
+                      JsonExpressionCallees.from_json expression_callees
+                      >>| fun expression_callees -> location, expression_callees)
+                |> Option.some)
       >>= Result.all
       >>| Location.Map.of_alist_exn
   end
