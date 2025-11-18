@@ -65,4 +65,8 @@ val pp_json_key : Format.formatter -> t -> unit
 
 val json_key : t -> string
 
+val from_json_key : string -> (t, string) Result.t
+
+val map_location : f:(Location.t -> Location.t) -> t -> t
+
 module Map : Data_structures.SerializableMap.S with type key = t

@@ -220,6 +220,73 @@ module T = struct
 
 
   let json_key = Format.asprintf "%a" pp_json_key
+
+  let from_json_key str =
+    let open Core.Result.Monad_infix in
+    String.split ~on:'|' str
+    |> (function
+         | location_str :: rest -> Ok (location_str, rest)
+         | [] -> Error (Format.sprintf "Invalid expression identifier: `%s`" str))
+    >>= fun (location_str, rest) ->
+    Location.from_string location_str
+    >>= fun location ->
+    match rest with
+    | [] -> Ok (Regular location)
+    | "artificial-attribute-access" :: rest ->
+        Origin.kind_from_json (String.concat ~sep:"|" rest)
+        >>= fun kind -> Ok (ArtificialAttributeAccess { Origin.kind; location })
+    | "artificial-call" :: rest ->
+        Origin.kind_from_json (String.concat ~sep:"|" rest)
+        >>= fun kind -> Ok (ArtificialCall { Origin.kind; location })
+    | "artificial-comparison-operator" :: rest ->
+        Origin.kind_from_json (String.concat ~sep:"|" rest)
+        >>= fun kind -> Ok (ArtificialComparisonOperator { Origin.kind; location })
+    | "artificial-binary-operator" :: rest ->
+        Origin.kind_from_json (String.concat ~sep:"|" rest)
+        >>= fun kind -> Ok (ArtificialBinaryOperator { Origin.kind; location })
+    | "artificial-unary-operator" :: rest ->
+        Origin.kind_from_json (String.concat ~sep:"|" rest)
+        >>= fun kind -> Ok (ArtificialUnaryOperator { Origin.kind; location })
+    | "artificial-boolean-operator" :: rest ->
+        Origin.kind_from_json (String.concat ~sep:"|" rest)
+        >>= fun kind -> Ok (ArtificialBooleanOperator { Origin.kind; location })
+    | "artificial-subscript" :: rest ->
+        Origin.kind_from_json (String.concat ~sep:"|" rest)
+        >>= fun kind -> Ok (ArtificialSubscript { Origin.kind; location })
+    | "artificial-walrus" :: rest ->
+        Origin.kind_from_json (String.concat ~sep:"|" rest)
+        >>= fun kind -> Ok (ArtificialWalrusOperator { Origin.kind; location })
+    | "artificial-slice" :: rest ->
+        Origin.kind_from_json (String.concat ~sep:"|" rest)
+        >>= fun kind -> Ok (ArtificialSlice { Origin.kind; location })
+    | "artificial-await" :: rest ->
+        Origin.kind_from_json (String.concat ~sep:"|" rest)
+        >>= fun kind -> Ok (ArtificialAwait { Origin.kind; location })
+    | ["identifier"; identifier] -> Ok (IdentifierExpression { location; identifier })
+    | ["format-string-artificial"] -> Ok (FormatStringArtificial location)
+    | ["format-string-stringify"] -> Ok (FormatStringStringify location)
+    (* TODO: Handle constants. *)
+    | _ -> Error (Format.sprintf "Invalid or unsupported expression identifier: `%s`" str)
+
+
+  let map_location ~f = function
+    | Regular location -> Regular (f location)
+    | ArtificialAttributeAccess origin -> ArtificialAttributeAccess (Origin.map_location ~f origin)
+    | ArtificialCall origin -> ArtificialCall (Origin.map_location ~f origin)
+    | ArtificialComparisonOperator origin ->
+        ArtificialComparisonOperator (Origin.map_location ~f origin)
+    | ArtificialBinaryOperator origin -> ArtificialBinaryOperator (Origin.map_location ~f origin)
+    | ArtificialUnaryOperator origin -> ArtificialUnaryOperator (Origin.map_location ~f origin)
+    | ArtificialBooleanOperator origin -> ArtificialBooleanOperator (Origin.map_location ~f origin)
+    | ArtificialSubscript origin -> ArtificialSubscript (Origin.map_location ~f origin)
+    | ArtificialWalrusOperator origin -> ArtificialWalrusOperator (Origin.map_location ~f origin)
+    | ArtificialSlice origin -> ArtificialSlice (Origin.map_location ~f origin)
+    | ArtificialAwait origin -> ArtificialAwait (Origin.map_location ~f origin)
+    | IdentifierExpression { location; identifier } ->
+        IdentifierExpression { location = f location; identifier }
+    | FormatStringArtificial location -> FormatStringArtificial (f location)
+    | FormatStringStringify location -> FormatStringStringify (f location)
+    | Constant { location; constant } -> Constant { location = f location; constant }
 end
 
 include T

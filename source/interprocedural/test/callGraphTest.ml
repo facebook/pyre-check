@@ -3594,6 +3594,7 @@ let test_call_graph_of_define =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
            ~_migrated_to_pyrefly:true
+           ~skip_for_pyrefly:false
            ~object_targets:[Target.Regular.Object "test.Token.token"]
            ~source:
              {|
@@ -3626,6 +3627,23 @@ let test_call_graph_of_define =
                            (Target.Regular.Object "test.Token.token");
                        ];
                      is_attribute = true;
+                     if_called = CallCallees.empty;
+                   } );
+             ]
+           ~pyrefly_expected:
+             [
+               ( "6:9-6:36",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~unresolved:
+                        (CallGraph.Unresolved.True CallGraph.Unresolved.UnexpectedPyreflyTarget)
+                      ()) );
+               ( "6:9-6:36|artificial-attribute-access|get-attr-constant-literal",
+                 ExpressionCallees.from_attribute_access
+                   {
+                     AttributeAccessCallees.property_targets = [];
+                     global_targets = [];
+                     is_attribute = false;
                      if_called = CallCallees.empty;
                    } );
              ]

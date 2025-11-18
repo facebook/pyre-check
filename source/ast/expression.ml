@@ -1294,6 +1294,10 @@ and Origin : sig
   val is_dunder_method : t -> bool
 
   val pp_kind_json : Format.formatter -> kind -> unit
+
+  val kind_from_json : string -> (kind, string) Result.t
+
+  val map_location : f:(Location.t -> Location.t) -> t -> t
 end = struct
   type kind =
     | ComparisonOperator
@@ -1564,6 +1568,177 @@ end = struct
     | ForTypeChecking -> Format.fprintf formatter "for-type-checking"
     | Nested { head; tail } -> Format.fprintf formatter "%a>%a" pp_kind_json tail pp_kind_json head
     | PysaReturnShim -> Format.fprintf formatter "return-statement"
+
+
+  let rec kind_from_json str =
+    let open Core.Result.Monad_infix in
+    let strip_prefix ~prefix str = String.drop_prefix str (String.length prefix) in
+    let parse_int str =
+      try Ok (Int.of_string str) with
+      | _ -> Error (Format.sprintf "Expected integer, got '%s'" str)
+    in
+    let parse_identifier_list str = String.split ~on:'.' str |> List.rev in
+    match str with
+    | "comparison" -> Ok ComparisonOperator
+    | "binary" -> Ok BinaryOperator
+    | "unary" -> Ok UnaryOperator
+    | "augmented-assign-dunder-call" -> Ok AugmentedAssignDunderCall
+    | "augmented-assign-lhs" -> Ok AugmentedAssignLHS
+    | "augmented-assign-rhs" -> Ok AugmentedAssignRHS
+    | "augmented-assign-statement" -> Ok AugmentedAssignStatement
+    | "subscript-set-item" -> Ok SubscriptSetItem
+    | "subscript-get-item" -> Ok SubscriptGetItem
+    | "for-iter" -> Ok ForIter
+    | "for-next" -> Ok ForNext
+    | "for-await" -> Ok ForAwait
+    | "for-assign" -> Ok ForAssign
+    | "generator-iter" -> Ok GeneratorIter
+    | "generator-next" -> Ok GeneratorNext
+    | "generator-await" -> Ok GeneratorAwait
+    | "generator-assign" -> Ok GeneratorAssign
+    | "with-enter" -> Ok WithEnter
+    | "with-assign" -> Ok WithAssign
+    | "in-contains" -> Ok InContains
+    | "in-iter" -> Ok InIter
+    | "in-get-item" -> Ok InGetItem
+    | "in-get-item-eq" -> Ok InGetItemEq
+    | "slice" -> Ok Slice
+    | "top-level-tuple-assign" -> Ok TopLevelTupleAssign
+    | "missing-stub-callable" -> Ok MissingStubCallable
+    | "typed-dict-implicit-class" -> Ok TypedDictImplicitClass
+    | "named-tuple-implicit-fields" -> Ok NamedTupleImplicitFields
+    | "pytorch-register-buffer" -> Ok PyTorchRegisterBuffer
+    | "union-shorthand" -> Ok UnionShorthand
+    | "negate" -> Ok Negate
+    | "negate-is" -> Ok NegateIs
+    | "negate-is-not" -> Ok NegateIsNot
+    | "normalize" -> Ok Normalize
+    | "normalize-not-comparison" -> Ok NormalizeNotComparison
+    | "normalize-not-bool-operator" -> Ok NormalizeNotBoolOperator
+    | "try-handler-isinstance" -> Ok TryHandlerIsInstance
+    | "try-handler-assign" -> Ok TryHandlerAssign
+    | "dataclass-implicit-field" -> Ok DataclassImplicitField
+    | "dataclass-implicit-default" -> Ok DataclassImplicitDefault
+    | "match-typing-sequence" -> Ok MatchTypingSequence
+    | "match-typing-mapping" -> Ok MatchTypingMapping
+    | "match-as-comparison-equals" -> Ok MatchAsComparisonEquals
+    | "match-as-with-condition" -> Ok MatchAsWithCondition
+    | "match-class-isinstance" -> Ok MatchClassIsInstance
+    | "match-class-join-conditions" -> Ok MatchClassJoinConditions
+    | "match-mapping-key-subscript" -> Ok MatchMappingKeySubscript
+    | "match-mapping-isinstance" -> Ok MatchMappingIsInstance
+    | "match-mapping-join-conditions" -> Ok MatchMappingJoinConditions
+    | "match-or-join-conditions" -> Ok MatchOrJoinConditions
+    | "match-singleton-comparison-is" -> Ok MatchSingletonComparisonIs
+    | "match-sequence-isinstance" -> Ok MatchSequenceIsInstance
+    | "match-sequence-join-conditions" -> Ok MatchSequenceJoinConditions
+    | "match-value-comparison-equals" -> Ok MatchValueComparisonEquals
+    | "match-condition-with-guard" -> Ok MatchConditionWithGuard
+    | "resolve-str-call" -> Ok ResolveStrCall
+    | "str-call-to-dunder-str" -> Ok StrCallToDunderStr
+    | "str-call-to-dunder-repr" -> Ok StrCallToDunderRepr
+    | "repr-call" -> Ok ReprCall
+    | "abs-call" -> Ok AbsCall
+    | "iter-call" -> Ok IterCall
+    | "next-call" -> Ok NextCall
+    | "implicit-init-call" -> Ok ImplicitInitCall
+    | "self-implicit-typevar-assign" -> Ok SelfImplicitTypeVarAssign
+    | "functional-enum-implicit-auto-assign" -> Ok FunctionalEnumImplicitAutoAssign
+    | "decorator-inlining" -> Ok DecoratorInlining
+    | "for-decorated-target" -> Ok ForDecoratedTarget
+    | "format-string-implicit-str" -> Ok FormatStringImplicitStr
+    | "format-string-implicit-repr" -> Ok FormatStringImplicitRepr
+    | "get-attr-constant-literal" -> Ok GetAttrConstantLiteral
+    | "set-attr-constant-literal" -> Ok SetAttrConstantLiteral
+    | "for-test-purpose" -> Ok ForTestPurpose
+    | "for-type-checking" -> Ok ForTypeChecking
+    | "return-statement" -> Ok PysaReturnShim
+    | _ when String.is_prefix str ~prefix:"chained-assign:" ->
+        strip_prefix ~prefix:"chained-assign:" str
+        |> parse_int
+        >>= fun index -> Ok (ChainedAssign { index })
+    | _ when String.is_prefix str ~prefix:"qualification:" ->
+        strip_prefix ~prefix:"qualification:" str
+        |> parse_identifier_list
+        |> fun identifiers -> Ok (Qualification identifiers)
+    | _ when String.is_prefix str ~prefix:"named-tuple-constructor-assignment:" ->
+        strip_prefix ~prefix:"named-tuple-constructor-assignment:" str
+        |> fun attribute -> Ok (NamedTupleConstructorAssignment attribute)
+    | _ when String.is_prefix str ~prefix:"match-class-args:" ->
+        strip_prefix ~prefix:"match-class-args:" str
+        |> parse_int
+        >>= fun index -> Ok (MatchClassArgs index)
+    | _ when String.is_prefix str ~prefix:"match-class-get-attr:" ->
+        strip_prefix ~prefix:"match-class-get-attr:" str
+        |> parse_int
+        >>= fun index -> Ok (MatchClassGetAttr index)
+    | _ when String.is_prefix str ~prefix:"match-class-args-subscript:" ->
+        strip_prefix ~prefix:"match-class-args-subscript:" str
+        |> parse_int
+        >>= fun index -> Ok (MatchClassArgsSubscript index)
+    | _ when String.is_prefix str ~prefix:"match-class-keyword-attribute:" ->
+        strip_prefix ~prefix:"match-class-keyword-attribute:" str
+        |> fun attribute -> Ok (MatchClassKeywordAttribute attribute)
+    | _ when String.is_prefix str ~prefix:"match-mapping-rest-dict:" ->
+        strip_prefix ~prefix:"match-mapping-rest-dict:" str
+        |> fun attribute -> Ok (MatchMappingRestDict attribute)
+    | _ when String.is_prefix str ~prefix:"match-mapping-rest-comparison-equals:" ->
+        strip_prefix ~prefix:"match-mapping-rest-comparison-equals:" str
+        |> fun attribute -> Ok (MatchMappingRestComparisonEquals attribute)
+    | _ when String.is_prefix str ~prefix:"match-sequence-rest-list:" ->
+        strip_prefix ~prefix:"match-sequence-rest-list:" str
+        |> fun attribute -> Ok (MatchSequenceRestList attribute)
+    | _ when String.is_prefix str ~prefix:"match-sequence-rest-subscript:" ->
+        strip_prefix ~prefix:"match-sequence-rest-subscript:" str
+        |> fun attribute -> Ok (MatchSequenceRestSubscript attribute)
+    | _ when String.is_prefix str ~prefix:"match-sequence-rest-slice:" ->
+        strip_prefix ~prefix:"match-sequence-rest-slice:" str
+        |> fun attribute -> Ok (MatchSequenceRestSlice attribute)
+    | _ when String.is_prefix str ~prefix:"match-sequence-rest-comparison-equals:" ->
+        strip_prefix ~prefix:"match-sequence-rest-comparison-equals:" str
+        |> fun attribute -> Ok (MatchSequenceRestComparisonEquals attribute)
+    | _ when String.is_prefix str ~prefix:"match-sequence-prefix:" ->
+        strip_prefix ~prefix:"match-sequence-prefix:" str
+        |> parse_int
+        >>= fun index -> Ok (MatchSequencePrefix index)
+    | _ when String.is_prefix str ~prefix:"match-sequence-suffix:" ->
+        strip_prefix ~prefix:"match-sequence-suffix:" str
+        |> parse_int
+        >>= fun index -> Ok (MatchSequenceSuffix index)
+    | _ when String.is_prefix str ~prefix:"self-implicit-typevar:" ->
+        strip_prefix ~prefix:"self-implicit-typevar:" str
+        |> fun name -> Ok (SelfImplicitTypeVar name)
+    | _ when String.is_prefix str ~prefix:"self-implicit-typevar-qualification:" -> (
+        let str = strip_prefix ~prefix:"self-implicit-typevar-qualification:" str in
+        match String.split ~on:':' str with
+        | name :: rest ->
+            parse_identifier_list (String.concat ~sep:":" rest)
+            |> fun attributes -> Ok (SelfImplicitTypeVarQualification (name, attributes))
+        | [] -> Error "Invalid self-implicit-typevar-qualification format")
+    | _ when String.is_prefix str ~prefix:"functional-enum-implicit-auto:" ->
+        strip_prefix ~prefix:"functional-enum-implicit-auto:" str
+        |> parse_identifier_list
+        |> fun attributes -> Ok (FunctionalEnumImplicitAuto attributes)
+    | _ when String.is_prefix str ~prefix:"for-decorated-target-callee:" ->
+        strip_prefix ~prefix:"for-decorated-target-callee:" str
+        |> parse_identifier_list
+        |> fun identifiers -> Ok (ForDecoratedTargetCallee identifiers)
+    | _ when String.is_prefix str ~prefix:"pysa-call-redirect:" ->
+        strip_prefix ~prefix:"pysa-call-redirect:" str |> fun name -> Ok (PysaCallRedirect name)
+    | _ when String.is_prefix str ~prefix:"pysa-higher-order-parameter:" ->
+        strip_prefix ~prefix:"pysa-higher-order-parameter:" str
+        |> parse_int
+        >>= fun index -> Ok (PysaHigherOrderParameter index)
+    | _ when String.is_substring str ~substring:">" ->
+        let index = Option.value_exn (String.rfindi str ~f:(fun _ c -> Char.equal c '>')) in
+        let tail_str = String.prefix str index in
+        let head_str = String.suffix str (String.length str - index - 1) in
+        kind_from_json tail_str
+        >>= fun tail -> kind_from_json head_str >>= fun head -> Ok (Nested { head; tail })
+    | _ -> Error (Format.sprintf "Unknown origin kind: `%s`" str)
+
+
+  let map_location ~f { kind; location } = { kind; location = f location }
 end
 
 and Expression : sig

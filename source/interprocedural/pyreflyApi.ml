@@ -40,12 +40,15 @@ module Error = struct
   [@@deriving show]
 end
 
+let fixup_location { Location.start; stop } =
+  (* WARNING: Pysa uses 0-indexed column numbers while Pyrefly uses 1-indexed column numbers. *)
+  let decrement_column { Location.line; column } = { Location.line; column = column - 1 } in
+  { Location.start = decrement_column start; stop = decrement_column stop }
+
+
 let parse_location location =
   match Location.from_string location with
-  | Ok { Location.start; stop } ->
-      (* WARNING: Pysa uses 0-indexed column numbers while Pyrefly uses 1-indexed column numbers. *)
-      let decrement_column { Location.line; column } = { Location.line; column = column - 1 } in
-      Ok { Location.start = decrement_column start; stop = decrement_column stop }
+  | Ok location -> Ok (fixup_location location)
   | Error error ->
       Error (FormatError.UnexpectedJsonType { json = `String location; message = error })
 
@@ -1494,24 +1497,23 @@ module ModuleCallGraphs = struct
   end
 
   module JsonCallGraph = struct
-    type t = JsonExpressionCallees.t Location.Map.t
+    type t = JsonExpressionCallees.t ExpressionIdentifier.Map.t
 
     let from_json json =
       let open Core.Result.Monad_infix in
       json
       |> JsonUtil.check_object
-      >>| List.filter_map ~f:(fun (location, expression_callees) ->
-              (* TODO: Handle expression identifiers *)
-              if String.contains location '|' then
-                None
-              else
-                parse_location location
-                >>= (fun location ->
-                      JsonExpressionCallees.from_json expression_callees
-                      >>| fun expression_callees -> location, expression_callees)
-                |> Option.some)
+      >>| List.map ~f:(fun (expression_identifier, expression_callees) ->
+              ExpressionIdentifier.from_json_key expression_identifier
+              |> Result.map_error ~f:(fun error ->
+                     FormatError.UnexpectedJsonType
+                       { json = `String expression_identifier; message = error })
+              >>| ExpressionIdentifier.map_location ~f:fixup_location
+              >>= fun expression_identifier ->
+              JsonExpressionCallees.from_json expression_callees
+              >>| fun expression_callees -> expression_identifier, expression_callees)
       >>= Result.all
-      >>| Location.Map.of_alist_exn
+      >>| ExpressionIdentifier.Map.of_alist_exn
   end
 
   type t = {
@@ -4136,18 +4138,18 @@ module ReadOnly = struct
       | JsonExpressionCallees.Define callees ->
           ExpressionCallees.Define (instantiate_define_callees callees)
     in
-    let instantiate_call_edge ~key:location ~data:callees call_graph =
+    let instantiate_call_edge expression_identifier callees call_graph =
       let callees = instantiate_expression_callees callees in
       DefineCallGraph.add_callees
         ~debug:false
         ~caller:callable
         ~on_existing_callees:DefineCallGraph.OnExistingCallees.Fail
-        ~expression_identifier:(ExpressionIdentifier.Regular location)
+        ~expression_identifier
         ~callees
         ~expression_for_logging:None
         call_graph
     in
-    Map.fold json_call_graph ~init:DefineCallGraph.empty ~f:instantiate_call_edge
+    ExpressionIdentifier.Map.fold instantiate_call_edge json_call_graph DefineCallGraph.empty
 
 
   let parse_call_graphs

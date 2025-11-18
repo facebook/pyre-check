@@ -541,6 +541,10 @@ and Origin : sig
   val is_dunder_method : t -> bool
 
   val pp_kind_json : Format.formatter -> kind -> unit
+
+  val kind_from_json : string -> (kind, string) Core.Result.t
+
+  val map_location : f:(Location.t -> Location.t) -> t -> t
 end
 
 and Expression : sig
