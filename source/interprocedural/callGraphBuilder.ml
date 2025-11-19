@@ -4757,14 +4757,84 @@ let build_whole_program_call_graph_for_pyrefly
     ~definitions
     ~create_dependency_for
   =
-  let transform_call_graph _ _ call_graph =
+  let transform_redirected_call_graph decorated_target call_graph =
+    (* For call graph of decorated targets, add a call graph edge for the decorated function itself,
+       in the return expression `decorator1(decorator2(original_function))` *)
+    let original_callable = Target.set_kind Target.Normal decorated_target in
+    let {
+      CallableToDecoratorsMap.DecoratedDefineBody.attribute_access;
+      attribute_access_location;
+      _;
+    }
+      =
+      CallableToDecoratorsMap.SharedMemory.decorated_callable_body
+        callables_to_decorators_map
+        original_callable
+      |> Option.value_exn ~message:"Unexpected decorated target without a decorated body"
+    in
+    let attribute_access =
+      match attribute_access with
+      | Name.Attribute attribute -> attribute
+      | attribute_access ->
+          Format.asprintf
+            "Expect the decorated callable to be an attribute but got `%a`"
+            Name.pp
+            attribute_access
+          |> failwith
+    in
+    let {
+      PyreflyApi.CallableMetadata.is_staticmethod = is_static_method;
+      is_classmethod = is_class_method;
+      _;
+    }
+      =
+      PyreflyApi.ReadOnly.get_callable_metadata
+        pyrefly_api
+        (Target.define_name_exn original_callable)
+    in
+    DefineCallGraph.set_attribute_access_callees
+      ~error_if_new:false
+      ~location:attribute_access_location
+      ~attribute_access
+      ~callees:
+        (AttributeAccessCallees.create
+           ~if_called:
+             (CallCallees.create
+                ~call_targets:
+                  [
+                    CallTarget.create
+                      ~implicit_receiver:
+                        (is_implicit_receiver
+                           ~is_static_method
+                           ~is_class_method
+                           ~explicit_receiver:false
+                           original_callable)
+                      ~is_class_method
+                      ~is_static_method
+                      original_callable;
+                  ]
+                ())
+           ())
+      call_graph
+  in
+  let transform_call_graph _ callable call_graph =
     let call_indexer = CallGraph.Indexer.create () in
+    let call_graph =
+      if Target.is_decorated callable then
+        call_graph
+        |> transform_redirected_call_graph callable
+        |> DefineCallGraph.filter_empty_attribute_access
+      else
+        call_graph
+        |> DefineCallGraph.filter_empty_attribute_access
+        |> DefineCallGraph.map_target
+             ~f:
+               (CallableToDecoratorsMap.SharedMemory.redirect_to_decorated
+                  callables_to_decorators_map)
+             ~map_call_if:CallCallees.should_redirect_to_decorated
+             ~map_return_if:(fun _ -> false)
+    in
     call_graph
-    |> DefineCallGraph.filter_empty_attribute_access
-    |> DefineCallGraph.map_target
-         ~f:(CallableToDecoratorsMap.SharedMemory.redirect_to_decorated callables_to_decorators_map)
-         ~map_call_if:CallCallees.should_redirect_to_decorated
-         ~map_return_if:(fun _ -> false)
     |> DefineCallGraph.dedup_and_sort
     |> DefineCallGraph.regenerate_call_indices ~indexer:call_indexer
   in

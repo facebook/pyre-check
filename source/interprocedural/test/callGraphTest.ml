@@ -8173,14 +8173,29 @@ let test_higher_order_call_graph_of_define =
     ]
 
 
-let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () context =
+let assert_resolve_decorator_callees
+    ?(debug = false)
+    ?((* Whether to run this test with PyreflyApi (i.e import call graphs from pyrefly) *)
+      skip_for_pyrefly = true)
+    ?pyrefly_expected
+    ~source
+    ~expected
+    ()
+    context
+  =
   let _, pyre_api, configuration =
     TestHelper.setup_single_py_file
-      ~force_pyre1:true
+      ~force_pyre1:skip_for_pyrefly
       ~requires_type_of_expressions:false
       ~file_name:"test.py"
       ~context
       ~source
+      ()
+  in
+  let static_analysis_configuration =
+    Configuration.StaticAnalysis.create
+      ~maximum_target_depth:Configuration.StaticAnalysis.default_maximum_target_depth
+      configuration
       ()
   in
   let qualifier = Reference.create "test" in
@@ -8240,6 +8255,33 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
       ~scheduler_policy
       definitions_and_stubs
   in
+  let pyrefly_define_call_graphs =
+    match pyre_api with
+    | PyrePysaApi.ReadOnly.Pyre1 _ -> None
+    | PyrePysaApi.ReadOnly.Pyrefly _ ->
+        let { CallGraph.SharedMemory.define_call_graphs; _ } =
+          CallGraphBuilder.build_whole_program_call_graph
+            ~scheduler
+            ~static_analysis_configuration
+            ~pyre_api
+            ~resolve_module_path:None
+            ~callables_to_definitions_map:
+              (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
+            ~callables_to_decorators_map:
+              (CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
+            ~type_of_expression_shared_memory
+            ~override_graph:
+              (Some
+                 (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
+            ~store_shared_memory:true
+            ~attribute_targets:Target.Set.empty
+            ~skip_analysis_targets:(Target.HashSet.create ())
+            ~check_invariants:true
+            ~definitions
+            ~create_dependency_for:CallGraph.AllTargetsUseCase.Everything
+        in
+        Some define_call_graphs
+  in
   let actual =
     definitions
     |> List.map ~f:(fun callable ->
@@ -8255,19 +8297,34 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
                        _;
                      } as body) ->
                  let call_graph =
-                   CallGraphBuilder.call_graph_of_decorated_callable
-                     ~debug
-                     ~pyre_api
-                     ~override_graph:
-                       (Some (OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
-                     ~callables_to_definitions_map:
-                       (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
-                     ~type_of_expression_shared_memory
-                     ~callables_to_decorators_map:
-                       (CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
-                     ~callable
-                     ~body
+                   match pyre_api with
+                   | PyrePysaApi.ReadOnly.Pyre1 _ ->
+                       CallGraphBuilder.call_graph_of_decorated_callable
+                         ~debug
+                         ~pyre_api
+                         ~override_graph:
+                           (Some (OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
+                         ~callables_to_definitions_map:
+                           (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
+                         ~type_of_expression_shared_memory
+                         ~callables_to_decorators_map:
+                           (CallableToDecoratorsMap.SharedMemory.read_only
+                              callables_to_decorators_map)
+                         ~callable
+                         ~body
+                   | PyrePysaApi.ReadOnly.Pyrefly _ ->
+                       let define_call_graphs =
+                         pyrefly_define_call_graphs
+                         |> Option.value_exn ~message:"missing define call graphs from pyrefly"
+                         |> CallGraph.SharedMemory.read_only
+                       in
+                       CallGraph.SharedMemory.ReadOnly.get
+                         define_call_graphs
+                         ~cache:false
+                         ~callable:decorated_callable
+                       |> Option.value_exn ~message:"missing call graph for decorated target"
                  in
+
                  TestResult.Decorators
                    {
                      return_expression = Expression.show return_expression;
@@ -8278,6 +8335,11 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
            |> Option.value ~default:TestResult.Undecorated
            |> fun result -> callable, result)
     |> Target.Map.of_alist_exn
+  in
+  let expected =
+    match pyrefly_expected with
+    | Some pyrefly_expected when PyrePysaApi.ReadOnly.is_pyrefly pyre_api -> pyrefly_expected
+    | _ -> expected
   in
   let expected =
     expected
@@ -8299,6 +8361,7 @@ let test_resolve_decorator_callees =
     [
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_resolve_decorator_callees
+           ~skip_for_pyrefly:false
            ~source:
              {|
      def decorator(f1):
@@ -8371,6 +8434,52 @@ let test_resolve_decorator_callees =
                                        unresolved = CallGraph.Unresolved.False;
                                      };
                                    ])
+                              ()) );
+                     ] ) );
+             ]
+           ~pyrefly_expected:
+             [
+               Target.Regular.Function { name = "test.$toplevel"; kind = Normal }, None;
+               Target.Regular.Function { name = "test.decorator"; kind = Normal }, None;
+               Target.Regular.Function { name = "test.decorator2"; kind = Normal }, None;
+               ( Target.Regular.Function { name = "test.foo"; kind = Normal },
+                 Some
+                   ( "decorator2(decorator(test.foo))",
+                     Target.Regular.Function { name = "test.foo"; kind = Decorated },
+                     "test.foo.@decorated",
+                     [
+                       ( "12:0-13:10|artificial-attribute-access|for-decorated-target-callee:test.foo",
+                         ExpressionCallees.from_attribute_access
+                           (AttributeAccessCallees.create
+                              ~if_called:
+                                (CallCallees.create
+                                   ~call_targets:
+                                     [
+                                       CallTarget.create_regular
+                                         (Target.Regular.Function
+                                            { name = "test.foo"; kind = Normal });
+                                     ]
+                                   ())
+                              ()) );
+                       ( "10:1-10:11|artificial-call|for-decorated-target",
+                         ExpressionCallees.from_call
+                           (CallCallees.create
+                              ~call_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function
+                                       { name = "test.decorator2"; kind = Normal });
+                                ]
+                              ()) );
+                       ( "11:1-11:10|artificial-call|for-decorated-target",
+                         ExpressionCallees.from_call
+                           (CallCallees.create
+                              ~call_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function
+                                       { name = "test.decorator"; kind = Normal });
+                                ]
                               ()) );
                      ] ) );
              ]
@@ -8462,6 +8571,7 @@ let test_resolve_decorator_callees =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_resolve_decorator_callees
+           ~skip_for_pyrefly:false
            ~source:
              {|
      def decorator_factory(arg1, arg2):
@@ -8553,6 +8663,73 @@ let test_resolve_decorator_callees =
                                        unresolved = CallGraph.Unresolved.False;
                                      };
                                    ])
+                              ()) );
+                     ] ) );
+             ]
+           ~pyrefly_expected:
+             [
+               Target.Regular.Function { name = "test.$toplevel"; kind = Normal }, None;
+               Target.Regular.Function { name = "test.decorator_factory"; kind = Normal }, None;
+               ( Target.Regular.Function { name = "test.foo"; kind = Normal },
+                 Some
+                   ( "decorator_factory(1, bar)(test.foo)",
+                     Target.Regular.Function { name = "test.foo"; kind = Decorated },
+                     "test.foo.@decorated",
+                     [
+                       ( "9:0-10:10|artificial-attribute-access|for-decorated-target-callee:test.foo",
+                         ExpressionCallees.from_attribute_access
+                           (AttributeAccessCallees.create
+                              ~if_called:
+                                (CallCallees.create
+                                   ~call_targets:
+                                     [
+                                       CallTarget.create_regular
+                                         (Target.Regular.Function
+                                            { name = "test.foo"; kind = Normal });
+                                     ]
+                                   ())
+                              ()) );
+                       ( "8:1-8:26",
+                         ExpressionCallees.from_call
+                           (CallCallees.create
+                              ~call_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function
+                                       { name = "test.decorator_factory"; kind = Normal });
+                                ]
+                              ~higher_order_parameters:
+                                (HigherOrderParameterMap.from_list
+                                   [
+                                     {
+                                       index = 1;
+                                       call_targets =
+                                         [
+                                           CallTarget.create_regular
+                                             (Target.Regular.Function
+                                                { name = "test.bar"; kind = Normal });
+                                         ];
+                                       unresolved = CallGraph.Unresolved.False;
+                                     };
+                                   ])
+                              ()) );
+                       ( "8:1-8:26|artificial-call|for-decorated-target",
+                         ExpressionCallees.from_call
+                           (CallCallees.create
+                              ~unresolved:(CallGraph.Unresolved.True UnexpectedCalleeExpression)
+                              ()) );
+                       ( "8:22-8:25",
+                         ExpressionCallees.from_identifier
+                           (IdentifierCallees.create
+                              ~if_called:
+                                (CallCallees.create
+                                   ~call_targets:
+                                     [
+                                       CallTarget.create_regular
+                                         (Target.Regular.Function
+                                            { name = "test.bar"; kind = Normal });
+                                     ]
+                                   ())
                               ()) );
                      ] ) );
              ]
