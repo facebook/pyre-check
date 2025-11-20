@@ -4751,6 +4751,7 @@ let build_whole_program_call_graph_for_pyrefly
     ~scheduler_policies
     ~pyrefly_api
     ~callables_to_decorators_map
+    ~override_graph
     ~store_shared_memory
     ~attribute_targets
     ~skip_analysis_targets
@@ -4817,25 +4818,38 @@ let build_whole_program_call_graph_for_pyrefly
            ())
       call_graph
   in
+  let apply_skip_overrides target =
+    match target, override_graph with
+    | Target.Regular (Target.Regular.Override target_method), Some override_graph ->
+        let base_target = Target.Regular (Target.Regular.Method target_method) in
+        if not (OverrideGraph.SharedMemory.ReadOnly.overrides_exist override_graph base_target) then
+          (* Pyrefly believes this method has overrides, but the override graph disagrees. This must
+             mean we have a model with `@SkipOverrides`. *)
+          base_target
+        else
+          target
+    | _ -> target
+  in
   let transform_call_graph _ callable call_graph =
     let call_indexer = CallGraph.Indexer.create () in
     let call_graph =
       if Target.is_decorated callable then
-        call_graph
-        |> transform_redirected_call_graph callable
-        |> DefineCallGraph.filter_empty_attribute_access
+        transform_redirected_call_graph callable call_graph
       else
-        call_graph
-        |> DefineCallGraph.filter_empty_attribute_access
-        |> DefineCallGraph.map_target
-             ~f:
-               (CallableToDecoratorsMap.SharedMemory.redirect_to_decorated
-                  callables_to_decorators_map)
-             ~map_call_if:CallCallees.should_redirect_to_decorated
-             ~map_return_if:(fun _ -> false)
+        DefineCallGraph.map_target
+          ~f:
+            (CallableToDecoratorsMap.SharedMemory.redirect_to_decorated callables_to_decorators_map)
+          ~map_call_if:CallCallees.should_redirect_to_decorated
+          ~map_return_if:(fun _ -> false)
+          call_graph
     in
     call_graph
+    |> DefineCallGraph.map_target
+         ~f:apply_skip_overrides
+         ~map_call_if:(fun _ -> true)
+         ~map_return_if:(fun _ -> true)
     |> DefineCallGraph.dedup_and_sort
+    |> DefineCallGraph.filter_empty_attribute_access
     |> DefineCallGraph.regenerate_call_indices ~indexer:call_indexer
   in
   PyreflyApi.ReadOnly.parse_call_graphs
@@ -4892,6 +4906,7 @@ let build_whole_program_call_graph
           ~scheduler_policies
           ~pyrefly_api
           ~callables_to_decorators_map
+          ~override_graph
           ~store_shared_memory
           ~attribute_targets
           ~skip_analysis_targets
