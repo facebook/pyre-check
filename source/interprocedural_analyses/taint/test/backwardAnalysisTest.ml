@@ -72,7 +72,9 @@ let assert_taint ~context source expected =
         ~callables_to_definitions_map:
           (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
         ~callables_to_decorators_map:
-          (Interprocedural.CallableToDecoratorsMap.SharedMemory.empty ()
+          (Interprocedural.CallableToDecoratorsMap.SharedMemory.create_empty
+             ~is_pyrefly:(PyrePysaApi.ReadOnly.is_pyrefly pyre_api)
+             ()
           |> Interprocedural.CallableToDecoratorsMap.SharedMemory.read_only)
         ~type_of_expression_shared_memory
         ~qualifier

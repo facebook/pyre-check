@@ -752,6 +752,7 @@ let initialize
         (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~scheduler
       ~scheduler_policy
+      ~is_pyrefly:(PyrePysaApi.ReadOnly.is_pyrefly pyre_api)
       definitions
   in
   let skip_analysis_targets =

@@ -797,6 +797,7 @@ let run_taint_analysis
              scheduler_policies
              Configuration.ScheduleIdentifier.CallableToDecoratorsMap
              ~default:Interprocedural.CallGraphBuilder.default_scheduler_policy)
+        ~is_pyrefly:(PyrePysaApi.ReadOnly.is_pyrefly pyre_api)
         definitions
     in
     let () =

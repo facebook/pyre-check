@@ -72,6 +72,7 @@ let compute_define_call_graph
         (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~scheduler
       ~scheduler_policy
+      ~is_pyrefly:(PyrePysaApi.ReadOnly.is_pyrefly pyre_api)
       definitions
   in
   let call_graph =
@@ -8253,6 +8254,7 @@ let assert_resolve_decorator_callees
         (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~scheduler
       ~scheduler_policy
+      ~is_pyrefly:(PyrePysaApi.ReadOnly.is_pyrefly pyre_api)
       definitions_and_stubs
   in
   let pyrefly_define_call_graphs =
@@ -8444,13 +8446,13 @@ let test_resolve_decorator_callees =
                Target.Regular.Function { name = "test.decorator2"; kind = Normal }, None;
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
                  Some
-                   ( "decorator2(decorator(test.foo))",
+                   ( "decorator2(decorator(foo))",
                      Target.Regular.Function { name = "test.foo"; kind = Decorated },
                      "test.foo.@decorated",
                      [
-                       ( "12:0-13:10|artificial-attribute-access|for-decorated-target-callee:test.foo",
-                         ExpressionCallees.from_attribute_access
-                           (AttributeAccessCallees.create
+                       ( "12:0-13:10|identifier|foo",
+                         ExpressionCallees.from_identifier
+                           (IdentifierCallees.create
                               ~if_called:
                                 (CallCallees.create
                                    ~call_targets:
@@ -8672,13 +8674,13 @@ let test_resolve_decorator_callees =
                Target.Regular.Function { name = "test.decorator_factory"; kind = Normal }, None;
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
                  Some
-                   ( "decorator_factory(1, bar)(test.foo)",
+                   ( "decorator_factory(1, bar)(foo)",
                      Target.Regular.Function { name = "test.foo"; kind = Decorated },
                      "test.foo.@decorated",
                      [
-                       ( "9:0-10:10|artificial-attribute-access|for-decorated-target-callee:test.foo",
-                         ExpressionCallees.from_attribute_access
-                           (AttributeAccessCallees.create
+                       ( "9:0-10:10|identifier|foo",
+                         ExpressionCallees.from_identifier
+                           (IdentifierCallees.create
                               ~if_called:
                                 (CallCallees.create
                                    ~call_targets:

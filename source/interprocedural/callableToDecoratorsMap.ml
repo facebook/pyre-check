@@ -25,8 +25,8 @@ module DecoratedDefineBody = struct
     decorated_callable: Target.t;
     define_name: Reference.t;
     return_expression: Expression.t;
-    attribute_access: Name.t;
-    attribute_access_location: Location.t;
+    original_function_name: Name.t;
+    original_function_name_location: Location.t;
   }
 end
 
@@ -140,24 +140,30 @@ module SharedMemory = struct
         let description = "callables to decorators"
       end)
 
-  type t = T.t
+  type t = {
+    handle: T.t;
+    is_pyrefly: bool;
+  }
 
   module ReadOnly = struct
-    type t = T.ReadOnly.t
+    type t = {
+      handle: T.ReadOnly.t;
+      is_pyrefly: bool;
+    }
 
-    let get = T.ReadOnly.get ~cache:true
+    let get { handle; _ } = T.ReadOnly.get ~cache:true handle
 
     let get_decorators readonly callable =
       callable |> get readonly >>| fun { decorators; _ } -> decorators
   end
 
-  let empty = T.create
+  let create_empty ~is_pyrefly () = { handle = T.create (); is_pyrefly }
 
-  let read_only = T.read_only
+  let read_only { handle; is_pyrefly } = { ReadOnly.handle = T.read_only handle; is_pyrefly }
 
-  let targets_with_decorators = T.keys
+  let targets_with_decorators { handle; _ } = T.keys handle
 
-  let cleanup = T.cleanup ~clean_old:true
+  let cleanup { handle; _ } = T.cleanup ~clean_old:true handle
 
   let save_decorator_counts_to_directory
       ~static_analysis_configuration:
@@ -168,7 +174,7 @@ module SharedMemory = struct
           _;
         }
       ~scheduler
-      shared_memory
+      { handle; _ }
     =
     let module DecoratorCount = struct
       type t = {
@@ -197,7 +203,7 @@ module SharedMemory = struct
       | _ -> Expression.show decorator
     in
     let decorator_counts =
-      shared_memory
+      handle
       |> T.to_alist
       |> List.map ~f:(fun (_, { Decorators.decorators; _ }) ->
              List.map ~f:show_decorator decorators)
@@ -232,7 +238,7 @@ module SharedMemory = struct
 
   (* We assume `DecoratorPreprocessing.setup_preprocessing` is called before since we use its shared
      memory here. *)
-  let create ~callables_to_definitions_map ~scheduler ~scheduler_policy callables =
+  let create ~callables_to_definitions_map ~scheduler ~scheduler_policy ~is_pyrefly callables =
     (* TODO(T240882988): This ends up copying decorators from `CallablesSharedMemory` to
        `CallableToDecoratorsMap.SharedMemory`. Instead, we could just store the
        `callables_to_definitions_map` handle and a set of targets with decorators. *)
@@ -256,11 +262,12 @@ module SharedMemory = struct
         ~inputs:callables
         ()
     in
-    T.from_add_only shared_memory_add_only
+    let shared_memory = T.from_add_only shared_memory_add_only in
+    { handle = shared_memory; is_pyrefly }
 
 
-  let is_decorated decorators callable =
-    Target.is_normal callable && T.ReadOnly.mem decorators callable
+  let is_decorated { ReadOnly.handle; _ } callable =
+    Target.is_normal callable && T.ReadOnly.mem handle callable
 
 
   (* Redirect any call to callable `foo` to its decorated version, if any. *)
@@ -289,7 +296,7 @@ module SharedMemory = struct
      * ```
      * would resolve into expression `decorator(decorator_factory(1, 2)(foo))`.
      *)
-  let decorated_callable_body decorators callable =
+  let decorated_callable_body ({ ReadOnly.is_pyrefly; _ } as decorators) callable =
     let create_decorator_call previous_argument decorator =
       Node.create
         ~location:decorator.Node.location
@@ -317,31 +324,36 @@ module SharedMemory = struct
     >>= ReadOnly.get decorators
     >>| fun { decorators; define_location } ->
     let define_name = Target.define_name_exn callable in
-    let attribute_access_location = define_location in
-    let attribute_access =
-      Ast.Expression.create_name_from_reference
-        ~location:attribute_access_location
-        ~create_origin:(fun attributes ->
-          Some
-            (Origin.create
-               ~location:attribute_access_location
-               (Origin.ForDecoratedTargetCallee attributes)))
-        define_name
+    let original_function_name_location = define_location in
+    let original_function_name =
+      if not is_pyrefly then (* When using Pyre1, create a fully qualified expression *)
+        Ast.Expression.create_name_from_reference
+          ~location:original_function_name_location
+          ~create_origin:(fun attributes ->
+            Some
+              (Origin.create
+                 ~location:original_function_name_location
+                 (Origin.ForDecoratedTargetCallee attributes)))
+          define_name
+      else (* When using Pyrefly, just use an identifier *)
+        Ast.Expression.Name.Identifier (Reference.last define_name)
     in
     let decorated_callable = Target.set_kind Target.Decorated callable in
     let define_name = Reference.create ~prefix:(Target.define_name_exn callable) "@decorated" in
     let return_expression =
       List.fold
         decorators
-        ~init:(Expression.Name attribute_access |> Node.create ~location:attribute_access_location)
+        ~init:
+          (Expression.Name original_function_name
+          |> Node.create ~location:original_function_name_location)
         ~f:create_decorator_call
     in
     {
       DecoratedDefineBody.decorated_callable;
       define_name;
       return_expression;
-      attribute_access;
-      attribute_access_location;
+      original_function_name;
+      original_function_name_location;
     }
 
 

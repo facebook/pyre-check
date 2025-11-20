@@ -13,8 +13,8 @@ module DecoratedDefineBody : sig
     decorated_callable: Target.t;
     define_name: Reference.t;
     return_expression: Expression.t;
-    attribute_access: Name.t;
-    attribute_access_location: Location.t;
+    original_function_name: Name.t;
+    original_function_name_location: Location.t;
   }
 end
 
@@ -30,7 +30,7 @@ module SharedMemory : sig
 
   val read_only : t -> ReadOnly.t
 
-  val empty : unit -> t
+  val create_empty : is_pyrefly:bool -> unit -> t
 
   (* We assume `DecoratorPreprocessing.setup_preprocessing` is called before since we use its shared
      memory here. *)
@@ -38,6 +38,7 @@ module SharedMemory : sig
     :  callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
     scheduler:Scheduler.t ->
     scheduler_policy:Scheduler.Policy.t ->
+    is_pyrefly:bool ->
     Target.t list ->
     t
 
