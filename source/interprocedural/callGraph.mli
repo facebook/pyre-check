@@ -153,6 +153,8 @@ module HigherOrderParameter : sig
 
   val to_json : t -> Yojson.Safe.t
 
+  val map_target : f:(Target.t -> Target.t) -> t -> t
+
   val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
 
@@ -178,6 +180,8 @@ module HigherOrderParameterMap : sig
 
   val to_json : t -> Yojson.Safe.t
 
+  val map_target : f:(Target.t -> Target.t) -> t -> t
+
   val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
 
@@ -190,6 +194,8 @@ module ShimTarget : sig
   [@@deriving equal, show]
 
   val to_json : t -> Yojson.Safe.t
+
+  val map_target : f:(Target.t -> Target.t) -> t -> t
 
   val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
@@ -297,6 +303,8 @@ module AttributeAccessCallees : sig
 
   val to_json : t -> Yojson.Safe.t
 
+  val map_target : f:(Target.t -> Target.t) -> t -> t
+
   val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
 
@@ -318,6 +326,8 @@ module IdentifierCallees : sig
 
   val to_json : t -> Yojson.Safe.t
 
+  val map_target : f:(Target.t -> Target.t) -> t -> t
+
   val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
 
@@ -329,6 +339,8 @@ module FormatStringArtificialCallees : sig
 
   val to_json : t -> Yojson.Safe.t
 
+  val map_target : f:(Target.t -> Target.t) -> t -> t
+
   val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
 
@@ -339,6 +351,8 @@ module FormatStringStringifyCallees : sig
   val from_stringify_targets : CallTarget.t list -> t
 
   val to_json : t -> Yojson.Safe.t
+
+  val map_target : f:(Target.t -> Target.t) -> t -> t
 
   val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
@@ -358,6 +372,8 @@ module DefineCallees : sig
 
   val to_json : t -> Yojson.Safe.t
 
+  val map_target : f:(Target.t -> Target.t) -> t -> t
+
   val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
 
@@ -372,6 +388,8 @@ module ReturnShimCallees : sig
     arguments: argument_mapping list;
   }
   [@@deriving equal, show]
+
+  val map_target : f:(Target.t -> Target.t) -> t -> t
 
   val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
@@ -403,6 +421,13 @@ module ExpressionCallees : sig
   val from_return : ReturnShimCallees.t -> t
 
   val to_json : t -> Yojson.Safe.t
+
+  val map_target
+    :  f:(Target.t -> Target.t) ->
+    map_call_if:(CallCallees.t -> bool) ->
+    map_return_if:(ReturnShimCallees.t -> bool) ->
+    t ->
+    t
 
   val dedup_and_sort : t -> t
 
@@ -603,6 +628,13 @@ module DefineCallGraph : sig
 
   val map_target
     :  f:(Target.t -> Target.t) ->
+    map_call_if:(CallCallees.t -> bool) ->
+    map_return_if:(ReturnShimCallees.t -> bool) ->
+    t ->
+    t
+
+  val map_receiver_class
+    :  f:(string -> string) ->
     map_call_if:(CallCallees.t -> bool) ->
     map_return_if:(ReturnShimCallees.t -> bool) ->
     t ->

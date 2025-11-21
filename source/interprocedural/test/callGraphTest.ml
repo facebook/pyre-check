@@ -125,18 +125,17 @@ let compute_define_call_graph
             ~definitions:[callable]
             ~create_dependency_for:CallGraph.AllTargetsUseCase.Everything
         in
-        let strip_builtins_module = function
+        let strip_builtins_from_string reference =
+          reference
+          |> Reference.create
+          |> Interprocedural.PyreflyApi.strip_builtins_prefix
+          |> Reference.show
+        in
+        let strip_builtins_from_target = function
           | Target.Regular (Target.Regular.Method { class_name; method_name; kind }) ->
               Target.Regular
                 (Target.Regular.Method
-                   {
-                     class_name =
-                       Reference.show
-                         (Interprocedural.PyreflyApi.strip_builtins_prefix
-                            (Reference.create class_name));
-                     method_name;
-                     kind;
-                   })
+                   { class_name = strip_builtins_from_string class_name; method_name; kind })
           | target -> target
         in
         CallGraph.SharedMemory.ReadOnly.get
@@ -145,7 +144,11 @@ let compute_define_call_graph
           ~callable
         |> Option.value_exn
         |> CallGraph.DefineCallGraph.map_target
-             ~f:strip_builtins_module
+             ~f:strip_builtins_from_target
+             ~map_call_if:(fun _ -> true)
+             ~map_return_if:(fun _ -> true)
+        |> CallGraph.DefineCallGraph.map_receiver_class
+             ~f:strip_builtins_from_string
              ~map_call_if:(fun _ -> true)
              ~map_return_if:(fun _ -> true)
   in
@@ -1111,6 +1114,7 @@ let test_call_graph_of_define =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
            ~_migrated_to_pyrefly:true
+           ~skip_for_pyrefly:false
            ~source:{|
         def foo():
           1 > 2
@@ -1127,6 +1131,46 @@ let test_call_graph_of_define =
                             ~implicit_receiver:true
                             ~return_type:(Some ReturnType.bool)
                             ~receiver_class:"int"
+                            (Target.Regular.Method
+                               { class_name = "int"; method_name = "__gt__"; kind = Normal });
+                        ]
+                      ()) );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~_migrated_to_pyrefly:true
+           ~skip_for_pyrefly:false
+           ~source:{|
+        def foo():
+          1 > 2 > 3
+      |}
+           ~define_name:"test.foo"
+           ~expected:
+             [
+               ( "3:2-3:7|artificial-call|comparison",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~return_type:(Some ReturnType.bool)
+                            ~receiver_class:"int"
+                            (Target.Regular.Method
+                               { class_name = "int"; method_name = "__gt__"; kind = Normal });
+                        ]
+                      ()) );
+               ( "3:6-3:11|artificial-call|comparison",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~return_type:(Some ReturnType.bool)
+                            ~receiver_class:"int"
+                            ~index:1
                             (Target.Regular.Method
                                { class_name = "int"; method_name = "__gt__"; kind = Normal });
                         ]

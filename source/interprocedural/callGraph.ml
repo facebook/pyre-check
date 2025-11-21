@@ -259,6 +259,10 @@ module CallTarget = struct
 
   let map_target ~f ({ target; _ } as call_target) = { call_target with target = f target }
 
+  let map_receiver_class ~f ({ receiver_class; _ } as call_target) =
+    { call_target with receiver_class = Option.map ~f receiver_class }
+
+
   let regenerate_index ~indexer ({ target; _ } as call_target) =
     { call_target with index = Indexer.get_index ~indexer target }
 end
@@ -435,12 +439,11 @@ module HigherOrderParameter = struct
     |> fun bindings -> `Assoc bindings
 
 
-  let map_target ~f ({ call_targets; _ } as higher_order_parameter) =
-    {
-      higher_order_parameter with
-      call_targets = List.map ~f:(CallTarget.map_target ~f) call_targets;
-    }
+  let map_call_target ~f ({ call_targets; _ } as higher_order_parameter) =
+    { higher_order_parameter with call_targets = List.map ~f call_targets }
 
+
+  let map_target ~f = map_call_target ~f:(CallTarget.map_target ~f)
 
   let regenerate_call_indices ~indexer ({ call_targets; _ } as higher_order_parameter) =
     {
@@ -503,6 +506,8 @@ module HigherOrderParameterMap = struct
   let to_json map =
     map |> Map.data |> List.map ~f:HigherOrderParameter.to_json |> fun elements -> `List elements
 
+
+  let map_call_target ~f = Map.map (HigherOrderParameter.map_call_target ~f)
 
   let map_target ~f = Map.map (HigherOrderParameter.map_target ~f)
 
@@ -582,9 +587,11 @@ module ShimTarget = struct
     |> fun bindings -> `Assoc (List.rev bindings)
 
 
-  let map_target ~f ({ call_targets; _ } as shim_target) =
-    { shim_target with call_targets = List.map ~f:(CallTarget.map_target ~f) call_targets }
+  let map_call_target ~f ({ call_targets; _ } as shim_target) =
+    { shim_target with call_targets = List.map ~f call_targets }
 
+
+  let map_target ~f = map_call_target ~f:(CallTarget.map_target ~f)
 
   let regenerate_call_indices ~indexer ({ call_targets; _ } as shim_target) =
     {
@@ -974,20 +981,22 @@ module CallCallees = struct
     `Assoc (List.rev bindings)
 
 
-  let map_target
+  let map_call_target
       ~f
       ({ call_targets; new_targets; init_targets; higher_order_parameters; shim_target; _ } as
       call_callees)
     =
     {
       call_callees with
-      call_targets = List.map ~f:(CallTarget.map_target ~f) call_targets;
-      higher_order_parameters = HigherOrderParameterMap.map_target ~f higher_order_parameters;
-      shim_target = Option.map ~f:(ShimTarget.map_target ~f) shim_target;
-      new_targets = List.map ~f:(CallTarget.map_target ~f) new_targets;
-      init_targets = List.map ~f:(CallTarget.map_target ~f) init_targets;
+      call_targets = List.map ~f call_targets;
+      higher_order_parameters = HigherOrderParameterMap.map_call_target ~f higher_order_parameters;
+      shim_target = Option.map ~f:(ShimTarget.map_call_target ~f) shim_target;
+      new_targets = List.map ~f new_targets;
+      init_targets = List.map ~f init_targets;
     }
 
+
+  let map_target ~f = map_call_target ~f:(CallTarget.map_target ~f)
 
   let should_redirect_to_decorated { recognized_call; _ } =
     RecognizedCall.redirect_to_decorated recognized_call
@@ -1137,9 +1146,11 @@ module AttributeAccessCallees = struct
     |> fun bindings -> `Assoc (List.rev bindings)
 
 
-  let map_target ~f ({ if_called; _ } as attribute_callees) =
-    { attribute_callees with if_called = CallCallees.map_target ~f if_called }
+  let map_call_target ~f ({ if_called; _ } as attribute_callees) =
+    { attribute_callees with if_called = CallCallees.map_call_target ~f if_called }
 
+
+  let map_target ~f = map_call_target ~f:(CallTarget.map_target ~f)
 
   let drop_decorated_targets ({ if_called; _ } as attribute_access_callees) =
     { attribute_access_callees with if_called = CallCallees.drop_decorated_targets if_called }
@@ -1223,9 +1234,11 @@ module IdentifierCallees = struct
     |> fun bindings -> `Assoc (List.rev bindings)
 
 
-  let map_target ~f ({ if_called; _ } as identifier_callees) =
-    { identifier_callees with if_called = CallCallees.map_target ~f if_called }
+  let map_call_target ~f ({ if_called; _ } as identifier_callees) =
+    { identifier_callees with if_called = CallCallees.map_call_target ~f if_called }
 
+
+  let map_target ~f = map_call_target ~f:(CallTarget.map_target ~f)
 
   let drop_decorated_targets ({ if_called; _ } as identifier_callees) =
     { identifier_callees with if_called = CallCallees.drop_decorated_targets if_called }
@@ -1262,7 +1275,9 @@ module FormatStringArtificialCallees = struct
 
   let to_json { targets } = `List (List.map ~f:CallTarget.to_json targets)
 
-  let map_target ~f { targets } = { targets = List.map ~f:(CallTarget.map_target ~f) targets }
+  let map_call_target ~f { targets } = { targets = List.map ~f targets }
+
+  let map_target ~f = map_call_target ~f:(CallTarget.map_target ~f)
 
   let drop_decorated_targets = Fn.id
 
@@ -1292,7 +1307,9 @@ module FormatStringStringifyCallees = struct
 
   let to_json { targets } = `List (List.map ~f:CallTarget.to_json targets)
 
-  let map_target ~f { targets } = { targets = List.map ~f:(CallTarget.map_target ~f) targets }
+  let map_call_target ~f { targets } = { targets = List.map ~f targets }
+
+  let map_target ~f = map_call_target ~f:(CallTarget.map_target ~f)
 
   let drop_decorated_targets = Fn.id
 
@@ -1354,9 +1371,11 @@ module DefineCallees = struct
     `Assoc bindings
 
 
-  let map_target ~f { define_targets; decorated_targets } =
-    { define_targets = List.map ~f:(CallTarget.map_target ~f) define_targets; decorated_targets }
+  let map_call_target ~f { define_targets; decorated_targets } =
+    { define_targets = List.map ~f define_targets; decorated_targets }
 
+
+  let map_target ~f = map_call_target ~f:(CallTarget.map_target ~f)
 
   let drop_decorated_targets callees = { callees with decorated_targets = [] }
 
@@ -1393,9 +1412,11 @@ module ReturnShimCallees = struct
     `Assoc bindings
 
 
-  let map_target ~f { call_targets; arguments } =
-    { call_targets = List.map ~f:(CallTarget.map_target ~f) call_targets; arguments }
+  let map_call_target ~f { call_targets; arguments } =
+    { call_targets = List.map ~f call_targets; arguments }
 
+
+  let map_target ~f = map_call_target ~f:(CallTarget.map_target ~f)
 
   let regenerate_call_indices ~indexer ({ call_targets; _ } as return_callees) =
     {
@@ -1504,19 +1525,22 @@ module ExpressionCallees = struct
     | Return callees -> `Assoc ["return", ReturnShimCallees.to_json callees]
 
 
-  let map_target ~f ~map_call_if ~map_return_if = function
+  let map_call_target ~f ~map_call_if ~map_return_if = function
     | Call callees ->
-        Call (if map_call_if callees then CallCallees.map_target ~f callees else callees)
-    | AttributeAccess callees -> AttributeAccess (AttributeAccessCallees.map_target ~f callees)
-    | Identifier callees -> Identifier (IdentifierCallees.map_target ~f callees)
+        Call (if map_call_if callees then CallCallees.map_call_target ~f callees else callees)
+    | AttributeAccess callees -> AttributeAccess (AttributeAccessCallees.map_call_target ~f callees)
+    | Identifier callees -> Identifier (IdentifierCallees.map_call_target ~f callees)
     | FormatStringArtificial callees ->
-        FormatStringArtificial (FormatStringArtificialCallees.map_target ~f callees)
+        FormatStringArtificial (FormatStringArtificialCallees.map_call_target ~f callees)
     | FormatStringStringify callees ->
-        FormatStringStringify (FormatStringStringifyCallees.map_target ~f callees)
-    | Define callees -> Define (DefineCallees.map_target ~f callees)
+        FormatStringStringify (FormatStringStringifyCallees.map_call_target ~f callees)
+    | Define callees -> Define (DefineCallees.map_call_target ~f callees)
     | Return callees ->
-        Return (if map_return_if callees then ReturnShimCallees.map_target ~f callees else callees)
+        Return
+          (if map_return_if callees then ReturnShimCallees.map_call_target ~f callees else callees)
 
+
+  let map_target ~f = map_call_target ~f:(CallTarget.map_target ~f)
 
   let drop_decorated_targets = function
     | Call callees -> Call (CallCallees.drop_decorated_targets callees)
@@ -1953,9 +1977,13 @@ module DefineCallGraph = struct
 
   let update_expression_callees ~f = ExpressionIdentifier.Map.map f
 
-  let map_target ~f ~map_call_if ~map_return_if =
-    update_expression_callees ~f:(ExpressionCallees.map_target ~f ~map_call_if ~map_return_if)
+  let map_call_target ~f ~map_call_if ~map_return_if =
+    update_expression_callees ~f:(ExpressionCallees.map_call_target ~f ~map_call_if ~map_return_if)
 
+
+  let map_target ~f = map_call_target ~f:(CallTarget.map_target ~f)
+
+  let map_receiver_class ~f = map_call_target ~f:(CallTarget.map_receiver_class ~f)
 
   (* Ensure the taint analysis does not use these targets. *)
   let drop_decorated_targets = update_expression_callees ~f:ExpressionCallees.drop_decorated_targets
