@@ -226,11 +226,7 @@ module Analysis = struct
     let () =
       Log.log ~section:`Interprocedural "Analyzing %a" Interprocedural.Target.pp_pretty callable
     in
-    let {
-      Interprocedural.CallablesSharedMemory.DefineAndQualifier.qualifier;
-      define = { Ast.Node.value = { Ast.Statement.Define.signature = { name; _ }; _ }; _ } as define;
-    }
-      =
+    let { Interprocedural.CallablesSharedMemory.DefineAndQualifier.qualifier; define } =
       callable
       |> Interprocedural.Target.strip_parameters
       |> Interprocedural.CallablesSharedMemory.ReadOnly.get_define callables_to_definitions_map
@@ -241,14 +237,6 @@ module Analysis = struct
                 Interprocedural.Target.pp_pretty
                 callable)
     in
-    let define_qualifier = Ast.Reference.delocalize name in
-    let open Ast in
-    let module_reference =
-      define_qualifier
-      |> PyrePysaApi.ReadOnly.location_of_global pyre_api
-      >>| fun { Location.WithModule.module_reference; _ } -> module_reference
-    in
-    let qualifier = Option.value ~default:qualifier module_reference in
     let string_combine_partial_sink_tree =
       taint_configuration
       |> TaintConfiguration.SharedMemory.get
