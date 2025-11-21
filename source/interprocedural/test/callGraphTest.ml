@@ -4048,7 +4048,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:{|
       def foo(e: Exception):
@@ -4123,7 +4123,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source:
              {|
       def foo(error_type: typing.Union[str, typing.Type[Exception]]):
@@ -4155,7 +4155,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source:
              {|
       def foo(error_type: typing.Type[Exception]):
@@ -4187,7 +4187,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:
              {|
@@ -4238,7 +4238,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:
              {|
@@ -4283,7 +4283,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:{|
       def foo(e: Exception):
