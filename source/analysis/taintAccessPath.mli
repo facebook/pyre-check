@@ -48,6 +48,8 @@ module Root : sig
 
   module Set : Stdlib.Set.S with type elt = t
 
+  module Map : Stdlib.Map.S with type key = t
+
   module List : sig
     type nonrec t = t list [@@deriving show]
   end

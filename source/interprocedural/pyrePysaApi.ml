@@ -245,6 +245,16 @@ module ReadOnly = struct
     | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.get_callable_captures pyrefly_api
 
 
+  let get_callable_return_annotations = function
+    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.get_callable_return_annotations pyre_api
+    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.get_callable_return_annotations pyrefly_api
+
+
+  let get_callable_parameter_annotations = function
+    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.get_callable_parameter_annotations pyre_api
+    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.get_callable_parameter_annotations pyrefly_api
+
+
   let get_variable = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.get_variable pyre_api
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.get_variable"

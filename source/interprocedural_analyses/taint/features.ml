@@ -800,10 +800,7 @@ let type_breadcrumbs scalar_properties =
 
 
 let type_breadcrumbs_from_annotation ~pyre_api type_ =
-  type_
-  >>| PyrePysaApi.ReadOnly.Type.scalar_properties pyre_api
-  |> Option.value ~default:PyrePysaApi.ScalarTypeProperties.none
-  |> type_breadcrumbs
+  type_ |> PyrePysaApi.ReadOnly.Type.scalar_properties pyre_api |> type_breadcrumbs
 
 
 let expand_via_features

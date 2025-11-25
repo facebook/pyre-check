@@ -128,6 +128,7 @@ module Root = struct
 
   include T
   module Set = Stdlib.Set.Make (T)
+  module Map = Stdlib.Map.Make (T)
 
   module List = struct
     type t = T.t list [@@deriving show]

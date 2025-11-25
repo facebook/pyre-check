@@ -590,6 +590,36 @@ module ReadOnly = struct
     | _ -> []
 
 
+  let get_callable_return_annotations
+      api
+      ~define_name:_
+      ~define:{ Ast.Statement.Define.signature = { return_annotation; _ }; _ }
+    =
+    match return_annotation with
+    | Some return_annotation -> [PysaType.from_pyre1_type (parse_annotation api return_annotation)]
+    | None -> []
+
+
+  let get_callable_parameter_annotations api ~define_name:_ parameters =
+    let attach_annotation
+        ({
+           TaintAccessPath.NormalizedParameter.original =
+             { Ast.Node.value = { Ast.Expression.Parameter.annotation; _ }; _ };
+           _;
+         } as parameter)
+      =
+      let annotation =
+        annotation
+        >>| parse_annotation api
+        >>| PysaType.from_pyre1_type
+        >>| List.return
+        |> Option.value ~default:[]
+      in
+      parameter, annotation
+    in
+    List.map parameters ~f:attach_annotation
+
+
   let resolve_define api = global_resolution api |> GlobalResolution.resolve_define
 
   let resolve_define_undecorated api =

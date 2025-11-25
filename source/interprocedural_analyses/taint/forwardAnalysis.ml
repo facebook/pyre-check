@@ -3419,8 +3419,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 end
 
 let extract_source_model
-    ~define
     ~pyre_api
+    ~define
     ~taint_configuration:
       {
         TaintConfiguration.Heap.analysis_model_constraints =
@@ -3433,7 +3433,13 @@ let extract_source_model
     ~apply_broadening
     exit_taint
   =
-  let { Statement.Define.signature = { return_annotation; parameters; _ }; _ } = define in
+  let { Statement.Define.signature = { parameters; _ }; _ } = define in
+  let return_annotations =
+    PyrePysaApi.ReadOnly.get_callable_return_annotations
+      pyre_api
+      ~define_name:(Interprocedural.Target.define_name_exn callable)
+      ~define
+  in
   let normalized_parameters = AccessPath.normalize_parameters parameters in
   let simplify tree =
     let tree =
@@ -3457,7 +3463,7 @@ let extract_source_model
     else
       tree
   in
-  let extract_model_from_variable ~variable ~port ~annotation state =
+  let extract_model_from_variable ~variable ~port ~annotations state =
     let breadcrumbs_to_attach, via_features_to_attach =
       ForwardState.extract_features_to_attach
         ~root:port
@@ -3465,10 +3471,10 @@ let extract_source_model
         existing_forward.Model.Forward.generations
     in
     let type_breadcrumbs =
-      annotation
-      >>| PyrePysaApi.ReadOnly.parse_annotation pyre_api
-      >>| PyrePysaApi.PysaType.from_pyre1_type
-      |> Features.type_breadcrumbs_from_annotation ~pyre_api
+      annotations
+      |> List.map ~f:(Features.type_breadcrumbs_from_annotation ~pyre_api)
+      |> List.reduce ~f:Features.BreadcrumbSet.inter
+      |> Option.value ~default:Features.BreadcrumbSet.empty
       |> Features.BreadcrumbMayAlwaysSet.of_set
     in
     let taint =
@@ -3484,8 +3490,7 @@ let extract_source_model
     match normalized_parameters with
     | {
         root = self_parameter;
-        original =
-          { Node.value = { Parameter.name = self_variable; annotation = self_annotation; _ }; _ };
+        original = { Node.value = { Parameter.name = self_variable; _ }; _ };
         _;
       }
       :: _
@@ -3494,16 +3499,16 @@ let extract_source_model
         |> extract_model_from_variable
              ~variable:(AccessPath.Root.Variable self_variable)
              ~port:self_parameter
-             ~annotation:self_annotation
+             ~annotations:[]
         |> extract_model_from_variable
              ~variable:AccessPath.Root.LocalResult
              ~port:AccessPath.Root.LocalResult
-             ~annotation:return_annotation
+             ~annotations:return_annotations
     | _ ->
         extract_model_from_variable
           ~variable:AccessPath.Root.LocalResult
           ~port:AccessPath.Root.LocalResult
-          ~annotation:return_annotation
+          ~annotations:return_annotations
           ForwardState.bottom
   in
   let model =
@@ -3622,8 +3627,8 @@ let run
     let generations =
       TaintProfiler.track_duration ~profiler ~name:"Forward analysis - extract model" ~f:(fun () ->
           extract_source_model
-            ~define:define.value
             ~pyre_api
+            ~define:define.value
             ~taint_configuration:FunctionContext.taint_configuration
             ~callable
             ~existing_forward:existing_model.forward

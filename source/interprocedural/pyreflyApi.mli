@@ -127,6 +127,18 @@ module ReadOnly : sig
 
   val get_callable_metadata : t -> Ast.Reference.t -> CallableMetadata.t
 
+  val get_callable_return_annotations
+    :  t ->
+    define_name:Ast.Reference.t ->
+    define:Ast.Statement.Define.t ->
+    PysaType.t list
+
+  val get_callable_parameter_annotations
+    :  t ->
+    define_name:Ast.Reference.t ->
+    Analysis.TaintAccessPath.NormalizedParameter.t list ->
+    (Analysis.TaintAccessPath.NormalizedParameter.t * PysaType.t list) list
+
   val get_overriden_base_method
     :  t ->
     class_name:Ast.Reference.t ->
