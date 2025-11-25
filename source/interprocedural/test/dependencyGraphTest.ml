@@ -71,6 +71,7 @@ let create_call_graph ?(other_sources = []) ~context source_text =
   in
   let type_of_expression_shared_memory =
     Interprocedural.TypeOfExpressionSharedMemory.create
+      ~pyre_api
       ~callables_to_definitions_map:
         (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ()

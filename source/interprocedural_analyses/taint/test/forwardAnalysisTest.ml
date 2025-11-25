@@ -74,6 +74,7 @@ let assert_taint ?models ?models_source ~context source expect =
   in
   let type_of_expression_shared_memory =
     Interprocedural.TypeOfExpressionSharedMemory.create
+      ~pyre_api
       ~callables_to_definitions_map:
         (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ()

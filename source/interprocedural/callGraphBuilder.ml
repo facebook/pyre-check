@@ -683,7 +683,7 @@ let resolve_stringify_call ~pyre_in_context ~type_of_expression_shared_memory ~c
   in
   try
     match
-      TypeOfExpressionSharedMemory.compute_or_retrieve_type
+      TypeOfExpressionSharedMemory.compute_or_retrieve_pyre_type
         type_of_expression_shared_memory
         ~pyre_in_context
         ~callable
@@ -848,7 +848,7 @@ let preprocess_call
       match
         Analysis.AnnotatedCall.preprocess_special_calls
           ~resolve_expression_to_type:
-            (TypeOfExpressionSharedMemory.compute_or_retrieve_type
+            (TypeOfExpressionSharedMemory.compute_or_retrieve_pyre_type
                type_of_expression_shared_memory
                ~pyre_in_context
                ~callable)

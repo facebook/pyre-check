@@ -3623,6 +3623,7 @@ module ReadOnly = struct
     callable_ast_shared_memory: CallableAstSharedMemory.t;
     callable_define_signature_shared_memory: CallableDefineSignatureSharedMemory.t;
     callable_undecorated_signatures_shared_memory: CallableUndecoratedSignaturesSharedMemory.t;
+    type_of_expressions_shared_memory: TypeOfExpressionsSharedMemory.t option;
     class_id_to_qualified_name_shared_memory: ClassIdToQualifiedNameSharedMemory.t;
     callable_id_to_qualified_name_shared_memory: CallableIdToQualifiedNameSharedMemory.t;
     object_class: FullyQualifiedName.t;
@@ -3643,6 +3644,7 @@ module ReadOnly = struct
         callable_ast_shared_memory;
         callable_define_signature_shared_memory;
         callable_undecorated_signatures_shared_memory;
+        type_of_expressions_shared_memory;
         class_id_to_qualified_name_shared_memory;
         callable_id_to_qualified_name_shared_memory;
         object_class;
@@ -3663,6 +3665,7 @@ module ReadOnly = struct
       callable_ast_shared_memory;
       callable_define_signature_shared_memory;
       callable_undecorated_signatures_shared_memory;
+      type_of_expressions_shared_memory;
       class_id_to_qualified_name_shared_memory;
       callable_id_to_qualified_name_shared_memory;
       object_class;
@@ -4324,6 +4327,22 @@ module ReadOnly = struct
     { CallGraph.SharedMemory.whole_program_call_graph; define_call_graphs }
 
 
+  let get_type_of_expression { type_of_expressions_shared_memory; _ } ~qualifier ~location =
+    match type_of_expressions_shared_memory with
+    | None ->
+        failwith
+          "Using `PyreflyApi.ReadOnly.get_type_of_expression` before calling \
+           `parse_type_of_expressions`."
+    | Some type_of_expressions_shared_memory ->
+        TypeOfExpressionsSharedMemory.get
+          type_of_expressions_shared_memory
+          {
+            TypeOfExpressionsSharedMemory.Key.module_qualifier =
+              ModuleQualifier.from_reference_unchecked qualifier;
+            location;
+          }
+
+
   module Type = struct
     let scalar_properties _ pysa_type =
       match PysaType.as_pyrefly_type pysa_type with
@@ -4372,6 +4391,17 @@ module ReadOnly = struct
             unbound_type_variable;
             is_exhaustive;
           }
+
+
+    let is_dictionary_or_mapping _ pysa_type =
+      match PysaType.as_pyrefly_type pysa_type with
+      | None ->
+          failwith
+            "ReadOnly.Type.is_dictionary_or_mapping: trying to use a pyre1 type with a pyrefly API."
+      | Some { PyreflyType.string; _ } ->
+          (* TODO(T225700656): Use the class id from class names *)
+          String.is_prefix ~prefix:"typing.Mapping[" string
+          || String.is_prefix ~prefix:"builtins.dict[" string
   end
 
   module ClassSummary = struct

@@ -71,6 +71,7 @@ let assert_higher_order_call_graph_fixpoint
   in
   let type_of_expression_shared_memory =
     Interprocedural.TypeOfExpressionSharedMemory.create
+      ~pyre_api
       ~callables_to_definitions_map:
         (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ()

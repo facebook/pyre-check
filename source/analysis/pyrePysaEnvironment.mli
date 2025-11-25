@@ -69,6 +69,8 @@ module PyreflyType : sig
     class_names: ClassNamesFromType.t option;
   }
   [@@deriving equal, compare, show]
+
+  val top : t
 end
 
 (* Minimal abstraction for a type, provided from Pyre1 or Pyrefly and used by Pysa. See
@@ -88,6 +90,8 @@ module PysaType : sig
   val pp_concise : Format.formatter -> t -> unit
 
   val show_fully_qualified : t -> string
+
+  val weaken_literals : t -> t
 end
 
 module PyreClassSummary = ClassSummary
@@ -330,6 +334,8 @@ module ReadOnly : sig
      * List[Dict[str, str]] -> [List]
      *)
     val get_class_names : t -> PysaType.t -> ClassNamesFromType.t
+
+    val is_dictionary_or_mapping : t -> PysaType.t -> bool
   end
 
   module ClassSummary : sig

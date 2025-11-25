@@ -635,6 +635,7 @@ let initialize
   in
   let type_of_expression_shared_memory =
     Interprocedural.TypeOfExpressionSharedMemory.create
+      ~pyre_api
       ~callables_to_definitions_map:
         (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ()
@@ -1066,6 +1067,7 @@ let end_to_end_integration_test path context =
               Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
             type_of_expression_shared_memory =
               Interprocedural.TypeOfExpressionSharedMemory.create
+                ~pyre_api
                 ~callables_to_definitions_map:
                   (Interprocedural.CallablesSharedMemory.ReadOnly.read_only
                      callables_to_definitions_map)

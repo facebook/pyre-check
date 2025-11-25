@@ -810,8 +810,17 @@ let run_taint_analysis
     callables_to_decorators_map
   in
 
+  let pyre_read_write_api =
+    PyrePysaApi.ReadWrite.parse_type_of_expressions
+      pyre_read_write_api
+      ~scheduler
+      ~scheduler_policies
+  in
+  let pyre_api = PyrePysaApi.ReadOnly.of_read_write_api pyre_read_write_api in
+
   let type_of_expression_shared_memory =
     Interprocedural.TypeOfExpressionSharedMemory.create
+      ~pyre_api
       ~callables_to_definitions_map:
         (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ()
@@ -988,13 +997,6 @@ let run_taint_analysis
       ~callables_to_decorators_map
       ~original_define_call_graphs
       ~call_graph_fixpoint:higher_order_call_graph_fixpoint
-  in
-
-  let pyre_read_write_api =
-    PyrePysaApi.ReadWrite.parse_type_of_expressions
-      pyre_read_write_api
-      ~scheduler
-      ~scheduler_policies
   in
 
   let () = PyrePysaApi.ReadWrite.purge_sources_from_shared_memory pyre_read_write_api in

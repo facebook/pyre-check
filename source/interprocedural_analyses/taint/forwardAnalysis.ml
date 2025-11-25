@@ -2120,8 +2120,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      origin = _;
     }
       when CallGraph.CallCallees.is_mapping_method callees
-           && Type.is_dictionary_or_mapping
-                (Interprocedural.TypeOfExpressionSharedMemory.compute_or_retrieve_type
+           && PyrePysaApi.ReadOnly.Type.is_dictionary_or_mapping
+                pyre_api
+                (Interprocedural.TypeOfExpressionSharedMemory.compute_or_retrieve_pysa_type
                    FunctionContext.type_of_expression_shared_memory
                    ~pyre_in_context
                    ~callable:FunctionContext.callable
@@ -3466,6 +3467,7 @@ let extract_source_model
     let type_breadcrumbs =
       annotation
       >>| PyrePysaApi.ReadOnly.parse_annotation pyre_api
+      >>| PyrePysaApi.PysaType.from_pyre1_type
       |> Features.type_breadcrumbs_from_annotation ~pyre_api
       |> Features.BreadcrumbMayAlwaysSet.of_set
     in

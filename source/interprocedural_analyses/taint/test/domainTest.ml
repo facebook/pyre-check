@@ -29,6 +29,7 @@ let test_partition_call_map context =
   in
   let type_of_expression_shared_memory =
     Interprocedural.TypeOfExpressionSharedMemory.create
+      ~pyre_api
       ~callables_to_definitions_map:
         (Interprocedural.CallablesSharedMemory.ReadWrite.empty ()
         |> Interprocedural.CallablesSharedMemory.ReadOnly.read_only)

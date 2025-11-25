@@ -198,10 +198,18 @@ module ReadOnly : sig
       (t -> Target.t -> CallGraph.DefineCallGraph.t -> CallGraph.DefineCallGraph.t) ->
     CallGraph.SharedMemory.call_graphs
 
+  val get_type_of_expression
+    :  t ->
+    qualifier:Ast.Reference.t ->
+    location:Ast.Location.t ->
+    PysaType.t option
+
   module Type : sig
     val scalar_properties : t -> PysaType.t -> Analysis.PyrePysaEnvironment.ScalarTypeProperties.t
 
     val get_class_names : t -> PysaType.t -> Analysis.PyrePysaEnvironment.ClassNamesFromType.t
+
+    val is_dictionary_or_mapping : t -> PysaType.t -> bool
   end
 
   module ClassSummary : sig

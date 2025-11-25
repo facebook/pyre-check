@@ -32,35 +32,79 @@ module T =
       let description = "caching type queries over expressions"
     end)
 
-type t = {
-  handle: T.t;
-  callables_to_definitions_map: CallablesSharedMemory.ReadOnly.t;
-}
+type t =
+  | Pyre1 of {
+      handle: T.t;
+      callables_to_definitions_map: CallablesSharedMemory.ReadOnly.t;
+    }
+  | Pyrefly of PyreflyApi.ReadOnly.t
 
-let create ~callables_to_definitions_map () = { handle = T.create (); callables_to_definitions_map }
+let create ~pyre_api ~callables_to_definitions_map () =
+  match pyre_api with
+  | PyrePysaApi.ReadOnly.Pyre1 _ -> Pyre1 { handle = T.create (); callables_to_definitions_map }
+  | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api -> Pyrefly pyrefly_api
+
 
 (* Compute the type of the given expression, or retrieve its type from the cache. `callable` is the
    callable whose source code contains the given expression. *)
-let compute_or_retrieve_type
-    { handle; callables_to_definitions_map }
+let compute_or_retrieve_pyre_type
+    type_of_expression_shared_memory
     ~pyre_in_context
     ~callable
     expression
   =
-  let key =
-    {
-      Key.callable = Target.get_regular callable;
-      expression_identifier = ExpressionIdentifier.of_expression expression;
-    }
-  in
-  match T.get handle key with
-  | Some type_ -> type_
-  | None ->
-      let type_ =
-        CallResolution.resolve_ignoring_errors
-          ~pyre_in_context
-          ~callables_to_definitions_map
-          expression
+  match type_of_expression_shared_memory with
+  | Pyrefly _ ->
+      failwith "unimplemented: TypeOfExpressionSharedMemory.compute_or_retrieve_pyre_type"
+  | Pyre1 { handle; callables_to_definitions_map } -> (
+      let key =
+        {
+          Key.callable = Target.get_regular callable;
+          expression_identifier = ExpressionIdentifier.of_expression expression;
+        }
       in
-      let () = T.add handle key type_ in
-      type_
+      match T.get handle key with
+      | Some type_ -> type_
+      | None ->
+          let type_ =
+            CallResolution.resolve_ignoring_errors
+              ~pyre_in_context
+              ~callables_to_definitions_map
+              expression
+          in
+          let () = T.add handle key type_ in
+          type_)
+
+
+let compute_or_retrieve_pysa_type
+    type_of_expression_shared_memory
+    ~pyre_in_context
+    ~callable
+    expression
+  =
+  match type_of_expression_shared_memory with
+  | Pyre1 _ ->
+      compute_or_retrieve_pyre_type
+        type_of_expression_shared_memory
+        ~pyre_in_context
+        ~callable
+        expression
+      |> PyrePysaApi.PysaType.from_pyre1_type
+  | Pyrefly pyrefly_api -> (
+      match Ast.Expression.origin expression with
+      | Some _ ->
+          (* This is an artificial expression that pyrefly doesn't know about. *)
+          PyrePysaApi.PysaType.from_pyrefly_type Analysis.PyrePysaEnvironment.PyreflyType.top
+      | None ->
+          (* TODO(T225700656): pyre_in_context should store the current module qualifier *)
+          let { PyreflyApi.CallableMetadata.module_qualifier; _ } =
+            PyreflyApi.ReadOnly.get_callable_metadata pyrefly_api (Target.define_name_exn callable)
+          in
+          PyreflyApi.ReadOnly.get_type_of_expression
+            pyrefly_api
+            ~qualifier:module_qualifier
+            ~location:(Ast.Node.location expression)
+          |> Option.value
+               ~default:
+                 (PyrePysaApi.PysaType.from_pyrefly_type
+                    Analysis.PyrePysaEnvironment.PyreflyType.top))

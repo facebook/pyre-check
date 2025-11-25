@@ -241,6 +241,8 @@ module ReadOnly : sig
     val scalar_properties : t -> PysaType.t -> ScalarTypeProperties.t
 
     val get_class_names : t -> PysaType.t -> ClassNamesFromType.t
+
+    val is_dictionary_or_mapping : t -> PysaType.t -> bool
   end
 
   module ClassSummary : sig

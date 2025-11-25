@@ -368,6 +368,11 @@ module ReadOnly = struct
     let get_class_names = function
       | Pyre1 pyre_api -> Pyre1Api.ReadOnly.Type.get_class_names pyre_api
       | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.Type.get_class_names pyrefly_api
+
+
+    let is_dictionary_or_mapping = function
+      | Pyre1 pyre_api -> Pyre1Api.ReadOnly.Type.is_dictionary_or_mapping pyre_api
+      | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.Type.is_dictionary_or_mapping pyrefly_api
   end
 
   module ClassSummary = struct
