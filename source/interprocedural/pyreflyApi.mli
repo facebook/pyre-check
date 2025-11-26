@@ -236,6 +236,8 @@ module ReadOnly : sig
     val dataclass_ordered_attributes : t -> PysaClassSummary.t -> string list
 
     val typed_dictionary_attributes : t -> PysaClassSummary.t -> string list
+
+    val named_tuple_attributes : t -> PysaClassSummary.t -> string list
   end
 end
 

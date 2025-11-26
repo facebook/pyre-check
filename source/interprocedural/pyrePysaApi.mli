@@ -233,6 +233,7 @@ module ReadOnly : sig
 
   val decorated_define : t -> Ast.Statement.Define.t Ast.Node.t -> Ast.Statement.Define.t Ast.Node.t
 
+  (* TODO(T225700656): Move this in the ClassSummary module *)
   val named_tuple_attributes : t -> string -> string list option
 
   val resolve_expression_to_type_info : t -> Ast.Expression.t -> Analysis.TypeInfo.Unit.t

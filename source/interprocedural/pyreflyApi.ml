@@ -4491,9 +4491,10 @@ module ReadOnly = struct
 
     let is_typed_dict _ { PysaClassSummary.metadata = { is_typed_dict; _ }; _ } = is_typed_dict
 
-    let get_ordered_fields_declared_by_annotation
+    let get_ordered_fields_with_predicate
         { class_fields_shared_memory; _ }
         { PysaClassSummary.class_name; _ }
+        ~predicate
       =
       let fields =
         ClassFieldsSharedMemory.get class_fields_shared_memory class_name
@@ -4507,18 +4508,29 @@ module ReadOnly = struct
       in
       fields
       |> SerializableStringMap.to_alist
-      |> List.filter ~f:(fun (_, { ClassField.declaration_kind; _ }) ->
-             match declaration_kind with
-             | Some ClassFieldDeclarationKind.DeclaredByAnnotation -> true
-             | _ -> false)
+      |> List.filter ~f:(fun (_, { ClassField.declaration_kind; _ }) -> predicate declaration_kind)
       |> List.filter ~f:(fun (_, { ClassField.location; _ }) -> Option.is_some location)
       |> List.sort ~compare:compare_by_location
       |> List.map ~f:fst
 
 
-    let dataclass_ordered_attributes = get_ordered_fields_declared_by_annotation
+    let dataclass_ordered_attributes api class_summary =
+      get_ordered_fields_with_predicate api class_summary ~predicate:(function
+          | Some ClassFieldDeclarationKind.DeclaredByAnnotation -> true
+          | _ -> false)
 
-    let typed_dictionary_attributes = get_ordered_fields_declared_by_annotation
+
+    let typed_dictionary_attributes api class_summary =
+      get_ordered_fields_with_predicate api class_summary ~predicate:(function
+          | Some ClassFieldDeclarationKind.DeclaredByAnnotation -> true
+          | _ -> false)
+
+
+    let named_tuple_attributes api class_summary =
+      get_ordered_fields_with_predicate api class_summary ~predicate:(function
+          | Some ClassFieldDeclarationKind.DeclaredByAnnotation -> true
+          | Some ClassFieldDeclarationKind.DeclaredWithoutAnnotation -> true
+          | _ -> false)
   end
 end
 
