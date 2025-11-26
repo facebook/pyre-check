@@ -17,12 +17,14 @@ module Decorators = struct
   type t = {
     decorators: Expression.t list;
     define_location: Location.t;
+    module_qualifier: Reference.t;
   }
 end
 
 module DecoratedDefineBody = struct
   type t = {
     decorated_callable: Target.t;
+    module_qualifier: Reference.t;
     define_name: Reference.t;
     return_expression: Expression.t;
     original_function_name: Name.t;
@@ -118,13 +120,14 @@ let collect_decorators ~callables_to_definitions_map callable =
       {
         CallablesSharedMemory.CallableSignature.decorators = AstResult.Some decorators;
         location = AstResult.Some define_location;
+        qualifier;
         _;
       } ->
       let decorators = decorators |> List.filter ~f:filter_decorator |> List.rev in
       if List.is_empty decorators then
         None
       else
-        Some { Decorators.decorators; define_location }
+        Some { Decorators.decorators; define_location; module_qualifier = qualifier }
   | _ -> None
 
 
@@ -322,7 +325,7 @@ module SharedMemory = struct
     callable
     |> Option.some_if (Target.is_normal callable)
     >>= ReadOnly.get decorators
-    >>| fun { decorators; define_location } ->
+    >>| fun { decorators; define_location; module_qualifier } ->
     let define_name = Target.define_name_exn callable in
     let original_function_name_location = define_location in
     let original_function_name =
@@ -350,6 +353,7 @@ module SharedMemory = struct
     in
     {
       DecoratedDefineBody.decorated_callable;
+      module_qualifier;
       define_name;
       return_expression;
       original_function_name;

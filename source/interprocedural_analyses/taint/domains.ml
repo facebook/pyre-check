@@ -625,7 +625,6 @@ module type TAINT_DOMAIN = sig
   val apply_call
     :  pyre_in_context:PyrePysaApi.InContext.t ->
     type_of_expression_shared_memory:Interprocedural.TypeOfExpressionSharedMemory.t ->
-    caller:Target.t ->
     call_site:CallSite.t ->
     location:Location.t ->
     callee:Target.t ->
@@ -1272,7 +1271,6 @@ end = struct
   let apply_call
       ~pyre_in_context
       ~type_of_expression_shared_memory
-      ~caller
       ~call_site
       ~location
       ~callee
@@ -1300,7 +1298,6 @@ end = struct
         |> Features.expand_via_features
              ~pyre_in_context
              ~type_of_expression_shared_memory
-             ~caller
              ~callee
              ~arguments
         |> Features.BreadcrumbMayAlwaysSet.of_set
@@ -1602,7 +1599,6 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
   let apply_call
       ~pyre_in_context
       ~type_of_expression_shared_memory
-      ~caller
       ~call_site
       ~location
       ~callee
@@ -1618,7 +1614,6 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
         Taint.apply_call
           ~pyre_in_context
           ~type_of_expression_shared_memory
-          ~caller
           ~call_site
           ~location
           ~callee
@@ -1711,7 +1706,6 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
   let add_local_type_breadcrumbs
       ~pyre_in_context
       ~type_of_expression_shared_memory
-      ~callable
       ~expression
       taint
     =
@@ -1724,7 +1718,6 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
             Interprocedural.TypeOfExpressionSharedMemory.compute_or_retrieve_pysa_type
               type_of_expression_shared_memory
               ~pyre_in_context
-              ~callable
               expression
           in
           Features.type_breadcrumbs_from_annotation

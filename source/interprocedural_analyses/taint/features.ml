@@ -505,20 +505,12 @@ module ViaFeature = struct
     Breadcrumb.ViaValue { value = feature; tag } |> BreadcrumbInterned.intern
 
 
-  let via_type_of_breadcrumb
-      ?tag
-      ~pyre_in_context
-      ~type_of_expression_shared_memory
-      ~caller
-      ~argument
-      ()
-    =
+  let via_type_of_breadcrumb ?tag ~pyre_in_context ~type_of_expression_shared_memory ~argument () =
     let feature =
       argument
       >>| Interprocedural.TypeOfExpressionSharedMemory.compute_or_retrieve_pysa_type
             type_of_expression_shared_memory
             ~pyre_in_context
-            ~callable:caller
       >>| PyrePysaApi.PysaType.weaken_literals
       >>| PyrePysaApi.PysaType.show_fully_qualified
       |> Option.value ~default:"unknown"
@@ -806,7 +798,6 @@ let type_breadcrumbs_from_annotation ~pyre_api type_ =
 let expand_via_features
     ~pyre_in_context
     ~type_of_expression_shared_memory
-    ~caller
     ~callee
     ~arguments
     via_features
@@ -840,7 +831,6 @@ let expand_via_features
                 ~pyre_in_context
                 ~argument:(match_argument_to_parameter parameter)
                 ~type_of_expression_shared_memory
-                ~caller
                 ()
         in
         BreadcrumbSet.add breadcrumb breadcrumbs

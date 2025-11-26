@@ -838,7 +838,7 @@ module CallableDecorator = struct
     callees: Reference.t list Lazy.t option;
   }
 
-  let create ~pyre_api ~callables_to_definitions_map ~target statement =
+  let create ~pyre_api ~callables_to_definitions_map ~qualifier ~target statement =
     let get_callees statement =
       let ({ Node.value = expression; _ } as decorator_expression) =
         Statement.Decorator.to_expression statement
@@ -860,7 +860,11 @@ module CallableDecorator = struct
           in
           let { Interprocedural.CallGraph.CallCallees.call_targets; new_targets; init_targets; _ } =
             Interprocedural.CallGraphBuilder.resolve_callees_from_type_external
-              ~pyre_in_context:(PyrePysaApi.InContext.create_at_global_scope pyre_api)
+              ~pyre_in_context:
+                (PyrePysaApi.InContext.create_at_function_scope
+                   pyre_api
+                   ~module_qualifier:qualifier
+                   ~define_name:(Target.define_name_exn target))
               ~callables_to_definitions_map
               ~override_graph:None
               ~return_type
@@ -1047,14 +1051,21 @@ module Modelable = struct
       lazy
         (define_signature
         |> Lazy.force
-        |> (fun { CallablesSharedMemory.CallableSignature.define_name; decorators; _ } ->
+        |> (fun { CallablesSharedMemory.CallableSignature.define_name; decorators; qualifier; _ } ->
              PyrePysaApi.AstResult.to_option decorators
-             >>| fun decorators ->
-             PyrePysaLogic.DecoratorPreprocessing.original_decorators_from_preprocessed_signature
-               ~define_name
-               ~decorators)
-        >>| List.filter_map ~f:Statement.Decorator.from_expression
-        >>| List.map ~f:(CallableDecorator.create ~pyre_api ~callables_to_definitions_map ~target)
+             >>| (fun decorators ->
+                   PyrePysaLogic.DecoratorPreprocessing
+                   .original_decorators_from_preprocessed_signature
+                     ~define_name
+                     ~decorators)
+             >>| List.filter_map ~f:Statement.Decorator.from_expression
+             >>| List.map
+                   ~f:
+                     (CallableDecorator.create
+                        ~pyre_api
+                        ~callables_to_definitions_map
+                        ~qualifier
+                        ~target))
         |> Option.value ~default:[])
     in
     let captures =

@@ -11,7 +11,7 @@ module Key = struct
     (* Types in a parameterized version of a regular target are the same as the regular target. Race
        conditions are possible, since multiple processes can write into the same key, but this
        should be fine since they all write the same value. *)
-    callable: Target.Regular.t;
+    define_name: Ast.Reference.t;
   }
   [@@deriving compare, sexp]
 
@@ -47,19 +47,14 @@ let create ~pyre_api ~callables_to_definitions_map () =
 
 (* Compute the type of the given expression, or retrieve its type from the cache. `callable` is the
    callable whose source code contains the given expression. *)
-let compute_or_retrieve_pyre_type
-    type_of_expression_shared_memory
-    ~pyre_in_context
-    ~callable
-    expression
-  =
+let compute_or_retrieve_pyre_type type_of_expression_shared_memory ~pyre_in_context expression =
   match type_of_expression_shared_memory with
   | Pyrefly _ ->
       failwith "unimplemented: TypeOfExpressionSharedMemory.compute_or_retrieve_pyre_type"
   | Pyre1 { handle; callables_to_definitions_map } -> (
       let key =
         {
-          Key.callable = Target.get_regular callable;
+          Key.define_name = PyrePysaApi.InContext.define_name pyre_in_context;
           expression_identifier = ExpressionIdentifier.of_expression expression;
         }
       in
@@ -76,19 +71,10 @@ let compute_or_retrieve_pyre_type
           type_)
 
 
-let compute_or_retrieve_pysa_type
-    type_of_expression_shared_memory
-    ~pyre_in_context
-    ~callable
-    expression
-  =
+let compute_or_retrieve_pysa_type type_of_expression_shared_memory ~pyre_in_context expression =
   match type_of_expression_shared_memory with
   | Pyre1 _ ->
-      compute_or_retrieve_pyre_type
-        type_of_expression_shared_memory
-        ~pyre_in_context
-        ~callable
-        expression
+      compute_or_retrieve_pyre_type type_of_expression_shared_memory ~pyre_in_context expression
       |> PyrePysaApi.PysaType.from_pyre1_type
   | Pyrefly pyrefly_api -> (
       match Ast.Expression.origin expression with
@@ -96,10 +82,7 @@ let compute_or_retrieve_pysa_type
           (* This is an artificial expression that pyrefly doesn't know about. *)
           PyrePysaApi.PysaType.from_pyrefly_type Analysis.PyrePysaEnvironment.PyreflyType.top
       | None ->
-          (* TODO(T225700656): pyre_in_context should store the current module qualifier *)
-          let { PyreflyApi.CallableMetadata.module_qualifier; _ } =
-            PyreflyApi.ReadOnly.get_callable_metadata pyrefly_api (Target.define_name_exn callable)
-          in
+          let module_qualifier = PyrePysaApi.InContext.module_qualifier pyre_in_context in
           PyreflyApi.ReadOnly.get_type_of_expression
             pyrefly_api
             ~qualifier:module_qualifier

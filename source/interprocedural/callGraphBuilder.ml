@@ -664,7 +664,7 @@ type resolved_stringify =
   | Str
   | Repr
 
-let resolve_stringify_call ~pyre_in_context ~type_of_expression_shared_memory ~callable expression =
+let resolve_stringify_call ~pyre_in_context ~type_of_expression_shared_memory expression =
   let string_callee =
     Node.create
       ~location:(Node.location expression)
@@ -686,7 +686,6 @@ let resolve_stringify_call ~pyre_in_context ~type_of_expression_shared_memory ~c
       TypeOfExpressionSharedMemory.compute_or_retrieve_pyre_type
         type_of_expression_shared_memory
         ~pyre_in_context
-        ~callable
         string_callee
       |> Type.callable_name
     with
@@ -760,7 +759,6 @@ let shim_special_calls { Call.callee; arguments; origin = _ } =
 let preprocess_special_calls
     ~pyre_in_context
     ~type_of_expression_shared_memory
-    ~callable
     ~location:call_location
     {
       Call.callee = { Node.location = callee_location; _ } as callee;
@@ -779,9 +777,7 @@ let preprocess_special_calls
       (* str() takes an optional encoding and errors - if these are present, the call shouldn't be
          redirected: https://docs.python.org/3/library/stdtypes.html#str *)
       let method_name, origin_kind =
-        match
-          resolve_stringify_call ~pyre_in_context ~type_of_expression_shared_memory ~callable value
-        with
+        match resolve_stringify_call ~pyre_in_context ~type_of_expression_shared_memory value with
         | Str -> "__str__", Origin.StrCallToDunderStr
         | Repr -> "__repr__", Origin.StrCallToDunderRepr
       in
@@ -828,18 +824,11 @@ let shim_for_call ~pyre_in_context ~callables_to_definitions_map call =
         call
 
 
-let preprocess_call
-    ~pyre_in_context
-    ~type_of_expression_shared_memory
-    ~callable
-    ~location
-    original_call
-  =
+let preprocess_call ~pyre_in_context ~type_of_expression_shared_memory ~location original_call =
   match
     preprocess_special_calls
       ~pyre_in_context
       ~type_of_expression_shared_memory
-      ~callable
       ~location
       original_call
   with
@@ -850,8 +839,7 @@ let preprocess_call
           ~resolve_expression_to_type:
             (TypeOfExpressionSharedMemory.compute_or_retrieve_pyre_type
                type_of_expression_shared_memory
-               ~pyre_in_context
-               ~callable)
+               ~pyre_in_context)
           ~location
           original_call
       with
@@ -987,7 +975,7 @@ let rec preprocess_expression
     |> Node.create ~location
   in
   let map_call ~mapper ~location call =
-    preprocess_call ~pyre_in_context ~type_of_expression_shared_memory ~callable ~location call
+    preprocess_call ~pyre_in_context ~type_of_expression_shared_memory ~location call
     |> Mapper.default_map_call_node ~mapper ~location
   in
   Mapper.map
@@ -2153,6 +2141,7 @@ end
 module CallGraphBuilder = struct
   module Context = struct
     type t = {
+      module_qualifier: Reference.t;
       define_name: Reference.t option; (* None if this is an artificial define. *)
       callable: Target.t;
       debug: bool;
@@ -2508,7 +2497,6 @@ module CallGraphBuilder = struct
                       resolve_stringify_call
                         ~pyre_in_context
                         ~type_of_expression_shared_memory
-                        ~callable
                         expression
                     with
                     | Str -> "__str__", Origin.FormatStringImplicitStr
@@ -2861,8 +2849,9 @@ struct
 
     let forward ~statement_key _ ~statement =
       let pyre_in_context =
-        PyrePysaApi.InContext.create_at_statement_key
+        PyrePysaApi.InContext.create_at_statement_scope
           Context.pyre_api
+          ~module_qualifier:Context.builder_context.module_qualifier
           ~define_name:(Option.value_exn Context.builder_context.define_name)
           ~define:Context.define
           ~statement_key
@@ -2984,6 +2973,8 @@ module HigherOrderCallGraph = struct
     val get_callee_model : Target.t -> t option
 
     val debug : bool
+
+    val module_qualifier : Reference.t
 
     val define : Ast.Statement.Define.t Node.t
 
@@ -4200,8 +4191,9 @@ module HigherOrderCallGraph = struct
         ~statement
         ~f:(fun () ->
           let pyre_in_context =
-            PyrePysaApi.InContext.create_at_statement_key
+            PyrePysaApi.InContext.create_at_statement_scope
               Context.pyre_api
+              ~module_qualifier:Context.module_qualifier
               ~define_name:Context.define_name
               ~define:Context.define
               ~statement_key
@@ -4246,6 +4238,8 @@ let higher_order_call_graph_of_define
 
     let debug = debug_higher_order_call_graph (Node.value define)
 
+    let module_qualifier = qualifier
+
     let define = define
 
     let define_name =
@@ -4285,7 +4279,12 @@ let higher_order_call_graph_of_define
   let module Fixpoint = PyrePysaLogic.Fixpoint.Make (TransferFunction) in
   (* Handle parameters. *)
   let initial_state =
-    let pyre_in_context = PyrePysaApi.InContext.create_at_global_scope pyre_api in
+    let pyre_in_context =
+      PyrePysaApi.InContext.create_at_function_scope
+        pyre_api
+        ~module_qualifier:qualifier
+        ~define_name:(Target.define_name_exn callable)
+    in
     List.fold
       define.Ast.Node.value.Ast.Statement.Define.signature.parameters
       ~init:initial_state
@@ -4339,7 +4338,8 @@ let call_graph_of_define
   let callees_at_location = ref DefineCallGraph.empty in
   let context =
     {
-      CallGraphBuilder.Context.define_name = Some define_name;
+      CallGraphBuilder.Context.module_qualifier = qualifier;
+      define_name = Some define_name;
       callable;
       missing_flow_type_analysis =
         (if is_missing_flow_type_analysis then
@@ -4371,7 +4371,12 @@ let call_graph_of_define
   let () = log ~debug:context.debug "Building call graph of `%a`" Target.pp_pretty callable in
   (* Handle parameters. *)
   let () =
-    let pyre_in_context = PyrePysaApi.InContext.create_at_global_scope pyre_api in
+    let pyre_in_context =
+      PyrePysaApi.InContext.create_at_function_scope
+        pyre_api
+        ~module_qualifier:qualifier
+        ~define_name
+    in
     List.iter
       define.Ast.Node.value.Ast.Statement.Define.signature.parameters
       ~f:(fun { Node.value = { Parameter.value; _ }; _ } ->
@@ -4457,16 +4462,20 @@ let call_graph_of_decorated_callable
         CallableToDecoratorsMap.DecoratedDefineBody.return_expression;
         original_function_name;
         original_function_name_location;
+        module_qualifier;
         define_name;
         decorated_callable;
         _;
       }
   =
-  let pyre_in_context = PyrePysaApi.InContext.create_at_global_scope pyre_api in
+  let pyre_in_context =
+    PyrePysaApi.InContext.create_at_function_scope pyre_api ~module_qualifier ~define_name
+  in
   let resolve_callees ~call_graph expression =
     let context =
       {
-        CallGraphBuilder.Context.define_name = Some define_name;
+        CallGraphBuilder.Context.module_qualifier;
+        define_name = Some define_name;
         callable = decorated_callable;
         missing_flow_type_analysis = None;
         debug;

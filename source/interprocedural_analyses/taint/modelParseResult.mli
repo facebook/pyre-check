@@ -432,6 +432,7 @@ module CallableDecorator : sig
   val create
     :  pyre_api:PyrePysaApi.ReadOnly.t ->
     callables_to_definitions_map:Interprocedural.CallablesSharedMemory.ReadOnly.t ->
+    qualifier:Ast.Reference.t ->
     target:Interprocedural.Target.t ->
     Ast.Statement.Decorator.t ->
     t

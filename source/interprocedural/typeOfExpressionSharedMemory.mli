@@ -19,7 +19,6 @@ val create
 val compute_or_retrieve_pyre_type
   :  t ->
   pyre_in_context:PyrePysaApi.InContext.t ->
-  callable:Target.t ->
   Ast.Expression.t ->
   Type.t
 
@@ -28,6 +27,5 @@ val compute_or_retrieve_pyre_type
 val compute_or_retrieve_pysa_type
   :  t ->
   pyre_in_context:PyrePysaApi.InContext.t ->
-  callable:Target.t ->
   Ast.Expression.t ->
   Analysis.PyrePysaEnvironment.PysaType.t

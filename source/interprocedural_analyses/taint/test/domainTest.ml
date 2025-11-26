@@ -18,7 +18,12 @@ let test_partition_call_map context =
     |> ScratchProject.pyre_pysa_read_only_api
     |> Interprocedural.PyrePysaApi.ReadOnly.from_pyre1_api
   in
-  let pyre_in_context = Interprocedural.PyrePysaApi.InContext.create_at_global_scope pyre_api in
+  let pyre_in_context =
+    Interprocedural.PyrePysaApi.InContext.create_at_function_scope
+      pyre_api
+      ~module_qualifier:!&"test"
+      ~define_name:!&"test.__toplevel__"
+  in
   let taint =
     ForwardTaint.singleton CallInfo.declaration (Sources.NamedSource "UserControlled") Frame.initial
   in
@@ -35,15 +40,10 @@ let test_partition_call_map context =
         |> Interprocedural.CallablesSharedMemory.ReadOnly.read_only)
       ()
   in
-  let caller =
-    Interprocedural.Target.from_regular
-      (Interprocedural.Target.Regular.Function { name = "test.foo"; kind = Normal })
-  in
   let call_taint1 =
     ForwardTaint.apply_call
       ~pyre_in_context
       ~type_of_expression_shared_memory
-      ~caller
       ~call_site:CallSite.any
       ~location:Location.any
       ~callee
@@ -59,7 +59,6 @@ let test_partition_call_map context =
     ForwardTaint.apply_call
       ~pyre_in_context
       ~type_of_expression_shared_memory
-      ~caller
       ~call_site:CallSite.any
       ~location:Location.any
       ~callee

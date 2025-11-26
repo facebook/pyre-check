@@ -1029,13 +1029,20 @@ module InContext = struct
   type t = {
     pyre_api: ReadOnly.t;
     resolution: Resolution.t;
+    module_qualifier: Ast.Reference.t;
+    define_name: Ast.Reference.t;
   }
 
-  let create_at_global_scope pyre_api =
-    { pyre_api; resolution = ReadOnly.contextless_resolution pyre_api }
+  let create_at_function_scope pyre_api ~module_qualifier ~define_name =
+    {
+      pyre_api;
+      resolution = ReadOnly.contextless_resolution pyre_api;
+      module_qualifier;
+      define_name;
+    }
 
 
-  let create_at_statement_key pyre_api ~define_name ~define ~statement_key =
+  let create_at_statement_scope pyre_api ~module_qualifier ~define_name ~define ~statement_key =
     let {
       Ast.Node.value = { Ast.Statement.Define.signature = { legacy_parent; _ }; _ };
       location = define_location;
@@ -1058,7 +1065,7 @@ module InContext = struct
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         (module TypeCheck.DummyContext)
     in
-    { pyre_api; resolution }
+    { pyre_api; resolution; module_qualifier; define_name }
 
 
   let pyre_api { pyre_api; _ } = pyre_api
@@ -1067,8 +1074,8 @@ module InContext = struct
 
   let resolve_reference { resolution; _ } = Resolution.resolve_reference resolution
 
-  let resolve_assignment { pyre_api; resolution } assign =
-    { pyre_api; resolution = Resolution.resolve_assignment resolution assign }
+  let resolve_assignment ({ resolution; _ } as pyre_in_context) assign =
+    { pyre_in_context with resolution = Resolution.resolve_assignment resolution assign }
 
 
   let resolve_expression_to_type { resolution; _ } =
@@ -1084,6 +1091,11 @@ module InContext = struct
       resolve_assignment pyre_in_context (Ast.Statement.Statement.generator_assignment generator)
     in
     List.fold generators ~init:pyre_in_context ~f:resolve_generator
+
+
+  let module_qualifier { module_qualifier; _ } = module_qualifier
+
+  let define_name { define_name; _ } = define_name
 end
 
 module ModelQueries = struct

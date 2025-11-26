@@ -13,11 +13,16 @@ open Core
 
 let test_resolve_ignoring_errors context =
   let assert_resolved ~source ~expression ~expected =
-    let pyre_in_context =
+    let pyre_api =
       ScratchProject.setup ~context ["x.py", source]
       |> ScratchProject.pyre_pysa_read_only_api
       |> PyrePysaApi.ReadOnly.from_pyre1_api
-      |> PyrePysaApi.InContext.create_at_global_scope
+    in
+    let pyre_in_context =
+      PyrePysaApi.InContext.create_at_function_scope
+        pyre_api
+        ~module_qualifier:!&"test"
+        ~define_name:!&"test.__toplevel__"
     in
     CallResolution.resolve_ignoring_errors
       ~pyre_in_context
@@ -92,10 +97,14 @@ let test_is_nonlocal context =
   in
   assert_qualify ~source ~expected ();
   let project = Test.ScratchProject.setup ~context [handle, source] in
+  let pyre_api =
+    ScratchProject.pyre_pysa_read_only_api project |> PyrePysaApi.ReadOnly.from_pyre1_api
+  in
   let pyre_in_context =
-    ScratchProject.pyre_pysa_read_only_api project
-    |> PyrePysaApi.ReadOnly.from_pyre1_api
-    |> PyrePysaApi.InContext.create_at_global_scope
+    PyrePysaApi.InContext.create_at_function_scope
+      pyre_api
+      ~module_qualifier:!&"test"
+      ~define_name:!&"test.__toplevel__"
   in
   let assert_nonlocal define variable () =
     variable

@@ -467,20 +467,32 @@ module InContext = struct
     | Pyre1 of Pyre1Api.InContext.t
     | Pyrefly of PyreflyApi.InContext.t
 
-  let create_at_global_scope = function
-    | ReadOnly.Pyre1 pyre_api -> Pyre1 (Pyre1Api.InContext.create_at_global_scope pyre_api)
+  let create_at_function_scope api ~module_qualifier ~define_name =
+    match api with
+    | ReadOnly.Pyre1 pyre_api ->
+        Pyre1 (Pyre1Api.InContext.create_at_function_scope pyre_api ~module_qualifier ~define_name)
     | ReadOnly.Pyrefly pyrefly_api ->
-        Pyrefly (PyreflyApi.InContext.create_at_global_scope pyrefly_api)
+        Pyrefly
+          (PyreflyApi.InContext.create_at_function_scope pyrefly_api ~module_qualifier ~define_name)
 
 
-  let create_at_statement_key api ~define_name ~define ~statement_key =
+  let create_at_statement_scope api ~module_qualifier ~define_name ~define ~statement_key =
     match api with
     | ReadOnly.Pyre1 pyre_api ->
         Pyre1
-          (Pyre1Api.InContext.create_at_statement_key pyre_api ~define_name ~define ~statement_key)
+          (Pyre1Api.InContext.create_at_statement_scope
+             pyre_api
+             ~module_qualifier
+             ~define_name
+             ~define
+             ~statement_key)
     | ReadOnly.Pyrefly pyrefly_api ->
         Pyrefly
-          (PyreflyApi.InContext.create_at_statement_key pyrefly_api ~define_name ~statement_key)
+          (PyreflyApi.InContext.create_at_statement_scope
+             pyrefly_api
+             ~module_qualifier
+             ~define_name
+             ~statement_key)
 
 
   let pyre_api = function
@@ -525,6 +537,16 @@ module InContext = struct
     | Pyre1 pyre_context -> Pyre1 (Pyre1Api.InContext.resolve_generators pyre_context generators)
     | Pyrefly pyrefly_context ->
         Pyrefly (PyreflyApi.InContext.resolve_generators pyrefly_context generators)
+
+
+  let module_qualifier = function
+    | Pyre1 pyre_context -> Pyre1Api.InContext.module_qualifier pyre_context
+    | Pyrefly pyrefly_context -> PyreflyApi.InContext.module_qualifier pyrefly_context
+
+
+  let define_name = function
+    | Pyre1 pyre_context -> Pyre1Api.InContext.define_name pyre_context
+    | Pyrefly pyrefly_context -> PyreflyApi.InContext.define_name pyrefly_context
 end
 
 module ModelQueries = struct

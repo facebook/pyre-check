@@ -280,10 +280,15 @@ end
 module InContext : sig
   type t
 
-  val create_at_global_scope : ReadOnly.t -> t
-
-  val create_at_statement_key
+  val create_at_function_scope
     :  ReadOnly.t ->
+    module_qualifier:Ast.Reference.t ->
+    define_name:Ast.Reference.t ->
+    t
+
+  val create_at_statement_scope
+    :  ReadOnly.t ->
+    module_qualifier:Ast.Reference.t ->
     define_name:Ast.Reference.t ->
     define:Ast.Statement.Define.t Ast.Node.t ->
     statement_key:int ->
@@ -310,6 +315,10 @@ module InContext : sig
     Analysis.AnnotatedAttribute.instantiated option
 
   val resolve_generators : t -> Ast.Expression.Comprehension.Generator.t list -> t
+
+  val module_qualifier : t -> Ast.Reference.t
+
+  val define_name : t -> Ast.Reference.t
 end
 
 module ModelQueries : sig

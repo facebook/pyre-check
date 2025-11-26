@@ -13,7 +13,6 @@ type t
 val from_expression
   :  pyre_in_context:Interprocedural.PyrePysaApi.InContext.t ->
   type_of_expression_shared_memory:Interprocedural.TypeOfExpressionSharedMemory.t ->
-  caller:Target.t ->
   call_graph:CallGraph.DefineCallGraph.t ->
   get_callee_model:(Target.t -> Model.t option) ->
   expression:Expression.t ->
@@ -22,13 +21,11 @@ val from_expression
 
 val get_source
   :  type_of_expression_shared_memory:Interprocedural.TypeOfExpressionSharedMemory.t ->
-  caller:Target.t ->
   t ->
   Domains.ForwardState.Tree.t
 
 val get_sinks
   :  type_of_expression_shared_memory:Interprocedural.TypeOfExpressionSharedMemory.t ->
-  caller:Target.t ->
   t ->
   Domains.SinkTreeWithHandle.t list
 

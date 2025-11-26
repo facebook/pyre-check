@@ -4828,23 +4828,41 @@ end
 
 module InContext = struct
   type t =
-    | GlobalScope of { api: ReadOnly.t }
+    | FunctionScope of {
+        api: ReadOnly.t;
+        module_qualifier: ModuleQualifier.t;
+        define_name: Ast.Reference.t;
+      }
     | StatementScope of {
         api: ReadOnly.t;
+        module_qualifier: ModuleQualifier.t;
         (* Define name of the function. Note that this might be a decorated target, which is not
            visible by pyrefly. *)
         define_name: Ast.Reference.t;
         statement_key: int;
       }
 
-  let create_at_global_scope api = GlobalScope { api }
+  let create_at_function_scope api ~module_qualifier ~define_name =
+    FunctionScope
+      {
+        api;
+        module_qualifier = ModuleQualifier.from_reference_unchecked module_qualifier;
+        define_name;
+      }
 
-  let create_at_statement_key api ~define_name ~statement_key =
-    StatementScope { api; define_name; statement_key }
+
+  let create_at_statement_scope api ~module_qualifier ~define_name ~statement_key =
+    StatementScope
+      {
+        api;
+        module_qualifier = ModuleQualifier.from_reference_unchecked module_qualifier;
+        define_name;
+        statement_key;
+      }
 
 
   let pyre_api = function
-    | GlobalScope { api } -> api
+    | FunctionScope { api; _ } -> api
     | StatementScope { api; _ } -> api
 
 
@@ -4875,6 +4893,16 @@ module InContext = struct
   let fallback_attribute _ ?accessed_through_class:_ ?type_for_lookup:_ ~name:_ _ =
     (* TODO(T225700656): Support fallback_attribute *)
     failwith "unimplemented: PyreflyApi.InContext.fallback_attribute"
+
+
+  let module_qualifier = function
+    | FunctionScope { module_qualifier; _ } -> ModuleQualifier.to_reference module_qualifier
+    | StatementScope { module_qualifier; _ } -> ModuleQualifier.to_reference module_qualifier
+
+
+  let define_name = function
+    | FunctionScope { define_name; _ } -> define_name
+    | StatementScope { define_name; _ } -> define_name
 end
 
 (* Exposed for testing purposes *)
