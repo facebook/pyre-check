@@ -476,8 +476,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       taint_model;
     let call_taint =
       BackwardState.Tree.add_local_breadcrumbs
-        (Option.value_exn return_type
-        |> Features.type_breadcrumbs
+        (return_type
+        >>| Features.type_breadcrumbs
+        |> Option.value ~default:Features.BreadcrumbSet.empty
         |> Features.BreadcrumbMayAlwaysSet.of_set)
         call_taint
     in

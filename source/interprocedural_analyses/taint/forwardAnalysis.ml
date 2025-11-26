@@ -753,8 +753,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let result_taint =
       ForwardState.Tree.add_local_breadcrumbs
-        (Option.value_exn return_type
-        |> Features.type_breadcrumbs
+        (return_type
+        >>| Features.type_breadcrumbs
+        |> Option.value ~default:Features.BreadcrumbSet.empty
         |> Features.BreadcrumbMayAlwaysSet.of_set)
         result_taint
     in
