@@ -3227,13 +3227,7 @@ let run
     ()
   =
   let timer = Timer.start () in
-  (* Apply decorators to make sure we match parameters up correctly. Decorators are not applied in
-     the forward analysis, because in case a decorator changes the parameters of the decorated
-     function, the user-defined models of the function may no longer be applicable to the resultant
-     function of the application (e.g., T132302522). *)
-  let define_name =
-    PyrePysaLogic.qualified_name_of_define ~module_name:qualifier (Node.value define)
-  in
+  let define_name = Interprocedural.Target.define_name_exn callable in
   let module FunctionContext = struct
     let qualifier = qualifier
 
@@ -3243,7 +3237,7 @@ let run
 
     let callable = callable
 
-    let debug = Statement.Define.dump define.value
+    let debug = Statement.Define.dump (Node.value define)
 
     let profiler = profiler
 

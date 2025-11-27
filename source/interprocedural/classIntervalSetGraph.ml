@@ -151,6 +151,7 @@ module SharedMemory = struct
 
   let of_definition handle define_name definition =
     let open Ast in
+    (* TODO(T225700656): Use callable metadata instead of Define.is_static_method *)
     match Target.from_define ~define_name ~define:definition |> Target.class_name with
     | Some class_name when not (Statement.Define.is_static_method definition) ->
         (* Note that we also return the interval of the class for class methods, since the same

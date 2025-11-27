@@ -1050,10 +1050,15 @@ module InContext = struct
       =
       define
     in
+    let pyre_define_name =
+      FunctionDefinition.qualified_name_of_define
+        ~module_name:module_qualifier
+        (Ast.Node.value define)
+    in
     let local_annotations =
       TypeEnvironment.ReadOnly.get_local_annotations
         (ReadOnly.type_environment pyre_api)
-        define_name
+        pyre_define_name
         define_location
     in
     let resolution =

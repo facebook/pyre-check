@@ -187,10 +187,8 @@ module CallGraphAnalysis = struct
           model.CallGraphBuilder.HigherOrderCallGraph.returned_callables;
         Log.dump
           "Additional dependencies for `%a`: `%a`"
-          Ast.Reference.pp
-          (Analysis.PyrePysaLogic.qualified_name_of_define
-             ~module_name:qualifier
-             (Ast.Node.value define))
+          Target.pp_pretty_with_kind
+          callable
           Target.Set.pp_pretty_with_kind
           additional_dependencies);
       {

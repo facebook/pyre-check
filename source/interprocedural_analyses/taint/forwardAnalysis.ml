@@ -807,13 +807,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let propagate_captured_variables state root =
         match root with
         | AccessPath.Root.CapturedVariable { name = variable } ->
+            (* TODO(T225700656): Handle captured variable propagation *)
             let nonlocal_reference = Reference.delocalize (Reference.create variable) in
-            let define_reference =
-              PyrePysaLogic.qualified_name_of_define
-                ~module_name:FunctionContext.qualifier
-                FunctionContext.definition.value
+            let is_prefix =
+              Reference.is_prefix ~prefix:FunctionContext.define_name nonlocal_reference
             in
-            let is_prefix = Reference.is_prefix ~prefix:define_reference nonlocal_reference in
             (* Treat any function call, even those that wrap a closure write, as a closure write *)
             let state =
               (* TODO(T169657906): Programatically decide between weak and strong storing of
@@ -3529,9 +3527,7 @@ let run
     =
     define
   in
-  let define_name =
-    PyrePysaLogic.qualified_name_of_define ~module_name:qualifier (Node.value define)
-  in
+  let define_name = Interprocedural.Target.define_name_exn callable in
   let module FunctionContext = struct
     let qualifier = qualifier
 

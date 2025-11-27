@@ -26,8 +26,6 @@ module ResolvedReference = ResolvedReference
 module ModuleExport = Module.Export
 module SharedMemoryKeys = SharedMemoryKeys
 
-let qualified_name_of_define = FunctionDefinition.qualified_name_of_define
-
 let qualifier_and_bodies_of_function_definition ({ FunctionDefinition.qualifier; _ } as definition) =
   qualifier, FunctionDefinition.all_bodies definition
 

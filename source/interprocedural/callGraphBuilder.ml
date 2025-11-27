@@ -4242,9 +4242,7 @@ let higher_order_call_graph_of_define
 
     let define = define
 
-    let define_name =
-      PyrePysaLogic.qualified_name_of_define ~module_name:qualifier (Node.value define)
-
+    let define_name = Target.define_name_exn callable
 
     let callable = callable
 
@@ -4332,9 +4330,7 @@ let call_graph_of_define
       find_missing_flows
       (Some Configuration.MissingFlowKind.Type)
   in
-  let define_name =
-    PyrePysaLogic.qualified_name_of_define ~module_name:qualifier (Node.value define)
-  in
+  let define_name = Target.define_name_exn callable in
   let callees_at_location = ref DefineCallGraph.empty in
   let context =
     {
