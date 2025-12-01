@@ -3681,8 +3681,11 @@ let test_call_graph_of_define =
                ( "6:9-6:36",
                  ExpressionCallees.from_call
                    (CallCallees.create
-                      ~unresolved:
-                        (CallGraph.Unresolved.True CallGraph.Unresolved.UnexpectedDefiningClass)
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            (Target.Regular.Function { name = "builtins.getattr"; kind = Normal });
+                        ]
                       ()) );
                ( "6:9-6:36|artificial-attribute-access|get-attr-constant-literal",
                  ExpressionCallees.from_attribute_access
