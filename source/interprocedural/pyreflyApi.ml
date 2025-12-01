@@ -399,20 +399,32 @@ end
 module PyreflyTarget = struct
   type t =
     | Function of GlobalCallableId.t
-    | Override of GlobalCallableId.t
-    | Object of string
+    | AllOverrides of GlobalCallableId.t
+    | OverrideSubset of {
+        base_method: GlobalCallableId.t;
+        subset: t list;
+      }
+    | FormatString
   [@@deriving compare, equal, show]
 
-  let from_json json =
+  let rec from_json json =
     let open Core.Result.Monad_infix in
     match json with
     | `Assoc [("Function", global_callable_id)] ->
         GlobalCallableId.from_json global_callable_id
         >>| fun global_callable_id -> Function global_callable_id
-    | `Assoc [("Override", global_callable_id)] ->
+    | `Assoc [("AllOverrides", global_callable_id)] ->
         GlobalCallableId.from_json global_callable_id
-        >>| fun global_callable_id -> Override global_callable_id
-    | `Assoc [("Object", `String object_name)] -> Ok (Object object_name)
+        >>| fun global_callable_id -> AllOverrides global_callable_id
+    | `Assoc [("OverrideSubset", override_subset)] ->
+        JsonUtil.get_object_member override_subset "base_method"
+        >>= (fun base_method -> GlobalCallableId.from_json (`Assoc base_method))
+        >>= fun base_method ->
+        JsonUtil.get_list_member override_subset "subset"
+        >>| List.map ~f:from_json
+        >>= Result.all
+        >>| fun subset -> OverrideSubset { base_method; subset }
+    | `Assoc [("FormatString", `Null)] -> Ok FormatString
     | _ -> Error (FormatError.UnexpectedJsonType { json; message = "Unknown type of target" })
 end
 
@@ -4081,33 +4093,73 @@ module ReadOnly = struct
   let instantiate_call_graph
       ({ callable_id_to_qualified_name_shared_memory; class_id_to_qualified_name_shared_memory; _ }
       as api)
+      ~method_has_overrides
       ~callable
       json_call_graph
     =
     let open ModuleCallGraphs in
     let open CallGraph in
-    let instantiate_target = function
+    let rec instantiate_target = function
       | PyreflyTarget.Function callable_id ->
           let fully_qualified_name =
             CallableIdToQualifiedNameSharedMemory.get
               callable_id_to_qualified_name_shared_memory
               callable_id
           in
-          target_from_define_name
-            api
-            ~override:false
-            (FullyQualifiedName.to_reference fully_qualified_name)
-      | PyreflyTarget.Override callable_id ->
+          let target =
+            target_from_define_name
+              api
+              ~override:false
+              (FullyQualifiedName.to_reference fully_qualified_name)
+          in
+          [target]
+      | PyreflyTarget.AllOverrides callable_id ->
           let fully_qualified_name =
             CallableIdToQualifiedNameSharedMemory.get
               callable_id_to_qualified_name_shared_memory
               callable_id
           in
-          target_from_define_name
-            api
-            ~override:true
-            (FullyQualifiedName.to_reference fully_qualified_name)
-      | PyreflyTarget.Object name -> Target.create_object (Ast.Reference.create name)
+          let target =
+            target_from_define_name
+              api
+              ~override:true
+              (FullyQualifiedName.to_reference fully_qualified_name)
+          in
+          let target_method =
+            match target with
+            | Target.Regular (Target.Regular.Override target_method) -> target_method
+            | _ -> failwith "unreachable"
+          in
+          if not (method_has_overrides target_method) then
+            (* Pyrefly believes this method has overrides, but the override graph disagrees. This
+               must mean we have a model with `@SkipOverrides`. *)
+            [Target.Regular (Target.Regular.Method target_method)]
+          else
+            [target]
+      | PyreflyTarget.OverrideSubset { base_method = base_method_id; subset } ->
+          let fully_qualified_base_method =
+            CallableIdToQualifiedNameSharedMemory.get
+              callable_id_to_qualified_name_shared_memory
+              base_method_id
+          in
+          let target =
+            target_from_define_name
+              api
+              ~override:false
+              (FullyQualifiedName.to_reference fully_qualified_base_method)
+          in
+          let target_method =
+            match target with
+            | Target.Regular (Target.Regular.Method target_method) -> target_method
+            | _ -> failwith "unreachable"
+          in
+          if not (method_has_overrides target_method) then
+            (* Pyrefly believes this method has overrides, but the override graph disagrees. This
+               must mean we have a model with `@SkipOverrides`. *)
+            [target]
+          else
+            subset |> List.map ~f:instantiate_target |> List.concat |> List.cons target
+      | PyreflyTarget.FormatString -> [Target.ArtificialTargets.format_string]
     in
     let instantiate_call_target
         {
@@ -4120,28 +4172,32 @@ module ReadOnly = struct
           return_type;
         }
       =
-      {
-        CallTarget.target = instantiate_target target;
-        implicit_receiver = JsonImplicitReceiver.is_true implicit_receiver;
-        implicit_dunder_call;
-        index = 0;
-        receiver_class =
-          receiver_class
-          >>| ClassIdToQualifiedNameSharedMemory.get_class_name
-                class_id_to_qualified_name_shared_memory
-          >>| FullyQualifiedName.to_reference
-          >>| Ast.Reference.show;
-        is_class_method;
-        is_static_method;
-        return_type;
-      }
+      let targets = instantiate_target target in
+      List.map
+        ~f:(fun target ->
+          {
+            CallTarget.target;
+            implicit_receiver = JsonImplicitReceiver.is_true implicit_receiver;
+            implicit_dunder_call;
+            index = 0;
+            receiver_class =
+              receiver_class
+              >>| ClassIdToQualifiedNameSharedMemory.get_class_name
+                    class_id_to_qualified_name_shared_memory
+              >>| FullyQualifiedName.to_reference
+              >>| Ast.Reference.show;
+            is_class_method;
+            is_static_method;
+            return_type;
+          })
+        targets
     in
     let instantiate_higher_order_parameter
         { JsonHigherOrderParameter.index; call_targets; unresolved }
       =
       {
         CallGraph.HigherOrderParameter.index;
-        call_targets = List.map ~f:instantiate_call_target call_targets;
+        call_targets = call_targets |> List.map ~f:instantiate_call_target |> List.concat;
         unresolved;
       }
     in
@@ -4156,9 +4212,10 @@ module ReadOnly = struct
       =
       (* TODO(T225700656): Support higher order parameters, shim targets, unresolved calles. *)
       {
-        CallCallees.call_targets = List.map ~f:instantiate_call_target call_targets;
-        init_targets = List.map ~f:instantiate_call_target init_targets;
-        new_targets = List.map ~f:instantiate_call_target new_targets;
+        CallCallees.call_targets =
+          call_targets |> List.map ~f:instantiate_call_target |> List.concat;
+        init_targets = init_targets |> List.map ~f:instantiate_call_target |> List.concat;
+        new_targets = new_targets |> List.map ~f:instantiate_call_target |> List.concat;
         decorated_targets = [];
         higher_order_parameters =
           higher_order_parameters
@@ -4182,7 +4239,9 @@ module ReadOnly = struct
       let if_called = instantiate_call_callees if_called in
       {
         AttributeAccessCallees.property_targets =
-          List.map ~f:instantiate_call_target (List.append property_setters property_getters);
+          List.append property_setters property_getters
+          |> List.map ~f:instantiate_call_target
+          |> List.concat;
         global_targets = [];
         is_attribute = false;
         if_called;
@@ -4190,7 +4249,8 @@ module ReadOnly = struct
     in
     let instantiate_define_callees { JsonDefineCallees.define_targets } =
       {
-        CallGraph.DefineCallees.define_targets = List.map ~f:instantiate_call_target define_targets;
+        CallGraph.DefineCallees.define_targets =
+          define_targets |> List.map ~f:instantiate_call_target |> List.concat;
         decorated_targets = [];
       }
     in
@@ -4222,8 +4282,8 @@ module ReadOnly = struct
       ({ pyrefly_directory; callable_metadata_shared_memory; module_infos_shared_memory; _ } as api)
       ~scheduler
       ~scheduler_policies
+      ~method_has_overrides
       ~store_shared_memory
-      ~attribute_targets:_ (* TODO(T225700656): Handle attribute targets *)
       ~skip_analysis_targets
       ~definitions
       ~create_dependency_for
@@ -4332,7 +4392,8 @@ module ReadOnly = struct
               Format.asprintf "Could not find call graph for `%a`" Target.pp callable |> failwith
           | Some call_graph ->
               let call_graph =
-                instantiate_call_graph api ~callable call_graph |> transform_call_graph api callable
+                instantiate_call_graph api ~method_has_overrides ~callable call_graph
+                |> transform_call_graph api callable
               in
               let define_call_graphs =
                 if store_shared_memory then

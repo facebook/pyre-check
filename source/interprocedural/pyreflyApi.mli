@@ -200,8 +200,8 @@ module ReadOnly : sig
     :  t ->
     scheduler:Scheduler.t ->
     scheduler_policies:Configuration.SchedulerPolicies.t ->
+    method_has_overrides:(Target.Method.t -> bool) ->
     store_shared_memory:bool ->
-    attribute_targets:Target.Set.t ->
     skip_analysis_targets:Target.HashSet.t ->
     definitions:Target.t list ->
     create_dependency_for:CallGraph.AllTargetsUseCase.t ->

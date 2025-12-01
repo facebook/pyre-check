@@ -4758,7 +4758,6 @@ let build_whole_program_call_graph_for_pyrefly
     ~callables_to_decorators_map
     ~override_graph
     ~store_shared_memory
-    ~attribute_targets
     ~skip_analysis_targets
     ~definitions
     ~create_dependency_for
@@ -4823,18 +4822,6 @@ let build_whole_program_call_graph_for_pyrefly
            ())
       call_graph
   in
-  let apply_skip_overrides target =
-    match target, override_graph with
-    | Target.Regular (Target.Regular.Override target_method), Some override_graph ->
-        let base_target = Target.Regular (Target.Regular.Method target_method) in
-        if not (OverrideGraph.SharedMemory.ReadOnly.overrides_exist override_graph base_target) then
-          (* Pyrefly believes this method has overrides, but the override graph disagrees. This must
-             mean we have a model with `@SkipOverrides`. *)
-          base_target
-        else
-          target
-    | _ -> target
-  in
   let transform_call_graph _ callable call_graph =
     let call_indexer = CallGraph.Indexer.create () in
     let call_graph =
@@ -4849,20 +4836,24 @@ let build_whole_program_call_graph_for_pyrefly
           call_graph
     in
     call_graph
-    |> DefineCallGraph.map_target
-         ~f:apply_skip_overrides
-         ~map_call_if:(fun _ -> true)
-         ~map_return_if:(fun _ -> true)
     |> DefineCallGraph.dedup_and_sort
     |> DefineCallGraph.filter_empty_attribute_access
     |> DefineCallGraph.regenerate_call_indices ~indexer:call_indexer
+  in
+  let method_has_overrides method_name =
+    match override_graph with
+    | Some override_graph ->
+        OverrideGraph.SharedMemory.ReadOnly.overrides_exist
+          override_graph
+          (Target.Regular (Target.Regular.Method method_name))
+    | None -> false
   in
   PyreflyApi.ReadOnly.parse_call_graphs
     pyrefly_api
     ~scheduler
     ~scheduler_policies
+    ~method_has_overrides
     ~store_shared_memory
-    ~attribute_targets
     ~skip_analysis_targets
     ~definitions
     ~create_dependency_for
@@ -4913,7 +4904,6 @@ let build_whole_program_call_graph
           ~callables_to_decorators_map
           ~override_graph
           ~store_shared_memory
-          ~attribute_targets
           ~skip_analysis_targets
           ~definitions
           ~create_dependency_for
