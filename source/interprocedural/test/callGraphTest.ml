@@ -3682,7 +3682,7 @@ let test_call_graph_of_define =
                  ExpressionCallees.from_call
                    (CallCallees.create
                       ~unresolved:
-                        (CallGraph.Unresolved.True CallGraph.Unresolved.UnexpectedPyreflyTarget)
+                        (CallGraph.Unresolved.True CallGraph.Unresolved.UnexpectedDefiningClass)
                       ()) );
                ( "6:9-6:36|artificial-attribute-access|get-attr-constant-literal",
                  ExpressionCallees.from_attribute_access
