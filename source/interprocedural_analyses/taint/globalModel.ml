@@ -26,7 +26,7 @@ type t = {
   interval: Interprocedural.ClassIntervalSet.t;
 }
 
-let get_global_targets ~call_graph ~expression =
+let get_global_targets_with_pyre1 ~call_graph ~expression =
   match Node.value expression with
   | Expression.Name (Name.Identifier identifier) ->
       CallGraph.DefineCallGraph.resolve_identifier
@@ -43,6 +43,46 @@ let get_global_targets ~call_graph ~expression =
       >>| (fun { global_targets; _ } -> global_targets)
       |> Option.value ~default:[]
   | _ -> []
+
+
+let get_global_targets_with_pyrefly
+    ~pyre_in_context
+    ~type_of_expression_shared_memory
+    ~get_callee_model
+    ~expression
+  =
+  match Node.value expression with
+  | Expression.Name (Name.Attribute { Name.Attribute.base; attribute; _ }) ->
+      Interprocedural.TypeOfExpressionSharedMemory.compute_or_retrieve_pysa_type
+        type_of_expression_shared_memory
+        ~pyre_in_context
+        base
+      |> PyrePysaApi.ReadOnly.Type.get_class_names (PyrePysaApi.InContext.pyre_api pyre_in_context)
+      |> (fun { PyrePysaApi.ClassNamesFromType.class_names; _ } -> class_names)
+      |> List.map ~f:(fun class_name ->
+             Format.sprintf "%s.%s" class_name attribute
+             |> Reference.create
+             |> Interprocedural.Target.create_object)
+      |> List.filter ~f:(fun target -> Option.is_some (get_callee_model target))
+      |> List.map ~f:(fun target -> CallGraph.CallTarget.create target)
+  | _ -> []
+
+
+let get_global_targets
+    ~pyre_in_context
+    ~type_of_expression_shared_memory
+    ~call_graph
+    ~get_callee_model
+    ~expression
+  =
+  match pyre_in_context with
+  | PyrePysaApi.InContext.Pyre1 _ -> get_global_targets_with_pyre1 ~call_graph ~expression
+  | PyrePysaApi.InContext.Pyrefly _ ->
+      get_global_targets_with_pyrefly
+        ~pyre_in_context
+        ~type_of_expression_shared_memory
+        ~get_callee_model
+        ~expression
 
 
 let from_expression
@@ -64,7 +104,15 @@ let from_expression
     in
     { Model.WithCallTarget.model; call_target }
   in
-  let models = get_global_targets ~call_graph ~expression |> List.map ~f:fetch_model in
+  let models =
+    get_global_targets
+      ~pyre_in_context
+      ~type_of_expression_shared_memory
+      ~call_graph
+      ~get_callee_model
+      ~expression
+    |> List.map ~f:fetch_model
+  in
   let location = Node.location expression in
   { models; pyre_in_context; location; interval }
 

@@ -278,7 +278,9 @@ module ReadOnly : sig
 end
 
 module InContext : sig
-  type t
+  type t =
+    | Pyre1 of Analysis.PyrePysaEnvironment.InContext.t
+    | Pyrefly of PyreflyApi.InContext.t
 
   val create_at_function_scope
     :  ReadOnly.t ->
