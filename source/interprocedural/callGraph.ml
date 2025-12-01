@@ -882,10 +882,12 @@ module CallCallees = struct
   let is_mapping_method callees =
     let is_class_name = function
       | "dict"
+      | "builtins.dict"
       | "typing.Mapping"
       | "typing.MutableMapping"
-      | "TypedDictionary"
-      | "NonTotalTypedDictionary"
+      | "TypedDictionary" (* pyre1 *)
+      | "NonTotalTypedDictionary" (* pyre1 *)
+      | "_typeshed._type_checker_internal.TypedDictFallback" (* pyrefly *)
       | "collections.OrderedDict"
       | "collections.defaultdict" ->
           true
@@ -897,10 +899,12 @@ module CallCallees = struct
   let is_sequence_method callees =
     let is_class_name = function
       | "list"
+      | "builtins.list"
       | "typing.Sequence"
       | "typing.MutableSequence"
       | "collections.deque"
-      | "tuple" ->
+      | "tuple"
+      | "builtins.tuple" ->
           true
       | _ -> false
     in
@@ -909,7 +913,9 @@ module CallCallees = struct
 
   let is_string_method callees =
     let is_class_name = function
-      | "str" -> true
+      | "str"
+      | "builtins.str" ->
+          true
       | _ -> false
     in
     is_method_of_class ~is_class_name callees
@@ -919,7 +925,9 @@ module CallCallees = struct
     | [] -> (* Unresolved call, assume it's object.__new__ *) true
     | [{ CallTarget.target; _ }] -> (
         match Target.get_regular target with
-        | Target.Regular.Method { class_name = "object"; method_name = "__new__"; kind = Normal } ->
+        | Target.Regular.Method { class_name = "object"; method_name = "__new__"; kind = Normal }
+        | Target.Regular.Method
+            { class_name = "builtins.object"; method_name = "__new__"; kind = Normal } ->
             true
         | _ -> false)
     | _ -> false
@@ -930,7 +938,8 @@ module CallCallees = struct
     | [{ CallTarget.target; _ }] -> (
         match Target.get_regular target with
         | Target.Regular.Method { class_name = "object"; method_name = "__init__"; kind = Normal }
-          ->
+        | Target.Regular.Method
+            { class_name = "builtins.object"; method_name = "__init__"; kind = Normal } ->
             true
         | _ -> false)
     | _ -> false
