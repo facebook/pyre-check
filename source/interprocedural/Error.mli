@@ -18,7 +18,7 @@ type t [@@deriving sexp, compare]
 
 val code : t -> int
 
-val create : location:Location.WithModule.t -> kind:kind -> define:Statement.Define.t Node.t -> t
+val create : location:Location.WithModule.t -> kind:kind -> define_name:Ast.Reference.t -> t
 
 module Instantiated : sig
   type t

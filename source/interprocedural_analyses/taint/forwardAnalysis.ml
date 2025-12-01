@@ -237,7 +237,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       candidates
       ~taint_configuration:FunctionContext.taint_configuration
       ~callable:FunctionContext.callable
-      ~define:FunctionContext.definition
+      ~define_location:(Node.location FunctionContext.definition)
 
 
   (* Store all triggered sinks seen in `triggered_sinks` to propagate them up in the backward

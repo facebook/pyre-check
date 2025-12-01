@@ -24,17 +24,7 @@ type t = {
 }
 [@@deriving sexp, compare]
 
-let create ~location ~kind ~define =
-  let {
-    Node.value =
-      { Statement.Define.signature = { Statement.Define.Signature.name = define_name; _ }; _ };
-    _;
-  }
-    =
-    define
-  in
-  { location; kind; define_name }
-
+let create ~location ~kind ~define_name = { location; kind; define_name }
 
 let code { kind = { code; _ }; _ } = code
 

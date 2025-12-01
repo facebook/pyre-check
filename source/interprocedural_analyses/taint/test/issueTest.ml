@@ -40,10 +40,6 @@ let test_no_errors _ =
         ~module_reference:Reference.empty
         (Location.create ~start:Lexing.dummy_pos ~stop:Lexing.dummy_pos)
     in
-    let define =
-      Statement.Define.create_toplevel ~unbound_names:[] ~module_name:Reference.empty ~statements:[]
-      |> Node.create_with_default_location
-    in
     let candidates = Candidates.create () in
     let () =
       Candidates.check_flow
@@ -60,7 +56,7 @@ let test_no_errors _ =
         ~taint_configuration
         ~callable:
           (Target.from_regular (Target.Regular.Function { name = "test.$toplevel"; kind = Normal }))
-        ~define
+        ~define_location:Location.any
       |> IssueHandle.SerializableMap.data
       |> List.map ~f:(to_error ~taint_configuration)
     in
@@ -103,10 +99,6 @@ let test_errors _ =
         ~module_reference:Reference.empty
         (Location.create ~start:Lexing.dummy_pos ~stop:Lexing.dummy_pos)
     in
-    let define =
-      Statement.Define.create_toplevel ~unbound_names:[] ~module_name:Reference.empty ~statements:[]
-      |> Node.create_with_default_location
-    in
     let candidates = Candidates.create () in
     let () =
       Candidates.check_flow
@@ -123,7 +115,7 @@ let test_errors _ =
         ~callable:
           (Target.from_regular (Target.Regular.Function { name = "test.$toplevel"; kind = Normal }))
         ~taint_configuration
-        ~define
+        ~define_location:Location.any
       |> IssueHandle.SerializableMap.data
       |> List.map ~f:(to_error ~taint_configuration)
     in
@@ -163,7 +155,7 @@ let test_canonical_location _ =
             sink = IssueHandle.Sink.Return;
           };
         locations;
-        define;
+        define_location = Location.any;
       }
     in
     let actual = Issue.canonical_location issue in

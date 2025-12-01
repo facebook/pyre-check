@@ -45,18 +45,18 @@ type t = {
   flow: Flow.t;
   handle: IssueHandle.t;
   locations: LocationSet.t;
-  define: Statement.Define.t Node.t;
+  define_location: Location.t;
 }
 
 let join
-    { flow = flow_left; handle; locations = locations_left; define }
-    { flow = flow_right; handle = _; locations = locations_right; define = _ }
+    { flow = flow_left; handle; locations = locations_left; define_location }
+    { flow = flow_right; handle = _; locations = locations_right; define_location = _ }
   =
   {
     flow = Flow.join flow_left flow_right;
     handle;
     locations = LocationSet.union locations_left locations_right;
-    define;
+    define_location;
   }
 
 
@@ -135,7 +135,7 @@ end
 let generate_issues
     ~taint_configuration
     ~callable
-    ~define
+    ~define_location
     { Candidate.flows; key = { location; sink_handle } }
   =
   let partitions =
@@ -360,7 +360,7 @@ let generate_issues
           flow;
           handle = { code = rule.code; callable; sink = sink_handle };
           locations = LocationSet.singleton location;
-          define;
+          define_location;
         }
   in
   let group_by_handle map issue =
@@ -656,7 +656,7 @@ module Candidates = struct
     List.iter new_candidates ~f:(add_candidate candidates)
 
 
-  let generate_issues candidates ~taint_configuration ~callable ~define =
+  let generate_issues candidates ~taint_configuration ~callable ~define_location =
     let add_or_merge_issue issues_so_far new_issue =
       IssueHandle.SerializableMap.update
         new_issue.handle
@@ -666,7 +666,7 @@ module Candidates = struct
         issues_so_far
     in
     let accumulate ~key:_ ~data:candidate issues =
-      let new_issues = generate_issues ~taint_configuration ~callable ~define candidate in
+      let new_issues = generate_issues ~taint_configuration ~callable ~define_location candidate in
       List.fold new_issues ~init:issues ~f:add_or_merge_issue
     in
     Core.Hashtbl.fold candidates ~f:accumulate ~init:IssueHandle.SerializableMap.empty
@@ -736,7 +736,7 @@ let get_name_and_detailed_message
 
 let to_error
     ~taint_configuration:({ TaintConfiguration.Heap.rules; _ } as taint_configuration)
-    ({ handle = { code; _ }; define; _ } as issue)
+    ({ handle = { code; callable; _ }; _ } as issue)
   =
   match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) rules with
   | None -> failwith "issue with code that has no rule"
@@ -744,7 +744,7 @@ let to_error
       let name, detail = get_name_and_detailed_message ~taint_configuration issue in
       let kind = { Error.name; messages = [detail]; code } in
       let location = canonical_location issue in
-      Error.create ~location ~define ~kind
+      Error.create ~location ~kind ~define_name:(Target.define_name_exn callable)
 
 
 let to_json ~taint_configuration ~expand_overrides ~is_valid_callee ~resolve_module_path issue =
@@ -811,7 +811,7 @@ let to_json ~taint_configuration ~expand_overrides ~is_valid_callee ~resolve_mod
     =
     canonical_location issue |> Location.WithModule.instantiate ~lookup:filename_lookup
   in
-  let callable_line = Ast.(Location.line issue.define.location) in
+  let callable_line = Ast.(Location.line issue.define_location) in
   let sink_handle = IssueHandle.Sink.to_json issue.handle.sink in
   let master_handle = IssueHandle.master_handle issue.handle in
   `Assoc

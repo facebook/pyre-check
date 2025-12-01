@@ -6,7 +6,6 @@
  *)
 
 open Ast
-open Statement
 open Domains
 open Interprocedural
 
@@ -30,8 +29,7 @@ type t = {
   flow: Flow.t;
   handle: IssueHandle.t;
   locations: LocationSet.t;
-  (* Only used to create the Pyre errors. *)
-  define: Ast.Statement.Define.t Ast.Node.t;
+  define_location: Location.t;
 }
 
 val canonical_location : t -> Location.WithModule.t
@@ -118,6 +116,6 @@ module Candidates : sig
     :  t ->
     taint_configuration:TaintConfiguration.Heap.t ->
     callable:Interprocedural.Target.t ->
-    define:Define.t Node.t ->
+    define_location:Location.t ->
     issue IssueHandle.SerializableMap.t
 end
