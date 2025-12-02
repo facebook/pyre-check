@@ -2130,7 +2130,7 @@ let test_call_graph_of_define =
                       ~define_targets:
                         [
                           CallTarget.create_regular
-                            ~return_type:None
+                            ~return_type:(Some ReturnType.none)
                             (Target.Regular.Function { name = "test.foo.inner"; kind = Decorated });
                         ]
                       ()) );
