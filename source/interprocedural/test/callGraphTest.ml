@@ -4615,7 +4615,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source:
              {|
        import typing
@@ -4710,7 +4710,7 @@ let test_call_graph_of_define =
       (* Nested defines. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source:
              {|
        def baz(x: int) -> int:
@@ -4739,7 +4739,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source:
              {|
        def baz(x: int) -> int:
@@ -4771,7 +4771,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source:
              {|
        def decorator(function):
@@ -4838,7 +4838,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source:
              {|
        def decorator(function):

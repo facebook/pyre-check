@@ -4782,7 +4782,7 @@ let build_whole_program_call_graph_for_pyrefly
       | Name.Identifier name -> name
       | original_function_name ->
           Format.asprintf
-            "Expect the decorated callable to be an identifier, bbcbut got `%a`"
+            "Expect the decorated callable to be an identifier, but got `%a`"
             Name.pp
             original_function_name
           |> failwith
