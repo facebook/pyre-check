@@ -1309,7 +1309,7 @@ module ModuleCallGraphs = struct
       receiver_class: GlobalClassId.t option;
       is_class_method: bool;
       is_static_method: bool;
-      return_type: ScalarTypeProperties.t option;
+      return_type: ScalarTypeProperties.t;
     }
 
     let from_json json =
@@ -1332,8 +1332,8 @@ module ModuleCallGraphs = struct
       JsonUtil.get_optional_bool_member ~default:false json "is_static_method"
       >>= fun is_static_method ->
       (match JsonUtil.get_optional_member json "return_type" with
-      | Some return_type -> parse_scalar_type_properties return_type >>| Option.some
-      | None -> Ok None)
+      | Some return_type -> parse_scalar_type_properties return_type
+      | None -> Ok ScalarTypeProperties.none)
       >>| fun return_type ->
       {
         target;
@@ -4188,7 +4188,7 @@ module ReadOnly = struct
               >>| Ast.Reference.show;
             is_class_method;
             is_static_method;
-            return_type;
+            return_type = Some return_type;
           })
         targets
     in
