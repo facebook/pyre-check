@@ -614,6 +614,20 @@ let test_call_graph_of_define =
                         ]
                       ()) );
              ]
+           ~pyrefly_expected:
+             [
+               ( "5:2-5:7",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create
+                            ~implicit_receiver:true
+                            ~receiver_class:"test.D"
+                            (Target.create_override !&"test.C" "m");
+                        ]
+                      ()) );
+             ]
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
