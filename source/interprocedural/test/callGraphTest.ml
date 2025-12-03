@@ -5998,7 +5998,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source:{|
      def foo():
        return bar
@@ -6023,7 +6023,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source:{|
      def foo():
        yield bar
@@ -6048,7 +6048,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source:
              {|
      class C:
@@ -6061,7 +6061,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source:{|
      def foo():
        def inner(): ...
@@ -6083,7 +6083,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source:
              {|
      from typing import Callable, Any
@@ -6421,7 +6421,7 @@ let test_call_graph_of_define_foo_and_bar =
     [
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source
            ~define_name:"test.foo"
            ~expected:
@@ -6553,7 +6553,7 @@ let test_call_graph_of_define_foo_and_bar =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source
            ~define_name:"test.bar"
            ~expected:
@@ -6594,57 +6594,7 @@ let test_call_graph_of_define_foo_and_bar =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
-           ~source:{|
-     def foo():
-       return bar
-     def bar(): ...
-  |}
-           ~define_name:"test.foo"
-           ~expected:
-             [
-               ( "3:9-3:12|artificial-attribute-access|qualification:test.bar",
-                 ExpressionCallees.from_attribute_access
-                   (AttributeAccessCallees.create
-                      ~if_called:
-                        (CallCallees.create
-                           ~call_targets:
-                             [
-                               CallTarget.create_regular
-                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                             ]
-                           ())
-                      ()) );
-             ]
-           ();
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
-           ~source:{|
-     def foo():
-       yield bar
-     def bar(): ...
-  |}
-           ~define_name:"test.foo"
-           ~expected:
-             [
-               ( "3:8-3:11|artificial-attribute-access|qualification:test.bar",
-                 ExpressionCallees.from_attribute_access
-                   (AttributeAccessCallees.create
-                      ~if_called:
-                        (CallCallees.create
-                           ~call_targets:
-                             [
-                               CallTarget.create_regular
-                                 (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                             ]
-                           ())
-                      ()) );
-             ]
-           ();
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source:
              {|
      def foo(x):
@@ -6793,7 +6743,7 @@ let test_call_graph_of_define_foo_and_bar =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source:
              {|
      def decorator(f):
@@ -6823,7 +6773,7 @@ let test_call_graph_of_define_foo_and_bar =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source:
              {|
      class A:
@@ -6895,7 +6845,7 @@ let test_call_graph_of_define_foo_and_bar =
        * the callee has a body and is annotated. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source:
              {|
      class A:
@@ -6943,7 +6893,7 @@ let test_call_graph_of_define_foo_and_bar =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source:
              {|
      from typing import Optional
@@ -6992,7 +6942,7 @@ let test_call_graph_of_define_foo_and_bar =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
-           ~_migrated_to_pyrefly:false
+           ~_migrated_to_pyrefly:true
            ~source:
              {|
      from typing import Optional
