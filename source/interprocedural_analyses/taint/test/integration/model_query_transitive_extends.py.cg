@@ -14,65 +14,65 @@ Call dependencies
     "model_query_transitive_extends.Test1_C2.instance (object)"
   ],
   "model_query_transitive_extends.misc_noalarm1 (fun)": [
-    "_test_sink (fun)"
+    "pysa._test_sink (fun)"
   ],
   "model_query_transitive_extends.misc_noalarm2 (fun)": [
-    "_test_sink (fun)"
+    "pysa._test_sink (fun)"
   ],
   "model_query_transitive_extends.misc_noalarm3 (fun)": [
-    "_test_source (fun)",
-    "model_query_transitive_extends.UnrelatedClass.foo (method)"
+    "model_query_transitive_extends.UnrelatedClass.foo (method)",
+    "pysa._test_source (fun)"
   ],
   "model_query_transitive_extends.test1_alarm1 (fun)": [
-    "_test_sink (fun)",
-    "model_query_transitive_extends.Test1_C.attribute (object)",
-    "model_query_transitive_extends.Test1_C1.attribute (object)"
-  ],
-  "model_query_transitive_extends.test1_alarm2 (fun)": [
-    "_test_sink (fun)",
-    "model_query_transitive_extends.Test1_C.instance (object)",
-    "model_query_transitive_extends.Test1_C1.instance (object)"
-  ],
-  "model_query_transitive_extends.test1_alarm3 (fun)": [
-    "_test_sink (fun)",
     "model_query_transitive_extends.Test1_C.attribute (object)",
     "model_query_transitive_extends.Test1_C1.attribute (object)",
-    "model_query_transitive_extends.Test1_C2.attribute (object)"
+    "pysa._test_sink (fun)"
   ],
-  "model_query_transitive_extends.test1_alarm4 (fun)": [
-    "_test_sink (fun)",
+  "model_query_transitive_extends.test1_alarm2 (fun)": [
     "model_query_transitive_extends.Test1_C.instance (object)",
     "model_query_transitive_extends.Test1_C1.instance (object)",
-    "model_query_transitive_extends.Test1_C2.instance (object)"
+    "pysa._test_sink (fun)"
+  ],
+  "model_query_transitive_extends.test1_alarm3 (fun)": [
+    "model_query_transitive_extends.Test1_C.attribute (object)",
+    "model_query_transitive_extends.Test1_C1.attribute (object)",
+    "model_query_transitive_extends.Test1_C2.attribute (object)",
+    "pysa._test_sink (fun)"
+  ],
+  "model_query_transitive_extends.test1_alarm4 (fun)": [
+    "model_query_transitive_extends.Test1_C.instance (object)",
+    "model_query_transitive_extends.Test1_C1.instance (object)",
+    "model_query_transitive_extends.Test1_C2.instance (object)",
+    "pysa._test_sink (fun)"
   ],
   "model_query_transitive_extends.test1_alarm5 (fun)": [
-    "_test_sink (fun)",
-    "model_query_transitive_extends.Test1_C.attribute (object)"
+    "model_query_transitive_extends.Test1_C.attribute (object)",
+    "pysa._test_sink (fun)"
   ],
   "model_query_transitive_extends.test1_alarm6 (fun)": [
-    "_test_sink (fun)",
-    "model_query_transitive_extends.Test1_C.instance (object)"
+    "model_query_transitive_extends.Test1_C.instance (object)",
+    "pysa._test_sink (fun)"
   ],
   "model_query_transitive_extends.test1_noalarm1 (fun)": [
-    "_test_sink (fun)"
+    "pysa._test_sink (fun)"
   ],
   "model_query_transitive_extends.test1_noalarm2 (fun)": [
-    "_test_sink (fun)"
+    "pysa._test_sink (fun)"
   ],
   "model_query_transitive_extends.test2_alarm1 (fun)": [
-    "_test_source (fun)",
-    "model_query_transitive_extends.Test2_D.foo (method)"
+    "model_query_transitive_extends.Test2_D.foo (method)",
+    "pysa._test_source (fun)"
   ],
   "model_query_transitive_extends.test2_noalarm1 (fun)": [
-    "_test_source (fun)",
-    "model_query_transitive_extends.Test2_C1.foo (override)"
+    "model_query_transitive_extends.Test2_C1.foo (override)",
+    "pysa._test_source (fun)"
   ],
   "model_query_transitive_extends.test2_noalarm2 (fun)": [
-    "_test_source (fun)",
-    "model_query_transitive_extends.Test2_C2.foo (method)"
+    "model_query_transitive_extends.Test2_C2.foo (method)",
+    "pysa._test_source (fun)"
   ],
   "model_query_transitive_extends.test2_noalarm3 (fun)": [
-    "_test_source (fun)",
-    "model_query_transitive_extends.Test2_C.foo (override)"
+    "model_query_transitive_extends.Test2_C.foo (override)",
+    "pysa._test_source (fun)"
   ]
 }

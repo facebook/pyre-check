@@ -2,9 +2,9 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_cookies",
-    "filename": "builtins.pyi",
-    "callable_line": 625,
+    "callable": "pysa._cookies",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 8,
     "sources": [
       {
         "port": "result",
@@ -19,9 +19,9 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_rce",
-    "filename": "builtins.pyi",
-    "callable_line": 626,
+    "callable": "pysa._rce",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 9,
     "sinks": [
       {
         "port": "formal(argument, position=0)",
@@ -39,9 +39,9 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_sql",
-    "filename": "builtins.pyi",
-    "callable_line": 627,
+    "callable": "pysa._sql",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 10,
     "sinks": [
       {
         "port": "formal(argument, position=0)",
@@ -54,9 +54,9 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -69,9 +69,9 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
     "sources": [
       {
         "port": "result",
@@ -84,9 +84,9 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_user_controlled",
-    "filename": "builtins.pyi",
-    "callable_line": 624,
+    "callable": "pysa._user_controlled",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 7,
     "sources": [
       {
         "port": "result",
@@ -281,7 +281,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_cookies", "port": "leaf:return" } ],
+                "leaves": [
+                  { "name": "pysa._cookies", "port": "leaf:return" }
+                ],
                 "kind": "Cookies"
               }
             ],
@@ -295,7 +297,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "length": 2,
                 "kind": "NotSource[UserControlled]:Test"
               }
@@ -342,7 +346,7 @@
               {
                 "features": [ { "always-via": "tito" } ],
                 "leaves": [
-                  { "name": "_user_controlled", "port": "leaf:return" }
+                  { "name": "pysa._user_controlled", "port": "leaf:return" }
                 ],
                 "length": 1,
                 "kind": "NotSink[SQL]:UserControlled"
@@ -364,7 +368,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_rce", "port": "leaf:argument" } ],
+                "leaves": [
+                  { "name": "pysa._rce", "port": "leaf:argument" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -377,11 +383,11 @@
     "features": [ { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_rce",
+      "callee": "pysa._rce",
       "index": 0,
       "parameter": "formal(argument)"
     },
-    "master_handle": "sanitize.issue_propagation_of_sanitize_parameter_no_sql_tito_in_source_trace:1000:0:Call|_rce|0|formal(argument):687b5173c87b17e0acfc721d005ea6a8"
+    "master_handle": "sanitize.issue_propagation_of_sanitize_parameter_no_sql_tito_in_source_trace:1000:0:Call|pysa._rce|0|formal(argument):2ebc21a163e84e086c66273ba68a8cbf"
   }
 }
 {
@@ -402,7 +408,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_cookies", "port": "leaf:return" } ],
+                "leaves": [
+                  { "name": "pysa._cookies", "port": "leaf:return" }
+                ],
                 "kind": "Cookies"
               }
             ],
@@ -416,7 +424,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_sql", "port": "leaf:argument" } ],
+                "leaves": [
+                  { "name": "pysa._sql", "port": "leaf:argument" }
+                ],
                 "length": 2,
                 "kind": "NotSource[UserControlled]:SQL"
               }
@@ -461,7 +471,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_cookies", "port": "leaf:return" } ],
+                "leaves": [
+                  { "name": "pysa._cookies", "port": "leaf:return" }
+                ],
                 "kind": "Cookies"
               }
             ],
@@ -476,7 +488,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "tito" } ],
-                "leaves": [ { "name": "_sql", "port": "leaf:argument" } ],
+                "leaves": [
+                  { "name": "pysa._sql", "port": "leaf:argument" }
+                ],
                 "length": 1,
                 "kind": "NotSource[UserControlled]:SQL"
               }
@@ -522,7 +536,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "_user_controlled", "port": "leaf:return" }
+                  { "name": "pysa._user_controlled", "port": "leaf:return" }
                 ],
                 "length": 2,
                 "kind": "NotSink[RemoteCodeExecution]:UserControlled"
@@ -544,7 +558,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_sql", "port": "leaf:argument" } ],
+                "leaves": [
+                  { "name": "pysa._sql", "port": "leaf:argument" }
+                ],
                 "kind": "SQL"
               }
             ],
@@ -557,11 +573,11 @@
     "features": [],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_sql",
+      "callee": "pysa._sql",
       "index": 0,
       "parameter": "formal(argument)"
     },
-    "master_handle": "sanitize.issue_propagation_of_sanitize_return_no_rce:1000:0:Call|_sql|0|formal(argument):9ec0e6a1cdda39553423a67f8749b562"
+    "master_handle": "sanitize.issue_propagation_of_sanitize_return_no_rce:1000:0:Call|pysa._sql|0|formal(argument):4b2e0d67262c5aaf8197d038d1a9379a"
   }
 }
 {
@@ -584,7 +600,7 @@
               {
                 "features": [ { "always-via": "tito" } ],
                 "leaves": [
-                  { "name": "_user_controlled", "port": "leaf:return" }
+                  { "name": "pysa._user_controlled", "port": "leaf:return" }
                 ],
                 "length": 1,
                 "kind": "NotSink[SQL]:UserControlled"
@@ -606,7 +622,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_rce", "port": "leaf:argument" } ],
+                "leaves": [
+                  { "name": "pysa._rce", "port": "leaf:argument" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -619,11 +637,11 @@
     "features": [ { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_rce",
+      "callee": "pysa._rce",
       "index": 0,
       "parameter": "formal(argument)"
     },
-    "master_handle": "sanitize.issue_propagation_of_sanitize_return_no_sql_in_source_trace:1000:0:Call|_rce|0|formal(argument):c36524d4a7d40d87a009cbbf2d35f649"
+    "master_handle": "sanitize.issue_propagation_of_sanitize_return_no_sql_in_source_trace:1000:0:Call|pysa._rce|0|formal(argument):2b866ca4f778dd16cc7c874077131d98"
   }
 }
 {
@@ -731,7 +749,9 @@
             "kinds": [
               {
                 "features": [ { "always-via": "tito" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "length": 1,
                 "kind": "NotSource[TestA]:Test"
               }
@@ -822,7 +842,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "NotSink[TestA]:NotSink[TestB]@Test"
               }
@@ -1047,7 +1067,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_cookies", "port": "leaf:return" } ],
+                "leaves": [
+                  { "name": "pysa._cookies", "port": "leaf:return" }
+                ],
                 "kind": "Cookies"
               }
             ],
@@ -1073,7 +1095,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_cookies", "port": "leaf:return" } ],
+                "leaves": [
+                  { "name": "pysa._cookies", "port": "leaf:return" }
+                ],
                 "kind": "Cookies"
               }
             ],
@@ -1099,7 +1123,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_rce", "port": "leaf:argument" } ],
+                "leaves": [
+                  { "name": "pysa._rce", "port": "leaf:argument" }
+                ],
                 "kind": "NotSource[Cookies]@RemoteCodeExecution"
               }
             ],
@@ -1126,7 +1152,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_rce", "port": "leaf:argument" } ],
+                "leaves": [
+                  { "name": "pysa._rce", "port": "leaf:argument" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -1153,7 +1181,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_rce", "port": "leaf:argument" } ],
+                "leaves": [
+                  { "name": "pysa._rce", "port": "leaf:argument" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -1335,7 +1365,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "_user_controlled", "port": "leaf:return" }
+                  { "name": "pysa._user_controlled", "port": "leaf:return" }
                 ],
                 "kind": "NotSink[SQL]@UserControlled"
               }
@@ -1450,7 +1480,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_sql", "port": "leaf:argument" } ],
+                "leaves": [
+                  { "name": "pysa._sql", "port": "leaf:argument" }
+                ],
                 "kind": "NotSource[UserControlled]@SQL"
               }
             ],
@@ -1533,7 +1565,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "_user_controlled", "port": "leaf:return" }
+                  { "name": "pysa._user_controlled", "port": "leaf:return" }
                 ],
                 "kind": "NotSink[SQL]@UserControlled"
               }
@@ -1561,7 +1593,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "_user_controlled", "port": "leaf:return" }
+                  { "name": "pysa._user_controlled", "port": "leaf:return" }
                 ],
                 "kind": "NotSink[SQL]@UserControlled"
               }
@@ -1588,7 +1620,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_sql", "port": "leaf:argument" } ],
+                "leaves": [
+                  { "name": "pysa._sql", "port": "leaf:argument" }
+                ],
                 "kind": "NotSource[UserControlled]@SQL"
               }
             ],
@@ -1616,7 +1650,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "_user_controlled", "port": "leaf:return" }
+                  { "name": "pysa._user_controlled", "port": "leaf:return" }
                 ],
                 "kind": "NotSink[SQL]@UserControlled"
               }
@@ -1973,7 +2007,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -1988,7 +2024,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -2041,7 +2079,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_sql", "port": "leaf:argument" } ],
+                "leaves": [
+                  { "name": "pysa._sql", "port": "leaf:argument" }
+                ],
                 "kind": "SQL"
               }
             ],
@@ -2083,7 +2123,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_rce", "port": "leaf:argument" } ],
+                "leaves": [
+                  { "name": "pysa._rce", "port": "leaf:argument" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -2150,7 +2192,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "NotSource[UserControlled]@Test"
               }
             ],
@@ -2417,7 +2461,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -2518,7 +2564,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -2533,7 +2581,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -2589,7 +2639,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_sql", "port": "leaf:argument" } ],
+                "leaves": [
+                  { "name": "pysa._sql", "port": "leaf:argument" }
+                ],
                 "kind": "SQL"
               }
             ],
@@ -2633,7 +2685,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_rce", "port": "leaf:argument" } ],
+                "leaves": [
+                  { "name": "pysa._rce", "port": "leaf:argument" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -2711,7 +2765,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_rce", "port": "leaf:argument" } ],
+                "leaves": [
+                  { "name": "pysa._rce", "port": "leaf:argument" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -2726,7 +2782,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_sql", "port": "leaf:argument" } ],
+                "leaves": [
+                  { "name": "pysa._sql", "port": "leaf:argument" }
+                ],
                 "kind": "NotSource[UserControlled]@SQL"
               }
             ],
@@ -2835,7 +2893,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -2869,7 +2929,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "_user_controlled", "port": "leaf:return" }
+                  { "name": "pysa._user_controlled", "port": "leaf:return" }
                 ],
                 "kind": "UserControlled"
               }
@@ -2896,7 +2956,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "_user_controlled", "port": "leaf:return" }
+                  { "name": "pysa._user_controlled", "port": "leaf:return" }
                 ],
                 "kind": "NotSink[RemoteCodeExecution]@UserControlled"
               }
@@ -2949,7 +3009,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_cookies", "port": "leaf:return" } ],
+                "leaves": [
+                  { "name": "pysa._cookies", "port": "leaf:return" }
+                ],
                 "kind": "Cookies"
               }
             ],
@@ -3101,7 +3163,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -3152,7 +3216,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -3211,7 +3275,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -3318,7 +3382,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -3335,11 +3401,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "sanitize.sanitize_test_a_source_attribute:1000:0:Call|_test_sink|0|formal(arg):7cf279501d48a6922a15112fda44e69a"
+    "master_handle": "sanitize.sanitize_test_a_source_attribute:1000:0:Call|pysa._test_sink|0|formal(arg):5b0f926370f16dc22d45892bbacb48ca"
   }
 }
 {
@@ -3355,7 +3421,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "NotSource[TestA]@Test"
               }
             ],
@@ -3436,7 +3504,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -3453,11 +3523,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "sanitize.sanitize_test_a_source_instance:1000:0:Call|_test_sink|0|formal(arg):4d775a95a91ae016f99f4813bdd80989"
+    "master_handle": "sanitize.sanitize_test_a_source_instance:1000:0:Call|pysa._test_sink|0|formal(arg):6ae9f65c1759fecb68be17514b244cb6"
   }
 }
 {
@@ -3497,7 +3567,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -3510,11 +3582,11 @@
     "features": [],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "sanitize.sanitize_test_ab_sources_attribute:1000:0:Call|_test_sink|0|formal(arg):38452faed7dd8a226475656fd4db7a59"
+    "master_handle": "sanitize.sanitize_test_ab_sources_attribute:1000:0:Call|pysa._test_sink|0|formal(arg):4a8374ec8c0515e30b7b7c9cefcea5a5"
   }
 }
 {
@@ -3554,7 +3626,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -3567,11 +3641,11 @@
     "features": [],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "sanitize.sanitize_test_ab_sources_instance:1000:0:Call|_test_sink|0|formal(arg):4edd9983bb03615959969b8fc84cd29f"
+    "master_handle": "sanitize.sanitize_test_ab_sources_instance:1000:0:Call|pysa._test_sink|0|formal(arg):47733f35818b3c208283521f038245b4"
   }
 }
 {
@@ -3593,7 +3667,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -3650,7 +3724,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -3707,7 +3781,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -3766,7 +3840,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -3873,7 +3947,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -3890,11 +3966,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "sanitize.sanitize_test_b_source_attribute:1000:0:Call|_test_sink|0|formal(arg):c9287a2192ebb69f44c803599227303b"
+    "master_handle": "sanitize.sanitize_test_b_source_attribute:1000:0:Call|pysa._test_sink|0|formal(arg):1c9c868314c1ed2e8eb6bf3586c0397b"
   }
 }
 {
@@ -3937,7 +4013,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -3954,11 +4032,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "sanitize.sanitize_test_b_source_instance:1000:0:Call|_test_sink|0|formal(arg):693b78211926f9ba8005843bc962d801"
+    "master_handle": "sanitize.sanitize_test_b_source_instance:1000:0:Call|pysa._test_sink|0|formal(arg):4d76dd548ba5abef642e418518a88946"
   }
 }
 {
@@ -4020,7 +4098,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -4076,7 +4156,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_rce", "port": "leaf:argument" } ],
+                "leaves": [
+                  { "name": "pysa._rce", "port": "leaf:argument" }
+                ],
                 "kind": "NotSource[TestA]@RemoteCodeExecution"
               }
             ],
@@ -4167,7 +4249,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "_rce", "port": "leaf:argument" } ],
+                "leaves": [
+                  { "name": "pysa._rce", "port": "leaf:argument" }
+                ],
                 "kind": "NotSource[TestB]@RemoteCodeExecution"
               }
             ],
@@ -4663,7 +4747,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }

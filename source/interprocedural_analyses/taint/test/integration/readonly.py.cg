@@ -5,29 +5,30 @@ Call dependencies
     "readonly.A.B (object)", "readonly.A.mapping (object)"
   ],
   "readonly.A.self_readonly_map (method)": [
-    "_test_sink (fun)", "readonly.A.mapping (object)",
+    "pysa._test_sink (fun)", "readonly.A.mapping (object)",
     "typing.Mapping.get (method)"
   ],
   "readonly.A.self_readonly_str (method)": [
-    "_test_sink (fun)", "readonly.A.B (object)"
+    "pysa._test_sink (fun)", "readonly.A.B (object)"
   ],
   "readonly.A.self_untyped_map (method)": [
-    "_test_sink (fun)", "readonly.A.mapping (object)",
+    "pysa._test_sink (fun)", "readonly.A.mapping (object)",
     "typing.Mapping.get (method)"
   ],
   "readonly.A.self_untyped_str (method)": [
-    "_test_sink (fun)", "readonly.A.B (object)"
+    "pysa._test_sink (fun)", "readonly.A.B (object)"
   ],
-  "readonly.readonly_foo_not_tainted (fun)": [ "_test_sink (fun)" ],
+  "readonly.readonly_foo_not_tainted (fun)": [ "pysa._test_sink (fun)" ],
   "readonly.readonly_foo_tainted (fun)": [
-    "_test_sink (fun)", "readonly.Foo.tainted (object)"
+    "pysa._test_sink (fun)", "readonly.Foo.tainted (object)"
   ],
   "readonly.readonly_tito (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "object.__new__ (method)",
-    "readonly.A.__init__ (method)", "readonly.A.readonly_tito (method)"
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "readonly.A.__init__ (method)",
+    "readonly.A.readonly_tito (method)"
   ],
-  "readonly.regular_foo_not_tainted (fun)": [ "_test_sink (fun)" ],
+  "readonly.regular_foo_not_tainted (fun)": [ "pysa._test_sink (fun)" ],
   "readonly.regular_foo_tainted (fun)": [
-    "_test_sink (fun)", "readonly.Foo.tainted (object)"
+    "pysa._test_sink (fun)", "readonly.Foo.tainted (object)"
   ]
 }

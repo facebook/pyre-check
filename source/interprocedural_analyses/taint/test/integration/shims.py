@@ -7,7 +7,7 @@
 import functools
 import multiprocessing
 import typing
-from builtins import _test_sink, _test_source, to_callable_target
+from pysa import _test_sink, _test_source, to_callable_target
 
 
 @to_callable_target

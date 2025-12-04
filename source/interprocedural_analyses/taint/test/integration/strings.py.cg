@@ -2,35 +2,42 @@
 Call dependencies
 {
   "strings.bad_1 (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "strings.concatenate_lhs (fun)"
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "strings.concatenate_lhs (fun)"
   ],
   "strings.bad_2 (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "strings.concatenate_rhs (fun)"
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "strings.concatenate_rhs (fun)"
   ],
   "strings.concatenate_lhs (fun)": [ "str.__add__ (method)" ],
   "strings.concatenate_rhs (fun)": [ "str.__add__ (method)" ],
   "strings.either (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "strings.concatenate_lhs (fun)", "strings.concatenate_rhs (fun)"
   ],
-  "strings.format_sink (fun)": [ "_test_sink (fun)", "str.format (method)" ],
+  "strings.format_sink (fun)": [
+    "pysa._test_sink (fun)", "str.format (method)"
+  ],
   "strings.format_source (fun)": [
-    "_test_source (fun)", "str.format (method)"
+    "pysa._test_source (fun)", "str.format (method)"
   ],
   "strings.format_tito (fun)": [ "str.format (method)" ],
   "strings.iadd_lhs_infer_sink (fun)": [
-    "_test_sink (fun)", "str.__add__ (method)"
+    "pysa._test_sink (fun)", "str.__add__ (method)"
   ],
   "strings.iadd_rhs_infer_sink (fun)": [
-    "_test_sink (fun)", "str.__add__ (method)"
+    "pysa._test_sink (fun)", "str.__add__ (method)"
   ],
   "strings.maybe_lhs (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "strings.concatenate_lhs (fun)"
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "strings.concatenate_lhs (fun)"
   ],
   "strings.maybe_rhs (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "strings.concatenate_rhs (fun)"
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "strings.concatenate_rhs (fun)"
   ],
   "strings.through_iadd (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "str.__add__ (method)"
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "str.__add__ (method)"
   ]
 }

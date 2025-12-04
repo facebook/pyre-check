@@ -2,13 +2,13 @@
 Call dependencies
 {
   "model_query_parent_decorator.TestC_1.__init__ (method)": [
-    "_test_sink (fun)"
+    "pysa._test_sink (fun)"
   ],
   "model_query_parent_decorator.TestC_2.__init__ (method)": [
-    "_test_sink (fun)"
+    "pysa._test_sink (fun)"
   ],
   "model_query_parent_decorator.TestC_3.__init__ (method)": [
-    "_test_sink (fun)"
+    "pysa._test_sink (fun)"
   ],
   "model_query_parent_decorator.setup (fun)": [
     "model_query_parent_decorator.TestC_1.__init__ (method)",

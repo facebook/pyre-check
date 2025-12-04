@@ -23,7 +23,7 @@ Higher order call graphs
     "28:4-28:19": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -60,7 +60,7 @@ Higher order call graphs
     "34:4-34:19": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -89,7 +89,7 @@ Higher order call graphs
     "39:4-39:19": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -118,7 +118,7 @@ Higher order call graphs
     "44:4-44:19": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -147,7 +147,7 @@ Higher order call graphs
     "55:4-55:19": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -176,7 +176,7 @@ Higher order call graphs
     "60:4-60:19": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -197,7 +197,7 @@ Higher order call graphs
     "65:4-65:19": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -210,7 +210,7 @@ Higher order call graphs
     "69:4-69:17": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -223,7 +223,7 @@ Higher order call graphs
     "73:4-73:17": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     }

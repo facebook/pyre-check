@@ -1,9 +1,9 @@
 @generated
 Call dependencies
 {
-  "select.first_index (fun)": [ "_test_source (fun)" ],
-  "select.first_index_numeric (fun)": [ "_test_source (fun)" ],
-  "select.first_index_unknown (fun)": [ "_test_source (fun)" ],
+  "select.first_index (fun)": [ "pysa._test_source (fun)" ],
+  "select.first_index_numeric (fun)": [ "pysa._test_source (fun)" ],
+  "select.first_index_unknown (fun)": [ "pysa._test_source (fun)" ],
   "select.return_is_RCE (fun)": [
     "dict.get (method)", "django.http.Request.GET (object)"
   ],

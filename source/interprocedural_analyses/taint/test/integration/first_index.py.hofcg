@@ -7,14 +7,14 @@ Higher order call graphs
     "12:14-12:28": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
     "12:35-12:49": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 1, "return_type": [] }
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
         ]
       }
     },
@@ -73,7 +73,7 @@ Higher order call graphs
     "17:4-17:17": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     }

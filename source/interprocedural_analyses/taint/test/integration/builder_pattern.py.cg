@@ -1,64 +1,66 @@
 @generated
 Call dependencies
 {
-  "builder_pattern.Builder.async_save (method)": [ "_test_sink (fun)" ],
+  "builder_pattern.Builder.async_save (method)": [ "pysa._test_sink (fun)" ],
   "builder_pattern.test_chained_class_setter (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
     "builder_pattern.Builder.__init__ (method)",
     "builder_pattern.Builder.return_self (method)",
     "builder_pattern.Builder.set_saved_no_return (method)",
-    "object.__new__ (method)"
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
   ],
   "builder_pattern.test_class_setter (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
     "builder_pattern.Builder.__init__ (method)",
     "builder_pattern.Builder.set_saved_no_return (method)",
-    "object.__new__ (method)"
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
   ],
   "builder_pattern.test_issue (fun)": [
-    "_test_source (fun)", "builder_pattern.Builder.__init__ (method)",
+    "builder_pattern.Builder.__init__ (method)",
     "builder_pattern.Builder.async_save (method)",
     "builder_pattern.Builder.set_not_saved (method)",
-    "builder_pattern.Builder.set_saved (method)", "object.__new__ (method)"
+    "builder_pattern.Builder.set_saved (method)", "object.__new__ (method)",
+    "pysa._test_source (fun)"
   ],
   "builder_pattern.test_issue_with_sub_builder (fun)": [
-    "_test_source (fun)", "builder_pattern.Builder.__init__ (method)",
+    "builder_pattern.Builder.__init__ (method)",
     "builder_pattern.Builder.async_save (method)",
     "builder_pattern.Builder.set_not_saved_through_typevar (method)",
     "builder_pattern.Builder.set_saved_through_typevar (method)",
-    "object.__new__ (method)"
+    "object.__new__ (method)", "pysa._test_source (fun)"
   ],
   "builder_pattern.test_issue_with_type_var (fun)": [
-    "_test_source (fun)", "builder_pattern.Builder.__init__ (method)",
+    "builder_pattern.Builder.__init__ (method)",
     "builder_pattern.Builder.async_save (method)",
     "builder_pattern.Builder.set_not_saved_through_typevar (method)",
     "builder_pattern.Builder.set_saved_through_typevar (method)",
-    "object.__new__ (method)"
+    "object.__new__ (method)", "pysa._test_source (fun)"
   ],
   "builder_pattern.test_no_issue (fun)": [
-    "_test_source (fun)", "builder_pattern.Builder.__init__ (method)",
+    "builder_pattern.Builder.__init__ (method)",
     "builder_pattern.Builder.async_save (method)",
     "builder_pattern.Builder.set_not_saved (method)",
-    "builder_pattern.Builder.set_saved (method)", "object.__new__ (method)"
+    "builder_pattern.Builder.set_saved (method)", "object.__new__ (method)",
+    "pysa._test_source (fun)"
   ],
   "builder_pattern.test_no_issue_with_sub_builder (fun)": [
-    "_test_source (fun)", "builder_pattern.Builder.__init__ (method)",
+    "builder_pattern.Builder.__init__ (method)",
     "builder_pattern.Builder.async_save (method)",
     "builder_pattern.Builder.set_not_saved_through_typevar (method)",
     "builder_pattern.Builder.set_saved_through_typevar (method)",
-    "object.__new__ (method)"
+    "object.__new__ (method)", "pysa._test_source (fun)"
   ],
   "builder_pattern.test_no_issue_with_type_var (fun)": [
-    "_test_source (fun)", "builder_pattern.Builder.__init__ (method)",
+    "builder_pattern.Builder.__init__ (method)",
     "builder_pattern.Builder.async_save (method)",
     "builder_pattern.Builder.set_not_saved_through_typevar (method)",
     "builder_pattern.Builder.set_saved_through_typevar (method)",
-    "object.__new__ (method)"
+    "object.__new__ (method)", "pysa._test_source (fun)"
   ],
   "builder_pattern.test_taint_update_receiver_declaration (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
     "builder_pattern.Builder.__init__ (method)",
     "builder_pattern.Builder.return_self (method)",
-    "builder_pattern.Builder.set_saved (method)", "object.__new__ (method)"
+    "builder_pattern.Builder.set_saved (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ]
 }

@@ -7,7 +7,7 @@ Higher order call graphs
     "11:4-11:19": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -26,7 +26,11 @@ Higher order call graphs
     "9:1-9:19|artificial-call|for-decorated-target": {
       "call": {
         "calls": [
-          { "target": "to_callable_target", "index": 0, "return_type": [] }
+          {
+            "target": "pysa.to_callable_target",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "higher_order_parameters": [
           {
@@ -65,7 +69,7 @@ Higher order call graphs
     "15:8-15:22": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },

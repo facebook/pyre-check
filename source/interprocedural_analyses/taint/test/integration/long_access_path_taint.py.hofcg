@@ -21,21 +21,21 @@ Higher order call graphs
     "35:29-35:43": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
     "35:45-35:59": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 1, "return_type": [] }
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
         ]
       }
     },
     "36:4-36:22": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     }

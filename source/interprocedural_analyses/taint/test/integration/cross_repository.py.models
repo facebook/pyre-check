@@ -2,59 +2,9 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "cross_repository.cross_repository_anchor_sink",
     "filename": "cross_repository.py",
-    "callable_line": 26,
+    "callable_line": 25,
     "sinks": [
       {
         "port": "formal(sink_parameter, position=0)",
@@ -83,7 +33,7 @@
   "data": {
     "callable": "cross_repository.cross_repository_source",
     "filename": "cross_repository.py",
-    "callable_line": 9,
+    "callable_line": 8,
     "sinks": [
       {
         "port": "formal(source_parameter, position=0)",
@@ -92,12 +42,14 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 10, "start": 15, "end": 31 },
-            "call_site": "10:4-10:32"
+            "origin": { "line": 9, "start": 15, "end": 31 },
+            "call_site": "9:4-9:32"
           }
         ]
       }
@@ -131,9 +83,9 @@
   "kind": "issue",
   "data": {
     "callable": "cross_repository.cross_repository_source",
-    "callable_line": 9,
+    "callable_line": 8,
     "code": 5002,
-    "line": 10,
+    "line": 9,
     "start": 15,
     "end": 31,
     "filename": "cross_repository.py",
@@ -156,8 +108,8 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": { "line": 9, "start": 28, "end": 44 },
-            "call_site": "9:0-10:32"
+            "origin": { "line": 8, "start": 28, "end": 44 },
+            "call_site": "8:0-9:32"
           }
         ]
       },
@@ -168,12 +120,14 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 10, "start": 15, "end": 31 },
-            "call_site": "10:4-10:32"
+            "origin": { "line": 9, "start": 15, "end": 31 },
+            "call_site": "9:4-9:32"
           }
         ]
       }
@@ -183,11 +137,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "cross_repository.cross_repository_source:5002:0:Call|_test_sink|0|formal(arg):ac21fdbf72127ac5c56bafd9b43a351b"
+    "master_handle": "cross_repository.cross_repository_source:5002:0:Call|pysa._test_sink|0|formal(arg):2bf0c3a0ae0a07cdd09ca0ab98d2d24a"
   }
 }
 {
@@ -195,7 +149,7 @@
   "data": {
     "callable": "cross_repository.reaches_crtex_sink",
     "filename": "cross_repository.py",
-    "callable_line": 17,
+    "callable_line": 16,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -226,7 +180,7 @@
   "data": {
     "callable": "cross_repository.returns_crtex_source",
     "filename": "cross_repository.py",
-    "callable_line": 13,
+    "callable_line": 12,
     "sources": [
       {
         "port": "result",
@@ -256,9 +210,9 @@
   "kind": "issue",
   "data": {
     "callable": "cross_repository.test",
-    "callable_line": 21,
+    "callable_line": 20,
     "code": 5002,
-    "line": 23,
+    "line": 22,
     "start": 15,
     "end": 16,
     "filename": "cross_repository.py",
@@ -281,7 +235,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": { "line": 22, "start": 8, "end": 30 }
+            "origin": { "line": 21, "start": 8, "end": 30 }
           }
         ]
       },
@@ -292,12 +246,14 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 23, "start": 15, "end": 16 },
-            "call_site": "23:4-23:17"
+            "origin": { "line": 22, "start": 15, "end": 16 },
+            "call_site": "22:4-22:17"
           }
         ]
       }
@@ -307,20 +263,20 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "cross_repository.test:5002:0:Call|_test_sink|0|formal(arg):2b28136ab12d359dd3ac489d6d107423"
+    "master_handle": "cross_repository.test:5002:0:Call|pysa._test_sink|0|formal(arg):79ea5b5a5fe8d8467c308698e78f2560"
   }
 }
 {
   "kind": "issue",
   "data": {
     "callable": "cross_repository.test_cross_repository_anchor",
-    "callable_line": 30,
+    "callable_line": 29,
     "code": 5002,
-    "line": 32,
+    "line": 31,
     "start": 33,
     "end": 39,
     "filename": "cross_repository.py",
@@ -334,12 +290,12 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 31, "start": 13, "end": 27 }
+            "origin": { "line": 30, "start": 13, "end": 27 }
           }
         ]
       },
@@ -358,8 +314,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 32, "start": 33, "end": 39 },
-            "call_site": "32:4-32:40"
+            "origin": { "line": 31, "start": 33, "end": 39 },
+            "call_site": "31:4-31:40"
           }
         ]
       }
@@ -379,7 +335,7 @@
   "data": {
     "callable": "cross_repository.test_propagate_cross_repository_sink_once",
     "filename": "cross_repository.py",
-    "callable_line": 43,
+    "callable_line": 42,
     "sinks": [
       {
         "port": "formal(y, position=0)",
@@ -398,8 +354,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 44, "start": 23, "end": 24 },
-            "call_site": "44:4-44:25"
+            "origin": { "line": 43, "start": 23, "end": 24 },
+            "call_site": "43:4-43:25"
           }
         ]
       }
@@ -411,7 +367,7 @@
   "data": {
     "callable": "cross_repository.test_propagate_cross_repository_sink_twice",
     "filename": "cross_repository.py",
-    "callable_line": 47,
+    "callable_line": 46,
     "sinks": [
       {
         "port": "formal(z, position=0)",
@@ -425,12 +381,12 @@
               }
             ],
             "call": {
-              "position": { "line": 48, "start": 46, "end": 47 },
+              "position": { "line": 47, "start": 46, "end": 47 },
               "resolves_to": [
                 "cross_repository.test_propagate_cross_repository_sink_once"
               ],
               "port": "formal(y, position=0)",
-              "call_site": "48:4-48:48"
+              "call_site": "47:4-47:48"
             }
           }
         ]
@@ -443,7 +399,7 @@
   "data": {
     "callable": "cross_repository.test_propagate_cross_repository_source_once",
     "filename": "cross_repository.py",
-    "callable_line": 35,
+    "callable_line": 34,
     "sources": [
       {
         "port": "result",
@@ -462,7 +418,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": { "line": 36, "start": 11, "end": 33 }
+            "origin": { "line": 35, "start": 11, "end": 33 }
           }
         ]
       }
@@ -474,7 +430,7 @@
   "data": {
     "callable": "cross_repository.test_propagate_cross_repository_source_twice",
     "filename": "cross_repository.py",
-    "callable_line": 39,
+    "callable_line": 38,
     "sources": [
       {
         "port": "result",
@@ -488,7 +444,7 @@
               }
             ],
             "call": {
-              "position": { "line": 40, "start": 11, "end": 56 },
+              "position": { "line": 39, "start": 11, "end": 56 },
               "resolves_to": [
                 "cross_repository.test_propagate_cross_repository_source_once"
               ],
@@ -503,9 +459,59 @@
 {
   "kind": "model",
   "data": {
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "cross_repository.TestDSLAnchor.bar",
     "filename": "cross_repository.py",
-    "callable_line": 55,
+    "callable_line": 54,
     "sinks": [
       {
         "port": "formal(yet_another_c, position=2)",
@@ -592,7 +598,7 @@
   "data": {
     "callable": "cross_repository.TestDSLAnchor.foo",
     "filename": "cross_repository.py",
-    "callable_line": 52,
+    "callable_line": 51,
     "sinks": [
       {
         "port": "formal(**kwargs, excluded=[other_b,crtex_a,self])",

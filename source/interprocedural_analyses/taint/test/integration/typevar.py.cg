@@ -3,6 +3,6 @@ Call dependencies
 {
   "typevar.Foo.__init__ (method)": [ "typevar.Foo.tainted (object)" ],
   "typevar.issue (fun)": [
-    "_test_sink (fun)", "typevar.Foo.tainted (object)"
+    "pysa._test_sink (fun)", "typevar.Foo.tainted (object)"
   ]
 }

@@ -2,7 +2,7 @@
 Call dependencies
 {
   "private_variables.Other.private_into_sink (method)": [
-    "_test_sink (fun)"
+    "pysa._test_sink (fun)"
   ],
   "private_variables.PrivateAttributeSinkModels.__init__ (method)": [
     "private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_mangled (object)",
@@ -33,61 +33,63 @@ Call dependencies
     "private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_unmangled (object)"
   ],
   "private_variables.Simple.expand_subexpression (method)": [
-    "_test_sink (fun)", "list.__getitem__ (method)"
+    "list.__getitem__ (method)", "pysa._test_sink (fun)"
   ],
   "private_variables.Simple.getattr_invalid (method)": [ "getattr (fun)" ],
   "private_variables.Simple.getattr_private (method)": [ "getattr (fun)" ],
   "private_variables.Simple.getattr_public (method)": [ "getattr (fun)" ],
   "private_variables.Simple.private_into_sink (method)": [
-    "_test_sink (fun)"
+    "pysa._test_sink (fun)"
   ],
   "private_variables.Simple.public_into_sink (method)": [
-    "_test_sink (fun)"
+    "pysa._test_sink (fun)"
   ],
   "private_variables.test_access_from_other_class (fun)": [
-    "_test_source (fun)", "object.__new__ (method)",
+    "object.__new__ (method)",
     "private_variables.Other.private_into_sink (method)",
-    "private_variables.Simple.__init__ (method)"
+    "private_variables.Simple.__init__ (method)", "pysa._test_source (fun)"
   ],
   "private_variables.test_bypass_private (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "object.__new__ (method)",
-    "private_variables.Simple.__init__ (method)"
+    "object.__new__ (method)", "private_variables.Simple.__init__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "private_variables.test_expand_subexpression (fun)": [
-    "_test_source (fun)", "object.__new__ (method)",
-    "private_variables.Simple.__init__ (method)",
-    "private_variables.Simple.expand_subexpression (method)"
+    "object.__new__ (method)", "private_variables.Simple.__init__ (method)",
+    "private_variables.Simple.expand_subexpression (method)",
+    "pysa._test_source (fun)"
   ],
   "private_variables.test_getattr (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "object.__new__ (method)",
-    "private_variables.Simple.__init__ (method)",
+    "object.__new__ (method)", "private_variables.Simple.__init__ (method)",
     "private_variables.Simple.getattr_invalid (method)",
     "private_variables.Simple.getattr_private (method)",
-    "private_variables.Simple.getattr_public (method)"
+    "private_variables.Simple.getattr_public (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "private_variables.test_private_attribute_sink_models (fun)": [
-    "_test_source (fun)", "object.__new__ (method)",
+    "object.__new__ (method)",
     "private_variables.PrivateAttributeSinkModels.__init__ (method)",
     "private_variables.PrivateAttributeSinkModels.set_model_mangled (method)",
     "private_variables.PrivateAttributeSinkModels.set_model_query (method)",
-    "private_variables.PrivateAttributeSinkModels.set_model_unmangled (method)"
+    "private_variables.PrivateAttributeSinkModels.set_model_unmangled (method)",
+    "pysa._test_source (fun)"
   ],
   "private_variables.test_private_attribute_source_models (fun)": [
-    "_test_sink (fun)", "object.__new__ (method)",
+    "object.__new__ (method)",
     "private_variables.PrivateAttributeSourceModels.__init__ (method)",
     "private_variables.PrivateAttributeSourceModels.get_model_mangled (method)",
     "private_variables.PrivateAttributeSourceModels.get_model_query (method)",
-    "private_variables.PrivateAttributeSourceModels.get_model_unmangled (method)"
+    "private_variables.PrivateAttributeSourceModels.get_model_unmangled (method)",
+    "pysa._test_sink (fun)"
   ],
   "private_variables.test_private_public_different (fun)": [
-    "_test_source (fun)", "object.__new__ (method)",
-    "private_variables.Simple.__init__ (method)",
+    "object.__new__ (method)", "private_variables.Simple.__init__ (method)",
     "private_variables.Simple.private_into_sink (method)",
-    "private_variables.Simple.public_into_sink (method)"
+    "private_variables.Simple.public_into_sink (method)",
+    "pysa._test_source (fun)"
   ],
   "private_variables.test_simple (fun)": [
-    "_test_source (fun)", "object.__new__ (method)",
-    "private_variables.Simple.__init__ (method)",
-    "private_variables.Simple.private_into_sink (method)"
+    "object.__new__ (method)", "private_variables.Simple.__init__ (method)",
+    "private_variables.Simple.private_into_sink (method)",
+    "pysa._test_source (fun)"
   ]
 }

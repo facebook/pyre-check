@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # flake8: noqa
-from builtins import _cookies, _rce, _sql, _test_sink, _test_source, _user_controlled
+from pysa import _cookies, _rce, _sql, _test_sink, _test_source, _user_controlled
 from typing import Sequence, TypeVar
 
 

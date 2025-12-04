@@ -101,17 +101,17 @@ Call dependencies
     "sanitize_obscure.sanitize_obscure_single_argument (fun)"
   ],
   "sanitize_obscure.test1 (fun)": [
-    "_test_sink (fun)", "sanitize_obscure.sanitize_all (fun)"
+    "pysa._test_sink (fun)", "sanitize_obscure.sanitize_all (fun)"
   ],
   "sanitize_obscure.test2 (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "sanitize_obscure.sanitize_all (fun)"
   ],
   "sanitize_obscure.test3 (fun)": [
-    "_test_sink (fun)", "sanitize_obscure.sanitize_tito (fun)"
+    "pysa._test_sink (fun)", "sanitize_obscure.sanitize_tito (fun)"
   ],
   "sanitize_obscure.test4 (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "sanitize_obscure.sanitize_tito (fun)"
   ]
 }

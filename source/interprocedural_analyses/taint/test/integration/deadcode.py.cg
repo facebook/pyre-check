@@ -2,8 +2,8 @@
 Call dependencies
 {
   "deadcode.dead_code_by_type_refinement (fun)": [
-    "_test_sink (fun)", "deadcode.MyCallable.__call__ (method)",
-    "isinstance (fun)", "print (fun)"
+    "deadcode.MyCallable.__call__ (method)", "isinstance (fun)",
+    "print (fun)", "pysa._test_sink (fun)"
   ],
   "deadcode.early_break_no_issue_for (fun)": [
     "object.__new__ (method)", "range.__init__ (method)",
@@ -14,11 +14,11 @@ Call dependencies
     "range.__iter__ (method)", "typing.Iterator.__next__ (method)"
   ],
   "deadcode.early_return_no_issue_class (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
-    "deadcode.EarlyReturns.__init__ (method)", "object.__new__ (method)"
+    "deadcode.EarlyReturns.__init__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "deadcode.early_return_no_issue_for_else (fun)": [
-    "_test_sink (fun)", "_test_source (fun)"
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
-  "deadcode.early_return_no_source (fun)": [ "_test_source (fun)" ]
+  "deadcode.early_return_no_source (fun)": [ "pysa._test_source (fun)" ]
 }

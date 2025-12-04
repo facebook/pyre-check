@@ -5,32 +5,34 @@ Call dependencies
     "nested_callables.access_parameter_in_inner_scope_sink.inner (fun)"
   ],
   "nested_callables.access_parameter_in_inner_scope_sink.inner (fun)": [
-    "_test_sink (fun)"
+    "pysa._test_sink (fun)"
   ],
   "nested_callables.access_parameter_in_inner_scope_tito (fun)": [
     "nested_callables.access_parameter_in_inner_scope_tito.inner (fun)"
   ],
   "nested_callables.access_variables_in_outer_scope_issue (fun)": [
-    "_test_source (fun)",
-    "nested_callables.access_variables_in_outer_scope_issue.inner (fun)"
+    "nested_callables.access_variables_in_outer_scope_issue.inner (fun)",
+    "pysa._test_source (fun)"
   ],
   "nested_callables.access_variables_in_outer_scope_issue.inner (fun)": [
-    "_test_sink (fun)"
+    "pysa._test_sink (fun)"
   ],
   "nested_callables.access_variables_in_outer_scope_source (fun)": [
-    "_test_source (fun)",
-    "nested_callables.access_variables_in_outer_scope_source.inner (fun)"
+    "nested_callables.access_variables_in_outer_scope_source.inner (fun)",
+    "pysa._test_source (fun)"
   ],
   "nested_callables.call_outer (fun)": [
-    "_test_source (fun)", "nested_callables.outer (fun)"
+    "nested_callables.outer (fun)", "pysa._test_source (fun)"
   ],
   "nested_callables.duplicate_function (fun)": [
     "nested_callables.foo (fun)"
   ],
   "nested_callables.foo.inner (fun)": [
-    "_test_sink (fun)", "_test_source (fun)"
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
-  "nested_callables.foo.inner_with_model (fun)": [ "_test_source (fun)" ],
+  "nested_callables.foo.inner_with_model (fun)": [
+    "pysa._test_source (fun)"
+  ],
   "nested_callables.nested_global_function (fun)": [
     "nested_callables.nested_global_function.g (fun)"
   ],
@@ -38,7 +40,7 @@ Call dependencies
     "str.__add__ (method)"
   ],
   "nested_callables.outer (fun)": [ "nested_callables.outer.inner (fun)" ],
-  "nested_callables.outer.inner (fun)": [ "_test_sink (fun)" ],
+  "nested_callables.outer.inner (fun)": [ "pysa._test_sink (fun)" ],
   "nested_callables.outer_calling_other_function (fun)": [
     "nested_callables.outer_calling_other_function.inner_calling_other_function (fun)"
   ],
@@ -49,25 +51,25 @@ Call dependencies
     "nested_callables.parameter_function.add (fun)"
   ],
   "nested_callables.parameter_function.add (fun)": [ "str.__add__ (method)" ],
-  "nested_callables.some_sink (fun)": [ "_test_sink (fun)" ],
+  "nested_callables.some_sink (fun)": [ "pysa._test_sink (fun)" ],
   "nested_callables.test_access_parameter_in_inner_scope_sink (fun)": [
-    "_test_source (fun)",
-    "nested_callables.access_parameter_in_inner_scope_sink (fun)"
+    "nested_callables.access_parameter_in_inner_scope_sink (fun)",
+    "pysa._test_source (fun)"
   ],
   "nested_callables.test_access_parameter_in_inner_scope_tito (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
-    "nested_callables.access_parameter_in_inner_scope_tito (fun)"
+    "nested_callables.access_parameter_in_inner_scope_tito (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "nested_callables.test_access_variables_in_outer_scope_source (fun)": [
-    "_test_sink (fun)",
-    "nested_callables.access_variables_in_outer_scope_source (fun)"
+    "nested_callables.access_variables_in_outer_scope_source (fun)",
+    "pysa._test_sink (fun)"
   ],
   "nested_callables.test_mutation_of_class (fun)": [
-    "_test_sink (fun)",
     "nested_callables.test_mutation_of_class.set_a (fun)",
-    "object.__init__ (method)", "object.__new__ (method)"
+    "object.__init__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)"
   ],
   "nested_callables.test_mutation_of_class.set_a (fun)": [
-    "_test_source (fun)"
+    "pysa._test_source (fun)"
   ]
 }

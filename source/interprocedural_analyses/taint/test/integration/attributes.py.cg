@@ -1,69 +1,71 @@
 @generated
 Call dependencies
 {
-  "attributes.NoListInference.sink (method)": [ "_test_sink (fun)" ],
+  "attributes.NoListInference.sink (method)": [ "pysa._test_sink (fun)" ],
   "attributes.Request.$class_toplevel (method)": [
     "object.__init__ (method)", "object.__new__ (method)"
   ],
   "attributes.test_attribute (fun)": [ "attributes.Token.token (object)" ],
   "attributes.test_attribute_union_sink (fun)": [
-    "_test_source (fun)", "attributes.Sink.token (object)",
-    "isinstance (fun)"
+    "attributes.Sink.token (object)", "isinstance (fun)",
+    "pysa._test_source (fun)"
   ],
   "attributes.test_attribute_union_source (fun)": [
-    "_test_sink (fun)", "attributes.Token.token (object)", "isinstance (fun)"
+    "attributes.Token.token (object)", "isinstance (fun)",
+    "pysa._test_sink (fun)"
   ],
   "attributes.test_attribute_via_dunder_dict (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
-    "attributes.UseViaDict.__init__ (method)", "object.__new__ (method)"
+    "attributes.UseViaDict.__init__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "attributes.test_getattr_backwards (fun)": [
-    "_test_sink (fun)", "getattr (fun)"
+    "getattr (fun)", "pysa._test_sink (fun)"
   ],
   "attributes.test_getattr_backwards_default (fun)": [
-    "_test_sink (fun)", "getattr (fun)"
+    "getattr (fun)", "pysa._test_sink (fun)"
   ],
   "attributes.test_getattr_default (fun)": [
-    "_test_source (fun)", "getattr (fun)"
+    "getattr (fun)", "pysa._test_source (fun)"
   ],
   "attributes.test_getattr_forward (fun)": [
     "attributes.Token.token (object)", "getattr (fun)"
   ],
   "attributes.test_issue_with_text_key_of_dictionary (fun)": [
-    "_test_sink (fun)", "attributes.C.dictionary (object)",
-    "dict.__getitem__ (method)"
+    "attributes.C.dictionary (object)", "dict.__getitem__ (method)",
+    "pysa._test_sink (fun)"
   ],
   "attributes.test_issue_with_tito_copy_dict (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
-    "attributes.tito_copy_dict (fun)"
+    "attributes.tito_copy_dict (fun)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
   ],
   "attributes.test_issue_with_tito_copy_multiple_possible_dictlike_objects (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
     "attributes.RegularForm.__init__ (method)",
     "attributes.tito_copy_multiple_possible_dictlike_objects (fun)",
-    "dict.__getitem__ (method)", "object.__new__ (method)"
+    "dict.__getitem__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "attributes.test_issue_with_update_to_self_attribute (fun)": [
-    "_test_source (fun)", "attributes.D.buffer (object)",
-    "list.append (method)"
+    "attributes.D.buffer (object)", "list.append (method)",
+    "pysa._test_source (fun)"
   ],
   "attributes.test_no_issue_sanitize (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "object.__init__ (method)",
-    "object.__new__ (method)"
+    "object.__init__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "attributes.test_no_issue_sanitize_via_call (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
     "attributes.sanitize_attribute (fun)", "object.__init__ (method)",
-    "object.__new__ (method)"
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
   ],
   "attributes.test_no_issue_with_other_key_of_dictionary (fun)": [
-    "_test_sink (fun)", "attributes.C.dictionary (object)",
-    "dict.__getitem__ (method)"
+    "attributes.C.dictionary (object)", "dict.__getitem__ (method)",
+    "pysa._test_sink (fun)"
   ],
   "attributes.test_no_list_inference (fun)": [
-    "_test_source (fun)", "attributes.NoListInference.__init__ (method)",
+    "attributes.NoListInference.__init__ (method)",
     "attributes.NoListInference.append (method)",
-    "attributes.NoListInference.sink (method)", "object.__new__ (method)"
+    "attributes.NoListInference.sink (method)", "object.__new__ (method)",
+    "pysa._test_source (fun)"
   ],
   "attributes.test_via_non_optional (fun)": [
     "attributes.Token.token (object)"

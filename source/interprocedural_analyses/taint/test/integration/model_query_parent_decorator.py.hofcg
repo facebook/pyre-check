@@ -193,21 +193,21 @@ Higher order call graphs
     "24:8-24:23": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
     "25:8-25:23": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 1, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
     "26:8-26:23": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 2, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 2, "return_type": [] }
         ]
       }
     }
@@ -220,21 +220,21 @@ Higher order call graphs
     "32:8-32:23": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
     "33:8-33:23": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 1, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
     "34:8-34:23": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 2, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 2, "return_type": [] }
         ]
       }
     }
@@ -247,21 +247,21 @@ Higher order call graphs
     "41:8-41:23": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
     "42:8-42:23": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 1, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
     "43:8-43:23": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 2, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 2, "return_type": [] }
         ]
       }
     }

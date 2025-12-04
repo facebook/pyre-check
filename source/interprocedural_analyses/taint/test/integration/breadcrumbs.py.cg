@@ -1,16 +1,16 @@
 @generated
 Call dependencies
 {
-  "breadcrumbs.bool_parameter (fun)": [ "_test_sink (fun)" ],
-  "breadcrumbs.bool_source (fun)": [ "_test_source (fun)" ],
-  "breadcrumbs.float_parameter (fun)": [ "_test_sink (fun)" ],
-  "breadcrumbs.float_source (fun)": [ "_test_source (fun)" ],
-  "breadcrumbs.int_parameter (fun)": [ "_test_sink (fun)" ],
-  "breadcrumbs.int_source (fun)": [ "_test_source (fun)" ],
+  "breadcrumbs.bool_parameter (fun)": [ "pysa._test_sink (fun)" ],
+  "breadcrumbs.bool_source (fun)": [ "pysa._test_source (fun)" ],
+  "breadcrumbs.float_parameter (fun)": [ "pysa._test_sink (fun)" ],
+  "breadcrumbs.float_source (fun)": [ "pysa._test_source (fun)" ],
+  "breadcrumbs.int_parameter (fun)": [ "pysa._test_sink (fun)" ],
+  "breadcrumbs.int_source (fun)": [ "pysa._test_source (fun)" ],
   "breadcrumbs.scalar_attribute_backward (fun)": [
-    "_test_sink (fun)", "int.__gt__ (method)", "int.__le__ (method)",
-    "list.__iter__ (method)", "object.__repr__ (method)",
-    "str.join (method)", "typing.Iterator.__next__ (method)"
+    "int.__gt__ (method)", "int.__le__ (method)", "list.__iter__ (method)",
+    "object.__repr__ (method)", "pysa._test_sink (fun)", "str.join (method)",
+    "typing.Iterator.__next__ (method)"
   ],
   "breadcrumbs.scalar_attribute_forward (fun)": [
     "breadcrumbs.tpm_request (fun)", "int.__gt__ (method)",

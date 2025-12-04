@@ -167,6 +167,8 @@ let test_simple_source context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def simple_source():
         return _test_source()
     |}
@@ -280,6 +282,8 @@ let test_hardcoded_source context =
       os.environ: TaintSource[UserControlled] = ...
     |}
     {|
+      import os
+
       def get_environment_variable():
         return os.environ
     |}
@@ -297,6 +301,8 @@ let test_hardcoded_source context =
       def dict.__getitem__(self: TaintInTaintOut, __k): ...
     |}
     {|
+      import os
+
       def get_environment_variable_with_getitem():
         return os.environ['BAD']
     |}
@@ -314,6 +320,8 @@ let test_hardcoded_source context =
     |}
     ~context
     {|
+      import django
+
       class Request(django.http.Request): ...
 
       def get_field(request: Request):
@@ -326,6 +334,8 @@ let test_local_copy context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def copy_source():
         var = _test_source()
         return var
@@ -337,6 +347,8 @@ let test_access_paths context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def access_downward_closed():
         o = { 'a': _test_source() }
         x = o.a
@@ -357,6 +369,8 @@ let test_access_paths context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def access_through_expression():
         return " ".join(_test_source())
     |}
@@ -372,6 +386,8 @@ let test_class_model context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       class Foo:
         def bar():
           return _test_source()
@@ -419,6 +435,8 @@ let test_class_model context =
       qualifier.Data.ATTRIBUTE: TaintSource[Test] = ...
     |}
     {|
+      import typing
+
       class Data:
         ATTRIBUTE = 1
       def optional(data: typing.Optional[Data]):
@@ -431,6 +449,8 @@ let test_apply_method_model_at_call_site context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       class Foo:
         def qux():
           return _test_source()
@@ -447,6 +467,8 @@ let test_apply_method_model_at_call_site context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       class Foo:
         def qux():
           return _test_source()
@@ -463,6 +485,8 @@ let test_apply_method_model_at_call_site context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       class Foo:
         def qux():
           return _test_source()
@@ -478,6 +502,8 @@ let test_apply_method_model_at_call_site context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       class Foo:
         def qux():
           return _test_source()
@@ -493,6 +519,8 @@ let test_apply_method_model_at_call_site context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       class Foo:
         def qux():
           return _test_source()
@@ -515,6 +543,8 @@ let test_apply_method_model_at_call_site context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       class Foo:
         def qux():
           return not_tainted()
@@ -543,6 +573,8 @@ let test_apply_method_model_at_call_site context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       class Indirect:
         def direct(self) -> Direct: ...
 
@@ -563,6 +595,8 @@ let test_apply_method_model_at_call_site context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       class Indirect:
         def direct(self) -> Direct: ...
 
@@ -585,6 +619,8 @@ let test_taint_in_taint_out_application context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source, _tito
+
       def simple_source():
         return _test_source()
 
@@ -597,6 +633,8 @@ let test_taint_in_taint_out_application context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def simple_source():
         return _test_source()
 
@@ -615,6 +653,8 @@ let test_dictionary context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def dictionary_source():
         return {
           "a": _test_source(),
@@ -663,6 +703,8 @@ let test_dictionary context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def dictionary_source():
         first = {
           "a": _test_source(),
@@ -674,6 +716,8 @@ let test_dictionary context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def dictionary_source():
         first = {
           "a": _test_source(),
@@ -687,6 +731,8 @@ let test_dictionary context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def dictionary_source():
         first = {
           "a": _test_source(),
@@ -700,6 +746,8 @@ let test_dictionary context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def dictionary_source():
         d = { _test_source(): "a" }
         return d
@@ -710,6 +758,8 @@ let test_dictionary context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def dictionary_source_keys_two():
         d = { _test_source(): "a" }
         return d[0]
@@ -720,6 +770,8 @@ let test_dictionary context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def dictionary_source():
         d = { 1: x for x in [_test_source()] }
         return d
@@ -728,6 +780,8 @@ let test_dictionary context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def dictionary_source():
         d = { x: 1 for x in [_test_source()] }
         return d
@@ -736,6 +790,8 @@ let test_dictionary context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def dictionary_source():
         d = { x: 1 for x in [_test_source()] }
         return d[0]
@@ -747,6 +803,8 @@ let test_comprehensions context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def source_in_iterator():
           return [ x for x in _test_source() ]
 
@@ -791,6 +849,8 @@ let test_list context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def source_in_list():
           return [ 1, _test_source(), "foo" ]
 
@@ -840,6 +900,8 @@ let test_tuple context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def source_in_tuple():
           return ( 1, _test_source(), "foo" )
 
@@ -889,7 +951,9 @@ let test_asyncio_gather context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
       import asyncio
+
       def benign_through_asyncio():
         a, b = asyncio.gather(0, _test_source())
         return a
@@ -910,6 +974,8 @@ let test_asyncio_gather context =
     ~context
     {|
       import foo
+      from pysa import _test_source
+
       def benign_through_asyncio():
         a, b = foo.asyncio.gather(0, _test_source())
         return a
@@ -931,6 +997,8 @@ let test_lambda context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def source_in_lambda():
           return lambda x : x + _test_source()
     |}
@@ -938,6 +1006,8 @@ let test_lambda context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def optional_lambda():
         if 1 > 2:
           f = None
@@ -952,6 +1022,8 @@ let test_set context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def source_in_set():
           return { 1, _test_source(), "foo" }
 
@@ -974,6 +1046,8 @@ let test_starred context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source, _tito
+
       def source_in_starred():
           list = [ 1, _test_source(), "foo" ]
           return _tito( *list )
@@ -999,6 +1073,8 @@ let test_string context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def normal_string() -> str:
         return ""
 
@@ -1040,10 +1116,12 @@ let test_ternary context =
     ~context
     ~models:
       {|
-       def _test_source() -> TaintSource[Test]: ...
+       def pysa._test_source() -> TaintSource[Test]: ...
        django.http.Request.GET: TaintSource[UserControlled] = ...
     |}
     {|
+      from pysa import _test_source
+
       def source_in_then(cond):
           return _test_source() if cond else None
 
@@ -1072,6 +1150,8 @@ let test_unary context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def source_in_unary():
           return not _test_source()
     |}
@@ -1082,6 +1162,8 @@ let test_parameter_default_values context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def source_in_default(totally_innocent=_test_source()):
         return totally_innocent
     |}
@@ -1089,6 +1171,8 @@ let test_parameter_default_values context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def source_in_default(benign, tainted=_test_source()):
         return benign
     |}
@@ -1099,6 +1183,8 @@ let test_walrus context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def source_in_walrus():
           return (x := _test_source())
     |}
@@ -1109,6 +1195,8 @@ let test_yield context =
   assert_taint
     ~context
     {|
+      from pysa import _test_source
+
       def source_in_yield():
           yield _test_source()
 
@@ -1126,10 +1214,12 @@ let test_construction context =
     ~context
     ~models:
       {|
-      def _test_source() -> TaintSource[Test]: ...
+      def pysa._test_source() -> TaintSource[Test]: ...
       def qualifier.Data.__init__(self, capture: TaintInTaintOut): ...
     |}
     {|
+      from pysa import _test_source
+
       class Data:
         def __init__(self, capture) -> None: ...
 
@@ -1195,7 +1285,7 @@ let test_tito_side_effects context =
     ~context
     ~models:
       {|
-      def _test_source() -> TaintSource[Test]: ...
+      def pysa._test_source() -> TaintSource[Test]: ...
       def models.change_arg0(arg0, arg1: TaintInTaintOut[Updates[arg0]]): ...
       def models.change_arg1(arg0: TaintInTaintOut[Updates[arg1]], arg1): ...
       def qualifier.MyList.append(self, arg: TaintInTaintOut[Updates[self]]): ...
@@ -1206,6 +1296,8 @@ let test_tito_side_effects context =
       def change_arg1(arg0, arg1): ...
       |}
     {|
+      from pysa import _test_source
+
       def test_from_1_to_0():
         x = 0
         models.change_arg0(x, _test_source())
@@ -1272,13 +1364,15 @@ let test_taint_in_taint_out_transform context =
     ~context
     ~models:
       {|
-      def _test_source() -> TaintSource[Test]: ...
+      def pysa._test_source() -> TaintSource[Test]: ...
       def models.test_transform(arg: TaintInTaintOut[Transform[TestTransform]]): ...
     |}
     ~models_source:{|
       def test_transform(arg): ...
     |}
     {|
+      from pysa import _test_source
+
       def simple_source():
         return _test_source()
 
@@ -1305,7 +1399,7 @@ let test_taint_in_taint_out_transform context =
     ~context
     ~models:
       {|
-      def _test_source() -> TaintSource[Test]: ...
+      def pysa._test_source() -> TaintSource[Test]: ...
       def models.test_transform(arg: TaintInTaintOut[Transform[TestTransform]]): ...
       def models.demo_transform(arg: TaintInTaintOut[Transform[DemoTransform]]): ...
     |}
@@ -1314,6 +1408,8 @@ let test_taint_in_taint_out_transform context =
       def demo_transform(arg): ...
     |}
     {|
+      from pysa import _test_source
+
       def simple_source():
         return _test_source()
 
@@ -1345,7 +1441,7 @@ let test_taint_in_taint_out_transform context =
     ~context
     ~models:
       {|
-      def _test_source() -> TaintSource[Test]: ...
+      def pysa._test_source() -> TaintSource[Test]: ...
       def models.test_transform(arg: TaintInTaintOut[Transform[TestTransform]]): ...
       def models.demo_transform(arg: TaintInTaintOut[Transform[DemoTransform]]): ...
     |}
@@ -1354,6 +1450,8 @@ let test_taint_in_taint_out_transform context =
       def demo_transform(arg): ...
     |}
     {|
+      from pysa import _test_source
+
       def simple_source():
         return _test_source()
 

@@ -106,7 +106,9 @@ Higher order call graphs
   "calls": {
     "794:8-794:18": {
       "call": {
-        "calls": [ { "target": "_cookies", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "pysa._cookies", "index": 0, "return_type": [] }
+        ]
       }
     },
     "795:4-795:64": {
@@ -139,7 +141,7 @@ Higher order call graphs
     },
     "684:4-684:11": {
       "call": {
-        "calls": [ { "target": "_rce", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -150,7 +152,9 @@ Higher order call graphs
   "calls": {
     "591:8-591:18": {
       "call": {
-        "calls": [ { "target": "_cookies", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "pysa._cookies", "index": 0, "return_type": [] }
+        ]
       }
     },
     "592:4-592:62": {
@@ -172,7 +176,9 @@ Higher order call graphs
   "calls": {
     "647:8-647:18": {
       "call": {
-        "calls": [ { "target": "_cookies", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "pysa._cookies", "index": 0, "return_type": [] }
+        ]
       }
     },
     "648:4-648:78": {
@@ -205,7 +211,7 @@ Higher order call graphs
     },
     "760:4-760:11": {
       "call": {
-        "calls": [ { "target": "_sql", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -227,7 +233,7 @@ Higher order call graphs
     },
     "726:4-726:11": {
       "call": {
-        "calls": [ { "target": "_rce", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -416,7 +422,7 @@ Higher order call graphs
     "306:12-306:26": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -499,7 +505,11 @@ Higher order call graphs
     "789:8-789:26": {
       "call": {
         "calls": [
-          { "target": "_user_controlled", "index": 0, "return_type": [] }
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
@@ -533,7 +543,7 @@ Higher order call graphs
     },
     "679:4-679:11": {
       "call": {
-        "calls": [ { "target": "_sql", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -545,7 +555,11 @@ Higher order call graphs
     "586:8-586:26": {
       "call": {
         "calls": [
-          { "target": "_user_controlled", "index": 0, "return_type": [] }
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
@@ -569,7 +583,11 @@ Higher order call graphs
     "642:8-642:26": {
       "call": {
         "calls": [
-          { "target": "_user_controlled", "index": 0, "return_type": [] }
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
@@ -603,7 +621,7 @@ Higher order call graphs
     },
     "755:4-755:11": {
       "call": {
-        "calls": [ { "target": "_rce", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -625,7 +643,7 @@ Higher order call graphs
     },
     "721:4-721:11": {
       "call": {
-        "calls": [ { "target": "_sql", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -647,7 +665,7 @@ Higher order call graphs
     },
     "859:4-859:11": {
       "call": {
-        "calls": [ { "target": "_sql", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -792,7 +810,9 @@ Higher order call graphs
   "calls": {
     "867:8-867:18": {
       "call": {
-        "calls": [ { "target": "_cookies", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "pysa._cookies", "index": 0, "return_type": [] }
+        ]
       }
     },
     "868:8-868:54": {
@@ -825,7 +845,7 @@ Higher order call graphs
     },
     "880:4-880:11": {
       "call": {
-        "calls": [ { "target": "_sql", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -871,7 +891,7 @@ Higher order call graphs
     },
     "843:4-843:11": {
       "call": {
-        "calls": [ { "target": "_sql", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -883,7 +903,11 @@ Higher order call graphs
     "821:8-821:26": {
       "call": {
         "calls": [
-          { "target": "_user_controlled", "index": 0, "return_type": [] }
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
@@ -917,7 +941,7 @@ Higher order call graphs
     },
     "660:4-660:11": {
       "call": {
-        "calls": [ { "target": "_sql", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -929,7 +953,11 @@ Higher order call graphs
     "621:8-621:26": {
       "call": {
         "calls": [
-          { "target": "_user_controlled", "index": 0, "return_type": [] }
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
@@ -1142,7 +1170,9 @@ Higher order call graphs
   "calls": {
     "827:8-827:18": {
       "call": {
-        "calls": [ { "target": "_cookies", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "pysa._cookies", "index": 0, "return_type": [] }
+        ]
       }
     },
     "828:11-828:61": {
@@ -1164,7 +1194,9 @@ Higher order call graphs
   "calls": {
     "627:8-627:18": {
       "call": {
-        "calls": [ { "target": "_cookies", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "pysa._cookies", "index": 0, "return_type": [] }
+        ]
       }
     },
     "628:11-628:59": {
@@ -1197,7 +1229,7 @@ Higher order call graphs
     },
     "885:4-885:11": {
       "call": {
-        "calls": [ { "target": "_rce", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -1219,7 +1251,7 @@ Higher order call graphs
     },
     "848:4-848:11": {
       "call": {
-        "calls": [ { "target": "_rce", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -1241,7 +1273,7 @@ Higher order call graphs
     },
     "665:4-665:11": {
       "call": {
-        "calls": [ { "target": "_rce", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -1352,7 +1384,11 @@ Higher order call graphs
     "673:8-673:26": {
       "call": {
         "calls": [
-          { "target": "_user_controlled", "index": 0, "return_type": [] }
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
@@ -1420,7 +1456,7 @@ Higher order call graphs
     },
     "638:4-638:11": {
       "call": {
-        "calls": [ { "target": "_sql", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -1466,7 +1502,11 @@ Higher order call graphs
     "714:8-714:26": {
       "call": {
         "calls": [
-          { "target": "_user_controlled", "index": 0, "return_type": [] }
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
@@ -1490,7 +1530,11 @@ Higher order call graphs
     "852:8-852:26": {
       "call": {
         "calls": [
-          { "target": "_user_controlled", "index": 0, "return_type": [] }
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
@@ -1524,7 +1568,7 @@ Higher order call graphs
     },
     "834:4-834:11": {
       "call": {
-        "calls": [ { "target": "_sql", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -1536,7 +1580,11 @@ Higher order call graphs
     "873:8-873:26": {
       "call": {
         "calls": [
-          { "target": "_user_controlled", "index": 0, "return_type": [] }
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
@@ -2027,14 +2075,14 @@ Higher order call graphs
     "768:4-768:17": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
     "769:4-769:17": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 1, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
@@ -2074,14 +2122,14 @@ Higher order call graphs
     "774:4-774:17": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
     "775:4-775:17": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 1, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
@@ -2146,7 +2194,7 @@ Higher order call graphs
     },
     "809:8-809:15": {
       "call": {
-        "calls": [ { "target": "_sql", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
       }
     },
     "810:9-810:14|artificial-call|comparison": {
@@ -2177,7 +2225,7 @@ Higher order call graphs
     },
     "811:8-811:15": {
       "call": {
-        "calls": [ { "target": "_rce", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -2214,7 +2262,7 @@ Higher order call graphs
     },
     "800:8-800:15": {
       "call": {
-        "calls": [ { "target": "_sql", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
       }
     },
     "801:9-801:14|artificial-call|comparison": {
@@ -2245,7 +2293,7 @@ Higher order call graphs
     },
     "802:8-802:15": {
       "call": {
-        "calls": [ { "target": "_rce", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -2257,7 +2305,7 @@ Higher order call graphs
     "780:4-780:17": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -2358,7 +2406,7 @@ Higher order call graphs
     "489:8-489:31": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -2470,7 +2518,7 @@ Higher order call graphs
     "519:8-519:30": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -2676,14 +2724,14 @@ Higher order call graphs
     "559:4-559:17": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
     "560:4-560:17": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 1, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
@@ -2723,14 +2771,14 @@ Higher order call graphs
     "565:4-565:17": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
     "566:4-566:17": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 1, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
@@ -2795,7 +2843,7 @@ Higher order call graphs
     },
     "606:8-606:15": {
       "call": {
-        "calls": [ { "target": "_sql", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
       }
     },
     "607:9-607:14|artificial-call|comparison": {
@@ -2826,7 +2874,7 @@ Higher order call graphs
     },
     "608:8-608:15": {
       "call": {
-        "calls": [ { "target": "_rce", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -2863,7 +2911,7 @@ Higher order call graphs
     },
     "597:8-597:15": {
       "call": {
-        "calls": [ { "target": "_sql", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
       }
     },
     "598:9-598:14|artificial-call|comparison": {
@@ -2894,7 +2942,7 @@ Higher order call graphs
     },
     "599:8-599:15": {
       "call": {
-        "calls": [ { "target": "_rce", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -3015,12 +3063,12 @@ Higher order call graphs
     },
     "576:8-576:15": {
       "call": {
-        "calls": [ { "target": "_sql", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
       }
     },
     "578:8-578:15": {
       "call": {
-        "calls": [ { "target": "_rce", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -3064,7 +3112,7 @@ Higher order call graphs
     "692:4-692:17": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -3114,13 +3162,19 @@ Higher order call graphs
     "731:12-731:30": {
       "call": {
         "calls": [
-          { "target": "_user_controlled", "index": 0, "return_type": [] }
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
     "733:12-733:22": {
       "call": {
-        "calls": [ { "target": "_cookies", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "pysa._cookies", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -3132,7 +3186,11 @@ Higher order call graphs
     "746:11-746:29": {
       "call": {
         "calls": [
-          { "target": "_user_controlled", "index": 0, "return_type": [] }
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     }
@@ -3171,7 +3229,11 @@ Higher order call graphs
     "698:15-698:33": {
       "call": {
         "calls": [
-          { "target": "_user_controlled", "index": 0, "return_type": [] }
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
@@ -3203,7 +3265,9 @@ Higher order call graphs
     },
     "700:15-700:25": {
       "call": {
-        "calls": [ { "target": "_cookies", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "pysa._cookies", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -3241,13 +3305,19 @@ Higher order call graphs
     "739:12-739:30": {
       "call": {
         "calls": [
-          { "target": "_user_controlled", "index": 0, "return_type": [] }
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
     "741:12-741:22": {
       "call": {
-        "calls": [ { "target": "_cookies", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "pysa._cookies", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -3291,7 +3361,7 @@ Higher order call graphs
     "112:4-112:17": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -3315,7 +3385,7 @@ Higher order call graphs
     "107:4-107:17": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -3350,7 +3420,7 @@ Higher order call graphs
     "523:30-523:44": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -3374,7 +3444,7 @@ Higher order call graphs
     "541:29-541:43": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -3493,7 +3563,7 @@ Higher order call graphs
     "356:4-356:27": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -3537,7 +3607,7 @@ Higher order call graphs
     "361:4-361:27": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -3658,7 +3728,7 @@ Higher order call graphs
     "414:4-414:26": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -3693,7 +3763,7 @@ Higher order call graphs
     "531:32-531:46": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -3717,7 +3787,7 @@ Higher order call graphs
     "549:31-549:45": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -3790,7 +3860,7 @@ Higher order call graphs
     "394:4-394:27": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -3874,7 +3944,7 @@ Higher order call graphs
     "432:4-432:26": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -3909,7 +3979,7 @@ Higher order call graphs
     "535:33-535:47": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -3947,7 +4017,7 @@ Higher order call graphs
     "537:18-537:32": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 1, "return_type": [] }
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
         ]
       }
     }
@@ -3971,7 +4041,7 @@ Higher order call graphs
     "553:32-553:46": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -4009,7 +4079,7 @@ Higher order call graphs
     "555:17-555:31": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 1, "return_type": [] }
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
         ]
       }
     }
@@ -4088,7 +4158,7 @@ Higher order call graphs
     "403:12-403:26": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -4115,7 +4185,7 @@ Higher order call graphs
     "405:4-405:27": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -4205,7 +4275,7 @@ Higher order call graphs
     "441:12-441:26": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -4232,7 +4302,7 @@ Higher order call graphs
     "443:4-443:26": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -4267,7 +4337,7 @@ Higher order call graphs
     "527:30-527:44": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -4291,7 +4361,7 @@ Higher order call graphs
     "545:29-545:43": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -4410,7 +4480,7 @@ Higher order call graphs
     "385:4-385:27": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -4494,7 +4564,7 @@ Higher order call graphs
     "423:4-423:26": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -4518,7 +4588,7 @@ Higher order call graphs
     "117:4-117:17": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -4552,7 +4622,7 @@ Higher order call graphs
     },
     "897:4-897:13": {
       "call": {
-        "calls": [ { "target": "_rce", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -4630,7 +4700,7 @@ Higher order call graphs
     },
     "912:4-912:13": {
       "call": {
-        "calls": [ { "target": "_rce", "index": 0, "return_type": [] } ]
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
       }
     }
   }
@@ -4718,7 +4788,7 @@ Higher order call graphs
     "87:17-87:31": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -4756,7 +4826,7 @@ Higher order call graphs
     "94:4-94:26": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -4780,7 +4850,7 @@ Higher order call graphs
     "99:4-99:33": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -5048,7 +5118,7 @@ Higher order call graphs
     "952:19-952:33": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -5107,7 +5177,7 @@ Higher order call graphs
     "943:19-943:33": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -5166,7 +5236,7 @@ Higher order call graphs
     "961:19-961:33": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -5179,7 +5249,7 @@ Higher order call graphs
     "934:19-934:33": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     }

@@ -2,8 +2,9 @@
 Call dependencies
 {
   "skip_analysis.no_issue_due_to_skip (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "object.__init__ (method)",
-    "object.__new__ (method)", "skip_analysis.SkipMe.taint_here (method)",
+    "object.__init__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "skip_analysis.SkipMe.taint_here (method)",
     "skip_analysis.SkipMe.tito_here (method)"
   ]
 }

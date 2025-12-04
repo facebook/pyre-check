@@ -1388,7 +1388,7 @@ let test_call_graph_of_define =
            ~_migrated_to_pyrefly:false
            ~source:
              {|
-      from builtins import to_callable_target
+      from pysa import to_callable_target
 
       @to_callable_target
       def callable_target(arg):
@@ -1456,7 +1456,7 @@ let test_call_graph_of_define =
            ~_migrated_to_pyrefly:false
            ~source:
              {|
-      from builtins import to_callable_target
+      from pysa import to_callable_target
 
       class Foo:
         @to_callable_target
@@ -1478,10 +1478,10 @@ let test_call_graph_of_define =
                             ~implicit_receiver:true
                             ~implicit_dunder_call:true
                             ~return_type:(Some ReturnType.integer)
-                            ~receiver_class:"TestCallableTarget"
+                            ~receiver_class:"pysa.TestCallableTarget"
                             (Target.Regular.Method
                                {
-                                 class_name = "TestCallableTarget";
+                                 class_name = "pysa.TestCallableTarget";
                                  method_name = "__call__";
                                  kind = Normal;
                                });
@@ -7429,7 +7429,7 @@ let test_higher_order_call_graph_of_define =
       @@ assert_higher_order_call_graph_of_define
            ~source:
              {|
-     from builtins import _test_sink
+     from pysa import _test_sink
      def foo(x):
        ... # stub
      def bar():
@@ -7481,7 +7481,7 @@ let test_higher_order_call_graph_of_define =
                       ~call_targets:
                         [
                           CallTarget.create_regular
-                            (Target.Regular.Function { name = "_test_sink"; kind = Normal });
+                            (Target.Regular.Function { name = "pysa._test_sink"; kind = Normal });
                         ]
                       ~higher_order_parameters:
                         (HigherOrderParameterMap.from_list

@@ -120,7 +120,7 @@ let test_fixpoint context =
   assert_fixpoint
     ~context
     {|
-      from builtins import _test_source, _test_sink, _user_controlled
+      from pysa import _test_source, _test_sink, _user_controlled
       def bar():
         return _test_source()
 
@@ -366,12 +366,12 @@ let test_combined_analysis context =
     ~context
     ~models_source:
       {|
-      def _test_sink(arg: TaintSink[Test, Via[special_sink]]): ...
-      def _user_controlled() -> TaintSource[UserControlled]: ...
+      def pysa._test_sink(arg: TaintSink[Test, Via[special_sink]]): ...
+      def pysa._user_controlled() -> TaintSource[UserControlled]: ...
       def qualifier.combined_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
-      from builtins import _test_sink, _user_controlled
+      from pysa import _test_sink, _user_controlled
       def combined_model(x, y, z):
         _test_sink(x)
         return x or _user_controlled()
@@ -408,7 +408,7 @@ let test_skipped_analysis context =
       def qualifier.skipped_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
-      from builtins import _test_sink, _user_controlled
+      from pysa import _test_sink, _user_controlled
       def skipped_model(x, y, z):
         _test_sink(x)
         return x or _user_controlled()
@@ -437,7 +437,7 @@ let test_sanitized_analysis context =
       def qualifier.sanitized_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
-      from builtins import _test_sink, _user_controlled
+      from pysa import _test_sink, _user_controlled
       def sanitized_model(x, y, z):
         eval(_user_controlled())
         _test_sink(x)
@@ -524,7 +524,7 @@ let test_overrides context =
   assert_fixpoint
     ~context
     {|
-      from builtins import _test_source, _test_sink, _user_controlled
+      from pysa import _test_source, _test_sink, _user_controlled
       class Base:
         def split(self):
           pass

@@ -1,9 +1,9 @@
 @generated
 Call dependencies
 {
-  "static_methods.StaticClass.sink (method)": [ "_test_sink (fun)" ],
+  "static_methods.StaticClass.sink (method)": [ "pysa._test_sink (fun)" ],
   "static_methods.run_test (fun)": [
-    "_test_source (fun)", "static_methods.test (fun)"
+    "pysa._test_source (fun)", "static_methods.test (fun)"
   ],
   "static_methods.test (fun)": [ "static_methods.StaticClass.sink (method)" ]
 }

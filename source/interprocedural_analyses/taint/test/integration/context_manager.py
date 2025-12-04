@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import _test_sink, _test_source
+from pysa import _test_sink, _test_source
 from contextlib import contextmanager
 
 
@@ -34,7 +34,7 @@ def test_source_on_enter_clear():
     c = SourceOnEnter()
     with c:
         c.value = ""
-    
+
     _test_sink(c.value)  # No issue.
 
 

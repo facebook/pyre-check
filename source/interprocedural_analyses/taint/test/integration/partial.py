@@ -7,7 +7,7 @@
 import functools
 import multiprocessing
 import typing
-from builtins import _test_sink, _test_source
+from pysa import _test_sink, _test_source
 
 
 class MyClass:

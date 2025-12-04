@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import _test_sink, _test_source
+from pysa import _test_sink, _test_source
 
 
 def goes_to_sink(arg):
@@ -199,4 +199,4 @@ test_duplicate_issues_in_different_parameterized_callables(print, _test_source()
 
 
 def test_callable_default_value(f = _test_source) -> None:
-    _test_sink(f())  # TODO(T225702991): False negative
+    _test_sink(f())

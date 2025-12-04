@@ -5,16 +5,16 @@ Call dependencies
     "object.__new__ (method)", "overrides.Base.__init__ (method)",
     "super.__init__ (method)"
   ],
-  "overrides.A.methodA (method)": [ "_test_sink (fun)" ],
+  "overrides.A.methodA (method)": [ "pysa._test_sink (fun)" ],
   "overrides.AnalyzeAllOverridesChild3.return_source (method)": [
-    "_test_source (fun)"
+    "pysa._test_source (fun)"
   ],
   "overrides.B.__init__ (method)": [
     "object.__new__ (method)", "overrides.Base.__init__ (method)",
     "super.__init__ (method)"
   ],
-  "overrides.B.classMethod (method)": [ "_test_sink (fun)" ],
-  "overrides.B.methodB (method)": [ "_test_source (fun)" ],
+  "overrides.B.classMethod (method)": [ "pysa._test_sink (fun)" ],
+  "overrides.B.methodB (method)": [ "pysa._test_source (fun)" ],
   "overrides.C.__init__ (method)": [
     "object.__new__ (method)", "overrides.B.__init__ (method)",
     "super.__init__ (method)"
@@ -23,11 +23,11 @@ Call dependencies
     "object.__new__ (method)", "overrides.C.__init__ (method)",
     "super.__init__ (method)"
   ],
-  "overrides.D.methodA (method)": [ "_test_sink (fun)" ],
-  "overrides.D.methodB (method)": [ "_test_source (fun)" ],
-  "overrides.ExtendsSkipped.method (method)": [ "_test_sink (fun)" ],
+  "overrides.D.methodA (method)": [ "pysa._test_sink (fun)" ],
+  "overrides.D.methodB (method)": [ "pysa._test_source (fun)" ],
+  "overrides.ExtendsSkipped.method (method)": [ "pysa._test_sink (fun)" ],
   "overrides.TooManyOverridesChild3.return_source (method)": [
-    "_test_source (fun)"
+    "pysa._test_source (fun)"
   ],
   "overrides.call_analyze_call_overrides (fun)": [
     "overrides.AnalyzeAllOverrides.return_source (override)"
@@ -36,8 +36,8 @@ Call dependencies
     "overrides.TooManyOverrides.return_source (method)"
   ],
   "overrides.constructorTest (fun)": [
-    "_test_source (fun)", "object.__new__ (method)",
-    "overrides.D.__init__ (method)"
+    "object.__new__ (method)", "overrides.D.__init__ (method)",
+    "pysa._test_source (fun)"
   ],
   "overrides.testA (fun)": [
     "overrides.A.methodA (method)", "overrides.Base.classMethod (method)",
@@ -97,7 +97,7 @@ Call dependencies
     "overrides.C.classMethod (method)", "overrides.D.methodB (method)"
   ],
   "overrides.test_overrides_with_declaration (fun)": [
-    "_test_sink (fun)",
-    "overrides.BaseWithDeclaration.return_source (override)"
+    "overrides.BaseWithDeclaration.return_source (override)",
+    "pysa._test_sink (fun)"
   ]
 }

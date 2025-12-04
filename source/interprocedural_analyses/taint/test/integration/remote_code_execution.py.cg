@@ -2,6 +2,6 @@
 Call dependencies
 {
   "remote_code_execution.rce_problem (fun)": [
-    "_user_controlled (fun)", "eval (fun)"
+    "eval (fun)", "pysa._user_controlled (fun)"
   ]
 }

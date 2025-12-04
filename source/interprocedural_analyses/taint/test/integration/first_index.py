@@ -5,7 +5,7 @@
 
 # flake8: noqa
 
-from builtins import _test_sink, _test_source
+from pysa import _test_sink, _test_source
 
 
 def alternate_fields():

@@ -1,14 +1,16 @@
 @generated
 Call dependencies
 {
-  "rule_with_filters.sink_distance_one (fun)": [ "_test_sink (fun)" ],
+  "rule_with_filters.sink_distance_one (fun)": [ "pysa._test_sink (fun)" ],
   "rule_with_filters.sink_distance_three (fun)": [
     "rule_with_filters.sink_distance_two (fun)"
   ],
   "rule_with_filters.sink_distance_two (fun)": [
     "rule_with_filters.sink_distance_one (fun)"
   ],
-  "rule_with_filters.source_distance_one (fun)": [ "_test_source (fun)" ],
+  "rule_with_filters.source_distance_one (fun)": [
+    "pysa._test_source (fun)"
+  ],
   "rule_with_filters.source_distance_two (fun)": [
     "rule_with_filters.source_distance_one (fun)"
   ],

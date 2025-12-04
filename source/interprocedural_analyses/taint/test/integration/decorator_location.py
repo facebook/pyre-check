@@ -5,7 +5,7 @@
 
 # flake8: noqa
 
-from builtins import _test_sink, _test_source
+from pysa import _test_sink, _test_source
 from functools import wraps
 from typing import Awaitable, Callable
 

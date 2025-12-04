@@ -1,21 +1,24 @@
 @generated
 Call dependencies
 {
-  "iterators.CustomGetItem.__getitem__ (method)": [ "_test_source (fun)" ],
+  "iterators.CustomGetItem.__getitem__ (method)": [
+    "pysa._test_source (fun)"
+  ],
   "iterators.CustomIter.__iter__ (method)": [
-    "_test_source (fun)", "list.__iter__ (method)"
+    "list.__iter__ (method)", "pysa._test_source (fun)"
   ],
   "iterators.test_custom_getitem (fun)": [
-    "_test_sink (fun)", "object.__init__ (method)", "object.__new__ (method)"
+    "object.__init__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)"
   ],
   "iterators.test_custom_iter (fun)": [
-    "_test_sink (fun)", "iterators.CustomIter.__iter__ (method)",
-    "object.__init__ (method)", "object.__new__ (method)",
+    "iterators.CustomIter.__iter__ (method)", "object.__init__ (method)",
+    "object.__new__ (method)", "pysa._test_sink (fun)",
     "typing.Iterator.__next__ (method)"
   ],
   "iterators.test_next_iter (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "dict.__getitem__ (method)",
-    "list.__iter__ (method)", "next (fun)",
+    "dict.__getitem__ (method)", "list.__iter__ (method)", "next (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "typing.Iterable.__iter__ (method)", "typing.Iterator.__next__ (method)"
   ]
 }

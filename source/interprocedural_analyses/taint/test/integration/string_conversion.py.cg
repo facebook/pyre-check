@@ -4,7 +4,9 @@ Call dependencies
   "string_conversion.C.__str__ (method)": [
     "string_conversion.C.g (object)"
   ],
-  "string_conversion.OverrideStr.__str__ (method)": [ "_test_source (fun)" ],
+  "string_conversion.OverrideStr.__str__ (method)": [
+    "pysa._test_source (fun)"
+  ],
   "string_conversion.ReprIsTainted.__repr__ (method)": [
     "dict.__getitem__ (method)", "django.http.Request.GET (object)"
   ],
@@ -31,11 +33,11 @@ Call dependencies
     "string_conversion.StrIsTainted.__str__ (method)"
   ],
   "string_conversion.forward_unioned_callees (fun)": [
-    "_test_source (fun)", "str.__str__ (method)",
+    "pysa._test_source (fun)", "str.__str__ (method)",
     "string_conversion.D.__str__ (method)"
   ],
   "string_conversion.forward_unioned_callees_2 (fun)": [
-    "_test_source (fun)"
+    "pysa._test_source (fun)"
   ],
   "string_conversion.function_call_target_1 (fun)": [
     "object.__str__ (method)", "str.__str__ (method)"

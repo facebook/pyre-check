@@ -4,58 +4,64 @@ Call dependencies
   "self.Foo.$class_toplevel (method)": [
     "self.Foo.__class__.tainted_class (object)"
   ],
-  "self.Foo.__init__ (method)": [ "_test_source (fun)" ],
-  "self.Foo.selftype_self_class (method)": [ "_test_sink (fun)" ],
-  "self.Foo.selftype_self_class_direct (method)": [ "_test_sink (fun)" ],
-  "self.Foo.selftype_self_extra_instance (method)": [ "_test_sink (fun)" ],
-  "self.Foo.selftype_self_instance (method)": [ "_test_sink (fun)" ],
-  "self.Foo.selftype_self_not_tainted (method)": [ "_test_sink (fun)" ],
-  "self.Foo.typevar_self_class (method)": [ "_test_sink (fun)" ],
+  "self.Foo.__init__ (method)": [ "pysa._test_source (fun)" ],
+  "self.Foo.selftype_self_class (method)": [ "pysa._test_sink (fun)" ],
+  "self.Foo.selftype_self_class_direct (method)": [ "pysa._test_sink (fun)" ],
+  "self.Foo.selftype_self_extra_instance (method)": [
+    "pysa._test_sink (fun)"
+  ],
+  "self.Foo.selftype_self_instance (method)": [ "pysa._test_sink (fun)" ],
+  "self.Foo.selftype_self_not_tainted (method)": [ "pysa._test_sink (fun)" ],
+  "self.Foo.typevar_self_class (method)": [ "pysa._test_sink (fun)" ],
   "self.Foo.typevar_self_class_direct (method)": [
-    "_test_sink (fun)", "object.__class__ (method)",
+    "object.__class__ (method)", "pysa._test_sink (fun)",
     "self.Foo.__class__.tainted_class (object)"
   ],
-  "self.Foo.typevar_self_extra_instance (method)": [ "_test_sink (fun)" ],
-  "self.Foo.typevar_self_instance (method)": [ "_test_sink (fun)" ],
-  "self.Foo.typevar_self_not_tainted (method)": [ "_test_sink (fun)" ],
-  "self.Foo.untyped_self_class (method)": [ "_test_sink (fun)" ],
+  "self.Foo.typevar_self_extra_instance (method)": [
+    "pysa._test_sink (fun)"
+  ],
+  "self.Foo.typevar_self_instance (method)": [ "pysa._test_sink (fun)" ],
+  "self.Foo.typevar_self_not_tainted (method)": [ "pysa._test_sink (fun)" ],
+  "self.Foo.untyped_self_class (method)": [ "pysa._test_sink (fun)" ],
   "self.Foo.untyped_self_class_direct (method)": [
-    "_test_sink (fun)", "object.__class__ (method)",
+    "object.__class__ (method)", "pysa._test_sink (fun)",
     "self.Foo.__class__.tainted_class (object)"
   ],
-  "self.Foo.untyped_self_extra_instance (method)": [ "_test_sink (fun)" ],
-  "self.Foo.untyped_self_instance (method)": [ "_test_sink (fun)" ],
-  "self.Foo.untyped_self_not_tainted (method)": [ "_test_sink (fun)" ],
+  "self.Foo.untyped_self_extra_instance (method)": [
+    "pysa._test_sink (fun)"
+  ],
+  "self.Foo.untyped_self_instance (method)": [ "pysa._test_sink (fun)" ],
+  "self.Foo.untyped_self_not_tainted (method)": [ "pysa._test_sink (fun)" ],
   "self.foo_class_attributes (fun)": [
-    "_test_sink (fun)", "self.Foo.__class__.tainted_class (object)"
+    "pysa._test_sink (fun)", "self.Foo.__class__.tainted_class (object)"
   ],
   "self.selftype_access_other (fun)": [
-    "_test_sink (fun)", "object.__new__ (method)",
+    "object.__new__ (method)", "pysa._test_sink (fun)",
     "self.Foo.__init__ (method)", "self.Foo.selftype_access_other (method)"
   ],
   "self.selftype_access_self (fun)": [
-    "_test_sink (fun)", "object.__new__ (method)",
+    "object.__new__ (method)", "pysa._test_sink (fun)",
     "self.Foo.__init__ (method)", "self.Foo.selftype_access_self (method)"
   ],
   "self.selftype_access_untyped_self (fun)": [
-    "_test_sink (fun)", "object.__class__ (method)",
-    "object.__new__ (method)", "self.Foo.__class__.tainted_class (object)",
+    "object.__class__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)", "self.Foo.__class__.tainted_class (object)",
     "self.Foo.__init__ (method)",
     "self.Foo.selftype_access_untyped_self (method)"
   ],
   "self.typevar_access_other (fun)": [
-    "_test_sink (fun)", "object.__class__ (method)",
-    "object.__new__ (method)", "self.Foo.__class__.tainted_class (object)",
+    "object.__class__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)", "self.Foo.__class__.tainted_class (object)",
     "self.Foo.__init__ (method)", "self.Foo.typevar_access_other (method)"
   ],
   "self.typevar_access_self (fun)": [
-    "_test_sink (fun)", "object.__class__ (method)",
-    "object.__new__ (method)", "self.Foo.__class__.tainted_class (object)",
+    "object.__class__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)", "self.Foo.__class__.tainted_class (object)",
     "self.Foo.__init__ (method)", "self.Foo.typevar_access_self (method)"
   ],
   "self.untyped_access_self (fun)": [
-    "_test_sink (fun)", "object.__class__ (method)",
-    "object.__new__ (method)", "self.Foo.__class__.tainted_class (object)",
+    "object.__class__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)", "self.Foo.__class__.tainted_class (object)",
     "self.Foo.__init__ (method)"
   ]
 }

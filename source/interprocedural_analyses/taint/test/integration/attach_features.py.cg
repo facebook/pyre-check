@@ -2,21 +2,27 @@
 Call dependencies
 {
   "attach_features.HasMethods.method_with_optionals (method)": [
-    "_test_sink (fun)"
+    "pysa._test_sink (fun)"
   ],
-  "attach_features.attach_to_parameter_source (fun)": [ "_test_sink (fun)" ],
-  "attach_features.attach_to_returned_sink (fun)": [ "_test_source (fun)" ],
+  "attach_features.attach_to_parameter_source (fun)": [
+    "pysa._test_sink (fun)"
+  ],
+  "attach_features.attach_to_returned_sink (fun)": [
+    "pysa._test_source (fun)"
+  ],
   "attach_features.attach_to_returned_with_captures (fun)": [
     "attach_features.attach_to_returned_with_captures.nested (fun)"
   ],
   "attach_features.attach_to_returned_with_captures.nested (fun)": [
-    "_test_source (fun)"
+    "pysa._test_source (fun)"
   ],
   "attach_features.inferred_is_propagated (fun)": [
     "attach_features.source_with_inferred (fun)"
   ],
-  "attach_features.inferred_sink (fun)": [ "_test_sink (fun)" ],
-  "attach_features.modeled_sink_with_optionals (fun)": [ "_test_sink (fun)" ],
+  "attach_features.inferred_sink (fun)": [ "pysa._test_sink (fun)" ],
+  "attach_features.modeled_sink_with_optionals (fun)": [
+    "pysa._test_sink (fun)"
+  ],
   "attach_features.no_tito (fun)": [
     "attach_features.attach_without_tito (fun)"
   ],
@@ -26,7 +32,7 @@ Call dependencies
   "attach_features.source_with_inferred (fun)": [
     "attach_features.source (fun)"
   ],
-  "attach_features.tito_and_sink (fun)": [ "_test_sink (fun)" ],
+  "attach_features.tito_and_sink (fun)": [ "pysa._test_sink (fun)" ],
   "attach_features.tito_is_propagated (fun)": [
     "attach_features.taint_in_taint_out (fun)"
   ]

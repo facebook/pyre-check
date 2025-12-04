@@ -182,6 +182,8 @@ let test_sink context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def test_sink(parameter0, tainted_parameter1):
         unused_parameter = parameter0
         command_unsafe = 'echo' + tainted_parameter1 + ' >> /dev/null'
@@ -217,6 +219,8 @@ let test_rce_and_test_sink context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def test_rce_and_test_sink(test_only, rce_only, both):
         _test_sink(test_only)
         eval(rce_only)
@@ -245,6 +249,8 @@ let test_tito_sink context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def test_base_tito(parameter0, tainted_parameter1):
         return tainted_parameter1
 
@@ -288,6 +294,8 @@ let test_apply_method_model_at_call_site context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       class Foo:
         def qux(self, tainted_parameter):
           command_unsafe = tainted_parameter
@@ -310,6 +318,8 @@ let test_apply_method_model_at_call_site context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       class Foo:
         def qux(self, tainted_parameter):
           command_unsafe = tainted_parameter
@@ -327,6 +337,8 @@ let test_apply_method_model_at_call_site context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       class Foo:
         def qux(self, tainted_parameter):
           command_unsafe = tainted_parameter
@@ -348,6 +360,8 @@ let test_apply_method_model_at_call_site context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       class Foo:
         def qux(self, tainted_parameter):
           command_unsafe = tainted_parameter
@@ -364,6 +378,8 @@ let test_apply_method_model_at_call_site context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       class Foo:
         def qux(self, tainted_parameter):
           command_unsafe = tainted_parameter
@@ -390,6 +406,8 @@ let test_apply_method_model_at_call_site context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       class Foo:
         def qux(self, not_tainted_parameter):
           pass
@@ -457,6 +475,8 @@ let test_sequential_call_path context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       class Foo:
         def sink(self, argument) -> Foo:
             _test_sink(argument)
@@ -472,6 +492,8 @@ let test_sequential_call_path context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       class Foo:
         def sink(self, argument) -> Foo:
             _test_sink(argument)
@@ -490,6 +512,8 @@ let test_sequential_call_path context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       class Foo:
         def sink(self, argument) -> Foo:
             _test_sink(argument)
@@ -513,6 +537,8 @@ let test_sequential_call_path context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       class Foo:
         def sink(self, argument) -> Foo:
             _test_sink(argument)
@@ -537,6 +563,8 @@ let test_sequential_call_path context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       class Foo:
         def sink(self, argument) -> Foo:
             _test_sink(argument)
@@ -561,6 +589,8 @@ let test_sequential_call_path context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       class Foo:
         def sink(self, argument) -> Foo:
             _test_sink(argument)
@@ -587,6 +617,8 @@ let test_chained_call_path context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       class Foo:
         def sink(self, argument1) -> Foo:
             _test_sink(argument1)
@@ -609,6 +641,8 @@ let test_chained_call_path context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       class Foo:
         def tito(self, argument1) -> Foo:
             return self
@@ -637,6 +671,8 @@ let test_dictionary context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def dictionary_sink(arg):
         {
           "a": _test_sink(arg),
@@ -705,6 +741,8 @@ let test_dictionary context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def dictionary_sink(arg):
         second = { **(_test_sink(arg)) }
         return second
@@ -718,6 +756,8 @@ let test_dictionary context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def dictionary_sink(arg):
         d = { _test_sink(arg): "a" }
     |}
@@ -730,6 +770,8 @@ let test_dictionary context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def dictionary_sink(arg):
         d = { _test_sink(a): "a" for a in arg }
     |}
@@ -742,6 +784,8 @@ let test_dictionary context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def dictionary_sink(arg):
         d = { "a": _test_sink(a) for a in arg }
     |}
@@ -754,6 +798,8 @@ let test_dictionary context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def key_sink(arg1, arg2):
         d = { arg1: arg2 }
         for k, v in d.items():
@@ -771,6 +817,8 @@ let test_comprehensions context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def sink_in_iterator(arg):
           [ x for x in _test_sink(arg) ]
 
@@ -843,6 +891,8 @@ let test_list context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def sink_in_list(arg):
           return [ 1, _test_sink(arg), "foo" ]
 
@@ -934,6 +984,8 @@ let test_tuple context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def sink_in_tuple(arg):
           return ( 1, _test_sink(arg), "foo" )
 
@@ -983,6 +1035,8 @@ let test_lambda context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def sink_in_lambda(arg):
           f = lambda x : x + _test_sink(arg)
 
@@ -1006,6 +1060,8 @@ let test_set context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def sink_in_set(arg):
           return { 1, _test_sink(arg), "foo" }
 
@@ -1037,6 +1093,8 @@ let test_starred context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink, _tito
+
       def sink_in_starred(arg):
           _tito( *[ 1, _test_sink(arg), "foo" ] )
 
@@ -1081,6 +1139,8 @@ let test_ternary context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def sink_in_then(arg, cond):
           x = _test_sink(arg) if cond else None
 
@@ -1146,6 +1206,8 @@ let test_unary context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def sink_in_unary(arg):
           x = not _test_sink(arg)
 
@@ -1168,6 +1230,8 @@ let test_walrus context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def sink_in_walrus(arg):
           (x := _test_sink(arg))
 
@@ -1190,6 +1254,8 @@ let test_yield context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def sink_in_yield(arg):
           yield _test_sink(arg)
 
@@ -1637,7 +1703,7 @@ let test_assignment context =
     ~context
     {|
       def assigns_to_sink(assigned_to_sink):
-        taint._global_sink = assigned_to_sink
+        pysa._global_sink = assigned_to_sink
     |}
     [
       outcome
@@ -1648,6 +1714,8 @@ let test_assignment context =
   assert_taint
     ~context
     {|
+      from pysa import ClassWithSinkAttribute
+      
       def assigns_to_sink(assigned_to_sink):
         sink = ClassWithSinkAttribute()
         sink.attribute = assigned_to_sink
@@ -1661,7 +1729,10 @@ let test_assignment context =
   assert_taint
     ~context
     {|
-      def assigns_to_sink(optional_sink: typing.Optional[ClassWithSinkAttribute], assigned_to_sink):
+      from typing import Optional
+      from pysa import ClassWithSinkAttribute
+
+      def assigns_to_sink(optional_sink: Optional[ClassWithSinkAttribute], assigned_to_sink):
         optional_sink.attribute = assigned_to_sink
     |}
     [
@@ -1676,6 +1747,8 @@ let test_access_paths context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def access_downward_closed(arg):
         o = { 'a': arg }
         x = o.a
@@ -1696,6 +1769,8 @@ let test_access_paths context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def access_through_expression(arg):
         _test_sink(" ".join(arg))
     |}
@@ -1711,6 +1786,8 @@ let test_for_loops context =
   assert_taint
     ~context
     {|
+      from pysa import _test_sink
+
       def sink_through_for(arg):
         for element in arg:
           _test_sink(element)

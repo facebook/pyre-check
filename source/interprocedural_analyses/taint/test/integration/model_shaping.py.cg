@@ -15,16 +15,19 @@ Call dependencies
   "model_shaping.asdict (fun)": [ "model_shaping._asdict_inner (fun)" ],
   "model_shaping.asdict_test (fun)": [ "model_shaping.asdict (fun)" ],
   "model_shaping.obscure_test (fun)": [
-    "_test_source (fun)", "type.__init__ (method)", "type.__new__ (method)"
+    "pysa._test_source (fun)", "type.__init__ (method)",
+    "type.__new__ (method)"
   ],
-  "model_shaping.shape_multi_sink (fun)": [ "_rce (fun)", "_sql (fun)" ],
+  "model_shaping.shape_multi_sink (fun)": [
+    "pysa._rce (fun)", "pysa._sql (fun)"
+  ],
   "model_shaping.shape_multi_source (fun)": [
-    "_cookies (fun)", "_user_controlled (fun)", "int.__gt__ (method)",
-    "int.__le__ (method)"
+    "int.__gt__ (method)", "int.__le__ (method)", "pysa._cookies (fun)",
+    "pysa._user_controlled (fun)"
   ],
   "model_shaping.test_tito_shaping (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "dict.__getitem__ (method)",
-    "model_shaping.tito_shaping (fun)"
+    "dict.__getitem__ (method)", "model_shaping.tito_shaping (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "model_shaping.tito_shaping (fun)": [
     "dict.get (method)", "object.__repr__ (method)"

@@ -12,6 +12,6 @@ Call dependencies
     "parametric_models.sink_subkind_b (fun)"
   ],
   "parametric_models.test_to_subkind_sink (fun)": [
-    "_test_source (fun)", "parametric_models.inferred_sink (fun)"
+    "parametric_models.inferred_sink (fun)", "pysa._test_source (fun)"
   ]
 }

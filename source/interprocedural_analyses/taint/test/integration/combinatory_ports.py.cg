@@ -8,6 +8,6 @@ Call dependencies
     "combinatory_ports.Base.method (override)"
   ],
   "combinatory_ports.C.method (method)": [
-    "_test_sink (fun)", "combinatory_ports.Base.method (override)"
+    "combinatory_ports.Base.method (override)", "pysa._test_sink (fun)"
   ]
 }

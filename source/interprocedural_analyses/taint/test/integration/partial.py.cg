@@ -1,7 +1,7 @@
 @generated
 Call dependencies
 {
-  "partial.MyClass.sink_on_foo (method)": [ "_test_sink (fun)" ],
+  "partial.MyClass.sink_on_foo (method)": [ "pysa._test_sink (fun)" ],
   "partial.NestedDefineConstructor.__init__@decorated (method)": [
     "object.__new__ (method)",
     "partial.NestedDefineDecorator.__init__ (method)[formal(func, position=1)=partial.NestedDefineConstructor.__init__ (method)]"
@@ -25,14 +25,14 @@ Call dependencies
     "functools.partial.__init__ (method)", "object.__new__ (method)",
     "partial.PartialDecorator.__call__ (method)"
   ],
-  "partial.a_flows_to_sink (fun)": [ "_test_sink (fun)" ],
+  "partial.a_flows_to_sink (fun)": [ "pysa._test_sink (fun)" ],
   "partial.dunder_call_partial_constructor (fun)": [
     "functools.partial.__call__ (method)", "object.__new__ (method)"
   ],
   "partial.multiprocessing_bound_method_issue (fun)": [
-    "_test_source (fun)",
     "multiprocessing.context.Process.__init__ (method)",
-    "object.__new__ (method)", "partial.MyClass.sink_on_foo (method)"
+    "object.__new__ (method)", "partial.MyClass.sink_on_foo (method)",
+    "pysa._test_source (fun)"
   ],
   "partial.multiprocessing_bound_method_sink (fun)": [
     "multiprocessing.context.Process.__init__ (method)",
@@ -55,49 +55,48 @@ Call dependencies
     "partial.sink_on_foo (fun)"
   ],
   "partial.multiprocessing_not_tainted (fun)": [
-    "_test_source (fun)",
     "multiprocessing.context.Process.__init__ (method)",
-    "object.__new__ (method)", "partial.a_flows_to_sink (fun)"
+    "object.__new__ (method)", "partial.a_flows_to_sink (fun)",
+    "pysa._test_source (fun)"
   ],
   "partial.multiprocessing_shim_fail (fun)": [
-    "_test_source (fun)",
     "multiprocessing.context.Process.__init__ (method)",
-    "object.__new__ (method)", "partial.a_flows_to_sink (fun)"
+    "object.__new__ (method)", "partial.a_flows_to_sink (fun)",
+    "pysa._test_source (fun)"
   ],
   "partial.multiprocessing_tainted (fun)": [
-    "_test_source (fun)",
     "multiprocessing.context.Process.__init__ (method)",
-    "object.__new__ (method)", "partial.a_flows_to_sink (fun)"
+    "object.__new__ (method)", "partial.a_flows_to_sink (fun)",
+    "pysa._test_source (fun)"
   ],
   "partial.multiprocessing_tainted_access_path (fun)": [
-    "_test_source (fun)",
     "multiprocessing.context.Process.__init__ (method)",
     "object.__new__ (method)", "partial.MyClass.__init__ (method)",
-    "partial.sink_on_foo (fun)"
+    "partial.sink_on_foo (fun)", "pysa._test_source (fun)"
   ],
   "partial.partial_application_bound_method_sink (fun)": [
     "functools.partial.__init__ (method)", "object.__new__ (method)",
     "partial.MyClass.sink_on_foo (method)"
   ],
   "partial.partial_application_bound_method_tito (fun)": [
-    "_test_source (fun)", "functools.partial.__init__ (method)",
-    "object.__new__ (method)", "partial.MyClass.set_foo (method)"
+    "functools.partial.__init__ (method)", "object.__new__ (method)",
+    "partial.MyClass.set_foo (method)", "pysa._test_source (fun)"
   ],
   "partial.partial_application_with_benign (fun)": [
     "functools.partial.__init__ (method)", "object.__new__ (method)",
     "partial.a_flows_to_sink (fun)"
   ],
   "partial.partial_application_with_named_a (fun)": [
-    "_test_source (fun)", "functools.partial.__init__ (method)",
-    "object.__new__ (method)", "partial.a_flows_to_sink (fun)"
+    "functools.partial.__init__ (method)", "object.__new__ (method)",
+    "partial.a_flows_to_sink (fun)", "pysa._test_source (fun)"
   ],
   "partial.partial_application_with_named_b (fun)": [
-    "_test_source (fun)", "functools.partial.__init__ (method)",
-    "object.__new__ (method)", "partial.a_flows_to_sink (fun)"
+    "functools.partial.__init__ (method)", "object.__new__ (method)",
+    "partial.a_flows_to_sink (fun)", "pysa._test_source (fun)"
   ],
   "partial.partial_application_with_tainted (fun)": [
-    "_test_source (fun)", "functools.partial.__init__ (method)",
-    "object.__new__ (method)", "partial.a_flows_to_sink (fun)"
+    "functools.partial.__init__ (method)", "object.__new__ (method)",
+    "partial.a_flows_to_sink (fun)", "pysa._test_source (fun)"
   ],
-  "partial.sink_on_foo (fun)": [ "_test_sink (fun)" ]
+  "partial.sink_on_foo (fun)": [ "pysa._test_sink (fun)" ]
 }

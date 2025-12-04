@@ -6,7 +6,7 @@
 # Class attributes where the model is inferred
 # and not explicitly set in the .pysa file
 
-from builtins import _test_sink, _test_source
+from pysa import _test_sink, _test_source
 
 
 class A:

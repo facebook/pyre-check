@@ -1,11 +1,11 @@
 @generated
 Call dependencies
 {
-  "class_attribute.A.__init__ (method)": [ "_test_source (fun)" ],
-  "class_attribute.A.sink_a (method)": [ "_test_sink (fun)" ],
-  "class_attribute.A.sink_b (method)": [ "_test_sink (fun)" ],
-  "class_attribute.A.sink_c (method)": [ "_test_sink (fun)" ],
-  "class_attribute.A.sink_d (method)": [ "_test_sink (fun)" ],
+  "class_attribute.A.__init__ (method)": [ "pysa._test_source (fun)" ],
+  "class_attribute.A.sink_a (method)": [ "pysa._test_sink (fun)" ],
+  "class_attribute.A.sink_b (method)": [ "pysa._test_sink (fun)" ],
+  "class_attribute.A.sink_c (method)": [ "pysa._test_sink (fun)" ],
+  "class_attribute.A.sink_d (method)": [ "pysa._test_sink (fun)" ],
   "class_attribute.class_attribute_A_a_flow (fun)": [
     "class_attribute.class_attribute_A_a_sink (fun)",
     "class_attribute.class_attribute_A_a_source (fun)"
@@ -14,9 +14,11 @@ Call dependencies
     "class_attribute.class_attribute_A_a_sink (fun)",
     "class_attribute.class_attribute_A_a_source (fun)"
   ],
-  "class_attribute.class_attribute_A_a_sink (fun)": [ "_test_sink (fun)" ],
+  "class_attribute.class_attribute_A_a_sink (fun)": [
+    "pysa._test_sink (fun)"
+  ],
   "class_attribute.class_attribute_A_a_source (fun)": [
-    "_test_source (fun)"
+    "pysa._test_source (fun)"
   ],
   "class_attribute.class_attribute_A_b_flow1 (fun)": [
     "class_attribute.A.__init__ (method)",
@@ -27,7 +29,9 @@ Call dependencies
     "class_attribute.A.__init__ (method)",
     "class_attribute.A.sink_b (method)", "object.__new__ (method)"
   ],
-  "class_attribute.class_attribute_A_b_sink (fun)": [ "_test_sink (fun)" ],
+  "class_attribute.class_attribute_A_b_sink (fun)": [
+    "pysa._test_sink (fun)"
+  ],
   "class_attribute.instance_attribute_A_c_no_flow (fun)": [
     "class_attribute.A.__init__ (method)",
     "class_attribute.A.sink_c (method)", "object.__new__ (method)"

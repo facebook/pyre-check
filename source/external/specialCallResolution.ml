@@ -13,7 +13,7 @@ open Ast
 open Expression
 open Pyre
 
-let recognized_callable_target_types = Type.Set.of_list [Type.Primitive "TestCallableTarget"]
+let recognized_callable_target_types = Type.Set.of_list [Type.Primitive "pysa.TestCallableTarget"]
 
 let shim_calls ~resolve_expression_to_type { Call.callee; arguments; origin = _ } =
   let open Shims.ShimArgumentMapping in

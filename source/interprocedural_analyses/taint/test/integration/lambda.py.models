@@ -2,56 +2,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "lambda.lambda_source",
     "filename": "lambda.py",
     "callable_line": 58,
@@ -64,7 +14,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -107,7 +57,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -132,7 +82,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -151,11 +103,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|0|formal(arg):5e4921bb8cf913e35ce7ddf776aaf4aa"
+    "master_handle": "lambda.test_filter_lambda:5002:0:Call|pysa._test_sink|0|formal(arg):d138f7a2584cddc3454f0c53373a6246"
   }
 }
 {
@@ -178,7 +130,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -203,7 +155,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -222,11 +176,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 1,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|1|formal(arg):f53277ec8627abf057db47fa005ef18b"
+    "master_handle": "lambda.test_filter_lambda:5002:0:Call|pysa._test_sink|1|formal(arg):ade59109c8dcae42f85371c3412b84a8"
   }
 }
 {
@@ -249,7 +203,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -274,7 +228,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -293,11 +249,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 2,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|2|formal(arg):9d20eab1b0e719b0cf8c3bbd8027e428"
+    "master_handle": "lambda.test_filter_lambda:5002:0:Call|pysa._test_sink|2|formal(arg):e39ab529d6fcd1f830e1b893d11c4cf5"
   }
 }
 {
@@ -320,7 +276,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -345,7 +301,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -364,11 +322,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 3,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|3|formal(arg):bbefd63d94e7c08862ab2238b8674d33"
+    "master_handle": "lambda.test_filter_lambda:5002:0:Call|pysa._test_sink|3|formal(arg):398f5cea6df39005d6fb473422bfc61d"
   }
 }
 {
@@ -391,7 +349,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -416,7 +374,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -435,11 +395,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 4,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|4|formal(arg):7221fdbf14dd13450b87e3db33035a17"
+    "master_handle": "lambda.test_filter_lambda:5002:0:Call|pysa._test_sink|4|formal(arg):3bf6f9918b60538d1d0fab28e6cd7a8f"
   }
 }
 {
@@ -462,7 +422,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -489,7 +449,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -510,11 +472,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 5,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|5|formal(arg):cb2c0fa055d1e851d608f0f3e515e648"
+    "master_handle": "lambda.test_filter_lambda:5002:0:Call|pysa._test_sink|5|formal(arg):39981ffdc24dab560afe9e64d87fcf4d"
   }
 }
 {
@@ -537,7 +499,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -562,7 +524,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -581,11 +545,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 6,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|6|formal(arg):ee6445b67588fffd93d6a38572dd6e4a"
+    "master_handle": "lambda.test_filter_lambda:5002:0:Call|pysa._test_sink|6|formal(arg):03ed67213a16cae67664bec001ea9492"
   }
 }
 {
@@ -614,7 +578,7 @@
                   { "via": "obscure:unknown-callee" }
                 ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "length": 1,
                 "kind": "Test"
@@ -639,7 +603,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -661,11 +627,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_lambda_source:5002:0:Call|_test_sink|0|formal(arg):bb9dad795ba2fe94d6d1fb4f934d86dc"
+    "master_handle": "lambda.test_lambda_source:5002:0:Call|pysa._test_sink|0|formal(arg):c0a62f5277005333d4601481390d2e6f"
   }
 }
 {
@@ -688,7 +654,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -719,7 +685,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -743,11 +711,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|0|formal(arg):6cb16f947915a816343fa08903300b41"
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|pysa._test_sink|0|formal(arg):e069dbd27b990c590c11de7d9bec2230"
   }
 }
 {
@@ -770,7 +738,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -801,7 +769,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -825,11 +795,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 1,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|1|formal(arg):8c9e52644ee8eab6629d91c3de3c4eee"
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|pysa._test_sink|1|formal(arg):21773a9d4e84e5f96f6d32a709d4c0f0"
   }
 }
 {
@@ -852,7 +822,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -883,7 +853,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -907,11 +879,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 2,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|2|formal(arg):4c2fc89b07288b50bac57800700dce05"
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|pysa._test_sink|2|formal(arg):87a4723236b1c4f6999adaa07602097a"
   }
 }
 {
@@ -934,7 +906,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -965,7 +937,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -989,11 +963,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 3,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|3|formal(arg):add6844872f3ba073153a94d1a62198b"
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|pysa._test_sink|3|formal(arg):8d784b4e42e3be6f3509b715733c93ec"
   }
 }
 {
@@ -1016,7 +990,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -1047,7 +1021,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -1071,11 +1047,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 4,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|4|formal(arg):0480206225d43db02d615fc5f7709a70"
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|pysa._test_sink|4|formal(arg):5cd1d587b2c28c14d7c49cbe9abd64e3"
   }
 }
 {
@@ -1098,7 +1074,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -1129,7 +1105,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -1153,11 +1131,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 5,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|5|formal(arg):6ebcbaa75658689a3b33d1e59a815091"
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|pysa._test_sink|5|formal(arg):be5c36ca2584336b282c9a163ce58af7"
   }
 }
 {
@@ -1180,7 +1158,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -1211,7 +1189,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -1235,11 +1215,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 6,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|6|formal(arg):3569b363ad876dffc337f38fdf3f7d59"
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|pysa._test_sink|6|formal(arg):bbfbdb52c6b7616489c40e43256122c7"
   }
 }
 {
@@ -1262,7 +1242,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -1293,7 +1273,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -1317,11 +1299,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 7,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|7|formal(arg):1f138bbc4402d9ea9c2ebccad492996a"
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|pysa._test_sink|7|formal(arg):fa57dabd402d56fc26e2748eaee8c861"
   }
 }
 {
@@ -1344,7 +1326,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -1375,7 +1357,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -1399,11 +1383,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 8,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|8|formal(arg):b2327cff7ce35468341795d73d2c2478"
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|pysa._test_sink|8|formal(arg):4284028c28271d710f0773b3e6d52fee"
   }
 }
 {
@@ -1426,7 +1410,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -1457,7 +1441,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -1481,11 +1467,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 9,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|9|formal(arg):e0cb3cb64a9697c82736135aa5b88c62"
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|pysa._test_sink|9|formal(arg):d5bf6e270cf97fd4e40389316a9ec137"
   }
 }
 {
@@ -1508,7 +1494,7 @@
               {
                 "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -1536,7 +1522,9 @@
             "kinds": [
               {
                 "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -1558,11 +1546,61 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "_test_sink",
+      "callee": "pysa._test_sink",
       "index": 10,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|10|formal(arg):90cc567fa1e4bb65d4c5534c3083dc7e"
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|pysa._test_sink|10|formal(arg):9b0449e6df22c691af7dbd390adf782b"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
   }
 }
 {

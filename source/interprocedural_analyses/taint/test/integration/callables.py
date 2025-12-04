@@ -7,6 +7,7 @@
 
 import abc
 from typing import Generic, List, Type, TypeVar
+from pysa import _test_source, _test_sink
 
 
 EPInputType = TypeVar("EPInputType")

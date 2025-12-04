@@ -2,11 +2,10 @@
 Call dependencies
 {
   "constructor_inheritance.MyBaseClass.__init__ (method)": [
-    "_test_sink (fun)"
+    "pysa._test_sink (fun)"
   ],
   "constructor_inheritance.test (fun)": [
-    "_test_source (fun)",
     "constructor_inheritance.MyBaseClass.__init__ (method)",
-    "object.__new__ (method)"
+    "object.__new__ (method)", "pysa._test_source (fun)"
   ]
 }

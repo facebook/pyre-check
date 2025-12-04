@@ -1,13 +1,13 @@
 @generated
 Call dependencies
 {
-  "binary_operators.Add.__add__ (method)": [ "_test_sink (fun)" ],
+  "binary_operators.Add.__add__ (method)": [ "pysa._test_sink (fun)" ],
   "binary_operators.test1 (fun)": [
-    "_test_source (fun)", "binary_operators.Add.__add__ (method)",
-    "object.__init__ (method)", "object.__new__ (method)"
+    "binary_operators.Add.__add__ (method)", "object.__init__ (method)",
+    "object.__new__ (method)", "pysa._test_source (fun)"
   ],
   "binary_operators.test2 (fun)": [
-    "_test_source (fun)", "binary_operators.Add.__add__ (method)",
-    "object.__init__ (method)", "object.__new__ (method)"
+    "binary_operators.Add.__add__ (method)", "object.__init__ (method)",
+    "object.__new__ (method)", "pysa._test_source (fun)"
   ]
 }

@@ -37,7 +37,7 @@ Higher order call graphs
     "18:13-18:27": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -64,7 +64,7 @@ Higher order call graphs
     "101:36-101:50": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -85,7 +85,7 @@ Higher order call graphs
     "102:27-102:41": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 1, "return_type": [] }
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
         ]
       }
     },
@@ -106,7 +106,7 @@ Higher order call graphs
     "104:8-104:22": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 2, "return_type": [] }
+          { "target": "pysa._test_source", "index": 2, "return_type": [] }
         ]
       }
     },
@@ -127,7 +127,7 @@ Higher order call graphs
     "106:35-106:49": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 3, "return_type": [] }
+          { "target": "pysa._test_source", "index": 3, "return_type": [] }
         ]
       }
     },
@@ -148,7 +148,7 @@ Higher order call graphs
     "107:36-107:50": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 4, "return_type": [] }
+          { "target": "pysa._test_source", "index": 4, "return_type": [] }
         ]
       }
     }
@@ -193,14 +193,14 @@ Higher order call graphs
     "112:29-112:43": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
     "113:4-113:38": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -245,14 +245,14 @@ Higher order call graphs
     "125:31-125:45": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
     "127:4-127:26": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -279,7 +279,7 @@ Higher order call graphs
     "35:8-35:23": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -386,7 +386,7 @@ Higher order call graphs
     "61:8-61:23": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -399,7 +399,7 @@ Higher order call graphs
     "82:8-82:23": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -412,7 +412,7 @@ Higher order call graphs
     "85:8-85:23": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -425,7 +425,7 @@ Higher order call graphs
     "89:8-89:23": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -438,7 +438,7 @@ Higher order call graphs
     "14:15-14:28": {
       "call": {
         "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     }

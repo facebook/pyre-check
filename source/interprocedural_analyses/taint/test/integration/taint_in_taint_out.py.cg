@@ -69,7 +69,8 @@ Call dependencies
     "taint_in_taint_out.Recursive.__init__ (method)"
   ],
   "taint_in_taint_out.indirect_sink (fun)": [
-    "_test_sink (fun)", "taint_in_taint_out.FieldIsTITO.add_tito (object)"
+    "pysa._test_sink (fun)",
+    "taint_in_taint_out.FieldIsTITO.add_tito (object)"
   ],
   "taint_in_taint_out.into_dict_then_collapse_two (fun)": [
     "taint_in_taint_out.tito_collapse_two (fun)"
@@ -81,29 +82,29 @@ Call dependencies
     "taint_in_taint_out.obscure_tito (fun)"
   ],
   "taint_in_taint_out.issue_approximate_return_access_paths (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "object.__init__ (method)",
-    "object.__new__ (method)",
+    "object.__init__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.approximate_return_access_paths (fun)"
   ],
   "taint_in_taint_out.issue_approximate_return_access_paths_common_prefix (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "object.__init__ (method)",
-    "object.__new__ (method)",
+    "object.__init__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.approximate_return_access_paths (fun)"
   ],
   "taint_in_taint_out.issue_join_tito_collapse_test_3 (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.join_tito_collapse_test_3 (fun)"
   ],
   "taint_in_taint_out.issue_user_declared_tito_collapse_one (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.user_declared_tito_collapse_one (fun)"
   ],
   "taint_in_taint_out.issue_with_indirect_sink_tito (fun)": [
-    "_test_source (fun)",
+    "pysa._test_source (fun)",
     "taint_in_taint_out.adds_tito_with_indirect_sink (fun)"
   ],
   "taint_in_taint_out.issue_with_into_dict_then_tito_collapse (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.into_dict_then_tito_collapse (fun)"
   ],
   "taint_in_taint_out.join_tito_collapse_test_1 (fun)": [
@@ -138,35 +139,35 @@ Call dependencies
     "typing.Iterator.__next__ (method)"
   ],
   "taint_in_taint_out.no_issue_tito_collapse_two_with_input_path (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.tito_collapse_one_with_input_path (fun)"
   ],
   "taint_in_taint_out.no_issue_user_declared_tito_collapse_one (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.user_declared_tito_collapse_one (fun)"
   ],
   "taint_in_taint_out.no_issue_user_declared_tito_no_collapse (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.user_declared_tito_no_collapse (fun)"
   ],
   "taint_in_taint_out.no_issue_with_into_dict_then_perfect_tito (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.into_dict_then_perfect_tito (fun)"
   ],
   "taint_in_taint_out.no_issue_with_perfect_tito_then_into_dict (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.perfect_tito_then_into_dict (fun)"
   ],
   "taint_in_taint_out.no_issue_with_tito_collapse_then_into_dict (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.tito_collapse_then_into_dict (fun)"
   ],
   "taint_in_taint_out.no_tito_init_then_overwrite (fun)": [
     "dict.__setitem__ (method)"
   ],
   "taint_in_taint_out.non_issue_approximate_return_access_paths_common_prefix (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "object.__init__ (method)",
-    "object.__new__ (method)",
+    "object.__init__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.approximate_return_access_paths (fun)"
   ],
   "taint_in_taint_out.perfect_tito_then_into_deep_dict (fun)": [
@@ -188,47 +189,49 @@ Call dependencies
     "taint_in_taint_out.product_data (fun)"
   ],
   "taint_in_taint_out.test_always_via_feature (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.tito_with_feature (fun)"
   ],
   "taint_in_taint_out.test_complex_argument_tito (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "object.__init__ (method)",
-    "object.__new__ (method)",
+    "object.__init__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.complex_argument_tito (fun)"
   ],
   "taint_in_taint_out.test_complex_evaluator (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload (method)"
   ],
   "taint_in_taint_out.test_explicit_call_to_superclass (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "object.__new__ (method)",
-    "taint_in_taint_out.GetUser.__init__ (method)"
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "taint_in_taint_out.GetUser.__init__ (method)"
   ],
   "taint_in_taint_out.test_simplified_evaluator (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.evaluate_lazy (fun)"
   ],
   "taint_in_taint_out.test_tito_class_method (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.TitoClassMethod.set_a (method)"
   ],
   "taint_in_taint_out.test_tito_from_0_to_1 (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.tito_from_0_to_1 (fun)"
   ],
   "taint_in_taint_out.test_tito_self (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "object.__new__ (method)",
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)",
     "taint_in_taint_out.TitoSelf.__init__ (method)",
     "taint_in_taint_out.TitoSelf.set_a (method)",
     "taint_in_taint_out.TitoSelf.set_join (method)",
     "taint_in_taint_out.TitoSelf.set_subfield (method)"
   ],
   "taint_in_taint_out.test_tuple_tito_indices (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "taint_in_taint_out.return_taint (fun)"
   ],
   "taint_in_taint_out.tito (fun)": [
-    "_test_source (fun)", "taint_in_taint_out.product_data_wrapper (fun)"
+    "pysa._test_source (fun)",
+    "taint_in_taint_out.product_data_wrapper (fun)"
   ],
   "taint_in_taint_out.tito_collapse_one (fun)": [
     "taint_in_taint_out.tito_collapse_one_append_a_b_c (fun)"
@@ -254,6 +257,6 @@ Call dependencies
   "taint_in_taint_out.tito_with_feature (fun)": [
     "taint_in_taint_out.add_feature (fun)"
   ],
-  "taint_in_taint_out.tito_with_sink (fun)": [ "_test_sink (fun)" ],
+  "taint_in_taint_out.tito_with_sink (fun)": [ "pysa._test_sink (fun)" ],
   "taint_in_taint_out.via_getattr (fun)": [ "getattr (fun)" ]
 }

@@ -5,7 +5,7 @@
 
 # flake8: noqa
 
-from builtins import _test_sink, _test_source
+from pysa import _test_sink, _test_source
 from typing import Awaitable, Callable, TypeVar
 
 from pyre_extensions import ParameterSpecification

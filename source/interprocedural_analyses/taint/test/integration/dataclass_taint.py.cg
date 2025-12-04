@@ -2,57 +2,54 @@
 Call dependencies
 {
   "dataclass_taint.DataClassWIthInit.__init__ (method)": [
-    "_test_sink (fun)"
+    "pysa._test_sink (fun)"
   ],
   "dataclass_taint.WeirdDataClass.__init__ (method)": [
     "dataclass_taint.WeirdDataClass.bad_sink (object)",
     "object.__setattr__ (method)"
   ],
   "dataclass_taint.bad_is_tainted (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
-    "dataclass_taint.DataClass.__init__ (method)", "object.__new__ (method)"
+    "dataclass_taint.DataClass.__init__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "dataclass_taint.benign_is_untainted (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
-    "dataclass_taint.DataClass.__init__ (method)", "object.__new__ (method)"
+    "dataclass_taint.DataClass.__init__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "dataclass_taint.issue_in_dataclass_constructor (fun)": [
-    "_test_source (fun)",
     "dataclass_taint.DataClassWIthInit.__init__ (method)",
-    "object.__new__ (method)"
+    "object.__new__ (method)", "pysa._test_source (fun)"
   ],
   "dataclass_taint.issue_with_weird_dataclass (fun)": [
-    "_test_sink (fun)", "dataclass_taint.WeirdDataClass.__init__ (method)",
-    "object.__new__ (method)"
+    "dataclass_taint.WeirdDataClass.__init__ (method)",
+    "object.__new__ (method)", "pysa._test_sink (fun)"
   ],
   "dataclass_taint.test_class_attr_model_tainted_directly (fun)": [
-    "_test_source (fun)",
     "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__ (method)",
     "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad (object)",
-    "object.__new__ (method)"
+    "object.__new__ (method)", "pysa._test_source (fun)"
   ],
   "dataclass_taint.test_class_attr_model_tainted_in_constructor (fun)": [
-    "_test_source (fun)",
     "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__ (method)",
-    "object.__new__ (method)"
+    "object.__new__ (method)", "pysa._test_source (fun)"
   ],
   "dataclass_taint.test_constructor_tito (fun)": [
     "dataclass_taint.DataClass.__init__ (method)", "object.__new__ (method)"
   ],
   "dataclass_taint.test_dataclass_parameter_path (fun)": [
-    "_test_sink (fun)"
+    "pysa._test_sink (fun)"
   ],
   "dataclass_taint.test_dataclass_positional_parameter (fun)": [
-    "_test_sink (fun)", "dataclass_taint.DataClass.__init__ (method)",
-    "object.__new__ (method)"
+    "dataclass_taint.DataClass.__init__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)"
   ],
   "dataclass_taint.test_dataclass_with_other_source (fun)": [
-    "_test_sink (fun)",
-    "dataclass_taint.DataClassWithOtherSource.tainted (object)"
+    "dataclass_taint.DataClassWithOtherSource.tainted (object)",
+    "pysa._test_sink (fun)"
   ],
   "dataclass_taint.test_dataclass_with_source (fun)": [
-    "_test_sink (fun)",
-    "dataclass_taint.DataClassWithSource.tainted (object)"
+    "dataclass_taint.DataClassWithSource.tainted (object)",
+    "pysa._test_sink (fun)"
   ],
   "dataclass_taint.test_weird_dataclass_taint (fun)": [
     "dataclass_taint.WeirdDataClass.__init__ (method)",

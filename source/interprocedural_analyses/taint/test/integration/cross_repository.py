@@ -3,8 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# flake8: noqa
-
+from pysa import _test_source, _test_sink
 
 def cross_repository_source(source_parameter):
     _test_sink(source_parameter)

@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
-from builtins import _test_sink
+from pysa import _test_sink
 from enum import Enum
 from typing import Annotated, Optional
 
