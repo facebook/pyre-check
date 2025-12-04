@@ -4758,6 +4758,7 @@ let build_whole_program_call_graph_for_pyrefly
     ~callables_to_decorators_map
     ~override_graph
     ~store_shared_memory
+    ~attribute_targets
     ~skip_analysis_targets
     ~definitions
     ~create_dependency_for
@@ -4838,6 +4839,7 @@ let build_whole_program_call_graph_for_pyrefly
     call_graph
     |> DefineCallGraph.dedup_and_sort
     |> DefineCallGraph.filter_empty_attribute_access
+    |> DefineCallGraph.filter_empty_identifier
     |> DefineCallGraph.regenerate_call_indices ~indexer:call_indexer
   in
   let method_has_overrides method_name =
@@ -4854,6 +4856,7 @@ let build_whole_program_call_graph_for_pyrefly
     ~scheduler_policies
     ~method_has_overrides
     ~store_shared_memory
+    ~attribute_targets
     ~skip_analysis_targets
     ~definitions
     ~create_dependency_for
@@ -4903,6 +4906,7 @@ let build_whole_program_call_graph
           ~pyrefly_api
           ~callables_to_decorators_map
           ~override_graph
+          ~attribute_targets
           ~store_shared_memory
           ~skip_analysis_targets
           ~definitions

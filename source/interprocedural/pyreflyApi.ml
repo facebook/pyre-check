@@ -428,6 +428,12 @@ module PyreflyTarget = struct
     | _ -> Error (FormatError.UnexpectedJsonType { json; message = "Unknown type of target" })
 end
 
+module ModuleIdSharedMemoryKey = struct
+  type t = ModuleId.t [@@deriving compare]
+
+  let to_string module_id = string_of_int (ModuleId.to_int module_id)
+end
+
 module GlobalCallableIdSharedMemoryKey = struct
   type t = GlobalCallableId.t [@@deriving compare]
 
@@ -1403,6 +1409,20 @@ module ModuleCallGraphs = struct
       >>| Map.of_alist_exn
   end
 
+  module JsonGlobalVariable = struct
+    type t = {
+      module_id: ModuleId.t;
+      name: string;
+    }
+
+    let from_json json =
+      let open Core.Result.Monad_infix in
+      JsonUtil.get_int_member json "module_id"
+      >>= fun module_id ->
+      JsonUtil.get_string_member json "name"
+      >>| fun name -> { module_id = ModuleId.from_int module_id; name }
+  end
+
   module JsonCallCallees = struct
     type t = {
       call_targets: JsonCallTarget.t list;
@@ -1444,6 +1464,7 @@ module ModuleCallGraphs = struct
       if_called: JsonCallCallees.t;
       property_setters: JsonCallTarget.t list;
       property_getters: JsonCallTarget.t list;
+      global_targets: JsonGlobalVariable.t list;
     }
 
     let from_json json =
@@ -1459,17 +1480,28 @@ module ModuleCallGraphs = struct
       >>= fun property_setters ->
       JsonUtil.get_optional_list_member json "property_getters"
       >>= parse_call_target_list
-      >>| fun property_getters -> { if_called; property_setters; property_getters }
+      >>= fun property_getters ->
+      JsonUtil.get_optional_list_member json "global_targets"
+      >>| List.map ~f:JsonGlobalVariable.from_json
+      >>= Result.all
+      >>| fun global_targets -> { if_called; property_setters; property_getters; global_targets }
   end
 
   module JsonIdentifierCallees = struct
-    type t = { if_called: JsonCallCallees.t }
+    type t = {
+      if_called: JsonCallCallees.t;
+      global_targets: JsonGlobalVariable.t list;
+    }
 
     let from_json json =
       let open Core.Result.Monad_infix in
       JsonUtil.get_member json "if_called"
       >>= JsonCallCallees.from_json
-      >>| fun if_called -> { if_called }
+      >>= fun if_called ->
+      JsonUtil.get_optional_list_member json "global_targets"
+      >>| List.map ~f:JsonGlobalVariable.from_json
+      >>= Result.all
+      >>| fun global_targets -> { if_called; global_targets }
   end
 
   module JsonDefineCallees = struct
@@ -1879,6 +1911,22 @@ module ModuleGlobalsSharedMemory =
       let description = "pyrefly global variables in module"
     end)
 
+module ModuleIdToQualifierSharedMemory = struct
+  include
+    Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
+      (ModuleIdSharedMemoryKey)
+      (struct
+        type t = ModuleQualifier.t
+
+        let prefix = Hack_parallel.Std.Prefix.make ()
+
+        let description = "pyrefly module id to module qualified"
+      end)
+
+  let get_module_qualifier handle module_id =
+    module_id |> get handle |> assert_shared_memory_key_exists "unknown module id"
+end
+
 module ClassIdToQualifiedNameSharedMemory = struct
   include
     Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
@@ -2037,6 +2085,7 @@ module ReadWrite = struct
     module_callables_shared_memory: ModuleCallablesSharedMemory.t;
     module_classes_shared_memory: ModuleClassesSharedMemory.t;
     module_globals_shared_memory: ModuleGlobalsSharedMemory.t;
+    module_id_to_qualifier_shared_memory: ModuleIdToQualifierSharedMemory.t;
     class_id_to_qualified_name_shared_memory: ClassIdToQualifiedNameSharedMemory.t;
     callable_id_to_qualified_name_shared_memory: CallableIdToQualifiedNameSharedMemory.t;
     callable_ast_shared_memory: CallableAstSharedMemory.t;
@@ -2174,7 +2223,8 @@ module ReadWrite = struct
   let write_module_infos_to_shared_memory ~qualifier_to_module_map =
     let timer = Timer.start () in
     let () = Log.info "Writing modules to shared memory..." in
-    let handle = ModuleInfosSharedMemory.create () in
+    let module_infos_shared_memory = ModuleInfosSharedMemory.create () in
+    let module_id_to_qualifier_shared_memory = ModuleIdToQualifierSharedMemory.create () in
     let () =
       Map.to_alist qualifier_to_module_map
       |> List.iter
@@ -2183,7 +2233,7 @@ module ReadWrite = struct
                   { Module.module_id; source_path; pyrefly_info_filename; is_test; is_stub; _ } )
               ->
              ModuleInfosSharedMemory.add
-               handle
+               module_infos_shared_memory
                qualifier
                {
                  ModuleInfosSharedMemory.Module.module_id;
@@ -2191,10 +2241,14 @@ module ReadWrite = struct
                  pyrefly_info_filename;
                  is_test;
                  is_stub;
-               })
+               };
+             ModuleIdToQualifierSharedMemory.add
+               module_id_to_qualifier_shared_memory
+               module_id
+               qualifier)
     in
     Log.info "Wrote modules to shared memory: %.3fs" (Timer.stop_in_sec timer);
-    handle
+    module_infos_shared_memory, module_id_to_qualifier_shared_memory
 
 
   let parse_source_files
@@ -3378,7 +3432,9 @@ module ReadWrite = struct
   let create_from_directory ~scheduler ~scheduler_policies ~configuration pyrefly_directory =
     let qualifier_to_module_map, object_class_id = parse_modules ~pyrefly_directory in
 
-    let module_infos_shared_memory = write_module_infos_to_shared_memory ~qualifier_to_module_map in
+    let module_infos_shared_memory, module_id_to_qualifier_shared_memory =
+      write_module_infos_to_shared_memory ~qualifier_to_module_map
+    in
 
     let qualifiers_shared_memory =
       let handle = QualifiersSharedMemory.create () in
@@ -3449,6 +3505,7 @@ module ReadWrite = struct
       module_callables_shared_memory;
       module_classes_shared_memory;
       module_globals_shared_memory;
+      module_id_to_qualifier_shared_memory;
       class_id_to_qualified_name_shared_memory;
       callable_id_to_qualified_name_shared_memory;
       callable_ast_shared_memory;
@@ -3535,6 +3592,7 @@ module ReadWrite = struct
         module_callables_shared_memory;
         module_classes_shared_memory;
         module_globals_shared_memory;
+        module_id_to_qualifier_shared_memory;
         class_id_to_qualified_name_shared_memory;
         callable_id_to_qualified_name_shared_memory;
         callable_ast_shared_memory;
@@ -3588,6 +3646,7 @@ module ReadWrite = struct
         |> assert_shared_memory_key_exists "missing module info"
       in
       ModuleInfosSharedMemory.remove module_infos_shared_memory module_qualifier;
+      ModuleIdToQualifierSharedMemory.remove module_id_to_qualifier_shared_memory module_id;
       let () =
         if Option.is_some pyrefly_info_filename then
           ModuleCallablesSharedMemory.get module_callables_shared_memory module_qualifier
@@ -3637,6 +3696,7 @@ module ReadOnly = struct
     callable_define_signature_shared_memory: CallableDefineSignatureSharedMemory.t;
     callable_undecorated_signatures_shared_memory: CallableUndecoratedSignaturesSharedMemory.t;
     type_of_expressions_shared_memory: TypeOfExpressionsSharedMemory.t option;
+    module_id_to_qualifier_shared_memory: ModuleIdToQualifierSharedMemory.t;
     class_id_to_qualified_name_shared_memory: ClassIdToQualifiedNameSharedMemory.t;
     callable_id_to_qualified_name_shared_memory: CallableIdToQualifiedNameSharedMemory.t;
     object_class: FullyQualifiedName.t;
@@ -3658,6 +3718,7 @@ module ReadOnly = struct
         callable_define_signature_shared_memory;
         callable_undecorated_signatures_shared_memory;
         type_of_expressions_shared_memory;
+        module_id_to_qualifier_shared_memory;
         class_id_to_qualified_name_shared_memory;
         callable_id_to_qualified_name_shared_memory;
         object_class;
@@ -3679,6 +3740,7 @@ module ReadOnly = struct
       callable_define_signature_shared_memory;
       callable_undecorated_signatures_shared_memory;
       type_of_expressions_shared_memory;
+      module_id_to_qualifier_shared_memory;
       class_id_to_qualified_name_shared_memory;
       callable_id_to_qualified_name_shared_memory;
       object_class;
@@ -4091,9 +4153,14 @@ module ReadOnly = struct
 
 
   let instantiate_call_graph
-      ({ callable_id_to_qualified_name_shared_memory; class_id_to_qualified_name_shared_memory; _ }
-      as api)
+      ({
+         module_id_to_qualifier_shared_memory;
+         callable_id_to_qualified_name_shared_memory;
+         class_id_to_qualified_name_shared_memory;
+         _;
+       } as api)
       ~method_has_overrides
+      ~attribute_targets
       ~callable
       json_call_graph
     =
@@ -4192,6 +4259,21 @@ module ReadOnly = struct
           })
         targets
     in
+    let instantiate_global_target { JsonGlobalVariable.module_id; name } =
+      let module_qualifier =
+        ModuleIdToQualifierSharedMemory.get_module_qualifier
+          module_id_to_qualifier_shared_memory
+          module_id
+      in
+      let object_target =
+        Reference.create ~prefix:(ModuleQualifier.to_reference module_qualifier) name
+        |> Target.create_object
+      in
+      if Target.Set.mem object_target attribute_targets then
+        Some (CallTarget.create ~return_type:None object_target)
+      else
+        None
+    in
     let instantiate_higher_order_parameter
         { JsonHigherOrderParameter.index; call_targets; unresolved }
       =
@@ -4227,22 +4309,24 @@ module ReadOnly = struct
         recognized_call = CallGraph.CallCallees.RecognizedCall.False;
       }
     in
-    let instantiate_identifier_callees { JsonIdentifierCallees.if_called } =
-      (* TODO(T225700656): Support global targets, non local targets. *)
+    let instantiate_identifier_callees { JsonIdentifierCallees.if_called; global_targets } =
+      (* TODO(T225700656): Support non local targets. *)
       let if_called = instantiate_call_callees if_called in
-      { IdentifierCallees.global_targets = []; nonlocal_targets = []; if_called }
+      let global_targets = List.filter_map ~f:instantiate_global_target global_targets in
+      { IdentifierCallees.global_targets; nonlocal_targets = []; if_called }
     in
     let instantiate_attribute_access_callees
-        { JsonAttributeAccessCallees.if_called; property_setters; property_getters }
+        { JsonAttributeAccessCallees.if_called; property_setters; property_getters; global_targets }
       =
-      (* TODO(T225700656): Support global targets, is_attribute, etc.. *)
+      (* TODO(T225700656): Support is_attribute, etc.. *)
       let if_called = instantiate_call_callees if_called in
+      let global_targets = List.filter_map ~f:instantiate_global_target global_targets in
       {
         AttributeAccessCallees.property_targets =
           List.append property_setters property_getters
           |> List.map ~f:instantiate_call_target
           |> List.concat;
-        global_targets = [];
+        global_targets;
         is_attribute = false;
         if_called;
       }
@@ -4284,6 +4368,7 @@ module ReadOnly = struct
       ~scheduler_policies
       ~method_has_overrides
       ~store_shared_memory
+      ~attribute_targets
       ~skip_analysis_targets
       ~definitions
       ~create_dependency_for
@@ -4392,7 +4477,12 @@ module ReadOnly = struct
               Format.asprintf "Could not find call graph for `%a`" Target.pp callable |> failwith
           | Some call_graph ->
               let call_graph =
-                instantiate_call_graph api ~method_has_overrides ~callable call_graph
+                instantiate_call_graph
+                  api
+                  ~method_has_overrides
+                  ~attribute_targets
+                  ~callable
+                  call_graph
                 |> transform_call_graph api callable
               in
               let define_call_graphs =

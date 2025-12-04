@@ -2517,6 +2517,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~skip_for_pyrefly:false
            ~_migrated_to_pyrefly:true
            ~source:
              {|
@@ -2532,9 +2533,48 @@ let test_call_graph_of_define =
           d[s].foo()
       |}
            ~define_name:"test.calls_d_method"
+           ~object_targets:[Target.Regular.Object "test.d"]
            ~expected:
              [
                ( "11:2-11:3|identifier|$local_test$d",
+                 ExpressionCallees.from_identifier
+                   (IdentifierCallees.create
+                      ~global_targets:
+                        [
+                          CallTarget.create_regular
+                            ~return_type:None
+                            (Target.Regular.Object "test.d");
+                        ]
+                      ()) );
+               ( "11:2-11:6|artificial-call|subscript-get-item",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~receiver_class:"dict"
+                            (Target.Regular.Method
+                               { class_name = "dict"; method_name = "__getitem__"; kind = Normal });
+                        ]
+                      ()) );
+               ( "11:2-11:12",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~is_class_method:true
+                            ~receiver_class:"test.C"
+                            (Target.Regular.Method
+                               { class_name = "test.C"; method_name = "foo"; kind = Normal });
+                        ]
+                      ()) );
+             ]
+           ~pyrefly_expected:
+             [
+               ( "11:2-11:3",
                  ExpressionCallees.from_identifier
                    (IdentifierCallees.create
                       ~global_targets:
