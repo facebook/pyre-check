@@ -303,6 +303,32 @@ let assert_higher_order_call_graph_of_define
     actual
 
 
+let class_identifier_without_constructors class_name =
+  ExpressionCallees.from_identifier
+    (IdentifierCallees.create
+       ~if_called:
+         (CallCallees.create
+            ~init_targets:
+              [
+                CallTarget.create_regular
+                  ~implicit_receiver:true
+                  ~return_type:(Some ReturnType.unknown)
+                  ~receiver_class:class_name
+                  (Target.Regular.Method
+                     { class_name = "object"; method_name = "__init__"; kind = Normal });
+              ]
+            ~new_targets:
+              [
+                CallTarget.create_regular
+                  ~return_type:(Some ReturnType.unknown)
+                  ~is_static_method:true
+                  (Target.Regular.Method
+                     { class_name = "object"; method_name = "__new__"; kind = Normal });
+              ]
+            ())
+       ())
+
+
 let test_call_graph_of_define =
   test_list
     [
@@ -713,6 +739,37 @@ let test_call_graph_of_define =
                         ]
                       ()) );
              ]
+           ~pyrefly_expected:
+             [
+               ( "5:3-5:4",
+                 ExpressionCallees.from_identifier
+                   (IdentifierCallees.create
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create
+                                 ~implicit_receiver:true
+                                 ~implicit_dunder_call:true
+                                 ~return_type:(Some ReturnType.unknown)
+                                 ~receiver_class:"test.C"
+                                 (Target.create_method !&"test.C" "__call__");
+                             ]
+                           ())
+                      ()) );
+               ( "5:3-5:16",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create
+                            ~implicit_receiver:true
+                            ~return_type:(Some ReturnType.bool)
+                            ~receiver_class:"test.C"
+                            (Target.create_method !&"test.C" "__call__");
+                        ]
+                      ()) );
+             ]
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
@@ -1019,6 +1076,39 @@ let test_call_graph_of_define =
            ~define_name:"test.foo"
            ~expected:
              [
+               ( "6:2-6:7",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~return_type:(Some ReturnType.integer)
+                            ~is_class_method:true
+                            ~receiver_class:"test.C"
+                            (Target.Regular.Method
+                               { class_name = "test.C"; method_name = "f"; kind = Normal });
+                        ]
+                      ()) );
+               ( "7:2-7:7",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~return_type:(Some ReturnType.integer)
+                            ~is_class_method:true
+                            ~index:1
+                            ~receiver_class:"test.C"
+                            (Target.Regular.Method
+                               { class_name = "test.C"; method_name = "f"; kind = Normal });
+                        ]
+                      ()) );
+             ]
+           ~pyrefly_expected:
+             [
+               "6:2-6:3", class_identifier_without_constructors "test.C";
                ( "6:2-6:7",
                  ExpressionCallees.from_call
                    (CallCallees.create
@@ -1509,6 +1599,21 @@ let test_call_graph_of_define =
                         ]
                       ()) );
              ]
+           ~pyrefly_expected:
+             [
+               "11:2-11:3", class_identifier_without_constructors "test.C";
+               ( "11:2-11:11",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~return_type:(Some ReturnType.integer)
+                            (Target.Regular.Method
+                               { class_name = "test.C"; method_name = "f"; kind = Normal });
+                        ]
+                      ()) );
+             ]
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
@@ -1565,6 +1670,53 @@ let test_call_graph_of_define =
                                { class_name = "test.D"; method_name = "f"; kind = Normal });
                         ]
                       ()) );
+               ( "18:2-18:7",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~is_class_method:true
+                            ~receiver_class:"test.D"
+                            (Target.Regular.Method
+                               { class_name = "test.C"; method_name = "g"; kind = Normal });
+                        ]
+                      ()) );
+             ]
+           ~pyrefly_expected:
+             [
+               "16:2-16:3", class_identifier_without_constructors "test.C";
+               ( "16:2-16:11",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~return_type:(Some ReturnType.integer)
+                            ~is_class_method:true
+                            ~receiver_class:"test.C"
+                            (Target.Regular.Method
+                               { class_name = "test.C"; method_name = "f"; kind = Normal });
+                        ]
+                      ()) );
+               "17:2-17:3", class_identifier_without_constructors "test.D";
+               ( "17:2-17:7",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~return_type:(Some ReturnType.integer)
+                            ~is_class_method:true
+                            ~receiver_class:"test.D"
+                            (Target.Regular.Method
+                               { class_name = "test.D"; method_name = "f"; kind = Normal });
+                        ]
+                      ()) );
+               "18:2-18:3", class_identifier_without_constructors "test.D";
                ( "18:2-18:7",
                  ExpressionCallees.from_call
                    (CallCallees.create
