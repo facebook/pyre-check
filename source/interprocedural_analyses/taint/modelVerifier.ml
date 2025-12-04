@@ -261,7 +261,9 @@ let verify_global_attribute ~path ~location ~pyre_api ~name =
                     { class_name = Reference.show class_name; attribute_name = Reference.last name }))
       | None, Some _ -> Ok ()
       | None, None -> (
-          let module_name = Reference.first name in
+          let module_name =
+            Reference.first (PyrePysaApi.ReadOnly.add_builtins_prefix pyre_api name)
+          in
           let module_resolved =
             PyrePysaApi.ModelQueries.resolve_qualified_name_to_global
               pyre_api
@@ -281,7 +283,7 @@ let verify_global_attribute ~path ~location ~pyre_api ~name =
                 (model_verification_error
                    ~path
                    ~location
-                   (NotInEnvironment { module_name; name = Reference.show name }))))
+                   (BaseModuleNotInEnvironment { module_name; name = Reference.show name }))))
 
 
 (* List of stdlib modules. To keep it short, this only includes modules that we want to annotate
@@ -328,7 +330,8 @@ let stdlib_modules =
 let filter_unused_stdlib_modules_errors errors =
   let filter = function
     | {
-        ModelVerificationError.kind = ModelVerificationError.NotInEnvironment { module_name; _ };
+        ModelVerificationError.kind =
+          ModelVerificationError.BaseModuleNotInEnvironment { module_name; _ };
         _;
       }
       when Set.mem stdlib_modules module_name ->

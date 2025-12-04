@@ -112,7 +112,7 @@ type kind =
   | ModelingClassAsAttribute of string
   | ModelingModuleAsAttribute of string
   | ModelingCallableAsAttribute of string
-  | NotInEnvironment of {
+  | BaseModuleNotInEnvironment of {
       module_name: string;
       name: string;
     }

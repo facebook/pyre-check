@@ -33,7 +33,7 @@ let test_to_json _ =
         |}
     {
       ModelVerificationError.kind =
-        ModelVerificationError.NotInEnvironment { module_name = "foo"; name = "foo.bar" };
+        ModelVerificationError.BaseModuleNotInEnvironment { module_name = "foo"; name = "foo.bar" };
       location =
         {
           Ast.Location.start = { Ast.Location.line = 1; column = 2 };

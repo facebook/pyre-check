@@ -127,7 +127,7 @@ type kind =
   | ModelingClassAsAttribute of string
   | ModelingModuleAsAttribute of string
   | ModelingCallableAsAttribute of string
-  | NotInEnvironment of {
+  | BaseModuleNotInEnvironment of {
       module_name: string;
       name: string;
     }
@@ -473,7 +473,7 @@ let description error =
          %s(): ...`?"
         callable_name
         callable_name
-  | NotInEnvironment { module_name; name } ->
+  | BaseModuleNotInEnvironment { module_name; name } ->
       Format.sprintf
         "`%s` is not part of the environment, no module `%s` in search path."
         name
@@ -638,7 +638,7 @@ let code { kind; _ } =
   | IncompatibleModelError _ -> 2
   | ImportedFunctionModel _ -> 3
   | MissingAttribute _ -> 5
-  | NotInEnvironment _ -> 6
+  | BaseModuleNotInEnvironment _ -> 6
   | UnexpectedDecorators _ -> 7
   | InvalidParameterExclude _ -> 8
   | InvalidTaintAnnotation _ -> 9

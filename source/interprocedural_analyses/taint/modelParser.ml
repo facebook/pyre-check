@@ -3555,7 +3555,7 @@ let create_model_from_signature
               (MissingSymbol { module_name; symbol_name = Reference.show callable_name })
         | None ->
             model_verification_error
-              (NotInEnvironment { module_name; name = Reference.show callable_name }))
+              (BaseModuleNotInEnvironment { module_name; name = Reference.show callable_name }))
     | Some (Global.Class _) ->
         model_verification_error (ModelingClassAsDefine (Reference.show callable_name))
     | Some Global.Module ->
@@ -3983,7 +3983,9 @@ let create_models_from_class
       in
       method_signatures |> List.map ~f:create_model_for_method |> List.concat |> Result.all
   | _ -> (
-      let module_name = Reference.first class_name in
+      let module_name =
+        Reference.first (PyrePysaApi.ReadOnly.add_builtins_prefix pyre_api class_name)
+      in
       let module_resolved =
         PyrePysaApi.ModelQueries.resolve_qualified_name_to_global
           pyre_api
@@ -3997,7 +3999,7 @@ let create_models_from_class
             (ModelVerificationError.MissingClass { class_name = Reference.show class_name })
       | None ->
           model_verification_error
-            (NotInEnvironment { module_name; name = Reference.show class_name }))
+            (BaseModuleNotInEnvironment { module_name; name = Reference.show class_name }))
 
 
 let is_obscure ~definitions ~stubs call_target =
