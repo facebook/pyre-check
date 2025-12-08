@@ -681,7 +681,7 @@ let test_call_graph_of_define =
              ]
            ~pyrefly_expected:
              [
-               ( "5:3-5:4",
+               ( "5:3-5:4|identifier|c",
                  ExpressionCallees.from_identifier
                    (IdentifierCallees.create
                       ~if_called:
@@ -1048,7 +1048,7 @@ let test_call_graph_of_define =
              ]
            ~pyrefly_expected:
              [
-               "6:2-6:3", class_identifier_without_constructors "test.C";
+               "6:2-6:3|identifier|C", class_identifier_without_constructors "test.C";
                ( "6:2-6:7",
                  ExpressionCallees.from_call
                    (CallCallees.create
@@ -1541,7 +1541,7 @@ let test_call_graph_of_define =
              ]
            ~pyrefly_expected:
              [
-               "11:2-11:3", class_identifier_without_constructors "test.C";
+               "11:2-11:3|identifier|C", class_identifier_without_constructors "test.C";
                ( "11:2-11:11",
                  ExpressionCallees.from_call
                    (CallCallees.create
@@ -1626,7 +1626,7 @@ let test_call_graph_of_define =
              ]
            ~pyrefly_expected:
              [
-               "16:2-16:3", class_identifier_without_constructors "test.C";
+               "16:2-16:3|identifier|C", class_identifier_without_constructors "test.C";
                ( "16:2-16:11",
                  ExpressionCallees.from_call
                    (CallCallees.create
@@ -1641,7 +1641,7 @@ let test_call_graph_of_define =
                                { class_name = "test.C"; method_name = "f"; kind = Normal });
                         ]
                       ()) );
-               "17:2-17:3", class_identifier_without_constructors "test.D";
+               "17:2-17:3|identifier|D", class_identifier_without_constructors "test.D";
                ( "17:2-17:7",
                  ExpressionCallees.from_call
                    (CallCallees.create
@@ -1656,7 +1656,7 @@ let test_call_graph_of_define =
                                { class_name = "test.D"; method_name = "f"; kind = Normal });
                         ]
                       ()) );
-               "18:2-18:3", class_identifier_without_constructors "test.D";
+               "18:2-18:3|identifier|D", class_identifier_without_constructors "test.D";
                ( "18:2-18:7",
                  ExpressionCallees.from_call
                    (CallCallees.create
@@ -1754,7 +1754,7 @@ let test_call_graph_of_define =
                              };
                            ])
                       ()) );
-               ( "9:6-9:9",
+               ( "9:6-9:9|identifier|bar",
                  ExpressionCallees.from_identifier
                    (IdentifierCallees.create
                       ~if_called:
@@ -1888,7 +1888,7 @@ let test_call_graph_of_define =
                              };
                            ])
                       ()) );
-               ( "13:6-13:9",
+               ( "13:6-13:9|identifier|foo",
                  ExpressionCallees.from_identifier
                    (IdentifierCallees.create
                       ~if_called:
@@ -1901,7 +1901,7 @@ let test_call_graph_of_define =
                              ]
                            ())
                       ()) );
-               ( "13:11-13:14",
+               ( "13:11-13:14|identifier|bar",
                  ExpressionCallees.from_identifier
                    (IdentifierCallees.create
                       ~if_called:
@@ -2666,7 +2666,7 @@ let test_call_graph_of_define =
              ]
            ~pyrefly_expected:
              [
-               ( "11:2-11:3",
+               ( "11:2-11:3|identifier|d",
                  ExpressionCallees.from_identifier
                    (IdentifierCallees.create
                       ~global_targets:
@@ -8895,7 +8895,7 @@ let test_resolve_decorator_callees =
                            (CallCallees.create
                               ~unresolved:(CallGraph.Unresolved.True UnexpectedCalleeExpression)
                               ()) );
-                       ( "8:22-8:25",
+                       ( "8:22-8:25|identifier|bar",
                          ExpressionCallees.from_identifier
                            (IdentifierCallees.create
                               ~if_called:

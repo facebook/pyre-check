@@ -233,7 +233,6 @@ let test_global_taint context =
 let test_global_var_taint context =
   assert_taint
     ~context
-    ~skip_for_pyrefly:true (* TODO(T225700656): False negative *)
     ~models:{|
        qualifier.foo: TaintSource[UserControlled] = ...
     |}

@@ -26,23 +26,21 @@ type t = {
   interval: Interprocedural.ClassIntervalSet.t;
 }
 
-let get_global_targets_with_pyre1 ~call_graph ~expression =
+let get_global_targets_from_call_graph ~call_graph ~expression =
   match Node.value expression with
   | Expression.Name (Name.Identifier identifier) ->
       CallGraph.DefineCallGraph.resolve_identifier
         call_graph
         ~location:(Node.location expression)
         ~identifier
-      >>| (fun { global_targets; _ } -> global_targets)
-      |> Option.value ~default:[]
+      >>| fun { global_targets; _ } -> global_targets
   | Expression.Name (Name.Attribute attribute_access) ->
       CallGraph.DefineCallGraph.resolve_attribute_access
         call_graph
         ~location:(Node.location expression)
         ~attribute_access
-      >>| (fun { global_targets; _ } -> global_targets)
-      |> Option.value ~default:[]
-  | _ -> []
+      >>| fun { global_targets; _ } -> global_targets
+  | _ -> None
 
 
 let get_global_targets_with_pyrefly
@@ -75,14 +73,20 @@ let get_global_targets
     ~get_callee_model
     ~expression
   =
-  match pyre_in_context with
-  | PyrePysaApi.InContext.Pyre1 _ -> get_global_targets_with_pyre1 ~call_graph ~expression
-  | PyrePysaApi.InContext.Pyrefly _ ->
-      get_global_targets_with_pyrefly
-        ~pyre_in_context
-        ~type_of_expression_shared_memory
-        ~get_callee_model
-        ~expression
+  let targets_from_call_graph =
+    get_global_targets_from_call_graph ~call_graph ~expression |> Option.value ~default:[]
+  in
+  let targets_from_type =
+    match pyre_in_context with
+    | PyrePysaApi.InContext.Pyre1 _ -> []
+    | PyrePysaApi.InContext.Pyrefly _ ->
+        get_global_targets_with_pyrefly
+          ~pyre_in_context
+          ~type_of_expression_shared_memory
+          ~get_callee_model
+          ~expression
+  in
+  List.rev_append targets_from_type targets_from_call_graph
 
 
 let from_expression
