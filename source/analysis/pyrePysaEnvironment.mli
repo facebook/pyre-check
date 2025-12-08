@@ -32,14 +32,33 @@ module ScalarTypeProperties : sig
   val create : is_boolean:bool -> is_integer:bool -> is_float:bool -> is_enumeration:bool -> t
 end
 
+module TypeModifier : sig
+  type t =
+    | Optional
+    | Coroutine
+    | Awaitable
+    | TypeVariableBound
+    | ReadOnly
+  [@@deriving equal, compare, show]
+
+  val from_string : string -> t option
+end
+
+module ClassWithModifiers : sig
+  type t = {
+    class_name: string;
+    modifiers: TypeModifier.t list;
+  }
+
+  val from_class_name : string -> t
+
+  val prepend_modifier : modifier:TypeModifier.t -> t -> t
+end
+
 (* Result of extracting class names from a type. *)
 module ClassNamesFromType : sig
   type t = {
-    class_names: string list;
-    stripped_coroutine: bool;
-    stripped_optional: bool;
-    stripped_readonly: bool;
-    unbound_type_variable: bool;
+    classes: ClassWithModifiers.t list;
     is_exhaustive: bool;
         (* Is there an element (after stripping) that isn't a class name? For instance:
            get_class_name(Union[A, Callable[...])) = { class_names = [A], is_exhaustive = false } *)
@@ -49,13 +68,20 @@ module ClassNamesFromType : sig
 end
 
 module PyreflyType : sig
+  module ClassWithModifiers : sig
+    type t = {
+      module_id: int;
+      class_id: int;
+      modifiers: TypeModifier.t list;
+    }
+    [@@deriving equal, compare, show]
+
+    val from_class : int * int -> t
+  end
+
   module ClassNamesFromType : sig
     type t = {
-      class_names: (int * int) list;
-      stripped_coroutine: bool;
-      stripped_optional: bool;
-      stripped_readonly: bool;
-      unbound_type_variable: bool;
+      classes: ClassWithModifiers.t list;
       is_exhaustive: bool;
     }
     [@@deriving equal, compare, show]

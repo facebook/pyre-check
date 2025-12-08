@@ -85,6 +85,11 @@ module JsonUtil = struct
     | json -> Error (FormatError.UnexpectedJsonType { json; message = "expected a list" })
 
 
+  let as_string = function
+    | `String string -> Ok string
+    | json -> Error (FormatError.UnexpectedJsonType { json; message = "expected a string" })
+
+
   let get_optional_string_member json key =
     match Yojson.Safe.Util.member key json with
     | `String value -> Ok (Some value)
@@ -602,41 +607,48 @@ module ProjectFile = struct
     | Error error -> raise (PyreflyFileFormatError { path; error = Error.FormatError error })
 end
 
+module ClassWithModifiers = struct
+  type t = {
+    class_name: GlobalClassId.t;
+    modifiers: Pyre1Api.TypeModifier.t list;
+  }
+  [@@deriving equal, show]
+
+  let from_json json =
+    let open Core.Result.Monad_infix in
+    JsonUtil.get_object_member json "class"
+    >>= fun class_name ->
+    GlobalClassId.from_json (`Assoc class_name)
+    >>= fun class_name ->
+    JsonUtil.get_optional_list_member json "modifiers"
+    >>| List.map ~f:JsonUtil.as_string
+    >>= Result.all
+    >>| List.map ~f:(fun modifier ->
+            match Pyre1Api.TypeModifier.from_string modifier with
+            | Some modifier -> Ok modifier
+            | None ->
+                Error
+                  (FormatError.UnexpectedJsonType
+                     { json = `String modifier; message = "expected a modifier" }))
+    >>= Result.all
+    >>| fun modifiers -> { class_name; modifiers }
+end
+
 module ClassNamesResult = struct
   type t = {
-    class_names: GlobalClassId.t list;
-    stripped_coroutine: bool;
-    stripped_optional: bool;
-    stripped_readonly: bool;
-    unbound_type_variable: bool;
+    classes: ClassWithModifiers.t list;
     is_exhaustive: bool;
   }
   [@@deriving equal, show]
 
   let from_json json =
     let open Core.Result.Monad_infix in
-    JsonUtil.get_list_member json "class_names"
-    >>| List.map ~f:GlobalClassId.from_json
+    JsonUtil.get_list_member json "classes"
+    >>| List.map ~f:ClassWithModifiers.from_json
     >>= Result.all
-    >>= fun class_names ->
-    JsonUtil.get_optional_bool_member ~default:false json "stripped_coroutine"
-    >>= fun stripped_coroutine ->
-    JsonUtil.get_optional_bool_member ~default:false json "stripped_optional"
-    >>= fun stripped_optional ->
-    JsonUtil.get_optional_bool_member ~default:false json "stripped_readonly"
-    >>= fun stripped_readonly ->
-    JsonUtil.get_optional_bool_member ~default:false json "unbound_type_variable"
-    >>= fun unbound_type_variable ->
+    >>= fun classes ->
     JsonUtil.get_optional_bool_member ~default:false json "is_exhaustive"
-    >>| fun is_exhaustive ->
-    {
-      class_names;
-      stripped_coroutine;
-      stripped_optional;
-      stripped_readonly;
-      unbound_type_variable;
-      is_exhaustive;
-    }
+    >>| fun is_exhaustive -> { classes; is_exhaustive }
 
 
   let from_optional_json = function
@@ -685,26 +697,23 @@ module JsonType = struct
   let to_pysa_type { string; scalar_properties; class_names } =
     let class_names =
       match class_names with
-      | Some
-          {
-            ClassNamesResult.class_names;
-            stripped_coroutine;
-            stripped_optional;
-            stripped_readonly;
-            unbound_type_variable;
-            is_exhaustive;
-          } ->
+      | Some { ClassNamesResult.classes; is_exhaustive } ->
           Some
             {
-              PyreflyType.ClassNamesFromType.class_names =
+              PyreflyType.ClassNamesFromType.classes =
                 List.map
-                  ~f:(fun { GlobalClassId.module_id; local_class_id } ->
-                    ModuleId.to_int module_id, LocalClassId.to_int local_class_id)
-                  class_names;
-              stripped_coroutine;
-              stripped_optional;
-              stripped_readonly;
-              unbound_type_variable;
+                  ~f:
+                    (fun {
+                           ClassWithModifiers.class_name =
+                             { GlobalClassId.module_id; local_class_id };
+                           modifiers;
+                         } ->
+                    {
+                      PyreflyType.ClassWithModifiers.module_id = ModuleId.to_int module_id;
+                      class_id = LocalClassId.to_int local_class_id;
+                      modifiers;
+                    })
+                  classes;
               is_exhaustive;
             }
       | None -> None
@@ -4632,38 +4641,26 @@ module ReadOnly = struct
           failwith "ReadOnly.Type.get_class_names: trying to use a pyre1 type with a pyrefly API."
       | Some { PyreflyType.class_names = None; _ } ->
           Analysis.PyrePysaEnvironment.ClassNamesFromType.not_a_class
-      | Some
-          {
-            PyreflyType.class_names =
-              Some
+      | Some { PyreflyType.class_names = Some { classes; is_exhaustive }; _ } ->
+          let get_class_with_modifiers
+              { Pyre1Api.PyreflyType.ClassWithModifiers.module_id; class_id; modifiers }
+            =
+            let class_name =
+              ClassIdToQualifiedNameSharedMemory.get
+                class_id_to_qualified_name_shared_memory
                 {
-                  class_names;
-                  stripped_coroutine;
-                  stripped_optional;
-                  stripped_readonly;
-                  unbound_type_variable;
-                  is_exhaustive;
-                };
-            _;
-          } ->
-          let get_class_name (module_id, class_id) =
-            ClassIdToQualifiedNameSharedMemory.get
-              class_id_to_qualified_name_shared_memory
-              {
-                GlobalClassId.module_id = ModuleId.from_int module_id;
-                local_class_id = LocalClassId.from_int class_id;
-              }
-            |> assert_shared_memory_key_exists "missing class id"
-            |> FullyQualifiedName.to_reference
-            |> Reference.show
+                  GlobalClassId.module_id = ModuleId.from_int module_id;
+                  local_class_id = LocalClassId.from_int class_id;
+                }
+              |> assert_shared_memory_key_exists "missing class id"
+              |> FullyQualifiedName.to_reference
+              |> Reference.show
+            in
+            { Pyre1Api.ClassWithModifiers.class_name; modifiers }
           in
           {
-            Analysis.PyrePysaEnvironment.ClassNamesFromType.class_names =
-              List.map ~f:get_class_name class_names;
-            stripped_coroutine;
-            stripped_optional;
-            stripped_readonly;
-            unbound_type_variable;
+            Analysis.PyrePysaEnvironment.ClassNamesFromType.classes =
+              List.map ~f:get_class_with_modifiers classes;
             is_exhaustive;
           }
 

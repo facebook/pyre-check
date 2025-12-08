@@ -10,6 +10,8 @@
    by `Analysis.PyrePysaEnvironment` or the Pyrefly API provided by `Interprocedural.Pyrefly`. *)
 
 module Pyre1Api = Analysis.PyrePysaEnvironment
+module TypeModifier = Analysis.PyrePysaEnvironment.TypeModifier
+module ClassWithModifiers = Analysis.PyrePysaEnvironment.ClassWithModifiers
 module ScalarTypeProperties = Pyre1Api.ScalarTypeProperties
 module ClassNamesFromType = Pyre1Api.ClassNamesFromType
 module PysaType = Pyre1Api.PysaType

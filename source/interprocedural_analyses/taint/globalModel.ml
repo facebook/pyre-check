@@ -52,12 +52,22 @@ let get_global_targets_with_pyrefly
   let pyre_api = PyrePysaApi.InContext.pyre_api pyre_in_context in
   match Node.value expression with
   | Expression.Name (Name.Attribute { Name.Attribute.base; attribute; _ }) ->
+      let allow_modifier = function
+        | PyrePysaApi.TypeModifier.Optional
+        | PyrePysaApi.TypeModifier.Coroutine
+        | PyrePysaApi.TypeModifier.Awaitable
+        | PyrePysaApi.TypeModifier.ReadOnly
+        | PyrePysaApi.TypeModifier.TypeVariableBound ->
+            true
+      in
       Interprocedural.TypeOfExpressionSharedMemory.compute_or_retrieve_pysa_type
         type_of_expression_shared_memory
         ~pyre_in_context
         base
       |> PyrePysaApi.ReadOnly.Type.get_class_names pyre_api
-      |> (fun { PyrePysaApi.ClassNamesFromType.class_names; _ } -> class_names)
+      |> (fun { PyrePysaApi.ClassNamesFromType.classes; _ } -> classes)
+      |> List.filter_map ~f:(fun { PyrePysaApi.ClassWithModifiers.modifiers; class_name } ->
+             if List.for_all ~f:allow_modifier modifiers then Some class_name else None)
       |> List.map ~f:(fun class_name ->
              class_name :: PyrePysaApi.ReadOnly.class_mro pyre_api class_name)
       |> List.concat

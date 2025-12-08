@@ -375,13 +375,18 @@ module LocalFunctionId : sig
 end
 
 (* Exposed for testing purposes *)
+module ClassWithModifiers : sig
+  type t = {
+    class_name: GlobalClassId.t;
+    modifiers: Analysis.PyrePysaEnvironment.TypeModifier.t list;
+  }
+  [@@deriving equal, show]
+end
+
+(* Exposed for testing purposes *)
 module ClassNamesResult : sig
   type t = {
-    class_names: GlobalClassId.t list;
-    stripped_coroutine: bool;
-    stripped_optional: bool;
-    stripped_readonly: bool;
-    unbound_type_variable: bool;
+    classes: ClassWithModifiers.t list;
     is_exhaustive: bool;
   }
   [@@deriving equal, show]

@@ -964,11 +964,21 @@ let get_class_attributes_transitive ~pyre_api class_name =
 let paths_for_source_or_sink ~pyre_api ~kind ~root ~root_annotations ~features =
   let open Core.Result in
   let all_static_field_paths () =
+    let allow_modifier = function
+      | PyrePysaApi.TypeModifier.Optional
+      | PyrePysaApi.TypeModifier.Coroutine
+      | PyrePysaApi.TypeModifier.Awaitable
+      | PyrePysaApi.TypeModifier.ReadOnly ->
+          true
+      | PyrePysaApi.TypeModifier.TypeVariableBound -> false
+    in
     let attributes =
       root_annotations
       |> List.map ~f:(PyrePysaApi.ReadOnly.Type.get_class_names pyre_api)
-      |> List.map ~f:(fun { PyrePysaApi.ClassNamesFromType.class_names; _ } -> class_names)
+      |> List.map ~f:(fun { PyrePysaApi.ClassNamesFromType.classes; _ } -> classes)
       |> List.concat
+      |> List.filter_map ~f:(fun { PyrePysaApi.ClassWithModifiers.modifiers; class_name } ->
+             if List.for_all ~f:allow_modifier modifiers then Some class_name else None)
       |> List.concat_map ~f:(get_class_attributes_transitive ~pyre_api)
       |> List.filter ~f:(Fn.non Ast.Expression.is_dunder_attribute)
       |> List.dedup_and_sort ~compare:Identifier.compare

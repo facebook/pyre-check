@@ -694,14 +694,23 @@ let matches_annotation_constraint
         (TypeAnnotation.show_fully_qualified_annotation annotation)
   | ModelQuery.AnnotationConstraint.AnnotationClassExtends
       { class_name; is_transitive; includes_self } ->
+      let allow_modifier = function
+        | PyrePysaApi.TypeModifier.Optional
+        | PyrePysaApi.TypeModifier.Coroutine
+        | PyrePysaApi.TypeModifier.Awaitable
+        | PyrePysaApi.TypeModifier.ReadOnly ->
+            true
+        | PyrePysaApi.TypeModifier.TypeVariableBound -> false
+      in
       TypeAnnotation.inferred_type annotation
       >>| PyrePysaApi.ReadOnly.Type.get_class_names pyre_api
       >>| (function
             | {
-                PyrePysaApi.ClassNamesFromType.class_names = [extracted_class_name];
+                PyrePysaApi.ClassNamesFromType.classes =
+                  [{ class_name = extracted_class_name; modifiers }];
                 is_exhaustive = true;
-                _;
-              } ->
+              }
+              when List.for_all ~f:allow_modifier modifiers ->
                 let class_name =
                   Reference.show
                     (PyrePysaApi.ReadOnly.add_builtins_prefix

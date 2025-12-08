@@ -12,6 +12,8 @@ open Core
    by `Analysis.PyrePysaEnvironment` or the Pyrefly API provided by `Interprocedural.Pyrefly`. *)
 
 module ScalarTypeProperties = Analysis.PyrePysaEnvironment.ScalarTypeProperties
+module TypeModifier = Analysis.PyrePysaEnvironment.TypeModifier
+module ClassWithModifiers = Analysis.PyrePysaEnvironment.ClassWithModifiers
 module ClassNamesFromType = Analysis.PyrePysaEnvironment.ClassNamesFromType
 module PysaType = Analysis.PyrePysaEnvironment.PysaType
 module PyreClassSummary = Analysis.ClassSummary

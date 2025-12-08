@@ -80,73 +80,83 @@ module ScalarTypeProperties = struct
     |> set_enumeration is_enumeration
 end
 
+module TypeModifier = struct
+  type t =
+    | Optional
+    | Coroutine
+    | Awaitable
+    | TypeVariableBound
+    | ReadOnly
+  [@@deriving equal, compare, show]
+
+  let from_string = function
+    | "Optional" -> Some Optional
+    | "Coroutine" -> Some Coroutine
+    | "Awaitable" -> Some Awaitable
+    | "TypeVariableBound" -> Some TypeVariableBound
+    | "ReadOnly" -> Some ReadOnly
+    | _ -> None
+end
+
+module ClassWithModifiers = struct
+  type t = {
+    class_name: string;
+    modifiers: TypeModifier.t list;
+  }
+
+  let from_class_name class_name = { class_name; modifiers = [] }
+
+  let prepend_modifier ~modifier { class_name; modifiers } =
+    { class_name; modifiers = modifier :: modifiers }
+end
+
 (* Result of extracting class names from a type. *)
 module ClassNamesFromType = struct
   type t = {
-    class_names: string list;
-    stripped_coroutine: bool;
-    stripped_optional: bool;
-    stripped_readonly: bool;
-    unbound_type_variable: bool;
+    classes: ClassWithModifiers.t list;
     is_exhaustive: bool;
         (* Is there an element (after stripping) that isn't a class name? For instance:
            get_class_name(Union[A, Callable[...])) = { class_names = [A], is_exhaustive = false } *)
   }
 
   let from_class_name class_name =
-    {
-      class_names = [class_name];
-      stripped_coroutine = false;
-      stripped_optional = false;
-      stripped_readonly = false;
-      unbound_type_variable = false;
-      is_exhaustive = true;
-    }
+    { classes = [ClassWithModifiers.from_class_name class_name]; is_exhaustive = true }
 
 
-  let not_a_class =
-    {
-      class_names = [];
-      stripped_coroutine = false;
-      stripped_optional = false;
-      stripped_readonly = false;
-      unbound_type_variable = false;
-      is_exhaustive = false;
-    }
+  let not_a_class = { classes = []; is_exhaustive = false }
+
+  let prepend_modifier ~modifier { classes; is_exhaustive } =
+    { classes = List.map ~f:(ClassWithModifiers.prepend_modifier ~modifier) classes; is_exhaustive }
 
 
   let join left right =
     {
-      class_names = List.rev_append left.class_names right.class_names;
-      stripped_coroutine = left.stripped_coroutine || right.stripped_coroutine;
-      stripped_optional = left.stripped_optional || right.stripped_optional;
-      stripped_readonly = left.stripped_readonly || right.stripped_readonly;
-      unbound_type_variable = left.unbound_type_variable || right.unbound_type_variable;
+      classes = List.rev_append left.classes right.classes;
       is_exhaustive = left.is_exhaustive && right.is_exhaustive;
     }
 end
 
 module PyreflyType = struct
+  module ClassWithModifiers = struct
+    type t = {
+      module_id: int;
+      class_id: int;
+      modifiers: TypeModifier.t list;
+    }
+    [@@deriving equal, compare, show]
+
+    let from_class (module_id, class_id) = { module_id; class_id; modifiers = [] }
+  end
+
   module ClassNamesFromType = struct
     type t = {
-      class_names: (int * int) list;
-      stripped_coroutine: bool;
-      stripped_optional: bool;
-      stripped_readonly: bool;
-      unbound_type_variable: bool;
+      classes: ClassWithModifiers.t list;
       is_exhaustive: bool;
     }
     [@@deriving equal, compare, show]
 
     let from_class (module_id, class_id) =
-      {
-        class_names = [module_id, class_id];
-        stripped_coroutine = false;
-        stripped_optional = false;
-        stripped_readonly = false;
-        unbound_type_variable = false;
-        is_exhaustive = true;
-      }
+      { classes = [ClassWithModifiers.from_class (module_id, class_id)]; is_exhaustive = true }
   end
 
   type t = {
@@ -910,13 +920,33 @@ module ReadOnly = struct
             | annotation -> annotation, false
           in
           let class_name_result = extract_class_names annotation in
-          {
-            class_name_result with
-            ClassNamesFromType.stripped_coroutine;
-            stripped_optional;
-            stripped_readonly;
-            unbound_type_variable;
-          }
+          let class_name_result =
+            if unbound_type_variable then
+              ClassNamesFromType.prepend_modifier
+                class_name_result
+                ~modifier:TypeModifier.TypeVariableBound
+            else
+              class_name_result
+          in
+          let class_name_result =
+            if stripped_readonly then
+              ClassNamesFromType.prepend_modifier class_name_result ~modifier:TypeModifier.ReadOnly
+            else
+              class_name_result
+          in
+          let class_name_result =
+            if stripped_optional then
+              ClassNamesFromType.prepend_modifier class_name_result ~modifier:TypeModifier.Optional
+            else
+              class_name_result
+          in
+          let class_name_result =
+            if stripped_coroutine then
+              ClassNamesFromType.prepend_modifier class_name_result ~modifier:TypeModifier.Coroutine
+            else
+              class_name_result
+          in
+          class_name_result
 
 
     let is_dictionary_or_mapping _ = function
