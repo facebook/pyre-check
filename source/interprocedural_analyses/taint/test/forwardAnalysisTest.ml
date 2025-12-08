@@ -305,7 +305,6 @@ let test_hardcoded_source context =
     [outcome ~kind:`Function ~returns:[Sources.NamedSource "UserControlled"] "qualifier.get_field"];
   assert_taint
     ~context
-    ~skip_for_pyrefly:true (* TODO(T225700656): False negative with pyrefly *)
     ~models:{|
       os.environ: TaintSource[UserControlled] = ...
     |}
@@ -323,7 +322,6 @@ let test_hardcoded_source context =
     ];
   assert_taint
     ~context
-    ~skip_for_pyrefly:true (* TODO(T225700656): False negative with pyrefly *)
     ~models:
       {|
       os.environ: TaintSource[UserControlled] = ...
@@ -426,7 +424,6 @@ let test_class_model context =
     [outcome ~kind:`Method ~returns:[Sources.NamedSource "Test"] "qualifier.Foo.bar"];
   assert_taint
     ~context
-    ~skip_for_pyrefly:true (* TODO(T225700656): Handle class attributes. *)
     ~models:{|
       qualifier.A.ATTRIBUTE: TaintSource[Test] = ...
     |}

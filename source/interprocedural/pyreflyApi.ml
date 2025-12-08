@@ -4369,7 +4369,7 @@ module ReadOnly = struct
           |> List.map ~f:instantiate_call_target
           |> List.concat;
         global_targets;
-        is_attribute = false;
+        is_attribute = not (List.is_empty global_targets);
         if_called;
       }
     in

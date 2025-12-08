@@ -1710,7 +1710,6 @@ let test_constructor_argument_tito context =
 let test_assignment context =
   assert_taint
     ~context
-    ~skip_for_pyrefly:true (* TODO(T225700656): False negative with pyrefly *)
     {|
       import pysa
 
