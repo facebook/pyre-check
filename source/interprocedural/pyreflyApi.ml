@@ -424,7 +424,7 @@ module PyreflyTarget = struct
         >>| List.map ~f:from_json
         >>= Result.all
         >>| fun subset -> OverrideSubset { base_method; subset }
-    | `Assoc [("FormatString", `Null)] -> Ok FormatString
+    | `String "FormatString" -> Ok FormatString
     | _ -> Error (FormatError.UnexpectedJsonType { json; message = "Unknown type of target" })
 end
 
@@ -1517,12 +1517,48 @@ module ModuleCallGraphs = struct
       >>| fun define_targets -> { define_targets }
   end
 
+  module JsonFormatStringArtificialCallees = struct
+    type t = { targets: JsonCallTarget.t list }
+
+    let from_json json =
+      let open Core.Result.Monad_infix in
+      let parse_call_target_list targets =
+        targets |> List.map ~f:JsonCallTarget.from_json |> Result.all
+      in
+      JsonUtil.get_list_member json "targets"
+      >>= parse_call_target_list
+      >>| fun targets -> { targets }
+  end
+
+  module JsonFormatStringStringifyCallees = struct
+    type t = {
+      targets: JsonCallTarget.t list;
+      unresolved: CallGraph.Unresolved.t;
+    }
+
+    let from_json json =
+      let open Core.Result.Monad_infix in
+      let parse_call_target_list targets =
+        targets |> List.map ~f:JsonCallTarget.from_json |> Result.all
+      in
+      JsonUtil.get_optional_list_member json "targets"
+      >>= parse_call_target_list
+      >>= fun targets ->
+      JsonUtil.get_optional_member json "unresolved"
+      |> (function
+           | Some json -> JsonUnresolved.from_json json
+           | None -> Ok CallGraph.Unresolved.False)
+      >>| fun unresolved -> { targets; unresolved }
+  end
+
   module JsonExpressionCallees = struct
     type t =
       | Call of JsonCallCallees.t
       | Identifier of JsonIdentifierCallees.t
       | AttributeAccess of JsonAttributeAccessCallees.t
       | Define of JsonDefineCallees.t
+      | FormatStringArtificial of JsonFormatStringArtificialCallees.t
+      | FormatStringStringify of JsonFormatStringStringifyCallees.t
 
     let from_json json =
       let open Core.Result.Monad_infix in
@@ -1537,6 +1573,12 @@ module ModuleCallGraphs = struct
           >>| fun attribute_access_callees -> AttributeAccess attribute_access_callees
       | `Assoc [("Define", define_callees)] ->
           JsonDefineCallees.from_json define_callees >>| fun define_callees -> Define define_callees
+      | `Assoc [("FormatStringArtificial", format_string_callees)] ->
+          JsonFormatStringArtificialCallees.from_json format_string_callees
+          >>| fun format_string_callees -> FormatStringArtificial format_string_callees
+      | `Assoc [("FormatStringStringify", format_string_callees)] ->
+          JsonFormatStringStringifyCallees.from_json format_string_callees
+          >>| fun format_string_callees -> FormatStringStringify format_string_callees
       | _ ->
           Error (FormatError.UnexpectedJsonType { json; message = "expected expression callees" })
   end
@@ -4338,6 +4380,20 @@ module ReadOnly = struct
         decorated_targets = [];
       }
     in
+    let instantiate_format_string_artificial_callees { JsonFormatStringArtificialCallees.targets } =
+      {
+        CallGraph.FormatStringArtificialCallees.targets =
+          targets |> List.map ~f:instantiate_call_target |> List.concat;
+      }
+    in
+    let instantiate_format_string_stringify_callees
+        { JsonFormatStringStringifyCallees.targets; unresolved = _ }
+      =
+      {
+        CallGraph.FormatStringStringifyCallees.targets =
+          targets |> List.map ~f:instantiate_call_target |> List.concat;
+      }
+    in
     let instantiate_expression_callees = function
       | JsonExpressionCallees.Call callees ->
           ExpressionCallees.Call (instantiate_call_callees callees)
@@ -4347,6 +4403,12 @@ module ReadOnly = struct
           ExpressionCallees.AttributeAccess (instantiate_attribute_access_callees callees)
       | JsonExpressionCallees.Define callees ->
           ExpressionCallees.Define (instantiate_define_callees callees)
+      | JsonExpressionCallees.FormatStringArtificial callees ->
+          ExpressionCallees.FormatStringArtificial
+            (instantiate_format_string_artificial_callees callees)
+      | JsonExpressionCallees.FormatStringStringify callees ->
+          ExpressionCallees.FormatStringStringify
+            (instantiate_format_string_stringify_callees callees)
     in
     let instantiate_call_edge expression_identifier callees call_graph =
       let callees = instantiate_expression_callees callees in
@@ -4530,7 +4592,6 @@ module ReadOnly = struct
         ~inputs:(Map.to_alist module_definitions_map)
         ()
     in
-    (* TODO(T225700656): Parse decorated call graphs. *)
     Log.info "Parsed call graphs from pyrefly: %.3fs" (Timer.stop_in_sec timer);
     Statistics.performance
       ~name:"Parsed call graphs from pyrefly"

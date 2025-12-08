@@ -1302,6 +1302,8 @@ end
 module FormatStringStringifyCallees = struct
   type t = { targets: CallTarget.t list } [@@deriving equal, show { with_path = false }]
 
+  let is_empty { targets } = List.is_empty targets
+
   let dedup_and_sort { targets } = { targets = CallTarget.dedup_and_sort targets }
 
   let join { targets = left_targets } { targets = right_targets } =
@@ -1514,6 +1516,11 @@ module ExpressionCallees = struct
 
   let is_empty_identifier = function
     | Identifier callees -> IdentifierCallees.is_empty callees
+    | _ -> false
+
+
+  let is_empty_format_string_stringify = function
+    | FormatStringStringify callees -> FormatStringStringifyCallees.is_empty callees
     | _ -> false
 
 
@@ -1996,6 +2003,11 @@ module DefineCallGraph = struct
   let filter_empty_identifier =
     ExpressionIdentifier.Map.filter (fun _ callees ->
         not (ExpressionCallees.is_empty_identifier callees))
+
+
+  let filter_empty_format_string_stringify =
+    ExpressionIdentifier.Map.filter (fun _ callees ->
+        not (ExpressionCallees.is_empty_format_string_stringify callees))
 
 
   let update_expression_callees ~f = ExpressionIdentifier.Map.map f

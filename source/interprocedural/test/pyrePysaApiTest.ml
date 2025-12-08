@@ -59,7 +59,7 @@ let convert_to_pyrefly_global global =
             PyrePysaEnvironment.PyreflyType.string = "test.Foo";
             scalar_properties = ScalarTypeProperties.none;
             class_names =
-              Some (PyrePysaEnvironment.PyreflyType.ClassNamesFromType.from_class (53, 0));
+              Some (PyrePysaEnvironment.PyreflyType.ClassNamesFromType.from_class (63, 0));
           }
     | Some (Type.Primitive "test.Bar") ->
         PysaType.from_pyrefly_type
@@ -67,7 +67,7 @@ let convert_to_pyrefly_global global =
             PyrePysaEnvironment.PyreflyType.string = "test.Bar";
             scalar_properties = ScalarTypeProperties.none;
             class_names =
-              Some (PyrePysaEnvironment.PyreflyType.ClassNamesFromType.from_class (53, 1));
+              Some (PyrePysaEnvironment.PyreflyType.ClassNamesFromType.from_class (63, 1));
           }
     | Some annotation ->
         failwith (Format.asprintf "unimplemented: pyrefly representation for %a" Type.pp annotation)

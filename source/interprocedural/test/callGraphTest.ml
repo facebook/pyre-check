@@ -2947,6 +2947,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~skip_for_pyrefly:false
            ~_migrated_to_pyrefly:true
            ~source:
              {|
@@ -2974,6 +2975,35 @@ let test_call_graph_of_define =
                           ~receiver_class:"str"
                           (Target.Regular.Method
                              { class_name = "str"; method_name = "__str__"; kind = Normal });
+                      ]) );
+               ( "7:18-7:23",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~receiver_class:"test.C"
+                            (Target.Regular.Method
+                               { class_name = "test.C"; method_name = "m"; kind = Normal });
+                        ]
+                      ()) );
+             ]
+           ~pyrefly_expected:
+             [
+               ( "7:9-7:25|format-string-artificial",
+                 ExpressionCallees.from_format_string_artificial
+                   (FormatStringArtificialCallees.from_f_string_targets
+                      [CallTarget.create Target.ArtificialTargets.format_string]) );
+               ( "7:18-7:23|format-string-stringify",
+                 ExpressionCallees.from_format_string_stringify
+                   (FormatStringStringifyCallees.from_stringify_targets
+                      [
+                        CallTarget.create_regular
+                          ~implicit_receiver:true
+                          ~receiver_class:"str"
+                          (Target.Regular.Method
+                             { class_name = "str"; method_name = "__format__"; kind = Normal });
                       ]) );
                ( "7:18-7:23",
                  ExpressionCallees.from_call

@@ -4840,6 +4840,7 @@ let build_whole_program_call_graph_for_pyrefly
     |> DefineCallGraph.dedup_and_sort
     |> DefineCallGraph.filter_empty_attribute_access
     |> DefineCallGraph.filter_empty_identifier
+    |> DefineCallGraph.filter_empty_format_string_stringify
     |> DefineCallGraph.regenerate_call_indices ~indexer:call_indexer
   in
   let method_has_overrides method_name =

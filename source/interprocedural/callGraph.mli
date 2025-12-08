@@ -628,6 +628,8 @@ module DefineCallGraph : sig
 
   val filter_empty_identifier : t -> t
 
+  val filter_empty_format_string_stringify : t -> t
+
   val map_target
     :  f:(Target.t -> Target.t) ->
     map_call_if:(CallCallees.t -> bool) ->
