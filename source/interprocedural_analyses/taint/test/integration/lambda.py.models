@@ -1608,7 +1608,7 @@
   "data": {
     "callable": "filter.__init__",
     "filename": "builtins.pyi",
-    "callable_line": 521,
+    "callable_line": 522,
     "tito": [
       {
         "port": "formal(__iterable, position=2, positional_only)[*]",

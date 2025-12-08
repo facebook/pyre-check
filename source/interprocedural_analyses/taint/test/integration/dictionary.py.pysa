@@ -28,6 +28,7 @@ def typing.Mapping.get(
 def dict.__getitem__(
     self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse],
     __key: Sanitize[TaintInTaintOut],
+    /
 ): ...
 
 @SkipObscure

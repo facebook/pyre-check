@@ -985,7 +985,7 @@
     "callable_line": 474,
     "sinks": [
       {
-        "port": "formal(arg, position=0)",
+        "port": "formal(source, position=0, positional_only)",
         "taint": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
@@ -1795,7 +1795,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
+                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],

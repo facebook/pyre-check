@@ -77,81 +77,21 @@ let compute_define_call_graph
       definitions
   in
   let call_graph =
-    match pyre_api with
-    | PyrePysaApi.ReadOnly.Pyre1 _ ->
-        let source = TestHelper.source_from_qualifier ~pyre_api module_name in
-        let define =
-          find_define_exn
-            ~define_name:(Target.define_name_exn callable |> Reference.show)
-            ~module_name
-            source
-        in
-        CallGraphBuilder.call_graph_of_define
-          ~static_analysis_configuration
-          ~pyre_api
-          ~override_graph:
-            (Some
-               (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
-          ~attribute_targets:
-            (object_targets |> List.map ~f:Target.from_regular |> Target.HashSet.of_list)
-          ~callables_to_definitions_map:
-            (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
-          ~callables_to_decorators_map:
-            (CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
-          ~type_of_expression_shared_memory
-          ~check_invariants:true
-          ~qualifier:module_name
-          ~callable
-          ~define
-    | PyrePysaApi.ReadOnly.Pyrefly _ ->
-        let { CallGraph.SharedMemory.define_call_graphs; _ } =
-          CallGraphBuilder.build_whole_program_call_graph
-            ~scheduler
-            ~static_analysis_configuration
-            ~pyre_api
-            ~resolve_module_path:None
-            ~callables_to_definitions_map:
-              (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
-            ~callables_to_decorators_map:
-              (CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
-            ~type_of_expression_shared_memory
-            ~override_graph:
-              (Some
-                 (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
-            ~store_shared_memory:true
-            ~attribute_targets:
-              (object_targets |> List.map ~f:Target.from_regular |> Target.Set.of_list)
-            ~skip_analysis_targets:(Target.HashSet.create ())
-            ~check_invariants:true
-            ~definitions:[callable]
-            ~create_dependency_for:CallGraph.AllTargetsUseCase.Everything
-        in
-        let strip_builtins_from_string reference =
-          reference
-          |> Reference.create
-          |> Interprocedural.PyreflyApi.strip_builtins_prefix
-          |> Reference.show
-        in
-        let strip_builtins_from_target = function
-          | Target.Regular (Target.Regular.Method { class_name; method_name; kind }) ->
-              Target.Regular
-                (Target.Regular.Method
-                   { class_name = strip_builtins_from_string class_name; method_name; kind })
-          | target -> target
-        in
-        CallGraph.SharedMemory.ReadOnly.get
-          (CallGraph.SharedMemory.read_only define_call_graphs)
-          ~cache:false
-          ~callable
-        |> Option.value_exn
-        |> CallGraph.DefineCallGraph.map_target
-             ~f:strip_builtins_from_target
-             ~map_call_if:(fun _ -> true)
-             ~map_return_if:(fun _ -> true)
-        |> CallGraph.DefineCallGraph.map_receiver_class
-             ~f:strip_builtins_from_string
-             ~map_call_if:(fun _ -> true)
-             ~map_return_if:(fun _ -> true)
+    TestHelper.call_graph_of_callable
+      ~pyre_api
+      ~static_analysis_configuration
+      ~override_graph:
+        (Some (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
+      ~object_targets:(List.map ~f:Target.from_regular object_targets)
+      ~callables_to_definitions_map:
+        (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
+      ~callables_to_decorators_map:
+        (CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
+      ~type_of_expression_shared_memory
+      ~check_invariants:true
+      ~module_name
+      ~callable
+      ~normalize_to_pyre1:true
   in
   OverrideGraph.SharedMemory.cleanup override_graph_shared_memory;
   call_graph, callables_to_definitions_map, type_of_expression_shared_memory

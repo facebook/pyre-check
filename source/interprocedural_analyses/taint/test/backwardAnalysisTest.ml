@@ -13,26 +13,25 @@ open Taint
 open Interprocedural
 open TestHelper
 
-let assert_taint ~context source expected =
+let assert_taint ?(skip_for_pyrefly = false) ~context source expected =
   let handle = "qualifier.py" in
   let qualifier = Ast.Reference.create "qualifier" in
-  let project = Test.ScratchProject.setup ~context [handle, source] in
-  let configuration = Test.ScratchProject.configuration_of project in
-  let pyre_api =
-    project |> Test.ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
+  let project =
+    Test.ScratchPyrePysaProject.setup
+      ~context
+      ~force_pyre1:skip_for_pyrefly
+      ~requires_type_of_expressions:true
+      [handle, source]
   in
+  let configuration = Test.ScratchPyrePysaProject.configuration_of project in
   let static_analysis_configuration =
     Configuration.StaticAnalysis.create
       ~maximum_target_depth:Configuration.StaticAnalysis.default_maximum_target_depth
       configuration
       ()
   in
-  let source =
-    PyrePysaApi.ReadOnly.source_of_qualifier pyre_api qualifier
-    |> fun option -> Option.value_exn option
-  in
-  let initial_models = TestHelper.get_initial_models ~context in
-  let defines = source |> Preprocessing.defines ~include_stubs:true |> List.rev in
+  let pyre_api = Test.ScratchPyrePysaProject.read_only_api project in
+  let initial_models = TestHelper.get_initial_models ~pyre_api in
   let initial_callables = FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier in
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
@@ -53,23 +52,15 @@ let assert_taint ~context source expected =
         (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ()
   in
-  let analyze_and_store_in_order models define =
-    let define_name =
-      FunctionDefinition.qualified_name_of_define ~module_name:qualifier (Ast.Node.value define)
-    in
-    let call_target = Target.from_define ~define_name ~define:(Ast.Node.value define) in
-    let () = Log.log ~section:`Taint "Analyzing %a" Target.pp call_target in
+  let analyze_and_store_in_order models (callable, define) =
+    let () = Log.log ~section:`Taint "Analyzing %a" Target.pp callable in
     let call_graph_of_define =
-      CallGraphBuilder.call_graph_of_define
+      TestHelper.call_graph_of_callable
         ~static_analysis_configuration
         ~pyre_api
         ~override_graph:
           (Some (OverrideGraph.SharedMemory.create () |> OverrideGraph.SharedMemory.read_only))
-        ~attribute_targets:
-          (initial_models
-          |> Registry.object_targets
-          |> Target.Set.elements
-          |> Target.HashSet.of_list)
+        ~object_targets:(initial_models |> Registry.object_targets |> Target.Set.elements)
         ~callables_to_definitions_map:
           (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
         ~callables_to_decorators_map:
@@ -78,12 +69,12 @@ let assert_taint ~context source expected =
              ()
           |> Interprocedural.CallableToDecoratorsMap.SharedMemory.read_only)
         ~type_of_expression_shared_memory
-        ~qualifier
-        ~callable:call_target
         ~check_invariants:true
-        ~define
+        ~normalize_to_pyre1:false
+        ~module_name:qualifier
+        ~callable
     in
-    let cfg = Cfg.create define.value in
+    let cfg = Cfg.create (Ast.Node.value define) in
     let taint_configuration = TaintConfiguration.Heap.default in
     let backward =
       BackwardAnalysis.run
@@ -97,7 +88,7 @@ let assert_taint ~context source expected =
         ~global_constants:
           (GlobalConstants.SharedMemory.create () |> GlobalConstants.SharedMemory.read_only)
         ~qualifier
-        ~callable:call_target
+        ~callable
         ~define
         ~cfg
         ~call_graph_of_define
@@ -107,9 +98,25 @@ let assert_taint ~context source expected =
         ()
     in
     let model = { Model.empty_model with backward } in
-    Registry.set models ~target:call_target ~model
+    Registry.set models ~target:callable ~model
   in
-  let models = List.fold ~f:analyze_and_store_in_order ~init:initial_models defines in
+  let callable_and_defines =
+    let add_define callable =
+      let { Interprocedural.CallablesSharedMemory.DefineAndQualifier.define; _ } =
+        Interprocedural.CallablesSharedMemory.ReadOnly.get_define
+          (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
+          callable
+        |> PyrePysaApi.AstResult.value_exn ~message:"missing ast"
+      in
+      callable, define
+    in
+    Interprocedural.FetchCallables.get_definitions initial_callables
+    |> List.map ~f:add_define
+    |> List.sort
+         ~compare:(fun (_, { Ast.Node.location = left; _ }) (_, { Ast.Node.location = right; _ }) ->
+           Ast.Location.compare left right)
+  in
+  let models = List.fold ~f:analyze_and_store_in_order ~init:initial_models callable_and_defines in
   let get_model = Registry.get models in
   let get_errors _ = [] in
   Interprocedural.CallablesSharedMemory.ReadWrite.cleanup callables_to_definitions_map;
@@ -218,13 +225,14 @@ let test_rce_sink context =
 let test_rce_and_test_sink context =
   assert_taint
     ~context
+    ~skip_for_pyrefly:true (* TODO(T225700656): False negative for pyrefly *)
     {|
       from pysa import _test_sink
 
       def test_rce_and_test_sink(test_only, rce_only, both):
         _test_sink(test_only)
         eval(rce_only)
-        if True:
+        if 1 > 2:
           _test_sink(both)
         else:
           eval(both)
@@ -1592,6 +1600,7 @@ let test_constructor_argument_tito context =
   let tito_to_return = { name = "tito"; titos = [Sinks.LocalReturn] } in
   let tito_to_self = { name = "tito"; titos = [Sinks.ParameterUpdate self_root] } in
   assert_taint
+    ~skip_for_pyrefly:true (* TODO(T225700656): Missing tito for DerivedData.__init__ *)
     ~context
     {|
       class Data:
@@ -1701,7 +1710,10 @@ let test_constructor_argument_tito context =
 let test_assignment context =
   assert_taint
     ~context
+    ~skip_for_pyrefly:true (* TODO(T225700656): False negative with pyrefly *)
     {|
+      import pysa
+
       def assigns_to_sink(assigned_to_sink):
         pysa._global_sink = assigned_to_sink
     |}

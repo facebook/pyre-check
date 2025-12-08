@@ -74,7 +74,7 @@
     "callable_line": 474,
     "sinks": [
       {
-        "port": "formal(arg, position=0)",
+        "port": "formal(source, position=0, positional_only)",
         "taint": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
@@ -94,7 +94,7 @@
     "callable_line": 476,
     "sinks": [
       {
-        "port": "formal(name, position=1)",
+        "port": "formal(name, position=1, positional_only)",
         "taint": [
           { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
         ]
@@ -102,7 +102,7 @@
     ],
     "tito": [
       {
-        "port": "formal(default, position=2)",
+        "port": "formal(default, position=2, positional_only)",
         "taint": [
           {
             "kinds": [
@@ -117,7 +117,7 @@
         ]
       },
       {
-        "port": "formal(o, position=0)",
+        "port": "formal(o, position=0, positional_only)",
         "taint": [
           {
             "kinds": [

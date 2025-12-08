@@ -331,12 +331,15 @@ module Unresolved = struct
     | UnexpectedPyreflyTarget
     | EmptyPyreflyTarget
     | UnknownClassField
+    | ClassFieldOnlyExistInObject
     | UnsupportedFunctionTarget
     | UnexpectedDefiningClass
     | UnexpectedInitMethod
     | UnexpectedNewMethod
     | UnexpectedCalleeExpression
     | UnresolvedMagicDunderAttr
+    | UnresolvedMagicDunderAttrDueToNoBase
+    | UnresolvedMagicDunderAttrDueToNoAttribute
     | Mixed
   [@@deriving equal, show, to_yojson]
 
@@ -371,12 +374,15 @@ module Unresolved = struct
     | "UnexpectedPyreflyTarget" -> Some UnexpectedPyreflyTarget
     | "EmptyPyreflyTarget" -> Some EmptyPyreflyTarget
     | "UnknownClassField" -> Some UnknownClassField
+    | "ClassFieldOnlyExistInObject" -> Some ClassFieldOnlyExistInObject
     | "UnsupportedFunctionTarget" -> Some UnsupportedFunctionTarget
     | "UnexpectedDefiningClass" -> Some UnexpectedDefiningClass
     | "UnexpectedInitMethod" -> Some UnexpectedInitMethod
     | "UnexpectedNewMethod" -> Some UnexpectedNewMethod
     | "UnexpectedCalleeExpression" -> Some UnexpectedCalleeExpression
     | "UnresolvedMagicDunderAttr" -> Some UnresolvedMagicDunderAttr
+    | "UnresolvedMagicDunderAttrDueToNoBase" -> Some UnresolvedMagicDunderAttrDueToNoBase
+    | "UnresolvedMagicDunderAttrDueToNoAttribute" -> Some UnresolvedMagicDunderAttrDueToNoAttribute
     | "Mixed" -> Some Mixed
     | _ -> None
 

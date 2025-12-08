@@ -120,12 +120,15 @@ module Unresolved : sig
     | UnexpectedPyreflyTarget
     | EmptyPyreflyTarget
     | UnknownClassField
+    | ClassFieldOnlyExistInObject
     | UnsupportedFunctionTarget
     | UnexpectedDefiningClass
     | UnexpectedInitMethod
     | UnexpectedNewMethod
     | UnexpectedCalleeExpression
     | UnresolvedMagicDunderAttr
+    | UnresolvedMagicDunderAttrDueToNoBase
+    | UnresolvedMagicDunderAttrDueToNoAttribute
     | Mixed
 
   type t =
