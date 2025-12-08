@@ -341,7 +341,6 @@ let test_hardcoded_source context =
     ];
   assert_taint
     ~context
-    ~skip_for_pyrefly:true (* TODO(T225700656): False negative with pyrefly *)
     ~models:
       {|
       django.http.Request.GET: TaintSource[UserControlled] = ...

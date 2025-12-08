@@ -49,14 +49,18 @@ let get_global_targets_with_pyrefly
     ~get_callee_model
     ~expression
   =
+  let pyre_api = PyrePysaApi.InContext.pyre_api pyre_in_context in
   match Node.value expression with
   | Expression.Name (Name.Attribute { Name.Attribute.base; attribute; _ }) ->
       Interprocedural.TypeOfExpressionSharedMemory.compute_or_retrieve_pysa_type
         type_of_expression_shared_memory
         ~pyre_in_context
         base
-      |> PyrePysaApi.ReadOnly.Type.get_class_names (PyrePysaApi.InContext.pyre_api pyre_in_context)
+      |> PyrePysaApi.ReadOnly.Type.get_class_names pyre_api
       |> (fun { PyrePysaApi.ClassNamesFromType.class_names; _ } -> class_names)
+      |> List.map ~f:(fun class_name ->
+             class_name :: PyrePysaApi.ReadOnly.class_mro pyre_api class_name)
+      |> List.concat
       |> List.map ~f:(fun class_name ->
              Format.sprintf "%s.%s" class_name attribute
              |> Reference.create
