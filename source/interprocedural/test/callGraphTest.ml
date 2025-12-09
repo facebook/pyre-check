@@ -115,7 +115,7 @@ let assert_call_graph_of_define
   let module_name, pyre_api, configuration =
     TestHelper.setup_single_py_file
       ~force_pyre1:skip_for_pyrefly
-      ~requires_type_of_expressions:false
+      ~requires_type_of_expressions:true
       ~file_name:"test.py"
       ~context
       ~source

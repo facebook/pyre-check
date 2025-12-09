@@ -26,92 +26,23 @@ type t = {
   interval: Interprocedural.ClassIntervalSet.t;
 }
 
-let get_global_targets_from_call_graph ~call_graph ~expression =
+let get_global_targets ~call_graph ~expression =
   match Node.value expression with
   | Expression.Name (Name.Identifier identifier) ->
       CallGraph.DefineCallGraph.resolve_identifier
         call_graph
         ~location:(Node.location expression)
         ~identifier
-      >>| fun { global_targets; _ } -> global_targets
+      >>| (fun { global_targets; _ } -> global_targets)
+      |> Option.value ~default:[]
   | Expression.Name (Name.Attribute attribute_access) ->
       CallGraph.DefineCallGraph.resolve_attribute_access
         call_graph
         ~location:(Node.location expression)
         ~attribute_access
-      >>| fun { global_targets; _ } -> global_targets
-  | _ -> None
-
-
-let get_global_targets_with_pyrefly
-    ~pyre_in_context
-    ~type_of_expression_shared_memory
-    ~get_callee_model
-    ~expression
-  =
-  let pyre_api = PyrePysaApi.InContext.pyre_api pyre_in_context in
-  match Node.value expression with
-  | Expression.Name (Name.Attribute { Name.Attribute.base; attribute; _ }) ->
-      let allow_modifier = function
-        | PyrePysaApi.TypeModifier.Optional
-        | PyrePysaApi.TypeModifier.Coroutine
-        | PyrePysaApi.TypeModifier.Awaitable
-        | PyrePysaApi.TypeModifier.ReadOnly
-        | PyrePysaApi.TypeModifier.TypeVariableBound ->
-            true
-        | PyrePysaApi.TypeModifier.Type -> false
-      in
-      let is_class_instance modifiers = List.for_all ~f:allow_modifier modifiers in
-      let is_class_type modifiers =
-        match List.rev modifiers with
-        | PyrePysaApi.TypeModifier.Type :: rest -> List.for_all ~f:allow_modifier rest
-        | _ -> false
-      in
-      Interprocedural.TypeOfExpressionSharedMemory.compute_or_retrieve_pysa_type
-        type_of_expression_shared_memory
-        ~pyre_in_context
-        base
-      |> PyrePysaApi.ReadOnly.Type.get_class_names pyre_api
-      |> (fun { PyrePysaApi.ClassNamesFromType.classes; _ } -> classes)
-      |> List.map ~f:(fun { PyrePysaApi.ClassWithModifiers.modifiers; class_name } ->
-             let parents = class_name :: PyrePysaApi.ReadOnly.class_mro pyre_api class_name in
-             if is_class_instance modifiers then
-               List.map ~f:(fun class_name -> Format.sprintf "%s.%s" class_name attribute) parents
-             else if is_class_type modifiers then
-               List.map
-                 ~f:(fun class_name -> Format.sprintf "%s.__class__.%s" class_name attribute)
-                 parents
-             else
-               [])
-      |> List.concat
-      |> List.map ~f:Reference.create
-      |> List.map ~f:Interprocedural.Target.create_object
-      |> List.filter ~f:(fun target -> Option.is_some (get_callee_model target))
-      |> List.map ~f:(fun target -> CallGraph.CallTarget.create target)
+      >>| (fun { global_targets; _ } -> global_targets)
+      |> Option.value ~default:[]
   | _ -> []
-
-
-let get_global_targets
-    ~pyre_in_context
-    ~type_of_expression_shared_memory
-    ~call_graph
-    ~get_callee_model
-    ~expression
-  =
-  let targets_from_call_graph =
-    get_global_targets_from_call_graph ~call_graph ~expression |> Option.value ~default:[]
-  in
-  let targets_from_type =
-    match pyre_in_context with
-    | PyrePysaApi.InContext.Pyre1 _ -> []
-    | PyrePysaApi.InContext.Pyrefly _ ->
-        get_global_targets_with_pyrefly
-          ~pyre_in_context
-          ~type_of_expression_shared_memory
-          ~get_callee_model
-          ~expression
-  in
-  List.rev_append targets_from_type targets_from_call_graph
 
 
 let from_expression
@@ -133,15 +64,7 @@ let from_expression
     in
     { Model.WithCallTarget.model; call_target }
   in
-  let models =
-    get_global_targets
-      ~pyre_in_context
-      ~type_of_expression_shared_memory
-      ~call_graph
-      ~get_callee_model
-      ~expression
-    |> List.map ~f:fetch_model
-  in
+  let models = get_global_targets ~call_graph ~expression |> List.map ~f:fetch_model in
   let location = Node.location expression in
   { models; pyre_in_context; location; interval }
 

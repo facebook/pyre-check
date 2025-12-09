@@ -4755,6 +4755,7 @@ let build_whole_program_call_graph_for_pyrefly
     ~scheduler
     ~scheduler_policies
     ~pyrefly_api
+    ~callables_to_definitions_map
     ~callables_to_decorators_map
     ~override_graph
     ~store_shared_memory
@@ -4823,18 +4824,109 @@ let build_whole_program_call_graph_for_pyrefly
            ())
       call_graph
   in
+  let add_class_attribute_targets callable call_graph =
+    (* For each attribute access, check the base and determine whether the attribute has a
+       user-provided model. *)
+    match CallablesSharedMemory.ReadOnly.get_define callables_to_definitions_map callable with
+    | AstResult.Some
+        {
+          CallablesSharedMemory.DefineAndQualifier.define = { Node.location; value = define };
+          qualifier;
+        } ->
+        let allow_modifier = function
+          | PyrePysaApi.TypeModifier.Optional
+          | PyrePysaApi.TypeModifier.Coroutine
+          | PyrePysaApi.TypeModifier.Awaitable
+          | PyrePysaApi.TypeModifier.ReadOnly
+          | PyrePysaApi.TypeModifier.TypeVariableBound ->
+              true
+          | PyrePysaApi.TypeModifier.Type -> false
+        in
+        let is_class_instance modifiers = List.for_all ~f:allow_modifier modifiers in
+        let is_class_type modifiers =
+          match List.rev modifiers with
+          | PyrePysaApi.TypeModifier.Type :: rest -> List.for_all ~f:allow_modifier rest
+          | _ -> false
+        in
+        let map_attribute_access
+            ~location:attribute_access_location
+            ~attribute_access:
+              ({ Ast.Expression.Name.Attribute.base; attribute; _ } as attribute_access)
+            call_graph
+          =
+          let targets =
+            PyreflyApi.ReadOnly.get_type_of_expression
+              pyrefly_api
+              ~qualifier
+              ~location:(Ast.Node.location base)
+            >>| PyreflyApi.ReadOnly.Type.get_class_names pyrefly_api
+            >>| (fun { PyrePysaApi.ClassNamesFromType.classes; _ } -> classes)
+            >>| List.map ~f:(fun { PyrePysaApi.ClassWithModifiers.modifiers; class_name } ->
+                    let parents =
+                      class_name :: PyreflyApi.ReadOnly.class_mro pyrefly_api class_name
+                    in
+                    if is_class_instance modifiers then
+                      List.map
+                        ~f:(fun class_name -> Format.sprintf "%s.%s" class_name attribute)
+                        parents
+                    else if is_class_type modifiers then
+                      List.map
+                        ~f:(fun class_name -> Format.sprintf "%s.__class__.%s" class_name attribute)
+                        parents
+                    else
+                      [])
+            >>| List.concat
+            >>| List.map ~f:Reference.create
+            >>| List.map ~f:Target.create_object
+            >>| List.filter ~f:(fun target -> Target.Set.mem target attribute_targets)
+            >>| List.map ~f:(fun target -> CallGraph.CallTarget.create target)
+            |> Option.value ~default:[]
+          in
+          if not (List.is_empty targets) then
+            DefineCallGraph.add_attribute_access_callees
+              ~debug:false
+              ~caller:callable
+              ~on_existing_callees:DefineCallGraph.OnExistingCallees.Join
+              ~location:attribute_access_location
+              ~attribute_access
+              ~callees:(AttributeAccessCallees.create ~global_targets:targets ~is_attribute:true ())
+              call_graph
+          else
+            call_graph
+        in
+        let module Visitor = Ast.Visit.Make (struct
+          type t = DefineCallGraph.t
+
+          let expression call_graph expression =
+            match Node.value expression with
+            | Expression.Name (Ast.Expression.Name.Attribute attribute_access) ->
+                map_attribute_access
+                  ~location:(Node.location expression)
+                  ~attribute_access
+                  call_graph
+            | _ -> call_graph
+
+
+          let statement call_graph _ = call_graph
+        end)
+        in
+        Visitor.visit call_graph (Source.create [Node.create ~location (Statement.Define define)])
+    | _ -> call_graph
+  in
   let transform_call_graph _ callable call_graph =
     let call_indexer = CallGraph.Indexer.create () in
     let call_graph =
       if Target.is_decorated callable then
         transform_redirected_call_graph callable call_graph
       else
-        DefineCallGraph.map_target
-          ~f:
-            (CallableToDecoratorsMap.SharedMemory.redirect_to_decorated callables_to_decorators_map)
-          ~map_call_if:CallCallees.should_redirect_to_decorated
-          ~map_return_if:(fun _ -> false)
-          call_graph
+        call_graph
+        |> DefineCallGraph.map_target
+             ~f:
+               (CallableToDecoratorsMap.SharedMemory.redirect_to_decorated
+                  callables_to_decorators_map)
+             ~map_call_if:CallCallees.should_redirect_to_decorated
+             ~map_return_if:(fun _ -> false)
+        |> add_class_attribute_targets callable
     in
     call_graph
     |> DefineCallGraph.dedup_and_sort
@@ -4905,6 +4997,7 @@ let build_whole_program_call_graph
           ~scheduler
           ~scheduler_policies
           ~pyrefly_api
+          ~callables_to_definitions_map
           ~callables_to_decorators_map
           ~override_graph
           ~attribute_targets
