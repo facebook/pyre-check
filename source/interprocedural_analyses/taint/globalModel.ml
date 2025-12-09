@@ -59,6 +59,13 @@ let get_global_targets_with_pyrefly
         | PyrePysaApi.TypeModifier.ReadOnly
         | PyrePysaApi.TypeModifier.TypeVariableBound ->
             true
+        | PyrePysaApi.TypeModifier.Type -> false
+      in
+      let is_class_instance modifiers = List.for_all ~f:allow_modifier modifiers in
+      let is_class_type modifiers =
+        match List.rev modifiers with
+        | PyrePysaApi.TypeModifier.Type :: rest -> List.for_all ~f:allow_modifier rest
+        | _ -> false
       in
       Interprocedural.TypeOfExpressionSharedMemory.compute_or_retrieve_pysa_type
         type_of_expression_shared_memory
@@ -66,15 +73,19 @@ let get_global_targets_with_pyrefly
         base
       |> PyrePysaApi.ReadOnly.Type.get_class_names pyre_api
       |> (fun { PyrePysaApi.ClassNamesFromType.classes; _ } -> classes)
-      |> List.filter_map ~f:(fun { PyrePysaApi.ClassWithModifiers.modifiers; class_name } ->
-             if List.for_all ~f:allow_modifier modifiers then Some class_name else None)
-      |> List.map ~f:(fun class_name ->
-             class_name :: PyrePysaApi.ReadOnly.class_mro pyre_api class_name)
+      |> List.map ~f:(fun { PyrePysaApi.ClassWithModifiers.modifiers; class_name } ->
+             let parents = class_name :: PyrePysaApi.ReadOnly.class_mro pyre_api class_name in
+             if is_class_instance modifiers then
+               List.map ~f:(fun class_name -> Format.sprintf "%s.%s" class_name attribute) parents
+             else if is_class_type modifiers then
+               List.map
+                 ~f:(fun class_name -> Format.sprintf "%s.__class__.%s" class_name attribute)
+                 parents
+             else
+               [])
       |> List.concat
-      |> List.map ~f:(fun class_name ->
-             Format.sprintf "%s.%s" class_name attribute
-             |> Reference.create
-             |> Interprocedural.Target.create_object)
+      |> List.map ~f:Reference.create
+      |> List.map ~f:Interprocedural.Target.create_object
       |> List.filter ~f:(fun target -> Option.is_some (get_callee_model target))
       |> List.map ~f:(fun target -> CallGraph.CallTarget.create target)
   | _ -> []

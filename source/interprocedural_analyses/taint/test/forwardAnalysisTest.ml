@@ -440,7 +440,6 @@ let test_class_model context =
     ];
   assert_taint
     ~context
-    ~skip_for_pyrefly:true (* TODO(T225700656): Handle class attributes. *)
     ~models:{|
       qualifier.B.__class__.ATTRIBUTE: TaintSource[Test] = ...
     |}

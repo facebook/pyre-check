@@ -700,7 +700,9 @@ let matches_annotation_constraint
         | PyrePysaApi.TypeModifier.Awaitable
         | PyrePysaApi.TypeModifier.ReadOnly ->
             true
-        | PyrePysaApi.TypeModifier.TypeVariableBound -> false
+        | PyrePysaApi.TypeModifier.TypeVariableBound
+        | PyrePysaApi.TypeModifier.Type ->
+            false
       in
       TypeAnnotation.inferred_type annotation
       >>| PyrePysaApi.ReadOnly.Type.get_class_names pyre_api

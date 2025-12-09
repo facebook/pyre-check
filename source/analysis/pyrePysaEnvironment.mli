@@ -34,11 +34,12 @@ end
 
 module TypeModifier : sig
   type t =
-    | Optional
-    | Coroutine
-    | Awaitable
-    | TypeVariableBound
-    | ReadOnly
+    | Optional (* Optional[T] *)
+    | Coroutine (* Coroutine[.., T] *)
+    | Awaitable (* Awaitable[T] *)
+    | TypeVariableBound (* TypeVar(.., bound=T) *)
+    | ReadOnly (* ReadOnly[T] *)
+    | Type (* type[T] *)
   [@@deriving equal, compare, show]
 
   val from_string : string -> t option

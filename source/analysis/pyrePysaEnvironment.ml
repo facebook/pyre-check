@@ -82,11 +82,12 @@ end
 
 module TypeModifier = struct
   type t =
-    | Optional
-    | Coroutine
-    | Awaitable
-    | TypeVariableBound
-    | ReadOnly
+    | Optional (* Optional[T] *)
+    | Coroutine (* Coroutine[.., T] *)
+    | Awaitable (* Awaitable[T] *)
+    | TypeVariableBound (* TypeVar(.., bound=T) *)
+    | ReadOnly (* ReadOnly[T] *)
+    | Type (* type[T] *)
   [@@deriving equal, compare, show]
 
   let from_string = function
@@ -95,6 +96,7 @@ module TypeModifier = struct
     | "Awaitable" -> Some Awaitable
     | "TypeVariableBound" -> Some TypeVariableBound
     | "ReadOnly" -> Some ReadOnly
+    | "Type" -> Some Type
     | _ -> None
 end
 

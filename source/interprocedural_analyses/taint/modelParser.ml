@@ -970,7 +970,9 @@ let paths_for_source_or_sink ~pyre_api ~kind ~root ~root_annotations ~features =
       | PyrePysaApi.TypeModifier.Awaitable
       | PyrePysaApi.TypeModifier.ReadOnly ->
           true
-      | PyrePysaApi.TypeModifier.TypeVariableBound -> false
+      | PyrePysaApi.TypeModifier.TypeVariableBound
+      | PyrePysaApi.TypeModifier.Type ->
+          false
     in
     let attributes =
       root_annotations
