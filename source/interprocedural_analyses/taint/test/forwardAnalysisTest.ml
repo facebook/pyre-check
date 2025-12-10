@@ -1035,7 +1035,6 @@ let test_lambda context =
     [outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.source_in_lambda"];
   assert_taint
     ~context
-    ~skip_for_pyrefly:true (* TODO(T225700656): Missing call graph edge *)
     {|
       from pysa import _test_source
 
