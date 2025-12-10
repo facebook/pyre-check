@@ -3409,12 +3409,12 @@ let map_origin ~f ({ Node.value; location } as expression) =
   | _ -> expression
 
 
-let negate ({ Node.location; value } as node) =
+let negate ~normalize ({ Node.location; value } as node) =
   match value with
   | UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand; origin = _ } -> operand
   | ComparisonOperator
       { ComparisonOperator.operator = ComparisonOperator.IsNot; left; right; origin = base_origin }
-    ->
+    when normalize ->
       {
         Node.location;
         value =
@@ -3427,7 +3427,8 @@ let negate ({ Node.location; value } as node) =
             };
       }
   | ComparisonOperator
-      { ComparisonOperator.operator = ComparisonOperator.Is; left; right; origin = base_origin } ->
+      { ComparisonOperator.operator = ComparisonOperator.Is; left; right; origin = base_origin }
+    when normalize ->
       {
         Node.location;
         value =
@@ -3495,8 +3496,8 @@ let rec normalize { Node.location; value } =
             BooleanOperator
               {
                 BooleanOperator.operator = BooleanOperator.inverse operator;
-                left = normalize (negate left);
-                right = normalize (negate right);
+                left = normalize (negate ~normalize:true left);
+                right = normalize (negate ~normalize:true right);
                 origin =
                   Some
                     (Origin.create

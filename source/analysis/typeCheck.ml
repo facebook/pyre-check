@@ -2154,7 +2154,7 @@ module State (Context : Context) = struct
           let left_assume =
             match operator with
             | BooleanOperator.And -> left
-            | BooleanOperator.Or -> normalize (negate left)
+            | BooleanOperator.Or -> normalize (negate ~normalize:true left)
           in
           match refine_resolution_for_assert ~resolution:resolution_left left_assume with
           | Unreachable ->
@@ -2661,7 +2661,7 @@ module State (Context : Context) = struct
           let resolution, resolved_callee, errors, resolved_base =
             let resolution, assume_errors =
               let post_resolution, errors =
-                forward_assert ~origin:None ~resolution (negate expression)
+                forward_assert ~origin:None ~resolution (negate ~normalize:true expression)
               in
               resolution_or_default post_resolution ~default:resolution, errors
             in
@@ -3694,7 +3694,7 @@ module State (Context : Context) = struct
           in
           let alternative_resolved, alternative_errors =
             let post_resolution =
-              refine_resolution_for_assert ~resolution (normalize (negate test))
+              refine_resolution_for_assert ~resolution (normalize (negate ~normalize:true test))
             in
             let resolution = resolution_or_default post_resolution ~default:resolution in
             let { Resolved.resolved; errors; _ } = forward_expression ~resolution alternative in
@@ -4724,7 +4724,7 @@ module State (Context : Context) = struct
             in
             let left_resolution = update resolution left in
             let right_resolution =
-              update resolution (normalize (negate left))
+              update resolution (normalize (negate ~normalize:true left))
               |> fun resolution -> update resolution right
             in
             Value (Resolution.outer_join_refinements left_resolution right_resolution))
@@ -9264,7 +9264,7 @@ let exit_state ~resolution (module Context : Context) =
   else (
     Log.log ~section:`Check "Checking %a" Reference.pp name;
     Context.Builder.initialize ();
-    let cfg = Cfg.create define in
+    let cfg = Cfg.create ~normalize_asserts:true define in
     let fixpoint = Fixpoint.forward ~cfg ~initial in
     let exit = Fixpoint.exit fixpoint in
     (* debugging logic for pyre_dump / pyre_dump_locations / pyre_dump_cfg *)

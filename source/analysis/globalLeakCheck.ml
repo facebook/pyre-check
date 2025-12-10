@@ -729,7 +729,7 @@ let global_leak_errors ~type_environment ~qualifier define =
   in
   let module State = State (Context) in
   let module Fixpoint = Fixpoint.Make (State) in
-  let cfg = Cfg.create (Node.value define) in
+  let cfg = Cfg.create ~normalize_asserts:true (Node.value define) in
   Fixpoint.forward ~cfg ~initial:(State.initial ~global_resolution (Node.value define))
   |> Fixpoint.exit
   >>| State.errors

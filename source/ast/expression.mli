@@ -795,7 +795,7 @@ type expression = Expression.expression [@@deriving equal, compare, sexp, show, 
 
 val location_insensitive_compare : t -> t -> int
 
-val negate : t -> t
+val negate : normalize:bool -> t -> t
 
 val normalize : t -> t
 

@@ -592,7 +592,7 @@ let error_index = 2
 
 let exit_index = 3
 
-let create define =
+let create ~normalize_asserts define =
   Node.reset_count ();
   let graph = Int.Table.create () in
   let entry = Node.empty graph Node.Entry in
@@ -639,7 +639,7 @@ let create define =
         Node.connect predecessor split;
         let body_node =
           let body_statements =
-            let test = Expression.normalize test in
+            let test = if normalize_asserts then Expression.normalize test else test in
             Statement.assume
               ~origin:(Some { Ast.Node.location; value = Assert.Origin.If { true_branch = true } })
               test
@@ -649,7 +649,12 @@ let create define =
         in
         Node.connect_option body_node join;
         let orelse_statements =
-          let test = Expression.negate test |> Expression.normalize in
+          let test =
+            if normalize_asserts then
+              test |> Expression.negate ~normalize:true |> Expression.normalize
+            else
+              Expression.negate ~normalize:false test
+          in
           Statement.assume
             ~origin:(Some { Ast.Node.location; value = Assert.Origin.If { true_branch = false } })
             test
@@ -691,7 +696,12 @@ let create define =
           let case_node = create case.body jumps case_node in
           Node.connect_option case_node join;
           let else_node =
-            let test = Expression.negate test |> Expression.normalize in
+            let test =
+              if normalize_asserts then
+                test |> Expression.negate ~normalize:true |> Expression.normalize
+              else
+                Expression.negate ~normalize:false test
+            in
             Node.empty
               graph
               (Node.Block
@@ -799,7 +809,7 @@ let create define =
         Node.connect predecessor split;
         let body =
           let body_statements =
-            let test = Expression.normalize test in
+            let test = if normalize_asserts then Expression.normalize test else test in
             Statement.assume
               ~origin:
                 (Some { Ast.Node.location; value = Assert.Origin.While { true_branch = true } })
@@ -811,7 +821,12 @@ let create define =
         Node.connect_option body split;
         let orelse =
           let orelse_statements =
-            let test = Expression.negate test |> Expression.normalize in
+            let test =
+              if normalize_asserts then
+                test |> Expression.negate ~normalize:true |> Expression.normalize
+              else
+                Expression.negate ~normalize:false test
+            in
             Statement.assume
               ~origin:
                 (Some { Ast.Node.location; value = Assert.Origin.While { true_branch = false } })

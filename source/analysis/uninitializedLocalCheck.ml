@@ -338,7 +338,7 @@ let defined_locals_at_each_statement define =
   in
   let module State = State (Context) in
   let module Fixpoint = Fixpoint.Make (State) in
-  let cfg = Cfg.create (Node.value define) in
+  let cfg = Cfg.create ~normalize_asserts:true (Node.value define) in
   let fixpoint = Fixpoint.forward ~cfg ~initial:(State.initial ~define) in
   let defined_locals =
     match Context.fixpoint_post_statement |> Hashtbl.to_alist |> StatementKey.Map.of_alist with

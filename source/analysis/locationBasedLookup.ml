@@ -301,7 +301,7 @@ module ExpressionTypes = struct
           with
           | None -> ()
           | Some (local_annotation_map, expressions_with_types) ->
-              let cfg = Cfg.create define in
+              let cfg = Cfg.create ~normalize_asserts:true define in
               let walk_statement node_id statement_index statement =
                 let pre_annotations, post_annotations =
                   let statement_key = [%hash: int * int] (node_id, statement_index) in
@@ -836,7 +836,7 @@ module SymbolSelection = struct
            cfg. *)
         walk_statement ~node_id:Cfg.entry_index 0 names_so_far define_signature
       in
-      let cfg = Cfg.create define in
+      let cfg = Cfg.create ~normalize_asserts:true define in
       let define_signature =
         { define_node with value = Statement.Define { define with Define.body = [] } }
       in

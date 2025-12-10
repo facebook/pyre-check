@@ -27,7 +27,7 @@ let test_negate _ =
       ~printer:Expression.show
       ~cmp:location_insensitive_equal
       (parse_single_expression expected)
-      (negate (parse_single_expression negated))
+      (negate ~normalize:true (parse_single_expression negated))
   in
   assert_negate ~expected:"True" ~negated:"not True";
   assert_negate ~expected:"not True" ~negated:"True";

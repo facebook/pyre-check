@@ -1033,7 +1033,7 @@ let infer_local
       Log.dump "%s state:\n%a" name State.pp state;
     state
   in
-  let cfg = Cfg.create define in
+  let cfg = Cfg.create ~normalize_asserts:true define in
   let backward_fixpoint ~initial_state =
     let rec fixpoint iteration ~initial_state =
       (* Run the initial state through forward, then backwards, before comparing to see whether

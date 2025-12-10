@@ -4294,7 +4294,12 @@ let higher_order_call_graph_of_define
           default_value)
   in
   let returned_callables =
-    Fixpoint.forward ~cfg:(PyrePysaLogic.Cfg.create (Node.value define)) ~initial:initial_state
+    let cfg =
+      PyrePysaLogic.Cfg.create
+        ~normalize_asserts:(PyrePysaApi.ReadOnly.is_pyre1 pyre_api)
+        (Node.value define)
+    in
+    Fixpoint.forward ~cfg ~initial:initial_state
     |> Fixpoint.exit
     >>| TransferFunction.get_returned_callables
     |> Option.value ~default:CallTarget.Set.bottom
@@ -4392,7 +4397,11 @@ let call_graph_of_define
               value))
   in
 
-  let cfg = PyrePysaLogic.Cfg.create (Node.value define) in
+  let cfg =
+    PyrePysaLogic.Cfg.create
+      ~normalize_asserts:(PyrePysaApi.ReadOnly.is_pyre1 pyre_api)
+      (Node.value define)
+  in
   log ~debug:context.debug "Processing CFG:@.%a" PyrePysaLogic.Cfg.pp cfg;
   DefineFixpoint.forward ~cfg ~initial:() |> ignore;
   let call_indexer = CallGraph.Indexer.create () in

@@ -128,6 +128,11 @@ module ReadOnly = struct
 
   let from_pyrefly_api pyrefly_api = Pyrefly pyrefly_api
 
+  let is_pyre1 = function
+    | Pyre1 _ -> true
+    | Pyrefly _ -> false
+
+
   let is_pyrefly = function
     | Pyre1 _ -> false
     | Pyrefly _ -> true

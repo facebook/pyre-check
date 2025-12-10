@@ -142,7 +142,9 @@ module Analysis = struct
     in
     let cfg =
       TaintProfiler.track_duration ~profiler ~name:"Control flow graph" ~f:(fun () ->
-          PyrePysaLogic.Cfg.create define.value)
+          PyrePysaLogic.Cfg.create
+            ~normalize_asserts:(PyrePysaApi.ReadOnly.is_pyre1 pyre_api)
+            define.value)
     in
     let forward, result, triggered_sinks =
       TaintProfiler.track_duration ~profiler ~name:"Forward analysis" ~f:(fun () ->

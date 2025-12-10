@@ -74,7 +74,9 @@ let assert_taint ?(skip_for_pyrefly = false) ~context source expected =
         ~module_name:qualifier
         ~callable
     in
-    let cfg = Cfg.create (Ast.Node.value define) in
+    let cfg =
+      Cfg.create ~normalize_asserts:(PyrePysaApi.ReadOnly.is_pyre1 pyre_api) (Ast.Node.value define)
+    in
     let taint_configuration = TaintConfiguration.Heap.default in
     let backward =
       BackwardAnalysis.run

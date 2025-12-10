@@ -45,7 +45,7 @@ let test_to_dot _ =
       ~printer:(fun id -> id)
       ~pp_diff:(diff ~print:(fun format -> Format.fprintf format "%s\n"))
       (make_dot expected)
-      (to_dot ~precondition ~sort_labels:true (create define))
+      (to_dot ~precondition ~sort_labels:true (create ~normalize_asserts:true define))
   in
   assert_dot
     [+Statement.Pass]
@@ -134,7 +134,7 @@ let assert_cfg body expected =
     ~printer:(fun cfg -> Format.asprintf "%a" pp cfg)
     ~pp_diff:(diff ~print:pp)
     (Int.Table.of_alist_exn expected)
-    (create define)
+    (create ~normalize_asserts:true define)
 
 
 let node id kind predecessors successors =

@@ -109,7 +109,9 @@ let assert_taint ?models ?models_source ?(skip_for_pyrefly = false) ~context sou
         ~module_name:qualifier
         ~callable
     in
-    let cfg = Cfg.create (Ast.Node.value define) in
+    let cfg =
+      Cfg.create ~normalize_asserts:(PyrePysaApi.ReadOnly.is_pyre1 pyre_api) (Ast.Node.value define)
+    in
     let taint_configuration = TaintConfiguration.Heap.default in
     let forward, _errors, _ =
       ForwardAnalysis.run
@@ -570,7 +572,6 @@ let test_apply_method_model_at_call_site context =
     ];
   assert_taint
     ~context
-    ~skip_for_pyrefly:true (* TODO(T225700656): Missing call graph edge *)
     {|
       from pysa import _test_source
 

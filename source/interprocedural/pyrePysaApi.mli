@@ -87,6 +87,8 @@ module ReadOnly : sig
 
   val from_pyrefly_api : PyreflyApi.ReadOnly.t -> t
 
+  val is_pyre1 : t -> bool
+
   val is_pyrefly : t -> bool
 
   val explicit_qualifiers : t -> Ast.Reference.t list
