@@ -38,6 +38,7 @@
   signatureSelectionTest
   sqlAlchemyTest
   taintAccessPathTest
+  tryFinallyRefinementTest
   typeAliasEnvironmentTest
   typeCheckTest
   typeConstraintsTest
