@@ -3869,7 +3869,10 @@ let test_call_graph_of_define =
                      AttributeAccessCallees.property_targets = [];
                      global_targets = [];
                      is_attribute = false;
-                     if_called = CallCallees.empty;
+                     if_called =
+                       CallCallees.create
+                         ~unresolved:(Unresolved.True Unresolved.EmptyPyreflyTarget)
+                         ();
                    } );
              ]
            ();

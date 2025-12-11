@@ -227,14 +227,14 @@ let test_rce_sink context =
 let test_rce_and_test_sink context =
   assert_taint
     ~context
-    ~skip_for_pyrefly:true (* TODO(T225700656): False negative for pyrefly *)
     {|
       from pysa import _test_sink
+      import random
 
       def test_rce_and_test_sink(test_only, rce_only, both):
         _test_sink(test_only)
         eval(rce_only)
-        if 1 > 2:
+        if random.random() > 0.5:
           _test_sink(both)
         else:
           eval(both)
