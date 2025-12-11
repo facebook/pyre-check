@@ -1602,7 +1602,6 @@ let test_constructor_argument_tito context =
   let tito_to_return = { name = "tito"; titos = [Sinks.LocalReturn] } in
   let tito_to_self = { name = "tito"; titos = [Sinks.ParameterUpdate self_root] } in
   assert_taint
-    ~skip_for_pyrefly:true (* TODO(T225700656): Missing tito for DerivedData.__init__ *)
     ~context
     {|
       class Data:
@@ -1671,7 +1670,7 @@ let test_constructor_argument_tito context =
 
       class DerivedData(Data):
         def __init__(self, tito, no_tito):
-          super(Data, self).__init__(tito, no_tito)
+          super(DerivedData, self).__init__(tito, no_tito)
 
     |}
     [
