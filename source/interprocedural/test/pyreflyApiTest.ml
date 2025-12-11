@@ -47,7 +47,8 @@ let test_module_qualifiers _ =
       {
         PyreflyApi.ProjectFile.Module.module_id = ModuleId.from_int id;
         module_name = Reference.create module_name;
-        module_path = path;
+        absolute_source_path = path;
+        relative_source_path = None;
         info_filename = None;
         is_test = false;
         is_interface = false;
@@ -58,7 +59,8 @@ let test_module_qualifiers _ =
       {
         PyreflyApi.Testing.Module.module_id = ModuleId.from_int id;
         module_name = Reference.create module_name;
-        source_path = source_path >>| PyrePath.create_absolute >>| ArtifactPath.create;
+        absolute_source_path = source_path >>| PyrePath.create_absolute >>| ArtifactPath.create;
+        relative_source_path = None;
         pyrefly_info_filename = None;
         is_test = false;
         is_stub = false;

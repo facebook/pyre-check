@@ -151,7 +151,7 @@ module ReadOnly = struct
   let relative_path_of_qualifier api qualifier =
     match api with
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.relative_path_of_qualifier pyre_api qualifier
-    | Pyrefly _ -> failwith "unimplemented: ReadOnly.relative_path_of_qualifier"
+    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.relative_path_of_qualifier pyrefly_api qualifier
 
 
   let source_of_qualifier = function

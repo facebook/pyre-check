@@ -1,0 +1,279 @@
+@generated
+Higher order call graphs
+{
+  "callable": "access_path.indexes_and_attributes",
+  "returned_callables": [],
+  "calls": {
+    "26:8-26:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "access_path.SpecialDict.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "access_path.SpecialDict"
+          }
+        ]
+      }
+    },
+    "27:18-27:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "29:4-29:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "29:15-29:29|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "access_path.SpecialDict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "access_path.SpecialDict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "access_path.indexes_are_attributes_for___dict__",
+  "returned_callables": [],
+  "calls": {
+    "33:8-33:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "Overrides{builtins.object.__init__}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.object"
+          }
+        ]
+      }
+    },
+    "34:18-34:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "35:4-35:39": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "35:15-35:38|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "access_path.indexes_are_strings",
+  "returned_callables": [],
+  "calls": {
+    "12:4-12:25|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "12:11-12:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "13:4-13:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "13:15-13:21|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "access_path.issue_positional_and_variadic",
+  "returned_callables": [],
+  "calls": {
+    "47:4-47:50": {
+      "call": {
+        "calls": [
+          {
+            "target": "access_path.positional_and_variadic1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "47:35-47:49": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "48:4-48:50": {
+      "call": {
+        "calls": [
+          {
+            "target": "access_path.positional_and_variadic2",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "48:35-48:49": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "49:4-49:47": {
+      "call": {
+        "calls": [
+          {
+            "target": "access_path.positional_and_variadic2",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "49:32-49:46": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "50:4-50:49": {
+      "call": {
+        "calls": [
+          {
+            "target": "access_path.positional_and_variadic2",
+            "index": 2,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "50:34-50:48": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 3, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "access_path.positional_and_variadic1",
+  "returned_callables": [],
+  "calls": {
+    "39:4-39:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "access_path.positional_and_variadic2",
+  "returned_callables": [],
+  "calls": {
+    "43:4-43:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "access_path.SpecialDict.__getitem__",
+  "returned_callables": [],
+  "calls": {
+    "22:15-22:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.get",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}

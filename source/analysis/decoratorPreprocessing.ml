@@ -18,7 +18,7 @@ module Action = struct
   module T = struct
     type t = (* Remove that decorator from decorated function, assuming it is a no-op. *)
       | Discard
-    [@@deriving equal, show, compare]
+    [@@deriving compare, equal, show, sexp]
 
     let to_mode = function
       | Discard -> "IgnoreDecorator"
@@ -33,7 +33,7 @@ module Configuration = struct
     actions: Action.t Reference.SerializableMap.t;
     enable_discarding: bool;
   }
-  [@@deriving equal]
+  [@@deriving compare, equal, sexp]
 
   let disable_preprocessing =
     { actions = Reference.SerializableMap.empty; enable_discarding = false }

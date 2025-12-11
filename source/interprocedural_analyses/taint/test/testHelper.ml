@@ -546,7 +546,7 @@ module TestEnvironment = struct
     Interprocedural.CallableToDecoratorsMap.SharedMemory.cleanup callables_to_decorators_map
 end
 
-let set_up_decorator_preprocessing ~handle models =
+let get_decorator_preprocessing_configuration ~handle models =
   let decorator_actions =
     models
     >>| (fun models ->
@@ -556,18 +556,29 @@ let set_up_decorator_preprocessing ~handle models =
           |> ModelParser.decorator_actions_from_modes)
     |> Option.value ~default:Reference.SerializableMap.empty
   in
-  PyrePysaLogic.DecoratorPreprocessing.setup_preprocessing
-    { actions = decorator_actions; enable_discarding = true }
+  {
+    PyrePysaLogic.DecoratorPreprocessing.Configuration.actions = decorator_actions;
+    enable_discarding = true;
+  }
 
 
-let initialize_pyre_and_fail_on_errors ~context ~handle ~source_content ~models_source =
+let initialize_pyre_and_fail_on_errors ~context ~force_pyre1 ~handle ~source_content ~models_source =
   let configuration, pyre_api, errors =
-    let project = Test.ScratchProject.setup ~context [handle, source_content] in
-    set_up_decorator_preprocessing ~handle models_source;
-    let _, errors = Test.ScratchProject.build_type_environment_and_postprocess project in
-    ( Test.ScratchProject.configuration_of project,
-      project |> Test.ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api,
-      errors )
+    let decorator_preprocessing_configuration =
+      get_decorator_preprocessing_configuration ~handle models_source
+    in
+    let project =
+      Test.ScratchPyrePysaProject.setup
+        ~context
+        ~force_pyre1
+        ~requires_type_of_expressions:true
+        ~decorator_preprocessing_configuration
+        [handle, source_content]
+    in
+    let configuration = Test.ScratchPyrePysaProject.configuration_of project in
+    let pyre_api = Test.ScratchPyrePysaProject.read_only_api project in
+    let errors = Test.ScratchPyrePysaProject.errors project in
+    configuration, pyre_api, errors
   in
   (if not (List.is_empty errors) then
      let errors =
@@ -586,7 +597,7 @@ let initialize_pyre_and_fail_on_errors ~context ~handle ~source_content ~models_
                 (PyrePysaLogic.Testing.AnalysisError.Instantiated.description error))
        |> String.concat ~sep:"\n"
      in
-     failwithf "Pyre errors were found in `%s`:\n%s" handle errors ());
+     failwithf "Type errors were found in `%s`:\n%s" handle errors ());
   configuration, pyre_api
 
 
@@ -603,11 +614,12 @@ let initialize
     ?(verify_empty_model_queries = true)
     ?model_path
     ?(maximum_target_depth = Configuration.StaticAnalysis.default_maximum_target_depth)
+    ?(force_pyre1 = false)
     ~context
     source_content
   =
   let configuration, pyre_api =
-    initialize_pyre_and_fail_on_errors ~context ~handle ~source_content ~models_source
+    initialize_pyre_and_fail_on_errors ~force_pyre1 ~context ~handle ~source_content ~models_source
   in
   let taint_configuration_shared_memory =
     TaintConfiguration.SharedMemory.from_heap taint_configuration
@@ -683,6 +695,7 @@ let initialize
             ~python_version:(ModelParser.PythonVersion.create ())
             ()
         in
+        let errors = filter_unused_test_modules_errors errors in
         let () =
           if not (List.is_empty errors) then
             assert_bool
@@ -977,7 +990,7 @@ type mismatch_file = {
 }
 
 let end_to_end_integration_test path context =
-  let create_expected_and_actual_files ~suffix actual =
+  let create_expected_and_actual_files ~is_pyrefly ~suffix actual =
     let output_filename ~suffix ~initial =
       if initial then
         PyrePath.with_suffix path ~suffix
@@ -998,6 +1011,12 @@ let end_to_end_integration_test path context =
     let get_expected ~suffix =
       try PyrePath.with_suffix path ~suffix |> File.create |> File.content with
       | CamlUnix.Unix_error _ -> None
+    in
+    let suffix =
+      if is_pyrefly then
+        ".pyrefly" ^ suffix
+      else
+        suffix
     in
     match get_expected ~suffix with
     | None ->
@@ -1022,7 +1041,7 @@ let end_to_end_integration_test path context =
          (Test.diff ~print:String.pp)
          (expected, actual))
   in
-  let divergent_files, serialized_models =
+  let divergent_files =
     let source = File.create path |> File.content |> fun content -> Option.value_exn content in
     let models_source =
       try
@@ -1059,7 +1078,7 @@ let end_to_end_integration_test path context =
       taint_configuration |> Option.value ~default:TaintConfiguration.Heap.default
     in
     let handle = PyrePath.show path |> String.split ~on:'/' |> List.last_exn in
-    let create_call_graph_files call_graph =
+    let create_call_graph_files ~is_pyrefly call_graph =
       let actual =
         Format.asprintf
           "@%s\nCall dependencies\n%s"
@@ -1069,9 +1088,9 @@ let end_to_end_integration_test path context =
           |> TargetGraph.to_json ~skip_empty_callees:true ~sorted:true
           |> Yojson.Safe.pretty_to_string)
       in
-      create_expected_and_actual_files ~suffix:".cg" actual
+      create_expected_and_actual_files ~is_pyrefly ~suffix:".cg" actual
     in
-    let create_higher_order_call_graph_files call_graph_fixpoint_state =
+    let create_higher_order_call_graph_files ~is_pyrefly call_graph_fixpoint_state =
       let content =
         call_graph_fixpoint_state.CallGraphFixpoint.fixpoint
         |> CallGraphFixpoint.analyzed_callables
@@ -1090,9 +1109,9 @@ let end_to_end_integration_test path context =
         |> String.concat ~sep:"\n"
       in
       let actual = Format.asprintf "@%s\nHigher order call graphs\n%s" "generated" content in
-      create_expected_and_actual_files ~suffix:".hofcg" actual
+      create_expected_and_actual_files ~is_pyrefly ~suffix:".hofcg" actual
     in
-    let create_overrides_files overrides =
+    let create_overrides_files ~is_pyrefly overrides =
       let actual =
         Format.asprintf
           "@%s\nOverrides\n%a"
@@ -1101,7 +1120,20 @@ let end_to_end_integration_test path context =
           (DependencyGraph.Reversed.to_target_graph
              (DependencyGraph.Reversed.from_overrides overrides))
       in
-      create_expected_and_actual_files ~suffix:".overrides" actual
+      create_expected_and_actual_files ~is_pyrefly ~suffix:".overrides" actual
+    in
+    let create_models_files ~is_pyrefly serialized_models =
+      let actual =
+        serialized_models
+        |> List.map ~f:NewlineDelimitedJson.Line.to_json
+        |> List.map ~f:(fun json -> Yojson.Safe.pretty_to_string ~std:true json ^ "\n")
+        |> String.concat ~sep:""
+      in
+      let actual = "@" ^ "generated\n" ^ actual in
+      create_expected_and_actual_files ~is_pyrefly ~suffix:".models" actual
+    in
+    let force_pyre1 =
+      not (PyrePath.file_exists (PyrePath.with_suffix path ~suffix:".pyrefly.models"))
     in
     let {
       TestEnvironment.static_analysis_configuration;
@@ -1126,6 +1158,7 @@ let end_to_end_integration_test path context =
         initialize
           ~handle
           ?models_source
+          ~force_pyre1
           ~add_initial_models
           ~taint_configuration
           ~verify_empty_model_queries:false
@@ -1210,18 +1243,15 @@ let end_to_end_integration_test path context =
       >>| fun filename ->
       { RepositoryPath.filename = Some filename; path = PyrePath.create_absolute filename }
     in
-
+    let is_pyrefly = Interprocedural.PyrePysaApi.ReadOnly.is_pyrefly pyre_api in
     let divergent_files =
       [
-        create_call_graph_files whole_program_call_graph;
-        create_higher_order_call_graph_files call_graph_fixpoint_state;
-        create_overrides_files override_graph_heap;
+        create_call_graph_files ~is_pyrefly whole_program_call_graph;
+        create_higher_order_call_graph_files ~is_pyrefly call_graph_fixpoint_state;
+        create_overrides_files ~is_pyrefly override_graph_heap;
       ]
     in
-    let serialized_models =
-      let callables_to_definitions_map =
-        Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map
-      in
+    let model_divergent_file =
       callables_to_analyze
       |> List.rev_append (TaintFixpoint.SharedModels.targets initial_models)
       |> List.dedup_and_sort ~compare:Target.compare
@@ -1230,24 +1260,19 @@ let end_to_end_integration_test path context =
            ~fixpoint_state:(TaintFixpoint.State.read_only fixpoint.TaintFixpoint.state)
            ~resolve_module_path
            ~resolve_callable_location:
-             (Interprocedural.CallablesSharedMemory.ReadOnly.get_location_opt
-                callables_to_definitions_map)
+             (callables_to_definitions_map
+             |> Interprocedural.CallablesSharedMemory.ReadOnly.read_only
+             |> Interprocedural.CallablesSharedMemory.ReadOnly.get_location_opt)
            ~override_graph:override_graph_shared_memory_read_only
            ~dump_override_models:true
            ~sorted:true
-      |> List.map ~f:NewlineDelimitedJson.Line.to_json
-      |> List.map ~f:(fun json -> Yojson.Safe.pretty_to_string ~std:true json ^ "\n")
-      |> String.concat ~sep:""
+      |> create_models_files ~is_pyrefly
     in
     let () = Memory.reset_shared_memory () in
-    divergent_files, serialized_models
+    model_divergent_file :: divergent_files
   in
-  let divergent_files =
-    create_expected_and_actual_files ~suffix:".models" ("@" ^ "generated\n" ^ serialized_models)
-    :: divergent_files
-    |> List.filter_opt
-  in
-  List.iter divergent_files ~f:error_on_actual_files;
+  let divergent_files = List.filter_opt divergent_files in
+  let () = List.iter divergent_files ~f:error_on_actual_files in
   if not (List.is_empty divergent_files) then
     let message =
       List.map divergent_files ~f:(fun { path; suffix; _ } ->

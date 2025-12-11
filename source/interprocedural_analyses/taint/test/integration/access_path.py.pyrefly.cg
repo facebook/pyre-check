@@ -1,0 +1,30 @@
+@generated
+Call dependencies
+{
+  "access_path.SpecialDict.__getitem__ (method)": [
+    "builtins.dict.get (method)"
+  ],
+  "access_path.indexes_and_attributes (fun)": [
+    "access_path.SpecialDict.__getitem__ (method)",
+    "access_path.SpecialDict.__init__ (method)",
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "access_path.indexes_are_attributes_for___dict__ (fun)": [
+    "builtins.dict.__getitem__ (method)",
+    "builtins.object.__init__ (override)",
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "access_path.indexes_are_strings (fun)": [
+    "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "access_path.issue_positional_and_variadic (fun)": [
+    "access_path.positional_and_variadic1 (fun)",
+    "access_path.positional_and_variadic2 (fun)", "pysa._test_source (fun)"
+  ],
+  "access_path.positional_and_variadic1 (fun)": [ "pysa._test_sink (fun)" ],
+  "access_path.positional_and_variadic2 (fun)": [ "pysa._test_sink (fun)" ]
+}

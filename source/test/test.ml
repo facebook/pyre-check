@@ -3615,10 +3615,7 @@ module ScratchPyreflyProject = struct
     { api; configuration }
 
 
-  let pyre_pysa_read_only_api { api; _ } =
-    Interprocedural.PyrePysaApi.ReadOnly.from_pyrefly_api
-      (Interprocedural.PyreflyApi.ReadOnly.of_read_write_api api)
-
+  let pyre_pysa_read_only_api { api; _ } = Interprocedural.PyreflyApi.ReadOnly.of_read_write_api api
 
   let configuration_of { configuration; _ } = configuration
 end
@@ -3632,22 +3629,34 @@ module ScratchPyrePysaProject : sig
     ?use_cache:bool ->
     ?force_pyre1:bool ->
     ?external_sources:(string * string) list ->
+    ?decorator_preprocessing_configuration:PyrePysaLogic.DecoratorPreprocessing.Configuration.t ->
     (string * string) list ->
     t
+
+  val errors : t -> AnalysisError.t list
 
   val read_only_api : t -> Interprocedural.PyrePysaApi.ReadOnly.t
 
   val configuration_of : t -> Configuration.Analysis.t
 end = struct
   type t =
-    | Pyre1 of ScratchProject.t
-    | Pyrefly of ScratchPyreflyProject.t
+    | Pyre1 of {
+        project: ScratchProject.t;
+        pyre_api: Analysis.PyrePysaEnvironment.ReadOnly.t;
+        errors: Analysis.AnalysisError.t list;
+      }
+    | Pyrefly of {
+        project: ScratchPyreflyProject.t;
+        pyrefly_api: Interprocedural.PyreflyApi.ReadOnly.t;
+      }
 
   module ProjectInputs = struct
     module T = struct
       type t = {
-        requires_type_of_expressions: bool;
         force_pyre1: bool;
+        requires_type_of_expressions: bool;
+        decorator_preprocessing_configuration:
+          PyrePysaLogic.DecoratorPreprocessing.Configuration.t option;
         external_sources: string String.Map.t;
         sources: string String.Map.t;
       }
@@ -3729,7 +3738,13 @@ end = struct
 
   let setup_without_cache
       ~context
-      { ProjectInputs.requires_type_of_expressions; force_pyre1; external_sources; sources }
+      {
+        ProjectInputs.force_pyre1;
+        requires_type_of_expressions;
+        decorator_preprocessing_configuration;
+        external_sources;
+        sources;
+      }
     =
     let timer = Timer.start () in
     let external_sources = Map.to_alist external_sources in
@@ -3737,14 +3752,27 @@ end = struct
     let result =
       match Lazy.force pyrefly_binary with
       | Some pyrefly_binary when not force_pyre1 ->
-          Pyrefly
-            (ScratchPyreflyProject.setup
-               ~context
-               ~pyrefly_binary
-               ~requires_type_of_expressions
-               ~external_sources
-               sources)
-      | _ -> Pyre1 (ScratchProject.setup ~context ~external_sources sources)
+          let project =
+            ScratchPyreflyProject.setup
+              ~context
+              ~pyrefly_binary
+              ~requires_type_of_expressions
+              ~external_sources
+              sources
+          in
+          let pyrefly_api = ScratchPyreflyProject.pyre_pysa_read_only_api project in
+          Pyrefly { project; pyrefly_api }
+      | _ ->
+          let project = ScratchProject.setup ~context ~external_sources sources in
+          let () =
+            match decorator_preprocessing_configuration with
+            | Some configuration ->
+                PyrePysaLogic.DecoratorPreprocessing.setup_preprocessing configuration
+            | None -> ()
+          in
+          let _, errors = ScratchProject.build_type_environment_and_postprocess project in
+          let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
+          Pyre1 { project; pyre_api; errors }
     in
     Log.debug
       "Type checked project using %s in %.3fs"
@@ -3761,12 +3789,14 @@ end = struct
       ?(use_cache = true)
       ?(force_pyre1 = false)
       ?(external_sources = [])
+      ?decorator_preprocessing_configuration
       sources
     =
     let inputs =
       {
-        ProjectInputs.requires_type_of_expressions;
-        force_pyre1;
+        ProjectInputs.force_pyre1;
+        requires_type_of_expressions;
+        decorator_preprocessing_configuration;
         external_sources =
           external_sources |> String.Map.of_alist_exn |> String.Map.map ~f:trim_extra_indentation;
         sources = sources |> String.Map.of_alist_exn |> String.Map.map ~f:trim_extra_indentation;
@@ -3784,14 +3814,20 @@ end = struct
 
 
   let read_only_api = function
-    | Pyre1 project ->
-        Interprocedural.PyrePysaApi.ReadOnly.Pyre1 (ScratchProject.pyre_pysa_read_only_api project)
-    | Pyrefly project -> ScratchPyreflyProject.pyre_pysa_read_only_api project
+    | Pyre1 { pyre_api; _ } -> Interprocedural.PyrePysaApi.ReadOnly.Pyre1 pyre_api
+    | Pyrefly { pyrefly_api; _ } -> Interprocedural.PyrePysaApi.ReadOnly.Pyrefly pyrefly_api
+
+
+  let errors = function
+    | Pyre1 { errors; _ } -> errors
+    | Pyrefly _ ->
+        (* TODO(T225700656): Support retriving type errors from pyrefly *)
+        []
 
 
   let configuration_of = function
-    | Pyre1 project -> ScratchProject.configuration_of project
-    | Pyrefly project -> ScratchPyreflyProject.configuration_of project
+    | Pyre1 { project; _ } -> ScratchProject.configuration_of project
+    | Pyrefly { project; _ } -> ScratchPyreflyProject.configuration_of project
 end
 
 type test_other_sources_t = {

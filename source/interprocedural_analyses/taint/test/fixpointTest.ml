@@ -41,7 +41,7 @@ let assert_fixpoint
          _;
        } as test_environment)
     =
-    initialize ?models_source ~handle:"qualifier.py" ~context source
+    initialize ?models_source ~force_pyre1:true ~handle:"qualifier.py" ~context source
   in
   let { DependencyGraph.dependency_graph; callables_to_analyze; override_targets; _ } =
     DependencyGraph.build_whole_program_dependency_graph

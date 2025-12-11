@@ -48,6 +48,7 @@ let assert_fixpoint
     initialize
       ?models_source
       ~find_missing_flows:missing_flows
+      ~force_pyre1:true
       ~taint_configuration
       ~handle
       ~context

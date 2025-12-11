@@ -105,6 +105,8 @@ module ReadOnly : sig
 
   val absolute_source_path_of_qualifier : t -> Ast.Reference.t -> string option
 
+  val relative_path_of_qualifier : t -> Ast.Reference.t -> string option
+
   val get_class_names_for_qualifier
     :  t ->
     exclude_test_modules:bool ->
@@ -350,7 +352,8 @@ module ProjectFile : sig
     type t = {
       module_id: ModuleId.t;
       module_name: Ast.Reference.t;
-      module_path: ModulePath.t;
+      absolute_source_path: ModulePath.t;
+      relative_source_path: string option;
       info_filename: ModuleInfoFilename.t option;
       is_test: bool;
       is_interface: bool;
@@ -557,7 +560,8 @@ module Testing : sig
     type t = {
       module_id: ModuleId.t;
       module_name: Ast.Reference.t;
-      source_path: ArtifactPath.t option;
+      absolute_source_path: ArtifactPath.t option;
+      relative_source_path: string option;
       pyrefly_info_filename: ModuleInfoFilename.t option;
       is_test: bool;
       is_stub: bool;

@@ -526,7 +526,9 @@ module ProjectFile = struct
     type t = {
       module_id: ModuleId.t;
       module_name: Reference.t;
-      module_path: ModulePath.t;
+      absolute_source_path: ModulePath.t;
+          (* Filesystem path to the source file for the module, as seen by the analyzer *)
+      relative_source_path: string option; (* Relative path from a root or search path *)
       info_filename: ModuleInfoFilename.t option;
       is_test: bool;
       is_interface: bool;
@@ -545,7 +547,9 @@ module ProjectFile = struct
       JsonUtil.get_object_member json "source_path"
       >>= fun source_path ->
       ModulePath.from_json (`Assoc source_path)
-      >>= fun module_path ->
+      >>= fun absolute_source_path ->
+      JsonUtil.get_optional_string_member json "relative_source_path"
+      >>= fun relative_source_path ->
       JsonUtil.get_optional_bool_member ~default:false json "is_test"
       >>= fun is_test ->
       JsonUtil.get_optional_bool_member ~default:false json "is_interface"
@@ -555,7 +559,8 @@ module ProjectFile = struct
       {
         module_id = ModuleId.from_int module_id;
         module_name = Reference.create module_name;
-        module_path;
+        absolute_source_path;
+        relative_source_path;
         info_filename = Option.map ~f:ModuleInfoFilename.create info_filename;
         is_test;
         is_interface;
@@ -1657,7 +1662,9 @@ module ModuleInfosSharedMemory = struct
   module Module = struct
     type t = {
       module_id: ModuleId.t;
-      source_path: ArtifactPath.t option (* The path of source code as seen by the analyzer. *);
+      absolute_source_path: ArtifactPath.t option;
+          (* Filesystem path to the source file for the module, as seen by the analyzer *)
+      relative_source_path: string option; (* Relative path from a root or search path *)
       pyrefly_info_filename: ModuleInfoFilename.t option;
       is_test: bool; (* Is this a test file? *)
       is_stub: bool; (* Is this a stub file (e.g, `a.pyi`)? *)
@@ -2094,7 +2101,9 @@ module ReadWrite = struct
     type t = {
       module_id: ModuleId.t;
       module_name: Reference.t;
-      source_path: ArtifactPath.t option; (* The path of source code as seen by the analyzer. *)
+      absolute_source_path: ArtifactPath.t option;
+          (* Filesystem path to the source file for the module, as seen by the analyzer *)
+      relative_source_path: string option; (* Relative path from a root or search path *)
       pyrefly_info_filename: ModuleInfoFilename.t option;
       is_test: bool;
       is_stub: bool;
@@ -2106,7 +2115,8 @@ module ReadWrite = struct
         {
           ProjectFile.Module.module_id;
           module_name;
-          module_path;
+          absolute_source_path;
+          relative_source_path;
           info_filename;
           is_test;
           is_interface;
@@ -2116,7 +2126,8 @@ module ReadWrite = struct
       {
         module_id;
         module_name;
-        source_path = ModulePath.artifact_file_path ~pyrefly_directory module_path;
+        absolute_source_path = ModulePath.artifact_file_path ~pyrefly_directory absolute_source_path;
+        relative_source_path;
         pyrefly_info_filename = info_filename;
         is_test;
         is_stub = is_interface;
@@ -2184,8 +2195,8 @@ module ReadWrite = struct
               find_shortest_unique_prefix ~prefix_length:(prefix_length + 1) modules_with_path
           in
           modules
-          |> List.map ~f:(fun ({ ProjectFile.Module.module_path; _ } as module_info) ->
-                 List.rev (module_path_elements module_path), module_info)
+          |> List.map ~f:(fun ({ ProjectFile.Module.absolute_source_path; _ } as module_info) ->
+                 List.rev (module_path_elements absolute_source_path), module_info)
           |> find_shortest_unique_prefix ~prefix_length:1
           |> List.map ~f:(fun (path, module_info) ->
                  ( ModuleQualifier.create ~path:(Some path) module_name,
@@ -2221,7 +2232,8 @@ module ReadWrite = struct
                       {
                         Module.module_id = last_module_id;
                         module_name = module_head;
-                        source_path = None;
+                        absolute_source_path = None;
+                        relative_source_path = None;
                         pyrefly_info_filename = None;
                         is_test = false;
                         is_stub = false;
@@ -2281,14 +2293,23 @@ module ReadWrite = struct
       |> List.iter
            ~f:(fun
                 ( qualifier,
-                  { Module.module_id; source_path; pyrefly_info_filename; is_test; is_stub; _ } )
+                  {
+                    Module.module_id;
+                    absolute_source_path;
+                    relative_source_path;
+                    pyrefly_info_filename;
+                    is_test;
+                    is_stub;
+                    _;
+                  } )
               ->
              ModuleInfosSharedMemory.add
                module_infos_shared_memory
                qualifier
                {
                  ModuleInfosSharedMemory.Module.module_id;
-                 source_path;
+                 absolute_source_path;
+                 relative_source_path;
                  pyrefly_info_filename;
                  is_test;
                  is_stub;
@@ -2671,13 +2692,17 @@ module ReadWrite = struct
       match module_info, callables, classes with
       | _, None, _ -> ()
       | _, _, None -> ()
-      | { ModuleInfosSharedMemory.Module.source_path = None; _ }, Some _, Some _ ->
+      | { ModuleInfosSharedMemory.Module.absolute_source_path = None; _ }, Some _, Some _ ->
           failwith "unexpected: no source path for module with callables"
       | { ModuleInfosSharedMemory.Module.is_test = true; _ }, Some callables, Some classes ->
           let () = store_callable_asts callables AstResult.TestFile in
           let () = store_class_decorators classes AstResult.TestFile in
           ()
-      | ( { ModuleInfosSharedMemory.Module.source_path = Some source_path; is_test = false; _ },
+      | ( {
+            ModuleInfosSharedMemory.Module.absolute_source_path = Some source_path;
+            is_test = false;
+            _;
+          },
           Some callables,
           Some classes ) -> (
           let load_result =
@@ -3492,10 +3517,12 @@ module ReadWrite = struct
       let qualifiers =
         qualifier_to_module_map
         |> Map.to_alist
-        |> List.map ~f:(fun (module_qualifier, { Module.source_path; pyrefly_info_filename; _ }) ->
+        |> List.map
+             ~f:(fun (module_qualifier, { Module.absolute_source_path; pyrefly_info_filename; _ })
+                ->
                {
                  QualifiersSharedMemory.Value.module_qualifier;
-                 has_source = Option.is_some source_path;
+                 has_source = Option.is_some absolute_source_path;
                  has_info = Option.is_some pyrefly_info_filename;
                })
       in
@@ -3803,13 +3830,21 @@ module ReadOnly = struct
       module_infos_shared_memory
       (ModuleQualifier.from_reference_unchecked qualifier)
     |> assert_shared_memory_key_exists "missing module info for qualifier"
-    |> fun { ModuleInfosSharedMemory.Module.source_path; _ } -> source_path
+    |> fun { ModuleInfosSharedMemory.Module.absolute_source_path; _ } -> absolute_source_path
 
 
   let absolute_source_path_of_qualifier api qualifier =
     (* TODO(T225700656): We currently return the artifact path, it should be translated back into a
        source path by buck *)
     artifact_path_of_qualifier api qualifier >>| ArtifactPath.raw >>| PyrePath.absolute
+
+
+  let relative_path_of_qualifier { module_infos_shared_memory; _ } qualifier =
+    ModuleInfosSharedMemory.get
+      module_infos_shared_memory
+      (ModuleQualifier.from_reference_unchecked qualifier)
+    |> assert_shared_memory_key_exists "missing module info for qualifier"
+    |> fun { ModuleInfosSharedMemory.Module.relative_source_path; _ } -> relative_source_path
 
 
   (* Return all qualifiers with source code *)
