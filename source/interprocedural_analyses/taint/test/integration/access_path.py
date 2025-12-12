@@ -10,6 +10,7 @@ from typing import Dict, Optional
 def indexes_are_strings() -> None:
     d = {}
     d[1] = _test_source()
+    # pyrefly: ignore[bad-index]
     _test_sink(d["1"])  # False positive.
 
 
@@ -31,6 +32,7 @@ def indexes_and_attributes():
 
 def indexes_are_attributes_for___dict__():
     o = object()
+    # pyrefly: ignore[missing-attribute]
     o.attribute = _test_source()
     _test_sink(o.__dict__["attribute"])
 

@@ -1657,6 +1657,51 @@ module ModuleCallGraphs = struct
     | Error error -> raise (PyreflyFileFormatError { path; error = Error.FormatError error })
 end
 
+(* Set of type errors parsed from pyrefly. This represents the
+   `pyrefly::report::pysa::PysaTypeErrorsFile` rust type. *)
+module TypeErrors = struct
+  module JsonError = struct
+    type t = {
+      module_id: ModuleId.t;
+      location: Location.t;
+      kind: string;
+      message: string;
+    }
+
+    let from_json json =
+      let open Core.Result.Monad_infix in
+      JsonUtil.get_int_member json "module_id"
+      >>= fun module_id ->
+      JsonUtil.get_string_member json "location"
+      >>= parse_location
+      >>= fun location ->
+      JsonUtil.get_string_member json "kind"
+      >>= fun kind ->
+      JsonUtil.get_string_member json "message"
+      >>| fun message -> { module_id = ModuleId.from_int module_id; location; kind; message }
+  end
+
+  type t = { errors: JsonError.t list }
+
+  let from_json json =
+    let open Core.Result.Monad_infix in
+    JsonUtil.check_object json
+    >>= fun _ ->
+    JsonUtil.check_format_version ~expected:1 json
+    >>= fun () ->
+    JsonUtil.get_list_member json "errors"
+    >>= fun errors -> List.map ~f:JsonError.from_json errors |> Result.all
+
+
+  let from_path_exn ~pyrefly_directory =
+    let path = pyrefly_directory |> PyrePath.append ~element:"errors.json" in
+    let () = Log.debug "Parsing pyrefly type errors file %a" PyrePath.pp path in
+    let json = JsonUtil.read_json_file_exn path in
+    match from_json json with
+    | Ok errors -> { errors }
+    | Error error -> raise (PyreflyFileFormatError { path; error = Error.FormatError error })
+end
+
 (* Information about a module, stored in shared memory. *)
 module ModuleInfosSharedMemory = struct
   module Module = struct
@@ -4644,6 +4689,47 @@ module ReadOnly = struct
       ();
     let define_call_graphs = CallGraph.SharedMemory.from_add_only define_call_graphs in
     { CallGraph.SharedMemory.whole_program_call_graph; define_call_graphs }
+
+
+  let parse_type_errors
+      { pyrefly_directory; module_id_to_qualifier_shared_memory; module_infos_shared_memory; _ }
+    =
+    let instantiate_error
+        {
+          TypeErrors.JsonError.module_id;
+          location =
+            {
+              start = { line = start_line; column = start_column };
+              stop = { line = stop_line; column = stop_column };
+            };
+          kind;
+          message;
+        }
+      =
+      let module_qualifier =
+        ModuleIdToQualifierSharedMemory.get_module_qualifier
+          module_id_to_qualifier_shared_memory
+          module_id
+      in
+      let { ModuleInfosSharedMemory.Module.relative_source_path; _ } =
+        ModuleInfosSharedMemory.get module_infos_shared_memory module_qualifier
+        |> assert_shared_memory_key_exists "invalid module id"
+      in
+      {
+        Analysis.AnalysisError.Instantiated.line = start_line;
+        column = start_column;
+        stop_line;
+        stop_column;
+        path = Option.value ~default:"?" relative_source_path;
+        code = 0;
+        name = kind;
+        description = message;
+        concise_description = message;
+        define = "";
+      }
+    in
+    let { TypeErrors.errors } = TypeErrors.from_path_exn ~pyrefly_directory in
+    List.map ~f:instantiate_error errors
 
 
   let get_type_of_expression { type_of_expressions_shared_memory; _ } ~qualifier ~location =

@@ -213,6 +213,8 @@ module ReadOnly : sig
       (t -> Target.t -> CallGraph.DefineCallGraph.t -> CallGraph.DefineCallGraph.t) ->
     CallGraph.SharedMemory.call_graphs
 
+  val parse_type_errors : t -> Analysis.AnalysisError.Instantiated.t list
+
   val get_type_of_expression
     :  t ->
     qualifier:Ast.Reference.t ->

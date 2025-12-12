@@ -3633,7 +3633,7 @@ module ScratchPyrePysaProject : sig
     (string * string) list ->
     t
 
-  val errors : t -> AnalysisError.t list
+  val errors : t -> AnalysisError.Instantiated.t list
 
   val read_only_api : t -> Interprocedural.PyrePysaApi.ReadOnly.t
 
@@ -3819,10 +3819,15 @@ end = struct
 
 
   let errors = function
-    | Pyre1 { errors; _ } -> errors
-    | Pyrefly _ ->
-        (* TODO(T225700656): Support retriving type errors from pyrefly *)
-        []
+    | Pyre1 { pyre_api; errors; _ } ->
+        let instantiate =
+          PyrePysaLogic.Testing.AnalysisError.instantiate
+            ~show_error_traces:false
+            ~lookup:(Analysis.PyrePysaEnvironment.ReadOnly.relative_path_of_qualifier pyre_api)
+        in
+        List.map ~f:instantiate errors
+    | Pyrefly { pyrefly_api; _ } ->
+        Interprocedural.PyreflyApi.ReadOnly.parse_type_errors pyrefly_api
 
 
   let configuration_of = function

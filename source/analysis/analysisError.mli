@@ -581,7 +581,19 @@ type t = {
 [@@deriving compare, show, sexp, hash]
 
 module Instantiated : sig
-  type t [@@deriving sexp, equal, compare, show, hash, yojson { strict = false }]
+  type t = {
+    line: int;
+    column: int;
+    stop_line: int;
+    stop_column: int;
+    path: string;
+    code: int;
+    name: string;
+    description: string;
+    concise_description: string;
+    define: string;
+  }
+  [@@deriving sexp, equal, compare, show, hash, yojson { strict = false }]
 
   val location : t -> Location.WithPath.t
 

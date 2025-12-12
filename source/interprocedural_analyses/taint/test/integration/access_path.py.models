@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "access_path.indexes_and_attributes",
-    "callable_line": 25,
+    "callable_line": 26,
     "code": 5002,
-    "line": 29,
+    "line": 30,
     "start": 15,
     "end": 29,
     "filename": "access_path.py",
@@ -27,7 +27,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "attribute" }
             ],
-            "origin": { "line": 27, "start": 18, "end": 32 }
+            "origin": { "line": 28, "start": 18, "end": 32 }
           }
         ]
       },
@@ -44,8 +44,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 29, "start": 15, "end": 29 },
-            "call_site": "29:4-29:30"
+            "origin": { "line": 30, "start": 15, "end": 29 },
+            "call_site": "30:4-30:30"
           }
         ]
       }
@@ -69,9 +69,9 @@
   "kind": "issue",
   "data": {
     "callable": "access_path.indexes_are_attributes_for___dict__",
-    "callable_line": 32,
+    "callable_line": 33,
     "code": 5002,
-    "line": 35,
+    "line": 37,
     "start": 15,
     "end": 38,
     "filename": "access_path.py",
@@ -93,7 +93,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "attribute" }
             ],
-            "origin": { "line": 34, "start": 18, "end": 32 }
+            "origin": { "line": 36, "start": 18, "end": 32 }
           }
         ]
       },
@@ -110,8 +110,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 35, "start": 15, "end": 38 },
-            "call_site": "35:4-35:39"
+            "origin": { "line": 37, "start": 15, "end": 38 },
+            "call_site": "37:4-37:39"
           }
         ]
       }
@@ -137,7 +137,7 @@
     "callable": "access_path.indexes_are_strings",
     "callable_line": 10,
     "code": 5002,
-    "line": 13,
+    "line": 14,
     "start": 15,
     "end": 21,
     "filename": "access_path.py",
@@ -176,8 +176,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 13, "start": 15, "end": 21 },
-            "call_site": "13:4-13:22"
+            "origin": { "line": 14, "start": 15, "end": 21 },
+            "call_site": "14:4-14:22"
           }
         ]
       }
@@ -201,9 +201,9 @@
   "kind": "issue",
   "data": {
     "callable": "access_path.issue_positional_and_variadic",
-    "callable_line": 46,
+    "callable_line": 48,
     "code": 5002,
-    "line": 47,
+    "line": 49,
     "start": 35,
     "end": 49,
     "filename": "access_path.py",
@@ -222,7 +222,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 47, "start": 35, "end": 49 }
+            "origin": { "line": 49, "start": 35, "end": 49 }
           }
         ]
       },
@@ -241,10 +241,10 @@
               }
             ],
             "call": {
-              "position": { "line": 47, "start": 35, "end": 49 },
+              "position": { "line": 49, "start": 35, "end": 49 },
               "resolves_to": [ "access_path.positional_and_variadic1" ],
               "port": "formal(*args, position=2)",
-              "call_site": "47:4-47:50"
+              "call_site": "49:4-49:50"
             }
           }
         ]
@@ -266,9 +266,9 @@
   "kind": "issue",
   "data": {
     "callable": "access_path.issue_positional_and_variadic",
-    "callable_line": 46,
+    "callable_line": 48,
     "code": 5002,
-    "line": 49,
+    "line": 51,
     "start": 32,
     "end": 46,
     "filename": "access_path.py",
@@ -287,7 +287,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 49, "start": 32, "end": 46 }
+            "origin": { "line": 51, "start": 32, "end": 46 }
           }
         ]
       },
@@ -306,10 +306,10 @@
               }
             ],
             "call": {
-              "position": { "line": 49, "start": 32, "end": 46 },
+              "position": { "line": 51, "start": 32, "end": 46 },
               "resolves_to": [ "access_path.positional_and_variadic2" ],
               "port": "formal(y, position=1)",
-              "call_site": "49:4-49:47"
+              "call_site": "51:4-51:47"
             }
           }
         ]
@@ -331,9 +331,9 @@
   "kind": "issue",
   "data": {
     "callable": "access_path.issue_positional_and_variadic",
-    "callable_line": 46,
+    "callable_line": 48,
     "code": 5002,
-    "line": 50,
+    "line": 52,
     "start": 34,
     "end": 48,
     "filename": "access_path.py",
@@ -352,7 +352,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 50, "start": 34, "end": 48 }
+            "origin": { "line": 52, "start": 34, "end": 48 }
           }
         ]
       },
@@ -371,10 +371,10 @@
               }
             ],
             "call": {
-              "position": { "line": 50, "start": 34, "end": 48 },
+              "position": { "line": 52, "start": 34, "end": 48 },
               "resolves_to": [ "access_path.positional_and_variadic2" ],
               "port": "formal(y, position=1)",
-              "call_site": "50:4-50:49"
+              "call_site": "52:4-52:49"
             }
           }
         ]
@@ -397,7 +397,7 @@
   "data": {
     "callable": "access_path.positional_and_variadic1",
     "filename": "access_path.py",
-    "callable_line": 38,
+    "callable_line": 40,
     "sinks": [
       {
         "port": "formal(*args, position=2)",
@@ -412,8 +412,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 39, "start": 15, "end": 16 },
-            "call_site": "39:4-39:17"
+            "origin": { "line": 41, "start": 15, "end": 16 },
+            "call_site": "41:4-41:17"
           }
         ]
       }
@@ -425,7 +425,7 @@
   "data": {
     "callable": "access_path.positional_and_variadic2",
     "filename": "access_path.py",
-    "callable_line": 42,
+    "callable_line": 44,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -440,8 +440,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 43, "start": 15, "end": 16 },
-            "call_site": "43:4-43:17"
+            "origin": { "line": 45, "start": 15, "end": 16 },
+            "call_site": "45:4-45:17"
           }
         ]
       }
@@ -453,7 +453,7 @@
   "data": {
     "callable": "access_path.sink_on_keyword_only",
     "filename": "access_path.py",
-    "callable_line": 53,
+    "callable_line": 55,
     "sinks": [
       {
         "port": "formal(y)",
@@ -467,7 +467,7 @@
   "data": {
     "callable": "access_path.sink_on_non_positional_only",
     "filename": "access_path.py",
-    "callable_line": 63,
+    "callable_line": 65,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -481,7 +481,7 @@
   "data": {
     "callable": "access_path.sink_on_positional_only",
     "filename": "access_path.py",
-    "callable_line": 58,
+    "callable_line": 60,
     "sinks": [
       {
         "port": "formal(__x, position=0, positional_only)",
@@ -545,7 +545,7 @@
   "data": {
     "callable": "access_path.SpecialDict.__getitem__",
     "filename": "access_path.py",
-    "callable_line": 21,
+    "callable_line": 22,
     "tito": [
       {
         "port": "formal(key, position=1)",
@@ -564,7 +564,7 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 22, "start": 29, "end": 32 } ],
+            "tito_positions": [ { "line": 23, "start": 29, "end": 32 } ],
             "tito": {
               "caller_interval": [ { "lower": 2, "upper": 3 } ],
               "is_self_call": false
@@ -589,7 +589,7 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 22, "start": 15, "end": 24 } ],
+            "tito_positions": [ { "line": 23, "start": 15, "end": 24 } ],
             "tito": {
               "caller_interval": [ { "lower": 2, "upper": 3 } ],
               "is_self_call": false

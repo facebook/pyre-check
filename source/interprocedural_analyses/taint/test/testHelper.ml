@@ -584,12 +584,6 @@ let initialize_pyre_and_fail_on_errors ~context ~force_pyre1 ~handle ~source_con
      let errors =
        errors
        |> List.map ~f:(fun error ->
-              let error =
-                PyrePysaLogic.Testing.AnalysisError.instantiate
-                  ~show_error_traces:false
-                  ~lookup:(PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api)
-                  error
-              in
               Format.asprintf
                 "%a:%s"
                 Location.WithPath.pp
