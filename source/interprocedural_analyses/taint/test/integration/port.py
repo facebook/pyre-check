@@ -8,7 +8,7 @@ from pysa import _test_sink, _test_source
 
 def source_field():
     result = {}
-    result.a = _test_source()
+    result.a = _test_source() # pyrefly: ignore[missing-attribute]
     return result
 
 
@@ -52,12 +52,12 @@ def match_star_star_arg_with_star():
 
 
 def match_star_star_arg_directly():
-    star_star_arg_wrapper("a", "b", arg=source_field())
+    star_star_arg_wrapper("a", "b", arg=source_field())  # pyrefly: ignore[bad-argument-count]
 
 
 class Foo:
     @property
-    def some_source():
+    def some_source(self):
         return _test_source()
 
 

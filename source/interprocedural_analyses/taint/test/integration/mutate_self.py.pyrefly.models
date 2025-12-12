@@ -1,0 +1,1540 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.eval",
+    "filename": "builtins.pyi",
+    "callable_line": 4297,
+    "sinks": [
+      {
+        "port": "formal(source, position=0, positional_only)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.getattr",
+    "filename": "builtins.pyi",
+    "callable_line": 4447,
+    "sinks": [
+      {
+        "port": "formal(name, position=1, positional_only)",
+        "taint": [
+          { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(default, position=2, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "default" },
+                  { "always-type": "integer" },
+                  { "always-type": "bool" },
+                  { "always-type": "scalar" }
+                ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(o, position=0, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "object" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "SkipObscure" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "mutate_self.issue_mutates_foo_and_returns_instance",
+    "callable_line": 72,
+    "code": 5002,
+    "line": 73,
+    "start": 4,
+    "end": 36,
+    "filename": "mutate_self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 73, "start": 4, "end": 36 },
+              "resolves_to": [ "mutate_self.Base.mutates_foo_and_returns" ],
+              "port": "result[foo]"
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 73, "start": 4, "end": 36 },
+              "resolves_to": [ "mutate_self.Base.foo_sink" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "73:4-73:47"
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "mutate_self.Base.foo_sink",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "mutate_self.issue_mutates_foo_and_returns_instance:5002:0:Call|mutate_self.Base.foo_sink|0|formal(self):8b2b6686f0e08eb52e9a3f6b56537385"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "mutate_self.issue_mutates_foo_instance",
+    "callable_line": 65,
+    "code": 5002,
+    "line": 68,
+    "start": 4,
+    "end": 5,
+    "filename": "mutate_self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 67, "start": 4, "end": 5 },
+              "resolves_to": [ "mutate_self.Base.mutates_foo" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "67:4-67:19"
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 68, "start": 4, "end": 5 },
+              "resolves_to": [ "mutate_self.Base.foo_sink" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "68:4-68:16"
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "mutate_self.Base.foo_sink",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "mutate_self.issue_mutates_foo_instance:5002:0:Call|mutate_self.Base.foo_sink|0|formal(self):75613d52759a7add8156ff92c507574f"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._cookies",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 8,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "Cookies" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._rce",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 9,
+    "sinks": [
+      {
+        "port": "formal(argument, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._sql",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 10,
+    "sinks": [
+      {
+        "port": "formal(argument, position=0)",
+        "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._tito",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 6,
+    "tito": [
+      {
+        "port": "formal(**kwargs)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(*args, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._user_controlled",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 7,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa.copy",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 12,
+    "tito": [
+      {
+        "port": "formal(obj, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "copy" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "mutate_self.Base.bar_sink",
+    "filename": "mutate_self.py",
+    "callable_line": 21,
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[bar]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 22, "start": 19, "end": 27 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "call_site": "22:8-22:28"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "mutate_self.Base.foo_sink",
+    "filename": "mutate_self.py",
+    "callable_line": 18,
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 19, "start": 19, "end": 27 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "call_site": "19:8-19:28"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "mutate_self.Base.isssue_mutates_foo",
+    "filename": "mutate_self.py",
+    "callable_line": 30,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 31, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.mutates_foo" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "31:8-31:26"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[bar]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 33, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.bar_sink" ],
+              "port": "formal(self, position=0)[bar]",
+              "call_site": "33:8-33:23"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      },
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 32, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.foo_sink" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "32:8-32:23"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "mutate_self.Base.isssue_mutates_foo",
+    "callable_line": 30,
+    "code": 5002,
+    "line": 32,
+    "start": 8,
+    "end": 12,
+    "filename": "mutate_self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 31, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.mutates_foo" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "31:8-31:26"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 32, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.foo_sink" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "32:8-32:23"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "mutate_self.Base.foo_sink",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "mutate_self.Base.isssue_mutates_foo:5002:0:Call|mutate_self.Base.foo_sink|0|formal(self):b946d9a2987e3e0211786f4a7be9221a"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "mutate_self.Base.issue_mutates_and_returns",
+    "filename": "mutate_self.py",
+    "callable_line": 44,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 45, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.mutates_foo_and_returns" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "45:8-45:38"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 45, "start": 8, "end": 12 } ],
+            "call": {
+              "position": { "line": 45, "start": 8, "end": 38 },
+              "resolves_to": [ "mutate_self.Base.foo_sink" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "45:8-45:49"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "mutate_self.Base.issue_mutates_and_returns",
+    "callable_line": 44,
+    "code": 5002,
+    "line": 45,
+    "start": 8,
+    "end": 38,
+    "filename": "mutate_self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 45, "start": 8, "end": 38 },
+              "resolves_to": [ "mutate_self.Base.mutates_foo_and_returns" ],
+              "port": "result[foo]"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 45, "start": 8, "end": 38 },
+              "resolves_to": [ "mutate_self.Base.foo_sink" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "45:8-45:49"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "mutate_self.Base.foo_sink",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "mutate_self.Base.issue_mutates_and_returns:5002:0:Call|mutate_self.Base.foo_sink|0|formal(self):d6e28ff5628052adeb984f175c21ca4c"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "mutate_self.Base.issue_mutates_foo_self_annotation",
+    "filename": "mutate_self.py",
+    "callable_line": 51,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 52, "start": 8, "end": 12 },
+              "resolves_to": [
+                "mutate_self.Base.mutates_foo_self_annotation"
+              ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "52:8-52:42"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[bar]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 54, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.bar_sink" ],
+              "port": "formal(self, position=0)[bar]",
+              "call_site": "54:8-54:23"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      },
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 53, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.foo_sink" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "53:8-53:23"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "mutate_self.Base.issue_mutates_foo_self_annotation",
+    "callable_line": 51,
+    "code": 5002,
+    "line": 53,
+    "start": 8,
+    "end": 12,
+    "filename": "mutate_self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 52, "start": 8, "end": 12 },
+              "resolves_to": [
+                "mutate_self.Base.mutates_foo_self_annotation"
+              ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "52:8-52:42"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 53, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.foo_sink" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "53:8-53:23"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "mutate_self.Base.foo_sink",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "mutate_self.Base.issue_mutates_foo_self_annotation:5002:0:Call|mutate_self.Base.foo_sink|0|formal(self):b36f750e0faacc83c8fca47726423dc7"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "mutate_self.Base.issue_mutates_foo_self_typevar",
+    "filename": "mutate_self.py",
+    "callable_line": 59,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 60, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.mutates_foo_self_typevar" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "60:8-60:39"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[bar]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 62, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.bar_sink" ],
+              "port": "formal(self, position=0)[bar]",
+              "call_site": "62:8-62:23"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      },
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 61, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.foo_sink" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "61:8-61:23"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "mutate_self.Base.issue_mutates_foo_self_typevar",
+    "callable_line": 59,
+    "code": 5002,
+    "line": 61,
+    "start": 8,
+    "end": 12,
+    "filename": "mutate_self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 60, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.mutates_foo_self_typevar" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "60:8-60:39"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 61, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.foo_sink" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "61:8-61:23"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "mutate_self.Base.foo_sink",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "mutate_self.Base.issue_mutates_foo_self_typevar:5002:0:Call|mutate_self.Base.foo_sink|0|formal(self):b3891c1a0ac4a8d18b09dd450d8d9cf6"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "mutate_self.Base.issue_mutates_foo_with_hop",
+    "filename": "mutate_self.py",
+    "callable_line": 35,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 36, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.mutates_foo_with_hop" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "36:8-36:35"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[bar]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 38, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.bar_sink" ],
+              "port": "formal(self, position=0)[bar]",
+              "call_site": "38:8-38:23"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      },
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 37, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.foo_sink" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "37:8-37:23"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "mutate_self.Base.issue_mutates_foo_with_hop",
+    "callable_line": 35,
+    "code": 5002,
+    "line": 37,
+    "start": 8,
+    "end": 12,
+    "filename": "mutate_self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 36, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.mutates_foo_with_hop" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "36:8-36:35"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 37, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.foo_sink" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "37:8-37:23"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "mutate_self.Base.foo_sink",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "mutate_self.Base.issue_mutates_foo_with_hop:5002:0:Call|mutate_self.Base.foo_sink|0|formal(self):e288cad994f851ea1ec8e39ae7049835"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "mutate_self.Base.mutates_foo",
+    "filename": "mutate_self.py",
+    "callable_line": 24,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 25, "start": 19, "end": 33 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "mutate_self.Base.mutates_foo_and_returns",
+    "filename": "mutate_self.py",
+    "callable_line": 40,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 41, "start": 19, "end": 33 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "port": "result[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 41, "start": 19, "end": 33 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "mutate_self.Base.mutates_foo_self_annotation",
+    "filename": "mutate_self.py",
+    "callable_line": 48,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 49, "start": 19, "end": 33 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "mutate_self.Base.mutates_foo_self_typevar",
+    "filename": "mutate_self.py",
+    "callable_line": 56,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 57, "start": 19, "end": 33 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "mutate_self.Base.mutates_foo_with_hop",
+    "filename": "mutate_self.py",
+    "callable_line": 27,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 28, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.mutates_foo" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "28:8-28:26"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{pysa.ClassWithSinkAttribute.attribute}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{pysa._global_sink}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}

@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "via_attribute_name.test_sink_attribute_x",
   "returned_callables": [],
   "calls": {
-    "78:4-78:7": {
+    "79:4-79:7": {
       "attribute_access": {
         "globals": [
           {
@@ -15,7 +15,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "78:10-78:24": {
+    "79:10-79:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -28,7 +28,7 @@ Higher order call graphs
   "callable": "via_attribute_name.test_sink_attribute_y",
   "returned_callables": [],
   "calls": {
-    "82:4-82:7": {
+    "83:4-83:7": {
       "attribute_access": {
         "globals": [
           {
@@ -39,7 +39,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "82:10-82:24": {
+    "83:10-83:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -52,7 +52,7 @@ Higher order call graphs
   "callable": "via_attribute_name.test_sink_attribute_z",
   "returned_callables": [],
   "calls": {
-    "86:4-86:7": {
+    "87:4-87:7": {
       "attribute_access": {
         "globals": [
           {
@@ -63,7 +63,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "86:10-86:24": {
+    "87:10-87:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -76,7 +76,7 @@ Higher order call graphs
   "callable": "via_attribute_name.test_source_attribute_join",
   "returned_callables": [],
   "calls": {
-    "62:10-62:13": {
+    "63:10-63:13": {
       "attribute_access": {
         "globals": [
           {
@@ -87,7 +87,44 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "64:14-64:17": {
+    "64:7-64:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "random.random",
+            "index": 0,
+            "return_type": [ "float" ]
+          }
+        ]
+      }
+    },
+    "64:7-64:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "64:7-64:28|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "65:14-65:17": {
       "attribute_access": {
         "globals": [
           {
@@ -98,7 +135,44 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "66:14-66:17": {
+    "66:9-66:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "random.random",
+            "index": 1,
+            "return_type": [ "float" ]
+          }
+        ]
+      }
+    },
+    "66:9-66:30|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__gt__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "66:9-66:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "67:14-67:17": {
       "attribute_access": {
         "globals": [
           {
@@ -109,7 +183,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "67:4-67:19": {
+    "68:4-68:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -122,14 +196,14 @@ Higher order call graphs
   "callable": "via_attribute_name.test_source_attribute_x",
   "returned_callables": [],
   "calls": {
-    "50:4-50:19": {
+    "51:4-51:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "50:15-50:18": {
+    "51:15-51:18": {
       "attribute_access": {
         "globals": [
           {
@@ -146,14 +220,14 @@ Higher order call graphs
   "callable": "via_attribute_name.test_source_attribute_y",
   "returned_callables": [],
   "calls": {
-    "54:4-54:19": {
+    "55:4-55:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "54:15-54:18": {
+    "55:15-55:18": {
       "attribute_access": {
         "globals": [
           {
@@ -170,14 +244,14 @@ Higher order call graphs
   "callable": "via_attribute_name.test_source_attribute_z",
   "returned_callables": [],
   "calls": {
-    "58:4-58:19": {
+    "59:4-59:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "58:15-58:18": {
+    "59:15-59:18": {
       "attribute_access": {
         "globals": [
           {
@@ -194,7 +268,7 @@ Higher order call graphs
   "callable": "via_attribute_name.test_tito_attribute_join",
   "returned_callables": [],
   "calls": {
-    "33:8-33:40": {
+    "34:8-34:40": {
       "call": {
         "new_calls": [
           {
@@ -214,14 +288,14 @@ Higher order call graphs
         ]
       }
     },
-    "33:25-33:39": {
+    "34:25-34:39": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "34:10-34:13": {
+    "35:10-35:13": {
       "attribute_access": {
         "globals": [
           {
@@ -232,7 +306,44 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "36:14-36:17": {
+    "36:7-36:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "random.random",
+            "index": 0,
+            "return_type": [ "float" ]
+          }
+        ]
+      }
+    },
+    "36:7-36:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "36:7-36:28|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "37:14-37:17": {
       "attribute_access": {
         "globals": [
           {
@@ -243,7 +354,44 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "38:14-38:17": {
+    "38:9-38:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "random.random",
+            "index": 1,
+            "return_type": [ "float" ]
+          }
+        ]
+      }
+    },
+    "38:9-38:30|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__gt__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "38:9-38:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "39:14-39:17": {
       "attribute_access": {
         "globals": [
           {
@@ -254,7 +402,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "39:4-39:19": {
+    "40:4-40:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -267,14 +415,14 @@ Higher order call graphs
   "callable": "via_attribute_name.test_tito_attribute_model_query_x",
   "returned_callables": [],
   "calls": {
-    "97:4-97:69": {
+    "98:4-98:69": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "97:15-97:68": {
+    "98:15-98:68": {
       "call": {
         "new_calls": [
           {
@@ -294,7 +442,7 @@ Higher order call graphs
         ]
       }
     },
-    "97:41-97:55": {
+    "98:41-98:55": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -307,14 +455,14 @@ Higher order call graphs
   "callable": "via_attribute_name.test_tito_attribute_model_query_y",
   "returned_callables": [],
   "calls": {
-    "101:4-101:69": {
+    "102:4-102:69": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "101:15-101:68": {
+    "102:15-102:68": {
       "call": {
         "new_calls": [
           {
@@ -334,7 +482,7 @@ Higher order call graphs
         ]
       }
     },
-    "101:47-101:61": {
+    "102:47-102:61": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -347,14 +495,14 @@ Higher order call graphs
   "callable": "via_attribute_name.test_tito_attribute_model_query_z",
   "returned_callables": [],
   "calls": {
-    "105:4-105:69": {
+    "106:4-106:69": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "105:15-105:68": {
+    "106:15-106:68": {
       "call": {
         "new_calls": [
           {
@@ -374,7 +522,7 @@ Higher order call graphs
         ]
       }
     },
-    "105:53-105:67": {
+    "106:53-106:67": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -387,7 +535,7 @@ Higher order call graphs
   "callable": "via_attribute_name.test_tito_attribute_x",
   "returned_callables": [],
   "calls": {
-    "18:8-18:40": {
+    "19:8-19:40": {
       "call": {
         "new_calls": [
           {
@@ -407,21 +555,21 @@ Higher order call graphs
         ]
       }
     },
-    "18:25-18:39": {
+    "19:25-19:39": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "19:4-19:19": {
+    "20:4-20:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "19:15-19:18": {
+    "20:15-20:18": {
       "attribute_access": {
         "globals": [
           {
@@ -438,7 +586,7 @@ Higher order call graphs
   "callable": "via_attribute_name.test_tito_attribute_y",
   "returned_callables": [],
   "calls": {
-    "23:8-23:40": {
+    "24:8-24:40": {
       "call": {
         "new_calls": [
           {
@@ -458,21 +606,21 @@ Higher order call graphs
         ]
       }
     },
-    "23:25-23:39": {
+    "24:25-24:39": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "24:4-24:19": {
+    "25:4-25:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "24:15-24:18": {
+    "25:15-25:18": {
       "attribute_access": {
         "globals": [
           {
@@ -489,7 +637,7 @@ Higher order call graphs
   "callable": "via_attribute_name.test_tito_attribute_z_with_tag",
   "returned_callables": [],
   "calls": {
-    "28:8-28:40": {
+    "29:8-29:40": {
       "call": {
         "new_calls": [
           {
@@ -509,21 +657,21 @@ Higher order call graphs
         ]
       }
     },
-    "28:25-28:39": {
+    "29:25-29:39": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "29:4-29:19": {
+    "30:4-30:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "29:15-29:18": {
+    "30:15-30:18": {
       "attribute_access": {
         "globals": [
           {
@@ -540,7 +688,7 @@ Higher order call graphs
   "callable": "via_attribute_name.TitoAttributes.__init__",
   "returned_callables": [],
   "calls": {
-    "12:8-12:14": {
+    "13:8-13:14": {
       "attribute_access": {
         "globals": [
           {
@@ -551,7 +699,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "13:8-13:14": {
+    "14:8-14:14": {
       "attribute_access": {
         "globals": [
           {
@@ -562,7 +710,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "14:8-14:14": {
+    "15:8-15:14": {
       "attribute_access": {
         "globals": [
           {

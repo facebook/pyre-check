@@ -1,0 +1,144 @@
+@generated
+Higher order call graphs
+{
+  "callable": "http_request.request_get_flows_to_sink",
+  "returned_callables": [],
+  "calls": {
+    "24:4-24:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "24:15-24:26": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{django.http.request.HttpRequest.GET}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "http_request.test_hop_is_cut_off",
+  "returned_callables": [],
+  "calls": {
+    "28:4-28:15": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{django.http.request.HttpRequest.GET}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "28:18-28:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "29:4-29:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "http_request.request_get_flows_to_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "http_request.test_trace_has_no_tito",
+  "returned_callables": [],
+  "calls": {
+    "19:4-19:15": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{django.http.request.HttpRequest.GET}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "19:18-19:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "20:4-20:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "20:15-20:26": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{django.http.request.HttpRequest.GET}",
+            "index": 1,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "http_request.test_untainted_assign",
+  "returned_callables": [],
+  "calls": {
+    "14:4-14:15": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{django.http.request.HttpRequest.GET}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "15:4-15:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "15:15-15:26": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{django.http.request.HttpRequest.GET}",
+            "index": 1,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}

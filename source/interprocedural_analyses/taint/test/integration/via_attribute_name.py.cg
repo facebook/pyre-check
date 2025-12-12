@@ -16,7 +16,8 @@ Call dependencies
     "pysa._test_source (fun)", "via_attribute_name.SinkAttributes.z (object)"
   ],
   "via_attribute_name.test_source_attribute_join (fun)": [
-    "pysa._test_sink (fun)",
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "pysa._test_sink (fun)", "random.random (fun)",
     "via_attribute_name.SourceAttributes.x (object)",
     "via_attribute_name.SourceAttributes.y (object)",
     "via_attribute_name.SourceAttributes.z (object)"
@@ -31,8 +32,9 @@ Call dependencies
     "pysa._test_sink (fun)", "via_attribute_name.SourceAttributes.z (object)"
   ],
   "via_attribute_name.test_tito_attribute_join (fun)": [
+    "float.__gt__ (method)", "float.__le__ (method)",
     "object.__new__ (method)", "pysa._test_sink (fun)",
-    "pysa._test_source (fun)",
+    "pysa._test_source (fun)", "random.random (fun)",
     "via_attribute_name.TitoAttributes.__init__ (method)",
     "via_attribute_name.TitoAttributes.x (object)",
     "via_attribute_name.TitoAttributes.y (object)",

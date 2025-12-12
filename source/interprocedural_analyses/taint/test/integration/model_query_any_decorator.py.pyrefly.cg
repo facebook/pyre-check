@@ -1,0 +1,64 @@
+@generated
+Call dependencies
+{
+  "model_query_any_decorator.$toplevel (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)"
+  ],
+  "model_query_any_decorator.source_on_decorator_ignored@decorated (fun)": [
+    "model_query_any_decorator.decorator_ignored (fun)[formal(f, position=0)=model_query_any_decorator.source_on_decorator_ignored (fun)]"
+  ],
+  "model_query_any_decorator.test1_alarm1@decorated (fun)": [
+    "model_query_any_decorator.test1_d1 (fun)[formal(f, position=0)=model_query_any_decorator.test1_alarm1 (fun)]"
+  ],
+  "model_query_any_decorator.test1_noalarm1@decorated (fun)": [
+    "model_query_any_decorator.test1_d2 (fun)[formal(f, position=0)=model_query_any_decorator.test1_noalarm1 (fun)]"
+  ],
+  "model_query_any_decorator.test2_alarm1@decorated (fun)": [
+    "model_query_any_decorator.test2_d1 (fun)[formal(f, position=0)=model_query_any_decorator.test2_alarm1 (fun)]"
+  ],
+  "model_query_any_decorator.test2_noalarm1@decorated (fun)": [
+    "model_query_any_decorator.test2_d2 (fun)[formal(f, position=0)=model_query_any_decorator.test2_noalarm1 (fun)]"
+  ],
+  "model_query_any_decorator.test3_alarm1@decorated (fun)": [
+    "model_query_any_decorator.test3_d1 (fun)"
+  ],
+  "model_query_any_decorator.test3_alarm2@decorated (fun)": [
+    "model_query_any_decorator.test3_d1 (fun)"
+  ],
+  "model_query_any_decorator.test3_alarm3@decorated (fun)": [
+    "model_query_any_decorator.test3_d1 (fun)"
+  ],
+  "model_query_any_decorator.test3_noalarm1@decorated (fun)": [
+    "model_query_any_decorator.test3_d1 (fun)"
+  ],
+  "model_query_any_decorator.test3_noalarm2@decorated (fun)": [
+    "model_query_any_decorator.test3_d1 (fun)"
+  ],
+  "model_query_any_decorator.test4_alarm1@decorated (fun)": [
+    "model_query_any_decorator.test4_d1 (fun)"
+  ],
+  "model_query_any_decorator.test4_noalarm1@decorated (fun)": [
+    "model_query_any_decorator.test4_d1 (fun)"
+  ],
+  "model_query_any_decorator.test4_noalarm2@decorated (fun)": [
+    "model_query_any_decorator.test4_d1 (fun)"
+  ],
+  "model_query_any_decorator.test4_noalarm3@decorated (fun)": [
+    "model_query_any_decorator.test4_d1 (fun)"
+  ],
+  "model_query_any_decorator.test5_alarm1@decorated (fun)": [
+    "model_query_any_decorator.test5_d1 (fun)"
+  ],
+  "model_query_any_decorator.test5_alarm2@decorated (fun)": [
+    "model_query_any_decorator.test5_d1 (fun)"
+  ],
+  "model_query_any_decorator.test5_noalarm1@decorated (fun)": [
+    "model_query_any_decorator.test5_d1 (fun)"
+  ],
+  "model_query_any_decorator.test5_noalarm2@decorated (fun)": [
+    "model_query_any_decorator.test5_d1 (fun)"
+  ],
+  "model_query_any_decorator.test_local_variable_method_decorator@decorated (fun)": [
+    "model_query_any_decorator.Application.decorator (method)[formal(f, position=1)=model_query_any_decorator.test_local_variable_method_decorator (fun)]"
+  ]
+}

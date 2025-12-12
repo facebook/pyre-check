@@ -1,6 +1,6 @@
 # common global mutators integration tests
 
-def list.append(self: TaintSink[MutationSink]): ...
+def list.append(self: TaintSink[MutationSink], /): ...
 
 # global sources
 ModelQuery(

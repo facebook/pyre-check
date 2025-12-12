@@ -594,7 +594,7 @@
     "callable_line": 401,
     "tito": [
       {
-        "port": "formal(self, position=0)",
+        "port": "formal(self, position=0, positional_only)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],

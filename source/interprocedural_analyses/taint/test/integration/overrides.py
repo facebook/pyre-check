@@ -29,7 +29,7 @@ class A(Base):
     q: str = "q"
 
     def __init__(self, arg):
-        super(Base, self).__init__(arg)
+        super().__init__(arg)
 
     def methodA(self, arg):
         _test_sink(arg)
@@ -39,7 +39,7 @@ class B(Base):
     r: str = "r"
 
     def __init__(self, arg):
-        super(Base, self).__init__(arg)
+        super(B, self).__init__(arg)
 
     def methodB(self):
         return _test_source()
@@ -86,7 +86,7 @@ def testStaticBase(o: Base):
 
 
 def testMakeBase():
-    o = Base()
+    o = Base("")
     x = o.methodB()
 
 
@@ -102,7 +102,7 @@ def testStaticA(o: A):
 
 
 def testMakeA():
-    o = A()
+    o = A("")
     x = o.methodB()
 
 
@@ -118,7 +118,7 @@ def testStaticB(o: B):
 
 
 def testMakeB():
-    o = B()
+    o = B("")
     x = o.methodB()
 
 
@@ -134,7 +134,7 @@ def testStaticC(o: C):
 
 
 def testMakeC():
-    o = C()
+    o = C("")
     x = o.methodB()
 
 
@@ -150,7 +150,7 @@ def testStaticD(o: D):
 
 
 def testMakeD():
-    o = D()
+    o = D("")
     x = o.methodB()
 
 
@@ -160,7 +160,7 @@ def constructorTest(cls: Type[D]) -> D:
 
 class OverloadedOverride(D):
     @overload
-    def methodA(self, arg: int) -> int:
+    def methodA(self, arg: int) -> int: # pyrefly: ignore[bad-override]
         ...
 
     @overload

@@ -1,0 +1,154 @@
+@generated
+Higher order call graphs
+{
+  "callable": "custom_dictionary_model.sink_dictionary_key",
+  "returned_callables": [],
+  "calls": {
+    "26:4-26:29|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "26:6-26:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "custom_dictionary_model._test_source_2",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "custom_dictionary_model.sink_dictionary_value",
+  "returned_callables": [],
+  "calls": {
+    "21:4-21:29|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "21:13-21:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "custom_dictionary_model._test_source_2",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "custom_dictionary_model.tainted_dictionary_key_sink",
+  "returned_callables": [],
+  "calls": {
+    "37:4-37:25|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "37:6-37:20": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "38:4-38:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "custom_dictionary_model.tainted_dictionary_value_sink",
+  "returned_callables": [],
+  "calls": {
+    "31:4-31:27|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "31:13-31:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "32:4-32:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "custom_dictionary_model.untainted_dictionary",
+  "returned_callables": [],
+  "calls": {
+    "15:4-15:31|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "16:4-16:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

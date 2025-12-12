@@ -1,0 +1,38 @@
+@generated
+Call dependencies
+{
+  "features.async_issue_bools (fun)": [
+    "features.async_tuple_of_bools (fun)", "pysa._test_sink (fun)"
+  ],
+  "features.async_tuple_of_bools (fun)": [ "pysa._test_source (fun)" ],
+  "features.issue_from_tuple (fun)": [
+    "features.return_tuple_of_bools (fun)", "pysa._test_sink (fun)"
+  ],
+  "features.issue_via_bool (fun)": [
+    "builtins.bool.__new__ (method)", "builtins.object.__init__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "features.issue_via_equality (fun)": [
+    "builtins.str.__eq__ (method)", "features.returns_tainted_object (fun)",
+    "pysa._test_sink (fun)"
+  ],
+  "features.issue_via_in (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "features.no_always_when_calling_setitem (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "features.SetItemClass.__setitem__ (method)", "pysa._test_source (fun)"
+  ],
+  "features.return_tuple_of_bools (fun)": [ "pysa._test_source (fun)" ],
+  "features.returns_tainted_object (fun)": [ "pysa._test_source (fun)" ],
+  "features.tito_via_constructor (fun)": [
+    "builtins.int.__new__ (method)", "builtins.object.__init__ (method)"
+  ],
+  "features.tito_via_len (fun)": [ "builtins.len (fun)" ],
+  "features.tito_via_min_left (fun)": [ "builtins.min (fun)" ],
+  "features.tito_via_min_or_not (fun)": [ "builtins.min (fun)" ],
+  "features.tito_via_min_right (fun)": [ "builtins.min (fun)" ],
+  "features.tito_via_named (fun)": [ "features.named (fun)" ],
+  "features.tito_via_optional (fun)": [ "features.optional_scalar (fun)" ],
+  "features.tito_with_tuple (fun)": [ "builtins.min (fun)" ]
+}

@@ -1,0 +1,2586 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.a_sink",
+    "filename": "multiple_sources.py",
+    "callable_line": 81,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "TestA" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.a_source",
+    "filename": "multiple_sources.py",
+    "callable_line": 68,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "TestA" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.b_source",
+    "filename": "multiple_sources.py",
+    "callable_line": 72,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "TestB" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.c_source",
+    "filename": "multiple_sources.py",
+    "callable_line": 218,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "TestC" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.combine_c_d_and_c_e",
+    "callable_line": 270,
+    "code": 4323,
+    "line": 271,
+    "start": 44,
+    "end": 54,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.d_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestD"
+              }
+            ],
+            "origin": { "line": 271, "start": 44, "end": 54 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source TestC",
+                    "origin": { "line": 271, "start": 32, "end": 42 },
+                    "leaf_kind": "TestC",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:y"
+                  }
+                ],
+                "kind": "Triggered[TestC]@PartialSink[ShareBothSinksRight]"
+              }
+            ],
+            "origin": { "line": 271, "start": 44, "end": 54 },
+            "call_site": "271:4-271:55"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.multi_sink_share_both_sinks",
+      "index": 0,
+      "parameter": "formal(y)"
+    },
+    "master_handle": "multiple_sources.combine_c_d_and_c_e:4323:0:Call|multiple_sources.multi_sink_share_both_sinks|0|formal(y):9ab743ac884cbbf27abc1dfac6b70fd4"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.combine_c_d_and_c_e",
+    "callable_line": 270,
+    "code": 4324,
+    "line": 272,
+    "start": 44,
+    "end": 54,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.e_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestE"
+              }
+            ],
+            "origin": { "line": 272, "start": 44, "end": 54 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source TestC",
+                    "origin": { "line": 272, "start": 32, "end": 42 },
+                    "leaf_kind": "TestC",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:y"
+                  }
+                ],
+                "kind": "Triggered[TestC]@PartialSink[ShareBothSinksRight]"
+              }
+            ],
+            "origin": { "line": 272, "start": 44, "end": 54 },
+            "call_site": "272:4-272:55"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.multi_sink_share_both_sinks",
+      "index": 1,
+      "parameter": "formal(y)"
+    },
+    "master_handle": "multiple_sources.combine_c_d_and_c_e:4324:0:Call|multiple_sources.multi_sink_share_both_sinks|1|formal(y):8a6f4e482f2d5c4f054df35e90173fc0"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.combine_tainted_user_and_dangerous_vc",
+    "callable_line": 29,
+    "code": 4321,
+    "line": 32,
+    "start": 22,
+    "end": 24,
+    "filename": "multiple_sources.py",
+    "message": "User controlled and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.permissive_context",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 31, "start": 9, "end": 29 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source UserControlled",
+                    "origin": { "line": 30, "start": 9, "end": 32 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
+                ],
+                "kind": "Triggered[UserControlled]@PartialSink[PermissiveContextSink]"
+              }
+            ],
+            "origin": { "line": 32, "start": 22, "end": 24 },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false,
+            "call_site": "32:4-32:25"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-type": "integer" }, { "always-type": "scalar" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.Node.send",
+      "index": 0,
+      "parameter": "formal(vc)"
+    },
+    "master_handle": "multiple_sources.combine_tainted_user_and_dangerous_vc:4321:0:Call|multiple_sources.Node.send|0|formal(vc):4b283006a4044ae3eb3809f82c65d061"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.combines_tests_and_context",
+    "filename": "multiple_sources.py",
+    "callable_line": 64,
+    "sinks": [
+      {
+        "port": "formal(vc, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "PartialSink[ExpectsEitherTestB]" } ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(test, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "PartialSink[ExpectsEitherTestA]" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.d_source",
+    "filename": "multiple_sources.py",
+    "callable_line": 221,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "TestD" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.demonstrate_triggered_c_from_d",
+    "filename": "multiple_sources.py",
+    "callable_line": 240,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source TestD",
+                    "origin": { "line": 241, "start": 35, "end": 45 },
+                    "leaf_kind": "TestD",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "Triggered[TestD]@PartialSink[ShareBothSinksLeft]"
+              }
+            ],
+            "origin": { "line": 241, "start": 32, "end": 33 },
+            "call_site": "241:4-241:46"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.demonstrate_triggered_c_from_d_and_e",
+    "filename": "multiple_sources.py",
+    "callable_line": 230,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source TestD",
+                    "origin": { "line": 231, "start": 35, "end": 45 },
+                    "leaf_kind": "TestD",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "Triggered[TestD]@PartialSink[ShareBothSinksLeft]"
+              }
+            ],
+            "origin": { "line": 231, "start": 32, "end": 33 },
+            "call_site": "231:4-231:46"
+          },
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source TestE",
+                    "origin": { "line": 232, "start": 35, "end": 45 },
+                    "leaf_kind": "TestE",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "Triggered[TestE]@PartialSink[ShareBothSinksLeft]"
+              }
+            ],
+            "origin": { "line": 232, "start": 32, "end": 33 },
+            "call_site": "232:4-232:46"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.demonstrate_triggered_c_from_d_or_e",
+    "filename": "multiple_sources.py",
+    "callable_line": 249,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source TestD",
+                    "origin": { "line": 251, "start": 39, "end": 49 },
+                    "leaf_kind": "TestD",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "Triggered[TestD]@PartialSink[ShareBothSinksLeft]"
+              }
+            ],
+            "origin": { "line": 251, "start": 36, "end": 37 },
+            "call_site": "251:8-251:50"
+          },
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source TestE",
+                    "origin": { "line": 253, "start": 39, "end": 49 },
+                    "leaf_kind": "TestE",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "Triggered[TestE]@PartialSink[ShareBothSinksLeft]"
+              }
+            ],
+            "origin": { "line": 253, "start": 36, "end": 37 },
+            "call_site": "253:8-253:50"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.demonstrate_triggered_context",
+    "filename": "multiple_sources.py",
+    "callable_line": 35,
+    "sinks": [
+      {
+        "port": "formal(vc, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source UserControlled",
+                    "origin": { "line": 36, "start": 9, "end": 32 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
+                ],
+                "kind": "Triggered[UserControlled]@PartialSink[PermissiveContextSink]"
+              }
+            ],
+            "origin": { "line": 37, "start": 22, "end": 24 },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false,
+            "call_site": "37:4-37:25"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.demonstrate_triggered_context_more_hops",
+    "filename": "multiple_sources.py",
+    "callable_line": 131,
+    "sinks": [
+      {
+        "port": "formal(vc, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source UserControlled",
+                    "call": {
+                      "position": { "line": 133, "start": 9, "end": 40 },
+                      "resolves_to": [
+                        "multiple_sources.user_controlled_input_wrapper"
+                      ],
+                      "port": "result"
+                    },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
+                ],
+                "kind": "Triggered[UserControlled]@PartialSink[PermissiveContextSink]"
+              }
+            ],
+            "origin": { "line": 134, "start": 22, "end": 24 },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false,
+            "call_site": "134:4-134:25"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.demonstrate_triggered_d_and_e",
+    "filename": "multiple_sources.py",
+    "callable_line": 261,
+    "sinks": [
+      {
+        "port": "formal(y, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source TestC",
+                    "origin": { "line": 262, "start": 32, "end": 42 },
+                    "leaf_kind": "TestC",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:y"
+                  }
+                ],
+                "kind": "Triggered[TestC]@PartialSink[ShareBothSinksRight]"
+              }
+            ],
+            "origin": { "line": 262, "start": 44, "end": 45 },
+            "call_site": "262:4-262:46"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.demonstrate_triggered_input",
+    "filename": "multiple_sources.py",
+    "callable_line": 40,
+    "sinks": [
+      {
+        "port": "formal(id, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source PermissiveContext",
+                    "origin": { "line": 41, "start": 9, "end": 29 },
+                    "leaf_kind": "PermissiveContext",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.Node.send",
+                    "port": "leaf:self"
+                  }
+                ],
+                "kind": "Triggered[PermissiveContext]@PartialSink[UserControlledSink]"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 42, "start": 13, "end": 15 } ],
+            "origin": { "line": 42, "start": 4, "end": 16 },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false,
+            "call_site": "42:4-42:25"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.e_source",
+    "filename": "multiple_sources.py",
+    "callable_line": 224,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "TestE" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_sanitizer",
+    "callable_line": 116,
+    "code": 4322,
+    "line": 119,
+    "start": 34,
+    "end": 54,
+    "filename": "multiple_sources.py",
+    "message": "TestA or TestB and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.permissive_context",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 119, "start": 34, "end": 54 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source TestA",
+                    "origin": { "line": 117, "start": 8, "end": 18 },
+                    "leaf_kind": "TestA",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.combines_tests_and_context",
+                    "port": "leaf:vc"
+                  }
+                ],
+                "kind": "Triggered[TestA]@PartialSink[ExpectsEitherTestB]"
+              }
+            ],
+            "origin": { "line": 119, "start": 34, "end": 54 },
+            "call_site": "119:4-119:55"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-type": "integer" }, { "always-type": "scalar" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.combines_tests_and_context",
+      "index": 0,
+      "parameter": "formal(vc)"
+    },
+    "master_handle": "multiple_sources.issue_with_sanitizer:4322:0:Call|multiple_sources.combines_tests_and_context|0|formal(vc):e409892815f29eff86f4a3539be16ff9"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_test_a_and_b",
+    "callable_line": 76,
+    "code": 4322,
+    "line": 77,
+    "start": 43,
+    "end": 63,
+    "filename": "multiple_sources.py",
+    "message": "TestA or TestB and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.permissive_context",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 77, "start": 43, "end": 63 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source TestA",
+                    "origin": { "line": 77, "start": 31, "end": 41 },
+                    "leaf_kind": "TestA",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.combines_tests_and_context",
+                    "port": "leaf:vc"
+                  }
+                ],
+                "kind": "Triggered[TestA]@PartialSink[ExpectsEitherTestB]"
+              }
+            ],
+            "origin": { "line": 77, "start": 43, "end": 63 },
+            "call_site": "77:4-77:64"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-type": "integer" }, { "always-type": "scalar" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.combines_tests_and_context",
+      "index": 0,
+      "parameter": "formal(vc)"
+    },
+    "master_handle": "multiple_sources.issue_with_test_a_and_b:4322:0:Call|multiple_sources.combines_tests_and_context|0|formal(vc):2952b352e0a37aa627ef7429212a7ad1"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_test_a_and_b",
+    "callable_line": 76,
+    "code": 4322,
+    "line": 78,
+    "start": 43,
+    "end": 63,
+    "filename": "multiple_sources.py",
+    "message": "TestA or TestB and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.permissive_context",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 78, "start": 43, "end": 63 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source TestB",
+                    "origin": { "line": 78, "start": 31, "end": 41 },
+                    "leaf_kind": "TestB",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.combines_tests_and_context",
+                    "port": "leaf:vc"
+                  }
+                ],
+                "kind": "Triggered[TestB]@PartialSink[ExpectsEitherTestB]"
+              }
+            ],
+            "origin": { "line": 78, "start": 43, "end": 63 },
+            "call_site": "78:4-78:64"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-type": "integer" }, { "always-type": "scalar" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.combines_tests_and_context",
+      "index": 1,
+      "parameter": "formal(vc)"
+    },
+    "master_handle": "multiple_sources.issue_with_test_a_and_b:4322:0:Call|multiple_sources.combines_tests_and_context|1|formal(vc):00952f5183650c224ff0c1236b161820"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_c_from_d",
+    "callable_line": 244,
+    "code": 4323,
+    "line": 246,
+    "start": 35,
+    "end": 45,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.c_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestC"
+              }
+            ],
+            "origin": { "line": 246, "start": 35, "end": 45 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "length": 1,
+                "kind": "Triggered[TestD]:PartialSink[ShareBothSinksLeft]"
+              }
+            ],
+            "call": {
+              "position": { "line": 246, "start": 35, "end": 45 },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_c_from_d"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "246:4-246:46"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_c_from_d",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_c_from_d:4323:0:Call|multiple_sources.demonstrate_triggered_c_from_d|0|formal(x):3bfb83d48fbb62b1e004c6538076ea8a"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_c_from_d_and_e",
+    "callable_line": 235,
+    "code": 4323,
+    "line": 237,
+    "start": 41,
+    "end": 51,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.c_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestC"
+              }
+            ],
+            "origin": { "line": 237, "start": 41, "end": 51 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "length": 1,
+                "kind": "Triggered[TestD]:PartialSink[ShareBothSinksLeft]"
+              }
+            ],
+            "call": {
+              "position": { "line": 237, "start": 41, "end": 51 },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_c_from_d_and_e"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "237:4-237:52"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_c_from_d_and_e",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_c_from_d_and_e:4323:0:Call|multiple_sources.demonstrate_triggered_c_from_d_and_e|0|formal(x):e6b12820a65d3ff304bcf1fb05acc3d5"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_c_from_d_and_e",
+    "callable_line": 235,
+    "code": 4324,
+    "line": 237,
+    "start": 41,
+    "end": 51,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.c_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestC"
+              }
+            ],
+            "origin": { "line": 237, "start": 41, "end": 51 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "length": 1,
+                "kind": "Triggered[TestE]:PartialSink[ShareBothSinksLeft]"
+              }
+            ],
+            "call": {
+              "position": { "line": 237, "start": 41, "end": 51 },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_c_from_d_and_e"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "237:4-237:52"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_c_from_d_and_e",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_c_from_d_and_e:4324:0:Call|multiple_sources.demonstrate_triggered_c_from_d_and_e|0|formal(x):f5167a0dfeda35ef3da24afdaf8b6f07"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_c_from_d_or_e",
+    "callable_line": 256,
+    "code": 4323,
+    "line": 258,
+    "start": 40,
+    "end": 50,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.c_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestC"
+              }
+            ],
+            "origin": { "line": 258, "start": 40, "end": 50 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "length": 1,
+                "kind": "Triggered[TestD]:PartialSink[ShareBothSinksLeft]"
+              }
+            ],
+            "call": {
+              "position": { "line": 258, "start": 40, "end": 50 },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_c_from_d_or_e"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "258:4-258:51"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_c_from_d_or_e",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_c_from_d_or_e:4323:0:Call|multiple_sources.demonstrate_triggered_c_from_d_or_e|0|formal(x):42b083168991b29fa594514047a3bade"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_c_from_d_or_e",
+    "callable_line": 256,
+    "code": 4324,
+    "line": 258,
+    "start": 40,
+    "end": 50,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.c_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestC"
+              }
+            ],
+            "origin": { "line": 258, "start": 40, "end": 50 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "length": 1,
+                "kind": "Triggered[TestE]:PartialSink[ShareBothSinksLeft]"
+              }
+            ],
+            "call": {
+              "position": { "line": 258, "start": 40, "end": 50 },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_c_from_d_or_e"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "258:4-258:51"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_c_from_d_or_e",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_c_from_d_or_e:4324:0:Call|multiple_sources.demonstrate_triggered_c_from_d_or_e|0|formal(x):98bbbe05fc248bb09ac039cf4933be0f"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_context",
+    "callable_line": 50,
+    "code": 4321,
+    "line": 52,
+    "start": 34,
+    "end": 36,
+    "filename": "multiple_sources.py",
+    "message": "User controlled and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.permissive_context",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 51, "start": 9, "end": 29 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
+                ],
+                "length": 1,
+                "kind": "Triggered[UserControlled]:PartialSink[PermissiveContextSink]"
+              }
+            ],
+            "call": {
+              "position": { "line": 52, "start": 34, "end": 36 },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_context"
+              ],
+              "port": "formal(vc, position=0)",
+              "call_site": "52:4-52:37"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-type": "integer" }, { "always-type": "scalar" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_context",
+      "index": 0,
+      "parameter": "formal(vc)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_context:4321:0:Call|multiple_sources.demonstrate_triggered_context|0|formal(vc):618ee3f551e51cbfdd4134288328fbfb"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_context_more_hops",
+    "callable_line": 137,
+    "code": 4321,
+    "line": 139,
+    "start": 44,
+    "end": 46,
+    "filename": "multiple_sources.py",
+    "message": "User controlled and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.permissive_context",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 138, "start": 9, "end": 29 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
+                ],
+                "length": 1,
+                "kind": "Triggered[UserControlled]:PartialSink[PermissiveContextSink]"
+              }
+            ],
+            "call": {
+              "position": { "line": 139, "start": 44, "end": 46 },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_context_more_hops"
+              ],
+              "port": "formal(vc, position=0)",
+              "call_site": "139:4-139:47"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-type": "integer" }, { "always-type": "scalar" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_context_more_hops",
+      "index": 0,
+      "parameter": "formal(vc)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_context_more_hops:4321:0:Call|multiple_sources.demonstrate_triggered_context_more_hops|0|formal(vc):494878f9a90ba21acf31712e1fd155d0"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_d_and_e",
+    "callable_line": 265,
+    "code": 4323,
+    "line": 266,
+    "start": 34,
+    "end": 44,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.d_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestD"
+              }
+            ],
+            "origin": { "line": 266, "start": 34, "end": 44 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:y"
+                  }
+                ],
+                "length": 1,
+                "kind": "Triggered[TestC]:PartialSink[ShareBothSinksRight]"
+              }
+            ],
+            "call": {
+              "position": { "line": 266, "start": 34, "end": 44 },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_d_and_e"
+              ],
+              "port": "formal(y, position=0)",
+              "call_site": "266:4-266:45"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_d_and_e",
+      "index": 0,
+      "parameter": "formal(y)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_d_and_e:4323:0:Call|multiple_sources.demonstrate_triggered_d_and_e|0|formal(y):bedc991d7011883b0e49ccc554133f51"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_d_and_e",
+    "callable_line": 265,
+    "code": 4324,
+    "line": 267,
+    "start": 34,
+    "end": 44,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.e_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestE"
+              }
+            ],
+            "origin": { "line": 267, "start": 34, "end": 44 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:y"
+                  }
+                ],
+                "length": 1,
+                "kind": "Triggered[TestC]:PartialSink[ShareBothSinksRight]"
+              }
+            ],
+            "call": {
+              "position": { "line": 267, "start": 34, "end": 44 },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_d_and_e"
+              ],
+              "port": "formal(y, position=0)",
+              "call_site": "267:4-267:45"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_d_and_e",
+      "index": 1,
+      "parameter": "formal(y)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_d_and_e:4324:0:Call|multiple_sources.demonstrate_triggered_d_and_e|1|formal(y):a74247c595f7ff3150ed12b26bd46067"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_input",
+    "callable_line": 45,
+    "code": 4321,
+    "line": 47,
+    "start": 32,
+    "end": 34,
+    "filename": "multiple_sources.py",
+    "message": "User controlled and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.user_controlled_input",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "origin": { "line": 46, "start": 9, "end": 32 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "<unknown>" },
+                  { "always-via": "tito" }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.Node.send",
+                    "port": "leaf:self"
+                  }
+                ],
+                "length": 1,
+                "kind": "Triggered[PermissiveContext]:PartialSink[UserControlledSink]"
+              }
+            ],
+            "call": {
+              "position": { "line": 47, "start": 32, "end": 34 },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_input"
+              ],
+              "port": "formal(id, position=0)",
+              "call_site": "47:4-47:35"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<unknown>" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_input",
+      "index": 0,
+      "parameter": "formal(id)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_input:4321:0:Call|multiple_sources.demonstrate_triggered_input|0|formal(id):8a70cfef2676b9104e0817e743936160"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_wrapper_node_get_send",
+    "callable_line": 174,
+    "code": 4321,
+    "line": 177,
+    "start": 30,
+    "end": 32,
+    "filename": "multiple_sources.py",
+    "message": "User controlled and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.permissive_context",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 176, "start": 9, "end": 29 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source UserControlled",
+                    "origin": { "line": 175, "start": 9, "end": 32 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
+                ],
+                "length": 1,
+                "kind": "Triggered[UserControlled]@PartialSink[PermissiveContextSink]"
+              }
+            ],
+            "call": {
+              "position": { "line": 177, "start": 30, "end": 32 },
+              "resolves_to": [ "multiple_sources.wrapper_node_get_send" ],
+              "port": "formal(vc, position=1)",
+              "call_site": "177:4-177:33"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-type": "integer" }, { "always-type": "scalar" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.wrapper_node_get_send",
+      "index": 0,
+      "parameter": "formal(vc)"
+    },
+    "master_handle": "multiple_sources.issue_with_wrapper_node_get_send:4321:0:Call|multiple_sources.wrapper_node_get_send|0|formal(vc):5791816da6f696975aca80364ab170f8"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_wrapper_node_get_send_triggered_context",
+    "callable_line": 186,
+    "code": 4321,
+    "line": 188,
+    "start": 44,
+    "end": 46,
+    "filename": "multiple_sources.py",
+    "message": "User controlled and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.permissive_context",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 187, "start": 9, "end": 29 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
+                ],
+                "length": 2,
+                "kind": "Triggered[UserControlled]:PartialSink[PermissiveContextSink]"
+              }
+            ],
+            "call": {
+              "position": { "line": 188, "start": 44, "end": 46 },
+              "resolves_to": [
+                "multiple_sources.wrapper_node_get_send_triggered_context"
+              ],
+              "port": "formal(vc, position=0)",
+              "call_site": "188:4-188:47"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-type": "integer" }, { "always-type": "scalar" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.wrapper_node_get_send_triggered_context",
+      "index": 0,
+      "parameter": "formal(vc)"
+    },
+    "master_handle": "multiple_sources.issue_with_wrapper_node_get_send_triggered_context:4321:0:Call|multiple_sources.wrapper_node_get_send_triggered_context|0|formal(vc):f32fca8115ba1b21385ae97f02a9b147"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.muliple_main_issues_1",
+    "callable_line": 152,
+    "code": 4321,
+    "line": 154,
+    "start": 47,
+    "end": 67,
+    "filename": "multiple_sources.py",
+    "message": "User controlled and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.permissive_context",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 154, "start": 47, "end": 67 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source UserControlled",
+                    "origin": { "line": 154, "start": 22, "end": 45 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.A.multi_sink",
+                    "port": "leaf:permissive_context"
+                  }
+                ],
+                "kind": "Triggered[UserControlled]@PartialSink[PermissiveContextSink]"
+              }
+            ],
+            "origin": { "line": 154, "start": 47, "end": 67 },
+            "call_site": "154:4-154:68"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-type": "integer" }, { "always-type": "scalar" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.A.multi_sink",
+      "index": 0,
+      "parameter": "formal(permissive_context)"
+    },
+    "master_handle": "multiple_sources.muliple_main_issues_1:4321:0:Call|multiple_sources.A.multi_sink|0|formal(permissive_context):58b71672d9a693c4b0936affaa2b0d93"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.muliple_main_issues_1",
+    "callable_line": 152,
+    "code": 4321,
+    "line": 154,
+    "start": 47,
+    "end": 67,
+    "filename": "multiple_sources.py",
+    "message": "User controlled and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.permissive_context",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 154, "start": 47, "end": 67 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source UserControlled",
+                    "origin": { "line": 154, "start": 22, "end": 45 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.B.multi_sink",
+                    "port": "leaf:permissive_context"
+                  }
+                ],
+                "kind": "Triggered[UserControlled]@PartialSink[PermissiveContextSink]"
+              }
+            ],
+            "origin": { "line": 154, "start": 47, "end": 67 },
+            "call_site": "154:4-154:68"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-type": "integer" }, { "always-type": "scalar" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.B.multi_sink",
+      "index": 0,
+      "parameter": "formal(permissive_context)"
+    },
+    "master_handle": "multiple_sources.muliple_main_issues_1:4321:0:Call|multiple_sources.B.multi_sink|0|formal(permissive_context):f654d592ff922dccc394aa85315abd75"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.muliple_main_issues_2",
+    "callable_line": 157,
+    "code": 4321,
+    "line": 160,
+    "start": 31,
+    "end": 33,
+    "filename": "multiple_sources.py",
+    "message": "User controlled and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.permissive_context",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 159, "start": 9, "end": 29 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
+                ],
+                "length": 1,
+                "kind": "Triggered[UserControlled]:PartialSink[PermissiveContextSink]"
+              }
+            ],
+            "call": {
+              "position": { "line": 160, "start": 31, "end": 33 },
+              "resolves_to": [
+                "multiple_sources.multiple_triggered_context"
+              ],
+              "port": "formal(vc, position=0)",
+              "call_site": "160:4-160:34"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-type": "integer" }, { "always-type": "scalar" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.multiple_triggered_context",
+      "index": 0,
+      "parameter": "formal(vc)"
+    },
+    "master_handle": "multiple_sources.muliple_main_issues_2:4321:0:Call|multiple_sources.multiple_triggered_context|0|formal(vc):aa2eb3730f0f46ab427c3e993aad3295"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.multi_sink_share_both_sinks",
+    "filename": "multiple_sources.py",
+    "callable_line": 227,
+    "sinks": [
+      {
+        "port": "formal(y, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "PartialSink[ShareBothSinksRight]" } ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "PartialSink[ShareBothSinksLeft]" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.multiple_triggered_context",
+    "filename": "multiple_sources.py",
+    "callable_line": 163,
+    "sinks": [
+      {
+        "port": "formal(vc, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source UserControlled",
+                    "origin": { "line": 164, "start": 10, "end": 33 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
+                ],
+                "kind": "Triggered[UserControlled]@PartialSink[PermissiveContextSink]"
+              }
+            ],
+            "origin": { "line": 165, "start": 23, "end": 25 },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false,
+            "call_site": "165:4-165:26"
+          },
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source UserControlled",
+                    "origin": { "line": 166, "start": 10, "end": 33 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
+                ],
+                "kind": "Triggered[UserControlled]@PartialSink[PermissiveContextSink]"
+              }
+            ],
+            "origin": { "line": 167, "start": 23, "end": 25 },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false,
+            "call_site": "167:4-167:26"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.permissive_context",
+    "filename": "multiple_sources.py",
+    "callable_line": 25,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.sanitize_sink_a_tito",
+    "filename": "multiple_sources.py",
+    "callable_line": 101,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "kind": "NotSink[TestA]@LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "sanitizers": [
+      { "port": "formal(arg, position=0)", "sinks": [ "TestA" ] }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.sanitize_source_a_tito",
+    "filename": "multiple_sources.py",
+    "callable_line": 93,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "kind": "NotSource[TestA]@LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "sanitizers": [
+      { "port": "formal(arg, position=0)", "sources": [ "TestA" ] }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.sanitize_source_b_tito",
+    "filename": "multiple_sources.py",
+    "callable_line": 97,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "kind": "NotSource[TestB]@LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "sanitizers": [
+      { "port": "formal(arg, position=0)", "sources": [ "TestB" ] }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.transform_t",
+    "filename": "multiple_sources.py",
+    "callable_line": 89,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "TransformT@ExtraTraceSink" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "TransformT@LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.user_controlled_input",
+    "filename": "multiple_sources.py",
+    "callable_line": 21,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.user_controlled_input_wrapper",
+    "filename": "multiple_sources.py",
+    "callable_line": 127,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.user_controlled_input",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "origin": { "line": 128, "start": 11, "end": 34 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.wrapper_node_get_send",
+    "filename": "multiple_sources.py",
+    "callable_line": 170,
+    "sinks": [
+      {
+        "port": "formal(vc, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
+                ],
+                "kind": "PartialSink[PermissiveContextSink]"
+              }
+            ],
+            "origin": { "line": 171, "start": 22, "end": 24 },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false,
+            "call_site": "171:4-171:25"
+          }
+        ]
+      },
+      {
+        "port": "formal(id, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.Node.send",
+                    "port": "leaf:self"
+                  }
+                ],
+                "kind": "PartialSink[UserControlledSink]"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 171, "start": 13, "end": 15 } ],
+            "origin": { "line": 171, "start": 4, "end": 16 },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false,
+            "call_site": "171:4-171:25"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.wrapper_node_get_send_triggered_context",
+    "filename": "multiple_sources.py",
+    "callable_line": 180,
+    "sinks": [
+      {
+        "port": "formal(vc, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source UserControlled",
+                    "origin": { "line": 181, "start": 9, "end": 32 },
+                    "leaf_kind": "UserControlled",
+                    "trace_kind": "source"
+                  }
+                ],
+                "length": 1,
+                "kind": "Triggered[UserControlled]@PartialSink[PermissiveContextSink]"
+              }
+            ],
+            "call": {
+              "position": { "line": 183, "start": 30, "end": 32 },
+              "resolves_to": [ "multiple_sources.wrapper_node_get_send" ],
+              "port": "formal(vc, position=1)",
+              "call_site": "183:4-183:33"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.A.multi_sink",
+    "filename": "multiple_sources.py",
+    "callable_line": 143,
+    "sinks": [
+      {
+        "port": "formal(permissive_context, position=2)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "PartialSink[PermissiveContextSink]" } ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(user_controlled, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "PartialSink[UserControlledSink]" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.B.multi_sink",
+    "filename": "multiple_sources.py",
+    "callable_line": 148,
+    "sinks": [
+      {
+        "port": "formal(permissive_context, position=2)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "PartialSink[PermissiveContextSink]" } ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(user_controlled, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "PartialSink[UserControlledSink]" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.Node.__init__",
+    "filename": "multiple_sources.py",
+    "callable_line": 11,
+    "tito": [
+      {
+        "port": "formal(id, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[id]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.Node.get",
+    "filename": "multiple_sources.py",
+    "callable_line": 17,
+    "tito": [
+      {
+        "port": "formal(id, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[id]": 3 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 18, "start": 19, "end": 21 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 6, "upper": 7 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources.Node.send",
+    "filename": "multiple_sources.py",
+    "callable_line": 14,
+    "sinks": [
+      {
+        "port": "formal(vc, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "PartialSink[PermissiveContextSink]" } ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "PartialSink[UserControlledSink]" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}

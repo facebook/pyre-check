@@ -1,0 +1,63 @@
+@generated
+Call dependencies
+{
+  "mutate_self.Base.bar_sink (method)": [ "pysa._test_sink (fun)" ],
+  "mutate_self.Base.foo_sink (method)": [ "pysa._test_sink (fun)" ],
+  "mutate_self.Base.isssue_mutates_foo (method)": [
+    "mutate_self.Base.bar_sink (method)",
+    "mutate_self.Base.foo_sink (method)",
+    "mutate_self.Base.mutates_foo (method)"
+  ],
+  "mutate_self.Base.issue_mutates_and_returns (method)": [
+    "mutate_self.Base.foo_sink (method)",
+    "mutate_self.Base.mutates_foo_and_returns (method)"
+  ],
+  "mutate_self.Base.issue_mutates_foo_self_annotation (method)": [
+    "mutate_self.Base.bar_sink (method)",
+    "mutate_self.Base.foo_sink (method)",
+    "mutate_self.Base.mutates_foo_self_annotation (method)"
+  ],
+  "mutate_self.Base.issue_mutates_foo_self_typevar (method)": [
+    "mutate_self.Base.bar_sink (method)",
+    "mutate_self.Base.foo_sink (method)",
+    "mutate_self.Base.mutates_foo_self_typevar (method)"
+  ],
+  "mutate_self.Base.issue_mutates_foo_with_hop (method)": [
+    "mutate_self.Base.bar_sink (method)",
+    "mutate_self.Base.foo_sink (method)",
+    "mutate_self.Base.mutates_foo_with_hop (method)"
+  ],
+  "mutate_self.Base.mutates_foo (method)": [ "pysa._test_source (fun)" ],
+  "mutate_self.Base.mutates_foo_and_returns (method)": [
+    "pysa._test_source (fun)"
+  ],
+  "mutate_self.Base.mutates_foo_self_annotation (method)": [
+    "pysa._test_source (fun)"
+  ],
+  "mutate_self.Base.mutates_foo_self_typevar (method)": [
+    "pysa._test_source (fun)"
+  ],
+  "mutate_self.Base.mutates_foo_with_hop (method)": [
+    "mutate_self.Base.mutates_foo (method)"
+  ],
+  "mutate_self.free_function_mutates_self (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "mutate_self.issue_free_function (fun)": [
+    "builtins.object.__new__ (method)", "mutate_self.Base.__init__ (method)",
+    "mutate_self.Base.bar_sink (method)",
+    "mutate_self.Base.foo_sink (method)",
+    "mutate_self.free_function_mutates_self (fun)"
+  ],
+  "mutate_self.issue_mutates_foo_and_returns_instance (fun)": [
+    "builtins.object.__new__ (method)", "mutate_self.Base.__init__ (method)",
+    "mutate_self.Base.foo_sink (method)",
+    "mutate_self.Base.mutates_foo_and_returns (method)"
+  ],
+  "mutate_self.issue_mutates_foo_instance (fun)": [
+    "builtins.object.__new__ (method)", "mutate_self.Base.__init__ (method)",
+    "mutate_self.Base.bar_sink (method)",
+    "mutate_self.Base.foo_sink (method)",
+    "mutate_self.Base.mutates_foo (method)"
+  ]
+}

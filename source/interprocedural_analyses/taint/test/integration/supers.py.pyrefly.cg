@@ -1,0 +1,92 @@
+@generated
+Call dependencies
+{
+  "supers.A.__init__ (method)": [ "pysa._test_source (fun)" ],
+  "supers.A.f1 (method)": [ "pysa._test_sink (fun)" ],
+  "supers.A.f2 (method)": [ "pysa._test_sink (fun)" ],
+  "supers.A.f3 (method)": [ "pysa._test_source (fun)" ],
+  "supers.B.f4 (method)": [ "pysa._test_source (fun)" ],
+  "supers.B.f5 (method)": [ "pysa._test_sink (fun)" ],
+  "supers.B.g1 (method)": [
+    "builtins.object.__new__ (method)", "builtins.super.__init__ (method)",
+    "supers.A.f1 (method)", "supers.A.f2 (method)", "supers.A.f3 (method)"
+  ],
+  "supers.B.g2 (method)": [
+    "builtins.object.__new__ (method)", "builtins.super.__init__ (method)",
+    "supers.A.f4 (method)", "supers.A.f5 (method)"
+  ],
+  "supers.B.g3 (method)": [
+    "builtins.object.__new__ (method)", "builtins.super.__init__ (method)",
+    "supers.A.f4 (method)", "supers.A.f5 (method)", "supers.B.f4 (method)",
+    "supers.B.f5 (method)"
+  ],
+  "supers.B.g4 (method)": [ "supers.B.f4 (method)", "supers.B.f5 (method)" ],
+  "supers.B_overwrite_both (fun)": [
+    "builtins.object.__new__ (method)", "supers.A.__init__ (method)",
+    "supers.B.g2 (override)"
+  ],
+  "supers.B_overwrite_partial (fun)": [
+    "builtins.object.__new__ (method)", "supers.A.__init__ (method)",
+    "supers.B.g3 (override)"
+  ],
+  "supers.B_standard (fun)": [
+    "builtins.object.__new__ (method)", "supers.A.__init__ (method)",
+    "supers.B.g4 (method)"
+  ],
+  "supers.C.g1 (method)": [
+    "builtins.object.__new__ (method)", "builtins.super.__init__ (method)",
+    "supers.A.f1 (method)"
+  ],
+  "supers.D.g1 (method)": [
+    "builtins.object.__new__ (method)", "builtins.super.__init__ (method)",
+    "supers.A.f1 (method)"
+  ],
+  "supers.E.g1 (method)": [
+    "builtins.object.__new__ (method)", "builtins.super.__init__ (method)",
+    "supers.B.f1 (method)"
+  ],
+  "supers.E.g2 (method)": [
+    "builtins.object.__new__ (method)", "builtins.super.__init__ (method)",
+    "supers.B.f1 (method)"
+  ],
+  "supers.E.g3 (method)": [
+    "builtins.object.__new__ (method)", "builtins.super.__init__ (method)",
+    "supers.A.f1 (method)"
+  ],
+  "supers.attribute_B_not_overwritten (fun)": [
+    "builtins.object.__new__ (method)", "supers.A.__init__ (method)",
+    "supers.B.g1 (override)"
+  ],
+  "supers.attribute_B_overwritten (fun)": [
+    "builtins.object.__new__ (method)", "supers.A.__init__ (method)",
+    "supers.B.g1 (override)"
+  ],
+  "supers.attribute_C_not_overwritten (fun)": [
+    "builtins.object.__new__ (method)", "supers.A.__init__ (method)",
+    "supers.C.g1 (override)"
+  ],
+  "supers.attribute_C_overwritten (fun)": [
+    "builtins.object.__new__ (method)", "supers.A.__init__ (method)",
+    "supers.C.g1 (override)"
+  ],
+  "supers.attribute_D_not_overwritten (fun)": [
+    "builtins.object.__new__ (method)", "supers.A.__init__ (method)",
+    "supers.D.g1 (method)"
+  ],
+  "supers.attribute_D_overwritten (fun)": [
+    "builtins.object.__new__ (method)", "supers.A.__init__ (method)",
+    "supers.D.g1 (method)"
+  ],
+  "supers.attribute_E_not_overwritten (fun)": [
+    "builtins.object.__new__ (method)", "supers.A.__init__ (method)",
+    "supers.E.g1 (method)", "supers.E.g2 (method)"
+  ],
+  "supers.attribute_E_not_overwritten_RCE (fun)": [
+    "builtins.object.__new__ (method)", "supers.A.__init__ (method)",
+    "supers.E.g3 (method)"
+  ],
+  "supers.attribute_E_overwritten (fun)": [
+    "builtins.object.__new__ (method)", "supers.A.__init__ (method)",
+    "supers.E.g1 (method)", "supers.E.g2 (method)", "supers.E.g3 (method)"
+  ]
+}

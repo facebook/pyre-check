@@ -1,0 +1,355 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multi_subkind.issue",
+    "callable_line": 28,
+    "code": 1000,
+    "line": 32,
+    "start": 15,
+    "end": 16,
+    "filename": "multi_subkind.py",
+    "message": "source A to sink A",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  { "name": "multi_subkind.source_a", "port": "leaf:return" }
+                ],
+                "kind": "SourceA[KindA]"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 30, "start": 13, "end": 23 }
+          },
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  { "name": "multi_subkind.source_b", "port": "leaf:return" }
+                ],
+                "kind": "SourceA[KindB]"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 31, "start": 13, "end": 23 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" }, { "first-index": "a" }
+                ],
+                "leaves": [
+                  { "name": "multi_subkind.sink_a", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "SinkA[KindA]"
+              }
+            ],
+            "call": {
+              "position": { "line": 32, "start": 15, "end": 16 },
+              "resolves_to": [ "multi_subkind.multi_sink" ],
+              "port": "formal(d, position=0)[a]",
+              "call_site": "32:4-32:17"
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" }, { "first-index": "b" }
+                ],
+                "leaves": [
+                  { "name": "multi_subkind.sink_b", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "SinkA[KindB]"
+              }
+            ],
+            "call": {
+              "position": { "line": 32, "start": 15, "end": 16 },
+              "resolves_to": [ "multi_subkind.multi_sink" ],
+              "port": "formal(d, position=0)[b]",
+              "call_site": "32:4-32:17"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "b" },
+      { "first-index": "a" },
+      { "always-type": "integer" },
+      { "always-type": "scalar" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multi_subkind.multi_sink",
+      "index": 0,
+      "parameter": "formal(d)"
+    },
+    "master_handle": "multi_subkind.issue:1000:0:Call|multi_subkind.multi_sink|0|formal(d):58ce21d125b38395a964fbad39de0b2d"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multi_subkind.multi_sink",
+    "filename": "multi_subkind.py",
+    "callable_line": 23,
+    "sinks": [
+      {
+        "port": "formal(d, position=0)[a]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multi_subkind.sink_a", "port": "leaf:arg" }
+                ],
+                "kind": "SinkA[KindA]"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "a" }
+            ],
+            "origin": { "line": 24, "start": 11, "end": 17 },
+            "call_site": "24:4-24:18"
+          }
+        ]
+      },
+      {
+        "port": "formal(d, position=0)[b]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multi_subkind.sink_b", "port": "leaf:arg" }
+                ],
+                "kind": "SinkA[KindB]"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "b" }
+            ],
+            "origin": { "line": 25, "start": 11, "end": 17 },
+            "call_site": "25:4-25:18"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multi_subkind.sink_a",
+    "filename": "multi_subkind.py",
+    "callable_line": 7,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "SinkA[KindA]" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multi_subkind.sink_b",
+    "filename": "multi_subkind.py",
+    "callable_line": 11,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "SinkA[KindB]" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multi_subkind.source_a",
+    "filename": "multi_subkind.py",
+    "callable_line": 15,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "kind": "SourceA[KindA]"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multi_subkind.source_b",
+    "filename": "multi_subkind.py",
+    "callable_line": 19,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "kind": "SourceA[KindB]"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}

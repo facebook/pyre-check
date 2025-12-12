@@ -1,0 +1,51 @@
+@generated
+Call dependencies
+{
+  "implicit_sinks.conditional_literal_sink (fun)": [
+    "implicit_sinks.format_wrapper (fun)", "pysa._test_source (fun)"
+  ],
+  "implicit_sinks.implicit_sink_before_parameter (fun)": [
+    "builtins.str.format (method)"
+  ],
+  "implicit_sinks.implicit_sink_before_source (fun)": [
+    "builtins.str.format (method)", "pysa._test_source (fun)"
+  ],
+  "implicit_sinks.inline_issue_dot_format (fun)": [
+    "builtins.str.format (method)", "pysa._test_source (fun)"
+  ],
+  "implicit_sinks.inline_issue_format_string (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "implicit_sinks.inline_issue_format_string_proper_tito (fun)": [
+    "builtins.str.__format__ (method)", "pysa._test_source (fun)"
+  ],
+  "implicit_sinks.inline_issue_lhs_add_literal (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "implicit_sinks.inline_issue_percent_format (fun)": [
+    "builtins.str.__mod__ (method)", "pysa._test_source (fun)"
+  ],
+  "implicit_sinks.inline_issue_rhs_add_literal (fun)": [
+    "builtins.str.__add__ (method)", "pysa._test_source (fun)"
+  ],
+  "implicit_sinks.propagate_sink_add_global (fun)": [
+    "builtins.str.__add__ (method)"
+  ],
+  "implicit_sinks.propagate_sink_dot_format (fun)": [
+    "builtins.str.format (method)"
+  ],
+  "implicit_sinks.propagate_sink_percent_format (fun)": [
+    "builtins.str.__mod__ (method)"
+  ],
+  "implicit_sinks.propagate_sink_rhs_add_literal (fun)": [
+    "builtins.str.__add__ (method)"
+  ],
+  "implicit_sinks.string_literal_arguments_issue (fun)": [
+    "implicit_sinks.string_literal_arguments_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "implicit_sinks.string_literal_arguments_sink (fun)": [
+    "builtins.int.__eq__ (method)", "builtins.str.format (method)",
+    "pysa._test_source (fun)"
+  ]
+}

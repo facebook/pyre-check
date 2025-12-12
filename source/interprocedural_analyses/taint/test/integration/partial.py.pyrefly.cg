@@ -1,0 +1,111 @@
+@generated
+Call dependencies
+{
+  "partial.MyClass.sink_on_foo (method)": [ "pysa._test_sink (fun)" ],
+  "partial.NestedDefineConstructor.__init__@decorated (method)": [
+    "builtins.object.__new__ (method)",
+    "partial.NestedDefineDecorator.__init__ (method)[formal(func, position=1)=partial.NestedDefineConstructor.__init__ (method)]"
+  ],
+  "partial.NestedDefineDecorator.__call__ (method)": [
+    "builtins.dict.pop (method)"
+  ],
+  "partial.NestedDefineDecorator.__get__.wrapper (fun)": [
+    "builtins.dict.__setitem__ (method)",
+    "partial.NestedDefineDecorator.__call__ (method)"
+  ],
+  "partial.PartialConstructor.__init__@decorated (method)": [
+    "builtins.object.__new__ (method)",
+    "partial.PartialDecorator.__init__ (method)[formal(func, position=1)=partial.PartialConstructor.__init__ (method)]"
+  ],
+  "partial.PartialDecorator.__call__ (method)": [
+    "builtins.dict.pop (method)"
+  ],
+  "partial.PartialDecorator.__get__ (method)": [
+    "builtins.object.__init__ (method)",
+    "functools.partial.__new__ (method)",
+    "partial.PartialDecorator.__call__ (method)"
+  ],
+  "partial.a_flows_to_sink (fun)": [ "pysa._test_sink (fun)" ],
+  "partial.dunder_call_nested_define_constructor (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)"
+  ],
+  "partial.dunder_call_partial_constructor (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)"
+  ],
+  "partial.multiprocessing_bound_method_issue (fun)": [
+    "builtins.object.__new__ (method)",
+    "multiprocessing.process.BaseProcess.__init__ (method)",
+    "partial.MyClass.sink_on_foo (method)", "pysa._test_source (fun)"
+  ],
+  "partial.multiprocessing_bound_method_sink (fun)": [
+    "builtins.object.__new__ (method)",
+    "multiprocessing.process.BaseProcess.__init__ (method)",
+    "partial.MyClass.sink_on_foo (method)"
+  ],
+  "partial.multiprocessing_infer_sinks (fun)": [
+    "builtins.object.__new__ (method)",
+    "multiprocessing.process.BaseProcess.__init__ (method)",
+    "partial.a_flows_to_sink (fun)"
+  ],
+  "partial.multiprocessing_nested_sink (fun)": [
+    "builtins.dict.__getitem__ (method)", "builtins.object.__new__ (method)",
+    "multiprocessing.process.BaseProcess.__init__ (method)",
+    "partial.MyClass.__init__ (method)", "partial.sink_on_foo (fun)"
+  ],
+  "partial.multiprocessing_no_sink (fun)": [
+    "builtins.dict.__getitem__ (method)", "builtins.object.__new__ (method)",
+    "multiprocessing.process.BaseProcess.__init__ (method)",
+    "partial.MyClass.__init__ (method)", "partial.sink_on_foo (fun)"
+  ],
+  "partial.multiprocessing_not_tainted (fun)": [
+    "builtins.object.__new__ (method)",
+    "multiprocessing.process.BaseProcess.__init__ (method)",
+    "partial.a_flows_to_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "partial.multiprocessing_shim_fail (fun)": [
+    "builtins.object.__new__ (method)",
+    "multiprocessing.process.BaseProcess.__init__ (method)",
+    "partial.a_flows_to_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "partial.multiprocessing_tainted (fun)": [
+    "builtins.object.__new__ (method)",
+    "multiprocessing.process.BaseProcess.__init__ (method)",
+    "partial.a_flows_to_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "partial.multiprocessing_tainted_access_path (fun)": [
+    "builtins.object.__new__ (method)",
+    "multiprocessing.process.BaseProcess.__init__ (method)",
+    "partial.MyClass.__init__ (method)", "partial.sink_on_foo (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "partial.partial_application_bound_method_sink (fun)": [
+    "builtins.object.__init__ (method)",
+    "functools.partial.__new__ (method)",
+    "partial.MyClass.sink_on_foo (method)"
+  ],
+  "partial.partial_application_bound_method_tito (fun)": [
+    "builtins.object.__init__ (method)",
+    "functools.partial.__new__ (method)", "partial.MyClass.set_foo (method)",
+    "pysa._test_source (fun)"
+  ],
+  "partial.partial_application_with_benign (fun)": [
+    "builtins.object.__init__ (method)",
+    "functools.partial.__new__ (method)", "partial.a_flows_to_sink (fun)"
+  ],
+  "partial.partial_application_with_named_a (fun)": [
+    "builtins.object.__init__ (method)",
+    "functools.partial.__new__ (method)", "partial.a_flows_to_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "partial.partial_application_with_named_b (fun)": [
+    "builtins.object.__init__ (method)",
+    "functools.partial.__new__ (method)", "partial.a_flows_to_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "partial.partial_application_with_tainted (fun)": [
+    "builtins.object.__init__ (method)",
+    "functools.partial.__new__ (method)", "partial.a_flows_to_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "partial.sink_on_foo (fun)": [ "pysa._test_sink (fun)" ]
+}

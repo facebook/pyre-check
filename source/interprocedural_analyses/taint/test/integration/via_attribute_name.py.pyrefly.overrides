@@ -1,0 +1,7 @@
+@generated
+Overrides
+builtins.object.__init__ (override) -> [builtins.object.__init__ (method) via_attribute_name.SinkAttributes.__init__ (override) via_attribute_name.SourceAttributes.__init__ (override) via_attribute_name.TitoAttributeModelQuery.__init__ (override) via_attribute_name.TitoAttributes.__init__ (override)]
+via_attribute_name.SinkAttributes.__init__ (override) -> [via_attribute_name.SinkAttributes.__init__ (method)]
+via_attribute_name.SourceAttributes.__init__ (override) -> [via_attribute_name.SourceAttributes.__init__ (method)]
+via_attribute_name.TitoAttributeModelQuery.__init__ (override) -> [via_attribute_name.TitoAttributeModelQuery.__init__ (method)]
+via_attribute_name.TitoAttributes.__init__ (override) -> [via_attribute_name.TitoAttributes.__init__ (method)]

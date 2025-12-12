@@ -1,0 +1,531 @@
+@generated
+Higher order call graphs
+{
+  "callable": "model_query_transitive_extends.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "16:15-16:22|identifier|Test1_C": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{model_query_transitive_extends.Test1_C.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_transitive_extends.Test1_C"
+            }
+          ]
+        }
+      }
+    },
+    "23:15-23:23|identifier|Test1_C1": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{model_query_transitive_extends.Test1_C1.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_transitive_extends.Test1_C1"
+            }
+          ]
+        }
+      }
+    },
+    "42:15-42:22|identifier|Test2_C": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_transitive_extends.Test2_C"
+            }
+          ]
+        }
+      }
+    },
+    "47:15-47:23|identifier|Test2_C1": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_transitive_extends.Test2_C1"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_transitive_extends.misc_noalarm1",
+  "returned_callables": [],
+  "calls": {
+    "116:4-116:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_transitive_extends.misc_noalarm2",
+  "returned_callables": [],
+  "calls": {
+    "120:4-120:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_transitive_extends.misc_noalarm3",
+  "returned_callables": [],
+  "calls": {
+    "124:4-124:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_transitive_extends.UnrelatedClass.foo",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "model_query_transitive_extends.UnrelatedClass"
+          }
+        ]
+      }
+    },
+    "124:10-124:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_transitive_extends.test1_alarm1",
+  "returned_callables": [],
+  "calls": {
+    "68:4-68:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "68:15-68:26": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_transitive_extends.Test1_C.attribute}",
+            "index": 0,
+            "return_type": []
+          },
+          {
+            "target": "Obj{model_query_transitive_extends.Test1_C1.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_transitive_extends.test1_alarm2",
+  "returned_callables": [],
+  "calls": {
+    "72:4-72:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "72:15-72:25": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_transitive_extends.Test1_C.instance}",
+            "index": 0,
+            "return_type": []
+          },
+          {
+            "target": "Obj{model_query_transitive_extends.Test1_C1.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_transitive_extends.test1_alarm3",
+  "returned_callables": [],
+  "calls": {
+    "76:4-76:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "76:15-76:26": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_transitive_extends.Test1_C.attribute}",
+            "index": 0,
+            "return_type": []
+          },
+          {
+            "target": "Obj{model_query_transitive_extends.Test1_C1.attribute}",
+            "index": 0,
+            "return_type": []
+          },
+          {
+            "target": "Obj{model_query_transitive_extends.Test1_C2.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_transitive_extends.test1_alarm4",
+  "returned_callables": [],
+  "calls": {
+    "80:4-80:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "80:15-80:25": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_transitive_extends.Test1_C.instance}",
+            "index": 0,
+            "return_type": []
+          },
+          {
+            "target": "Obj{model_query_transitive_extends.Test1_C1.instance}",
+            "index": 0,
+            "return_type": []
+          },
+          {
+            "target": "Obj{model_query_transitive_extends.Test1_C2.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_transitive_extends.test1_alarm5",
+  "returned_callables": [],
+  "calls": {
+    "84:4-84:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "84:15-84:26": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_transitive_extends.Test1_C.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_transitive_extends.test1_alarm6",
+  "returned_callables": [],
+  "calls": {
+    "88:4-88:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "88:15-88:25": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_transitive_extends.Test1_C.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_transitive_extends.test1_noalarm1",
+  "returned_callables": [],
+  "calls": {
+    "92:4-92:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_transitive_extends.test1_noalarm2",
+  "returned_callables": [],
+  "calls": {
+    "96:4-96:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_transitive_extends.test2_alarm1",
+  "returned_callables": [],
+  "calls": {
+    "100:4-100:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_transitive_extends.Test2_D.foo",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "model_query_transitive_extends.Test2_D"
+          }
+        ]
+      }
+    },
+    "100:10-100:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_transitive_extends.test2_noalarm1",
+  "returned_callables": [],
+  "calls": {
+    "104:4-104:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{model_query_transitive_extends.Test2_C1.foo}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "model_query_transitive_extends.Test2_C1"
+          }
+        ]
+      }
+    },
+    "104:10-104:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_transitive_extends.test2_noalarm2",
+  "returned_callables": [],
+  "calls": {
+    "108:4-108:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_transitive_extends.Test2_C2.foo",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "model_query_transitive_extends.Test2_C2"
+          }
+        ]
+      }
+    },
+    "108:10-108:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_transitive_extends.test2_noalarm3",
+  "returned_callables": [],
+  "calls": {
+    "112:4-112:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{model_query_transitive_extends.Test2_C.foo}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "model_query_transitive_extends.Test2_C"
+          }
+        ]
+      }
+    },
+    "112:10-112:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_transitive_extends.Test1_C.__init__",
+  "returned_callables": [],
+  "calls": {
+    "13:8-13:21": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_transitive_extends.Test1_C.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_transitive_extends.Test1_C1.__init__",
+  "returned_callables": [],
+  "calls": {
+    "20:8-20:21": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_transitive_extends.Test1_C.instance}",
+            "index": 0,
+            "return_type": []
+          },
+          {
+            "target": "Obj{model_query_transitive_extends.Test1_C1.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_transitive_extends.Test1_C2.__init__",
+  "returned_callables": [],
+  "calls": {
+    "27:8-27:21": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_transitive_extends.Test1_C.instance}",
+            "index": 0,
+            "return_type": []
+          },
+          {
+            "target": "Obj{model_query_transitive_extends.Test1_C1.instance}",
+            "index": 0,
+            "return_type": []
+          },
+          {
+            "target": "Obj{model_query_transitive_extends.Test1_C2.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}

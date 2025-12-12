@@ -1,0 +1,1800 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.eval",
+    "filename": "builtins.pyi",
+    "callable_line": 4297,
+    "sinks": [
+      {
+        "port": "formal(source, position=0, positional_only)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "constructors.test_both_new_and_init_callgraph",
+    "callable_line": 75,
+    "code": 5002,
+    "line": 76,
+    "start": 4,
+    "end": 18,
+    "filename": "constructors.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 76, "start": 4, "end": 20 },
+              "resolves_to": [ "constructors.BothNewAndInit.__new__" ],
+              "port": "result[foo]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 76, "start": 4, "end": 18 },
+              "resolves_to": [ "constructors.BothNewAndInit.__init__" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "76:4-76:20"
+            },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "constructors.BothNewAndInit.__init__",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "constructors.test_both_new_and_init_callgraph:5002:0:Call|constructors.BothNewAndInit.__init__|0|formal(self):a73cb91fd5cea4801cfb7e4f7da2c823"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "constructors.test_class_stub",
+    "callable_line": 114,
+    "code": 5002,
+    "line": 116,
+    "start": 15,
+    "end": 40,
+    "filename": "constructors.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 116, "start": 25, "end": 39 } ],
+            "origin": { "line": 116, "start": 25, "end": 39 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 116, "start": 15, "end": 40 },
+            "call_site": "116:4-116:41"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "constructors.test_class_stub:5002:0:Call|pysa._test_sink|0|formal(arg):a3fce930ad36ccab50039e5b5cfe1ec0"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.test_construction",
+    "filename": "constructors.py",
+    "callable_line": 30,
+    "tito": [
+      {
+        "port": "formal(request, position=0)[POST][1]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[oauth_token]": 3 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 32, "start": 41, "end": 50 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(request, position=0)[POST][2]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[oauth_token_secret]": 3 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 32, "start": 52, "end": 61 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "constructors.test_constructor_with_source_model",
+    "callable_line": 123,
+    "code": 5002,
+    "line": 124,
+    "start": 15,
+    "end": 43,
+    "filename": "constructors.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "constructors.ConstructorWithSourceModel.__init__",
+                    "port": "leaf:self"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 124, "start": 15, "end": 41 },
+            "receiver_interval": [ { "lower": 18, "upper": 19 } ],
+            "is_self_call": false,
+            "call_site": "124:15-124:43"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 124, "start": 15, "end": 43 },
+            "call_site": "124:4-124:44"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "constructors.test_constructor_with_source_model:5002:0:Call|pysa._test_sink|0|formal(arg):733a925f9141bb4b8aff4756916ed6dd"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "constructors.test_constructor_with_source_model",
+    "callable_line": 123,
+    "code": 5002,
+    "line": 126,
+    "start": 15,
+    "end": 16,
+    "filename": "constructors.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "constructors.ConstructorWithSourceModel.__init__",
+                    "port": "leaf:self"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 125, "start": 8, "end": 34 },
+            "receiver_interval": [ { "lower": 18, "upper": 19 } ],
+            "is_self_call": false,
+            "call_site": "125:8-125:36"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 126, "start": 15, "end": 16 },
+            "call_site": "126:4-126:17"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "constructors.test_constructor_with_source_model:5002:0:Call|pysa._test_sink|1|formal(arg):7785c961c2aaf6b885d9c8ebd2142e4f"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "constructors.test_constructor_with_tito_model",
+    "callable_line": 139,
+    "code": 5002,
+    "line": 142,
+    "start": 15,
+    "end": 66,
+    "filename": "constructors.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 142, "start": 51, "end": 65 } ],
+            "origin": { "line": 142, "start": 51, "end": 65 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 142, "start": 15, "end": 66 },
+            "call_site": "142:4-142:67"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 2,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "constructors.test_constructor_with_tito_model:5002:0:Call|pysa._test_sink|2|formal(arg):31712fcb14e37f5f0bd3ee1744ae86ef"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "constructors.test_constructor_with_tito_model_query",
+    "callable_line": 156,
+    "code": 5002,
+    "line": 158,
+    "start": 15,
+    "end": 69,
+    "filename": "constructors.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "a" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 158, "start": 48, "end": 62 } ],
+            "origin": { "line": 158, "start": 48, "end": 62 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 158, "start": 15, "end": 69 },
+            "call_site": "158:4-158:70"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "a" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "constructors.test_constructor_with_tito_model_query:5002:0:Call|pysa._test_sink|1|formal(arg):7300cabfbfc13d20b939e8474810ec78"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "constructors.test_init_model",
+    "callable_line": 95,
+    "code": 5002,
+    "line": 96,
+    "start": 15,
+    "end": 49,
+    "filename": "constructors.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 96, "start": 34, "end": 48 } ],
+            "origin": { "line": 96, "start": 34, "end": 48 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 96, "start": 15, "end": 49 },
+            "call_site": "96:4-96:50"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "constructors.test_init_model:5002:0:Call|pysa._test_sink|0|formal(arg):a556812749705d75c19e4e58329cdafe"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "constructors.test_new_model",
+    "callable_line": 105,
+    "code": 5002,
+    "line": 106,
+    "start": 15,
+    "end": 48,
+    "filename": "constructors.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 106, "start": 33, "end": 47 } ],
+            "origin": { "line": 106, "start": 33, "end": 47 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 106, "start": 15, "end": 48 },
+            "call_site": "106:4-106:49"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "constructors.test_new_model:5002:0:Call|pysa._test_sink|0|formal(arg):c1e2564cc45f6cf6556925c5f597ff2a"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "constructors.test_new_thing",
+    "callable_line": 60,
+    "code": 5002,
+    "line": 61,
+    "start": 21,
+    "end": 35,
+    "filename": "constructors.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 61, "start": 21, "end": 35 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 61, "start": 21, "end": 35 },
+              "resolves_to": [ "constructors.ChildWithNew.__new__" ],
+              "port": "formal(input, position=1)",
+              "call_site": "61:8-61:36"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "constructors.ChildWithNew.__new__",
+      "index": 0,
+      "parameter": "formal(input)"
+    },
+    "master_handle": "constructors.test_new_thing:5002:0:Call|constructors.ChildWithNew.__new__|0|formal(input):0621c7e8907b0ed7ff4ad484eebe8e34"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "constructors.test_parent_with_obscure_constructor",
+    "callable_line": 172,
+    "code": 5002,
+    "line": 173,
+    "start": 15,
+    "end": 63,
+    "filename": "constructors.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 173, "start": 44, "end": 58 } ],
+            "origin": { "line": 173, "start": 44, "end": 58 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 173, "start": 15, "end": 63 },
+            "call_site": "173:4-173:64"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "constructors.test_parent_with_obscure_constructor:5002:0:Call|pysa._test_sink|0|formal(arg):0a3ef95b5512b13c372983a1ad2bcb06"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "constructors.test_parent_with_obscure_constructor",
+    "callable_line": 172,
+    "code": 5002,
+    "line": 174,
+    "start": 15,
+    "end": 63,
+    "filename": "constructors.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 174, "start": 48, "end": 62 } ],
+            "origin": { "line": 174, "start": 48, "end": 62 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 174, "start": 15, "end": 63 },
+            "call_site": "174:4-174:64"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "constructors.test_parent_with_obscure_constructor:5002:0:Call|pysa._test_sink|1|formal(arg):83ad7a4f34784addd0f72f3766fc10db"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "constructors.test_source_in_constructor",
+    "callable_line": 43,
+    "code": 5002,
+    "line": 45,
+    "start": 15,
+    "end": 18,
+    "filename": "constructors.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" }, { "first-field": "x" }
+            ],
+            "call": {
+              "position": { "line": 44, "start": 8, "end": 27 },
+              "resolves_to": [ "constructors.SourceInConstructor.__init__" ],
+              "port": "formal(self, position=0)[x]",
+              "call_site": "44:8-44:29"
+            },
+            "receiver_interval": [ { "lower": 50, "upper": 51 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 45, "start": 15, "end": 18 },
+            "call_site": "45:4-45:19"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "x" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "constructors.test_source_in_constructor:5002:0:Call|pysa._test_sink|0|formal(arg):e1bec82b6da5ae824a5a07052424595f"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.BaseConstructor.__init__",
+    "filename": "constructors.py",
+    "callable_line": 80,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[x]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 81, "start": 17, "end": 31 },
+            "caller_interval": [ { "lower": 2, "upper": 5 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.BothNewAndInit.__init__",
+    "filename": "constructors.py",
+    "callable_line": 70,
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 71, "start": 19, "end": 27 },
+            "caller_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false,
+            "call_site": "71:8-71:28"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.BothNewAndInit.__new__",
+    "filename": "constructors.py",
+    "callable_line": 65,
+    "sources": [
+      {
+        "port": "result[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 67, "start": 18, "end": 32 }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(cls, position=0)[__new__]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.ChildWithNew.__new__",
+    "filename": "constructors.py",
+    "callable_line": 55,
+    "sinks": [
+      {
+        "port": "formal(input, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 56, "start": 19, "end": 24 },
+            "call_site": "56:8-56:25"
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(cls, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 57, "start": 30, "end": 33 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.ConstructorTitoModelQuery.__init__",
+    "filename": "constructors.py",
+    "callable_line": 146,
+    "tito": [
+      {
+        "port": "formal(b, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[b]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "model_generators": [ "add_tito_init_parameters" ],
+    "modes": [ "SkipAnalysis" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.ConstructorWithSourceModel.__init__",
+    "filename": "constructors.py",
+    "callable_line": 120,
+    "sources": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.ConstructorWithTitoModel.__init__",
+    "filename": "constructors.py",
+    "callable_line": 130,
+    "tito": [
+      {
+        "port": "formal(value, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.DerivedConstructor.__init__",
+    "filename": "constructors.py",
+    "callable_line": 85,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[x]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 86, "start": 8, "end": 15 },
+              "resolves_to": [ "constructors.BaseConstructor.__init__" ],
+              "port": "formal(self, position=0)[x]",
+              "call_site": "86:8-86:26"
+            },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "receiver_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(y, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[y]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.DerivedConstructorTitoModelQuery.__init__",
+    "filename": "constructors.py",
+    "callable_line": 152,
+    "tito": [
+      {
+        "port": "formal(b, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[b]": 3 },
+                "length": 1,
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 153, "start": 28, "end": 29 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 15, "upper": 16 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3 },
+                "length": 1,
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 153, "start": 25, "end": 26 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 15, "upper": 16 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.DerivedConstructorWithTitoModel.__init__",
+    "filename": "constructors.py",
+    "callable_line": 135,
+    "tito": [
+      {
+        "port": "formal(b, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 136, "start": 25, "end": 26 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 21, "upper": 22 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.InitWithModel.__init__",
+    "filename": "constructors.py",
+    "callable_line": 91,
+    "tito": [
+      {
+        "port": "formal(tito, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "SkipObscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.NewWithModel.__new__",
+    "filename": "constructors.py",
+    "callable_line": 101,
+    "tito": [
+      {
+        "port": "formal(tito, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "SkipObscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.ParentWithObscureConstructor.__init__",
+    "filename": "constructors.py",
+    "callable_line": 168,
+    "tito": [
+      {
+        "port": "formal(b, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 169, "start": 28, "end": 29 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 11, "upper": 12 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 169, "start": 25, "end": 26 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 11, "upper": 12 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          },
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 169, "start": 8, "end": 15 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 11, "upper": 12 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.SanitizeParameterTaintInTaintOut.__init__",
+    "filename": "constructors.py",
+    "callable_line": 216,
+    "tito": [
+      {
+        "port": "formal(foo, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[foo]": 3 },
+                "kind": "NotSource[Test]@ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "sanitizers": [
+      {
+        "port": "formal(foo, position=1)",
+        "tito": { "sources": [ "Test" ] }
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.SanitizeReturn.__init__",
+    "filename": "constructors.py",
+    "callable_line": 205,
+    "tito": [
+      {
+        "port": "formal(foo, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[foo]": 3 },
+                "kind": "NotSource[Test]@ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "parameters_sanitizer": { "sources": [ "Test" ] }
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.SanitizeSingleTraceSource.__init__",
+    "filename": "constructors.py",
+    "callable_line": 194,
+    "global_sanitizer": { "sources": [ "Test" ] }
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.SanitizeTaintInTaintOut.__init__",
+    "filename": "constructors.py",
+    "callable_line": 211,
+    "tito": [
+      {
+        "port": "formal(foo, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[foo]": 3 },
+                "kind": "NotSource[Test]:NotSink[Test]@ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "global_sanitizer": {
+      "tito": { "sources": [ "Test" ], "sinks": [ "Test" ] }
+    }
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.SanitizeTitoKindSpecific.__init__",
+    "filename": "constructors.py",
+    "callable_line": 199,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[bar]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 201, "start": 19, "end": 33 },
+            "caller_interval": [ { "lower": 46, "upper": 47 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(foo, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[foo]": 3 },
+                "kind": "NotSource[Test]@ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "global_sanitizer": { "tito": { "sources": [ "Test" ] } }
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.SomeAPI.__init__",
+    "filename": "constructors.py",
+    "callable_line": 14,
+    "tito": [
+      {
+        "port": "formal(oauth_token_secret, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[oauth_token_secret]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(oauth_token, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[oauth_token]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.SomeAPI.async_get_authenticated_user",
+    "filename": "constructors.py",
+    "callable_line": 22,
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[AUTHENTICATE_URL]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": { "line": 23, "start": 13, "end": 34 },
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "is_self_call": false,
+            "call_site": "23:8-23:35"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.SomeAPI.from_default_keys",
+    "filename": "constructors.py",
+    "callable_line": 19,
+    "tito": [
+      {
+        "port": "formal(oauth_token_secret, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[oauth_token_secret]": 3 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 20, "start": 32, "end": 50 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 48, "upper": 49 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(oauth_token, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[oauth_token]": 3 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 20, "start": 19, "end": 30 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 48, "upper": 49 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.SourceInConstructor.__init__",
+    "filename": "constructors.py",
+    "callable_line": 38,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[x]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 39, "start": 17, "end": 31 },
+            "caller_interval": [ { "lower": 50, "upper": 51 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}

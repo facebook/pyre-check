@@ -1,0 +1,76 @@
+@generated
+Call dependencies
+{
+  "extra_trace.OverrideTransform.transform (method)": [
+    "extra_trace.transform_x (fun)"
+  ],
+  "extra_trace.branch_tito_backward (fun)": [
+    "extra_trace.nested_transform_x (fun)", "extra_trace.transform_y (fun)",
+    "pysa._test_sink (fun)"
+  ],
+  "extra_trace.branch_tito_forward (fun)": [
+    "extra_trace.nested_transform_x (fun)", "extra_trace.transform_y (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "extra_trace.double_nested_transform_x (fun)": [
+    "extra_trace.nested_transform_x (fun)"
+  ],
+  "extra_trace.extra_trace_sink_as_origin (fun)": [
+    "extra_trace.transform_x (fun)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "extra_trace.extra_trace_through_override (fun)": [
+    "extra_trace.TransformBase.transform (override)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "extra_trace.issue_via_transfom_captured_variable (fun)": [
+    "extra_trace.issue_via_transfom_captured_variable.nested_function (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "extra_trace.loop_tito_backward (fun)": [
+    "builtins.int.__gt__ (method)",
+    "extra_trace.non_deterministic_int (fun)",
+    "extra_trace.transform_x (fun)", "pysa._test_sink (fun)"
+  ],
+  "extra_trace.loop_tito_forward (fun)": [
+    "builtins.int.__gt__ (method)",
+    "extra_trace.non_deterministic_int (fun)",
+    "extra_trace.transform_x (fun)", "pysa._test_source (fun)"
+  ],
+  "extra_trace.mismatching_tito_extra_sink (fun)": [
+    "builtins.int.__gt__ (method)",
+    "extra_trace.non_deterministic_int (fun)",
+    "extra_trace.tito_transform_attribute (fun)"
+  ],
+  "extra_trace.nested_transform_x (fun)": [ "extra_trace.transform_x (fun)" ],
+  "extra_trace.no_issue_via_transform_tito_with_missing_extra_sink (fun)": [
+    "extra_trace.transform_tito_with_missing_extra_sink (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "extra_trace.sequential_tito_backward (fun)": [
+    "extra_trace.nested_transform_x (fun)", "extra_trace.tito (fun)",
+    "extra_trace.transform_yz (fun)", "pysa._test_sink (fun)"
+  ],
+  "extra_trace.sequential_tito_forward (fun)": [
+    "extra_trace.nested_transform_x (fun)", "extra_trace.tito (fun)",
+    "extra_trace.transform_yz (fun)", "pysa._test_source (fun)"
+  ],
+  "extra_trace.source_transform_nested_x_y (fun)": [
+    "extra_trace.transform_nested_x_y (fun)", "pysa._test_source (fun)"
+  ],
+  "extra_trace.tito_transform_attribute (fun)": [
+    "builtins.int.__gt__ (method)",
+    "extra_trace.non_deterministic_int (fun)",
+    "extra_trace.tito_collapse (fun)", "extra_trace.transform_x (fun)"
+  ],
+  "extra_trace.transform_nested_x_y (fun)": [
+    "extra_trace.nested_transform_x (fun)", "extra_trace.transform_y (fun)"
+  ],
+  "extra_trace.transform_tito_with_missing_extra_sink (fun)": [
+    "extra_trace.mismatching_tito_extra_sink (fun)"
+  ],
+  "extra_trace.transform_yz (fun)": [
+    "extra_trace.tito (fun)", "extra_trace.transform_y (fun)",
+    "extra_trace.transform_z (fun)"
+  ]
+}

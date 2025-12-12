@@ -15,13 +15,13 @@ class DataClass:
 
 
 def bad_is_tainted():
-    context = DataClass(bad=_test_source(), benign=1)
+    context = DataClass(bad=_test_source(), benign="")
     _test_sink(context)
     return context
 
 
 def benign_is_untainted():
-    context = DataClass(bad=_test_source(), benign=1)
+    context = DataClass(bad=_test_source(), benign="")
     _test_sink(context.benign)
     return context
 

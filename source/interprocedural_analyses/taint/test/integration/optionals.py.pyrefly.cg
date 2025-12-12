@@ -1,0 +1,16 @@
+@generated
+Call dependencies
+{
+  "optionals.$toplevel (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)"
+  ],
+  "optionals.Client.offer (method)": [ "pysa._test_sink (fun)" ],
+  "optionals.ClientSingleton.get_instance (method)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)"
+  ],
+  "optionals.test (fun)": [
+    "optionals.Client.offer (method)",
+    "optionals.ClientSingleton.get_instance (method)",
+    "pysa._test_source (fun)"
+  ]
+}

@@ -27,11 +27,11 @@ class Builder:
         _test_sink(self._saved)
 
     def set_saved_through_typevar(self: T, saved: str) -> T:
-        self._saved = saved
+        self._saved = saved  # pyrefly: ignore[missing-attribute]
         return self
 
     def set_not_saved_through_typevar(self: T, not_saved: str) -> T:
-        self._not_saved = not_saved
+        self._not_saved = not_saved  # pyrefly: ignore[missing-attribute]
         return self
 
     def return_self(self) -> "Builder":

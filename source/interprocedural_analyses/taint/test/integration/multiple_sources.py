@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from typing import Union
+import random
 
 
 class Node:
@@ -197,7 +198,9 @@ def wrapper_node_send(id, vc):
 def wrapper_combined_node_get_send(combined):
     # Expect no partial sink, because we need two partial sinks on different
     # parameters to file an issue
-    if 1 == 1:
+    id = None
+    vc = None
+    if random.random() > 0.5:
         id = combined
     else:
         vc = combined
@@ -244,7 +247,7 @@ def issue_with_triggered_c_from_d():
 
 
 def demonstrate_triggered_c_from_d_or_e(x):
-    if 1 == 1:
+    if random.random() > 0.5:
         multi_sink_share_both_sinks(x, d_source())
     else:
         multi_sink_share_both_sinks(x, e_source())

@@ -27,7 +27,7 @@ def sink_on_return_and_tito(arg, arg2):
 
 def propagate_returned_sink_to_arg(arg):
     # Sink is first generated and then propagated to arg
-    sink_on_return_and_tito(arg)
+    sink_on_return_and_tito(arg, 0)
 
 
 def not_propagate_returned_sink_to_arg(arg):

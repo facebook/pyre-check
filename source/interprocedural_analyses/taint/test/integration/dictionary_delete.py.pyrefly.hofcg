@@ -1,0 +1,241 @@
+@generated
+Higher order call graphs
+{
+  "callable": "dictionary_delete.dict_into_sink",
+  "returned_callables": [],
+  "calls": {
+    "39:8-39:22|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "40:4-40:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "40:15-40:29|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "dictionary_delete.pop_dict_with_bad_key",
+  "returned_callables": [],
+  "calls": {
+    "30:4-30:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.pop",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "31:11-31:25|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "dictionary_delete.pop_key",
+  "returned_callables": [],
+  "calls": {
+    "35:11-35:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.pop",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "dictionary_delete.return_dict_with_bad_key",
+  "returned_callables": [],
+  "calls": {
+    "18:10-18:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "20:8-20:22|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "dictionary_delete.take_dict_with_bad_key",
+  "returned_callables": [],
+  "calls": {
+    "25:8-25:22|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "26:11-26:25|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "dictionary_delete.test_del_keyword",
+  "returned_callables": [],
+  "calls": {
+    "11:10-11:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "13:8-13:22|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "14:4-14:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "14:15-14:29|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "dictionary_delete.test_pop_method",
+  "returned_callables": [],
+  "calls": {
+    "44:10-44:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "46:4-46:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.pop",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "47:4-47:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "47:15-47:29|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -21,4 +21,5 @@ client: ClientSingleton = ClientSingleton()
 
 
 def test():
+    # pyrefly: ignore[missing-attribute]
     client.get_instance().offer(_test_source())

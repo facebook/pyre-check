@@ -66,7 +66,7 @@ def aliased_indicies_forward():
     a = tainted_tuple()
     _test_sink(a[0])  # No issue
     _test_sink(a[1])  # Issue here
-    _test_sink(a[2])  # Invalid attribute access
+    _test_sink(a[2])  # Invalid attribute access # pyrefly: ignore[bad-index]
 
 
 def aliased_indicies_forward_unknown_attribute(i: int):

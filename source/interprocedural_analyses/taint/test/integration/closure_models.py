@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from pysa import _test_sink, _test_source
+from typing import Any
 
 
 def inner_sink_wrapper():
@@ -24,11 +25,11 @@ class Reclassification:
 
 
 def reclassify(inner, feature) -> Reclassification:
-    pass
+    ...
 
 
-def outer():
-    pass
+def outer() -> Any:
+    ...
 
 
 def use_source(x):

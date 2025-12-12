@@ -82,6 +82,15 @@ Higher order call graphs
     },
     "19:4-19:36": {
       "call": {
+        "calls": [
+          {
+            "target": "pysa.TestCallableTarget.async_delay",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "pysa.TestCallableTarget"
+          }
+        ],
         "shim": {
           "calls": [
             {
@@ -102,8 +111,7 @@ Higher order call graphs
               { "value": { "kind": "argument", "index": 1 } }
             ]
           }
-        },
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+        }
       }
     },
     "20:4-20:18|artificial-attribute-access|qualification:shims.async_callable": {
@@ -122,6 +130,15 @@ Higher order call graphs
     },
     "20:4-20:49": {
       "call": {
+        "calls": [
+          {
+            "target": "pysa.TestCallableTarget.async_delay",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "pysa.TestCallableTarget"
+          }
+        ],
         "shim": {
           "calls": [
             {
@@ -142,8 +159,7 @@ Higher order call graphs
               { "value": { "kind": "argument", "index": 1 } }
             ]
           }
-        },
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+        }
       }
     },
     "20:34-20:48": {
@@ -169,6 +185,15 @@ Higher order call graphs
     },
     "21:4-21:49": {
       "call": {
+        "calls": [
+          {
+            "target": "pysa.TestCallableTarget.async_delay",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "pysa.TestCallableTarget"
+          }
+        ],
         "shim": {
           "calls": [
             {
@@ -189,8 +214,7 @@ Higher order call graphs
               { "value": { "kind": "argument", "index": 1 } }
             ]
           }
-        },
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+        }
       }
     },
     "21:31-21:45": {
@@ -222,6 +246,15 @@ Higher order call graphs
     },
     "25:4-25:39": {
       "call": {
+        "calls": [
+          {
+            "target": "pysa.TestCallableTarget.async_schedule",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "pysa.TestCallableTarget"
+          }
+        ],
         "shim": {
           "calls": [
             {
@@ -242,8 +275,7 @@ Higher order call graphs
               { "value": { "kind": "argument", "index": 1 } }
             ]
           }
-        },
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+        }
       }
     },
     "26:4-26:18|artificial-attribute-access|qualification:shims.async_callable": {
@@ -262,6 +294,15 @@ Higher order call graphs
     },
     "26:4-26:52": {
       "call": {
+        "calls": [
+          {
+            "target": "pysa.TestCallableTarget.async_schedule",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "pysa.TestCallableTarget"
+          }
+        ],
         "shim": {
           "calls": [
             {
@@ -282,8 +323,7 @@ Higher order call graphs
               { "value": { "kind": "argument", "index": 1 } }
             ]
           }
-        },
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+        }
       }
     },
     "26:37-26:51": {
@@ -309,6 +349,15 @@ Higher order call graphs
     },
     "27:4-27:52": {
       "call": {
+        "calls": [
+          {
+            "target": "pysa.TestCallableTarget.async_schedule",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "pysa.TestCallableTarget"
+          }
+        ],
         "shim": {
           "calls": [
             {
@@ -329,8 +378,7 @@ Higher order call graphs
               { "value": { "kind": "argument", "index": 1 } }
             ]
           }
-        },
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+        }
       }
     },
     "27:34-27:48": {

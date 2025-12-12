@@ -1,0 +1,11 @@
+@generated
+Overrides
+attributes.NoListInference.__init__ (override) -> [attributes.NoListInference.__init__ (method)]
+attributes.PartiallyZonedDict.__hash__ (override) -> [attributes.PartiallyZonedDict.__hash__ (method)]
+attributes.PartiallyZonedDict.__init__ (override) -> [attributes.PartiallyZonedDict.__init__ (method)]
+attributes.RegularForm.__init__ (override) -> [attributes.RegularForm.__init__ (method)]
+attributes.UseViaDict.__init__ (override) -> [attributes.UseViaDict.__init__ (method)]
+attributes.ZonedForm.__hash__ (override) -> [attributes.ZonedForm.__hash__ (method)]
+attributes.ZonedForm.__init__ (override) -> [attributes.ZonedForm.__init__ (method)]
+builtins.object.__hash__ (override) -> [attributes.PartiallyZonedDict.__hash__ (override) attributes.ZonedForm.__hash__ (override) builtins.object.__hash__ (method)]
+builtins.object.__init__ (override) -> [attributes.NoListInference.__init__ (override) attributes.PartiallyZonedDict.__init__ (override) attributes.RegularForm.__init__ (override) attributes.UseViaDict.__init__ (override) attributes.ZonedForm.__init__ (override) builtins.object.__init__ (method)]

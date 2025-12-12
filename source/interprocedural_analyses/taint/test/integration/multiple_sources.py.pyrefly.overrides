@@ -1,0 +1,4 @@
+@generated
+Overrides
+builtins.object.__init__ (override) -> [builtins.object.__init__ (method) multiple_sources.Node.__init__ (override)]
+multiple_sources.Node.__init__ (override) -> [multiple_sources.Node.__init__ (method)]

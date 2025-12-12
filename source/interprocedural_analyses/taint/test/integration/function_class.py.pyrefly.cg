@@ -1,0 +1,11 @@
+@generated
+Call dependencies
+{
+  "function_class.test (fun)": [
+    "builtins.object.__new__ (method)",
+    "function_class.test.A.__init__ (method)"
+  ],
+  "function_class.test.A.__init__ (method)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ]
+}

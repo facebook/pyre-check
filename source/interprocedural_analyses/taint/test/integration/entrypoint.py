@@ -13,11 +13,11 @@ def MyEntrypoint(f):
 
 
 class MyClass:
-    def some_entrypoint_function():
+    def some_entrypoint_function(self):
         glob.append(1)
 
     @MyEntrypoint
-    def method_entrypoint_with_decorator():
+    def method_entrypoint_with_decorator(self):
         glob.append(1)
 
 

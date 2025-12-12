@@ -1,0 +1,57 @@
+@generated
+Call dependencies
+{
+  "context_manager.SinkOnEnter.__enter__ (method)": [
+    "pysa._test_sink (fun)"
+  ],
+  "context_manager.SourceOnEnter.__enter__ (method)": [
+    "pysa._test_source (fun)"
+  ],
+  "context_manager.SourceOnExit.__exit__ (method)": [
+    "pysa._test_source (fun)"
+  ],
+  "context_manager.source_on_enter_and_sink_on_exit (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "context_manager.source_on_enter_and_sink_on_exit@decorated (fun)": [
+    "contextlib.contextmanager (fun)"
+  ],
+  "context_manager.test_generator_sink_on_exit (fun)": [
+    "context_manager.source_on_enter_and_sink_on_exit@decorated (fun)",
+    "contextlib.AbstractContextManager.__enter__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "context_manager.test_generator_source_on_enter (fun)": [
+    "context_manager.source_on_enter_and_sink_on_exit@decorated (fun)",
+    "contextlib.AbstractContextManager.__enter__ (method)",
+    "pysa._test_sink (fun)"
+  ],
+  "context_manager.test_sink_on_enter (fun)": [
+    "builtins.object.__new__ (method)",
+    "context_manager.SinkOnEnter.__enter__ (method)",
+    "context_manager.SinkOnEnter.__init__ (method)"
+  ],
+  "context_manager.test_source_on_enter (fun)": [
+    "builtins.object.__new__ (method)",
+    "context_manager.SourceOnEnter.__enter__ (method)",
+    "context_manager.SourceOnEnter.__init__ (method)",
+    "pysa._test_sink (fun)"
+  ],
+  "context_manager.test_source_on_enter_as (fun)": [
+    "builtins.object.__new__ (method)",
+    "context_manager.SourceOnEnter.__enter__ (method)",
+    "context_manager.SourceOnEnter.__init__ (method)",
+    "pysa._test_sink (fun)"
+  ],
+  "context_manager.test_source_on_enter_clear (fun)": [
+    "builtins.object.__new__ (method)",
+    "context_manager.SourceOnEnter.__enter__ (method)",
+    "context_manager.SourceOnEnter.__init__ (method)",
+    "pysa._test_sink (fun)"
+  ],
+  "context_manager.test_source_on_exit (fun)": [
+    "builtins.object.__new__ (method)",
+    "context_manager.SourceOnExit.__enter__ (method)",
+    "context_manager.SourceOnExit.__init__ (method)", "pysa._test_sink (fun)"
+  ]
+}

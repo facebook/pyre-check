@@ -1,0 +1,165 @@
+@generated
+Higher order call graphs
+{
+  "callable": "obscure_tito.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "17:8-17:9|identifier|C": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "obscure_tito.C"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "obscure_tito.test_obscure_return",
+  "returned_callables": [],
+  "calls": {
+    "32:8-32:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "obscure_tito.C"
+          }
+        ]
+      }
+    },
+    "33:11-33:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{obscure_tito.C.update}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "obscure_tito.C"
+          }
+        ]
+      }
+    },
+    "33:20-33:34": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "obscure_tito.test_obscure_sink",
+  "returned_callables": [],
+  "calls": {
+    "37:8-37:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "obscure_tito.C"
+          }
+        ]
+      }
+    },
+    "38:4-38:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{obscure_tito.C.taint_parameter}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "obscure_tito.C"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "obscure_tito.test_obscure_tito",
+  "returned_callables": [],
+  "calls": {
+    "26:8-26:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "obscure_tito.C"
+          }
+        ]
+      }
+    },
+    "27:4-27:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{obscure_tito.C.update}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "obscure_tito.C"
+          }
+        ]
+      }
+    },
+    "27:13-27:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

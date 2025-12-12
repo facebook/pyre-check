@@ -60,18 +60,18 @@ def class_attribute_A_b_sink():
 
 def class_attribute_A_b_flow1():
     # TODO(T145247918): False negative
-    A()
+    A(0)
     class_attribute_A_b_sink()
 
 
 def class_attribute_A_b_flow2():
     # TODO(T145247918): False negative
-    A().sink_b()
+    A(0).sink_b()
 
 
 def instance_attribute_A_c_no_flow():
-    A().sink_c()
+    A(0).sink_c()
 
 
 def instance_attribute_A_d_flow():
-    A().sink_d()
+    A(0).sink_d()

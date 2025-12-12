@@ -1,0 +1,69 @@
+@generated
+Higher order call graphs
+{
+  "callable": "skip_analysis.no_issue_due_to_skip",
+  "returned_callables": [],
+  "calls": {
+    "20:8-20:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "21:11-21:19": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "skip_analysis.SkipMe"
+          }
+        ]
+      }
+    },
+    "22:4-22:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "skip_analysis.SkipMe.taint_here",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "skip_analysis.SkipMe"
+          }
+        ]
+      }
+    },
+    "23:4-23:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "23:15-23:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "skip_analysis.SkipMe.tito_here",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "skip_analysis.SkipMe"
+          }
+        ]
+      }
+    }
+  }
+}

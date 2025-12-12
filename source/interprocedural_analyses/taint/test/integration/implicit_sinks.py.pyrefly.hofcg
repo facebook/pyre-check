@@ -1,0 +1,389 @@
+@generated
+Higher order call graphs
+{
+  "callable": "implicit_sinks.conditional_literal_sink",
+  "returned_callables": [],
+  "calls": {
+    "87:8-87:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "89:4-89:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "implicit_sinks.format_wrapper",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "implicit_sinks.format_wrapper",
+  "returned_callables": [],
+  "calls": {
+    "83:4-83:15": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
+  }
+}
+{
+  "callable": "implicit_sinks.implicit_sink_before_parameter",
+  "returned_callables": [],
+  "calls": {
+    "78:4-78:15": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.format",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "implicit_sinks.implicit_sink_before_source",
+  "returned_callables": [],
+  "calls": {
+    "72:4-72:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.format",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "72:13-72:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "implicit_sinks.inline_issue_dot_format",
+  "returned_callables": [],
+  "calls": {
+    "26:8-26:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "27:4-27:20": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.format",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "implicit_sinks.inline_issue_format_string",
+  "returned_callables": [],
+  "calls": {
+    "16:8-16:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "17:4-17:12|format-string-artificial": {
+      "format_string_artificial": [
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
+      ]
+    },
+    "18:4-18:10|format-string-artificial": {
+      "format_string_artificial": [
+        { "target": "Obj{<format-string>}", "index": 1, "return_type": [] }
+      ]
+    }
+  }
+}
+{
+  "callable": "implicit_sinks.inline_issue_format_string_proper_tito",
+  "returned_callables": [],
+  "calls": {
+    "65:14-65:28": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "65:34-65:48": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "66:4-66:18|format-string-artificial": {
+      "format_string_artificial": [
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
+      ]
+    },
+    "66:11-66:12|format-string-stringify": {
+      "format_string_stringify": [
+        {
+          "target": "builtins.str.__format__",
+          "index": 0,
+          "implicit_receiver": true,
+          "return_type": []
+        }
+      ]
+    }
+  }
+}
+{
+  "callable": "implicit_sinks.inline_issue_lhs_add_literal",
+  "returned_callables": [],
+  "calls": {
+    "60:8-60:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "61:14-61:25|artificial-call|binary": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "implicit_sinks.inline_issue_percent_format",
+  "returned_callables": [],
+  "calls": {
+    "35:8-35:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "36:4-36:17|artificial-call|binary": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.__mod__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "implicit_sinks.inline_issue_rhs_add_literal",
+  "returned_callables": [],
+  "calls": {
+    "44:8-44:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "45:4-45:18|artificial-call|binary": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.__add__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "implicit_sinks.propagate_sink_add_global",
+  "returned_callables": [],
+  "calls": {
+    "52:4-52:19|artificial-call|binary": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.__add__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "implicit_sinks.propagate_sink_dot_format",
+  "returned_callables": [],
+  "calls": {
+    "22:4-22:20": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.format",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "implicit_sinks.propagate_sink_format_string",
+  "returned_callables": [],
+  "calls": {
+    "12:4-12:12|format-string-artificial": {
+      "format_string_artificial": [
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
+      ]
+    }
+  }
+}
+{
+  "callable": "implicit_sinks.propagate_sink_lhs_add_literal",
+  "returned_callables": [],
+  "calls": {
+    "56:14-56:25|artificial-call|binary": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "implicit_sinks.propagate_sink_percent_format",
+  "returned_callables": [],
+  "calls": {
+    "31:4-31:17|artificial-call|binary": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.__mod__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "implicit_sinks.propagate_sink_rhs_add_literal",
+  "returned_callables": [],
+  "calls": {
+    "40:4-40:18|artificial-call|binary": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.__add__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "implicit_sinks.string_literal_arguments_issue",
+  "returned_callables": [],
+  "calls": {
+    "103:4-103:49": {
+      "call": {
+        "calls": [
+          {
+            "target": "implicit_sinks.string_literal_arguments_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "103:34-103:48": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "implicit_sinks.string_literal_arguments_sink",
+  "returned_callables": [],
+  "calls": {
+    "93:8-93:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "94:7-94:13|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.int.__eq__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.int"
+          }
+        ]
+      }
+    },
+    "95:8-95:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.format",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.str"
+          }
+        ]
+      }
+    },
+    "96:9-96:15|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "97:8-97:35|artificial-call|binary": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "99:8-99:23|artificial-call|binary": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    }
+  }
+}

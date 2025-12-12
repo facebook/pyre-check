@@ -4,6 +4,18 @@
 # LICENSE file in the root directory of this source tree.
 
 from pysa import _test_sink, _test_source
+from typing import Any
+
+
+class Object:
+    def __init__(self) -> None:
+        self.foo: Any = 0
+        self.bar: Any = 0
+
+
+class MyList:
+    def append(self, arg):
+        pass
 
 
 def test_from_1_to_0():
@@ -19,13 +31,13 @@ def test_from_0_to_1():
 
 
 def test_from_1_to_0_nested():
-    x = {}
+    x = Object()
     change_arg0(x.foo, _test_source())
     return x.foo
 
 
 def test_from_1_to_0_nested_distinct():
-    x = {}
+    x = Object()
     change_arg0(x.foo, _test_source())
     return x.bar
 
@@ -67,6 +79,3 @@ def change_arg1(arg0, arg1):
     ...
 
 
-class MyList:
-    def append(self, arg):
-        pass

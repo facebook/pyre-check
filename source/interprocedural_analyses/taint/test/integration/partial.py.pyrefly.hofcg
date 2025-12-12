@@ -1,0 +1,1358 @@
+@generated
+Higher order call graphs
+{
+  "callable": "partial.NestedDefineDecorator.__get__.wrapper",
+  "returned_callables": [],
+  "calls": {
+    "138:12-138:41|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "139:19-139:49": {
+      "call": {
+        "calls": [
+          {
+            "target": "partial.NestedDefineDecorator.__call__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "partial.NestedDefineDecorator"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "partial.a_flows_to_sink",
+  "returned_callables": [],
+  "calls": {
+    "30:4-30:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "partial.dunder_call_nested_define_constructor",
+  "returned_callables": [],
+  "calls": {
+    "156:11-156:40": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "partial.dunder_call_partial_constructor",
+  "returned_callables": [],
+  "calls": {
+    "129:11-129:35": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "partial.multiprocessing_bound_method_issue",
+  "returned_callables": [],
+  "calls": {
+    "75:12-75:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "76:4-76:58": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "multiprocessing.process.BaseProcess.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiprocessing.context.Process"
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "partial.MyClass.sink_on_foo",
+                "index": 0,
+                "implicit_receiver": true,
+                "return_type": [],
+                "receiver_class": "partial.MyClass"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "76:35-76:48": {
+      "attribute_access": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.MyClass.sink_on_foo",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "partial.MyClass"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "partial.multiprocessing_bound_method_sink",
+  "returned_callables": [],
+  "calls": {
+    "82:4-82:58": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "multiprocessing.process.BaseProcess.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiprocessing.context.Process"
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "partial.MyClass.sink_on_foo",
+                "index": 0,
+                "implicit_receiver": true,
+                "return_type": [],
+                "receiver_class": "partial.MyClass"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "82:35-82:48": {
+      "attribute_access": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.MyClass.sink_on_foo",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "partial.MyClass"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "partial.multiprocessing_infer_sinks",
+  "returned_callables": [],
+  "calls": {
+    "71:4-71:64": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "multiprocessing.process.BaseProcess.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiprocessing.context.Process"
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "partial.a_flows_to_sink",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "71:35-71:50|identifier|a_flows_to_sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "partial.multiprocessing_nested_sink",
+  "returned_callables": [],
+  "calls": {
+    "94:14-94:28": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "partial.MyClass.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "partial.MyClass"
+          }
+        ]
+      }
+    },
+    "95:4-95:63": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "multiprocessing.process.BaseProcess.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiprocessing.context.Process"
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "partial.sink_on_foo",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "95:35-95:46|identifier|sink_on_foo": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.sink_on_foo",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "95:54-95:60|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "partial.multiprocessing_no_sink",
+  "returned_callables": [],
+  "calls": {
+    "99:14-99:28": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "partial.MyClass.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "partial.MyClass"
+          }
+        ]
+      }
+    },
+    "100:4-100:63": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "multiprocessing.process.BaseProcess.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiprocessing.context.Process"
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "partial.sink_on_foo",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "100:35-100:46|identifier|sink_on_foo": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.sink_on_foo",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "100:54-100:60|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "partial.multiprocessing_not_tainted",
+  "returned_callables": [],
+  "calls": {
+    "67:4-67:77": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "multiprocessing.process.BaseProcess.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiprocessing.context.Process"
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "partial.a_flows_to_sink",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "67:35-67:50|identifier|a_flows_to_sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "67:61-67:75": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "partial.multiprocessing_shim_fail",
+  "returned_callables": [],
+  "calls": {
+    "87:12-87:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "88:4-88:62": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "multiprocessing.process.BaseProcess.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiprocessing.context.Process"
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "partial.a_flows_to_sink",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "88:35-88:50|identifier|a_flows_to_sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "partial.multiprocessing_tainted",
+  "returned_callables": [],
+  "calls": {
+    "63:4-63:77": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "multiprocessing.process.BaseProcess.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiprocessing.context.Process"
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "partial.a_flows_to_sink",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "63:35-63:50|identifier|a_flows_to_sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "63:58-63:72": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "partial.multiprocessing_tainted_access_path",
+  "returned_callables": [],
+  "calls": {
+    "104:4-104:86": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "multiprocessing.process.BaseProcess.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiprocessing.context.Process"
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "partial.sink_on_foo",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "104:35-104:46|identifier|sink_on_foo": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.sink_on_foo",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "104:54-104:81": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "partial.MyClass.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "partial.MyClass"
+          }
+        ]
+      }
+    },
+    "104:66-104:80": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "105:4-105:86": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 2,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "multiprocessing.process.BaseProcess.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiprocessing.context.Process"
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "partial.sink_on_foo",
+                "index": 1,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "105:35-105:46|identifier|sink_on_foo": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.sink_on_foo",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "105:54-105:81": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 3,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "partial.MyClass.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "partial.MyClass"
+          }
+        ]
+      }
+    },
+    "105:66-105:80": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "partial.partial_application_bound_method_sink",
+  "returned_callables": [],
+  "calls": {
+    "54:4-54:39": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "functools.partial.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "partial.MyClass.sink_on_foo",
+                "index": 0,
+                "implicit_receiver": true,
+                "return_type": [],
+                "receiver_class": "partial.MyClass"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "54:22-54:35": {
+      "attribute_access": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.MyClass.sink_on_foo",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "partial.MyClass"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "partial.partial_application_bound_method_tito",
+  "returned_callables": [],
+  "calls": {
+    "58:4-58:48": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "functools.partial.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "partial.MyClass.set_foo",
+                "index": 0,
+                "implicit_receiver": true,
+                "return_type": [],
+                "receiver_class": "partial.MyClass"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "58:22-58:31": {
+      "attribute_access": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.MyClass.set_foo",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "partial.MyClass"
+            }
+          ]
+        }
+      }
+    },
+    "58:33-58:47": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "partial.partial_application_with_benign",
+  "returned_callables": [],
+  "calls": {
+    "40:4-40:41": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "functools.partial.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "partial.a_flows_to_sink",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "40:22-40:37|identifier|a_flows_to_sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "partial.partial_application_with_named_a",
+  "returned_callables": [],
+  "calls": {
+    "44:8-44:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "45:4-45:43": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "functools.partial.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "partial.a_flows_to_sink",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "45:22-45:37|identifier|a_flows_to_sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "partial.partial_application_with_named_b",
+  "returned_callables": [],
+  "calls": {
+    "49:8-49:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "50:4-50:43": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "functools.partial.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "partial.a_flows_to_sink",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "50:22-50:37|identifier|a_flows_to_sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "partial.partial_application_with_tainted",
+  "returned_callables": [],
+  "calls": {
+    "34:8-34:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "35:4-35:41": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "functools.partial.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "partial.a_flows_to_sink",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "35:22-35:37|identifier|a_flows_to_sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "partial.sink_on_foo",
+  "returned_callables": [],
+  "calls": {
+    "26:4-26:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "partial.MyClass.sink_on_foo",
+  "returned_callables": [],
+  "calls": {
+    "19:8-19:28": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "partial.NestedDefineConstructor.__init__@decorated",
+  "returned_callables": [],
+  "calls": {
+    "149:5-149:26|artificial-call|for-decorated-target": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "partial.NestedDefineDecorator.__init__[formal(func, position=1)=partial.NestedDefineConstructor.__init__]",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "partial.NestedDefineDecorator"
+          }
+        ]
+      }
+    },
+    "150:4-152:18|identifier|__init__": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.NestedDefineConstructor.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "partial.NestedDefineDecorator.__call__",
+  "returned_callables": [],
+  "calls": {
+    "144:19-144:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.pop",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "145:15-145:52": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "partial.NestedDefineDecorator.__get__",
+  "returned_callables": [
+    {
+      "target": "partial.NestedDefineDecorator.__get__.wrapper",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "137:8-139:49": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "partial.NestedDefineDecorator.__get__.wrapper",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "141:15-141:22|identifier|wrapper": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.NestedDefineDecorator.__get__.wrapper",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "partial.PartialConstructor.__init__@decorated",
+  "returned_callables": [],
+  "calls": {
+    "121:5-121:21|artificial-call|for-decorated-target": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "partial.PartialDecorator.__init__[formal(func, position=1)=partial.PartialConstructor.__init__]",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "partial.PartialDecorator"
+          }
+        ]
+      }
+    },
+    "122:4-124:18|identifier|__init__": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.PartialConstructor.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "partial.PartialDecorator.__call__",
+  "returned_callables": [],
+  "calls": {
+    "116:19-116:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.pop",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "117:15-117:52": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "partial.PartialDecorator.__get__",
+  "returned_callables": [],
+  "calls": {
+    "113:15-113:66": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "functools.partial.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "partial.PartialDecorator.__call__",
+                "index": 0,
+                "implicit_receiver": true,
+                "return_type": [],
+                "receiver_class": "partial.PartialDecorator"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "113:33-113:46": {
+      "attribute_access": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "partial.PartialDecorator.__call__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "partial.PartialDecorator"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

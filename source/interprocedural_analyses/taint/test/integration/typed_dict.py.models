@@ -439,8 +439,6 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "foo" },
-              { "always-type": "integer" },
-              { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 33, "start": 24, "end": 57 } ],
@@ -469,8 +467,6 @@
     "features": [
       { "has": "first-index" },
       { "first-index": "foo" },
-      { "always-type": "integer" },
-      { "always-type": "scalar" },
       { "always-via": "tito" }
     ],
     "sink_handle": {
@@ -645,8 +641,6 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "foo" },
-              { "always-type": "integer" },
-              { "always-type": "scalar" },
               { "always-via": "tito-broadening" },
               { "always-via": "tito" },
               { "always-via": "broadening" }
@@ -677,8 +671,6 @@
     "features": [
       { "has": "first-index" },
       { "first-index": "foo" },
-      { "always-type": "integer" },
-      { "always-type": "scalar" },
       { "always-via": "tito-broadening" },
       { "always-via": "tito" },
       { "always-via": "broadening" }

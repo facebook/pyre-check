@@ -6,6 +6,10 @@
 from pysa import _test_sink, _test_source
 
 
+def non_deterministic_int() -> int:
+    ...
+
+
 def tito(arg):
     return arg
 
@@ -73,13 +77,13 @@ def branch_tito_backward(arg, b):
 
 def loop_tito_forward():
     x0 = _test_source()
-    while 1:
+    while non_deterministic_int() > 10:
         x0 = transform_x(x0)
     return x0
 
 
 def loop_tito_backward(arg):
-    while 1:
+    while non_deterministic_int() > 10:
         arg = transform_x(arg)
     _test_sink(arg)
 
@@ -119,10 +123,6 @@ def extra_trace_through_override(o: TransformBase):
 # That might lead to a T:LocalReturn tito being present while the T:ExtraTraceSink is missing,
 # which usually means this is a false positive.
 
-def non_deterministic_int() -> int:
-    ...
-
-
 def tito_collapse(x: str) -> str:
     ...
 
@@ -150,7 +150,7 @@ def mismatching_tito_extra_sink(self):
         taint = self['d']
     elif non_deterministic_int() > 10:
         taint = self['e']
-    elif non_deterministic_int() > 10:
+    else:
         taint = self['f']
     return taint
 

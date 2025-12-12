@@ -1,0 +1,7 @@
+@generated
+Call dependencies
+{
+  "multiline.test (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ]
+}

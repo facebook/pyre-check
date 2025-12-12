@@ -1,0 +1,413 @@
+@generated
+Higher order call graphs
+{
+  "callable": "context_manager.source_on_enter_and_sink_on_exit",
+  "returned_callables": [],
+  "calls": {
+    "81:14-81:28": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "83:8-83:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "context_manager.source_on_enter_and_sink_on_exit@decorated",
+  "returned_callables": [
+    {
+      "target": "context_manager.source_on_enter_and_sink_on_exit",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "78:1-78:15|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "contextlib.contextmanager",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "79:0-83:21|identifier|source_on_enter_and_sink_on_exit": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "context_manager.source_on_enter_and_sink_on_exit",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "context_manager.test_generator_sink_on_exit",
+  "returned_callables": [],
+  "calls": {
+    "92:9-92:57": {
+      "call": {
+        "calls": [
+          {
+            "target": "context_manager.source_on_enter_and_sink_on_exit@decorated",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "92:9-92:57|artificial-call|with-enter": {
+      "call": {
+        "calls": [
+          {
+            "target": "contextlib.AbstractContextManager.__enter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "contextlib._GeneratorContextManager"
+          }
+        ]
+      }
+    },
+    "92:42-92:56": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "93:8-93:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "context_manager.test_generator_source_on_enter",
+  "returned_callables": [],
+  "calls": {
+    "87:9-87:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "context_manager.source_on_enter_and_sink_on_exit@decorated",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "87:9-87:45|artificial-call|with-enter": {
+      "call": {
+        "calls": [
+          {
+            "target": "contextlib.AbstractContextManager.__enter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "contextlib._GeneratorContextManager"
+          }
+        ]
+      }
+    },
+    "88:8-88:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "context_manager.test_sink_on_enter",
+  "returned_callables": [],
+  "calls": {
+    "73:8-73:22": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "context_manager.SinkOnEnter.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "context_manager.SinkOnEnter"
+          }
+        ]
+      }
+    },
+    "74:9-74:10|artificial-call|with-enter": {
+      "call": {
+        "calls": [
+          {
+            "target": "context_manager.SinkOnEnter.__enter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "context_manager.SinkOnEnter"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "context_manager.test_source_on_enter",
+  "returned_callables": [],
+  "calls": {
+    "23:8-23:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "context_manager.SourceOnEnter.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "context_manager.SourceOnEnter"
+          }
+        ]
+      }
+    },
+    "24:9-24:10|artificial-call|with-enter": {
+      "call": {
+        "calls": [
+          {
+            "target": "context_manager.SourceOnEnter.__enter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "context_manager.SourceOnEnter"
+          }
+        ]
+      }
+    },
+    "25:8-25:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "context_manager.test_source_on_enter_as",
+  "returned_callables": [],
+  "calls": {
+    "29:9-29:24": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "context_manager.SourceOnEnter.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "context_manager.SourceOnEnter"
+          }
+        ]
+      }
+    },
+    "29:9-29:24|artificial-call|with-enter": {
+      "call": {
+        "calls": [
+          {
+            "target": "context_manager.SourceOnEnter.__enter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "context_manager.SourceOnEnter"
+          }
+        ]
+      }
+    },
+    "30:8-30:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "context_manager.test_source_on_enter_clear",
+  "returned_callables": [],
+  "calls": {
+    "34:8-34:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "context_manager.SourceOnEnter.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "context_manager.SourceOnEnter"
+          }
+        ]
+      }
+    },
+    "35:9-35:10|artificial-call|with-enter": {
+      "call": {
+        "calls": [
+          {
+            "target": "context_manager.SourceOnEnter.__enter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "context_manager.SourceOnEnter"
+          }
+        ]
+      }
+    },
+    "38:4-38:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "context_manager.test_source_on_exit",
+  "returned_callables": [],
+  "calls": {
+    "53:8-53:22": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "context_manager.SourceOnExit.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "context_manager.SourceOnExit"
+          }
+        ]
+      }
+    },
+    "54:9-54:10|artificial-call|with-enter": {
+      "call": {
+        "calls": [
+          {
+            "target": "context_manager.SourceOnExit.__enter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "context_manager.SourceOnExit"
+          }
+        ]
+      }
+    },
+    "55:8-55:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "57:4-57:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "context_manager.SinkOnEnter.__enter__",
+  "returned_callables": [],
+  "calls": {
+    "65:8-65:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "context_manager.SourceOnEnter.__enter__",
+  "returned_callables": [],
+  "calls": {
+    "15:21-15:35": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "context_manager.SourceOnExit.__exit__",
+  "returned_callables": [],
+  "calls": {
+    "49:21-49:35": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

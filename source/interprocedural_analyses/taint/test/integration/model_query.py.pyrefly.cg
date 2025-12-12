@@ -1,0 +1,70 @@
+@generated
+Call dependencies
+{
+  "model_query.AttributeTestClass1.__init__ (method)": [
+    "model_query.AttributeTestClass1.instance (object)"
+  ],
+  "model_query.AttributeTestClass2.__init__ (method)": [
+    "model_query.AttributeTestClass2.instance (object)"
+  ],
+  "model_query.AttributeTestClass3.__init__ (method)": [
+    "model_query.AttributeTestClass3.instance (object)"
+  ],
+  "model_query.AttributeTestClass4.__init__ (method)": [
+    "model_query.AttributeTestClass4.instance (object)"
+  ],
+  "model_query.AttributeTestClass5.__init__ (method)": [
+    "model_query.AttributeTestClass5.foo_instance (object)"
+  ],
+  "model_query.AttributeTestClass6.__init__ (method)": [
+    "model_query.AttributeTestClass6.foo_instance (object)"
+  ],
+  "model_query.alarm_1 (fun)": [
+    "model_query.AttributeTestClass1.attribute (object)",
+    "pysa._test_sink (fun)"
+  ],
+  "model_query.alarm_10 (fun)": [
+    "model_query.AttributeTestClass5.foo_instance (object)",
+    "pysa._test_sink (fun)"
+  ],
+  "model_query.alarm_11 (fun)": [
+    "model_query.AttributeTestClass6.foo_attribute (object)",
+    "pysa._test_sink (fun)"
+  ],
+  "model_query.alarm_12 (fun)": [
+    "model_query.AttributeTestClass6.foo_instance (object)",
+    "pysa._test_sink (fun)"
+  ],
+  "model_query.alarm_2 (fun)": [
+    "model_query.AttributeTestClass1.instance (object)",
+    "pysa._test_sink (fun)"
+  ],
+  "model_query.alarm_3 (fun)": [
+    "model_query.AttributeTestClass2.attribute (object)",
+    "pysa._test_sink (fun)"
+  ],
+  "model_query.alarm_4 (fun)": [
+    "model_query.AttributeTestClass2.instance (object)",
+    "pysa._test_sink (fun)"
+  ],
+  "model_query.alarm_5 (fun)": [
+    "model_query.AttributeTestClass3.attribute (object)"
+  ],
+  "model_query.alarm_6 (fun)": [
+    "model_query.AttributeTestClass3.instance (object)",
+    "pysa._test_source (fun)"
+  ],
+  "model_query.alarm_7 (fun)": [
+    "model_query.AttributeTestClass4.attribute (object)"
+  ],
+  "model_query.alarm_8 (fun)": [
+    "model_query.AttributeTestClass4.instance (object)",
+    "pysa._test_sink (fun)"
+  ],
+  "model_query.alarm_9 (fun)": [
+    "model_query.AttributeTestClass5.foo_attribute (object)",
+    "pysa._test_sink (fun)"
+  ],
+  "model_query.no_alarm_1 (fun)": [ "pysa._test_sink (fun)" ],
+  "model_query.no_alarm_2 (fun)": [ "pysa._test_sink (fun)" ]
+}

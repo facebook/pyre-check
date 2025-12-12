@@ -79,7 +79,7 @@ def issue_from_tuple():
     _test_sink(a)
 
 
-def tito_with_tuple(o: Any, b: bool) -> Tuple[bool, bool]:
+def tito_with_tuple(o: Any, b: bool) -> Tuple[Any, Any]:
     if b:
         return min(o, "abc"), min(o, "abc")
     else:

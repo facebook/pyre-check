@@ -4,10 +4,14 @@
 # LICENSE file in the root directory of this source tree.
 
 from pysa import _test_sink, _test_source
+from typing import Any
 
 
 class Object:
-    pass
+    def __init__(self) -> None:
+        self.x: Any = 0
+        self.y: Any = 0
+        self.z: Any = 0
 
 
 obj1 = Object()
@@ -65,6 +69,8 @@ def obj4_flow():
     _test_sink(obj4)
 
 
+z = ""
+
 def create_global_source():
     global z
     z = _test_source()
@@ -99,11 +105,14 @@ def obj6_flow():
 
 def obj7_source():
     # This created a new variable obj7 in the global frame
+    # pyrefly: ignore[unknown-name]
     global obj7
+    # pyrefly: ignore[unknown-name]
     obj7 = _test_source()
 
 
 def obj7_sink():
+    # pyrefly: ignore[unknown-name]
     _test_sink(obj7)
 
 

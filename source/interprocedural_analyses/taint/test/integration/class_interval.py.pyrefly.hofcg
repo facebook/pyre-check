@@ -1,0 +1,3607 @@
+@generated
+Higher order call graphs
+{
+  "callable": "class_interval.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "28:9-28:11|identifier|A0": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A0"
+            }
+          ]
+        }
+      }
+    },
+    "33:9-33:11|identifier|A0": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A0"
+            }
+          ]
+        }
+      }
+    },
+    "57:9-57:11|identifier|A1": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A1"
+            }
+          ]
+        }
+      }
+    },
+    "65:9-65:11|identifier|A1": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A1"
+            }
+          ]
+        }
+      }
+    },
+    "91:9-91:11|identifier|A2": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A2"
+            }
+          ]
+        }
+      }
+    },
+    "96:9-96:11|identifier|A2": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A2"
+            }
+          ]
+        }
+      }
+    },
+    "101:9-101:11|identifier|B2": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.B2"
+            }
+          ]
+        }
+      }
+    },
+    "101:13-101:15|identifier|C2": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.C2"
+            }
+          ]
+        }
+      }
+    },
+    "127:9-127:11|identifier|A3": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A3"
+            }
+          ]
+        }
+      }
+    },
+    "132:9-132:11|identifier|B3": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.B3"
+            }
+          ]
+        }
+      }
+    },
+    "140:9-140:11|identifier|B3": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.B3"
+            }
+          ]
+        }
+      }
+    },
+    "169:9-169:11|identifier|A4": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A4"
+            }
+          ]
+        }
+      }
+    },
+    "174:9-174:11|identifier|A4": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A4"
+            }
+          ]
+        }
+      }
+    },
+    "179:9-179:11|identifier|B4": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.B4"
+            }
+          ]
+        }
+      }
+    },
+    "205:9-205:11|identifier|A5": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A5"
+            }
+          ]
+        }
+      }
+    },
+    "210:9-210:11|identifier|A5": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A5"
+            }
+          ]
+        }
+      }
+    },
+    "214:9-214:11|identifier|C5": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.C5"
+            }
+          ]
+        }
+      }
+    },
+    "244:9-244:11|identifier|A6": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A6"
+            }
+          ]
+        }
+      }
+    },
+    "252:9-252:11|identifier|A6": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A6"
+            }
+          ]
+        }
+      }
+    },
+    "257:9-257:11|identifier|B6": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.B6"
+            }
+          ]
+        }
+      }
+    },
+    "355:10-355:13|identifier|A12": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A12"
+            }
+          ]
+        }
+      }
+    },
+    "360:10-360:13|identifier|A12": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A12"
+            }
+          ]
+        }
+      }
+    },
+    "381:10-381:13|identifier|A13": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A13"
+            }
+          ]
+        }
+      }
+    },
+    "386:10-386:13|identifier|A13": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A13"
+            }
+          ]
+        }
+      }
+    },
+    "419:10-419:13|identifier|A14": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A14"
+            }
+          ]
+        }
+      }
+    },
+    "424:10-424:13|identifier|A14": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A14"
+            }
+          ]
+        }
+      }
+    },
+    "432:10-432:13|identifier|B14": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.B14"
+            }
+          ]
+        }
+      }
+    },
+    "432:15-432:18|identifier|C14": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.C14"
+            }
+          ]
+        }
+      }
+    },
+    "448:10-448:13|identifier|A15": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A15"
+            }
+          ]
+        }
+      }
+    },
+    "453:10-453:13|identifier|A15": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A15"
+            }
+          ]
+        }
+      }
+    },
+    "461:10-461:13|identifier|B15": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.B15"
+            }
+          ]
+        }
+      }
+    },
+    "465:10-465:13|identifier|C15": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.C15"
+            }
+          ]
+        }
+      }
+    },
+    "465:15-465:18|identifier|E15": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.E15"
+            }
+          ]
+        }
+      }
+    },
+    "481:10-481:13|identifier|A16": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A16"
+            }
+          ]
+        }
+      }
+    },
+    "486:10-486:13|identifier|A16": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A16"
+            }
+          ]
+        }
+      }
+    },
+    "494:10-494:13|identifier|B16": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.B16"
+            }
+          ]
+        }
+      }
+    },
+    "494:15-494:18|identifier|C16": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.C16"
+            }
+          ]
+        }
+      }
+    },
+    "525:10-525:13|identifier|A17": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A17"
+            }
+          ]
+        }
+      }
+    },
+    "531:10-531:13|identifier|A17": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A17"
+            }
+          ]
+        }
+      }
+    },
+    "537:10-537:13|identifier|A17": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A17"
+            }
+          ]
+        }
+      }
+    },
+    "561:10-561:13|identifier|A18": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A18"
+            }
+          ]
+        }
+      }
+    },
+    "567:10-567:13|identifier|A18": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A18"
+            }
+          ]
+        }
+      }
+    },
+    "621:10-621:13|identifier|A20": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A20"
+            }
+          ]
+        }
+      }
+    },
+    "625:10-625:13|identifier|A20": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A20"
+            }
+          ]
+        }
+      }
+    },
+    "630:10-630:13|identifier|C20": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.C20"
+            }
+          ]
+        }
+      }
+    },
+    "630:15-630:18|identifier|B20": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.B20"
+            }
+          ]
+        }
+      }
+    },
+    "662:10-662:13|identifier|A21": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A21"
+            }
+          ]
+        }
+      }
+    },
+    "668:10-668:13|identifier|A21": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A21"
+            }
+          ]
+        }
+      }
+    },
+    "687:10-687:13|identifier|A22": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A22"
+            }
+          ]
+        }
+      }
+    },
+    "692:10-692:13|identifier|A22": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A22"
+            }
+          ]
+        }
+      }
+    },
+    "722:10-722:13|identifier|A23": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A23"
+            }
+          ]
+        }
+      }
+    },
+    "726:10-726:13|identifier|B23": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.B23"
+            }
+          ]
+        }
+      }
+    },
+    "731:10-731:13|identifier|B23": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.B23"
+            }
+          ]
+        }
+      }
+    },
+    "736:10-736:13|identifier|A23": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A23"
+            }
+          ]
+        }
+      }
+    },
+    "759:10-759:13|identifier|A24": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A24"
+            }
+          ]
+        }
+      }
+    },
+    "764:10-764:13|identifier|A24": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A24"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.abstract_method",
+  "returned_callables": [],
+  "calls": {
+    "392:8-392:13": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A13.f",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.C13"
+          }
+        ]
+      }
+    },
+    "393:4-393:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "394:8-394:13": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A13.f",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B13"
+          }
+        ]
+      }
+    },
+    "395:4-395:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.call_method_via_class_name",
+  "returned_callables": [],
+  "calls": {
+    "338:11-338:13|identifier|A9": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A9"
+            }
+          ]
+        }
+      }
+    },
+    "338:11-338:18": {
+      "call": {
+        "calls": [
+          { "target": "class_interval.A9.f", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.canonical_example",
+  "returned_callables": [],
+  "calls": {
+    "39:4-39:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B0.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B0"
+          }
+        ]
+      }
+    },
+    "39:9-39:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.issue_precise_tito_intervals",
+  "returned_callables": [],
+  "calls": {
+    "744:4-744:36": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "744:15-744:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A23.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B23"
+          }
+        ]
+      }
+    },
+    "744:20-744:34": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.multi_inheritance_issue",
+  "returned_callables": [],
+  "calls": {
+    "500:4-500:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "500:15-500:21": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B16.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B16"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.multi_inheritance_no_issue_one_hop",
+  "returned_callables": [],
+  "calls": {
+    "437:4-437:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "437:15-437:21": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B14.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B14"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.multi_inheritance_no_issue_two_hops",
+  "returned_callables": [],
+  "calls": {
+    "470:4-470:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "470:15-470:21": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B15.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B15"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.multiple_inheritance",
+  "returned_callables": [],
+  "calls": {
+    "107:4-107:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B2.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B2"
+          }
+        ]
+      }
+    },
+    "107:9-107:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.no_call_to_parent_class",
+  "returned_callables": [],
+  "calls": {
+    "71:4-71:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B1.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B1"
+          }
+        ]
+      }
+    },
+    "71:9-71:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.no_issue_source_through_staticmethod_tito",
+  "returned_callables": [],
+  "calls": {
+    "769:4-769:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "769:15-769:21": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A24.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.C24"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.no_issue_taint_transform_with_class_interval",
+  "returned_callables": [],
+  "calls": {
+    "699:4-699:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.sink_d",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "699:11-699:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A22.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.C22"
+          }
+        ]
+      }
+    },
+    "699:16-699:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.no_issue_taint_transform_with_class_interval_for_classmethods",
+  "returned_callables": [],
+  "calls": {
+    "676:4-676:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.sink_d",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "676:11-676:14|identifier|C21": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.C21"
+            }
+          ]
+        }
+      }
+    },
+    "676:11-676:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A21.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.C21",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "676:18-676:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.propagate_source_empty",
+  "returned_callables": [],
+  "calls": {
+    "268:11-268:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "268:22-268:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A6.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.C6"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.sink_in_subclass",
+  "returned_callables": [],
+  "calls": {
+    "149:4-149:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.B3.m0}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B3"
+          }
+        ]
+      }
+    },
+    "149:9-149:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.sink_two_hops",
+  "returned_callables": [],
+  "calls": {
+    "220:4-220:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B5.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B5"
+          }
+        ]
+      }
+    },
+    "220:9-220:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.source_two_hops",
+  "returned_callables": [],
+  "calls": {
+    "185:4-185:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.D4.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.D4"
+          }
+        ]
+      }
+    },
+    "185:9-185:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.test_class_methods",
+  "returned_callables": [],
+  "calls": {
+    "545:4-545:7|identifier|B17": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.B17"
+            }
+          ]
+        }
+      }
+    },
+    "545:4-545:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A17.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B17",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "545:11-545:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "548:8-548:13": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B17"
+          }
+        ]
+      }
+    },
+    "549:4-549:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A17.m0",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B17",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "549:9-549:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "554:4-554:7|identifier|B17": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.B17"
+            }
+          ]
+        }
+      }
+    },
+    "554:4-554:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A17.m2",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B17",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "554:11-554:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 2, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.test_multi_inheritance_parent_call",
+  "returned_callables": [],
+  "calls": {
+    "637:4-637:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A20.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B20"
+          }
+        ]
+      }
+    },
+    "637:9-637:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.test_multi_inheritance_parent_issue",
+  "returned_callables": [],
+  "calls": {
+    "641:4-641:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.test_multi_inheritance_parent_call",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "641:39-641:44": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.D20"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.test_static_methods",
+  "returned_callables": [],
+  "calls": {
+    "576:4-576:7|identifier|C18": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.C18"
+            }
+          ]
+        }
+      }
+    },
+    "576:4-576:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.C18.m0",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ]
+      }
+    },
+    "576:11-576:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "579:8-579:13": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.C18"
+          }
+        ]
+      }
+    },
+    "580:4-580:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.C18.m0",
+            "index": 1,
+            "return_type": [],
+            "receiver_class": "class_interval.C18",
+            "is_static_method": true
+          }
+        ]
+      }
+    },
+    "580:9-580:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.undetected_issue",
+  "returned_callables": [],
+  "calls": {
+    "366:8-366:13": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A12.f",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.C12"
+          }
+        ]
+      }
+    },
+    "369:4-369:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A0.m1",
+  "returned_callables": [],
+  "calls": {
+    "20:8-20:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A0.m2}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A0"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A1.m1",
+  "returned_callables": [],
+  "calls": {
+    "51:8-51:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A1.m2}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A1"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A10.object_target",
+  "returned_callables": [],
+  "calls": {
+    "345:12-345:17": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A10"
+          }
+        ]
+      }
+    },
+    "346:8-346:11": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{class_interval.A10.f}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A12.f",
+  "returned_callables": [],
+  "calls": {
+    "352:15-352:23": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttr" ] }
+    }
+  }
+}
+{
+  "callable": "class_interval.A13.f",
+  "returned_callables": [],
+  "calls": {
+    "374:15-374:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A13.g}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A13"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A13.g@decorated",
+  "returned_callables": [
+    {
+      "target": "class_interval.A13.g",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "376:5-376:19|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          { "target": "abc.abstractmethod", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "377:4-378:14|identifier|g": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "class_interval.A13.g",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A14.m1",
+  "returned_callables": [],
+  "calls": {
+    "413:15-413:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A14.m2}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A14"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A15.m1",
+  "returned_callables": [],
+  "calls": {
+    "442:15-442:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A15.m2}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A15"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A16.m1",
+  "returned_callables": [],
+  "calls": {
+    "475:15-475:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A16.m2}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A16"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A17.m0",
+  "returned_callables": [],
+  "calls": {
+    "514:8-514:11|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A17"
+            }
+          ]
+        }
+      }
+    },
+    "514:8-514:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A17.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "is_class_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A17.m2",
+  "returned_callables": [],
+  "calls": {
+    "522:8-522:11|identifier|D17": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.D17"
+            }
+          ]
+        }
+      }
+    },
+    "522:8-522:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.D17.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.D17",
+            "is_class_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A19.m0",
+  "returned_callables": [],
+  "calls": {
+    "588:8-588:9|identifier|c": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A19"
+            }
+          ]
+        }
+      }
+    },
+    "588:8-588:17": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A19.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "is_class_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A19.m1",
+  "returned_callables": [],
+  "calls": {
+    "592:8-592:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A19.m2",
+  "returned_callables": [],
+  "calls": {
+    "597:8-597:17": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A19.m3",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A19"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A19.m3",
+  "returned_callables": [],
+  "calls": {
+    "600:8-600:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A2.m1",
+  "returned_callables": [],
+  "calls": {
+    "85:8-85:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A2.m2}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A2"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A21.m0",
+  "returned_callables": [],
+  "calls": {
+    "655:15-655:18|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A21"
+            }
+          ]
+        }
+      }
+    },
+    "655:15-655:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A21.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "is_class_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A22.m0",
+  "returned_callables": [],
+  "calls": {
+    "681:15-681:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A22.m1}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A22"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A23.m0",
+  "returned_callables": [],
+  "calls": {
+    "716:15-716:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A23.m1}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A23"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A24.m0",
+  "returned_callables": [],
+  "calls": {
+    "749:15-749:18|identifier|A24": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.A24"
+            }
+          ]
+        }
+      }
+    },
+    "749:15-749:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A24.tito",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ]
+      }
+    },
+    "749:24-749:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A24.m1}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A24"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A3.m1",
+  "returned_callables": [],
+  "calls": {
+    "121:8-121:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A3.m2}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A3"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A4.m2",
+  "returned_callables": [],
+  "calls": {
+    "163:8-163:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A4.m3}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A4"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A5.m1",
+  "returned_callables": [],
+  "calls": {
+    "199:8-199:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A5.m2}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A5"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A6.m1",
+  "returned_callables": [],
+  "calls": {
+    "238:15-238:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A6.m0}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A6"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A7.f",
+  "returned_callables": [],
+  "calls": {
+    "290:12-290:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B7.foo",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B7"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A8.bar",
+  "returned_callables": [],
+  "calls": {
+    "313:11-313:17|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.int.__eq__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.int"
+          }
+        ]
+      }
+    },
+    "314:19-314:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A8.baz",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A8"
+          }
+        ]
+      }
+    },
+    "315:13-315:19|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.int.__eq__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.int"
+          }
+        ]
+      }
+    },
+    "321:19-321:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B8.foo",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          },
+          {
+            "target": "class_interval.C8.foo",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "322:13-322:19|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.int.__eq__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.int"
+          }
+        ]
+      }
+    },
+    "324:19-324:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A8"
+          }
+        ]
+      }
+    },
+    "324:19-324:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A8.baz",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A8"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A8.baz",
+  "returned_callables": [],
+  "calls": {
+    "329:15-329:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.A9.f",
+  "returned_callables": [],
+  "calls": {
+    "334:15-334:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.B0.m0",
+  "returned_callables": [],
+  "calls": {
+    "30:8-30:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A0.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B0"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.B1.m0",
+  "returned_callables": [],
+  "calls": {
+    "59:8-59:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B1.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B1"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.B14.m0",
+  "returned_callables": [],
+  "calls": {
+    "426:15-426:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A14.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B14"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.B15.m0",
+  "returned_callables": [],
+  "calls": {
+    "455:15-455:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A15.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B15"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.B16.m0",
+  "returned_callables": [],
+  "calls": {
+    "488:15-488:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A16.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B16"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.B18.m0",
+  "returned_callables": [],
+  "calls": {
+    "564:8-564:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.sink_b",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.B2.m0",
+  "returned_callables": [],
+  "calls": {
+    "93:8-93:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A2.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B2"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.B21.m1",
+  "returned_callables": [],
+  "calls": {
+    "665:15-665:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.transformX",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.B22.m1",
+  "returned_callables": [],
+  "calls": {
+    "689:15-689:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.transformX",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.B24.m1",
+  "returned_callables": [],
+  "calls": {
+    "761:15-761:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.B3.m0",
+  "returned_callables": [],
+  "calls": {
+    "129:8-129:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A3.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B3"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.B4.m1",
+  "returned_callables": [],
+  "calls": {
+    "171:8-171:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A4.m2",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B4"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.B5.m0",
+  "returned_callables": [],
+  "calls": {
+    "207:8-207:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A5.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B5"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.B6.m0",
+  "returned_callables": [],
+  "calls": {
+    "246:11-246:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "_random.Random.random",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
+          }
+        ]
+      }
+    },
+    "246:11-246:32|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.float"
+          }
+        ]
+      }
+    },
+    "247:19-247:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "249:19-249:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.E6"
+          }
+        ]
+      }
+    },
+    "249:19-249:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.E6.m3",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.E6"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.B7.bar",
+  "returned_callables": [],
+  "calls": {
+    "282:15-282:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.B7.foo",
+  "returned_callables": [],
+  "calls": {
+    "279:15-279:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B7.bar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B7"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.B8.foo",
+  "returned_callables": [],
+  "calls": {
+    "303:15-303:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.C0.m2",
+  "returned_callables": [],
+  "calls": {
+    "35:8-35:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.C1.m2",
+  "returned_callables": [],
+  "calls": {
+    "67:8-67:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.C12.g",
+  "returned_callables": [],
+  "calls": {
+    "362:15-362:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.C13.g",
+  "returned_callables": [],
+  "calls": {
+    "388:15-388:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.C14.m2",
+  "returned_callables": [],
+  "calls": {
+    "421:15-421:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.C17.m1",
+  "returned_callables": [],
+  "calls": {
+    "534:8-534:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.sink_c",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.C18.m0",
+  "returned_callables": [],
+  "calls": {
+    "571:8-571:11|identifier|B18": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_interval.B18"
+            }
+          ]
+        }
+      }
+    },
+    "571:8-571:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B18.m0",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.C20.m0",
+  "returned_callables": [],
+  "calls": {
+    "627:8-627:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.C23.m1",
+  "returned_callables": [],
+  "calls": {
+    "728:15-728:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.add_feature_c",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.C3.m0",
+  "returned_callables": [],
+  "calls": {
+    "134:8-134:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A3.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.C3"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.C3.m2",
+  "returned_callables": [],
+  "calls": {
+    "137:8-137:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.C4.m3",
+  "returned_callables": [],
+  "calls": {
+    "176:8-176:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.C6.m2",
+  "returned_callables": [],
+  "calls": {
+    "254:15-254:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A6.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.C6"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.D16.m2",
+  "returned_callables": [],
+  "calls": {
+    "496:15-496:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.D17.m1",
+  "returned_callables": [],
+  "calls": {
+    "540:8-540:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.sink_c",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.D2.m2",
+  "returned_callables": [],
+  "calls": {
+    "103:8-103:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.D23.m1",
+  "returned_callables": [],
+  "calls": {
+    "733:15-733:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.add_feature_d",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.D4.m0",
+  "returned_callables": [],
+  "calls": {
+    "181:8-181:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B4.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.D4"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.D5.m2",
+  "returned_callables": [],
+  "calls": {
+    "216:8-216:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.D6.m0",
+  "returned_callables": [],
+  "calls": {
+    "259:15-259:22": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "259:15-259:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B6.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.D6"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.E15.m2",
+  "returned_callables": [],
+  "calls": {
+    "450:15-450:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.E23.m1",
+  "returned_callables": [],
+  "calls": {
+    "738:15-738:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.add_feature_e",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_interval.E6.m3",
+  "returned_callables": [],
+  "calls": {
+    "264:15-264:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

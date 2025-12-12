@@ -1,0 +1,1565 @@
+@generated
+Higher order call graphs
+{
+  "callable": "overrides.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "28:8-28:12|identifier|Base": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{overrides.Base.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.Base"
+            }
+          ]
+        }
+      }
+    },
+    "38:8-38:12|identifier|Base": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{overrides.Base.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.Base"
+            }
+          ]
+        }
+      }
+    },
+    "52:8-52:9|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{overrides.B.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.B"
+            }
+          ]
+        }
+      }
+    },
+    "66:8-66:9|identifier|C": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{overrides.C.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.C"
+            }
+          ]
+        }
+      }
+    },
+    "161:25-161:26|identifier|D": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.D.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.D"
+            }
+          ]
+        }
+      }
+    },
+    "179:21-179:37|identifier|SkippedOverrides": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.SkippedOverrides"
+            }
+          ]
+        }
+      }
+    },
+    "191:32-191:51|identifier|AnalyzeAllOverrides": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.AnalyzeAllOverrides"
+            }
+          ]
+        }
+      }
+    },
+    "196:32-196:51|identifier|AnalyzeAllOverrides": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.AnalyzeAllOverrides"
+            }
+          ]
+        }
+      }
+    },
+    "201:32-201:51|identifier|AnalyzeAllOverrides": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.AnalyzeAllOverrides"
+            }
+          ]
+        }
+      }
+    },
+    "217:29-217:45|identifier|TooManyOverrides": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.TooManyOverrides"
+            }
+          ]
+        }
+      }
+    },
+    "222:29-222:45|identifier|TooManyOverrides": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.TooManyOverrides"
+            }
+          ]
+        }
+      }
+    },
+    "227:29-227:45|identifier|TooManyOverrides": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.TooManyOverrides"
+            }
+          ]
+        }
+      }
+    },
+    "241:29-241:48|identifier|BaseWithDeclaration": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.BaseWithDeclaration"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.call_analyze_call_overrides",
+  "returned_callables": [],
+  "calls": {
+    "207:4-207:21": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{overrides.AnalyzeAllOverrides.return_source}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.AnalyzeAllOverrides"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.call_too_many_overrides",
+  "returned_callables": [],
+  "calls": {
+    "233:4-233:21": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.TooManyOverrides.return_source",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.TooManyOverrides"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.constructorTest",
+  "returned_callables": [],
+  "calls": {
+    "158:11-158:30": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "overrides.D.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.D"
+          }
+        ]
+      }
+    },
+    "158:15-158:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.testA",
+  "returned_callables": [],
+  "calls": {
+    "94:8-94:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.Base.methodB",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.A"
+          }
+        ]
+      }
+    },
+    "95:4-95:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.A.methodA",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.A"
+          }
+        ]
+      }
+    },
+    "96:4-96:7|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.A"
+            }
+          ]
+        }
+      }
+    },
+    "96:4-96:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.Base.classMethod",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "is_class_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.testB",
+  "returned_callables": [],
+  "calls": {
+    "110:8-110:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{overrides.B.methodB}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.B"
+          }
+        ]
+      }
+    },
+    "111:4-111:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.Base.methodA",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.B"
+          },
+          {
+            "target": "Overrides{overrides.C.methodA}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.B"
+          }
+        ]
+      }
+    },
+    "112:4-112:7|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{overrides.B.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.B"
+            }
+          ]
+        }
+      }
+    },
+    "112:4-112:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.B.classMethod",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "is_class_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.testBase",
+  "returned_callables": [],
+  "calls": {
+    "78:8-78:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{overrides.Base.methodB}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.Base"
+          }
+        ]
+      }
+    },
+    "79:4-79:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{overrides.Base.methodA}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.Base"
+          }
+        ]
+      }
+    },
+    "80:4-80:7|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{overrides.Base.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.Base"
+            }
+          ]
+        }
+      }
+    },
+    "80:4-80:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.Base.classMethod",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "is_class_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.testC",
+  "returned_callables": [],
+  "calls": {
+    "126:8-126:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{overrides.B.methodB}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.C"
+          }
+        ]
+      }
+    },
+    "127:4-127:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{overrides.C.methodA}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.C"
+          }
+        ]
+      }
+    },
+    "128:4-128:7|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{overrides.C.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.C"
+            }
+          ]
+        }
+      }
+    },
+    "128:4-128:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.C.classMethod",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "is_class_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.testD",
+  "returned_callables": [],
+  "calls": {
+    "142:8-142:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.D.methodB",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.D"
+          }
+        ]
+      }
+    },
+    "143:4-143:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{overrides.D.methodA}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.D"
+          }
+        ]
+      }
+    },
+    "144:4-144:7|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.D.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.D"
+            }
+          ]
+        }
+      }
+    },
+    "144:4-144:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.C.classMethod",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "is_class_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.testMakeA",
+  "returned_callables": [],
+  "calls": {
+    "105:8-105:13": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "overrides.A.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.A"
+          }
+        ]
+      }
+    },
+    "106:8-106:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.Base.methodB",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.A"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.testMakeB",
+  "returned_callables": [],
+  "calls": {
+    "121:8-121:13": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "Overrides{overrides.B.__init__}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.B"
+          }
+        ]
+      }
+    },
+    "122:8-122:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{overrides.B.methodB}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.B"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.testMakeBase",
+  "returned_callables": [],
+  "calls": {
+    "89:8-89:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "Overrides{overrides.Base.__init__}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.Base"
+          }
+        ]
+      }
+    },
+    "90:8-90:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{overrides.Base.methodB}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.Base"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.testMakeC",
+  "returned_callables": [],
+  "calls": {
+    "137:8-137:13": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "Overrides{overrides.C.__init__}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.C"
+          }
+        ]
+      }
+    },
+    "138:8-138:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{overrides.B.methodB}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.C"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.testMakeD",
+  "returned_callables": [],
+  "calls": {
+    "153:8-153:13": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "overrides.D.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.D"
+          }
+        ]
+      }
+    },
+    "154:8-154:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.D.methodB",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.D"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.testStaticA",
+  "returned_callables": [],
+  "calls": {
+    "100:8-100:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.Base.methodB",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.A"
+          }
+        ]
+      }
+    },
+    "101:4-101:5|identifier|A": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.A"
+            }
+          ]
+        }
+      }
+    },
+    "101:4-101:20": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.Base.classMethod",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.A",
+            "is_class_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.testStaticB",
+  "returned_callables": [],
+  "calls": {
+    "116:8-116:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{overrides.B.methodB}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.B"
+          }
+        ]
+      }
+    },
+    "117:4-117:5|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{overrides.B.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.B"
+            }
+          ]
+        }
+      }
+    },
+    "117:4-117:20": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.B.classMethod",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.B",
+            "is_class_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.testStaticBase",
+  "returned_callables": [],
+  "calls": {
+    "84:8-84:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{overrides.Base.methodB}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.Base"
+          }
+        ]
+      }
+    },
+    "85:4-85:8|identifier|Base": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{overrides.Base.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.Base"
+            }
+          ]
+        }
+      }
+    },
+    "85:4-85:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.Base.classMethod",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.Base",
+            "is_class_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.testStaticC",
+  "returned_callables": [],
+  "calls": {
+    "132:8-132:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{overrides.B.methodB}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.C"
+          }
+        ]
+      }
+    },
+    "133:4-133:5|identifier|C": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{overrides.C.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.C"
+            }
+          ]
+        }
+      }
+    },
+    "133:4-133:20": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.C.classMethod",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.C",
+            "is_class_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.testStaticD",
+  "returned_callables": [],
+  "calls": {
+    "148:8-148:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.D.methodB",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.D"
+          }
+        ]
+      }
+    },
+    "149:4-149:5|identifier|D": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.D.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.D"
+            }
+          ]
+        }
+      }
+    },
+    "149:4-149:20": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.C.classMethod",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.D",
+            "is_class_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.test_overrides_with_declaration",
+  "returned_callables": [],
+  "calls": {
+    "247:4-247:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "247:15-247:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{overrides.BaseWithDeclaration.return_source}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.BaseWithDeclaration"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.A.__init__",
+  "returned_callables": [],
+  "calls": {
+    "32:8-32:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "32:8-32:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.Base.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.A"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.A.methodA",
+  "returned_callables": [],
+  "calls": {
+    "35:8-35:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.AnalyzeAllOverridesChild3.return_source",
+  "returned_callables": [],
+  "calls": {
+    "203:15-203:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.B.__init__",
+  "returned_callables": [],
+  "calls": {
+    "42:8-42:22": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "42:8-42:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.Base.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.B"
+          }
+        ]
+      }
+    },
+    "42:14-42:15|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{overrides.B.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.B"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.B.classMethod",
+  "returned_callables": [],
+  "calls": {
+    "49:8-49:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.B.methodB",
+  "returned_callables": [],
+  "calls": {
+    "45:15-45:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.C.__init__",
+  "returned_callables": [],
+  "calls": {
+    "56:8-56:22": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "56:8-56:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.Base.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.C"
+          }
+        ]
+      }
+    },
+    "56:14-56:15|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{overrides.B.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.B"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.D.__init__",
+  "returned_callables": [],
+  "calls": {
+    "68:8-68:22": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "68:8-68:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "overrides.B.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.D"
+          }
+        ]
+      }
+    },
+    "68:14-68:15|identifier|C": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{overrides.C.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.C"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.D.methodA",
+  "returned_callables": [],
+  "calls": {
+    "71:8-71:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.D.methodB",
+  "returned_callables": [],
+  "calls": {
+    "74:15-74:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.ExtendsSkipped.method",
+  "returned_callables": [],
+  "calls": {
+    "181:8-181:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "overrides.TooManyOverridesChild3.return_source",
+  "returned_callables": [],
+  "calls": {
+    "229:15-229:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,34 @@
+@generated
+Higher order call graphs
+{
+  "callable": "class_level_taint.test",
+  "returned_callables": [],
+  "calls": {
+    "18:4-18:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_level_taint.ClassSink.sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_level_taint.ClassSink"
+          }
+        ]
+      }
+    },
+    "18:20-18:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_level_taint.ClassSource.source",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_level_taint.ClassSource"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,4 @@
+@generated
+Overrides
+builtins.object.__init__ (override) -> [builtins.object.__init__ (method) readonly.A.__init__ (override)]
+readonly.A.__init__ (override) -> [readonly.A.__init__ (method)]

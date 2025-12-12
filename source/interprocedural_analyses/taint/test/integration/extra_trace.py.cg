@@ -28,10 +28,14 @@ Call dependencies
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "extra_trace.loop_tito_backward (fun)": [
-    "extra_trace.transform_x (fun)", "pysa._test_sink (fun)"
+    "extra_trace.non_deterministic_int (fun)",
+    "extra_trace.transform_x (fun)", "int.__gt__ (method)",
+    "int.__le__ (method)", "pysa._test_sink (fun)"
   ],
   "extra_trace.loop_tito_forward (fun)": [
-    "extra_trace.transform_x (fun)", "pysa._test_source (fun)"
+    "extra_trace.non_deterministic_int (fun)",
+    "extra_trace.transform_x (fun)", "int.__gt__ (method)",
+    "int.__le__ (method)", "pysa._test_source (fun)"
   ],
   "extra_trace.mismatching_tito_extra_sink (fun)": [
     "extra_trace.non_deterministic_int (fun)",

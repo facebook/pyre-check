@@ -1,0 +1,16 @@
+@generated
+Call dependencies
+{
+  "return_sinks.not_propagate_returned_sink_to_arg (fun)": [
+    "return_sinks.sink_on_return_and_tito (fun)"
+  ],
+  "return_sinks.propagate_returned_sink_to_arg (fun)": [
+    "return_sinks.sink_on_return_and_tito (fun)"
+  ],
+  "return_sinks.sink_on_return_not_propagated_to_arg (fun)": [
+    "return_sinks.sink_on_return (fun)"
+  ],
+  "return_sinks.sink_on_return_not_propagated_to_return (fun)": [
+    "return_sinks.sink_on_return (fun)"
+  ]
+}

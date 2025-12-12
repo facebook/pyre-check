@@ -1,0 +1,396 @@
+@generated
+Higher order call graphs
+{
+  "callable": "global.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "17:7-17:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "global.Object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "global.Object"
+          }
+        ]
+      }
+    },
+    "39:7-39:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "global.Object.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "global.Object"
+          }
+        ]
+      }
+    },
+    "46:7-46:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 2,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "global.Object.__init__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "global.Object"
+          }
+        ]
+      }
+    },
+    "64:7-64:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "79:0-79:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "global.create_global_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "88:7-88:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 3,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "global.Object.__init__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "global.Object"
+          }
+        ]
+      }
+    },
+    "125:7-125:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 4,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "global.Object.__init__",
+            "index": 4,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "global.Object"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "global.create_global_source",
+  "returned_callables": [],
+  "calls": {
+    "76:8-76:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "global.obj1_flow",
+  "returned_callables": [],
+  "calls": {
+    "30:4-30:17": {
+      "call": {
+        "calls": [
+          { "target": "global.obj1_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "31:4-31:15": {
+      "call": {
+        "calls": [
+          { "target": "global.obj1_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "global.obj1_no_flow",
+  "returned_callables": [],
+  "calls": {
+    "35:4-35:15": {
+      "call": {
+        "calls": [
+          { "target": "global.obj1_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "36:4-36:17": {
+      "call": {
+        "calls": [
+          { "target": "global.obj1_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "global.obj1_sink",
+  "returned_callables": [],
+  "calls": {
+    "25:4-25:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "global.obj1_source",
+  "returned_callables": [],
+  "calls": {
+    "21:13-21:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "global.obj2_sink",
+  "returned_callables": [],
+  "calls": {
+    "43:4-43:20": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "global.obj3_flow",
+  "returned_callables": [],
+  "calls": {
+    "59:4-59:28": {
+      "call": {
+        "calls": [
+          { "target": "global.obj3_set", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "59:13-59:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "60:8-60:21": {
+      "call": {
+        "calls": [
+          { "target": "global.obj3_return", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "61:4-61:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "global.obj4_flow",
+  "returned_callables": [],
+  "calls": {
+    "69:4-69:20": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "global.obj6_flow",
+  "returned_callables": [],
+  "calls": {
+    "102:4-102:17": {
+      "call": {
+        "calls": [
+          { "target": "global.obj6_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "103:4-103:15": {
+      "call": {
+        "calls": [
+          { "target": "global.obj6_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "global.obj6_sink",
+  "returned_callables": [],
+  "calls": {
+    "97:4-97:20": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "global.obj6_source",
+  "returned_callables": [],
+  "calls": {
+    "93:11-93:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "global.obj7_flow",
+  "returned_callables": [],
+  "calls": {
+    "121:4-121:17": {
+      "call": {
+        "calls": [
+          { "target": "global.obj7_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "122:4-122:15": {
+      "call": {
+        "calls": [
+          { "target": "global.obj7_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "global.obj7_sink",
+  "returned_callables": [],
+  "calls": {
+    "116:4-116:20": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "global.obj7_source",
+  "returned_callables": [],
+  "calls": {
+    "111:11-111:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "global.obj8_flow",
+  "returned_callables": [],
+  "calls": {
+    "139:4-139:28": {
+      "call": {
+        "calls": [
+          { "target": "global.obj8_set", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "139:13-139:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "140:8-140:21": {
+      "call": {
+        "calls": [
+          { "target": "global.obj8_return", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "141:4-141:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

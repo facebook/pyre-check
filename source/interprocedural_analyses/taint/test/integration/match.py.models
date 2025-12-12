@@ -141,73 +141,6 @@
     "callable": "match.test_match_class_pattern",
     "callable_line": 84,
     "code": 5002,
-    "line": 90,
-    "start": 23,
-    "end": 24,
-    "filename": "match.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "object" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 86, "start": 10, "end": 11 } ],
-            "origin": { "line": 85, "start": 8, "end": 22 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 90, "start": 23, "end": 24 },
-            "call_site": "90:12-90:25"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "object" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "pysa._test_sink",
-      "index": 1,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "match.test_match_class_pattern:5002:0:Call|pysa._test_sink|1|formal(arg):c47a86ac66385bcfb68f75525eacad77"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "match.test_match_class_pattern",
-    "callable_line": 84,
-    "code": 5002,
     "line": 91,
     "start": 23,
     "end": 24,
@@ -263,10 +196,10 @@
     "sink_handle": {
       "kind": "Call",
       "callee": "pysa._test_sink",
-      "index": 2,
+      "index": 1,
       "parameter": "formal(arg)"
     },
-    "master_handle": "match.test_match_class_pattern:5002:0:Call|pysa._test_sink|2|formal(arg):8b20e3f99a3be644d0e0e439b62822ac"
+    "master_handle": "match.test_match_class_pattern:5002:0:Call|pysa._test_sink|1|formal(arg):c47a86ac66385bcfb68f75525eacad77"
   }
 }
 {
@@ -275,7 +208,7 @@
     "callable": "match.test_match_class_pattern",
     "callable_line": 84,
     "code": 5002,
-    "line": 93,
+    "line": 92,
     "start": 23,
     "end": 24,
     "filename": "match.py",
@@ -315,8 +248,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 93, "start": 23, "end": 24 },
-            "call_site": "93:12-93:25"
+            "origin": { "line": 92, "start": 23, "end": 24 },
+            "call_site": "92:12-92:25"
           }
         ]
       }
@@ -330,10 +263,10 @@
     "sink_handle": {
       "kind": "Call",
       "callee": "pysa._test_sink",
-      "index": 3,
+      "index": 2,
       "parameter": "formal(arg)"
     },
-    "master_handle": "match.test_match_class_pattern:5002:0:Call|pysa._test_sink|3|formal(arg):b48b933dd094901603f26f25ad794fc5"
+    "master_handle": "match.test_match_class_pattern:5002:0:Call|pysa._test_sink|2|formal(arg):8b20e3f99a3be644d0e0e439b62822ac"
   }
 }
 {
@@ -397,10 +330,10 @@
     "sink_handle": {
       "kind": "Call",
       "callee": "pysa._test_sink",
-      "index": 4,
+      "index": 3,
       "parameter": "formal(arg)"
     },
-    "master_handle": "match.test_match_class_pattern:5002:0:Call|pysa._test_sink|4|formal(arg):c0fda7af8576e857061d554d60511560"
+    "master_handle": "match.test_match_class_pattern:5002:0:Call|pysa._test_sink|3|formal(arg):b48b933dd094901603f26f25ad794fc5"
   }
 }
 {
@@ -464,10 +397,10 @@
     "sink_handle": {
       "kind": "Call",
       "callee": "pysa._test_sink",
-      "index": 5,
+      "index": 4,
       "parameter": "formal(arg)"
     },
-    "master_handle": "match.test_match_class_pattern:5002:0:Call|pysa._test_sink|5|formal(arg):e67e82ef5473a6d34355d155a406258c"
+    "master_handle": "match.test_match_class_pattern:5002:0:Call|pysa._test_sink|4|formal(arg):c0fda7af8576e857061d554d60511560"
   }
 }
 {
@@ -476,7 +409,7 @@
     "callable": "match.test_match_class_pattern",
     "callable_line": 84,
     "code": 5002,
-    "line": 100,
+    "line": 96,
     "start": 23,
     "end": 24,
     "filename": "match.py",
@@ -496,16 +429,10 @@
               }
             ],
             "local_features": [
-              { "always-via": "object" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" }
+              { "always-via": "object" }, { "always-via": "tito" }
             ],
-            "tito_positions": [
-              { "line": 97, "start": 24, "end": 38 },
-              { "line": 98, "start": 10, "end": 11 }
-            ],
-            "origin": { "line": 97, "start": 24, "end": 38 }
+            "tito_positions": [ { "line": 86, "start": 10, "end": 11 } ],
+            "origin": { "line": 85, "start": 8, "end": 22 }
           }
         ]
       },
@@ -522,8 +449,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 100, "start": 23, "end": 24 },
-            "call_site": "100:12-100:25"
+            "origin": { "line": 96, "start": 23, "end": 24 },
+            "call_site": "96:12-96:25"
           }
         ]
       }
@@ -532,17 +459,15 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
       { "always-via": "object" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" }
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
       "callee": "pysa._test_sink",
-      "index": 6,
+      "index": 5,
       "parameter": "formal(arg)"
     },
-    "master_handle": "match.test_match_class_pattern:5002:0:Call|pysa._test_sink|6|formal(arg):d3354f3efc3ce4c8414188bac4923ccb"
+    "master_handle": "match.test_match_class_pattern:5002:0:Call|pysa._test_sink|5|formal(arg):e67e82ef5473a6d34355d155a406258c"
   }
 }
 {
@@ -577,10 +502,10 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [
-              { "line": 97, "start": 24, "end": 38 },
-              { "line": 98, "start": 10, "end": 11 }
+              { "line": 98, "start": 24, "end": 38 },
+              { "line": 99, "start": 10, "end": 11 }
             ],
-            "origin": { "line": 97, "start": 24, "end": 38 }
+            "origin": { "line": 98, "start": 24, "end": 38 }
           }
         ]
       },
@@ -614,10 +539,10 @@
     "sink_handle": {
       "kind": "Call",
       "callee": "pysa._test_sink",
-      "index": 7,
+      "index": 6,
       "parameter": "formal(arg)"
     },
-    "master_handle": "match.test_match_class_pattern:5002:0:Call|pysa._test_sink|7|formal(arg):ec3d6790e78e6f3a1dcee94232059dae"
+    "master_handle": "match.test_match_class_pattern:5002:0:Call|pysa._test_sink|6|formal(arg):d3354f3efc3ce4c8414188bac4923ccb"
   }
 }
 {
@@ -652,10 +577,10 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [
-              { "line": 97, "start": 24, "end": 38 },
-              { "line": 98, "start": 10, "end": 11 }
+              { "line": 98, "start": 24, "end": 38 },
+              { "line": 99, "start": 10, "end": 11 }
             ],
-            "origin": { "line": 97, "start": 24, "end": 38 }
+            "origin": { "line": 98, "start": 24, "end": 38 }
           }
         ]
       },
@@ -674,6 +599,81 @@
             ],
             "origin": { "line": 102, "start": 23, "end": 24 },
             "call_site": "102:12-102:25"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "object" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 7,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "match.test_match_class_pattern:5002:0:Call|pysa._test_sink|7|formal(arg):ec3d6790e78e6f3a1dcee94232059dae"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "match.test_match_class_pattern",
+    "callable_line": 84,
+    "code": 5002,
+    "line": 103,
+    "start": 23,
+    "end": 24,
+    "filename": "match.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "object" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [
+              { "line": 98, "start": 24, "end": 38 },
+              { "line": 99, "start": 10, "end": 11 }
+            ],
+            "origin": { "line": 98, "start": 24, "end": 38 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 103, "start": 23, "end": 24 },
+            "call_site": "103:12-103:25"
           }
         ]
       }

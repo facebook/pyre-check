@@ -1,0 +1,10 @@
+@generated
+Call dependencies
+{
+  "first_index.alternate_fields (fun)": [
+    "builtins.dict.__getitem__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "first_index.local_fields (fun)": [ "first_index.alternate_fields (fun)" ],
+  "first_index.local_fields_hop (fun)": [ "first_index.local_fields (fun)" ]
+}

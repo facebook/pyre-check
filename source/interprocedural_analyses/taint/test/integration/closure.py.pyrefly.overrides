@@ -1,0 +1,4 @@
+@generated
+Overrides
+builtins.object.__init__ (override) -> [builtins.object.__init__ (method) closure.Object.__init__ (override)]
+closure.Object.__init__ (override) -> [closure.Object.__init__ (method)]

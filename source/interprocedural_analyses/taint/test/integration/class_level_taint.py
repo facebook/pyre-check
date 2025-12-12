@@ -5,12 +5,12 @@
 
 
 class ClassSink:
-    async def sink(self, argument):
+    def sink(self, argument):
         pass
 
 
 class ClassSource:
-    async def source(self):
+    def source(self):
         pass
 
 

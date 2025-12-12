@@ -9,7 +9,7 @@ from typing import Any, Type, Union, Optional
 from django.http import Request
 
 
-request: Request = ...
+request: Request = ... # pyrefly: ignore[bad-assignment]
 
 
 class StrIsTainted:

@@ -1,0 +1,101 @@
+@generated
+Higher order call graphs
+{
+  "callable": "issue_grouping.issue",
+  "returned_callables": [],
+  "calls": {
+    "30:4-30:23|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "30:13-30:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "issue_grouping.source_a",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    },
+    "31:4-31:23|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__setitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "31:13-31:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "issue_grouping.source_b",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    },
+    "32:4-32:17": {
+      "call": {
+        "calls": [
+          {
+            "target": "issue_grouping.multi_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "issue_grouping.multi_sink",
+  "returned_callables": [],
+  "calls": {
+    "24:4-24:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "issue_grouping.sink_a",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "24:11-24:17|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "25:4-25:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "issue_grouping.sink_b",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "25:11-25:17|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}

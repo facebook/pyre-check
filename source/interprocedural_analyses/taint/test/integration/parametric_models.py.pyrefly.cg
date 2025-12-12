@@ -1,0 +1,13 @@
+@generated
+Call dependencies
+{
+  "parametric_models.f_and_g_to_test (fun)": [
+    "parametric_models.g (fun)", "parametric_models.sink (fun)"
+  ],
+  "parametric_models.inferred_sink (fun)": [
+    "parametric_models.sink_subkind_b (fun)"
+  ],
+  "parametric_models.test_to_subkind_sink (fun)": [
+    "parametric_models.inferred_sink (fun)", "pysa._test_source (fun)"
+  ]
+}

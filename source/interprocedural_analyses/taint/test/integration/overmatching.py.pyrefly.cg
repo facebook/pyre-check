@@ -1,0 +1,42 @@
+@generated
+Call dependencies
+{
+  "overmatching.issue_source_on_0_and_star_to_sink_on_0 (fun)": [
+    "builtins.dict.__setitem__ (method)", "overmatching.sink_on_0 (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "overmatching.issue_source_on_0_and_star_to_sink_on_0_and_star (fun)": [
+    "builtins.dict.__setitem__ (method)",
+    "overmatching.sink_on_0_and_star (fun)", "pysa._test_source (fun)"
+  ],
+  "overmatching.issue_source_on_0_to_sink_on_0 (fun)": [
+    "builtins.dict.__setitem__ (method)", "overmatching.sink_on_0 (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "overmatching.issue_source_on_0_to_sink_on_0_and_star (fun)": [
+    "builtins.dict.__setitem__ (method)",
+    "overmatching.sink_on_0_and_star (fun)", "pysa._test_source (fun)"
+  ],
+  "overmatching.issue_source_on_1_to_sink_on_0_and_star (fun)": [
+    "builtins.dict.__setitem__ (method)",
+    "overmatching.sink_on_0_and_star (fun)", "pysa._test_source (fun)"
+  ],
+  "overmatching.issue_source_on_star_to_sink_on_0 (fun)": [
+    "builtins.dict.__setitem__ (method)", "overmatching.sink_on_0 (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "overmatching.issue_source_on_star_to_sink_on_0_and_star (fun)": [
+    "builtins.dict.__setitem__ (method)",
+    "overmatching.sink_on_0_and_star (fun)", "pysa._test_source (fun)"
+  ],
+  "overmatching.no_issue_source_on_1_to_sink_on_0 (fun)": [
+    "builtins.dict.__setitem__ (method)", "overmatching.sink_on_0 (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "overmatching.sink_on_0 (fun)": [
+    "builtins.dict.__getitem__ (method)", "pysa._test_sink (fun)"
+  ],
+  "overmatching.sink_on_0_and_star (fun)": [
+    "builtins.dict.__getitem__ (method)", "pysa._test_sink (fun)"
+  ]
+}

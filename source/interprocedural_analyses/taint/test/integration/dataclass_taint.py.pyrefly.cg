@@ -1,0 +1,65 @@
+@generated
+Call dependencies
+{
+  "dataclass_taint.$toplevel (fun)": [ "dataclasses.dataclass (fun)" ],
+  "dataclass_taint.DataClassWIthInit.__init__ (method)": [
+    "pysa._test_sink (fun)"
+  ],
+  "dataclass_taint.WeirdDataClass.__init__ (method)": [
+    "builtins.object.__setattr__ (method)"
+  ],
+  "dataclass_taint.bad_is_tainted (fun)": [
+    "builtins.object.__new__ (method)",
+    "dataclass_taint.DataClass.__init__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "dataclass_taint.benign_is_untainted (fun)": [
+    "builtins.object.__new__ (method)",
+    "dataclass_taint.DataClass.__init__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "dataclass_taint.issue_in_dataclass_constructor (fun)": [
+    "builtins.object.__new__ (method)",
+    "dataclass_taint.DataClassWIthInit.__init__ (method)",
+    "pysa._test_source (fun)"
+  ],
+  "dataclass_taint.issue_with_weird_dataclass (fun)": [
+    "builtins.object.__new__ (method)",
+    "dataclass_taint.WeirdDataClass.__init__ (method)",
+    "pysa._test_sink (fun)"
+  ],
+  "dataclass_taint.test_class_attr_model_tainted_directly (fun)": [
+    "builtins.object.__new__ (method)",
+    "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__ (method)",
+    "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad (object)",
+    "pysa._test_source (fun)"
+  ],
+  "dataclass_taint.test_class_attr_model_tainted_in_constructor (fun)": [
+    "builtins.object.__new__ (method)",
+    "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__ (method)",
+    "pysa._test_source (fun)"
+  ],
+  "dataclass_taint.test_constructor_tito (fun)": [
+    "builtins.object.__new__ (method)",
+    "dataclass_taint.DataClass.__init__ (method)"
+  ],
+  "dataclass_taint.test_dataclass_parameter_path (fun)": [
+    "pysa._test_sink (fun)"
+  ],
+  "dataclass_taint.test_dataclass_positional_parameter (fun)": [
+    "builtins.object.__new__ (method)",
+    "dataclass_taint.DataClass.__init__ (method)", "pysa._test_sink (fun)"
+  ],
+  "dataclass_taint.test_dataclass_with_other_source (fun)": [
+    "dataclass_taint.DataClassWithOtherSource.tainted (object)",
+    "pysa._test_sink (fun)"
+  ],
+  "dataclass_taint.test_dataclass_with_source (fun)": [
+    "dataclass_taint.DataClassWithSource.tainted (object)",
+    "pysa._test_sink (fun)"
+  ],
+  "dataclass_taint.test_weird_dataclass_taint (fun)": [
+    "builtins.object.__new__ (method)",
+    "dataclass_taint.WeirdDataClass.__init__ (method)"
+  ]
+}

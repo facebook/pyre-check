@@ -1,0 +1,8 @@
+@generated
+Overrides
+builtins.object.__init__ (override) -> [builtins.object.__init__ (method) partial.MyClass.__init__ (override) partial.NestedDefineConstructor.__init__ (override) partial.NestedDefineDecorator.__init__ (override) partial.PartialConstructor.__init__ (override) partial.PartialDecorator.__init__ (override)]
+partial.MyClass.__init__ (override) -> [partial.MyClass.__init__ (method)]
+partial.NestedDefineConstructor.__init__ (override) -> [partial.NestedDefineConstructor.__init__ (method)]
+partial.NestedDefineDecorator.__init__ (override) -> [partial.NestedDefineDecorator.__init__ (method)]
+partial.PartialConstructor.__init__ (override) -> [partial.PartialConstructor.__init__ (method)]
+partial.PartialDecorator.__init__ (override) -> [partial.PartialDecorator.__init__ (method)]

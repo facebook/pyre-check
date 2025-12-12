@@ -1,0 +1,49 @@
+@generated
+Higher order call graphs
+{
+  "callable": "function_class.test",
+  "returned_callables": [],
+  "calls": {
+    "15:4-15:7": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "function_class.test.A.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "function_class.test.A"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "function_class.test.A.__init__",
+  "returned_callables": [],
+  "calls": {
+    "12:19-12:45": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "12:30-12:44": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,1245 @@
+@generated
+Higher order call graphs
+{
+  "callable": "lambda.lambda_sink",
+  "returned_callables": [],
+  "calls": {
+    "68:4-68:41": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.list.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "68:9-68:40": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.map.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "unresolved": [ "LambdaArgument" ],
+            "parameter_index": 0,
+            "calls": []
+          }
+        ]
+      }
+    },
+    "68:23-68:36": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "lambda.lambda_source",
+  "returned_callables": [],
+  "calls": {
+    "59:11-59:52": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.list.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "59:16-59:51": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.map.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "unresolved": [ "LambdaArgument" ],
+            "parameter_index": 0,
+            "calls": []
+          }
+        ]
+      }
+    },
+    "59:30-59:34|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "59:36-59:50": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "lambda.test_filter_lambda",
+  "returned_callables": [],
+  "calls": {
+    "40:15-40:63": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.list.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "40:20-40:62": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.filter.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "unresolved": [ "LambdaArgument" ],
+            "parameter_index": 0,
+            "calls": []
+          }
+        ]
+      }
+    },
+    "40:37-40:43|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.int.__ne__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.int"
+          }
+        ]
+      }
+    },
+    "40:46-40:60": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "41:4-41:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "41:15-41:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "42:4-42:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "42:15-42:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "44:15-44:69": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.list.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "44:20-44:68": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.filter.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "unresolved": [ "LambdaArgument" ],
+            "parameter_index": 0,
+            "calls": []
+          }
+        ]
+      }
+    },
+    "44:37-44:43|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.int.__ne__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.int"
+          }
+        ]
+      }
+    },
+    "44:49-44:63": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "45:4-45:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "45:15-45:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "46:4-46:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 3, "return_type": [] }
+        ]
+      }
+    },
+    "46:15-46:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "47:4-47:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 4, "return_type": [] }
+        ]
+      }
+    },
+    "47:15-47:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 4,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "49:15-49:83": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 2,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.list.__init__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "49:20-49:82": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.filter.__new__",
+            "index": 2,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "unresolved": [ "LambdaArgument" ],
+            "parameter_index": 0,
+            "calls": []
+          }
+        ]
+      }
+    },
+    "49:37-49:43|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "49:52-49:66": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "50:4-50:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 5, "return_type": [] }
+        ]
+      }
+    },
+    "50:15-50:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 5,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "51:4-51:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 6, "return_type": [] }
+        ]
+      }
+    },
+    "51:15-51:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 6,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "51:15-51:31|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "52:4-52:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 7, "return_type": [] }
+        ]
+      }
+    },
+    "52:15-52:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 7,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "52:15-52:31|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "55:15-55:70": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 3,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.list.__init__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "55:20-55:69": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.filter.__new__",
+            "index": 3,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "unresolved": [ "LambdaArgument" ],
+            "parameter_index": 0,
+            "calls": []
+          }
+        ]
+      }
+    },
+    "55:37-55:50": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 8, "return_type": [] }
+        ]
+      }
+    },
+    "55:53-55:67": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 3, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "lambda.test_lambda_sink",
+  "returned_callables": [],
+  "calls": {
+    "72:4-72:31": {
+      "call": {
+        "calls": [
+          { "target": "lambda.lambda_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "72:16-72:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "lambda.test_lambda_source",
+  "returned_callables": [],
+  "calls": {
+    "63:4-63:31": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "63:15-63:30": {
+      "call": {
+        "calls": [
+          { "target": "lambda.lambda_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "lambda.test_map_lambda",
+  "returned_callables": [],
+  "calls": {
+    "12:15-12:55": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.list.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "12:20-12:54": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.map.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "unresolved": [ "LambdaArgument" ],
+            "parameter_index": 0,
+            "calls": []
+          }
+        ]
+      }
+    },
+    "12:38-12:52": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "13:4-13:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "13:15-13:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "14:4-14:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "14:15-14:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "16:15-16:61": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.list.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "16:20-16:60": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.map.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "unresolved": [ "LambdaArgument" ],
+            "parameter_index": 0,
+            "calls": []
+          }
+        ]
+      }
+    },
+    "16:41-16:55": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "17:4-17:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "17:15-17:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "18:4-18:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 3, "return_type": [] }
+        ]
+      }
+    },
+    "18:15-18:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "19:4-19:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 4, "return_type": [] }
+        ]
+      }
+    },
+    "19:15-19:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 4,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "21:15-21:75": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 2,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.list.__init__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "21:20-21:74": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.map.__new__",
+            "index": 2,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "unresolved": [ "LambdaArgument" ],
+            "parameter_index": 0,
+            "calls": []
+          }
+        ]
+      }
+    },
+    "21:58-21:72": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "22:4-22:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 5, "return_type": [] }
+        ]
+      }
+    },
+    "22:15-22:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 5,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "23:4-23:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 6, "return_type": [] }
+        ]
+      }
+    },
+    "23:15-23:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 6,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "23:15-23:31|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "24:4-24:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 7, "return_type": [] }
+        ]
+      }
+    },
+    "24:15-24:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 7,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "24:15-24:31|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "26:15-26:80": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 3,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.list.__init__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "26:20-26:79": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.map.__new__",
+            "index": 3,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "unresolved": [ "LambdaArgument" ],
+            "parameter_index": 0,
+            "calls": []
+          }
+        ]
+      }
+    },
+    "26:34-26:40|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "26:49-26:63": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 3, "return_type": [] }
+        ]
+      }
+    },
+    "27:4-27:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 8, "return_type": [] }
+        ]
+      }
+    },
+    "27:15-27:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 8,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "29:15-29:80": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 4,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.list.__init__",
+            "index": 4,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "29:20-29:79": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.map.__new__",
+            "index": 4,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 4,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "unresolved": [ "LambdaArgument" ],
+            "parameter_index": 0,
+            "calls": []
+          }
+        ]
+      }
+    },
+    "29:34-29:40|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "29:49-29:63": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 4, "return_type": [] }
+        ]
+      }
+    },
+    "30:4-30:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 9, "return_type": [] }
+        ]
+      }
+    },
+    "30:15-30:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 9,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "32:15-32:60": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 5,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.list.__init__",
+            "index": 5,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "32:20-32:59": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.map.__new__",
+            "index": 5,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 5,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "unresolved": [ "LambdaArgument" ],
+            "parameter_index": 0,
+            "calls": []
+          }
+        ]
+      }
+    },
+    "32:34-32:48": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 5, "return_type": [] }
+        ]
+      }
+    },
+    "33:4-33:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 10, "return_type": [] }
+        ]
+      }
+    },
+    "33:15-33:26|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__getitem__",
+            "index": 10,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "36:15-36:67": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 6,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.list.__init__",
+            "index": 6,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "36:20-36:66": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.map.__new__",
+            "index": 6,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 6,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "unresolved": [ "LambdaArgument" ],
+            "parameter_index": 0,
+            "calls": []
+          }
+        ]
+      }
+    },
+    "36:34-36:47": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 11, "return_type": [] }
+        ]
+      }
+    },
+    "36:50-36:64": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 6, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,220 @@
+@generated
+Higher order call graphs
+{
+  "callable": "attach_features.attach_to_parameter_source",
+  "returned_callables": [],
+  "calls": {
+    "87:4-87:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attach_features.attach_to_returned_sink",
+  "returned_callables": [],
+  "calls": {
+    "63:8-63:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attach_features.attach_to_returned_with_captures",
+  "returned_callables": [],
+  "calls": {
+    "78:4-81:16": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "attach_features.attach_to_returned_with_captures.nested",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    },
+    "83:11-83:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "attach_features.attach_to_returned_with_captures.nested",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attach_features.attach_to_returned_with_captures.nested",
+  "returned_callables": [],
+  "calls": {
+    "80:12-80:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attach_features.inferred_is_propagated",
+  "returned_callables": [],
+  "calls": {
+    "19:11-19:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "attach_features.source_with_inferred",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attach_features.inferred_sink",
+  "returned_callables": [],
+  "calls": {
+    "23:4-23:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "24:4-24:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "25:4-25:37": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 2, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attach_features.modeled_sink_with_optionals",
+  "returned_callables": [],
+  "calls": {
+    "54:4-54:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attach_features.no_tito",
+  "returned_callables": [],
+  "calls": {
+    "50:11-50:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "attach_features.attach_without_tito",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attach_features.sink_is_propagated",
+  "returned_callables": [],
+  "calls": {
+    "29:4-29:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "attach_features.inferred_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attach_features.source_with_inferred",
+  "returned_callables": [],
+  "calls": {
+    "14:8-14:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "attach_features.source",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attach_features.tito_and_sink",
+  "returned_callables": [],
+  "calls": {
+    "37:4-37:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attach_features.tito_is_propagated",
+  "returned_callables": [],
+  "calls": {
+    "42:11-42:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "attach_features.taint_in_taint_out",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attach_features.HasMethods.method_with_optionals",
+  "returned_callables": [],
+  "calls": {
+    "59:8-59:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

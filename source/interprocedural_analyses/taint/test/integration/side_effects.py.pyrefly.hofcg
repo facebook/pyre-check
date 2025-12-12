@@ -1,0 +1,282 @@
+@generated
+Higher order call graphs
+{
+  "callable": "side_effects.dict_to_sink_via_side_effect",
+  "returned_callables": [],
+  "calls": {
+    "67:4-67:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "side_effects.change_arg0",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "67:16-67:24|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "68:4-68:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "side_effects.test_from_0_to_1",
+  "returned_callables": [],
+  "calls": {
+    "29:4-29:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "side_effects.change_arg1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "29:16-29:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "side_effects.test_from_1_to_0",
+  "returned_callables": [],
+  "calls": {
+    "23:4-23:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "side_effects.change_arg0",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "23:19-23:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "side_effects.test_from_1_to_0_nested",
+  "returned_callables": [],
+  "calls": {
+    "34:8-34:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "side_effects.Object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "side_effects.Object"
+          }
+        ]
+      }
+    },
+    "35:4-35:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "side_effects.change_arg0",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "35:23-35:37": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "side_effects.test_from_1_to_0_nested_distinct",
+  "returned_callables": [],
+  "calls": {
+    "40:8-40:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "side_effects.Object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "side_effects.Object"
+          }
+        ]
+      }
+    },
+    "41:4-41:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "side_effects.change_arg0",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "41:23-41:37": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "side_effects.test_list_append",
+  "returned_callables": [],
+  "calls": {
+    "46:8-46:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "side_effects.MyList"
+          }
+        ]
+      }
+    },
+    "47:4-47:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "side_effects.MyList.append",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "side_effects.MyList"
+          }
+        ]
+      }
+    },
+    "47:13-47:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "side_effects.to_sink_via_side_effect",
+  "returned_callables": [],
+  "calls": {
+    "61:4-61:21": {
+      "call": {
+        "calls": [
+          {
+            "target": "side_effects.change_arg0",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "62:4-62:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "side_effects.wrapper_from_0_to_1",
+  "returned_callables": [],
+  "calls": {
+    "56:4-56:21": {
+      "call": {
+        "calls": [
+          {
+            "target": "side_effects.change_arg1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "side_effects.wrapper_from_1_to_0",
+  "returned_callables": [],
+  "calls": {
+    "52:4-52:21": {
+      "call": {
+        "calls": [
+          {
+            "target": "side_effects.change_arg0",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}

@@ -5,7 +5,7 @@
     "callable": "private_variables.test_bypass_private",
     "callable_line": 69,
     "code": 5002,
-    "line": 70,
+    "line": 71,
     "start": 15,
     "end": 60,
     "filename": "private_variables.py",
@@ -29,8 +29,8 @@
               { "first-field": "_Simple__value" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 70, "start": 30, "end": 44 } ],
-            "origin": { "line": 70, "start": 30, "end": 44 }
+            "tito_positions": [ { "line": 71, "start": 30, "end": 44 } ],
+            "origin": { "line": 71, "start": 30, "end": 44 }
           }
         ]
       },
@@ -47,8 +47,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 70, "start": 15, "end": 60 },
-            "call_site": "70:4-70:61"
+            "origin": { "line": 71, "start": 15, "end": 60 },
+            "call_site": "71:4-71:61"
           }
         ]
       }
@@ -600,9 +600,9 @@
   "kind": "issue",
   "data": {
     "callable": "private_variables.test_private_attribute_sink_models",
-    "callable_line": 132,
+    "callable_line": 134,
     "code": 5002,
-    "line": 134,
+    "line": 136,
     "start": 51,
     "end": 65,
     "filename": "private_variables.py",
@@ -621,7 +621,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 134, "start": 51, "end": 65 }
+            "origin": { "line": 136, "start": 51, "end": 65 }
           }
         ]
       },
@@ -642,12 +642,12 @@
               }
             ],
             "call": {
-              "position": { "line": 134, "start": 51, "end": 65 },
+              "position": { "line": 136, "start": 51, "end": 65 },
               "resolves_to": [
                 "private_variables.PrivateAttributeSinkModels.set_model_mangled"
               ],
               "port": "formal(value, position=1)",
-              "call_site": "134:4-134:66"
+              "call_site": "136:4-136:66"
             },
             "receiver_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
@@ -669,9 +669,9 @@
   "kind": "issue",
   "data": {
     "callable": "private_variables.test_private_attribute_sink_models",
-    "callable_line": 132,
+    "callable_line": 134,
     "code": 5002,
-    "line": 138,
+    "line": 140,
     "start": 49,
     "end": 63,
     "filename": "private_variables.py",
@@ -690,7 +690,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 138, "start": 49, "end": 63 }
+            "origin": { "line": 140, "start": 49, "end": 63 }
           }
         ]
       },
@@ -711,12 +711,12 @@
               }
             ],
             "call": {
-              "position": { "line": 138, "start": 49, "end": 63 },
+              "position": { "line": 140, "start": 49, "end": 63 },
               "resolves_to": [
                 "private_variables.PrivateAttributeSinkModels.set_model_query"
               ],
               "port": "formal(value, position=1)",
-              "call_site": "138:4-138:64"
+              "call_site": "140:4-140:64"
             },
             "receiver_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
@@ -738,9 +738,9 @@
   "kind": "issue",
   "data": {
     "callable": "private_variables.test_private_attribute_sink_models",
-    "callable_line": 132,
+    "callable_line": 134,
     "code": 5002,
-    "line": 136,
+    "line": 138,
     "start": 53,
     "end": 67,
     "filename": "private_variables.py",
@@ -759,7 +759,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 136, "start": 53, "end": 67 }
+            "origin": { "line": 138, "start": 53, "end": 67 }
           }
         ]
       },
@@ -780,12 +780,12 @@
               }
             ],
             "call": {
-              "position": { "line": 136, "start": 53, "end": 67 },
+              "position": { "line": 138, "start": 53, "end": 67 },
               "resolves_to": [
                 "private_variables.PrivateAttributeSinkModels.set_model_unmangled"
               ],
               "port": "formal(value, position=1)",
-              "call_site": "136:4-136:68"
+              "call_site": "138:4-138:68"
             },
             "receiver_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
@@ -807,9 +807,9 @@
   "kind": "issue",
   "data": {
     "callable": "private_variables.test_private_attribute_source_models",
-    "callable_line": 106,
+    "callable_line": 108,
     "code": 5002,
-    "line": 108,
+    "line": 110,
     "start": 15,
     "end": 65,
     "filename": "private_variables.py",
@@ -832,7 +832,7 @@
               }
             ],
             "call": {
-              "position": { "line": 108, "start": 15, "end": 65 },
+              "position": { "line": 110, "start": 15, "end": 65 },
               "resolves_to": [
                 "private_variables.PrivateAttributeSourceModels.get_model_mangled"
               ],
@@ -856,8 +856,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 108, "start": 15, "end": 65 },
-            "call_site": "108:4-108:66"
+            "origin": { "line": 110, "start": 15, "end": 65 },
+            "call_site": "110:4-110:66"
           }
         ]
       }
@@ -876,9 +876,9 @@
   "kind": "issue",
   "data": {
     "callable": "private_variables.test_private_attribute_source_models",
-    "callable_line": 106,
+    "callable_line": 108,
     "code": 5002,
-    "line": 110,
+    "line": 112,
     "start": 15,
     "end": 67,
     "filename": "private_variables.py",
@@ -901,7 +901,7 @@
               }
             ],
             "call": {
-              "position": { "line": 110, "start": 15, "end": 67 },
+              "position": { "line": 112, "start": 15, "end": 67 },
               "resolves_to": [
                 "private_variables.PrivateAttributeSourceModels.get_model_unmangled"
               ],
@@ -925,8 +925,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 110, "start": 15, "end": 67 },
-            "call_site": "110:4-110:68"
+            "origin": { "line": 112, "start": 15, "end": 67 },
+            "call_site": "112:4-112:68"
           }
         ]
       }
@@ -945,9 +945,9 @@
   "kind": "issue",
   "data": {
     "callable": "private_variables.test_private_attribute_source_models",
-    "callable_line": 106,
+    "callable_line": 108,
     "code": 5002,
-    "line": 112,
+    "line": 114,
     "start": 15,
     "end": 63,
     "filename": "private_variables.py",
@@ -970,7 +970,7 @@
               }
             ],
             "call": {
-              "position": { "line": 112, "start": 15, "end": 63 },
+              "position": { "line": 114, "start": 15, "end": 63 },
               "resolves_to": [
                 "private_variables.PrivateAttributeSourceModels.get_model_query"
               ],
@@ -994,8 +994,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 112, "start": 15, "end": 63 },
-            "call_site": "112:4-112:64"
+            "origin": { "line": 114, "start": 15, "end": 63 },
+            "call_site": "114:4-114:64"
           }
         ]
       }
@@ -1278,7 +1278,7 @@
   "data": {
     "callable": "private_variables.Other.private_into_sink",
     "filename": "private_variables.py",
-    "callable_line": 79,
+    "callable_line": 81,
     "sinks": [
       {
         "port": "formal(s, position=0)[_Other__value]",
@@ -1293,8 +1293,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 82, "start": 19, "end": 28 },
-            "call_site": "82:8-82:29"
+            "origin": { "line": 84, "start": 19, "end": 28 },
+            "call_site": "84:8-84:29"
           }
         ]
       }
@@ -1306,7 +1306,7 @@
   "data": {
     "callable": "private_variables.PrivateAttributeSinkModels.set_model_mangled",
     "filename": "private_variables.py",
-    "callable_line": 122,
+    "callable_line": 124,
     "sinks": [
       {
         "port": "formal(value, position=1)",
@@ -1323,7 +1323,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 123, "start": 8, "end": 28 },
+            "origin": { "line": 125, "start": 8, "end": 28 },
             "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
           }
@@ -1355,7 +1355,7 @@
   "data": {
     "callable": "private_variables.PrivateAttributeSinkModels.set_model_query",
     "filename": "private_variables.py",
-    "callable_line": 128,
+    "callable_line": 130,
     "sinks": [
       {
         "port": "formal(value, position=1)",
@@ -1372,7 +1372,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 129, "start": 8, "end": 26 },
+            "origin": { "line": 131, "start": 8, "end": 26 },
             "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
           }
@@ -1404,7 +1404,7 @@
   "data": {
     "callable": "private_variables.PrivateAttributeSinkModels.set_model_unmangled",
     "filename": "private_variables.py",
-    "callable_line": 125,
+    "callable_line": 127,
     "sinks": [
       {
         "port": "formal(value, position=1)",
@@ -1421,7 +1421,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 126, "start": 8, "end": 30 },
+            "origin": { "line": 128, "start": 8, "end": 30 },
             "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
           }
@@ -1453,7 +1453,7 @@
   "data": {
     "callable": "private_variables.PrivateAttributeSourceModels.get_model_mangled",
     "filename": "private_variables.py",
-    "callable_line": 96,
+    "callable_line": 98,
     "sources": [
       {
         "port": "result",
@@ -1470,7 +1470,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 97, "start": 15, "end": 35 },
+            "origin": { "line": 99, "start": 15, "end": 35 },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false
           }
@@ -1495,7 +1495,7 @@
   "data": {
     "callable": "private_variables.PrivateAttributeSourceModels.get_model_query",
     "filename": "private_variables.py",
-    "callable_line": 102,
+    "callable_line": 104,
     "sources": [
       {
         "port": "result",
@@ -1512,7 +1512,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 103, "start": 15, "end": 33 },
+            "origin": { "line": 105, "start": 15, "end": 33 },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false
           }
@@ -1537,7 +1537,7 @@
   "data": {
     "callable": "private_variables.PrivateAttributeSourceModels.get_model_unmangled",
     "filename": "private_variables.py",
-    "callable_line": 99,
+    "callable_line": 101,
     "sources": [
       {
         "port": "result",
@@ -1554,7 +1554,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 100, "start": 15, "end": 37 },
+            "origin": { "line": 102, "start": 15, "end": 37 },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false
           }

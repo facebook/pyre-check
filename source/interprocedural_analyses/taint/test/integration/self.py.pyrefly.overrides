@@ -1,0 +1,4 @@
+@generated
+Overrides
+builtins.object.__init__ (override) -> [builtins.object.__init__ (method) self.Foo.__init__ (override)]
+self.Foo.__init__ (override) -> [self.Foo.__init__ (method)]

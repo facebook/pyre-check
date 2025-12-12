@@ -1,0 +1,3877 @@
+@generated
+Higher order call graphs
+{
+  "callable": "sanitize.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "11:4-11:16": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
+  }
+}
+{
+  "callable": "sanitize.combine_sanitize_a_sink_b_sink_in_source_trace",
+  "returned_callables": [],
+  "calls": {
+    "273:8-273:56": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_a_sink_in_source_trace",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "274:8-274:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_b_sink_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.combine_sanitize_a_source_a_sink_tito",
+  "returned_callables": [],
+  "calls": {
+    "246:8-246:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_a_source_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "247:8-247:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_a_sink_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.combine_sanitize_a_source_b_source_in_sink_trace",
+  "returned_callables": [],
+  "calls": {
+    "227:8-227:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_b_source_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "228:4-228:53": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_a_source_in_sink_trace",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.issue_propagation_of_sanitize_all_parameters_no_user_controlled",
+  "returned_callables": [],
+  "calls": {
+    "794:8-794:18": {
+      "call": {
+        "calls": [
+          { "target": "pysa._cookies", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "795:4-795:64": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_all_parameters_no_user_controlled",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.issue_propagation_of_sanitize_parameter_no_sql_tito_in_source_trace",
+  "returned_callables": [],
+  "calls": {
+    "683:8-683:71": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_parameter_no_sql_tito_in_source_trace",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "684:4-684:11": {
+      "call": {
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.issue_propagation_of_sanitize_parameter_no_user_controlled",
+  "returned_callables": [],
+  "calls": {
+    "591:8-591:18": {
+      "call": {
+        "calls": [
+          { "target": "pysa._cookies", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "592:4-592:62": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_parameter_no_user_controlled",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.issue_propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace",
+  "returned_callables": [],
+  "calls": {
+    "647:8-647:18": {
+      "call": {
+        "calls": [
+          { "target": "pysa._cookies", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "648:4-648:78": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.issue_propagation_of_sanitize_return_no_rce",
+  "returned_callables": [],
+  "calls": {
+    "759:8-759:47": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_return_no_rce",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "760:4-760:11": {
+      "call": {
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.issue_propagation_of_sanitize_return_no_sql_in_source_trace",
+  "returned_callables": [],
+  "calls": {
+    "725:8-725:63": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_return_no_sql_in_source_trace",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "726:4-726:11": {
+      "call": {
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.issue_sanitize_a_sink_attribute_in_source_trace",
+  "returned_callables": [],
+  "calls": {
+    "465:8-465:51": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_a_sink_attribute_in_source_trace",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "466:4-466:13": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.issue_sanitize_test_a_source_attribute_in_sink_trace",
+  "returned_callables": [],
+  "calls": {
+    "370:8-370:18": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "371:4-371:53": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_test_a_source_attribute_in_sink_trace",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_issue_fixpoint_sanitize",
+  "returned_callables": [],
+  "calls": {
+    "323:8-323:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.no_issue_fixpoint_sanitize_sources",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "324:4-324:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.no_issue_fixpoint_sanitize_sinks",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_issue_fixpoint_sanitize_sinks",
+  "returned_callables": [],
+  "calls": {
+    "312:7-312:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "313:8-313:17": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "315:12-315:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_a_source_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "316:8-316:17": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_issue_fixpoint_sanitize_sources",
+  "returned_callables": [],
+  "calls": {
+    "302:7-302:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "303:12-303:22": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "304:15-304:38": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "306:12-306:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "307:12-307:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_a_sink_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "308:15-308:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_b_sink_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_issue_propagation_of_sanitize_a_sink_in_source_trace",
+  "returned_callables": [],
+  "calls": {
+    "264:8-264:56": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_a_sink_in_source_trace",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "265:4-265:13": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.a_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_issue_propagation_of_sanitize_a_source_in_sink_trace",
+  "returned_callables": [],
+  "calls": {
+    "214:8-214:18": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.a_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "215:4-215:53": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_a_source_in_sink_trace",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_issue_propagation_of_sanitize_all_parameters_no_user_controlled",
+  "returned_callables": [],
+  "calls": {
+    "789:8-789:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "790:4-790:64": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_all_parameters_no_user_controlled",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_issue_propagation_of_sanitize_parameter_no_sql_tito_in_source_trace",
+  "returned_callables": [],
+  "calls": {
+    "678:8-678:71": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_parameter_no_sql_tito_in_source_trace",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "679:4-679:11": {
+      "call": {
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_issue_propagation_of_sanitize_parameter_no_user_controlled",
+  "returned_callables": [],
+  "calls": {
+    "586:8-586:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "587:4-587:62": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_parameter_no_user_controlled",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_issue_propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace",
+  "returned_callables": [],
+  "calls": {
+    "642:8-642:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "643:4-643:78": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_issue_propagation_of_sanitize_return_no_rce",
+  "returned_callables": [],
+  "calls": {
+    "754:8-754:47": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_return_no_rce",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "755:4-755:11": {
+      "call": {
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_issue_propagation_of_sanitize_return_no_sql_in_source_trace",
+  "returned_callables": [],
+  "calls": {
+    "720:8-720:63": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_return_no_sql_in_source_trace",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "721:4-721:11": {
+      "call": {
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_issue_propagation_of_sanitize_sql_tito_in_source_trace",
+  "returned_callables": [],
+  "calls": {
+    "858:8-858:58": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_sql_tito_in_source_trace",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "859:4-859:11": {
+      "call": {
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_issue_sanitize_a_sink_attribute_in_source_trace",
+  "returned_callables": [],
+  "calls": {
+    "460:8-460:51": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_a_sink_attribute_in_source_trace",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "461:4-461:13": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.a_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_issue_sanitize_test_a_source_attribute_in_sink_trace",
+  "returned_callables": [],
+  "calls": {
+    "365:8-365:18": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.a_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "366:4-366:53": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_test_a_source_attribute_in_sink_trace",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_issue_through_combine_sanitize_a_source_a_sink_tito",
+  "returned_callables": [],
+  "calls": {
+    "252:8-252:18": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.a_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "253:8-253:48": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.combine_sanitize_a_source_a_sink_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "254:4-254:13": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.a_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_issue_through_propagation_of_sanitize_a_source_tito",
+  "returned_callables": [],
+  "calls": {
+    "203:8-203:18": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.a_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "204:8-204:48": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_a_source_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "205:4-205:13": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.a_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_propagation_of_a_sink",
+  "returned_callables": [],
+  "calls": {
+    "236:8-236:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_a_sink_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "237:4-237:13": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.a_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_propagation_of_cookies_with_sanitize_all_parameters_no_cookies_sql_tito",
+  "returned_callables": [],
+  "calls": {
+    "867:8-867:18": {
+      "call": {
+        "calls": [
+          { "target": "pysa._cookies", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "868:8-868:54": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_all_parameters_no_cookies_sql_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_propagation_of_sql_with_sanitize_all_parameters_no_cookies_sql_tito",
+  "returned_callables": [],
+  "calls": {
+    "879:8-879:54": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_all_parameters_no_cookies_sql_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "880:4-880:11": {
+      "call": {
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_propagation_with_sanitize_a_source_tito",
+  "returned_callables": [],
+  "calls": {
+    "187:8-187:18": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.a_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "188:8-188:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_a_source_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_propagation_with_sanitize_all_parameters_no_sql_tito",
+  "returned_callables": [],
+  "calls": {
+    "842:8-842:46": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_all_parameters_no_sql_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "843:4-843:11": {
+      "call": {
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_propagation_with_sanitize_all_parameters_no_user_controlled_tito",
+  "returned_callables": [],
+  "calls": {
+    "821:8-821:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "822:8-822:58": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_all_parameters_no_user_controlled_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_propagation_with_sanitize_parameter_no_sql_tito",
+  "returned_callables": [],
+  "calls": {
+    "659:8-659:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_parameter_no_sql_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "660:4-660:11": {
+      "call": {
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.no_propagation_with_sanitize_parameter_no_user_controlled_tito",
+  "returned_callables": [],
+  "calls": {
+    "621:8-621:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "622:8-622:56": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_parameter_no_user_controlled_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.partial_issue_sanitize",
+  "returned_callables": [],
+  "calls": {
+    "346:8-346:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.partial_issue_sources",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "347:4-347:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.partial_issue_sinks",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.partial_issue_sinks",
+  "returned_callables": [],
+  "calls": {
+    "336:7-336:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "337:8-337:17": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "339:12-339:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_a_source_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "340:8-340:17": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.a_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.partial_issue_sources",
+  "returned_callables": [],
+  "calls": {
+    "328:7-328:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "329:12-329:22": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "330:15-330:38": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "332:15-332:25": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.a_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_b_sink",
+  "returned_callables": [],
+  "calls": {
+    "241:8-241:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_a_sink_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "242:4-242:13": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_b_with_sanitize_a_source_tito",
+  "returned_callables": [],
+  "calls": {
+    "193:8-193:18": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "194:11-194:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_a_source_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_cookies_with_sanitize_all_parameters_no_user_controlled_tito",
+  "returned_callables": [],
+  "calls": {
+    "827:8-827:18": {
+      "call": {
+        "calls": [
+          { "target": "pysa._cookies", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "828:11-828:61": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_all_parameters_no_user_controlled_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_cookies_with_sanitize_parameter_no_user_controlled_tito",
+  "returned_callables": [],
+  "calls": {
+    "627:8-627:18": {
+      "call": {
+        "calls": [
+          { "target": "pysa._cookies", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "628:11-628:59": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_parameter_no_user_controlled_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_rce_with_sanitize_all_parameters_no_cookies_sql_tito",
+  "returned_callables": [],
+  "calls": {
+    "884:8-884:54": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_all_parameters_no_cookies_sql_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "885:4-885:11": {
+      "call": {
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_rce_with_sanitize_all_parameters_no_sql_tito",
+  "returned_callables": [],
+  "calls": {
+    "847:8-847:46": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_all_parameters_no_sql_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "848:4-848:11": {
+      "call": {
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_rce_with_sanitize_parameter_no_sql_tito",
+  "returned_callables": [],
+  "calls": {
+    "664:8-664:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_parameter_no_sql_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "665:4-665:11": {
+      "call": {
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_sanitize_a_sink_in_source_trace",
+  "returned_callables": [],
+  "calls": {
+    "258:8-258:18": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.a_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "259:8-259:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_a_sink_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_sanitize_a_source_in_sink_trace",
+  "returned_callables": [],
+  "calls": {
+    "209:8-209:48": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_a_source_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "210:4-210:13": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.a_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_sanitize_a_source_tito",
+  "returned_callables": [],
+  "calls": {
+    "199:11-199:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_a_source_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_sanitize_all_parameters_no_user_controlled",
+  "returned_callables": [],
+  "calls": {
+    "785:4-785:49": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_all_parameters_no_user_controlled",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_sanitize_parameter_no_sql_tito",
+  "returned_callables": [],
+  "calls": {
+    "669:11-669:47": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_parameter_no_sql_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_sanitize_parameter_no_sql_tito_in_source_trace",
+  "returned_callables": [],
+  "calls": {
+    "673:8-673:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "674:11-674:62": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_parameter_no_sql_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_sanitize_parameter_no_user_controlled",
+  "returned_callables": [],
+  "calls": {
+    "582:4-582:47": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_parameter_no_user_controlled",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito",
+  "returned_callables": [],
+  "calls": {
+    "633:11-633:59": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_parameter_no_user_controlled_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace",
+  "returned_callables": [],
+  "calls": {
+    "637:8-637:71": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "638:4-638:11": {
+      "call": {
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_sanitize_return_no_rce",
+  "returned_callables": [],
+  "calls": {
+    "750:11-750:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_return_no_rce",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_sanitize_return_no_sql",
+  "returned_callables": [],
+  "calls": {
+    "710:11-710:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_return_no_sql",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_sanitize_return_no_sql_in_source_trace",
+  "returned_callables": [],
+  "calls": {
+    "714:8-714:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "715:8-715:48": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.propagation_of_sanitize_return_no_sql",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_sanitize_sql_tito_in_source_trace",
+  "returned_callables": [],
+  "calls": {
+    "852:8-852:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "853:8-853:46": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_all_parameters_no_sql_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_sanitize_user_controlled_tito_in_sink_trace",
+  "returned_callables": [],
+  "calls": {
+    "833:8-833:58": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_all_parameters_no_user_controlled_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "834:4-834:11": {
+      "call": {
+        "calls": [ { "target": "pysa._sql", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.propagation_of_user_controlled_with_sanitize_all_parameters_no_cookies_sql_tito",
+  "returned_callables": [],
+  "calls": {
+    "873:8-873:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "874:11-874:57": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_all_parameters_no_cookies_sql_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_a_and_b_sinks",
+  "returned_callables": [],
+  "calls": {
+    "176:7-176:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "177:8-177:17": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "179:8-179:17": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_a_and_b_source",
+  "returned_callables": [],
+  "calls": {
+    "146:7-146:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "147:12-147:22": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "149:12-149:22": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_a_sink",
+  "returned_callables": [],
+  "calls": {
+    "162:7-162:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "163:8-163:17": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "165:8-165:17": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_a_sink_attribute",
+  "returned_callables": [],
+  "calls": {
+    "447:7-447:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "448:8-448:27": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "450:8-450:27": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "450:15-450:26": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_a_sink.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_a_sink_attribute_in_source_trace",
+  "returned_callables": [],
+  "calls": {
+    "454:8-454:18": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.a_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "455:8-455:29": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "sanitize.C_sanitized_a_sink.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "sanitize.C_sanitized_a_sink"
+          }
+        ]
+      }
+    },
+    "456:11-456:22": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_a_sink.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_a_sink_instance",
+  "returned_callables": [],
+  "calls": {
+    "493:7-493:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "494:8-494:26": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "496:8-496:26": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "496:15-496:25": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_a_sink.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_a_source_tito_with_sink",
+  "returned_callables": [],
+  "calls": {
+    "279:4-279:13": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.a_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_ab_sinks_attribute",
+  "returned_callables": [],
+  "calls": {
+    "477:7-477:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "478:8-478:27": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "480:8-480:27": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "480:15-480:26": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_ab_sinks.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_ab_sinks_instance",
+  "returned_callables": [],
+  "calls": {
+    "507:7-507:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "508:8-508:26": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "510:8-510:26": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "510:15-510:25": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_ab_sinks.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_all_parameters",
+  "returned_callables": [],
+  "calls": {
+    "768:4-768:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "769:4-769:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "770:11-770:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.source_with_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "770:11-770:52|artificial-call|binary": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "770:33-770:52": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.source_with_tito",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_all_parameters_all_tito",
+  "returned_callables": [],
+  "calls": {
+    "774:4-774:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "775:4-775:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "776:11-776:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.source_with_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "776:11-776:52|artificial-call|binary": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "776:33-776:52": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.source_with_tito",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_all_parameters_no_rce",
+  "returned_callables": [],
+  "calls": {
+    "808:7-808:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "809:8-809:15": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "810:9-810:14|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "811:8-811:15": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_all_parameters_no_sql",
+  "returned_callables": [],
+  "calls": {
+    "799:7-799:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "800:8-800:15": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "801:9-801:14|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "802:8-802:15": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_all_parameters_no_user_controlled",
+  "returned_callables": [],
+  "calls": {
+    "780:4-780:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_all_sinks_attribute",
+  "returned_callables": [],
+  "calls": {
+    "484:7-484:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "485:8-485:27": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "486:9-486:14|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "487:8-487:27": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "489:8-489:31": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "489:19-489:30": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_all_sinks.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_all_sinks_instance",
+  "returned_callables": [],
+  "calls": {
+    "514:7-514:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "515:8-515:26": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "516:9-516:14|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "517:8-517:26": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "519:8-519:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "519:19-519:29": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_all_sinks.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_b_sink",
+  "returned_callables": [],
+  "calls": {
+    "169:7-169:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "170:8-170:17": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "172:8-172:17": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_b_sink_attribute",
+  "returned_callables": [],
+  "calls": {
+    "470:7-470:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "471:8-471:27": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "473:8-473:27": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "473:15-473:26": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_b_sink.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_b_sink_instance",
+  "returned_callables": [],
+  "calls": {
+    "500:7-500:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "501:8-501:26": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "503:8-503:26": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "503:15-503:25": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_b_sink.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_parameter",
+  "returned_callables": [],
+  "calls": {
+    "559:4-559:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "560:4-560:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "561:11-561:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.source_with_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "561:11-561:52|artificial-call|binary": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "561:33-561:52": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.source_with_tito",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_parameter_all_tito",
+  "returned_callables": [],
+  "calls": {
+    "565:4-565:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "566:4-566:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "567:11-567:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.source_with_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "567:11-567:52|artificial-call|binary": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "567:33-567:52": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.source_with_tito",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_parameter_no_rce",
+  "returned_callables": [],
+  "calls": {
+    "605:7-605:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "606:8-606:15": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "607:9-607:14|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "608:8-608:15": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_parameter_no_sql",
+  "returned_callables": [],
+  "calls": {
+    "596:7-596:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "597:8-597:15": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "598:9-598:14|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "599:8-599:15": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_parameter_no_sql_tito",
+  "returned_callables": [],
+  "calls": {
+    "652:7-652:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_parameter_no_user_controlled",
+  "returned_callables": [],
+  "calls": {
+    "571:7-571:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "573:9-573:14|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "575:9-575:14|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "576:8-576:15": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "578:8-578:15": {
+      "call": {
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_parameter_no_user_controlled_tito",
+  "returned_callables": [],
+  "calls": {
+    "614:7-614:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_return",
+  "returned_callables": [],
+  "calls": {
+    "692:4-692:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "693:11-693:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.source_with_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_return_no_cookies",
+  "returned_callables": [],
+  "calls": {
+    "730:7-730:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "731:12-731:30": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "733:12-733:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._cookies", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_return_no_rce",
+  "returned_callables": [],
+  "calls": {
+    "746:11-746:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_return_no_user_controlled",
+  "returned_callables": [],
+  "calls": {
+    "697:7-697:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "698:15-698:33": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "699:9-699:14|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "700:15-700:25": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_return_no_user_controlled_cookies",
+  "returned_callables": [],
+  "calls": {
+    "738:7-738:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "739:12-739:30": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "741:12-741:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._cookies", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_single_argument_tito",
+  "returned_callables": [],
+  "calls": {
+    "926:7-926:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_sinks",
+  "returned_callables": [],
+  "calls": {
+    "112:4-112:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "113:11-113:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.source_with_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_sources",
+  "returned_callables": [],
+  "calls": {
+    "107:4-107:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "108:11-108:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.source_with_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_a_sink_attribute",
+  "returned_callables": [],
+  "calls": {
+    "523:4-523:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_a_sink_attribute",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "523:30-523:44": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_a_sink_instance",
+  "returned_callables": [],
+  "calls": {
+    "541:4-541:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_a_sink_instance",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "541:29-541:43": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_a_source",
+  "returned_callables": [],
+  "calls": {
+    "130:7-130:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "131:12-131:22": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "133:12-133:22": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_a_source_attribute",
+  "returned_callables": [],
+  "calls": {
+    "351:7-351:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "352:12-352:22": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "354:12-354:22": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "355:8-355:31": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "sanitize.C_sanitized_a_source.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "sanitize.C_sanitized_a_source"
+          }
+        ]
+      }
+    },
+    "356:4-356:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "356:15-356:26": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_a_source.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_a_source_attribute_in_sink_trace",
+  "returned_callables": [],
+  "calls": {
+    "360:8-360:31": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "sanitize.C_sanitized_a_source.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "sanitize.C_sanitized_a_source"
+          }
+        ]
+      }
+    },
+    "361:4-361:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "361:15-361:26": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_a_source.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_a_source_attribute_in_tito",
+  "returned_callables": [],
+  "calls": {
+    "375:8-375:31": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "sanitize.C_sanitized_a_source.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "sanitize.C_sanitized_a_source"
+          }
+        ]
+      }
+    },
+    "376:11-376:22": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_a_source.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_a_source_instance",
+  "returned_callables": [],
+  "calls": {
+    "409:7-409:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "410:12-410:22": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "412:12-412:22": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "413:8-413:31": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "sanitize.C_sanitized_a_source.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "sanitize.C_sanitized_a_source"
+          }
+        ]
+      }
+    },
+    "414:4-414:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "414:15-414:25": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_a_source.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_ab_sinks_attribute",
+  "returned_callables": [],
+  "calls": {
+    "531:4-531:47": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_ab_sinks_attribute",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "531:32-531:46": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_ab_sinks_instance",
+  "returned_callables": [],
+  "calls": {
+    "549:4-549:46": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_ab_sinks_instance",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "549:31-549:45": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_ab_sources_attribute",
+  "returned_callables": [],
+  "calls": {
+    "389:7-389:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "390:12-390:22": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "392:12-392:22": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "393:8-393:33": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "sanitize.C_sanitized_ab_sources.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "sanitize.C_sanitized_ab_sources"
+          }
+        ]
+      }
+    },
+    "394:4-394:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "394:15-394:26": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_ab_sources.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_ab_sources_instance",
+  "returned_callables": [],
+  "calls": {
+    "427:7-427:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "428:12-428:22": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "430:12-430:22": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "431:8-431:33": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "sanitize.C_sanitized_ab_sources.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "sanitize.C_sanitized_ab_sources"
+          }
+        ]
+      }
+    },
+    "432:4-432:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "432:15-432:25": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_ab_sources.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_all_sinks_attribute",
+  "returned_callables": [],
+  "calls": {
+    "535:4-535:48": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_all_sinks_attribute",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "535:33-535:47": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "536:8-536:33": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "sanitize.C_sanitized_all_sinks.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "sanitize.C_sanitized_all_sinks"
+          }
+        ]
+      }
+    },
+    "537:4-537:15": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_all_sinks.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "537:18-537:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_all_sinks_instance",
+  "returned_callables": [],
+  "calls": {
+    "553:4-553:47": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_all_sinks_instance",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "553:32-553:46": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "554:8-554:33": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "sanitize.C_sanitized_all_sinks.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "sanitize.C_sanitized_all_sinks"
+          }
+        ]
+      }
+    },
+    "555:4-555:14": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_all_sinks.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "555:17-555:31": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_all_sources_attribute",
+  "returned_callables": [],
+  "calls": {
+    "398:7-398:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "399:12-399:22": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "400:9-400:14|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "401:12-401:22": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "403:12-403:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "404:8-404:34": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "sanitize.C_sanitized_all_sources.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "sanitize.C_sanitized_all_sources"
+          }
+        ]
+      }
+    },
+    "405:4-405:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "405:15-405:26": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_all_sources.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_all_sources_instance",
+  "returned_callables": [],
+  "calls": {
+    "436:7-436:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "437:12-437:22": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "438:9-438:14|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "439:12-439:22": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "441:12-441:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "442:8-442:34": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "sanitize.C_sanitized_all_sources.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "sanitize.C_sanitized_all_sources"
+          }
+        ]
+      }
+    },
+    "443:4-443:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "443:15-443:25": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_all_sources.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_b_sink_attribute",
+  "returned_callables": [],
+  "calls": {
+    "527:4-527:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_b_sink_attribute",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "527:30-527:44": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_b_sink_instance",
+  "returned_callables": [],
+  "calls": {
+    "545:4-545:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_b_sink_instance",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "545:29-545:43": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_b_source",
+  "returned_callables": [],
+  "calls": {
+    "138:7-138:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "139:12-139:22": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "141:12-141:22": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_b_source_attribute",
+  "returned_callables": [],
+  "calls": {
+    "380:7-380:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "381:12-381:22": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "383:12-383:22": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "384:8-384:31": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "sanitize.C_sanitized_b_source.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "sanitize.C_sanitized_b_source"
+          }
+        ]
+      }
+    },
+    "385:4-385:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "385:15-385:26": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_b_source.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_test_b_source_instance",
+  "returned_callables": [],
+  "calls": {
+    "418:7-418:12|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "419:12-419:22": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "421:12-421:22": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "422:8-422:31": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "sanitize.C_sanitized_b_source.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "sanitize.C_sanitized_b_source"
+          }
+        ]
+      }
+    },
+    "423:4-423:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "423:15-423:25": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_b_source.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sanitize_tito",
+  "returned_callables": [],
+  "calls": {
+    "117:4-117:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "118:11-118:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.source_with_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sink_taint_sanitize_a",
+  "returned_callables": [],
+  "calls": {
+    "896:10-896:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_a_source_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "897:4-897:13": {
+      "call": {
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sink_taint_sanitize_a_sanitize_b",
+  "returned_callables": [],
+  "calls": {
+    "901:10-901:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_b_source_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "902:4-902:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sink_taint_sanitize_a",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sink_taint_sanitize_a_sanitize_b_santize_test",
+  "returned_callables": [],
+  "calls": {
+    "906:10-906:40": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_test_source_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "907:4-907:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sink_taint_sanitize_a_sanitize_b",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sink_taint_sanitize_b",
+  "returned_callables": [],
+  "calls": {
+    "911:10-911:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_b_source_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "912:4-912:13": {
+      "call": {
+        "calls": [ { "target": "pysa._rce", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sink_taint_sanitize_b_sanitize_a",
+  "returned_callables": [],
+  "calls": {
+    "916:10-916:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_a_source_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "917:4-917:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sink_taint_sanitize_b",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.sink_taint_sanitize_b_sanitize_a_santize_test",
+  "returned_callables": [],
+  "calls": {
+    "921:10-921:40": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_test_source_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "922:4-922:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sink_taint_sanitize_b_sanitize_a",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.test1",
+  "returned_callables": [],
+  "calls": {
+    "86:14-86:22": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "Overrides{builtins.object.__init__}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.object"
+          }
+        ]
+      }
+    },
+    "87:17-87:31": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "88:4-88:18": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.test2", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "89:4-89:18": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.test3", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.test2",
+  "returned_callables": [],
+  "calls": {
+    "93:14-93:50": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.return_taint_sanitize",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "94:4-94:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.test3",
+  "returned_callables": [],
+  "calls": {
+    "98:21-98:58": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.return_taint_sanitize",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "99:4-99:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.test4",
+  "returned_callables": [],
+  "calls": {
+    "292:8-292:18": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.a_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "293:8-293:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_a_source_tito_with_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "294:4-294:13": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.a_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.C_sanitized_a_sink.__init__",
+  "returned_callables": [],
+  "calls": {
+    "50:8-50:21": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_a_sink.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "51:8-51:22": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_a_sink.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.C_sanitized_a_source.__init__",
+  "returned_callables": [],
+  "calls": {
+    "18:8-18:21": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_a_source.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "19:8-19:22": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_a_source.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.C_sanitized_ab_sinks.__init__",
+  "returned_callables": [],
+  "calls": {
+    "66:8-66:21": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_ab_sinks.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "67:8-67:22": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_ab_sinks.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.C_sanitized_ab_sources.__init__",
+  "returned_callables": [],
+  "calls": {
+    "34:8-34:21": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_ab_sources.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "35:8-35:22": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_ab_sources.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.C_sanitized_all_sinks.__init__",
+  "returned_callables": [],
+  "calls": {
+    "74:8-74:21": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_all_sinks.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "75:8-75:22": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_all_sinks.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.C_sanitized_all_sources.__init__",
+  "returned_callables": [],
+  "calls": {
+    "42:8-42:21": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_all_sources.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "43:8-43:22": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_all_sources.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.C_sanitized_b_sink.__init__",
+  "returned_callables": [],
+  "calls": {
+    "58:8-58:21": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_b_sink.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "59:8-59:22": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_b_sink.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.C_sanitized_b_source.__init__",
+  "returned_callables": [],
+  "calls": {
+    "26:8-26:21": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_b_source.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "27:8-27:22": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{sanitize.C_sanitized_b_source.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.GenerationOnSelf.sanitize_all_parameters",
+  "returned_callables": [],
+  "calls": {
+    "952:19-952:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.GenerationOnSelf.sanitize_all_parameters_test_a_source",
+  "returned_callables": [],
+  "calls": {
+    "955:11-955:16|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "956:23-956:33": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "958:23-958:33": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.GenerationOnSelf.sanitize_parameter",
+  "returned_callables": [],
+  "calls": {
+    "943:19-943:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.GenerationOnSelf.sanitize_parameter_test_a_source",
+  "returned_callables": [],
+  "calls": {
+    "946:11-946:16|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "947:23-947:33": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "949:23-949:33": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.GenerationOnSelf.sanitize_return",
+  "returned_callables": [],
+  "calls": {
+    "961:19-961:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.GenerationOnSelf.sanitize_sources",
+  "returned_callables": [],
+  "calls": {
+    "934:19-934:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.GenerationOnSelf.sanitize_test_a_source",
+  "returned_callables": [],
+  "calls": {
+    "937:11-937:16|artificial-call|comparison": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "938:23-938:33": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "940:23-940:33": {
+      "call": {
+        "calls": [
+          { "target": "sanitize.b_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize.TitoSelf.sanitize_self",
+  "returned_callables": [],
+  "calls": {
+    "966:15-966:55": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize.sanitize_return_no_user_controlled",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}

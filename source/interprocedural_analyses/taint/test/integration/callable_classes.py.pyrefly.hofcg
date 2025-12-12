@@ -1,0 +1,55 @@
+@generated
+Higher order call graphs
+{
+  "callable": "callable_classes.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "18:7-18:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "callable_classes.returns_p",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "callable_classes.bar",
+  "returned_callables": [],
+  "calls": {
+    "35:8-35:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "callable_classes.returns_callable_protocol",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "36:11-36:17": {
+      "call": {
+        "calls": [
+          {
+            "target": "callable_classes.CallableProtocol.__call__",
+            "index": 0,
+            "implicit_receiver": true,
+            "implicit_dunder_call": true,
+            "return_type": [],
+            "receiver_class": "callable_classes.CallableProtocol"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "callable_classes.foo",
+  "returned_callables": [],
+  "calls": { "22:11-22:17": { "call": {} } }
+}

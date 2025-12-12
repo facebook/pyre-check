@@ -1,0 +1,197 @@
+@generated
+Call dependencies
+{
+  "closure.async_nonlocal_closure_tito_ignore_decorator (fun)": [
+    "closure.async_tito (fun)[formal(function, position=0)=closure.ignored_decorator.wrapper (fun)]",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "closure.async_nonlocal_closure_tito_ignore_decorator.inner@decorated (fun)": [
+    "closure.ignored_decorator (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)]"
+  ],
+  "closure.async_nonlocal_closure_tito_with_decorator (fun)": [
+    "closure.async_tito (fun)[formal(function, position=0)=closure.decorator.wrapper (fun)]",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "closure.async_nonlocal_closure_tito_with_decorator.inner@decorated (fun)": [
+    "closure.decorator (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]"
+  ],
+  "closure.closure (fun)": [
+    "builtins.object.__new__ (method)", "closure.Object.__init__ (method)"
+  ],
+  "closure.closure.sink (fun)": [ "pysa._test_sink (fun)" ],
+  "closure.closure.source (fun)": [ "pysa._test_source (fun)" ],
+  "closure.closure_flow (fun)": [ "closure.closure (fun)" ],
+  "closure.closure_no_flow (fun)": [ "closure.closure (fun)" ],
+  "closure.nonlocal_closure_conditional_write (fun)": [
+    "closure.nonlocal_closure_conditional_write.clear (fun)",
+    "closure.nonlocal_closure_conditional_write.conditional_write (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "closure.nonlocal_closure_conditional_write.conditional_write (fun)": [
+    "closure._test_source2 (fun)"
+  ],
+  "closure.nonlocal_closure_define_before_variable_initialization (fun)": [
+    "closure.nonlocal_closure_define_before_variable_initialization.read (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "closure.nonlocal_closure_define_before_variable_initialization.read (fun)": [
+    "pysa._test_sink (fun)"
+  ],
+  "closure.nonlocal_closure_flow (fun)": [
+    "closure.nonlocal_closure_flow.sink (fun)",
+    "closure.nonlocal_closure_flow.source (fun)"
+  ],
+  "closure.nonlocal_closure_flow.sink (fun)": [ "pysa._test_sink (fun)" ],
+  "closure.nonlocal_closure_flow.source (fun)": [ "pysa._test_source (fun)" ],
+  "closure.nonlocal_closure_inner_flow (fun)": [
+    "closure.nonlocal_closure_inner_flow.flow (fun)"
+  ],
+  "closure.nonlocal_closure_inner_flow.flow (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "closure.nonlocal_closure_multiple_reads (fun)": [
+    "closure.nonlocal_closure_multiple_reads.conditional_read (fun)",
+    "closure.nonlocal_closure_multiple_reads.overread (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "closure.nonlocal_closure_multiple_reads.conditional_read (fun)": [
+    "pysa._test_sink (fun)"
+  ],
+  "closure.nonlocal_closure_multiple_reads.overread (fun)": [
+    "pysa._test_sink (fun)"
+  ],
+  "closure.nonlocal_closure_multiple_writes (fun)": [
+    "closure.nonlocal_closure_multiple_writes.conditional_write (fun)",
+    "closure.nonlocal_closure_multiple_writes.overwrite (fun)",
+    "pysa._test_sink (fun)"
+  ],
+  "closure.nonlocal_closure_multiple_writes.conditional_write (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "closure.nonlocal_closure_multiple_writes.overwrite (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "closure.nonlocal_closure_nested_flow (fun)": [
+    "closure.nonlocal_closure_nested_flow.source1 (fun)",
+    "pysa._test_sink (fun)"
+  ],
+  "closure.nonlocal_closure_nested_flow.source1 (fun)": [
+    "closure.nonlocal_closure_nested_flow.source1.source2 (fun)",
+    "pysa._test_sink (fun)"
+  ],
+  "closure.nonlocal_closure_nested_flow.source1.source2 (fun)": [
+    "closure.nonlocal_closure_nested_flow.source1.source2.source3 (fun)",
+    "pysa._test_sink (fun)"
+  ],
+  "closure.nonlocal_closure_nested_flow.source1.source2.source3 (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "closure.nonlocal_closure_no_flow (fun)": [
+    "closure.nonlocal_closure_no_flow.sink (fun)",
+    "closure.nonlocal_closure_no_flow.source (fun)"
+  ],
+  "closure.nonlocal_closure_no_flow.sink (fun)": [ "pysa._test_sink (fun)" ],
+  "closure.nonlocal_closure_no_flow.source (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "closure.nonlocal_closure_obscure.sink (fun)": [ "pysa._test_sink (fun)" ],
+  "closure.nonlocal_closure_obscure.source (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "closure.nonlocal_closure_read_reduction (fun)": [
+    "closure.nonlocal_closure_read_reduction.inner (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "closure.nonlocal_closure_read_reduction.inner (fun)": [
+    "pysa._test_sink (fun)"
+  ],
+  "closure.nonlocal_closure_reduction (fun)": [
+    "closure.nonlocal_closure_reduction.sink (fun)",
+    "closure.nonlocal_closure_reduction.source (fun)",
+    "closure.nonlocal_closure_reduction.tito (fun)"
+  ],
+  "closure.nonlocal_closure_reduction.sink (fun)": [
+    "pysa._test_sink (fun)"
+  ],
+  "closure.nonlocal_closure_reduction.source (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "closure.nonlocal_closure_tito (fun)": [
+    "closure.nonlocal_closure_tito.inner (fun)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "closure.nonlocal_closure_wrapper_flow (fun)": [
+    "closure.nonlocal_closure_wrapper_flow.wrapper (fun)",
+    "pysa._test_sink (fun)"
+  ],
+  "closure.nonlocal_closure_wrapper_flow.source (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "closure.nonlocal_closure_wrapper_flow.wrapper (fun)": [
+    "closure.nonlocal_closure_wrapper_flow.source (fun)"
+  ],
+  "closure.nonlocal_closure_write_reduction (fun)": [
+    "closure.nonlocal_closure_write_reduction.source (fun)",
+    "pysa._test_sink (fun)"
+  ],
+  "closure.nonlocal_closure_write_reduction.source (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "closure.nonlocal_obscure_flow (fun)": [
+    "closure.nonlocal_closure_obscure (fun)"
+  ],
+  "closure.nonlocal_obscure_no_flow (fun)": [
+    "closure.nonlocal_closure_obscure (fun)"
+  ],
+  "closure.parameter_order_swap (fun)": [
+    "closure.parameter_order_swap.inner (fun)"
+  ],
+  "closure.parameter_order_swap.inner (fun)": [ "pysa._test_sink (fun)" ],
+  "closure.parameter_order_swap_different_variable_names (fun)": [
+    "closure.parameter_order_swap_different_variable_names.inner (fun)"
+  ],
+  "closure.parameter_order_swap_different_variable_names.inner (fun)": [
+    "pysa._test_sink (fun)"
+  ],
+  "closure.parameter_order_swap_tito (fun)": [
+    "builtins.tuple.__getitem__ (method)",
+    "closure.parameter_order_swap_tito.inner (fun)", "pysa._test_sink (fun)"
+  ],
+  "closure.taint_propagation (fun)": [
+    "closure.wrapper_for_taint_propagation (fun)", "pysa._test_source (fun)"
+  ],
+  "closure.taint_propagation_hof (fun)": [
+    "closure.wrapper_for_taint_propagation_hof (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "closure.tito_hof (fun)": [ "pysa._test_sink (fun)" ],
+  "closure.tito_hof (fun)[formal(f, position=0)=closure.wrapper_for_tito_propagation_hof.inner (fun)]": [
+    "pysa._test_sink (fun)"
+  ],
+  "closure.tito_propagation (fun)": [
+    "closure.wrapper_for_tito_propagation (fun)", "pysa._test_source (fun)"
+  ],
+  "closure.tito_propagation_hof (fun)": [
+    "closure.wrapper_for_tito_propagation_hof (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "closure.wrapper_for_taint_propagation (fun)": [
+    "closure.wrapper_for_taint_propagation.inner (fun)"
+  ],
+  "closure.wrapper_for_taint_propagation.inner (fun)": [
+    "pysa._test_sink (fun)"
+  ],
+  "closure.wrapper_for_taint_propagation_hof (fun)": [
+    "closure.higher_order_function (fun)[formal(f, position=0)=closure.wrapper_for_taint_propagation_hof.inner (fun)]"
+  ],
+  "closure.wrapper_for_taint_propagation_hof.inner (fun)": [
+    "pysa._test_sink (fun)"
+  ],
+  "closure.wrapper_for_tito_propagation (fun)": [
+    "closure.wrapper_for_tito_propagation.inner (fun)",
+    "pysa._test_sink (fun)"
+  ],
+  "closure.wrapper_for_tito_propagation_hof (fun)": [
+    "closure.tito_hof (fun)[formal(f, position=0)=closure.wrapper_for_tito_propagation_hof.inner (fun)]"
+  ]
+}

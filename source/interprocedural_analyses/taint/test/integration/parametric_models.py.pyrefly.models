@@ -1,0 +1,364 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "parametric_models.f",
+    "filename": "parametric_models.py",
+    "callable_line": 12,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "WithSubkind[A]" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parametric_models.f_and_g_to_test",
+    "callable_line": 24,
+    "code": 7001,
+    "line": 30,
+    "start": 9,
+    "end": 10,
+    "filename": "parametric_models.py",
+    "message": "[WithSubkind[B]] flow into expects subkind.",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "parametric_models.g", "port": "leaf:return" }
+                ],
+                "kind": "WithSubkind[B]"
+              }
+            ],
+            "origin": { "line": 28, "start": 12, "end": 15 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "parametric_models.sink", "port": "leaf:x" }
+                ],
+                "kind": "ExpectsSubkind"
+              }
+            ],
+            "origin": { "line": 30, "start": 9, "end": 10 },
+            "call_site": "30:4-30:11"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "parametric_models.sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "parametric_models.f_and_g_to_test:7001:0:Call|parametric_models.sink|0|formal(x):990aa6fcb5124df94578025a4ac071d4"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parametric_models.g",
+    "filename": "parametric_models.py",
+    "callable_line": 16,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "WithSubkind[B]" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parametric_models.inferred_sink",
+    "filename": "parametric_models.py",
+    "callable_line": 41,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "parametric_models.sink_subkind_b",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "SinkWithSubkind[SinkB]"
+              }
+            ],
+            "origin": { "line": 45, "start": 23, "end": 24 },
+            "call_site": "45:8-45:25"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parametric_models.sink",
+    "filename": "parametric_models.py",
+    "callable_line": 20,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "ExpectsSubkind" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parametric_models.sink_subkind_a",
+    "filename": "parametric_models.py",
+    "callable_line": 33,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "SinkWithSubkind[SinkA]" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parametric_models.sink_subkind_b",
+    "filename": "parametric_models.py",
+    "callable_line": 37,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "SinkWithSubkind[SinkB]" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parametric_models.test_to_subkind_sink",
+    "callable_line": 48,
+    "code": 7002,
+    "line": 50,
+    "start": 18,
+    "end": 19,
+    "filename": "parametric_models.py",
+    "message": "[Test] flow into [SinkWithSubkind[SinkB]].",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 49, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "parametric_models.sink_subkind_b",
+                    "port": "leaf:x"
+                  }
+                ],
+                "length": 1,
+                "kind": "SinkWithSubkind[SinkB]"
+              }
+            ],
+            "call": {
+              "position": { "line": 50, "start": 18, "end": 19 },
+              "resolves_to": [ "parametric_models.inferred_sink" ],
+              "port": "formal(x, position=0)",
+              "call_site": "50:4-50:20"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "parametric_models.inferred_sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "parametric_models.test_to_subkind_sink:7002:0:Call|parametric_models.inferred_sink|0|formal(x):dab13191364556881466b8c4df42a47b"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}

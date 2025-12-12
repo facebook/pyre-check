@@ -1,0 +1,260 @@
+@generated
+Higher order call graphs
+{
+  "callable": "maximum_trace_length.issue_source_one_sink_one",
+  "returned_callables": [],
+  "calls": {
+    "44:4-44:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_trace_length.sink_distance_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "44:22-44:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_trace_length.source_distance_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.issue_source_one_sink_two",
+  "returned_callables": [],
+  "calls": {
+    "54:4-54:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_trace_length.sink_distance_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "54:22-54:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_trace_length.source_distance_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.issue_source_one_sink_zero",
+  "returned_callables": [],
+  "calls": {
+    "40:4-40:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_trace_length.sink_distance_zero",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "40:23-40:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_trace_length.source_distance_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.issue_source_two_sink_one",
+  "returned_callables": [],
+  "calls": {
+    "49:4-49:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_trace_length.sink_distance_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "49:22-49:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_trace_length.source_distance_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.issue_source_zero_sink_zero",
+  "returned_callables": [],
+  "calls": {
+    "36:4-36:46": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_trace_length.sink_distance_zero",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "36:23-36:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_trace_length.source_distance_zero",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.multi_sink",
+  "returned_callables": [],
+  "calls": {
+    "58:8-58:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._tito", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "59:4-59:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_trace_length.sink_distance_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.sink_distance_one",
+  "returned_callables": [],
+  "calls": {
+    "27:4-27:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_trace_length.sink_distance_zero",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.sink_distance_two",
+  "returned_callables": [],
+  "calls": {
+    "32:4-32:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_trace_length.sink_distance_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.sink_distance_zero",
+  "returned_callables": [],
+  "calls": {
+    "23:4-23:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.source_distance_one",
+  "returned_callables": [],
+  "calls": {
+    "14:11-14:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_trace_length.source_distance_zero",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.source_distance_two",
+  "returned_callables": [],
+  "calls": {
+    "19:11-19:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_trace_length.source_distance_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.source_distance_zero",
+  "returned_callables": [],
+  "calls": {
+    "10:11-10:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

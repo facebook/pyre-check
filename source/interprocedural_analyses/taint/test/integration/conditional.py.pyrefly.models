@@ -1,0 +1,242 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "conditional.issue1",
+    "callable_line": 22,
+    "code": 123,
+    "line": 24,
+    "start": 7,
+    "end": 8,
+    "filename": "conditional.py",
+    "message": "[MySource] flow into conditional",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "conditional.some_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "MySource"
+              }
+            ],
+            "local_features": [ { "always-via-value": "my-data" } ],
+            "origin": { "line": 23, "start": 8, "end": 30 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<condition>}", "port": "leaf:condition" }
+                ],
+                "kind": "InTest"
+              }
+            ],
+            "origin": { "line": 24, "start": 7, "end": 8 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via-value": "my-data" } ],
+    "sink_handle": { "kind": "ConditionalTestSink", "sink": "InTest" },
+    "master_handle": "conditional.issue1:123:0:ConditionalTestSink|InTest:45e375676071b503631c5b5a4da3286b"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "conditional.issue2",
+    "callable_line": 28,
+    "code": 123,
+    "line": 30,
+    "start": 16,
+    "end": 17,
+    "filename": "conditional.py",
+    "message": "[MySource] flow into conditional",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "conditional.some_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "MySource"
+              }
+            ],
+            "local_features": [ { "always-via-value": "other" } ],
+            "origin": { "line": 29, "start": 8, "end": 28 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<condition>}", "port": "leaf:condition" }
+                ],
+                "kind": "InTest"
+              }
+            ],
+            "origin": { "line": 30, "start": 16, "end": 17 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via-value": "other" } ],
+    "sink_handle": { "kind": "ConditionalTestSink", "sink": "InTest" },
+    "master_handle": "conditional.issue2:123:0:ConditionalTestSink|InTest:bac100ce2eb7ca255a4834112ed5f755"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "conditional.some_source",
+    "filename": "conditional.py",
+    "callable_line": 18,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaValueOf", "parameter": "formal(name)" }
+                ],
+                "kind": "MySource"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}

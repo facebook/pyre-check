@@ -1,0 +1,18 @@
+@generated
+Call dependencies
+{
+  "callables.ConcreteEventProcessor.async_call_tainted (method)": [
+    "pysa._test_sink (fun)"
+  ],
+  "callables.ConcreteEventProcessor.async_run (method)": [
+    "pysa._test_sink (fun)"
+  ],
+  "callables.async_execute_event_processor (fun)": [
+    "builtins.list.__iter__ (method)", "builtins.object.__new__ (method)",
+    "callables.AbstractEventProcessor.__init__ (method)",
+    "callables.AbstractEventProcessor.async_call_tainted (override)",
+    "callables.AbstractEventProcessor.async_run (override)",
+    "callables.get_event_processors (fun)", "pysa._test_source (fun)",
+    "typing.Iterator.__next__ (method)"
+  ]
+}

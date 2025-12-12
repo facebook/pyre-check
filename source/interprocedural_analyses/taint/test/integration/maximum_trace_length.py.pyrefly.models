@@ -1,0 +1,465 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "maximum_trace_length.issue_source_one_sink_one",
+    "callable_line": 43,
+    "code": 1000,
+    "line": 44,
+    "start": 22,
+    "end": 43,
+    "filename": "maximum_trace_length.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 44, "start": 22, "end": 43 },
+              "resolves_to": [ "maximum_trace_length.source_distance_one" ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 44, "start": 22, "end": 43 },
+              "resolves_to": [ "maximum_trace_length.sink_distance_one" ],
+              "port": "formal(x, position=0)",
+              "call_site": "44:4-44:44"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "maximum_trace_length.sink_distance_one",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "maximum_trace_length.issue_source_one_sink_one:1000:0:Call|maximum_trace_length.sink_distance_one|0|formal(x):a08e4c0767d31879aad563d6ccd32a7b"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "maximum_trace_length.issue_source_one_sink_zero",
+    "callable_line": 39,
+    "code": 1000,
+    "line": 40,
+    "start": 23,
+    "end": 44,
+    "filename": "maximum_trace_length.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 40, "start": 23, "end": 44 },
+              "resolves_to": [ "maximum_trace_length.source_distance_one" ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 40, "start": 23, "end": 44 },
+              "resolves_to": [ "maximum_trace_length.sink_distance_zero" ],
+              "port": "formal(x, position=0)",
+              "call_site": "40:4-40:45"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "maximum_trace_length.sink_distance_zero",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "maximum_trace_length.issue_source_one_sink_zero:1000:0:Call|maximum_trace_length.sink_distance_zero|0|formal(x):f1e39236af32c42d591fc6b91d1f3e01"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "maximum_trace_length.issue_source_zero_sink_zero",
+    "callable_line": 35,
+    "code": 1000,
+    "line": 36,
+    "start": 23,
+    "end": 45,
+    "filename": "maximum_trace_length.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 36, "start": 23, "end": 45 },
+              "resolves_to": [ "maximum_trace_length.source_distance_zero" ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 36, "start": 23, "end": 45 },
+              "resolves_to": [ "maximum_trace_length.sink_distance_zero" ],
+              "port": "formal(x, position=0)",
+              "call_site": "36:4-36:46"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "maximum_trace_length.sink_distance_zero",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "maximum_trace_length.issue_source_zero_sink_zero:1000:0:Call|maximum_trace_length.sink_distance_zero|0|formal(x):25f77eba01683531b416229d0cd28e54"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "maximum_trace_length.sink_distance_one",
+    "filename": "maximum_trace_length.py",
+    "callable_line": 26,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "call": {
+              "position": { "line": 27, "start": 23, "end": 24 },
+              "resolves_to": [ "maximum_trace_length.sink_distance_zero" ],
+              "port": "formal(x, position=0)",
+              "call_site": "27:4-27:25"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "maximum_trace_length.sink_distance_zero",
+    "filename": "maximum_trace_length.py",
+    "callable_line": 22,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 23, "start": 15, "end": 16 },
+            "call_site": "23:4-23:17"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "maximum_trace_length.source_distance_one",
+    "filename": "maximum_trace_length.py",
+    "callable_line": 13,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "call": {
+              "position": { "line": 14, "start": 11, "end": 33 },
+              "resolves_to": [ "maximum_trace_length.source_distance_zero" ],
+              "port": "result"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "maximum_trace_length.source_distance_zero",
+    "filename": "maximum_trace_length.py",
+    "callable_line": 9,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 10, "start": 11, "end": 25 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._tito",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 6,
+    "tito": [
+      {
+        "port": "formal(**kwargs)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(*args, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}

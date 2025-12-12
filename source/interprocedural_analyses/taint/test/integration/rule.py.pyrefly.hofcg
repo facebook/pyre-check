@@ -1,0 +1,20 @@
+@generated
+Higher order call graphs
+{
+  "callable": "rule.alarm",
+  "returned_callables": [],
+  "calls": {
+    "16:8-16:16": {
+      "call": {
+        "calls": [
+          { "target": "rule.source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "17:4-17:11": {
+      "call": {
+        "calls": [ { "target": "rule.sink", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}

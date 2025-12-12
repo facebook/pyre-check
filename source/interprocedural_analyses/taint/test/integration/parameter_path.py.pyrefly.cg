@@ -1,0 +1,61 @@
+@generated
+Call dependencies
+{
+  "parameter_path.issue_complex_tito (fun)": [
+    "parameter_path.complex_tito (fun)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "parameter_path.issue_only_with_sink_first (fun)": [
+    "parameter_path.sink_on_first (fun)", "pysa._test_source (fun)"
+  ],
+  "parameter_path.issue_only_with_sink_key_a (fun)": [
+    "parameter_path.sink_on_key_a (fun)", "pysa._test_source (fun)"
+  ],
+  "parameter_path.issue_only_with_sink_nested_first (fun)": [
+    "parameter_path.sink_on_0_1 (fun)", "pysa._test_source (fun)"
+  ],
+  "parameter_path.issue_only_with_sink_second (fun)": [
+    "parameter_path.sink_on_second (fun)", "pysa._test_source (fun)"
+  ],
+  "parameter_path.issue_only_with_source_first (fun)": [
+    "parameter_path.source_on_first (fun)", "pysa._test_sink (fun)"
+  ],
+  "parameter_path.issue_only_with_source_key_a (fun)": [
+    "builtins.dict.__getitem__ (method)",
+    "parameter_path.source_on_key_a (fun)", "pysa._test_sink (fun)"
+  ],
+  "parameter_path.issue_only_with_source_nested_first (fun)": [
+    "parameter_path.source_on_0_1 (fun)", "pysa._test_sink (fun)"
+  ],
+  "parameter_path.issue_only_with_source_second (fun)": [
+    "parameter_path.source_on_second (fun)", "pysa._test_sink (fun)"
+  ],
+  "parameter_path.issue_tito_b_to_a (fun)": [
+    "parameter_path.tito_from_b_to_a (fun)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "parameter_path.issue_tito_first_to_second (fun)": [
+    "parameter_path.tito_from_first_to_second (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "parameter_path.issue_tito_from_a_to_self_b (fun)": [
+    "builtins.dict.__getitem__ (method)",
+    "parameter_path.tito_from_a_to_self_b (fun)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "parameter_path.issue_tito_from_first (fun)": [
+    "parameter_path.tito_from_first (fun)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "parameter_path.issue_tito_from_second (fun)": [
+    "parameter_path.tito_from_second (fun)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "parameter_path.issue_with_sink_member (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "parameter_path.sink_on_member_a (fun)", "pysa._test_source (fun)"
+  ],
+  "parameter_path.issue_with_source_member (fun)": [
+    "parameter_path.source_on_member_a (fun)", "pysa._test_sink (fun)"
+  ]
+}

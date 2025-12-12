@@ -1,0 +1,131 @@
+@generated
+Higher order call graphs
+{
+  "callable": "cross_repository.cross_repository_source",
+  "returned_callables": [],
+  "calls": {
+    "9:4-9:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "cross_repository.test",
+  "returned_callables": [],
+  "calls": {
+    "21:8-21:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "cross_repository.returns_crtex_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "22:4-22:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "cross_repository.test_cross_repository_anchor",
+  "returned_callables": [],
+  "calls": {
+    "30:13-30:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "31:4-31:40": {
+      "call": {
+        "calls": [
+          {
+            "target": "cross_repository.cross_repository_anchor_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "cross_repository.test_propagate_cross_repository_sink_once",
+  "returned_callables": [],
+  "calls": {
+    "43:4-43:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "cross_repository.reaches_crtex_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "cross_repository.test_propagate_cross_repository_sink_twice",
+  "returned_callables": [],
+  "calls": {
+    "47:4-47:48": {
+      "call": {
+        "calls": [
+          {
+            "target": "cross_repository.test_propagate_cross_repository_sink_once",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "cross_repository.test_propagate_cross_repository_source_once",
+  "returned_callables": [],
+  "calls": {
+    "35:11-35:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "cross_repository.returns_crtex_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "cross_repository.test_propagate_cross_repository_source_twice",
+  "returned_callables": [],
+  "calls": {
+    "39:11-39:56": {
+      "call": {
+        "calls": [
+          {
+            "target": "cross_repository.test_propagate_cross_repository_source_once",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}

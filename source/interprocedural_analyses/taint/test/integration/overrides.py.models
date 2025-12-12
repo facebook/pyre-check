@@ -702,7 +702,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 32, "start": 35, "end": 38 } ],
+            "tito_positions": [ { "line": 32, "start": 25, "end": 28 } ],
             "tito": {
               "caller_interval": [ { "lower": 11, "upper": 12 } ],
               "is_self_call": false
@@ -791,7 +791,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 42, "start": 35, "end": 38 } ],
+            "tito_positions": [ { "line": 42, "start": 32, "end": 35 } ],
             "tito": {
               "caller_interval": [ { "lower": 13, "upper": 20 } ],
               "is_self_call": false

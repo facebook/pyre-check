@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from pysa import _test_sink, _test_source
+from typing import Any
 
 
 def source_on_first():
@@ -51,7 +52,7 @@ def issue_only_with_source_key_a():
     _test_sink(d["b"])
 
 
-def source_on_member_a():
+def source_on_member_a() -> Any:
     ...
 
 
@@ -105,19 +106,19 @@ def issue_only_with_sink_key_a():
 
 def issue_with_sink_member():
     x = object()
-    x.a = _test_source()
+    x.a = _test_source() # pyrefly: ignore[missing-attribute]
     sink_on_member_a(x)
 
     y = object()
-    y.b = _test_source()
+    y.b = _test_source() # pyrefly: ignore[missing-attribute]
     sink_on_member_a(y)
 
 
-def tito_from_first(arg):
+def tito_from_first(arg) -> Any:
     return
 
 
-def tito_from_second(arg):
+def tito_from_second(arg) -> Any:
     return
 
 
@@ -131,7 +132,7 @@ def issue_tito_from_second():
     _test_sink(tito_from_second(arg=(0, _test_source())))
 
 
-def tito_from_first_to_second(arg):
+def tito_from_first_to_second(arg) -> Any:
     return
 
 
@@ -142,7 +143,7 @@ def issue_tito_first_to_second():
     _test_sink(tito_from_first_to_second(arg=(0, _test_source()))[1])
 
 
-def tito_from_b_to_a(arg):
+def tito_from_b_to_a(arg) -> Any:
     return
 
 
@@ -153,7 +154,7 @@ def issue_tito_b_to_a():
     _test_sink(tito_from_b_to_a({"a": 0, "b": _test_source()})["b"])
 
 
-def tito_from_a_to_self_b(self, arg):
+def tito_from_a_to_self_b(self, arg) -> Any:
     return
 
 
@@ -169,7 +170,7 @@ def issue_tito_from_a_to_self_b():
     _test_sink(x["b"])
 
 
-def complex_tito(arg):
+def complex_tito(arg) -> Any:
     return
 
 

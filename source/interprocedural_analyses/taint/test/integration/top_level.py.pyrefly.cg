@@ -1,0 +1,8 @@
+@generated
+Call dependencies
+{
+  "top_level.$toplevel (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)", "top_level.foo (fun)"
+  ],
+  "top_level.foo (fun)": [ "pysa._test_sink (fun)" ]
+}

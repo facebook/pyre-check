@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate",
   "returned_callables": [],
   "calls": {
-    "186:15-186:38": {
+    "194:15-194:38": {
       "call": {
         "calls": [
           {
@@ -15,7 +15,7 @@ Higher order call graphs
         ]
       }
     },
-    "187:23-187:56": {
+    "195:23-195:56": {
       "call": {
         "calls": [
           {
@@ -28,7 +28,7 @@ Higher order call graphs
         ]
       }
     },
-    "188:19-188:50": {
+    "196:19-196:50": {
       "call": {
         "calls": [
           {
@@ -47,7 +47,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.adds_tito",
   "returned_callables": [],
   "calls": {
-    "83:11-83:21": {
+    "91:11-91:21": {
       "attribute_access": {
         "globals": [
           {
@@ -64,7 +64,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.adds_tito_inherited",
   "returned_callables": [],
   "calls": {
-    "91:11-91:21": {
+    "99:11-99:21": {
       "attribute_access": {
         "globals": [
           {
@@ -81,7 +81,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.adds_tito_with_indirect_sink",
   "returned_callables": [],
   "calls": {
-    "95:4-95:22": {
+    "103:4-103:22": {
       "call": {
         "calls": [
           {
@@ -98,7 +98,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.collapse_two_then_into_deep_dict",
   "returned_callables": [],
   "calls": {
-    "322:8-322:28": {
+    "330:8-330:28": {
       "call": {
         "calls": [
           {
@@ -115,7 +115,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.collapse_two_then_into_dict",
   "returned_callables": [],
   "calls": {
-    "312:8-312:28": {
+    "320:8-320:28": {
       "call": {
         "calls": [
           {
@@ -132,7 +132,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.combine_collapse_one",
   "returned_callables": [],
   "calls": {
-    "328:8-328:28": {
+    "336:8-336:28": {
       "call": {
         "calls": [
           {
@@ -143,7 +143,7 @@ Higher order call graphs
         ]
       }
     },
-    "330:8-330:28": {
+    "338:8-338:28": {
       "call": {
         "calls": [
           {
@@ -160,7 +160,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.combine_collapse_one_and_two",
   "returned_callables": [],
   "calls": {
-    "360:8-360:28": {
+    "368:8-368:28": {
       "call": {
         "calls": [
           {
@@ -171,7 +171,7 @@ Higher order call graphs
         ]
       }
     },
-    "362:8-362:28": {
+    "370:8-370:28": {
       "call": {
         "calls": [
           {
@@ -188,7 +188,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.combine_collapse_three",
   "returned_callables": [],
   "calls": {
-    "344:8-344:30": {
+    "352:8-352:30": {
       "call": {
         "calls": [
           {
@@ -199,7 +199,7 @@ Higher order call graphs
         ]
       }
     },
-    "346:8-346:30": {
+    "354:8-354:30": {
       "call": {
         "calls": [
           {
@@ -216,7 +216,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.combine_collapse_two",
   "returned_callables": [],
   "calls": {
-    "336:8-336:28": {
+    "344:8-344:28": {
       "call": {
         "calls": [
           {
@@ -227,7 +227,7 @@ Higher order call graphs
         ]
       }
     },
-    "338:8-338:28": {
+    "346:8-346:28": {
       "call": {
         "calls": [
           {
@@ -244,7 +244,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.combine_collapse_two_and_one",
   "returned_callables": [],
   "calls": {
-    "352:8-352:28": {
+    "360:8-360:28": {
       "call": {
         "calls": [
           {
@@ -255,7 +255,7 @@ Higher order call graphs
         ]
       }
     },
-    "354:8-354:28": {
+    "362:8-362:28": {
       "call": {
         "calls": [
           {
@@ -272,7 +272,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.evaluate_lazy",
   "returned_callables": [],
   "calls": {
-    "170:41-170:56": {
+    "178:41-178:56": {
       "call": {
         "calls": [
           {
@@ -285,7 +285,7 @@ Higher order call graphs
         ]
       }
     },
-    "170:41-170:56|artificial-call|generator-iter": {
+    "178:41-178:56|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -298,7 +298,7 @@ Higher order call graphs
         ]
       }
     },
-    "170:41-170:56|artificial-call|generator-next": {
+    "178:41-178:56|artificial-call|generator-next": {
       "call": {
         "calls": [
           {
@@ -317,7 +317,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.get_related",
   "returned_callables": [],
   "calls": {
-    "75:11-75:28": {
+    "83:11-83:28": {
       "call": {
         "new_calls": [
           {
@@ -343,14 +343,14 @@ Higher order call graphs
   "callable": "taint_in_taint_out.indirect_sink",
   "returned_callables": [],
   "calls": {
-    "99:4-99:26": {
+    "107:4-107:26": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "99:15-99:25": {
+    "107:15-107:25": {
       "attribute_access": {
         "globals": [
           {
@@ -367,7 +367,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.into_dict_then_collapse_two",
   "returned_callables": [],
   "calls": {
-    "308:11-308:31": {
+    "316:11-316:31": {
       "call": {
         "calls": [
           {
@@ -384,7 +384,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.into_dict_then_perfect_tito",
   "returned_callables": [],
   "calls": {
-    "232:11-232:26": {
+    "240:11-240:26": {
       "call": {
         "calls": [
           {
@@ -401,7 +401,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.into_dict_then_tito_collapse",
   "returned_callables": [],
   "calls": {
-    "206:11-206:26": {
+    "214:11-214:26": {
       "call": {
         "calls": [
           {
@@ -418,7 +418,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.issue_approximate_return_access_paths",
   "returned_callables": [],
   "calls": {
-    "253:8-253:16": {
+    "261:8-261:16": {
       "call": {
         "new_calls": [
           {
@@ -430,7 +430,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "taint_in_taint_out.Object.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
@@ -438,14 +438,14 @@ Higher order call graphs
         ]
       }
     },
-    "254:10-254:24": {
+    "262:10-262:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "255:8-255:42": {
+    "263:8-263:42": {
       "call": {
         "calls": [
           {
@@ -456,14 +456,14 @@ Higher order call graphs
         ]
       }
     },
-    "256:4-256:22": {
+    "264:4-264:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "256:15-256:21|artificial-call|subscript-get-item": {
+    "264:15-264:21|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
@@ -474,7 +474,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.issue_approximate_return_access_paths_common_prefix",
   "returned_callables": [],
   "calls": {
-    "260:8-260:16": {
+    "268:8-268:16": {
       "call": {
         "new_calls": [
           {
@@ -486,7 +486,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "taint_in_taint_out.Object.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
@@ -494,854 +494,14 @@ Higher order call graphs
         ]
       }
     },
-    "261:12-261:26": {
+    "269:12-269:26": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "262:8-262:42": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.approximate_return_access_paths",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "263:4-263:22": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "263:15-263:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.issue_join_tito_collapse_test_3",
-  "returned_callables": [],
-  "calls": {
-    "427:14-427:28": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_source", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "428:8-428:36": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.join_tito_collapse_test_3",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "429:4-429:29": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "429:15-429:23|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "429:15-429:28|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.issue_user_declared_tito_collapse_one",
-  "returned_callables": [],
-  "calls": {
-    "453:20-453:34": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_source", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "454:8-454:42": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.user_declared_tito_collapse_one",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "455:4-455:27": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "455:15-455:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "455:15-455:26|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.issue_with_indirect_sink_tito",
-  "returned_callables": [],
-  "calls": {
-    "103:8-103:22": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_source", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "104:4-104:35": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.adds_tito_with_indirect_sink",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.issue_with_into_dict_then_tito_collapse",
-  "returned_callables": [],
-  "calls": {
-    "215:8-215:22": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_source", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "216:8-216:39": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.into_dict_then_tito_collapse",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "217:4-217:22": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "217:15-217:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.join_tito_collapse_test_1",
-  "returned_callables": [],
-  "calls": {
-    "388:13-388:21": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "object.__new__",
-            "index": 0,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "object.__init__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "389:7-389:12|artificial-call|comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "int.__gt__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
-          }
-        ]
-      }
-    },
-    "389:7-389:12|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "int.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
-          }
-        ]
-      }
-    },
-    "390:19-390:39": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.tito_collapse_two",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "392:21-392:41": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.tito_collapse_one",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.join_tito_collapse_test_2",
-  "returned_callables": [],
-  "calls": {
-    "397:13-397:21": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "object.__new__",
-            "index": 0,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "object.__init__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "398:7-398:12|artificial-call|comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "int.__gt__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
-          }
-        ]
-      }
-    },
-    "398:7-398:12|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "int.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
-          }
-        ]
-      }
-    },
-    "399:19-399:39": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.tito_collapse_two",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "401:21-401:43": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.tito_collapse_three",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.join_tito_collapse_test_3",
-  "returned_callables": [],
-  "calls": {
-    "420:7-420:12|artificial-call|comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "int.__gt__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
-          }
-        ]
-      }
-    },
-    "420:7-420:12|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "int.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
-          }
-        ]
-      }
-    },
-    "421:15-421:35": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.tito_collapse_one",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "423:23-423:43": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.tito_collapse_two",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.loop_perfect_tito",
-  "returned_callables": [],
-  "calls": {
-    "367:13-367:23": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "object.__new__",
-            "index": 0,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "range.__init__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "367:13-367:23|artificial-call|for-iter": {
-      "call": {
-        "calls": [
-          {
-            "target": "range.__iter__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "range"
-          }
-        ]
-      }
-    },
-    "367:13-367:23|artificial-call|for-next": {
-      "call": {
-        "calls": [
-          {
-            "target": "typing.Iterator.__next__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer" ],
-            "receiver_class": "typing.Iterator"
-          }
-        ]
-      }
-    },
-    "369:12-369:27": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.perfect_tito",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.loop_tito_collapse_one",
-  "returned_callables": [],
-  "calls": {
-    "374:13-374:23": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "object.__new__",
-            "index": 0,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "range.__init__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "374:13-374:23|artificial-call|for-iter": {
-      "call": {
-        "calls": [
-          {
-            "target": "range.__iter__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "range"
-          }
-        ]
-      }
-    },
-    "374:13-374:23|artificial-call|for-next": {
-      "call": {
-        "calls": [
-          {
-            "target": "typing.Iterator.__next__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer" ],
-            "receiver_class": "typing.Iterator"
-          }
-        ]
-      }
-    },
-    "376:12-376:32": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.tito_collapse_one",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.loop_tito_collapse_two",
-  "returned_callables": [],
-  "calls": {
-    "381:13-381:23": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "object.__new__",
-            "index": 0,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "range.__init__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "381:13-381:23|artificial-call|for-iter": {
-      "call": {
-        "calls": [
-          {
-            "target": "range.__iter__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "range"
-          }
-        ]
-      }
-    },
-    "381:13-381:23|artificial-call|for-next": {
-      "call": {
-        "calls": [
-          {
-            "target": "typing.Iterator.__next__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer" ],
-            "receiver_class": "typing.Iterator"
-          }
-        ]
-      }
-    },
-    "383:12-383:32": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.tito_collapse_two",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.no_issue_tito_collapse_two_with_input_path",
-  "returned_callables": [],
-  "calls": {
-    "414:26-414:40": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_source", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "415:8-415:44": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.tito_collapse_one_with_input_path",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "416:4-416:22": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "416:15-416:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.no_issue_user_declared_tito_collapse_one",
-  "returned_callables": [],
-  "calls": {
-    "447:14-447:28": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_source", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "448:8-448:42": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.user_declared_tito_collapse_one",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "449:4-449:22": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "449:15-449:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.no_issue_user_declared_tito_no_collapse",
-  "returned_callables": [],
-  "calls": {
-    "437:14-437:28": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_source", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "438:8-438:41": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.user_declared_tito_no_collapse",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "439:4-439:22": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "439:15-439:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.no_issue_with_into_dict_then_perfect_tito",
-  "returned_callables": [],
-  "calls": {
-    "241:8-241:22": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_source", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "242:8-242:38": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.into_dict_then_perfect_tito",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "243:4-243:22": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "243:15-243:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.no_issue_with_perfect_tito_then_into_dict",
-  "returned_callables": [],
-  "calls": {
-    "247:8-247:22": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_source", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "248:8-248:38": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.perfect_tito_then_into_dict",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "249:4-249:22": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "249:15-249:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.no_issue_with_tito_collapse_then_into_dict",
-  "returned_callables": [],
-  "calls": {
-    "221:8-221:22": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_source", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "222:8-222:39": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.tito_collapse_then_into_dict",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "223:4-223:22": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "223:15-223:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.no_tito_init_then_overwrite",
-  "returned_callables": [],
-  "calls": {
-    "463:4-463:14|artificial-call|subscript-set-item": {
-      "call": {
-        "calls": [
-          {
-            "target": "dict.__setitem__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "dict"
-          }
-        ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.no_tito_overwrite_then_init",
-  "returned_callables": [],
-  "calls": {
-    "468:4-468:14|artificial-call|subscript-set-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "469:11-469:17|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    }
-  }
-}
-{
-  "callable": "taint_in_taint_out.non_issue_approximate_return_access_paths_common_prefix",
-  "returned_callables": [],
-  "calls": {
-    "267:8-267:16": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "object.__new__",
-            "index": 0,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "object.__init__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "268:10-268:24": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_source", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "269:8-269:42": {
+    "270:8-270:42": {
       "call": {
         "calls": [
           {
@@ -1367,10 +527,883 @@ Higher order call graphs
   }
 }
 {
+  "callable": "taint_in_taint_out.issue_join_tito_collapse_test_3",
+  "returned_callables": [],
+  "calls": {
+    "435:14-435:28": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "436:8-436:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.join_tito_collapse_test_3",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "437:4-437:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "437:15-437:23|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "437:15-437:28|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.issue_user_declared_tito_collapse_one",
+  "returned_callables": [],
+  "calls": {
+    "461:20-461:34": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "462:8-462:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.user_declared_tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "463:4-463:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "463:15-463:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "463:15-463:26|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.issue_with_indirect_sink_tito",
+  "returned_callables": [],
+  "calls": {
+    "111:8-111:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "112:4-112:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.adds_tito_with_indirect_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.issue_with_into_dict_then_tito_collapse",
+  "returned_callables": [],
+  "calls": {
+    "223:8-223:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "224:8-224:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.into_dict_then_tito_collapse",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "225:4-225:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "225:15-225:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.join_tito_collapse_test_1",
+  "returned_callables": [],
+  "calls": {
+    "396:13-396:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.Object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "397:7-397:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "random.random",
+            "index": 0,
+            "return_type": [ "float" ]
+          }
+        ]
+      }
+    },
+    "397:7-397:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "397:7-397:28|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "398:19-398:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "400:21-400:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.join_tito_collapse_test_2",
+  "returned_callables": [],
+  "calls": {
+    "405:13-405:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.Object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "406:7-406:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "random.random",
+            "index": 0,
+            "return_type": [ "float" ]
+          }
+        ]
+      }
+    },
+    "406:7-406:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "406:7-406:28|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "407:19-407:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "409:21-409:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_three",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.join_tito_collapse_test_3",
+  "returned_callables": [],
+  "calls": {
+    "428:7-428:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "random.random",
+            "index": 0,
+            "return_type": [ "float" ]
+          }
+        ]
+      }
+    },
+    "428:7-428:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "428:7-428:28|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "429:15-429:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "431:23-431:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.loop_perfect_tito",
+  "returned_callables": [],
+  "calls": {
+    "375:13-375:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "range.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "375:13-375:23|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "range.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "range"
+          }
+        ]
+      }
+    },
+    "375:13-375:23|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "377:12-377:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.perfect_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.loop_tito_collapse_one",
+  "returned_callables": [],
+  "calls": {
+    "382:13-382:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "range.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "382:13-382:23|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "range.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "range"
+          }
+        ]
+      }
+    },
+    "382:13-382:23|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "384:12-384:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.loop_tito_collapse_two",
+  "returned_callables": [],
+  "calls": {
+    "389:13-389:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "range.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "389:13-389:23|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "range.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "range"
+          }
+        ]
+      }
+    },
+    "389:13-389:23|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "391:12-391:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.no_issue_tito_collapse_two_with_input_path",
+  "returned_callables": [],
+  "calls": {
+    "422:26-422:40": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "423:8-423:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one_with_input_path",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "424:4-424:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "424:15-424:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.no_issue_user_declared_tito_collapse_one",
+  "returned_callables": [],
+  "calls": {
+    "455:14-455:28": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "456:8-456:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.user_declared_tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "457:4-457:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "457:15-457:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.no_issue_user_declared_tito_no_collapse",
+  "returned_callables": [],
+  "calls": {
+    "445:14-445:28": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "446:8-446:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.user_declared_tito_no_collapse",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "447:4-447:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "447:15-447:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.no_issue_with_into_dict_then_perfect_tito",
+  "returned_callables": [],
+  "calls": {
+    "249:8-249:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "250:8-250:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.into_dict_then_perfect_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "251:4-251:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "251:15-251:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.no_issue_with_perfect_tito_then_into_dict",
+  "returned_callables": [],
+  "calls": {
+    "255:8-255:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "256:8-256:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.perfect_tito_then_into_dict",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "257:4-257:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "257:15-257:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.no_issue_with_tito_collapse_then_into_dict",
+  "returned_callables": [],
+  "calls": {
+    "229:8-229:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "230:8-230:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_then_into_dict",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "231:4-231:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "231:15-231:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.no_tito_init_then_overwrite",
+  "returned_callables": [],
+  "calls": {
+    "471:4-471:14|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.no_tito_overwrite_then_init",
+  "returned_callables": [],
+  "calls": {
+    "476:4-476:14|artificial-call|subscript-set-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "477:11-477:17|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.non_issue_approximate_return_access_paths_common_prefix",
+  "returned_callables": [],
+  "calls": {
+    "275:8-275:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.Object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "276:10-276:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "277:8-277:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.approximate_return_access_paths",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "279:4-279:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "279:15-279:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    }
+  }
+}
+{
   "callable": "taint_in_taint_out.perfect_tito_then_into_deep_dict",
   "returned_callables": [],
   "calls": {
-    "317:8-317:23": {
+    "325:8-325:23": {
       "call": {
         "calls": [
           {
@@ -1387,7 +1420,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.perfect_tito_then_into_dict",
   "returned_callables": [],
   "calls": {
-    "236:8-236:23": {
+    "244:8-244:23": {
       "call": {
         "calls": [
           {
@@ -1404,7 +1437,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.perfect_tito_with_tree_manipulation",
   "returned_callables": [],
   "calls": {
-    "276:11-276:17|artificial-call|subscript-get-item": {
+    "284:11-284:17|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -1423,7 +1456,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.product_data",
   "returned_callables": [],
   "calls": {
-    "37:11-37:22": {
+    "45:11-45:22": {
       "call": {
         "calls": [
           {
@@ -1434,7 +1467,7 @@ Higher order call graphs
         ]
       }
     },
-    "40:17-40:39": {
+    "48:17-48:39": {
       "call": {
         "calls": [
           {
@@ -1445,7 +1478,7 @@ Higher order call graphs
         ]
       }
     },
-    "44:17-44:38": {
+    "52:17-52:41": {
       "call": {
         "calls": [
           {
@@ -1456,7 +1489,12 @@ Higher order call graphs
         ]
       }
     },
-    "45:19-45:83": {
+    "52:30-52:40|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "53:19-53:89": {
       "call": {
         "new_calls": [
           {
@@ -1476,7 +1514,17 @@ Higher order call graphs
         ]
       }
     },
-    "47:18-47:39": {
+    "53:33-53:43|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "53:54-53:66|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "55:18-55:39": {
       "call": {
         "calls": [
           {
@@ -1486,6 +1534,16 @@ Higher order call graphs
           }
         ]
       }
+    },
+    "56:14-56:24|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "58:16-58:28|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
     }
   }
 }
@@ -1493,7 +1551,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.product_data_wrapper",
   "returned_callables": [],
   "calls": {
-    "55:11-55:26": {
+    "63:11-63:26": {
       "call": {
         "calls": [
           {
@@ -1510,14 +1568,14 @@ Higher order call graphs
   "callable": "taint_in_taint_out.test_always_via_feature",
   "returned_callables": [],
   "calls": {
-    "148:4-148:49": {
+    "156:4-156:49": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "148:15-148:48": {
+    "156:15-156:48": {
       "call": {
         "calls": [
           {
@@ -1528,7 +1586,7 @@ Higher order call graphs
         ]
       }
     },
-    "148:33-148:47": {
+    "156:33-156:47": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -1541,7 +1599,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.test_complex_argument_tito",
   "returned_callables": [],
   "calls": {
-    "575:8-575:16": {
+    "583:8-583:16": {
       "call": {
         "new_calls": [
           {
@@ -1553,7 +1611,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "taint_in_taint_out.Object.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
@@ -1561,7 +1619,7 @@ Higher order call graphs
         ]
       }
     },
-    "576:8-576:16": {
+    "584:8-584:16": {
       "call": {
         "new_calls": [
           {
@@ -1573,7 +1631,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "taint_in_taint_out.Object.__init__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": []
@@ -1581,14 +1639,14 @@ Higher order call graphs
         ]
       }
     },
-    "577:12-577:26": {
+    "585:12-585:26": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "578:4-578:31": {
+    "586:4-586:31": {
       "call": {
         "calls": [
           {
@@ -1599,126 +1657,47 @@ Higher order call graphs
         ]
       }
     },
-    "579:4-579:21": {
+    "587:4-587:21": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "580:4-580:21": {
+    "588:4-588:21": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "581:4-581:21": {
+    "589:4-589:21": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 2, "return_type": [] }
         ]
       }
     },
-    "582:4-582:21": {
+    "590:4-590:21": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 3, "return_type": [] }
         ]
       }
     },
-    "584:12-584:26": {
+    "592:12-592:26": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 1, "return_type": [] }
         ]
       }
     },
-    "585:4-585:31": {
+    "593:4-593:31": {
       "call": {
         "calls": [
           {
             "target": "taint_in_taint_out.complex_argument_tito",
             "index": 1,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "586:4-586:21": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_sink", "index": 4, "return_type": [] }
-        ]
-      }
-    },
-    "587:4-587:21": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_sink", "index": 5, "return_type": [] }
-        ]
-      }
-    },
-    "588:4-588:21": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_sink", "index": 6, "return_type": [] }
-        ]
-      }
-    },
-    "589:4-589:21": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_sink", "index": 7, "return_type": [] }
-        ]
-      }
-    },
-    "591:8-591:16": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "object.__new__",
-            "index": 2,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "object.__init__",
-            "index": 2,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "592:12-592:20": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "object.__new__",
-            "index": 3,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "object.__init__",
-            "index": 3,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "593:4-593:35": {
-      "call": {
-        "calls": [
-          {
-            "target": "taint_in_taint_out.complex_argument_tito",
-            "index": 2,
             "return_type": []
           }
         ]
@@ -1727,25 +1706,104 @@ Higher order call graphs
     "594:4-594:21": {
       "call": {
         "calls": [
-          { "target": "pysa._test_sink", "index": 8, "return_type": [] }
+          { "target": "pysa._test_sink", "index": 4, "return_type": [] }
         ]
       }
     },
     "595:4-595:21": {
       "call": {
         "calls": [
+          { "target": "pysa._test_sink", "index": 5, "return_type": [] }
+        ]
+      }
+    },
+    "596:4-596:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 6, "return_type": [] }
+        ]
+      }
+    },
+    "597:4-597:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 7, "return_type": [] }
+        ]
+      }
+    },
+    "599:8-599:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 2,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.Object.__init__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "600:12-600:20": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 3,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.Object.__init__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "601:4-601:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.complex_argument_tito",
+            "index": 2,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "602:4-602:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 8, "return_type": [] }
+        ]
+      }
+    },
+    "603:4-603:21": {
+      "call": {
+        "calls": [
           { "target": "pysa._test_sink", "index": 9, "return_type": [] }
         ]
       }
     },
-    "596:4-596:25": {
+    "604:4-604:25": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 10, "return_type": [] }
         ]
       }
     },
-    "597:4-597:25": {
+    "605:4-605:25": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 11, "return_type": [] }
@@ -1758,14 +1816,14 @@ Higher order call graphs
   "callable": "taint_in_taint_out.test_complex_evaluator",
   "returned_callables": [],
   "calls": {
-    "194:4-194:63": {
+    "202:4-202:63": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "194:15-194:62": {
+    "202:15-202:62": {
       "call": {
         "calls": [
           {
@@ -1778,7 +1836,7 @@ Higher order call graphs
         ]
       }
     },
-    "194:47-194:61": {
+    "202:47-202:61": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -1791,7 +1849,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.test_explicit_call_to_superclass",
   "returned_callables": [],
   "calls": {
-    "165:11-165:34": {
+    "173:11-173:34": {
       "call": {
         "new_calls": [
           {
@@ -1811,14 +1869,14 @@ Higher order call graphs
         ]
       }
     },
-    "165:19-165:33": {
+    "173:19-173:33": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "166:4-166:24": {
+    "174:4-174:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -1831,14 +1889,14 @@ Higher order call graphs
   "callable": "taint_in_taint_out.test_simplified_evaluator",
   "returned_callables": [],
   "calls": {
-    "174:4-174:45": {
+    "182:4-182:45": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "174:15-174:44": {
+    "182:15-182:44": {
       "call": {
         "calls": [
           {
@@ -1849,7 +1907,7 @@ Higher order call graphs
         ]
       }
     },
-    "174:29-174:43": {
+    "182:29-182:43": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -1862,14 +1920,14 @@ Higher order call graphs
   "callable": "taint_in_taint_out.test_tito_class_method",
   "returned_callables": [],
   "calls": {
-    "547:4-547:33": {
+    "555:4-555:33": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "548:4-548:41": {
+    "556:4-556:41": {
       "call": {
         "calls": [
           {
@@ -1883,14 +1941,14 @@ Higher order call graphs
         ]
       }
     },
-    "548:26-548:40": {
+    "556:26-556:40": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "549:4-549:33": {
+    "557:4-557:33": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 1, "return_type": [] }
@@ -1903,14 +1961,14 @@ Higher order call graphs
   "callable": "taint_in_taint_out.test_tito_from_0_to_1",
   "returned_callables": [],
   "calls": {
-    "563:8-563:22": {
+    "571:8-571:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "565:4-565:26": {
+    "573:4-573:26": {
       "call": {
         "calls": [
           {
@@ -1921,14 +1979,14 @@ Higher order call graphs
         ]
       }
     },
-    "566:4-566:17": {
+    "574:4-574:17": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "567:4-567:17": {
+    "575:4-575:17": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 1, "return_type": [] }
@@ -1941,7 +1999,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.test_tito_self",
   "returned_callables": [],
   "calls": {
-    "505:8-505:36": {
+    "513:8-513:36": {
       "call": {
         "new_calls": [
           {
@@ -1961,28 +2019,28 @@ Higher order call graphs
         ]
       }
     },
-    "505:17-505:31": {
+    "513:17-513:31": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "506:4-506:19": {
+    "514:4-514:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "507:4-507:19": {
+    "515:4-515:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "509:8-509:24": {
+    "517:8-517:24": {
       "call": {
         "new_calls": [
           {
@@ -2002,7 +2060,7 @@ Higher order call graphs
         ]
       }
     },
-    "510:4-510:27": {
+    "518:4-518:27": {
       "call": {
         "calls": [
           {
@@ -2015,28 +2073,28 @@ Higher order call graphs
         ]
       }
     },
-    "510:12-510:26": {
+    "518:12-518:26": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 1, "return_type": [] }
         ]
       }
     },
-    "511:4-511:19": {
+    "519:4-519:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 2, "return_type": [] }
         ]
       }
     },
-    "512:4-512:19": {
+    "520:4-520:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 3, "return_type": [] }
         ]
       }
     },
-    "514:8-514:24": {
+    "522:8-522:24": {
       "call": {
         "new_calls": [
           {
@@ -2056,7 +2114,7 @@ Higher order call graphs
         ]
       }
     },
-    "515:4-515:33": {
+    "523:4-523:33": {
       "call": {
         "calls": [
           {
@@ -2069,45 +2127,45 @@ Higher order call graphs
         ]
       }
     },
-    "515:17-515:31": {
+    "523:17-523:31": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 2, "return_type": [] }
         ]
       }
     },
-    "516:4-516:22": {
+    "524:4-524:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 4, "return_type": [] }
         ]
       }
     },
-    "516:15-516:21|artificial-call|subscript-get-item": {
+    "524:15-524:21|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "517:4-517:22": {
+    "525:4-525:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 5, "return_type": [] }
         ]
       }
     },
-    "517:15-517:21|artificial-call|subscript-get-item": {
+    "525:15-525:21|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "518:4-518:19": {
+    "526:4-526:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 6, "return_type": [] }
         ]
       }
     },
-    "520:8-520:24": {
+    "528:8-528:24": {
       "call": {
         "new_calls": [
           {
@@ -2127,7 +2185,7 @@ Higher order call graphs
         ]
       }
     },
-    "521:4-521:34": {
+    "529:4-529:34": {
       "call": {
         "calls": [
           {
@@ -2140,28 +2198,28 @@ Higher order call graphs
         ]
       }
     },
-    "521:15-521:29": {
+    "529:15-529:29": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 3, "return_type": [] }
         ]
       }
     },
-    "522:4-522:19": {
+    "530:4-530:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 7, "return_type": [] }
         ]
       }
     },
-    "523:4-523:19": {
+    "531:4-531:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 8, "return_type": [] }
         ]
       }
     },
-    "525:4-525:34": {
+    "533:4-533:34": {
       "call": {
         "calls": [
           {
@@ -2174,28 +2232,28 @@ Higher order call graphs
         ]
       }
     },
-    "525:19-525:33": {
+    "533:19-533:33": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 4, "return_type": [] }
         ]
       }
     },
-    "526:4-526:19": {
+    "534:4-534:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 9, "return_type": [] }
         ]
       }
     },
-    "527:4-527:19": {
+    "535:4-535:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 10, "return_type": [] }
         ]
       }
     },
-    "529:8-529:24": {
+    "537:8-537:24": {
       "call": {
         "new_calls": [
           {
@@ -2215,7 +2273,7 @@ Higher order call graphs
         ]
       }
     },
-    "530:4-530:34": {
+    "538:4-538:34": {
       "call": {
         "calls": [
           {
@@ -2228,28 +2286,28 @@ Higher order call graphs
         ]
       }
     },
-    "530:19-530:33": {
+    "538:19-538:33": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 5, "return_type": [] }
         ]
       }
     },
-    "531:4-531:21": {
+    "539:4-539:21": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 11, "return_type": [] }
         ]
       }
     },
-    "532:4-532:21": {
+    "540:4-540:21": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 12, "return_type": [] }
         ]
       }
     },
-    "533:4-533:19": {
+    "541:4-541:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 13, "return_type": [] }
@@ -2262,7 +2320,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.test_tuple_tito_indices",
   "returned_callables": [],
   "calls": {
-    "128:28-128:64": {
+    "136:28-136:64": {
       "call": {
         "calls": [
           {
@@ -2273,14 +2331,14 @@ Higher order call graphs
         ]
       }
     },
-    "128:41-128:55": {
+    "136:41-136:55": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "129:4-129:18": {
+    "137:4-137:18": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -2293,7 +2351,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.tito",
   "returned_callables": [],
   "calls": {
-    "59:11-59:47": {
+    "67:11-67:47": {
       "call": {
         "calls": [
           {
@@ -2304,7 +2362,7 @@ Higher order call graphs
         ]
       }
     },
-    "59:32-59:46": {
+    "67:32-67:46": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -2317,7 +2375,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.tito_collapse_one",
   "returned_callables": [],
   "calls": {
-    "284:8-284:41": {
+    "292:8-292:41": {
       "call": {
         "calls": [
           {
@@ -2328,17 +2386,17 @@ Higher order call graphs
         ]
       }
     },
-    "285:11-285:17|artificial-call|subscript-get-item": {
+    "293:11-293:17|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "285:11-285:22|artificial-call|subscript-get-item": {
+    "293:11-293:22|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "285:11-285:27|artificial-call|subscript-get-item": {
+    "293:11-293:27|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
@@ -2349,7 +2407,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.tito_collapse_one_with_input_path",
   "returned_callables": [],
   "calls": {
-    "406:11-406:41": {
+    "414:11-414:41": {
       "call": {
         "calls": [
           {
@@ -2360,12 +2418,12 @@ Higher order call graphs
         ]
       }
     },
-    "406:29-406:35|artificial-call|subscript-get-item": {
+    "414:29-414:35|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "406:29-406:40|artificial-call|subscript-get-item": {
+    "414:29-414:40|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
@@ -2376,7 +2434,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.tito_collapse_one_with_input_path_with_hop",
   "returned_callables": [],
   "calls": {
-    "410:11-410:47": {
+    "418:11-418:47": {
       "call": {
         "calls": [
           {
@@ -2393,7 +2451,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.tito_collapse_then_into_dict",
   "returned_callables": [],
   "calls": {
-    "210:8-210:23": {
+    "218:8-218:23": {
       "call": {
         "calls": [
           {
@@ -2410,7 +2468,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.tito_collapse_three",
   "returned_callables": [],
   "calls": {
-    "302:8-302:39": {
+    "310:8-310:39": {
       "call": {
         "calls": [
           {
@@ -2421,7 +2479,7 @@ Higher order call graphs
         ]
       }
     },
-    "303:11-303:17|artificial-call|subscript-get-item": {
+    "311:11-311:17|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
@@ -2432,7 +2490,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.tito_collapse_two",
   "returned_callables": [],
   "calls": {
-    "293:8-293:39": {
+    "301:8-301:39": {
       "call": {
         "calls": [
           {
@@ -2443,12 +2501,12 @@ Higher order call graphs
         ]
       }
     },
-    "294:11-294:17|artificial-call|subscript-get-item": {
+    "302:11-302:17|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "294:11-294:22|artificial-call|subscript-get-item": {
+    "302:11-302:22|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
@@ -2459,7 +2517,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.tito_from_0_to_1",
   "returned_callables": [],
   "calls": {
-    "559:4-559:27|artificial-call|subscript-set-item": {
+    "567:4-567:27|artificial-call|subscript-set-item": {
       "call": {
         "calls": [
           {
@@ -2472,7 +2530,7 @@ Higher order call graphs
         ]
       }
     },
-    "559:6-559:22": {
+    "567:6-567:22": {
       "call": {
         "calls": [
           {
@@ -2489,7 +2547,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.tito_with_feature",
   "returned_callables": [],
   "calls": {
-    "144:15-144:31": {
+    "152:15-152:31": {
       "call": {
         "calls": [
           {
@@ -2506,19 +2564,19 @@ Higher order call graphs
   "callable": "taint_in_taint_out.tito_with_sink",
   "returned_callables": [],
   "calls": {
-    "473:8-473:14|artificial-call|subscript-get-item": {
+    "481:8-481:14|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "474:4-474:22": {
+    "482:4-482:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "474:15-474:21|artificial-call|subscript-get-item": {
+    "482:15-482:21|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
@@ -2529,7 +2587,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.via_getattr",
   "returned_callables": [],
   "calls": {
-    "63:11-63:31": {
+    "71:11-71:31": {
       "call": {
         "calls": [ { "target": "getattr", "index": 0, "return_type": [] } ]
       }
@@ -2540,7 +2598,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_field",
   "returned_callables": [],
   "calls": {
-    "179:11-179:26": {
+    "187:11-187:26": {
       "call": {
         "calls": [
           {
@@ -2551,7 +2609,7 @@ Higher order call graphs
         ]
       }
     },
-    "180:19-180:26": {
+    "188:19-188:26": {
       "call": {
         "unresolved": [
           "BypassingDecorators", [ "UnknownIdentifierCallee" ]
@@ -2564,7 +2622,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload",
   "returned_callables": [],
   "calls": {
-    "185:8-188:50": {
+    "193:8-196:50": {
       "define": {
         "define_targets": [
           {
@@ -2575,7 +2633,7 @@ Higher order call graphs
         ]
       }
     },
-    "190:21-190:37": {
+    "198:21-198:37": {
       "call": {
         "calls": [
           {
@@ -2586,17 +2644,17 @@ Higher order call graphs
         ]
       }
     },
-    "190:56-190:71": {
+    "198:56-198:71": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "190:56-190:71|artificial-call|generator-iter": {
+    "198:56-198:71|artificial-call|generator-iter": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "190:56-190:71|artificial-call|generator-next": {
+    "198:56-198:71|artificial-call|generator-next": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
@@ -2607,7 +2665,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.GetUser.__init__",
   "returned_callables": [],
   "calls": {
-    "161:8-161:36": {
+    "169:8-169:36": {
       "call": {
         "calls": [
           {
@@ -2624,27 +2682,27 @@ Higher order call graphs
   "callable": "taint_in_taint_out.Recursive.__init__",
   "returned_callables": [],
   "calls": {
-    "69:12-69:16|artificial-call|subscript-get-item": {
+    "77:12-77:16|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "69:41-69:80|artificial-call|subscript-get-item": {
+    "77:41-77:80|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "69:41-69:80|artificial-call|generator-iter": {
+    "77:41-77:80|artificial-call|generator-iter": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "69:41-69:80|artificial-call|generator-next": {
+    "77:41-77:80|artificial-call|generator-next": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "69:48-69:79|artificial-call|slice": {
+    "77:48-77:79|artificial-call|slice": {
       "call": {
         "new_calls": [
           {
@@ -2664,7 +2722,7 @@ Higher order call graphs
         ]
       }
     },
-    "71:23-71:42": {
+    "79:23-79:42": {
       "call": {
         "calls": [
           {
@@ -2681,7 +2739,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.TitoSelf.self_tito",
   "returned_callables": [],
   "calls": {
-    "498:15-498:33": {
+    "506:15-506:33": {
       "call": {
         "calls": [
           {
@@ -2698,28 +2756,39 @@ Higher order call graphs
   "callable": "taint_in_taint_out.TitoSelf.set_join",
   "returned_callables": [],
   "calls": {
-    "489:11-489:16|artificial-call|comparison": {
+    "497:11-497:26": {
       "call": {
         "calls": [
           {
-            "target": "int.__lt__",
+            "target": "random.random",
             "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "489:11-489:16|artificial-call|normalize-not-comparison>comparison": {
+    "497:11-497:32|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__ge__",
+            "target": "float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "497:11-497:32|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
           }
         ]
       }
@@ -2730,7 +2799,7 @@ Higher order call graphs
   "callable": "taint_in_taint_out.TitoSelf.set_subfield",
   "returned_callables": [],
   "calls": {
-    "495:19-495:34": {
+    "503:19-503:34": {
       "call": {
         "calls": [
           {

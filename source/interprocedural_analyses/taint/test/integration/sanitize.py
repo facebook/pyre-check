@@ -84,7 +84,7 @@ def return_taint_sanitize(arg: T) -> T:
 
 def test1():
     tainted = object()
-    tainted.id = _test_source()
+    tainted.id = _test_source() # pyrefly: ignore[missing-attribute]
     test2(tainted)
     test3(tainted)
 

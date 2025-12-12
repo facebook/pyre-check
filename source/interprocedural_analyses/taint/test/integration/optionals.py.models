@@ -74,7 +74,7 @@
     "callable": "optionals.test",
     "callable_line": 23,
     "code": 5002,
-    "line": 24,
+    "line": 25,
     "start": 32,
     "end": 46,
     "filename": "optionals.py",
@@ -93,7 +93,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 24, "start": 32, "end": 46 }
+            "origin": { "line": 25, "start": 32, "end": 46 }
           }
         ]
       },
@@ -112,10 +112,10 @@
               }
             ],
             "call": {
-              "position": { "line": 24, "start": 32, "end": 46 },
+              "position": { "line": 25, "start": 32, "end": 46 },
               "resolves_to": [ "optionals.Client.offer" ],
               "port": "formal(message, position=1)",
-              "call_site": "24:4-24:47"
+              "call_site": "25:4-25:47"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false

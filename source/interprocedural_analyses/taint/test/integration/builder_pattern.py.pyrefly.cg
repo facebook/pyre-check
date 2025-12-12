@@ -1,0 +1,67 @@
+@generated
+Call dependencies
+{
+  "builder_pattern.Builder.async_save (method)": [ "pysa._test_sink (fun)" ],
+  "builder_pattern.test_chained_class_setter (fun)": [
+    "builder_pattern.Builder.__init__ (method)",
+    "builder_pattern.Builder.return_self (method)",
+    "builder_pattern.Builder.set_saved_no_return (method)",
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "builder_pattern.test_class_setter (fun)": [
+    "builder_pattern.Builder.__init__ (method)",
+    "builder_pattern.Builder.set_saved_no_return (method)",
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "builder_pattern.test_issue (fun)": [
+    "builder_pattern.Builder.__init__ (method)",
+    "builder_pattern.Builder.async_save (method)",
+    "builder_pattern.Builder.set_not_saved (method)",
+    "builder_pattern.Builder.set_saved (method)",
+    "builtins.object.__new__ (method)", "pysa._test_source (fun)"
+  ],
+  "builder_pattern.test_issue_with_sub_builder (fun)": [
+    "builder_pattern.Builder.__init__ (method)",
+    "builder_pattern.Builder.async_save (method)",
+    "builder_pattern.Builder.set_not_saved_through_typevar (method)",
+    "builder_pattern.Builder.set_saved_through_typevar (method)",
+    "builtins.object.__new__ (method)", "pysa._test_source (fun)"
+  ],
+  "builder_pattern.test_issue_with_type_var (fun)": [
+    "builder_pattern.Builder.__init__ (method)",
+    "builder_pattern.Builder.async_save (method)",
+    "builder_pattern.Builder.set_not_saved_through_typevar (method)",
+    "builder_pattern.Builder.set_saved_through_typevar (method)",
+    "builtins.object.__new__ (method)", "pysa._test_source (fun)"
+  ],
+  "builder_pattern.test_no_issue (fun)": [
+    "builder_pattern.Builder.__init__ (method)",
+    "builder_pattern.Builder.async_save (method)",
+    "builder_pattern.Builder.set_not_saved (method)",
+    "builder_pattern.Builder.set_saved (method)",
+    "builtins.object.__new__ (method)", "pysa._test_source (fun)"
+  ],
+  "builder_pattern.test_no_issue_with_sub_builder (fun)": [
+    "builder_pattern.Builder.__init__ (method)",
+    "builder_pattern.Builder.async_save (method)",
+    "builder_pattern.Builder.set_not_saved_through_typevar (method)",
+    "builder_pattern.Builder.set_saved_through_typevar (method)",
+    "builtins.object.__new__ (method)", "pysa._test_source (fun)"
+  ],
+  "builder_pattern.test_no_issue_with_type_var (fun)": [
+    "builder_pattern.Builder.__init__ (method)",
+    "builder_pattern.Builder.async_save (method)",
+    "builder_pattern.Builder.set_not_saved_through_typevar (method)",
+    "builder_pattern.Builder.set_saved_through_typevar (method)",
+    "builtins.object.__new__ (method)", "pysa._test_source (fun)"
+  ],
+  "builder_pattern.test_taint_update_receiver_declaration (fun)": [
+    "builder_pattern.Builder.__init__ (method)",
+    "builder_pattern.Builder.return_self (method)",
+    "builder_pattern.Builder.set_saved (method)",
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ]
+}

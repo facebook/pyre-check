@@ -1,0 +1,11 @@
+@generated
+Overrides
+builtins.object.__init__ (override) -> [builtins.object.__init__ (method) model_query.AttributeTestClass1.__init__ (override) model_query.AttributeTestClass2.__init__ (override) model_query.AttributeTestClass3.__init__ (override) model_query.AttributeTestClass4.__init__ (override) model_query.AttributeTestClass5.__init__ (override) model_query.AttributeTestClass6.__init__ (override) model_query.AttributeTestClass7.__init__ (override)]
+model_query.AttributeTestClass1.__init__ (override) -> [model_query.AttributeTestClass1.__init__ (method)]
+model_query.AttributeTestClass2.__init__ (override) -> [model_query.AttributeTestClass2.__init__ (method)]
+model_query.AttributeTestClass3.__init__ (override) -> [model_query.AttributeTestClass3.__init__ (method)]
+model_query.AttributeTestClass4.__init__ (override) -> [model_query.AttributeTestClass4.__init__ (method)]
+model_query.AttributeTestClass5.__init__ (override) -> [model_query.AttributeTestClass5.__init__ (method)]
+model_query.AttributeTestClass6.__init__ (override) -> [model_query.AttributeTestClass6.__init__ (method)]
+model_query.AttributeTestClass7.__init__ (override) -> [model_query.AttributeTestClass7.__init__ (method) model_query.AttributeTestClass8.__init__ (override)]
+model_query.AttributeTestClass8.__init__ (override) -> [model_query.AttributeTestClass8.__init__ (method)]

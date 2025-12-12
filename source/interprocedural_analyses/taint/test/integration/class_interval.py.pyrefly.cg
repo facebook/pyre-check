@@ -1,0 +1,157 @@
+@generated
+Call dependencies
+{
+  "class_interval.A0.m1 (method)": [ "class_interval.A0.m2 (override)" ],
+  "class_interval.A1.m1 (method)": [ "class_interval.A1.m2 (override)" ],
+  "class_interval.A10.object_target (method)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "class_interval.A10.f (object)"
+  ],
+  "class_interval.A13.f (method)": [ "class_interval.A13.g (override)" ],
+  "class_interval.A13.g@decorated (method)": [ "abc.abstractmethod (fun)" ],
+  "class_interval.A14.m1 (method)": [ "class_interval.A14.m2 (override)" ],
+  "class_interval.A15.m1 (method)": [ "class_interval.A15.m2 (override)" ],
+  "class_interval.A16.m1 (method)": [ "class_interval.A16.m2 (override)" ],
+  "class_interval.A17.m0 (method)": [ "class_interval.A17.m1 (method)" ],
+  "class_interval.A17.m2 (method)": [ "class_interval.D17.m1 (method)" ],
+  "class_interval.A19.m0 (method)": [ "class_interval.A19.m1 (method)" ],
+  "class_interval.A19.m1 (method)": [ "pysa._test_sink (fun)" ],
+  "class_interval.A19.m2 (method)": [ "class_interval.A19.m3 (method)" ],
+  "class_interval.A19.m3 (method)": [ "pysa._test_sink (fun)" ],
+  "class_interval.A2.m1 (method)": [ "class_interval.A2.m2 (override)" ],
+  "class_interval.A21.m0 (method)": [ "class_interval.A21.m1 (method)" ],
+  "class_interval.A22.m0 (method)": [ "class_interval.A22.m1 (override)" ],
+  "class_interval.A23.m0 (method)": [ "class_interval.A23.m1 (override)" ],
+  "class_interval.A24.m0 (method)": [
+    "class_interval.A24.m1 (override)", "class_interval.A24.tito (method)"
+  ],
+  "class_interval.A3.m1 (method)": [ "class_interval.A3.m2 (override)" ],
+  "class_interval.A4.m2 (method)": [ "class_interval.A4.m3 (override)" ],
+  "class_interval.A5.m1 (method)": [ "class_interval.A5.m2 (override)" ],
+  "class_interval.A6.m1 (method)": [ "class_interval.A6.m0 (override)" ],
+  "class_interval.A7.f (method)": [ "class_interval.B7.foo (method)" ],
+  "class_interval.A8.bar (method)": [
+    "builtins.int.__eq__ (method)", "builtins.object.__init__ (method)",
+    "builtins.object.__new__ (method)", "class_interval.A8.baz (method)",
+    "class_interval.B8.foo (method)", "class_interval.C8.foo (method)"
+  ],
+  "class_interval.A8.baz (method)": [ "pysa._test_source (fun)" ],
+  "class_interval.A9.f (method)": [ "pysa._test_source (fun)" ],
+  "class_interval.B0.m0 (method)": [ "class_interval.A0.m1 (method)" ],
+  "class_interval.B1.m0 (method)": [ "class_interval.B1.m1 (method)" ],
+  "class_interval.B14.m0 (method)": [ "class_interval.A14.m1 (method)" ],
+  "class_interval.B15.m0 (method)": [ "class_interval.A15.m1 (method)" ],
+  "class_interval.B16.m0 (method)": [ "class_interval.A16.m1 (method)" ],
+  "class_interval.B18.m0 (method)": [ "class_interval.sink_b (fun)" ],
+  "class_interval.B2.m0 (method)": [ "class_interval.A2.m1 (method)" ],
+  "class_interval.B21.m1 (method)": [ "class_interval.transformX (fun)" ],
+  "class_interval.B22.m1 (method)": [ "class_interval.transformX (fun)" ],
+  "class_interval.B24.m1 (method)": [ "pysa._test_source (fun)" ],
+  "class_interval.B3.m0 (method)": [ "class_interval.A3.m1 (method)" ],
+  "class_interval.B4.m1 (method)": [ "class_interval.A4.m2 (method)" ],
+  "class_interval.B5.m0 (method)": [ "class_interval.A5.m1 (method)" ],
+  "class_interval.B6.m0 (method)": [
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "class_interval.E6.m3 (method)", "pysa._test_source (fun)"
+  ],
+  "class_interval.B7.bar (method)": [ "pysa._test_source (fun)" ],
+  "class_interval.B7.foo (method)": [ "class_interval.B7.bar (method)" ],
+  "class_interval.B8.foo (method)": [ "pysa._test_source (fun)" ],
+  "class_interval.C0.m2 (method)": [ "pysa._test_sink (fun)" ],
+  "class_interval.C1.m2 (method)": [ "pysa._test_sink (fun)" ],
+  "class_interval.C12.g (method)": [ "pysa._test_source (fun)" ],
+  "class_interval.C13.g (method)": [ "pysa._test_source (fun)" ],
+  "class_interval.C14.m2 (method)": [ "pysa._test_source (fun)" ],
+  "class_interval.C17.m1 (method)": [ "class_interval.sink_c (fun)" ],
+  "class_interval.C18.m0 (method)": [ "class_interval.B18.m0 (method)" ],
+  "class_interval.C20.m0 (method)": [ "pysa._test_sink (fun)" ],
+  "class_interval.C23.m1 (method)": [ "class_interval.add_feature_c (fun)" ],
+  "class_interval.C3.m0 (method)": [ "class_interval.A3.m1 (method)" ],
+  "class_interval.C3.m2 (method)": [ "pysa._test_sink (fun)" ],
+  "class_interval.C4.m3 (method)": [ "pysa._test_sink (fun)" ],
+  "class_interval.C6.m2 (method)": [ "class_interval.A6.m1 (method)" ],
+  "class_interval.D16.m2 (method)": [ "pysa._test_source (fun)" ],
+  "class_interval.D17.m1 (method)": [ "class_interval.sink_c (fun)" ],
+  "class_interval.D2.m2 (method)": [ "pysa._test_sink (fun)" ],
+  "class_interval.D23.m1 (method)": [ "class_interval.add_feature_d (fun)" ],
+  "class_interval.D4.m0 (method)": [ "class_interval.B4.m1 (method)" ],
+  "class_interval.D5.m2 (method)": [ "pysa._test_sink (fun)" ],
+  "class_interval.D6.m0 (method)": [
+    "builtins.object.__new__ (method)", "builtins.super.__init__ (method)",
+    "class_interval.B6.m0 (method)"
+  ],
+  "class_interval.E15.m2 (method)": [ "pysa._test_source (fun)" ],
+  "class_interval.E23.m1 (method)": [ "class_interval.add_feature_e (fun)" ],
+  "class_interval.E6.m3 (method)": [ "pysa._test_source (fun)" ],
+  "class_interval.abstract_method (fun)": [
+    "class_interval.A13.f (method)", "pysa._test_sink (fun)"
+  ],
+  "class_interval.call_method_via_class_name (fun)": [
+    "class_interval.A9.f (method)"
+  ],
+  "class_interval.canonical_example (fun)": [
+    "class_interval.B0.m0 (method)", "pysa._test_source (fun)"
+  ],
+  "class_interval.issue_precise_tito_intervals (fun)": [
+    "class_interval.A23.m0 (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "class_interval.multi_inheritance_issue (fun)": [
+    "class_interval.B16.m0 (method)", "pysa._test_sink (fun)"
+  ],
+  "class_interval.multi_inheritance_no_issue_one_hop (fun)": [
+    "class_interval.B14.m0 (method)", "pysa._test_sink (fun)"
+  ],
+  "class_interval.multi_inheritance_no_issue_two_hops (fun)": [
+    "class_interval.B15.m0 (method)", "pysa._test_sink (fun)"
+  ],
+  "class_interval.multiple_inheritance (fun)": [
+    "class_interval.B2.m0 (method)", "pysa._test_source (fun)"
+  ],
+  "class_interval.no_call_to_parent_class (fun)": [
+    "class_interval.B1.m0 (method)", "pysa._test_source (fun)"
+  ],
+  "class_interval.no_issue_source_through_staticmethod_tito (fun)": [
+    "class_interval.A24.m0 (method)", "pysa._test_sink (fun)"
+  ],
+  "class_interval.no_issue_taint_transform_with_class_interval (fun)": [
+    "class_interval.A22.m0 (method)", "class_interval.sink_d (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "class_interval.no_issue_taint_transform_with_class_interval_for_classmethods (fun)": [
+    "class_interval.A21.m0 (method)", "class_interval.sink_d (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "class_interval.propagate_source_empty (fun)": [
+    "class_interval.A6.m1 (method)", "pysa._test_sink (fun)"
+  ],
+  "class_interval.sink_in_subclass (fun)": [
+    "class_interval.B3.m0 (override)", "pysa._test_source (fun)"
+  ],
+  "class_interval.sink_two_hops (fun)": [
+    "class_interval.B5.m0 (method)", "pysa._test_source (fun)"
+  ],
+  "class_interval.source_two_hops (fun)": [
+    "class_interval.D4.m0 (method)", "pysa._test_source (fun)"
+  ],
+  "class_interval.test_class_methods (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "class_interval.A17.m0 (method)", "class_interval.A17.m2 (method)",
+    "pysa._test_source (fun)"
+  ],
+  "class_interval.test_multi_inheritance_parent_call (fun)": [
+    "class_interval.A20.m0 (method)", "pysa._test_source (fun)"
+  ],
+  "class_interval.test_multi_inheritance_parent_issue (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "class_interval.test_multi_inheritance_parent_call (fun)"
+  ],
+  "class_interval.test_static_methods (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "class_interval.C18.m0 (method)", "pysa._test_source (fun)"
+  ],
+  "class_interval.undetected_issue (fun)": [
+    "class_interval.A12.f (method)", "pysa._test_sink (fun)"
+  ]
+}

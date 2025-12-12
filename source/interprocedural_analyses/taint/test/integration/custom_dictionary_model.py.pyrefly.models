@@ -1,0 +1,502 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "custom_dictionary_model._test_source_2",
+    "filename": "custom_dictionary_model.py",
+    "callable_line": 9,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "Test2" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "custom_dictionary_model.sink_dictionary_key",
+    "callable_line": 24,
+    "code": 1002,
+    "line": 26,
+    "start": 6,
+    "end": 22,
+    "filename": "custom_dictionary_model.py",
+    "message": "[Test2] to [SinkKey]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "custom_dictionary_model._test_source_2",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test2"
+              }
+            ],
+            "origin": { "line": 26, "start": 6, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "builtins.dict.__setitem__",
+                    "port": "leaf:__key"
+                  }
+                ],
+                "kind": "SinkKey"
+              }
+            ],
+            "origin": { "line": 26, "start": 6, "end": 22 },
+            "call_site": "26:4-26:29"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "builtins.dict.__setitem__",
+      "index": 0,
+      "parameter": "formal(__key)"
+    },
+    "master_handle": "custom_dictionary_model.sink_dictionary_key:1002:0:Call|builtins.dict.__setitem__|0|formal(__key):d2c0b0d010d5872fb41cde32470d9c12"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "custom_dictionary_model.sink_dictionary_value",
+    "callable_line": 19,
+    "code": 1003,
+    "line": 21,
+    "start": 13,
+    "end": 29,
+    "filename": "custom_dictionary_model.py",
+    "message": "[Test2] to [SinkValue]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "custom_dictionary_model._test_source_2",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test2"
+              }
+            ],
+            "origin": { "line": 21, "start": 13, "end": 29 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "builtins.dict.__setitem__",
+                    "port": "leaf:__value"
+                  }
+                ],
+                "kind": "SinkValue"
+              }
+            ],
+            "origin": { "line": 21, "start": 13, "end": 29 },
+            "call_site": "21:4-21:29"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "builtins.dict.__setitem__",
+      "index": 0,
+      "parameter": "formal(__value)"
+    },
+    "master_handle": "custom_dictionary_model.sink_dictionary_value:1003:0:Call|builtins.dict.__setitem__|0|formal(__value):ce4e8cc05b583697bd898175f0a7b755"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "custom_dictionary_model.tainted_dictionary_key_sink",
+    "callable_line": 35,
+    "code": 1001,
+    "line": 38,
+    "start": 15,
+    "end": 16,
+    "filename": "custom_dictionary_model.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
+            ],
+            "origin": { "line": 37, "start": 6, "end": 20 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 38, "start": 15, "end": 16 },
+            "call_site": "38:4-38:17"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "custom_dictionary_model.tainted_dictionary_key_sink:1001:0:Call|pysa._test_sink|0|formal(arg):03517d8d743a3142d6b70bfb2d01817f"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "custom_dictionary_model.tainted_dictionary_value_sink",
+    "callable_line": 29,
+    "code": 1001,
+    "line": 32,
+    "start": 15,
+    "end": 16,
+    "filename": "custom_dictionary_model.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
+            ],
+            "origin": { "line": 31, "start": 13, "end": 27 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 32, "start": 15, "end": 16 },
+            "call_site": "32:4-32:17"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "custom_dictionary_model.tainted_dictionary_value_sink:1001:0:Call|pysa._test_sink|0|formal(arg):841a1bf6c27e0b1e158a5635ef5e36ba"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.dict.__setitem__",
+    "filename": "builtins.pyi",
+    "callable_line": 3621,
+    "sinks": [
+      {
+        "port": "formal(__value, position=2, positional_only)",
+        "taint": [
+          { "kinds": [ { "kind": "SinkValue" } ], "declaration": null }
+        ]
+      },
+      {
+        "port": "formal(__key, position=1, positional_only)",
+        "taint": [
+          { "kinds": [ { "kind": "SinkKey" } ], "declaration": null }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(__value, position=2, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito_value" } ],
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__key, position=1, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito_key" } ],
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(self, position=0, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito_self" } ],
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}

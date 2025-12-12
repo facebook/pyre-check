@@ -41,8 +41,8 @@ Call dependencies
   "attributes.test_issue_with_tito_copy_multiple_possible_dictlike_objects (fun)": [
     "attributes.RegularForm.__init__ (method)",
     "attributes.tito_copy_multiple_possible_dictlike_objects (fun)",
-    "dict.__getitem__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "typing.Mapping.__getitem__ (method)"
   ],
   "attributes.test_issue_with_update_to_self_attribute (fun)": [
     "attributes.D.buffer (object)", "list.append (method)",

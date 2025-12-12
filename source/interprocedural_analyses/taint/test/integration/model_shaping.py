@@ -35,10 +35,10 @@ def asdict(obj: RecordSchema, *, dict_factory: Any = dict) -> Dict[str, Any]:
 
 
 def _asdict_inner(obj: Any, dict_factory: Any) -> Any:
-    meta = getattr(obj, RecordSchema._META_PROP, {})
+    meta = getattr(obj, RecordSchema._META_PROP, {}) # pyrefly: ignore[no-matching-overload]
     if _is_dataclass_instance(obj):
         result = []
-        for f in fields(obj):
+        for f in fields(obj): # pyrefly: ignore[not-iterable]
             value = _asdict_inner(getattr(obj, f.name), dict_factory)
             field_meta = meta.get(f.name)
             if value is not None or (field_meta and field_meta.include_none):

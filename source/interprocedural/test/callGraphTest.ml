@@ -1357,6 +1357,19 @@ let test_call_graph_of_define =
                ( "9:2-9:35",
                  ExpressionCallees.from_call
                    (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~return_type:(Some ReturnType.none)
+                            ~implicit_receiver:true
+                            ~receiver_class:"pysa.TestCallableTarget"
+                            (Target.Regular.Method
+                               {
+                                 class_name = "pysa.TestCallableTarget";
+                                 method_name = "async_schedule";
+                                 kind = Normal;
+                               });
+                        ]
                       ~shim_target:
                         (Some
                            {
@@ -1385,9 +1398,6 @@ let test_call_graph_of_define =
                                    ];
                                };
                            })
-                      ~unresolved:
-                        (Unresolved.True
-                           (Unresolved.BypassingDecorators Unresolved.CannotResolveExports))
                       ()) );
              ]
            ();

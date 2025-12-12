@@ -1,0 +1,399 @@
+@generated
+Higher order call graphs
+{
+  "callable": "features.async_issue_bools",
+  "returned_callables": [],
+  "calls": {
+    "94:17-94:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "features.async_tuple_of_bools",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "95:4-95:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "features.async_tuple_of_bools",
+  "returned_callables": [],
+  "calls": {
+    "90:11-90:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "90:27-90:41": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "features.issue_from_tuple",
+  "returned_callables": [],
+  "calls": {
+    "78:11-78:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "features.return_tuple_of_bools",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "79:4-79:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "features.issue_via_bool",
+  "returned_callables": [],
+  "calls": {
+    "58:8-58:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "59:8-59:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.bool.__new__",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "60:4-60:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "features.issue_via_equality",
+  "returned_callables": [],
+  "calls": {
+    "68:8-68:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "features.returns_tainted_object",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "69:22-69:36|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.__eq__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "70:4-70:31": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "features.issue_via_in",
+  "returned_callables": [],
+  "calls": {
+    "103:8-103:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "104:4-104:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "104:15-104:23|artificial-call|comparison": {
+      "call": {
+        "unresolved": [ "UnresolvedMagicDunderAttrDueToNoAttribute" ]
+      }
+    },
+    "105:4-105:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "105:15-105:23|artificial-call|comparison": {
+      "call": {
+        "unresolved": [ "UnresolvedMagicDunderAttrDueToNoAttribute" ]
+      }
+    }
+  }
+}
+{
+  "callable": "features.no_always_when_calling_setitem",
+  "returned_callables": [],
+  "calls": {
+    "119:8-119:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "120:8-120:22": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "features.SetItemClass"
+          }
+        ]
+      }
+    },
+    "121:4-121:21|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "features.SetItemClass.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "features.SetItemClass"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "features.return_tuple_of_bools",
+  "returned_callables": [],
+  "calls": {
+    "74:11-74:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "74:27-74:41": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "features.returns_tainted_object",
+  "returned_callables": [],
+  "calls": {
+    "64:11-64:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "features.tito_via_constructor",
+  "returned_callables": [],
+  "calls": {
+    "46:11-46:17": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.int.__new__",
+            "index": 0,
+            "return_type": [ "float", "integer" ],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "features.tito_via_len",
+  "returned_callables": [],
+  "calls": {
+    "23:11-23:17": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.len",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "features.tito_via_min_left",
+  "returned_callables": [],
+  "calls": {
+    "27:11-27:21": {
+      "call": {
+        "calls": [
+          { "target": "builtins.min", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "features.tito_via_min_or_not",
+  "returned_callables": [],
+  "calls": {
+    "40:15-40:28": {
+      "call": {
+        "calls": [
+          { "target": "builtins.min", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "features.tito_via_min_right",
+  "returned_callables": [],
+  "calls": {
+    "31:11-31:20": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.min",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "features.tito_via_named",
+  "returned_callables": [],
+  "calls": {
+    "35:11-35:35": {
+      "call": {
+        "calls": [
+          { "target": "features.named", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "features.tito_via_optional",
+  "returned_callables": [],
+  "calls": {
+    "54:11-54:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "features.optional_scalar",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "features.tito_with_tuple",
+  "returned_callables": [],
+  "calls": {
+    "84:15-84:28": {
+      "call": {
+        "calls": [
+          { "target": "builtins.min", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "84:30-84:43": {
+      "call": {
+        "calls": [
+          { "target": "builtins.min", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

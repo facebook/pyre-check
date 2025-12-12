@@ -247,7 +247,7 @@
   "data": {
     "callable": "raise.backward",
     "filename": "raise.py",
-    "callable_line": 13,
+    "callable_line": 14,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -262,8 +262,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 14, "start": 21, "end": 22 },
-            "call_site": "14:10-14:23"
+            "origin": { "line": 16, "start": 21, "end": 22 },
+            "call_site": "16:10-16:23"
           }
         ]
       }
@@ -276,7 +276,7 @@
     "callable": "raise.forward",
     "callable_line": 9,
     "code": 5002,
-    "line": 10,
+    "line": 11,
     "start": 21,
     "end": 35,
     "filename": "raise.py",
@@ -295,7 +295,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 10, "start": 21, "end": 35 }
+            "origin": { "line": 11, "start": 21, "end": 35 }
           }
         ]
       },
@@ -312,8 +312,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 10, "start": 21, "end": 35 },
-            "call_site": "10:10-10:36"
+            "origin": { "line": 11, "start": 21, "end": 35 },
+            "call_site": "11:10-11:36"
           }
         ]
       }
@@ -334,9 +334,9 @@
   "kind": "issue",
   "data": {
     "callable": "raise.unreachable_code_do_to_always_exception",
-    "callable_line": 43,
+    "callable_line": 45,
     "code": 5002,
-    "line": 47,
+    "line": 49,
     "start": 15,
     "end": 16,
     "filename": "raise.py",
@@ -355,7 +355,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 46, "start": 8, "end": 22 }
+            "origin": { "line": 48, "start": 8, "end": 22 }
           }
         ]
       },
@@ -372,8 +372,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 47, "start": 15, "end": 16 },
-            "call_site": "47:4-47:17"
+            "origin": { "line": 49, "start": 15, "end": 16 },
+            "call_site": "49:4-49:17"
           }
         ]
       }

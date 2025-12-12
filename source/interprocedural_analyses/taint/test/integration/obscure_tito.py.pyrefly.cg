@@ -1,0 +1,16 @@
+@generated
+Call dependencies
+{
+  "obscure_tito.test_obscure_return (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "obscure_tito.C.update (override)", "pysa._test_source (fun)"
+  ],
+  "obscure_tito.test_obscure_sink (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "obscure_tito.C.taint_parameter (override)"
+  ],
+  "obscure_tito.test_obscure_tito (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "obscure_tito.C.update (override)", "pysa._test_source (fun)"
+  ]
+}

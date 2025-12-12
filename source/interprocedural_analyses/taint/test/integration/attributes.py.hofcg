@@ -351,7 +351,7 @@ Higher order call graphs
   "callable": "attributes.test_issue_with_tito_copy_multiple_possible_dictlike_objects",
   "returned_callables": [],
   "calls": {
-    "168:8-168:48": {
+    "169:8-169:48": {
       "call": {
         "new_calls": [
           {
@@ -371,14 +371,14 @@ Higher order call graphs
         ]
       }
     },
-    "168:32-168:46": {
+    "169:32-169:46": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "169:15-169:62": {
+    "170:15-170:62": {
       "call": {
         "calls": [
           {
@@ -389,22 +389,22 @@ Higher order call graphs
         ]
       }
     },
-    "171:4-171:35": {
+    "172:4-172:35": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "171:15-171:34|artificial-call|subscript-get-item": {
+    "172:15-172:34|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "typing.MutableMapping"
           }
         ]
       }
@@ -447,7 +447,7 @@ Higher order call graphs
   "callable": "attributes.test_no_issue_sanitize",
   "returned_callables": [],
   "calls": {
-    "177:8-177:11": {
+    "178:8-178:11": {
       "call": {
         "new_calls": [
           {
@@ -467,14 +467,14 @@ Higher order call graphs
         ]
       }
     },
-    "178:18-178:32": {
+    "179:18-179:32": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "180:4-180:27": {
+    "181:4-181:27": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -487,7 +487,7 @@ Higher order call graphs
   "callable": "attributes.test_no_issue_sanitize_via_call",
   "returned_callables": [],
   "calls": {
-    "186:8-186:11": {
+    "187:8-187:11": {
       "call": {
         "new_calls": [
           {
@@ -507,14 +507,14 @@ Higher order call graphs
         ]
       }
     },
-    "187:18-187:32": {
+    "188:18-188:32": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "188:4-188:25": {
+    "189:4-189:25": {
       "call": {
         "calls": [
           {
@@ -525,7 +525,7 @@ Higher order call graphs
         ]
       }
     },
-    "189:4-189:27": {
+    "190:4-190:27": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -670,7 +670,7 @@ Higher order call graphs
   "callable": "attributes.tito_copy_multiple_possible_dictlike_objects",
   "returned_callables": [],
   "calls": {
-    "165:11-165:17": {
+    "166:11-166:17": {
       "attribute_access": {
         "properties": [
           {
@@ -683,7 +683,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "165:11-165:24": {
+    "166:11-166:24": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }

@@ -1,0 +1,14 @@
+@generated
+Call dependencies
+{
+  "recognized_callable_targets.callable_target (fun)": [
+    "pysa._test_sink (fun)"
+  ],
+  "recognized_callable_targets.callable_target@decorated (fun)": [
+    "pysa.to_callable_target (fun)"
+  ],
+  "recognized_callable_targets.test_callable_target (fun)": [
+    "pysa.TestCallableTarget.async_schedule (method)",
+    "pysa._test_source (fun)"
+  ]
+}

@@ -1,0 +1,578 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_name_path.test_tito_args_kwargs",
+    "filename": "parameter_name_path.py",
+    "callable_line": 13,
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[x])",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(*args, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[x]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "model_generators": [ "tito_parameter_name" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_name_path.test_tito_keyword_only_parameter",
+    "filename": "parameter_name_path.py",
+    "callable_line": 21,
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[y]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[x]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "model_generators": [ "tito_parameter_name" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_name_path.test_tito_mix1",
+    "filename": "parameter_name_path.py",
+    "callable_line": 29,
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[g,f,d,c,b,a])",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(*args, position=4)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(g)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[g]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(f)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[f]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(d, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[d]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(c, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[c]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(b, position=1, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(a, position=0, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "model_generators": [ "tito_parameter_name" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_name_path.test_tito_mix2",
+    "filename": "parameter_name_path.py",
+    "callable_line": 33,
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[g,f,d,c,b,a])",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(g)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[g]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(f)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[f]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(d, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[d]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(c, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[c]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(b, position=1, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(a, position=0, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "model_generators": [ "tito_parameter_name" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_name_path.test_tito_mix3",
+    "filename": "parameter_name_path.py",
+    "callable_line": 37,
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[g,f,b,a])",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(g)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[g]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(f)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[f]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(b, position=1, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(a, position=0, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "model_generators": [ "tito_parameter_name" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_name_path.test_tito_mix_positional_and_named_parameters",
+    "filename": "parameter_name_path.py",
+    "callable_line": 25,
+    "tito": [
+      {
+        "port": "formal(z)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[z]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(y, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[y]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__x, position=0, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "model_generators": [ "tito_parameter_name" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_name_path.test_tito_positional_only_parameter",
+    "filename": "parameter_name_path.py",
+    "callable_line": 17,
+    "tito": [
+      {
+        "port": "formal(__x, position=0, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "model_generators": [ "tito_parameter_name" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_name_path.test_tito_regular_parameters",
+    "filename": "parameter_name_path.py",
+    "callable_line": 9,
+    "tito": [
+      {
+        "port": "formal(z, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[z]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(y, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[y]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[x]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "model_generators": [ "tito_parameter_name" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}

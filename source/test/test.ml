@@ -579,11 +579,15 @@ let pysa_stubs () =
 
         class TestCallableTarget:
           def __call__(self) -> int: ...
+          def async_delay(*args: Any, **kwargs: Any) -> None: ...
+          def async_schedule(*args: Any, **kwargs: Any) -> None: ...
         def to_callable_target(f: Callable[..., Any]) -> TestCallableTarget: ...
         |}
     );
   ]
 
+
+let pytest_stubs () = ["pytest.pyi", ""]
 
 let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions = true) () =
   let builtins =
@@ -1036,11 +1040,11 @@ let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions =
           def items(self) -> Iterable[Tuple[_KT, _VT]]: pass
           def __delitem__(self, __v: _KT) -> None: ...
           def __getitem__(self, __k: _KT, /) -> _VT: ...
-          def __setitem__(self, __k: _KT, __v: _VT) -> None: ...
+          def __setitem__(self, __k: _KT, __v: _VT, /) -> None: ...
           @overload
-          def get(self, __key: _KT) -> Optional[_VT]: ...
+          def get(self, __key: _KT, /) -> Optional[_VT]: ...
           @overload
-          def get(self, __key: _KT, __default: Union[_VT, _T]) -> Union[_VT, _T]: ...
+          def get(self, __key: _KT, __default: Union[_VT, _T], /) -> Union[_VT, _T]: ...
           def __len__(self) -> int: ...
 
         class list(MutableSequence[_T], Generic[_T]):
@@ -1059,7 +1063,7 @@ let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions =
           @overload
           def __iter__(self: _PyreReadOnly_[Self]) -> Iterator[_PyreReadOnly_[_T]]: ...
 
-          def append(self, __element: _T) -> None: ...
+          def append(self, object: _T, /) -> None: ...
           def insert(self, __index: int, __object: _T) -> None: ...
           @overload
           def __getitem__(self, index: int) -> _T: ...
@@ -1159,11 +1163,11 @@ let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions =
 
         class filter(Iterator[_T], Generic[_T]):
           @overload
-          def __init__(self, __function: None, __iterable: Iterable[_T | None]) -> None: ...
+          def __new__(cls, __function: None, __iterable: Iterable[_T | None], /) -> _Self: ...
           @overload
-          def __init__(self, __function: Callable[[_S], TypeGuard[_T]], __iterable: Iterable[_S]) -> None: ...
+          def __new__(cls, __function: Callable[[_S], TypeGuard[_T]], __iterable: Iterable[_S], /) -> _Self: ...
           @overload
-          def __init__(self, __function: Callable[[_T], Any], __iterable: Iterable[_T]) -> None: ...
+          def __new__(cls, __function: Callable[[_T], Any], __iterable: Iterable[_T], /) -> _Self: ...
           def __iter__(self: _Self) -> _Self: ...
           def __next__(self) -> _T: ...
 
@@ -2047,7 +2051,6 @@ let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions =
         sep: str
         |}
     );
-    "pytest.pyi", "";
     ( "os/__init__.pyi",
       {|
     from builtins import _PathLike as PathLike
@@ -2222,6 +2225,9 @@ let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions =
         ) -> Callable[[_C], _C]: ...
       |}
     );
+    "random.pyi", {|
+        def random() -> float: ...
+      |};
     ( "click/__init__.pyi",
       {|
         # -*- coding: utf-8 -*-
@@ -3170,6 +3176,7 @@ let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions =
   @ readonly_stubs
   @ django_stubs ()
   @ pysa_stubs ()
+  @ pytest_stubs ()
   @ if include_pyre_extensions then pyre_extensions_stubs () else []
 
 
@@ -3536,7 +3543,11 @@ module ScratchPyreflyProject = struct
       File.write file
     in
     let external_sources =
-      django_stubs () @ pysa_stubs () @ pyre_extensions_stubs () @ external_sources
+      django_stubs ()
+      @ pysa_stubs ()
+      @ pytest_stubs ()
+      @ pyre_extensions_stubs ()
+      @ external_sources
     in
     let () = List.iter sources ~f:(add_source ~root:local_root) in
     let () = List.iter external_sources ~f:(add_source ~root:external_root) in

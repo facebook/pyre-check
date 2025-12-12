@@ -1,0 +1,40 @@
+@generated
+Higher order call graphs
+{
+  "callable": "typevar.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "10:4-10:29": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
+  }
+}
+{
+  "callable": "typevar.issue",
+  "returned_callables": [],
+  "calls": {
+    "17:4-17:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "typevar.Foo.__init__",
+  "returned_callables": [],
+  "calls": {
+    "14:8-14:20": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{typevar.Foo.tainted}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}

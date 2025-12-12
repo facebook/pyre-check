@@ -54,7 +54,7 @@ class Base:
         self.bar_sink()  # Not an issue.
 
     def mutates_foo_self_typevar(self: MySelf) -> None:
-        self.foo = _test_source()
+        self.foo = _test_source() # pyrefly: ignore[missing-attribute]
 
     def issue_mutates_foo_self_typevar(self) -> None:
         self.mutates_foo_self_typevar()

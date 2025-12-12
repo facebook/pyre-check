@@ -1,0 +1,817 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "implicit_sinks.inline_issue_dot_format",
+    "callable_line": 25,
+    "code": 1337,
+    "line": 27,
+    "start": 4,
+    "end": 10,
+    "filename": "implicit_sinks.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 27, "start": 18, "end": 19 } ],
+            "origin": { "line": 26, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "builtins.str.format", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 27, "start": 4, "end": 10 }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "format-string" }, { "always-via": "tito" }
+    ],
+    "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
+    "master_handle": "implicit_sinks.inline_issue_dot_format:1337:0:LiteralStringSink|Test:12e6985f0ee1e45370ff2a0b6e46b05f"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "implicit_sinks.inline_issue_format_string",
+    "callable_line": 15,
+    "code": 1337,
+    "line": 17,
+    "start": 4,
+    "end": 12,
+    "filename": "implicit_sinks.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 17, "start": 8, "end": 9 } ],
+            "origin": { "line": 16, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 17, "start": 4, "end": 12 }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "format-string" }, { "always-via": "tito" }
+    ],
+    "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
+    "master_handle": "implicit_sinks.inline_issue_format_string:1337:0:LiteralStringSink|Test:e8f93741bdea2fc8de1e3a34c54afe6f"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "implicit_sinks.inline_issue_format_string_proper_tito",
+    "callable_line": 64,
+    "code": 1337,
+    "line": 66,
+    "start": 4,
+    "end": 18,
+    "filename": "implicit_sinks.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 66, "start": 8, "end": 9 } ],
+            "origin": { "line": 65, "start": 14, "end": 28 }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 66, "start": 14, "end": 15 } ],
+            "origin": { "line": 65, "start": 34, "end": 48 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 66, "start": 4, "end": 18 }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "format-string" }, { "always-via": "tito" }
+    ],
+    "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
+    "master_handle": "implicit_sinks.inline_issue_format_string_proper_tito:1337:0:LiteralStringSink|Test:2d2f13f927e373f2d409957884ab2173"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "implicit_sinks.inline_issue_lhs_add_literal",
+    "callable_line": 59,
+    "code": 1337,
+    "line": 61,
+    "start": 18,
+    "end": 25,
+    "filename": "implicit_sinks.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 61, "start": 14, "end": 15 } ],
+            "origin": { "line": 60, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<str.__add__>}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 61, "start": 18, "end": 25 }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
+    ],
+    "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
+    "master_handle": "implicit_sinks.inline_issue_lhs_add_literal:1337:0:LiteralStringSink|Test:e9c51c2a5cfd075f3b02e2b308c79e83"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "implicit_sinks.inline_issue_percent_format",
+    "callable_line": 34,
+    "code": 1337,
+    "line": 36,
+    "start": 4,
+    "end": 10,
+    "filename": "implicit_sinks.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 36, "start": 13, "end": 17 } ],
+            "origin": { "line": 35, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "builtins.str.__mod__", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 36, "start": 4, "end": 10 }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "format-string" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" }
+    ],
+    "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
+    "master_handle": "implicit_sinks.inline_issue_percent_format:1337:0:LiteralStringSink|Test:a3816965f707388cfddef3263d5a9c83"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "implicit_sinks.inline_issue_rhs_add_literal",
+    "callable_line": 43,
+    "code": 1337,
+    "line": 45,
+    "start": 4,
+    "end": 14,
+    "filename": "implicit_sinks.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 45, "start": 17, "end": 18 } ],
+            "origin": { "line": 44, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "builtins.str.__add__", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 45, "start": 4, "end": 14 }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
+    ],
+    "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
+    "master_handle": "implicit_sinks.inline_issue_rhs_add_literal:1337:0:LiteralStringSink|Test:915afc9811e1387b5a7d62eacdefd5e7"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "implicit_sinks.propagate_sink_dot_format",
+    "filename": "implicit_sinks.py",
+    "callable_line": 21,
+    "sinks": [
+      {
+        "port": "formal(a, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 22, "start": 18, "end": 19 } ],
+            "origin": { "line": 22, "start": 4, "end": 10 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "implicit_sinks.propagate_sink_format_string",
+    "filename": "implicit_sinks.py",
+    "callable_line": 11,
+    "sinks": [
+      {
+        "port": "formal(a, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 12, "start": 8, "end": 9 } ],
+            "origin": { "line": 12, "start": 4, "end": 12 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "implicit_sinks.propagate_sink_lhs_add_literal",
+    "filename": "implicit_sinks.py",
+    "callable_line": 55,
+    "sinks": [
+      {
+        "port": "formal(a, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 56, "start": 14, "end": 15 } ],
+            "origin": { "line": 56, "start": 18, "end": 25 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "implicit_sinks.propagate_sink_percent_format",
+    "filename": "implicit_sinks.py",
+    "callable_line": 30,
+    "sinks": [
+      {
+        "port": "formal(a, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 31, "start": 13, "end": 17 } ],
+            "origin": { "line": 31, "start": 4, "end": 10 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "implicit_sinks.propagate_sink_rhs_add_literal",
+    "filename": "implicit_sinks.py",
+    "callable_line": 39,
+    "sinks": [
+      {
+        "port": "formal(a, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 40, "start": 17, "end": 18 } ],
+            "origin": { "line": 40, "start": 4, "end": 14 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "implicit_sinks.string_literal_arguments_issue",
+    "callable_line": 102,
+    "code": 1337,
+    "line": 103,
+    "start": 34,
+    "end": 48,
+    "filename": "implicit_sinks.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 103, "start": 34, "end": 48 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "format-string" }, { "always-via": "tito" }
+                ],
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 103, "start": 34, "end": 48 },
+              "resolves_to": [
+                "implicit_sinks.string_literal_arguments_sink"
+              ],
+              "port": "formal(template, position=0)",
+              "call_site": "103:4-103:49"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "format-string" }, { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "implicit_sinks.string_literal_arguments_sink",
+      "index": 0,
+      "parameter": "formal(template)"
+    },
+    "master_handle": "implicit_sinks.string_literal_arguments_issue:1337:0:Call|implicit_sinks.string_literal_arguments_sink|0|formal(template):3410447c57b39115321f880c963130fa"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "implicit_sinks.string_literal_arguments_sink",
+    "filename": "implicit_sinks.py",
+    "callable_line": 92,
+    "sinks": [
+      {
+        "port": "formal(template, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 95, "start": 8, "end": 16 } ],
+            "origin": { "line": 95, "start": 8, "end": 39 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "implicit_sinks.string_literal_arguments_sink",
+    "callable_line": 92,
+    "code": 1337,
+    "line": 95,
+    "start": 8,
+    "end": 39,
+    "filename": "implicit_sinks.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "via": "format-string" },
+              { "via": "string_concat_lhs" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 95, "start": 37, "end": 38 },
+              { "line": 99, "start": 8, "end": 9 }
+            ],
+            "origin": { "line": 93, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "builtins.str.format", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 95, "start": 8, "end": 39 }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<str.__add__>}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 99, "start": 12, "end": 23 }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "via": "format-string" },
+      { "via": "string_concat_lhs" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
+    "master_handle": "implicit_sinks.string_literal_arguments_sink:1337:0:LiteralStringSink|Test:e3c1e392051508a7ea531e0005723cc2"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}

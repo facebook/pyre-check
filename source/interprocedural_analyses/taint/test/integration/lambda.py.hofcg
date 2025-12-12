@@ -153,15 +153,15 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
-            "index": 1,
+            "target": "filter.__new__",
+            "index": 0,
             "return_type": [],
             "is_static_method": true
           }
         ],
         "init_calls": [
           {
-            "target": "filter.__init__",
+            "target": "object.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
@@ -233,7 +233,7 @@ Higher order call graphs
         "new_calls": [
           {
             "target": "object.__new__",
-            "index": 2,
+            "index": 1,
             "return_type": [],
             "is_static_method": true
           }
@@ -252,15 +252,15 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
-            "index": 3,
+            "target": "filter.__new__",
+            "index": 1,
             "return_type": [],
             "is_static_method": true
           }
         ],
         "init_calls": [
           {
-            "target": "filter.__init__",
+            "target": "object.__init__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": []
@@ -352,7 +352,7 @@ Higher order call graphs
         "new_calls": [
           {
             "target": "object.__new__",
-            "index": 4,
+            "index": 2,
             "return_type": [],
             "is_static_method": true
           }
@@ -371,15 +371,15 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
-            "index": 5,
+            "target": "filter.__new__",
+            "index": 2,
             "return_type": [],
             "is_static_method": true
           }
         ],
         "init_calls": [
           {
-            "target": "filter.__init__",
+            "target": "object.__init__",
             "index": 2,
             "implicit_receiver": true,
             "return_type": []
@@ -481,7 +481,7 @@ Higher order call graphs
         "new_calls": [
           {
             "target": "object.__new__",
-            "index": 6,
+            "index": 3,
             "return_type": [],
             "is_static_method": true
           }
@@ -500,15 +500,15 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
-            "index": 7,
+            "target": "filter.__new__",
+            "index": 3,
             "return_type": [],
             "is_static_method": true
           }
         ],
         "init_calls": [
           {
-            "target": "filter.__init__",
+            "target": "object.__init__",
             "index": 3,
             "implicit_receiver": true,
             "return_type": []

@@ -1,0 +1,14 @@
+@generated
+Overrides
+builtins.object.__hash__ (override) -> [builtins.object.__hash__ (method) dataclass_taint.DataClassWithOtherSource.__hash__ (override) dataclass_taint.DataClassWithSource.__hash__ (override)]
+builtins.object.__init__ (override) -> [builtins.object.__init__ (method) dataclass_taint.DataClass.__init__ (override) dataclass_taint.DataClassSwapArguments.__init__ (override) dataclass_taint.DataClassWIthInit.__init__ (override) dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__ (override) dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__ (override) dataclass_taint.DataClassWithOtherSource.__init__ (override) dataclass_taint.DataClassWithSource.__init__ (override) dataclass_taint.WeirdDataClass.__init__ (override)]
+dataclass_taint.DataClass.__init__ (override) -> [dataclass_taint.DataClass.__init__ (method)]
+dataclass_taint.DataClassSwapArguments.__init__ (override) -> [dataclass_taint.DataClassSwapArguments.__init__ (method)]
+dataclass_taint.DataClassWIthInit.__init__ (override) -> [dataclass_taint.DataClassWIthInit.__init__ (method)]
+dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__ (override) -> [dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__ (method)]
+dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__ (override) -> [dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__ (method)]
+dataclass_taint.DataClassWithOtherSource.__hash__ (override) -> [dataclass_taint.DataClassWithOtherSource.__hash__ (method)]
+dataclass_taint.DataClassWithOtherSource.__init__ (override) -> [dataclass_taint.DataClassWithOtherSource.__init__ (method)]
+dataclass_taint.DataClassWithSource.__hash__ (override) -> [dataclass_taint.DataClassWithSource.__hash__ (method)]
+dataclass_taint.DataClassWithSource.__init__ (override) -> [dataclass_taint.DataClassWithSource.__init__ (method)]
+dataclass_taint.WeirdDataClass.__init__ (override) -> [dataclass_taint.WeirdDataClass.__init__ (method)]

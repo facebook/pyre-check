@@ -1,0 +1,712 @@
+@generated
+Higher order call graphs
+{
+  "callable": "builder_pattern.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "10:4-10:16": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } },
+    "96:17-96:24|identifier|Builder": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builder_pattern.Builder.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "builder_pattern.Builder"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "builder_pattern.test_chained_class_setter",
+  "returned_callables": [],
+  "calls": {
+    "71:14-71:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builder_pattern.Builder.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "72:4-72:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.return_self",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "72:4-72:61": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_saved_no_return",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "72:46-72:60": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "73:4-73:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "74:4-74:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "builder_pattern.test_class_setter",
+  "returned_callables": [],
+  "calls": {
+    "78:14-78:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builder_pattern.Builder.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "79:4-79:47": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_saved_no_return",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "79:32-79:46": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "80:4-80:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "81:4-81:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "builder_pattern.test_issue",
+  "returned_callables": [],
+  "calls": {
+    "50:14-50:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builder_pattern.Builder.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "51:4-51:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_not_saved",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "51:4-51:61": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_saved",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "51:4-51:74": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.async_save",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "51:46-51:60": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "builder_pattern.test_issue_with_sub_builder",
+  "returned_callables": [],
+  "calls": {
+    "108:14-108:26": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builder_pattern.Builder.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.SubBuilder"
+          }
+        ]
+      }
+    },
+    "109:4-109:51": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_not_saved_through_typevar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.SubBuilder"
+          }
+        ]
+      }
+    },
+    "109:4-111:5": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_saved_through_typevar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.SubBuilder"
+          }
+        ]
+      }
+    },
+    "109:4-111:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.async_save",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.SubBuilder"
+          }
+        ]
+      }
+    },
+    "110:8-110:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "builder_pattern.test_issue_with_type_var",
+  "returned_callables": [],
+  "calls": {
+    "62:14-62:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builder_pattern.Builder.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "63:4-63:51": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_not_saved_through_typevar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "63:4-65:5": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_saved_through_typevar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "63:4-65:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.async_save",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "64:8-64:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "builder_pattern.test_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "45:14-45:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builder_pattern.Builder.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "46:4-46:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_not_saved",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "46:4-46:61": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_saved",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "46:4-46:74": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.async_save",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "46:26-46:40": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "builder_pattern.test_no_issue_with_sub_builder",
+  "returned_callables": [],
+  "calls": {
+    "101:14-101:26": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builder_pattern.Builder.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.SubBuilder"
+          }
+        ]
+      }
+    },
+    "102:4-102:57": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_not_saved_through_typevar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.SubBuilder"
+          }
+        ]
+      }
+    },
+    "102:4-104:5": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_saved_through_typevar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.SubBuilder"
+          }
+        ]
+      }
+    },
+    "102:4-104:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.async_save",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.SubBuilder"
+          }
+        ]
+      }
+    },
+    "102:42-102:56": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "builder_pattern.test_no_issue_with_type_var",
+  "returned_callables": [],
+  "calls": {
+    "55:14-55:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builder_pattern.Builder.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "56:4-56:57": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_not_saved_through_typevar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "56:4-58:5": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_saved_through_typevar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "56:4-58:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.async_save",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "56:42-56:56": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "builder_pattern.test_taint_update_receiver_declaration",
+  "returned_callables": [],
+  "calls": {
+    "89:14-89:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builder_pattern.Builder.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "90:4-90:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.return_self",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "90:4-90:51": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_saved",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "90:36-90:50": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "91:4-91:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "92:4-92:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "93:4-93:37": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "93:15-93:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.return_self",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "builder_pattern.Builder.async_save",
+  "returned_callables": [],
+  "calls": {
+    "27:8-27:31": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

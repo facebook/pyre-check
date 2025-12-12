@@ -20,7 +20,7 @@ Higher order call graphs
   "callable": "properties.CollidePropertySetterName.collided_property.setter",
   "returned_callables": [],
   "calls": {
-    "249:12-249:22": {
+    "250:12-250:22": {
       "call": {
         "calls": [
           {
@@ -39,7 +39,7 @@ Higher order call graphs
   "callable": "properties.function_with_nested_properties",
   "returned_callables": [],
   "calls": {
-    "226:4-229:16": {
+    "227:4-230:16": {
       "define": {
         "define_targets": [
           {
@@ -50,7 +50,7 @@ Higher order call graphs
         ]
       }
     },
-    "231:4-234:13": {
+    "232:4-235:13": {
       "define": {
         "define_targets": [
           {
@@ -67,7 +67,7 @@ Higher order call graphs
   "callable": "properties.function_with_nested_properties.my_property",
   "returned_callables": [],
   "calls": {
-    "228:8-228:13": {
+    "229:8-229:13": {
       "call": {
         "calls": [
           { "target": "properties.foo", "index": 0, "return_type": [] }
@@ -80,21 +80,21 @@ Higher order call graphs
   "callable": "properties.function_with_nested_properties.my_property@setter",
   "returned_callables": [],
   "calls": {
-    "233:8-233:34": {
+    "234:8-234:34": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "233:19-233:33": {
+    "234:19-234:33": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "234:8-234:13": {
+    "235:8-235:13": {
       "call": {
         "calls": [
           { "target": "properties.bar", "index": 0, "return_type": [] }
@@ -274,7 +274,7 @@ Higher order call graphs
   "callable": "properties.string_source",
   "returned_callables": [],
   "calls": {
-    "313:11-313:25": {
+    "317:11-317:25": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -342,7 +342,7 @@ Higher order call graphs
   "callable": "properties.test_object_class",
   "returned_callables": [],
   "calls": {
-    "316:8-316:23": {
+    "320:8-320:23": {
       "call": {
         "calls": [
           {
@@ -353,14 +353,14 @@ Higher order call graphs
         ]
       }
     },
-    "317:4-317:27": {
+    "321:4-321:27": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "317:15-317:26": {
+    "321:15-321:26": {
       "attribute_access": {
         "properties": [
           {
@@ -378,7 +378,7 @@ Higher order call graphs
   "callable": "properties.test_property_augmented_assign",
   "returned_callables": [],
   "calls": {
-    "309:4-309:17|artificial-attribute-access|augmented-assign-lhs": {
+    "313:4-313:17|artificial-attribute-access|augmented-assign-lhs": {
       "attribute_access": {
         "properties": [
           {
@@ -390,7 +390,7 @@ Higher order call graphs
         ]
       }
     },
-    "309:4-309:17|artificial-attribute-access|augmented-assign-rhs": {
+    "313:4-313:17|artificial-attribute-access|augmented-assign-rhs": {
       "attribute_access": {
         "properties": [
           {
@@ -402,7 +402,7 @@ Higher order call graphs
         ]
       }
     },
-    "309:4-309:22|artificial-call|augmented-assign-dunder-call": {
+    "313:4-313:22|artificial-call|augmented-assign-dunder-call": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
@@ -778,7 +778,7 @@ Higher order call graphs
   "callable": "properties.CollidePropertySetterName.collided_property",
   "returned_callables": [],
   "calls": {
-    "248:8-249:22": {
+    "249:8-250:22": {
       "define": {
         "define_targets": [
           {
@@ -789,7 +789,7 @@ Higher order call graphs
         ]
       }
     },
-    "251:8-251:17": {
+    "252:8-252:17": {
       "call": {
         "calls": [
           {
@@ -806,7 +806,7 @@ Higher order call graphs
   "callable": "properties.CollidePropertySetterName.collided_property@setter",
   "returned_callables": [],
   "calls": {
-    "255:8-255:18": {
+    "256:8-256:18": {
       "call": {
         "calls": [
           {
@@ -1004,7 +1004,7 @@ Higher order call graphs
   "callable": "properties.PropertySetterTitoModel.test_obscure_property",
   "returned_callables": [],
   "calls": {
-    "280:8-280:29": {
+    "284:8-284:29": {
       "attribute_access": {
         "properties": [
           {
@@ -1016,14 +1016,14 @@ Higher order call graphs
         ]
       }
     },
-    "280:32-280:46": {
+    "284:32-284:46": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "281:8-281:24": {
+    "285:8-285:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -1036,7 +1036,7 @@ Higher order call graphs
   "callable": "properties.PropertySetterTitoModel.test_tito_property",
   "returned_callables": [],
   "calls": {
-    "268:8-268:24": {
+    "272:8-272:24": {
       "attribute_access": {
         "properties": [
           {
@@ -1048,21 +1048,21 @@ Higher order call graphs
         ]
       }
     },
-    "268:27-268:41": {
+    "272:27-272:41": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "269:8-269:36": {
+    "273:8-273:36": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "269:19-269:35": {
+    "273:19-273:35": {
       "attribute_access": {
         "properties": [
           {
@@ -1136,7 +1136,7 @@ Higher order call graphs
   "callable": "properties.TestTypeInferenceInSetter.my_property@setter",
   "returned_callables": [],
   "calls": {
-    "301:8-301:19": {
+    "305:8-305:19": {
       "call": {
         "calls": [
           {
@@ -1149,7 +1149,7 @@ Higher order call graphs
         ]
       }
     },
-    "302:11-302:31": {
+    "306:11-306:31": {
       "call": {
         "calls": [
           {
@@ -1160,7 +1160,7 @@ Higher order call graphs
         ]
       }
     },
-    "303:12-303:23": {
+    "307:12-307:23": {
       "call": {
         "calls": [
           {

@@ -147,7 +147,7 @@ def dict_update_with_literal_multiple():
 
 
 def big_dict_update_arg():
-    x = {k: "safe" for k in range(100)}
+    x: Dict[int | str, Any] = {k: "safe" for k in range(100)}
     x["a"] = _test_source()
     x.update({"a": "safe"})
     return x
@@ -316,7 +316,7 @@ def test_with_issue_in_dict_comprehension():
     {"k": s for s in sources if _test_sink(s)}
 
 
-TV = TypeVar("_T")
+TV = TypeVar("TV")
 
 
 def to_map(x: Dict[str, TV]) -> Mapping[str, TV]:
@@ -501,7 +501,7 @@ def dictionary_int_key():
 
 
 def dictionary_bool_key():
-    d = {True: _test_source()}
+    d: Dict[bool | int, Any] = {True: _test_source()}
     _test_sink(d[0])
     _test_sink(d[1])
 

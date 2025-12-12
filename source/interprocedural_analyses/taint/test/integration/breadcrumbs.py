@@ -32,8 +32,8 @@ def bool_parameter(x, y: bool):
 
 
 class TpmRequest:
-    id_float: float = ...
-    ids_list: typing.List[int] = ...
+    id_float: float = ... # pyrefly: ignore[bad-assignment]
+    ids_list: typing.List[int] = ... # pyrefly: ignore[bad-assignment]
 
     def __init__(
         self,

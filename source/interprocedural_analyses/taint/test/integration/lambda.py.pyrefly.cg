@@ -1,0 +1,33 @@
+@generated
+Call dependencies
+{
+  "lambda.lambda_sink (fun)": [
+    "builtins.list.__init__ (method)", "builtins.map.__new__ (method)",
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "pysa._test_sink (fun)"
+  ],
+  "lambda.lambda_source (fun)": [
+    "builtins.list.__init__ (method)", "builtins.map.__new__ (method)",
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "pysa._test_source (fun)"
+  ],
+  "lambda.test_filter_lambda (fun)": [
+    "builtins.filter.__new__ (method)", "builtins.int.__ne__ (method)",
+    "builtins.list.__getitem__ (method)", "builtins.list.__init__ (method)",
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "lambda.test_lambda_sink (fun)": [
+    "lambda.lambda_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "lambda.test_lambda_source (fun)": [
+    "lambda.lambda_source (fun)", "pysa._test_sink (fun)"
+  ],
+  "lambda.test_map_lambda (fun)": [
+    "builtins.dict.__getitem__ (method)",
+    "builtins.list.__getitem__ (method)", "builtins.list.__init__ (method)",
+    "builtins.map.__new__ (method)", "builtins.object.__init__ (method)",
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ]
+}

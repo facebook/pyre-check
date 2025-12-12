@@ -1,0 +1,44 @@
+@generated
+Call dependencies
+{
+  "all_static_fields.C.__init__ (method)": [
+    "all_static_fields.A.__init__ (method)",
+    "builtins.object.__new__ (method)", "builtins.super.__init__ (method)"
+  ],
+  "all_static_fields.D.__init__ (method)": [
+    "all_static_fields.A.__init__ (method)",
+    "builtins.object.__new__ (method)", "builtins.super.__init__ (method)"
+  ],
+  "all_static_fields.return_source_b (fun)": [
+    "all_static_fields.C.__init__ (method)",
+    "builtins.object.__new__ (method)"
+  ],
+  "all_static_fields.return_source_c (fun)": [
+    "all_static_fields.C.__init__ (method)",
+    "builtins.object.__new__ (method)"
+  ],
+  "all_static_fields.return_source_d (fun)": [
+    "all_static_fields.D.__init__ (method)",
+    "builtins.object.__new__ (method)"
+  ],
+  "all_static_fields.return_source_dataclass (fun)": [
+    "all_static_fields.Dataclass.__init__ (method)",
+    "builtins.object.__new__ (method)"
+  ],
+  "all_static_fields.return_source_empty (fun)": [
+    "all_static_fields.Empty.__init__ (method)",
+    "builtins.object.__new__ (method)"
+  ],
+  "all_static_fields.return_source_regular_class (fun)": [
+    "all_static_fields.RegularClass.__init__ (method)",
+    "builtins.object.__new__ (method)"
+  ],
+  "all_static_fields.return_source_union_c_d (fun)": [
+    "all_static_fields.D.__init__ (method)",
+    "builtins.object.__new__ (method)"
+  ],
+  "all_static_fields.return_source_union_dataclass_regular (fun)": [
+    "all_static_fields.RegularClass.__init__ (method)",
+    "builtins.object.__new__ (method)"
+  ]
+}

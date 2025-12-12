@@ -58,7 +58,7 @@ class MyList:
         ...
 
 
-l: MyList = ...
+l: MyList = ... # pyrefly: ignore[bad-assignment]
 
 
 def append_directly():

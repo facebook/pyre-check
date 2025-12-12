@@ -1,0 +1,963 @@
+@generated
+Higher order call graphs
+{
+  "callable": "closure_models.captured_variable_model_both_generation_parameter_source",
+  "returned_callables": [],
+  "calls": {
+    "167:4-168:36": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.captured_variable_model_both_generation_parameter_source.model_all_captured_as_generation_and_parameter_sources",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "170:4-170:60": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.captured_variable_model_both_generation_parameter_source.model_all_captured_as_generation_and_parameter_sources",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "171:4-171:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.captured_variable_model_both_generation_parameter_source.model_all_captured_as_generation_and_parameter_sources",
+  "returned_callables": [],
+  "calls": {
+    "168:8-168:36": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.captured_variable_model_generation_source",
+  "returned_callables": [],
+  "calls": {
+    "155:4-157:36": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.captured_variable_model_generation_source.model_all_captured_as_generation_sources",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "159:4-159:46": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.captured_variable_model_generation_source.model_all_captured_as_generation_sources",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "160:4-160:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.captured_variable_model_generation_source.model_all_captured_as_generation_sources",
+  "returned_callables": [],
+  "calls": {
+    "157:8-157:36": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.captured_variable_model_parameter_source",
+  "returned_callables": [],
+  "calls": {
+    "141:4-141:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "144:4-145:36": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.captured_variable_model_parameter_source.model_all_captured_as_parameter_sources",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "147:4-147:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.captured_variable_model_parameter_source.model_all_captured_as_parameter_sources",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "148:4-148:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.captured_variable_model_parameter_source.model_all_captured_as_parameter_sources",
+  "returned_callables": [],
+  "calls": {
+    "145:8-145:36": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.captured_variable_model_sink",
+  "returned_callables": [],
+  "calls": {
+    "175:23-175:37": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "178:4-179:24": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.captured_variable_model_sink.model_all_captured_as_sinks",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "181:4-181:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.captured_variable_model_sink.model_all_captured_as_sinks",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.captured_variable_model_tito",
+  "returned_callables": [],
+  "calls": {
+    "129:23-129:37": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "132:4-133:24": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.captured_variable_model_tito.model_all_captured_as_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "135:4-135:44": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "135:15-135:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.captured_variable_model_tito.model_all_captured_as_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.inner_sink_wrapper",
+  "returned_callables": [],
+  "calls": {
+    "11:4-12:16": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.inner_sink_wrapper.inner_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "14:4-14:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.inner_sink_wrapper.inner_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "14:15-14:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.some_decorator",
+  "returned_callables": [
+    {
+      "target": "closure_models.some_decorator.wrapper_func",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "111:4-112:14": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.some_decorator.wrapper_func",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "114:11-114:23|identifier|wrapper_func": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.some_decorator.wrapper_func",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.some_decorator.wrapper_func",
+  "returned_callables": [],
+  "calls": { "112:8-112:14": { "call": {} } }
+}
+{
+  "callable": "closure_models.test",
+  "returned_callables": [],
+  "calls": {
+    "42:4-43:29": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.test.return_taint",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "45:4-46:20": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.test.return_model_taint",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "48:13-48:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "50:4-51:26": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.test.return_model_taint_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "53:4-54:26": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.test.return_model_query_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "56:12-59:5": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.reclassify",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "closure_models.test.return_taint",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "57:14-57:26|identifier|return_taint": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.test.return_taint",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "61:4-61:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.Reclassification.reclassify",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "closure_models.Reclassification"
+          }
+        ]
+      }
+    },
+    "63:12-66:5": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.reclassify",
+            "index": 1,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "closure_models.test.return_model_taint",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "64:14-64:32|identifier|return_model_taint": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.test.return_model_taint",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "67:4-67:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.Reclassification.reclassify",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "closure_models.Reclassification"
+          }
+        ]
+      }
+    },
+    "69:12-72:5": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.reclassify",
+            "index": 2,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "closure_models.outer",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "70:14-70:19|identifier|outer": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.outer",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "73:4-73:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.Reclassification.reclassify",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "closure_models.Reclassification"
+          }
+        ]
+      }
+    },
+    "75:12-78:5": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.reclassify",
+            "index": 3,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "closure_models.test.return_model_taint_tito",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "76:14-76:37|identifier|return_model_taint_tito": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.test.return_model_taint_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "79:4-79:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.Reclassification.reclassify",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "closure_models.Reclassification"
+          }
+        ]
+      }
+    },
+    "81:12-84:5": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.reclassify",
+            "index": 4,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "closure_models.test.return_model_query_tito",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "82:14-82:37|identifier|return_model_query_tito": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.test.return_model_query_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "85:4-85:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.Reclassification.reclassify",
+            "index": 4,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "closure_models.Reclassification"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.test.return_model_query_tito",
+  "returned_callables": [],
+  "calls": {
+    "54:8-54:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.use_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.test.return_model_taint_tito",
+  "returned_callables": [],
+  "calls": {
+    "51:8-51:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.use_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.test.return_taint",
+  "returned_callables": [],
+  "calls": {
+    "43:15-43:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.test_dsl_decorator_source",
+  "returned_callables": [],
+  "calls": {
+    "123:4-125:29": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.some_decorator.wrapper_func",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable",
+  "returned_callables": [],
+  "calls": {
+    "125:8-125:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable@decorated",
+  "returned_callables": [
+    {
+      "target": "closure_models.some_decorator.wrapper_func",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "123:5-123:19|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.some_decorator[formal(func, position=0)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "124:4-125:29|identifier|decorated_local_function_capturing_local_variable": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.test_dsl_source",
+  "returned_callables": [],
+  "calls": {
+    "118:4-119:29": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.test_dsl_source.local_function_capturing_local_variable",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.test_dsl_source.local_function_capturing_local_variable",
+  "returned_callables": [],
+  "calls": {
+    "119:8-119:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.test_tito_transform",
+  "returned_callables": [],
+  "calls": {
+    "89:13-89:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "91:4-92:26": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.test_tito_transform.return_model_taint_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "94:4-95:26": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.test_tito_transform.return_model_query_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "97:12-100:5": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.reclassify",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "closure_models.test_tito_transform.return_model_taint_tito",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "98:14-98:37|identifier|return_model_taint_tito": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.test_tito_transform.return_model_taint_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "101:4-101:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.Reclassification.reclassify",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "closure_models.Reclassification"
+          }
+        ]
+      }
+    },
+    "103:12-106:5": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.reclassify",
+            "index": 1,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "closure_models.test_tito_transform.return_model_query_tito",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "104:14-104:37|identifier|return_model_query_tito": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.test_tito_transform.return_model_query_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "107:4-107:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.Reclassification.reclassify",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "closure_models.Reclassification"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.test_tito_transform.return_model_query_tito",
+  "returned_callables": [],
+  "calls": {
+    "95:8-95:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.use_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.test_tito_transform.return_model_taint_tito",
+  "returned_callables": [],
+  "calls": {
+    "92:8-92:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure_models.use_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.Reclassification.reclassify",
+  "returned_callables": [],
+  "calls": {
+    "24:15-24:27": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "closure_models.some_decorator[formal(func, position=0)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable]",
+  "returned_callables": [
+    {
+      "target": "closure_models.some_decorator.wrapper_func",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "111:4-112:14": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.some_decorator.wrapper_func",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "114:11-114:23|identifier|wrapper_func": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.some_decorator.wrapper_func",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}

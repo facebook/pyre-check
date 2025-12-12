@@ -1,0 +1,422 @@
+@generated
+Higher order call graphs
+{
+  "callable": "all_static_fields.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "38:1-38:10|identifier|dataclass": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "dataclasses.dataclass",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "101:8-101:9|identifier|A": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{all_static_fields.A.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "all_static_fields.A"
+            }
+          ]
+        }
+      }
+    },
+    "105:8-105:9|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "all_static_fields.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "all_static_fields.B"
+            },
+            {
+              "target": "all_static_fields.C.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "all_static_fields.B"
+            }
+          ]
+        }
+      }
+    },
+    "111:8-111:9|identifier|A": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{all_static_fields.A.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "all_static_fields.A"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "all_static_fields.return_source_b",
+  "returned_callables": [],
+  "calls": {
+    "124:11-124:22": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "all_static_fields.C.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "all_static_fields.C"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "all_static_fields.return_source_c",
+  "returned_callables": [],
+  "calls": {
+    "132:11-132:22": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "all_static_fields.C.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "all_static_fields.C"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "all_static_fields.return_source_d",
+  "returned_callables": [],
+  "calls": {
+    "140:11-140:22": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "all_static_fields.D.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "all_static_fields.D"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "all_static_fields.return_source_dataclass",
+  "returned_callables": [],
+  "calls": {
+    "49:11-49:31": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "all_static_fields.Dataclass.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "all_static_fields.Dataclass"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "all_static_fields.return_source_empty",
+  "returned_callables": [],
+  "calls": {
+    "169:11-169:18": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "all_static_fields.Empty.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "all_static_fields.Empty"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "all_static_fields.return_source_regular_class",
+  "returned_callables": [],
+  "calls": {
+    "27:11-27:34": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "all_static_fields.RegularClass.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "all_static_fields.RegularClass"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "all_static_fields.return_source_type",
+  "returned_callables": [],
+  "calls": {
+    "156:11-156:12|identifier|A": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{all_static_fields.A.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "all_static_fields.A"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "all_static_fields.return_source_union_c_d",
+  "returned_callables": [],
+  "calls": {
+    "148:11-148:22": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "all_static_fields.D.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "all_static_fields.D"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "all_static_fields.return_source_union_dataclass_regular",
+  "returned_callables": [],
+  "calls": {
+    "67:11-67:34": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "all_static_fields.RegularClass.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "all_static_fields.RegularClass"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "all_static_fields.C.__init__",
+  "returned_callables": [],
+  "calls": {
+    "107:8-107:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "107:8-107:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "all_static_fields.A.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "all_static_fields.C"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "all_static_fields.D.__init__",
+  "returned_callables": [],
+  "calls": {
+    "115:8-115:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "115:8-115:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "all_static_fields.A.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "all_static_fields.D"
+          }
+        ]
+      }
+    }
+  }
+}

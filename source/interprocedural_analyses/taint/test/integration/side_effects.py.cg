@@ -12,10 +12,12 @@ Call dependencies
     "pysa._test_source (fun)", "side_effects.change_arg0 (fun)"
   ],
   "side_effects.test_from_1_to_0_nested (fun)": [
-    "pysa._test_source (fun)", "side_effects.change_arg0 (fun)"
+    "object.__new__ (method)", "pysa._test_source (fun)",
+    "side_effects.Object.__init__ (method)", "side_effects.change_arg0 (fun)"
   ],
   "side_effects.test_from_1_to_0_nested_distinct (fun)": [
-    "pysa._test_source (fun)", "side_effects.change_arg0 (fun)"
+    "object.__new__ (method)", "pysa._test_source (fun)",
+    "side_effects.Object.__init__ (method)", "side_effects.change_arg0 (fun)"
   ],
   "side_effects.test_list_append (fun)": [
     "object.__init__ (method)", "object.__new__ (method)",

@@ -1119,7 +1119,7 @@ Higher order call graphs
         ]
       }
     },
-    "43:4-43:41": {
+    "43:4-43:44": {
       "call": {
         "calls": [
           {

@@ -1,0 +1,608 @@
+@generated
+Higher order call graphs
+{
+  "callable": "model_query.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "52:12-52:16|identifier|Base": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query.Base"
+            }
+          ]
+        }
+      }
+    },
+    "57:17-57:22|identifier|Child": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query.Child"
+            }
+          ]
+        }
+      }
+    },
+    "71:26-71:43|identifier|AttributeTestBase": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query.AttributeTestBase"
+            },
+            {
+              "target": "model_query.AttributeTestClass1.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query.AttributeTestBase"
+            },
+            {
+              "target": "model_query.AttributeTestClass2.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query.AttributeTestBase"
+            }
+          ]
+        }
+      }
+    },
+    "78:26-78:43|identifier|AttributeTestBase": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query.AttributeTestBase"
+            },
+            {
+              "target": "model_query.AttributeTestClass1.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query.AttributeTestBase"
+            },
+            {
+              "target": "model_query.AttributeTestClass2.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query.AttributeTestBase"
+            }
+          ]
+        }
+      }
+    },
+    "120:26-120:45|identifier|AttributeTestClass7": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{model_query.AttributeTestClass7.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query.AttributeTestClass7"
+            }
+          ]
+        }
+      }
+    },
+    "233:26-233:38|identifier|NoAlarmClass": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query.NoAlarmClass"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_1",
+  "returned_callables": [],
+  "calls": {
+    "129:4-129:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "129:15-129:26": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query.AttributeTestClass1.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_10",
+  "returned_callables": [],
+  "calls": {
+    "174:4-174:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "174:15-174:29": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query.AttributeTestClass5.foo_instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_11",
+  "returned_callables": [],
+  "calls": {
+    "179:4-179:31": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "179:15-179:30": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query.AttributeTestClass6.foo_attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_12",
+  "returned_callables": [],
+  "calls": {
+    "184:4-184:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "184:15-184:29": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query.AttributeTestClass6.foo_instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_2",
+  "returned_callables": [],
+  "calls": {
+    "134:4-134:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "134:15-134:25": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query.AttributeTestClass1.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_3",
+  "returned_callables": [],
+  "calls": {
+    "139:4-139:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "139:15-139:26": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query.AttributeTestClass2.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_4",
+  "returned_callables": [],
+  "calls": {
+    "144:4-144:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "144:15-144:25": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query.AttributeTestClass2.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_5",
+  "returned_callables": [],
+  "calls": {
+    "149:4-149:15": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query.AttributeTestClass3.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_6",
+  "returned_callables": [],
+  "calls": {
+    "154:4-154:14": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query.AttributeTestClass3.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "154:17-154:31": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_7",
+  "returned_callables": [],
+  "calls": {
+    "159:11-159:22": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query.AttributeTestClass4.attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_8",
+  "returned_callables": [],
+  "calls": {
+    "164:4-164:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "164:15-164:25": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query.AttributeTestClass4.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_9",
+  "returned_callables": [],
+  "calls": {
+    "169:4-169:31": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "169:15-169:30": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query.AttributeTestClass5.foo_attribute}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.no_alarm_1",
+  "returned_callables": [],
+  "calls": {
+    "188:4-188:36": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "189:4-189:35": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.no_alarm_2",
+  "returned_callables": [],
+  "calls": {
+    "193:4-193:35": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "194:4-194:35": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.AttributeTestClass1.__init__",
+  "returned_callables": [],
+  "calls": {
+    "75:8-75:21": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query.AttributeTestClass1.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.AttributeTestClass2.__init__",
+  "returned_callables": [],
+  "calls": {
+    "82:8-82:21": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query.AttributeTestClass2.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.AttributeTestClass3.__init__",
+  "returned_callables": [],
+  "calls": {
+    "89:8-89:21": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query.AttributeTestClass3.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.AttributeTestClass4.__init__",
+  "returned_callables": [],
+  "calls": {
+    "96:8-96:21": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query.AttributeTestClass4.instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.AttributeTestClass5.__init__",
+  "returned_callables": [],
+  "calls": {
+    "103:8-103:25": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query.AttributeTestClass5.foo_instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.AttributeTestClass6.__init__",
+  "returned_callables": [],
+  "calls": {
+    "110:8-110:25": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query.AttributeTestClass6.foo_instance}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}

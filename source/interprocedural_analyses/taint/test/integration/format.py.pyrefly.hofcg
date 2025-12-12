@@ -1,0 +1,197 @@
+@generated
+Higher order call graphs
+{
+  "callable": "format.issue_in_format",
+  "returned_callables": [],
+  "calls": {
+    "31:12-31:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "32:11-32:40|format-string-artificial": {
+      "format_string_artificial": [
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
+      ]
+    },
+    "32:14-32:31": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "32:14-32:31|format-string-stringify": {
+      "format_string_stringify": [
+        {
+          "target": "builtins.object.__repr__",
+          "index": 0,
+          "implicit_receiver": true,
+          "return_type": [],
+          "receiver_class": "builtins.object"
+        }
+      ]
+    }
+  }
+}
+{
+  "callable": "format.issue_in_format_specifier",
+  "returned_callables": [],
+  "calls": {
+    "46:4-46:43|format-string-artificial": {
+      "format_string_artificial": [
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
+      ]
+    },
+    "46:7-46:12|format-string-stringify": {
+      "format_string_stringify": [
+        {
+          "target": "builtins.str.__format__",
+          "index": 0,
+          "implicit_receiver": true,
+          "return_type": []
+        }
+      ]
+    },
+    "46:14-46:40": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "46:25-46:39": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "format.sink_in_format",
+  "returned_callables": [],
+  "calls": {
+    "27:4-27:31|format-string-artificial": {
+      "format_string_artificial": [
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
+      ]
+    },
+    "27:7-27:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "27:7-27:22|format-string-stringify": {
+      "format_string_stringify": [
+        {
+          "target": "builtins.object.__repr__",
+          "index": 0,
+          "implicit_receiver": true,
+          "return_type": [],
+          "receiver_class": "builtins.object"
+        }
+      ]
+    }
+  }
+}
+{
+  "callable": "format.sink_in_format_specifier",
+  "returned_callables": [],
+  "calls": {
+    "41:4-41:37|format-string-artificial": {
+      "format_string_artificial": [
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
+      ]
+    },
+    "41:14-41:34": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "format.sink_via_format",
+  "returned_callables": [],
+  "calls": {
+    "23:4-23:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "23:15-23:23|format-string-artificial": {
+      "format_string_artificial": [
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
+      ]
+    }
+  }
+}
+{
+  "callable": "format.source_in_format",
+  "returned_callables": [],
+  "calls": {
+    "15:11-15:37|format-string-artificial": {
+      "format_string_artificial": [
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
+      ]
+    },
+    "15:14-15:28": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "format.source_in_format_specifier",
+  "returned_callables": [],
+  "calls": {
+    "37:11-37:38|format-string-artificial": {
+      "format_string_artificial": [
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
+      ]
+    },
+    "37:14-37:19|format-string-stringify": {
+      "format_string_stringify": [
+        {
+          "target": "builtins.str.__format__",
+          "index": 0,
+          "implicit_receiver": true,
+          "return_type": []
+        }
+      ]
+    },
+    "37:21-37:35": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "format.source_via_format",
+  "returned_callables": [],
+  "calls": {
+    "10:12-10:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "11:11-11:28|format-string-artificial": {
+      "format_string_artificial": [
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
+      ]
+    }
+  }
+}
+{
+  "callable": "format.tito_via_format",
+  "returned_callables": [],
+  "calls": {
+    "19:11-19:44|format-string-artificial": {
+      "format_string_artificial": [
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
+      ]
+    }
+  }
+}

@@ -3,32 +3,33 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import Any
 
-def test1_d1(f, *args, **kwargs):
+def test1_d1(f, *args, **kwargs) -> Any:
     pass
 
 
-def test1_d2(f, *args, **kwargs):
+def test1_d2(f, *args, **kwargs) -> Any:
     pass
 
 
-def test2_d1(f, *args, **kwargs):
+def test2_d1(f, *args, **kwargs) -> Any:
     pass
 
 
-def test2_d2(f, *args, **kwargs):
+def test2_d2(f, *args, **kwargs) -> Any:
     pass
 
 
-def test3_d1(f, *args, **kwargs):
+def test3_d1(f, *args, **kwargs) -> Any:
     pass
 
 
-def test4_d1(f, *args, **kwargs):
+def test4_d1(f, *args, **kwargs) -> Any:
     pass
 
 
-def test5_d1(f, *args, **kwargs):
+def test5_d1(f, *args, **kwargs) -> Any:
     pass
 
 
@@ -70,12 +71,12 @@ def test3_alarm3():
     return None
 
 
-@test3_d1()
+@test3_d1(arg1)
 def test3_noalarm1():
     return None
 
 
-@test3_d1(arg3="Foo")
+@test3_d1(arg1, arg3="Foo")
 def test3_noalarm2():
     return None
 
@@ -90,12 +91,12 @@ def test4_noalarm1():
     return None
 
 
-@test4_d1()
+@test4_d1(arg1)
 def test4_noalarm2():
     return None
 
 
-@test4_d1(arg3="Foo")
+@test4_d1(arg1, arg3="Foo")
 def test4_noalarm3():
     return None
 

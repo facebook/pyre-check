@@ -1,0 +1,1683 @@
+@generated
+Higher order call graphs
+{
+  "callable": "multiple_sources.combine_c_d_and_c_e",
+  "returned_callables": [],
+  "calls": {
+    "271:4-271:55": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.multi_sink_share_both_sinks",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "271:32-271:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.c_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "271:44-271:54": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.d_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "272:4-272:55": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.multi_sink_share_both_sinks",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "272:32-272:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.c_source",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "272:44-272:54": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.e_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.combine_tainted_user_and_dangerous_vc",
+  "returned_callables": [],
+  "calls": {
+    "30:9-30:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.user_controlled_input",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "31:9-31:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.permissive_context",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    },
+    "32:4-32:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
+      }
+    },
+    "32:4-32:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.get",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "32:4-32:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.send",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.demonstrate_triggered_c_from_d",
+  "returned_callables": [],
+  "calls": {
+    "241:4-241:46": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.multi_sink_share_both_sinks",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "241:35-241:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.d_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.demonstrate_triggered_c_from_d_and_e",
+  "returned_callables": [],
+  "calls": {
+    "231:4-231:46": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.multi_sink_share_both_sinks",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "231:35-231:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.d_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "232:4-232:46": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.multi_sink_share_both_sinks",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "232:35-232:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.e_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.demonstrate_triggered_c_from_d_or_e",
+  "returned_callables": [],
+  "calls": {
+    "250:7-250:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "_random.Random.random",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
+          }
+        ]
+      }
+    },
+    "250:7-250:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.float"
+          }
+        ]
+      }
+    },
+    "251:8-251:50": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.multi_sink_share_both_sinks",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "251:39-251:49": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.d_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "253:8-253:50": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.multi_sink_share_both_sinks",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "253:39-253:49": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.e_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.demonstrate_triggered_context",
+  "returned_callables": [],
+  "calls": {
+    "36:9-36:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.user_controlled_input",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "37:4-37:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
+      }
+    },
+    "37:4-37:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.get",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "37:4-37:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.send",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.demonstrate_triggered_context_more_hops",
+  "returned_callables": [],
+  "calls": {
+    "133:9-133:40": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.user_controlled_input_wrapper",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "134:4-134:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
+      }
+    },
+    "134:4-134:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.get",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "134:4-134:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.send",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.demonstrate_triggered_d_and_e",
+  "returned_callables": [],
+  "calls": {
+    "262:4-262:46": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.multi_sink_share_both_sinks",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "262:32-262:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.c_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.demonstrate_triggered_input",
+  "returned_callables": [],
+  "calls": {
+    "41:9-41:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.permissive_context",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    },
+    "42:4-42:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
+      }
+    },
+    "42:4-42:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.get",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "42:4-42:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.send",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.issue_with_sanitizer",
+  "returned_callables": [],
+  "calls": {
+    "117:8-117:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.a_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "118:8-118:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.sanitize_sink_a_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "119:4-119:55": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.combines_tests_and_context",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "119:34-119:54": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.permissive_context",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.issue_with_test_a_and_b",
+  "returned_callables": [],
+  "calls": {
+    "77:4-77:64": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.combines_tests_and_context",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "77:31-77:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.a_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "77:43-77:63": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.permissive_context",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    },
+    "78:4-78:64": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.combines_tests_and_context",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "78:31-78:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.b_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "78:43-78:63": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.permissive_context",
+            "index": 1,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.issue_with_triggered_c_from_d",
+  "returned_callables": [],
+  "calls": {
+    "246:4-246:46": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.demonstrate_triggered_c_from_d",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "246:35-246:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.c_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.issue_with_triggered_c_from_d_and_e",
+  "returned_callables": [],
+  "calls": {
+    "237:4-237:52": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.demonstrate_triggered_c_from_d_and_e",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "237:41-237:51": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.c_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.issue_with_triggered_c_from_d_or_e",
+  "returned_callables": [],
+  "calls": {
+    "258:4-258:51": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.demonstrate_triggered_c_from_d_or_e",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "258:40-258:50": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.c_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.issue_with_triggered_context",
+  "returned_callables": [],
+  "calls": {
+    "51:9-51:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.permissive_context",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    },
+    "52:4-52:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.demonstrate_triggered_context",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.issue_with_triggered_context_more_hops",
+  "returned_callables": [],
+  "calls": {
+    "138:9-138:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.permissive_context",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    },
+    "139:4-139:47": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.demonstrate_triggered_context_more_hops",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.issue_with_triggered_d_and_e",
+  "returned_callables": [],
+  "calls": {
+    "266:4-266:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.demonstrate_triggered_d_and_e",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "266:34-266:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.d_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "267:4-267:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.demonstrate_triggered_d_and_e",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "267:34-267:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.e_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.issue_with_triggered_input",
+  "returned_callables": [],
+  "calls": {
+    "46:9-46:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.user_controlled_input",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "47:4-47:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.demonstrate_triggered_input",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.issue_with_wrapper_node_get_send",
+  "returned_callables": [],
+  "calls": {
+    "175:9-175:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.user_controlled_input",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "176:9-176:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.permissive_context",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    },
+    "177:4-177:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.wrapper_node_get_send",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.issue_with_wrapper_node_get_send_triggered_context",
+  "returned_callables": [],
+  "calls": {
+    "187:9-187:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.permissive_context",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    },
+    "188:4-188:47": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.wrapper_node_get_send_triggered_context",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.muliple_main_issues_1",
+  "returned_callables": [],
+  "calls": {
+    "154:4-154:68": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.A.multi_sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          },
+          {
+            "target": "multiple_sources.B.multi_sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "154:22-154:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.user_controlled_input",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "154:47-154:67": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.permissive_context",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.muliple_main_issues_2",
+  "returned_callables": [],
+  "calls": {
+    "159:9-159:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.permissive_context",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    },
+    "160:4-160:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.multiple_triggered_context",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.multiple_triggered_context",
+  "returned_callables": [],
+  "calls": {
+    "164:10-164:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.user_controlled_input",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "165:4-165:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
+      }
+    },
+    "165:4-165:17": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.get",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "165:4-165:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.send",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node"
+          }
+        ]
+      }
+    },
+    "166:10-166:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.user_controlled_input",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "167:4-167:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
+      }
+    },
+    "167:4-167:17": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.get",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "167:4-167:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.send",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.no_issue_with_transform",
+  "returned_callables": [],
+  "calls": {
+    "106:8-106:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.a_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "107:8-107:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.transform_t",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "108:4-108:55": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.combines_tests_and_context",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "108:34-108:54": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.permissive_context",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.no_issue_with_wrong_label",
+  "returned_callables": [],
+  "calls": {
+    "56:9-56:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.permissive_context",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    },
+    "57:4-57:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.demonstrate_triggered_input",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.no_sink_with_sanitizer",
+  "returned_callables": [],
+  "calls": {
+    "123:8-123:57": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.sanitize_source_b_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "123:31-123:56": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.sanitize_source_a_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "124:4-124:55": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.combines_tests_and_context",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "124:34-124:54": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.permissive_context",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.no_sink_with_transform",
+  "returned_callables": [],
+  "calls": {
+    "112:8-112:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.transform_t",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "113:4-113:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.combines_tests_and_context",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "113:31-113:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.a_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.user_controlled_input_wrapper",
+  "returned_callables": [],
+  "calls": {
+    "128:11-128:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.user_controlled_input",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.wrapper_combined_node_get_send",
+  "returned_callables": [],
+  "calls": {
+    "203:7-203:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "_random.Random.random",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
+          }
+        ]
+      }
+    },
+    "203:7-203:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.float"
+          }
+        ]
+      }
+    },
+    "207:4-207:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
+      }
+    },
+    "207:4-207:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.get",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "207:4-207:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.send",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.wrapper_mismatched_partial_sinks",
+  "returned_callables": [],
+  "calls": {
+    "213:4-213:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
+      }
+    },
+    "213:4-213:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.get",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "213:4-213:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.send",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node"
+          }
+        ]
+      }
+    },
+    "214:4-214:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
+      }
+    },
+    "214:4-214:15": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.get",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "214:4-214:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.send",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.wrapper_node_get_send",
+  "returned_callables": [],
+  "calls": {
+    "171:4-171:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
+      }
+    },
+    "171:4-171:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.get",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "171:4-171:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.send",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.wrapper_node_get_send_triggered_context",
+  "returned_callables": [],
+  "calls": {
+    "181:9-181:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.user_controlled_input",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "183:4-183:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.wrapper_node_get_send",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.wrapper_node_send",
+  "returned_callables": [],
+  "calls": {
+    "195:4-195:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
+      }
+    },
+    "195:4-195:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.get",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "195:4-195:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources.Node.send",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources.Node.get",
+  "returned_callables": [],
+  "calls": {
+    "18:15-18:22": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "multiple_sources.Node.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node"
+          }
+        ]
+      }
+    }
+  }
+}

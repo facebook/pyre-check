@@ -1,0 +1,252 @@
+@generated
+Higher order call graphs
+{
+  "callable": "raise.backward",
+  "returned_callables": [],
+  "calls": {
+    "16:10-16:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "raise.conditional_unreachability",
+  "returned_callables": [],
+  "calls": {
+    "54:12-54:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "55:14-55:25": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.BaseException.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.BaseException.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.Exception"
+          }
+        ]
+      }
+    },
+    "58:4-58:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "raise.forward",
+  "returned_callables": [],
+  "calls": {
+    "11:10-11:36": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "11:21-11:35": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "raise.no_sink",
+  "returned_callables": [],
+  "calls": {
+    "31:10-31:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.BaseException.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.BaseException.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.Exception"
+          }
+        ]
+      }
+    },
+    "32:4-32:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "raise.no_source",
+  "returned_callables": [],
+  "calls": {
+    "36:10-36:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.BaseException.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.BaseException.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.Exception"
+          }
+        ]
+      }
+    },
+    "37:11-37:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "raise.unreachable",
+  "returned_callables": [],
+  "calls": {
+    "20:8-20:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "21:10-21:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.BaseException.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.BaseException.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.Exception"
+          }
+        ]
+      }
+    },
+    "22:4-22:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "raise.unreachable_code_do_to_always_exception",
+  "returned_callables": [],
+  "calls": {
+    "47:4-47:15": {
+      "call": {
+        "calls": [
+          { "target": "raise.no_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "48:8-48:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "49:4-49:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "raise.unreachable_through_function_call_sink",
+  "returned_callables": [],
+  "calls": {
+    "26:8-26:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "27:4-27:14": {
+      "call": {
+        "calls": [
+          { "target": "raise.no_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "raise.unreachable_through_function_call_source",
+  "returned_callables": [],
+  "calls": {
+    "41:8-41:19": {
+      "call": {
+        "calls": [
+          { "target": "raise.no_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "42:4-42:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

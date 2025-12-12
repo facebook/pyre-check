@@ -1,0 +1,4 @@
+@generated
+Overrides
+builtins.object.__init__ (override) -> [builtins.object.__init__ (method) graphql_callees.GraphQLEntrypoint.__init__ (override)]
+graphql_callees.GraphQLEntrypoint.__init__ (override) -> [graphql_callees.GraphQLEntrypoint.__init__ (method)]

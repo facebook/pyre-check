@@ -5,6 +5,7 @@
 
 from pysa import _test_sink, _test_source
 from dataclasses import dataclass
+import random
 
 
 class TitoAttributes:
@@ -32,9 +33,9 @@ def test_tito_attribute_z_with_tag():
 def test_tito_attribute_join():
     c = TitoAttributes(**_test_source())
     foo = c.x
-    if 1:
+    if random.random() > 0.5:
         foo = c.y
-    elif 2:
+    elif random.random() > 0.5:
         foo = c.z
     _test_sink(foo)
 
@@ -60,9 +61,9 @@ def test_source_attribute_z(c: SourceAttributes):
 
 def test_source_attribute_join(c: SourceAttributes):
     foo = c.x
-    if 1:
+    if random.random() > 0.5:
         foo = c.y
-    elif 2:
+    elif random.random() > 0.5:
         foo = c.z
     _test_sink(foo)
 

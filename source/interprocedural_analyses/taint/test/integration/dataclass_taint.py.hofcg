@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "dataclass_taint.bad_is_tainted",
   "returned_callables": [],
   "calls": {
-    "18:14-18:53": {
+    "18:14-18:54": {
       "call": {
         "new_calls": [
           {
@@ -44,7 +44,7 @@ Higher order call graphs
   "callable": "dataclass_taint.benign_is_untainted",
   "returned_callables": [],
   "calls": {
-    "24:14-24:53": {
+    "24:14-24:54": {
       "call": {
         "new_calls": [
           {

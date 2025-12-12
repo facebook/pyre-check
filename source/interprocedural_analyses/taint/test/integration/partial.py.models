@@ -334,14 +334,14 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "a" },
-              { "always-via": "higher-order-parameter" },
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 94, "start": 26, "end": 27 } ],
             "call": {
-              "position": { "line": 95, "start": 35, "end": 46 },
+              "position": { "line": 95, "start": 54, "end": 60 },
               "resolves_to": [ "partial.sink_on_foo" ],
-              "port": "formal(x, position=0)[foo]"
+              "port": "formal(x, position=0)[foo]",
+              "call_site": "95:4-95:63"
             }
           }
         ]

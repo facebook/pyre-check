@@ -1,0 +1,11 @@
+@generated
+Call dependencies
+{
+  "overloads.A.call_me (method)": [ "pysa._test_sink (fun)" ],
+  "overloads.call_me (fun)": [ "pysa._test_sink (fun)" ],
+  "overloads.f (fun)": [ "overloads.call_me (fun)" ],
+  "overloads.g (fun)": [
+    "builtins.isinstance (fun)", "overloads.A.call_me (method)",
+    "pysa._test_source (fun)"
+  ]
+}

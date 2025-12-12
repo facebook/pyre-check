@@ -1,0 +1,6 @@
+@generated
+Call dependencies
+{
+  "starred.sink (fun)": [ "pysa._test_sink (fun)" ],
+  "starred.test (fun)": [ "pysa._test_source (fun)", "starred.sink (fun)" ]
+}

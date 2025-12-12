@@ -1,0 +1,1501 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.complex_tito",
+    "filename": "parameter_path.py",
+    "callable_line": 173,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)[a][*].**keys",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[foo]": 0 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parameter_path.issue_complex_tito",
+    "callable_line": 177,
+    "code": 5002,
+    "line": 178,
+    "start": 15,
+    "end": 69,
+    "filename": "parameter_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 178, "start": 28, "end": 61 } ],
+            "origin": { "line": 178, "start": 41, "end": 55 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 178, "start": 15, "end": 69 },
+            "call_site": "178:4-178:70"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "foo" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "parameter_path.issue_complex_tito:5002:0:Call|pysa._test_sink|0|formal(arg):1d648044eb072751f86295fd04acd589"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parameter_path.issue_only_with_sink_first",
+    "callable_line": 77,
+    "code": 5002,
+    "line": 78,
+    "start": 22,
+    "end": 41,
+    "filename": "parameter_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 78, "start": 23, "end": 37 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "parameter_path.sink_on_first",
+                    "port": "leaf:arg[0]"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 78, "start": 22, "end": 41 },
+            "call_site": "78:4-78:42"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "parameter_path.sink_on_first",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "parameter_path.issue_only_with_sink_first:5002:0:Call|parameter_path.sink_on_first|0|formal(arg):a255b9939638122109e4f36b20e279a2"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parameter_path.issue_only_with_sink_key_a",
+    "callable_line": 102,
+    "code": 5002,
+    "line": 103,
+    "start": 18,
+    "end": 47,
+    "filename": "parameter_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 103, "start": 24, "end": 38 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "parameter_path.sink_on_key_a",
+                    "port": "leaf:arg[a]"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 103, "start": 18, "end": 47 },
+            "call_site": "103:4-103:48"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "parameter_path.sink_on_key_a",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "parameter_path.issue_only_with_sink_key_a:5002:0:Call|parameter_path.sink_on_key_a|0|formal(arg):e5821fbd19a1c7c6031d7e3389f3675a"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parameter_path.issue_only_with_sink_nested_first",
+    "callable_line": 87,
+    "code": 5002,
+    "line": 89,
+    "start": 20,
+    "end": 49,
+    "filename": "parameter_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 89, "start": 25, "end": 39 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "parameter_path.sink_on_0_1",
+                    "port": "leaf:arg[0][1]"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 89, "start": 20, "end": 49 },
+            "call_site": "89:4-89:50"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "parameter_path.sink_on_0_1",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "parameter_path.issue_only_with_sink_nested_first:5002:0:Call|parameter_path.sink_on_0_1|1|formal(arg):8b77903078e642c0249335e9f9c3caea"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parameter_path.issue_only_with_sink_second",
+    "callable_line": 82,
+    "code": 5002,
+    "line": 84,
+    "start": 23,
+    "end": 42,
+    "filename": "parameter_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 84, "start": 27, "end": 41 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "parameter_path.sink_on_second",
+                    "port": "leaf:arg[1]"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 84, "start": 23, "end": 42 },
+            "call_site": "84:4-84:43"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "parameter_path.sink_on_second",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "parameter_path.issue_only_with_sink_second:5002:0:Call|parameter_path.sink_on_second|1|formal(arg):2cd01f84b8ac90af17a9508d724e57ff"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parameter_path.issue_only_with_source_first",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 24,
+    "start": 15,
+    "end": 20,
+    "filename": "parameter_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "parameter_path.source_on_first",
+                    "port": "leaf:return[0]"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 23, "start": 22, "end": 39 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 24, "start": 15, "end": 20 },
+            "call_site": "24:4-24:21"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_sink" },
+      { "always-type": "integer" },
+      { "always-type": "scalar" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "parameter_path.issue_only_with_source_first:5002:0:Call|pysa._test_sink|0|formal(arg):240993849d0ec189a45516771994d1e1"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parameter_path.issue_only_with_source_key_a",
+    "callable_line": 49,
+    "code": 5002,
+    "line": 51,
+    "start": 15,
+    "end": 21,
+    "filename": "parameter_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "parameter_path.source_on_key_a",
+                    "port": "leaf:return[a]"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "a" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 50, "start": 8, "end": 25 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 51, "start": 15, "end": 21 },
+            "call_site": "51:4-51:22"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "a" },
+      { "always-via": "special_sink" },
+      { "always-type": "integer" },
+      { "always-type": "scalar" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "parameter_path.issue_only_with_source_key_a:5002:0:Call|pysa._test_sink|0|formal(arg):693876b850115d8c906e1d541c6b7d98"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.issue_only_with_source_nested_first",
+    "filename": "parameter_path.py",
+    "callable_line": 34,
+    "sources": [
+      {
+        "port": "result[0][1]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "parameter_path.source_on_0_1",
+                    "port": "leaf:return[0][1]"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 42, "start": 11, "end": 26 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parameter_path.issue_only_with_source_nested_first",
+    "callable_line": 34,
+    "code": 5002,
+    "line": 38,
+    "start": 15,
+    "end": 20,
+    "filename": "parameter_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "parameter_path.source_on_0_1",
+                    "port": "leaf:return[0][1]"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 35, "start": 20, "end": 35 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 38, "start": 15, "end": 20 },
+            "call_site": "38:4-38:21"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_sink" },
+      { "always-type": "integer" },
+      { "always-type": "scalar" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "parameter_path.issue_only_with_source_nested_first:5002:0:Call|pysa._test_sink|0|formal(arg):1b64336025463117e1051e9a0b3f6747"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parameter_path.issue_only_with_source_second",
+    "callable_line": 28,
+    "code": 5002,
+    "line": 31,
+    "start": 15,
+    "end": 20,
+    "filename": "parameter_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "parameter_path.source_on_second",
+                    "port": "leaf:return[1]"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 29, "start": 22, "end": 40 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 31, "start": 15, "end": 20 },
+            "call_site": "31:4-31:21"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_sink" },
+      { "always-type": "integer" },
+      { "always-type": "scalar" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "parameter_path.issue_only_with_source_second:5002:0:Call|pysa._test_sink|1|formal(arg):6935ee9bd96d0ecbf1f2e612e8254458"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parameter_path.issue_tito_b_to_a",
+    "callable_line": 150,
+    "code": 5002,
+    "line": 152,
+    "start": 15,
+    "end": 67,
+    "filename": "parameter_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "a" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 152, "start": 32, "end": 61 } ],
+            "origin": { "line": 152, "start": 46, "end": 60 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 152, "start": 15, "end": 67 },
+            "call_site": "152:4-152:68"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "a" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "parameter_path.issue_tito_b_to_a:5002:0:Call|pysa._test_sink|1|formal(arg):ed5061f21277af37af8ab840754e16a7"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parameter_path.issue_tito_first_to_second",
+    "callable_line": 139,
+    "code": 5002,
+    "line": 142,
+    "start": 15,
+    "end": 68,
+    "filename": "parameter_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 142, "start": 45, "end": 64 } ],
+            "origin": { "line": 142, "start": 46, "end": 60 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 142, "start": 15, "end": 68 },
+            "call_site": "142:4-142:69"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 2,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "parameter_path.issue_tito_first_to_second:5002:0:Call|pysa._test_sink|2|formal(arg):1d47d3a3fa44fe3addee9955c3bc11cf"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parameter_path.issue_tito_from_a_to_self_b",
+    "callable_line": 161,
+    "code": 5002,
+    "line": 165,
+    "start": 15,
+    "end": 21,
+    "filename": "parameter_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "b" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 163, "start": 29, "end": 58 } ],
+            "origin": { "line": 163, "start": 35, "end": 49 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 165, "start": 15, "end": 21 },
+            "call_site": "165:4-165:22"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "b" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "parameter_path.issue_tito_from_a_to_self_b:5002:0:Call|pysa._test_sink|1|formal(arg):0cf71f046d53b6368121a70cd8c3c2b8"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parameter_path.issue_tito_from_first",
+    "callable_line": 125,
+    "code": 5002,
+    "line": 126,
+    "start": 15,
+    "end": 55,
+    "filename": "parameter_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 126, "start": 35, "end": 54 } ],
+            "origin": { "line": 126, "start": 36, "end": 50 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 126, "start": 15, "end": 55 },
+            "call_site": "126:4-126:56"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "parameter_path.issue_tito_from_first:5002:0:Call|pysa._test_sink|0|formal(arg):207ab6731c6eb924d6eff3f340ade2d4"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parameter_path.issue_tito_from_second",
+    "callable_line": 130,
+    "code": 5002,
+    "line": 132,
+    "start": 15,
+    "end": 56,
+    "filename": "parameter_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 132, "start": 36, "end": 55 } ],
+            "origin": { "line": 132, "start": 40, "end": 54 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 132, "start": 15, "end": 56 },
+            "call_site": "132:4-132:57"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "parameter_path.issue_tito_from_second:5002:0:Call|pysa._test_sink|1|formal(arg):0aa772b366f01eb930b979e4f012ac42"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parameter_path.issue_with_sink_member",
+    "callable_line": 107,
+    "code": 5002,
+    "line": 110,
+    "start": 21,
+    "end": 22,
+    "filename": "parameter_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 109, "start": 10, "end": 24 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "parameter_path.sink_on_member_a",
+                    "port": "leaf:arg[a]"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 110, "start": 21, "end": 22 },
+            "call_site": "110:4-110:23"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "parameter_path.sink_on_member_a",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "parameter_path.issue_with_sink_member:5002:0:Call|parameter_path.sink_on_member_a|0|formal(arg):354da4db83df1a2c6f549c9cca1863c0"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "parameter_path.issue_with_source_member",
+    "callable_line": 59,
+    "code": 5002,
+    "line": 61,
+    "start": 15,
+    "end": 18,
+    "filename": "parameter_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "parameter_path.source_on_member_a",
+                    "port": "leaf:return[a]"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" }, { "first-field": "a" }
+            ],
+            "origin": { "line": 60, "start": 8, "end": 28 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 61, "start": 15, "end": 18 },
+            "call_site": "61:4-61:19"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "a" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "parameter_path.issue_with_source_member:5002:0:Call|pysa._test_sink|0|formal(arg):d170cea277d39b811917656bccbc35a7"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.sink_on_0_1",
+    "filename": "parameter_path.py",
+    "callable_line": 73,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)[0][1]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.sink_on_first",
+    "filename": "parameter_path.py",
+    "callable_line": 65,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)[0]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.sink_on_key_a",
+    "filename": "parameter_path.py",
+    "callable_line": 94,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)[a]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.sink_on_member_a",
+    "filename": "parameter_path.py",
+    "callable_line": 98,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)[a]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.sink_on_second",
+    "filename": "parameter_path.py",
+    "callable_line": 69,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)[1]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.source_on_0_1",
+    "filename": "parameter_path.py",
+    "callable_line": 18,
+    "sources": [
+      {
+        "port": "result[0][1]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.source_on_first",
+    "filename": "parameter_path.py",
+    "callable_line": 10,
+    "sources": [
+      {
+        "port": "result[0]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.source_on_key_a",
+    "filename": "parameter_path.py",
+    "callable_line": 45,
+    "sources": [
+      {
+        "port": "result[a]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.source_on_member_a",
+    "filename": "parameter_path.py",
+    "callable_line": 55,
+    "sources": [
+      {
+        "port": "result[a]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.source_on_second",
+    "filename": "parameter_path.py",
+    "callable_line": 14,
+    "sources": [
+      {
+        "port": "result[1]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.tito_from_a_to_self_b",
+    "filename": "parameter_path.py",
+    "callable_line": 157,
+    "tito": [
+      {
+        "port": "formal(arg, position=1)[a]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[b]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.tito_from_b_to_a",
+    "filename": "parameter_path.py",
+    "callable_line": 146,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)[b]",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[a]": 0 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.tito_from_first",
+    "filename": "parameter_path.py",
+    "callable_line": 117,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)[0]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.tito_from_first_to_second",
+    "filename": "parameter_path.py",
+    "callable_line": 135,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)[0]",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[1]": 0 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.tito_from_second",
+    "filename": "parameter_path.py",
+    "callable_line": 121,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)[1]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}

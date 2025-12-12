@@ -24,9 +24,10 @@ Call dependencies
     "multiple_sources.multi_sink_share_both_sinks (fun)"
   ],
   "multiple_sources.demonstrate_triggered_c_from_d_or_e (fun)": [
-    "int.__eq__ (method)", "int.__ne__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)",
     "multiple_sources.d_source (fun)", "multiple_sources.e_source (fun)",
-    "multiple_sources.multi_sink_share_both_sinks (fun)"
+    "multiple_sources.multi_sink_share_both_sinks (fun)",
+    "random.random (fun)"
   ],
   "multiple_sources.demonstrate_triggered_context (fun)": [
     "multiple_sources.Node.get (method)",
@@ -136,9 +137,9 @@ Call dependencies
     "multiple_sources.user_controlled_input (fun)"
   ],
   "multiple_sources.wrapper_combined_node_get_send (fun)": [
-    "int.__eq__ (method)", "int.__ne__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)",
     "multiple_sources.Node.get (method)",
-    "multiple_sources.Node.send (method)"
+    "multiple_sources.Node.send (method)", "random.random (fun)"
   ],
   "multiple_sources.wrapper_mismatched_partial_sinks (fun)": [
     "multiple_sources.Node.get (method)",

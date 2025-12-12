@@ -23,7 +23,7 @@ Call dependencies
     "closure.decorator.wrapper (fun)[local($parameter$function)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]"
   ],
   "closure.closure (fun)": [
-    "object.__init__ (method)", "object.__new__ (method)"
+    "closure.Object.__init__ (method)", "object.__new__ (method)"
   ],
   "closure.closure.sink (fun)": [ "pysa._test_sink (fun)" ],
   "closure.closure.source (fun)": [ "pysa._test_source (fun)" ],

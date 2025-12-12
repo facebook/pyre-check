@@ -1,0 +1,785 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_flows.global_class_attribute_issue",
+    "callable_line": 56,
+    "code": 5002,
+    "line": 57,
+    "start": 4,
+    "end": 29,
+    "filename": "class_flows.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 57, "start": 32, "end": 46 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{class_flows.C.__class__.tainted_class_attribute}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 57, "start": 4, "end": 29 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Global",
+      "callee": "Obj{class_flows.C.__class__.tainted_class_attribute}",
+      "index": 0
+    },
+    "master_handle": "class_flows.global_class_attribute_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:3018a70369c9c80371f3853076f8a844"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_flows.tainted_attribute_flow_issue",
+    "callable_line": 21,
+    "code": 5002,
+    "line": 22,
+    "start": 4,
+    "end": 23,
+    "filename": "class_flows.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 22, "start": 26, "end": 40 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{class_flows.C.tainted_attribute}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 22, "start": 4, "end": 23 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Global",
+      "callee": "Obj{class_flows.C.tainted_attribute}",
+      "index": 0
+    },
+    "master_handle": "class_flows.tainted_attribute_flow_issue:5002:0:Global|Obj{class_flows.C.tainted_attribute}|0:cba0e6980917c39855cb75c4ce3a3ebf"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_flows.tainted_attribute_through_inheritance_issue",
+    "callable_line": 33,
+    "code": 5002,
+    "line": 34,
+    "start": 4,
+    "end": 23,
+    "filename": "class_flows.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 34, "start": 26, "end": 40 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{class_flows.C.tainted_attribute}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 34, "start": 4, "end": 23 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Global",
+      "callee": "Obj{class_flows.C.tainted_attribute}",
+      "index": 0
+    },
+    "master_handle": "class_flows.tainted_attribute_through_inheritance_issue:5002:0:Global|Obj{class_flows.C.tainted_attribute}|0:79778c5e234d08fb4b022de03cd0edd4"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_flows.tainted_class_attribute_through_class_issue",
+    "callable_line": 41,
+    "code": 5002,
+    "line": 42,
+    "start": 4,
+    "end": 40,
+    "filename": "class_flows.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 42, "start": 43, "end": 57 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{class_flows.C.__class__.tainted_class_attribute}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 42, "start": 4, "end": 40 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Global",
+      "callee": "Obj{class_flows.C.__class__.tainted_class_attribute}",
+      "index": 0
+    },
+    "master_handle": "class_flows.tainted_class_attribute_through_class_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:2542e9e60455731d983e298f2875bfbf"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_flows.tainted_class_attribute_through_double_underscore_class_issue",
+    "callable_line": 45,
+    "code": 5002,
+    "line": 46,
+    "start": 4,
+    "end": 39,
+    "filename": "class_flows.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 46, "start": 42, "end": 56 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{class_flows.C.__class__.tainted_class_attribute}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 46, "start": 4, "end": 39 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Global",
+      "callee": "Obj{class_flows.C.__class__.tainted_class_attribute}",
+      "index": 0
+    },
+    "master_handle": "class_flows.tainted_class_attribute_through_double_underscore_class_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:b7f61664326b657c5227d14cc38865b0"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_flows.tainted_class_attribute_through_optional_class_issue",
+    "callable_line": 49,
+    "code": 5002,
+    "line": 53,
+    "start": 8,
+    "end": 44,
+    "filename": "class_flows.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 53, "start": 47, "end": 61 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{class_flows.C.__class__.tainted_class_attribute}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 53, "start": 8, "end": 44 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Global",
+      "callee": "Obj{class_flows.C.__class__.tainted_class_attribute}",
+      "index": 0
+    },
+    "master_handle": "class_flows.tainted_class_attribute_through_optional_class_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:a139d3961b8e8b18bed9ef93c398cca6"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_flows.test_classmethod",
+    "callable_line": 78,
+    "code": 5002,
+    "line": 79,
+    "start": 63,
+    "end": 77,
+    "filename": "class_flows.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 79, "start": 63, "end": 77 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 79, "start": 63, "end": 77 },
+              "resolves_to": [
+                "class_flows.HasClassmethods._async_results_for_non_empty_query_from_db"
+              ],
+              "port": "formal(locale, position=1)",
+              "call_site": "79:4-79:78"
+            },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "class_flows.HasClassmethods._async_results_for_non_empty_query_from_db",
+      "index": 0,
+      "parameter": "formal(locale)"
+    },
+    "master_handle": "class_flows.test_classmethod:5002:0:Call|class_flows.HasClassmethods._async_results_for_non_empty_query_from_db|0|formal(locale):cbecf01336661e7694457345f5964c33"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_flows.test_decorated_classmethod",
+    "callable_line": 89,
+    "code": 5002,
+    "line": 90,
+    "start": 36,
+    "end": 50,
+    "filename": "class_flows.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 90, "start": 36, "end": 50 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 90, "start": 36, "end": 50 },
+              "resolves_to": [
+                "class_flows.HasDecoratedClassmethod.to_sink"
+              ],
+              "port": "formal(x, position=1)",
+              "call_site": "90:4-90:51"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "class_flows.HasDecoratedClassmethod.to_sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "class_flows.test_decorated_classmethod:5002:0:Call|class_flows.HasDecoratedClassmethod.to_sink|0|formal(x):70aad8c4ef81c0c7ddff090277f2bbc8"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.list.append",
+    "filename": "builtins.pyi",
+    "callable_line": 3365,
+    "tito": [
+      {
+        "port": "formal(__element, position=1, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_flows.HasClassmethods._async_results_for_non_empty_query_from_db",
+    "filename": "class_flows.py",
+    "callable_line": 62,
+    "sinks": [
+      {
+        "port": "formal(locale, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 66, "start": 49, "end": 55 },
+              "resolves_to": [
+                "class_flows.HasClassmethods._get_multi_word_results"
+              ],
+              "port": "formal(locale, position=1)",
+              "call_site": "66:21-66:56"
+            },
+            "caller_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_flows.HasClassmethods._get_multi_word_results",
+    "filename": "class_flows.py",
+    "callable_line": 69,
+    "sinks": [
+      {
+        "port": "formal(locale, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 70, "start": 19, "end": 25 },
+            "caller_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false,
+            "call_site": "70:8-70:26"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_flows.HasDecoratedClassmethod.to_sink",
+    "filename": "class_flows.py",
+    "callable_line": 85,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 86, "start": 19, "end": 20 },
+            "caller_interval": [ { "lower": 8, "upper": 9 } ],
+            "is_self_call": false,
+            "call_site": "86:8-86:21"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{class_flows.C.__class__.tainted_class_attribute}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{class_flows.C.tainted_attribute}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}

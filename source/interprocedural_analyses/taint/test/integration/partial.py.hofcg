@@ -267,7 +267,7 @@ Higher order call graphs
         ]
       }
     },
-    "95:4-95:62": {
+    "95:4-95:63": {
       "call": {
         "new_calls": [
           {
@@ -285,18 +285,28 @@ Higher order call graphs
             "return_type": []
           }
         ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
+        "shim": {
+          "calls": [
+            {
+              "target": "partial.sink_on_foo",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "multiprocessing.Process",
+            "callee": { "kind": "argument", "index": 0 },
+            "arguments": [
               {
-                "target": "partial.sink_on_foo",
-                "index": 0,
-                "return_type": []
+                "value": {
+                  "kind": "get-tuple-element",
+                  "inner": { "kind": "argument", "index": 1 },
+                  "index": 0
+                }
               }
             ]
           }
-        ]
+        }
       }
     },
     "95:35-95:46|artificial-attribute-access|qualification:partial.sink_on_foo": {
@@ -352,7 +362,7 @@ Higher order call graphs
         ]
       }
     },
-    "100:4-100:62": {
+    "100:4-100:63": {
       "call": {
         "new_calls": [
           {
@@ -370,18 +380,28 @@ Higher order call graphs
             "return_type": []
           }
         ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
+        "shim": {
+          "calls": [
+            {
+              "target": "partial.sink_on_foo",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "multiprocessing.Process",
+            "callee": { "kind": "argument", "index": 0 },
+            "arguments": [
               {
-                "target": "partial.sink_on_foo",
-                "index": 0,
-                "return_type": []
+                "value": {
+                  "kind": "get-tuple-element",
+                  "inner": { "kind": "argument", "index": 1 },
+                  "index": 0
+                }
               }
             ]
           }
-        ]
+        }
       }
     },
     "100:35-100:46|artificial-attribute-access|qualification:partial.sink_on_foo": {

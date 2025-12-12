@@ -894,7 +894,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "origin": { "line": 504, "start": 15, "end": 29 }
+            "origin": { "line": 504, "start": 38, "end": 52 }
           }
         ]
       },
@@ -3887,7 +3887,7 @@
         ]
       },
       {
-        "port": "formal(self, position=0)[*]",
+        "port": "formal(self, position=0, positional_only)[*]",
         "taint": [
           {
             "kinds": [

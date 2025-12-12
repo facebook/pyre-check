@@ -1,0 +1,477 @@
+@generated
+Higher order call graphs
+{
+  "callable": "deadcode.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "90:1-90:10|identifier|dataclass": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "dataclasses.dataclass",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "deadcode.dead_code_by_type_refinement",
+  "returned_callables": [],
+  "calls": {
+    "96:7-96:20|artificial-call|comparison": {
+      "call": {
+        "unresolved": [ "UnresolvedMagicDunderAttrDueToNoAttribute" ]
+      }
+    },
+    "97:11-97:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.isinstance",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "deadcode.MyCallable.__call__",
+                "index": 0,
+                "implicit_receiver": true,
+                "implicit_dunder_call": true,
+                "return_type": [],
+                "receiver_class": "deadcode.MyCallable"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "97:22-97:25": {
+      "attribute_access": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "deadcode.MyCallable.__call__",
+              "index": 0,
+              "implicit_receiver": true,
+              "implicit_dunder_call": true,
+              "return_type": [],
+              "receiver_class": "deadcode.MyCallable"
+            }
+          ]
+        }
+      }
+    },
+    "97:27-97:37|identifier|MyCallable": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "deadcode.MyCallable"
+            }
+          ]
+        }
+      }
+    },
+    "98:12-98:23": {
+      "call": {
+        "calls": [
+          { "target": "builtins.print", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "100:12-100:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "deadcode.early_break_no_issue_for",
+  "returned_callables": [],
+  "calls": {
+    "51:13-51:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.range.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "51:13-51:21|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.range.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.range"
+          }
+        ]
+      }
+    },
+    "51:13-51:21|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "53:8-53:34": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "53:19-53:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "deadcode.early_break_no_issue_while",
+  "returned_callables": [],
+  "calls": {
+    "59:8-59:34": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "59:19-59:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "deadcode.early_continue_no_issue_for",
+  "returned_callables": [],
+  "calls": {
+    "63:13-63:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.range.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "63:13-63:21|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.range.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.range"
+          }
+        ]
+      }
+    },
+    "63:13-63:21|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "65:8-65:34": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "65:19-65:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "deadcode.early_raise_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "69:10-69:31": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.BaseException.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.BaseException.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.RuntimeError"
+          }
+        ]
+      }
+    },
+    "70:4-70:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "70:15-70:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "deadcode.early_return_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "25:4-25:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "25:15-25:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "deadcode.early_return_no_issue_class",
+  "returned_callables": [],
+  "calls": {
+    "81:13-81:41": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "deadcode.EarlyReturns.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "deadcode.EarlyReturns"
+          }
+        ]
+      }
+    },
+    "81:26-81:40": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "82:4-82:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "deadcode.early_return_no_issue_for_else",
+  "returned_callables": [],
+  "calls": {
+    "37:13-37:14|artificial-call|for-iter": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "37:13-37:14|artificial-call|for-next": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "41:4-41:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "41:15-41:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "deadcode.early_return_no_issue_if",
+  "returned_callables": [],
+  "calls": {
+    "33:4-33:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "33:15-33:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "deadcode.early_return_no_issue_while",
+  "returned_callables": [],
+  "calls": {
+    "47:4-47:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "47:15-47:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "deadcode.early_return_no_sink",
+  "returned_callables": [],
+  "calls": {
+    "14:4-14:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "deadcode.early_return_no_source",
+  "returned_callables": [],
+  "calls": {
+    "18:8-18:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "deadcode.EarlyReturns.__init__",
+  "returned_callables": [],
+  "calls": {
+    "76:17-76:31": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "77:8-77:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

@@ -67,7 +67,9 @@ def test_getattr() -> None:
 
 
 def test_bypass_private() -> None:
-    _test_sink(Simple(private=_test_source())._Simple__value)  # Error.
+    # pyrefly: ignore[missing-attribute]
+    _test_sink(Simple(private=_test_source())._Simple__value)  # Error. 
+    # pyrefly: ignore[missing-attribute]
     _test_sink(Simple(public=_test_source())._Simple__value)  # No error.
     # pyre-ignore
     _test_sink(Simple(private=_test_source()).__value)  # No error.

@@ -76,7 +76,7 @@ Higher order call graphs
   "callable": "sanitize_obscure.no_propagation_of_a_sink_via_parameter_tito",
   "returned_callables": [],
   "calls": {
-    "128:8-128:41": {
+    "128:8-128:44": {
       "call": {
         "calls": [
           {
@@ -227,7 +227,7 @@ Higher order call graphs
         ]
       }
     },
-    "110:11-110:46": {
+    "110:11-110:49": {
       "call": {
         "calls": [
           {
@@ -440,7 +440,7 @@ Higher order call graphs
   "callable": "sanitize_obscure.propagation_of_b_sink_via_parameter_tito",
   "returned_callables": [],
   "calls": {
-    "138:8-138:41": {
+    "138:8-138:44": {
       "call": {
         "calls": [
           {
@@ -591,7 +591,7 @@ Higher order call graphs
         ]
       }
     },
-    "120:11-120:46": {
+    "120:11-120:49": {
       "call": {
         "calls": [
           {

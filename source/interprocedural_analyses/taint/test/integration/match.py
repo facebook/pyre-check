@@ -87,6 +87,7 @@ def test_match_class_pattern():
         case MyClass(a):
             _test_sink(a) # Issue.
         case MyClass(b, a=""):
+            # pyrefly: ignore[unbound-name]
             _test_sink(a) # Issue.
             _test_sink(b) # Issue.
         case MyClass(a, b, c):

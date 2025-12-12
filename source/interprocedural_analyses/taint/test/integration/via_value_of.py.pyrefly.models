@@ -1,0 +1,1663 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.attach_to_sink",
+    "filename": "via_value_of.py",
+    "callable_line": 99,
+    "sinks": [
+      {
+        "port": "formal(parameter, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaValueOf", "parameter": "formal(feature)" }
+                ],
+                "kind": "Attach"
+              }
+            ],
+            "declaration": null
+          },
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaValueOf", "parameter": "formal(feature)" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 100, "start": 15, "end": 24 },
+            "call_site": "100:4-100:25"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.attach_to_source",
+    "filename": "via_value_of.py",
+    "callable_line": 91,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaValueOf", "parameter": "formal(parameter)" }
+                ],
+                "kind": "Attach"
+              }
+            ],
+            "declaration": null
+          },
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaValueOf", "parameter": "formal(parameter)" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 92, "start": 11, "end": 25 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.meta",
+    "filename": "via_value_of.py",
+    "callable_line": 38,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_parameter_name",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "<unknown:positional>" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 39, "start": 11, "end": 47 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.meta_named",
+    "filename": "via_value_of.py",
+    "callable_line": 42,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_parameter_name",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "<unknown:named>" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 43, "start": 11, "end": 57 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.meta_sink",
+    "filename": "via_value_of.py",
+    "callable_line": 71,
+    "sinks": [
+      {
+        "port": "formal(parameter, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "via_value_of.sink_via_value_of",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "<unknown:positional>" }
+            ],
+            "origin": { "line": 72, "start": 22, "end": 31 },
+            "call_site": "72:4-72:39"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.meta_sink_args",
+    "filename": "via_value_of.py",
+    "callable_line": 75,
+    "sinks": [
+      {
+        "port": "formal(parameter, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "via_value_of.sink_via_value_of",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via-value": "<unknown:args>" } ],
+            "origin": { "line": 76, "start": 22, "end": 41 },
+            "call_site": "76:4-76:42"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.meta_sink_kwargs",
+    "filename": "via_value_of.py",
+    "callable_line": 79,
+    "sinks": [
+      {
+        "port": "formal(parameter, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "via_value_of.sink_via_value_of",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via-value": "<unknown:kwargs>" } ],
+            "origin": { "line": 80, "start": 22, "end": 52 },
+            "call_site": "80:4-80:53"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.return_including_name",
+    "filename": "via_value_of.py",
+    "callable_line": 107,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter": "formal(parameter)",
+                    "tag": "parameter"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.return_via_keyword_only",
+    "filename": "via_value_of.py",
+    "callable_line": 205,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter": "formal(b)",
+                    "tag": "tag"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.return_via_parameter_name",
+    "filename": "via_value_of.py",
+    "callable_line": 10,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "via_features": [
+                  { "kind": "ViaValueOf", "parameter": "formal(parameter)" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.return_via_second_parameter",
+    "filename": "via_value_of.py",
+    "callable_line": 115,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "via_features": [
+                  { "kind": "ViaValueOf", "parameter": "formal(second)" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.sink_via_value_of",
+    "filename": "via_value_of.py",
+    "callable_line": 59,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaValueOf", "parameter": "formal(y)" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_args_kwargs_parameter",
+    "filename": "via_value_of.py",
+    "callable_line": 137,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_second_parameter",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "<unknown:args_or_kwargs>" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 140, "start": 11, "end": 55 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_args_parameter",
+    "filename": "via_value_of.py",
+    "callable_line": 127,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_second_parameter",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "<unknown:args>" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 129, "start": 11, "end": 45 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_attach_to_sink",
+    "filename": "via_value_of.py",
+    "callable_line": 103,
+    "sinks": [
+      {
+        "port": "formal(parameter, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "local_features": [ { "always-via-value": "attached to sink" } ],
+            "call": {
+              "position": { "line": 104, "start": 19, "end": 28 },
+              "resolves_to": [ "via_value_of.attach_to_sink" ],
+              "port": "formal(parameter, position=0)",
+              "call_site": "104:4-104:49"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_attach_to_source",
+    "filename": "via_value_of.py",
+    "callable_line": 95,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "local_features": [
+              { "always-via-value": "attached to source" }
+            ],
+            "call": {
+              "position": { "line": 96, "start": 11, "end": 49 },
+              "resolves_to": [ "via_value_of.attach_to_source" ],
+              "port": "result"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_backwards_tito",
+    "filename": "via_value_of.py",
+    "callable_line": 67,
+    "tito": [
+      {
+        "port": "formal(parameter, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "by_backwards" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 68, "start": 16, "end": 25 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_bool",
+    "filename": "via_value_of.py",
+    "callable_line": 26,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_parameter_name",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "False" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 27, "start": 11, "end": 43 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_enums",
+    "filename": "via_value_of.py",
+    "callable_line": 30,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_parameter_name",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "FOO" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 31, "start": 11, "end": 48 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_kwargs_parameter",
+    "filename": "via_value_of.py",
+    "callable_line": 132,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_second_parameter",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "<unknown:kwargs>" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 134, "start": 11, "end": 48 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_missing",
+    "filename": "via_value_of.py",
+    "callable_line": 34,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_parameter_name",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "<missing>" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 35, "start": 11, "end": 38 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_named_kwargs_parameter",
+    "filename": "via_value_of.py",
+    "callable_line": 148,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_second_parameter",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "2" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 150, "start": 11, "end": 60 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_numerals",
+    "filename": "via_value_of.py",
+    "callable_line": 22,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_parameter_name",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "1" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 23, "start": 11, "end": 39 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_positional_kwargs_parameter",
+    "filename": "via_value_of.py",
+    "callable_line": 143,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_second_parameter",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "<unknown:kwargs>" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 145, "start": 11, "end": 53 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_return_including_name",
+    "filename": "via_value_of.py",
+    "callable_line": 111,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_including_name",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-parameter-value": "parameter_value" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 112, "start": 11, "end": 51 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_return_second_parameter",
+    "filename": "via_value_of.py",
+    "callable_line": 119,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_second_parameter",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "2" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 120, "start": 11, "end": 44 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_return_second_parameter_keyword",
+    "filename": "via_value_of.py",
+    "callable_line": 123,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_second_parameter",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "2" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 124, "start": 11, "end": 57 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_return_via_keyword_only",
+    "filename": "via_value_of.py",
+    "callable_line": 209,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_keyword_only",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-tag-value": "B" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 210, "start": 11, "end": 48 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_sink",
+    "filename": "via_value_of.py",
+    "callable_line": 63,
+    "sinks": [
+      {
+        "port": "formal(element, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "via_value_of.sink_via_value_of",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via-value": "second" } ],
+            "origin": { "line": 64, "start": 29, "end": 36 },
+            "call_site": "64:11-64:47"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_sinks_do_not_propagate",
+    "filename": "via_value_of.py",
+    "callable_line": 87,
+    "sinks": [
+      {
+        "port": "formal(parameter, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via-value": "<unknown:positional>" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 88, "start": 14, "end": 23 },
+              "resolves_to": [ "via_value_of.meta_sink" ],
+              "port": "formal(parameter, position=0)",
+              "call_site": "88:4-88:41"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_string_literals",
+    "filename": "via_value_of.py",
+    "callable_line": 18,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_parameter_name",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "A" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 19, "start": 11, "end": 41 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_tito",
+    "filename": "via_value_of.py",
+    "callable_line": 54,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "second" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 55, "start": 13, "end": 27 } ],
+            "origin": { "line": 55, "start": 13, "end": 27 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_named_args",
+    "filename": "via_value_of.py",
+    "callable_line": 153,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_second_parameter",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "<unknown:args_or_named>" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 155, "start": 11, "end": 55 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_named_args_kwargs",
+    "filename": "via_value_of.py",
+    "callable_line": 193,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_second_parameter",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "<unknown:args_or_named>" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 196, "start": 11, "end": 65 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_named_kwargs",
+    "filename": "via_value_of.py",
+    "callable_line": 158,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_second_parameter",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "<unknown:named>" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 160, "start": 11, "end": 58 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_positional_args",
+    "filename": "via_value_of.py",
+    "callable_line": 163,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_second_parameter",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "<unknown:positional>" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 165, "start": 11, "end": 51 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_positional_kwargs",
+    "filename": "via_value_of.py",
+    "callable_line": 168,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_second_parameter",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "<unknown:positional>" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 170, "start": 11, "end": 54 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_positional_named_args1",
+    "filename": "via_value_of.py",
+    "callable_line": 173,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_second_parameter",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "<unknown:args_or_named>" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 175, "start": 11, "end": 58 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_positional_named_args2",
+    "filename": "via_value_of.py",
+    "callable_line": 178,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_second_parameter",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "<unknown:named_or_positional>" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 180, "start": 11, "end": 61 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_positional_named_args_kwargs1",
+    "filename": "via_value_of.py",
+    "callable_line": 199,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_second_parameter",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "<unknown:args_or_named>" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 202, "start": 11, "end": 68 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_positional_named_kwargs1",
+    "filename": "via_value_of.py",
+    "callable_line": 183,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_second_parameter",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "<unknown:named>" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 185, "start": 11, "end": 61 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_unknown_positional_named_kwargs2",
+    "filename": "via_value_of.py",
+    "callable_line": 188,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "via_value_of.return_via_second_parameter",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-value": "<unknown:named_or_positional>" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 190, "start": 11, "end": 64 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.test_via_value_of_does_not_propagate",
+    "filename": "via_value_of.py",
+    "callable_line": 46,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via-value": "<unknown:positional>" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "call": {
+              "position": { "line": 47, "start": 11, "end": 23 },
+              "resolves_to": [ "via_value_of.meta" ],
+              "port": "result"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_value_of.tito",
+    "filename": "via_value_of.py",
+    "callable_line": 50,
+    "tito": [
+      {
+        "port": "formal(parameter, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaValueOf", "parameter": "formal(other)" }
+                ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+@generated
+Call dependencies
+{
+  "joined_tito.y_is_benign (fun)": [
+    "builtins.object.__new__ (method)", "joined_tito.C.__init__ (method)",
+    "joined_tito.Wrapper.__init__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ]
+}

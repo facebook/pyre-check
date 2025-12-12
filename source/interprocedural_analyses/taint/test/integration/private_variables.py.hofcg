@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "private_variables.test_access_from_other_class",
   "returned_callables": [],
   "calls": {
-    "86:4-86:59": {
+    "88:4-88:59": {
       "call": {
         "calls": [
           {
@@ -16,7 +16,7 @@ Higher order call graphs
         ]
       }
     },
-    "86:28-86:58": {
+    "88:28-88:58": {
       "call": {
         "new_calls": [
           {
@@ -36,7 +36,7 @@ Higher order call graphs
         ]
       }
     },
-    "86:43-86:57": {
+    "88:43-88:57": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -49,14 +49,14 @@ Higher order call graphs
   "callable": "private_variables.test_bypass_private",
   "returned_callables": [],
   "calls": {
-    "70:4-70:61": {
+    "71:4-71:61": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "70:15-70:45": {
+    "71:15-71:45": {
       "call": {
         "new_calls": [
           {
@@ -76,21 +76,21 @@ Higher order call graphs
         ]
       }
     },
-    "70:30-70:44": {
+    "71:30-71:44": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "71:4-71:60": {
+    "73:4-73:60": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "71:15-71:44": {
+    "73:15-73:44": {
       "call": {
         "new_calls": [
           {
@@ -110,21 +110,21 @@ Higher order call graphs
         ]
       }
     },
-    "71:29-71:43": {
+    "73:29-73:43": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 1, "return_type": [] }
         ]
       }
     },
-    "73:4-73:54": {
+    "75:4-75:54": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 2, "return_type": [] }
         ]
       }
     },
-    "73:15-73:45": {
+    "75:15-75:45": {
       "call": {
         "new_calls": [
           {
@@ -144,21 +144,21 @@ Higher order call graphs
         ]
       }
     },
-    "73:30-73:44": {
+    "75:30-75:44": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 2, "return_type": [] }
         ]
       }
     },
-    "74:4-74:53": {
+    "76:4-76:53": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 3, "return_type": [] }
         ]
       }
     },
-    "74:15-74:44": {
+    "76:15-76:44": {
       "call": {
         "new_calls": [
           {
@@ -178,7 +178,7 @@ Higher order call graphs
         ]
       }
     },
-    "74:29-74:43": {
+    "76:29-76:43": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 3, "return_type": [] }
@@ -583,7 +583,7 @@ Higher order call graphs
   "callable": "private_variables.test_private_attribute_sink_models",
   "returned_callables": [],
   "calls": {
-    "134:4-134:32": {
+    "136:4-136:32": {
       "call": {
         "new_calls": [
           {
@@ -603,7 +603,7 @@ Higher order call graphs
         ]
       }
     },
-    "134:4-134:66": {
+    "136:4-136:66": {
       "call": {
         "calls": [
           {
@@ -616,14 +616,14 @@ Higher order call graphs
         ]
       }
     },
-    "134:51-134:65": {
+    "136:51-136:65": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "136:4-136:32": {
+    "138:4-138:32": {
       "call": {
         "new_calls": [
           {
@@ -643,7 +643,7 @@ Higher order call graphs
         ]
       }
     },
-    "136:4-136:68": {
+    "138:4-138:68": {
       "call": {
         "calls": [
           {
@@ -656,14 +656,14 @@ Higher order call graphs
         ]
       }
     },
-    "136:53-136:67": {
+    "138:53-138:67": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 1, "return_type": [] }
         ]
       }
     },
-    "138:4-138:32": {
+    "140:4-140:32": {
       "call": {
         "new_calls": [
           {
@@ -683,7 +683,7 @@ Higher order call graphs
         ]
       }
     },
-    "138:4-138:64": {
+    "140:4-140:64": {
       "call": {
         "calls": [
           {
@@ -696,7 +696,7 @@ Higher order call graphs
         ]
       }
     },
-    "138:49-138:63": {
+    "140:49-140:63": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 2, "return_type": [] }
@@ -709,14 +709,14 @@ Higher order call graphs
   "callable": "private_variables.test_private_attribute_source_models",
   "returned_callables": [],
   "calls": {
-    "108:4-108:66": {
+    "110:4-110:66": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "108:15-108:45": {
+    "110:15-110:45": {
       "call": {
         "new_calls": [
           {
@@ -736,7 +736,7 @@ Higher order call graphs
         ]
       }
     },
-    "108:15-108:65": {
+    "110:15-110:65": {
       "call": {
         "calls": [
           {
@@ -749,14 +749,14 @@ Higher order call graphs
         ]
       }
     },
-    "110:4-110:68": {
+    "112:4-112:68": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "110:15-110:45": {
+    "112:15-112:45": {
       "call": {
         "new_calls": [
           {
@@ -776,7 +776,7 @@ Higher order call graphs
         ]
       }
     },
-    "110:15-110:67": {
+    "112:15-112:67": {
       "call": {
         "calls": [
           {
@@ -789,14 +789,14 @@ Higher order call graphs
         ]
       }
     },
-    "112:4-112:64": {
+    "114:4-114:64": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 2, "return_type": [] }
         ]
       }
     },
-    "112:15-112:45": {
+    "114:15-114:45": {
       "call": {
         "new_calls": [
           {
@@ -816,7 +816,7 @@ Higher order call graphs
         ]
       }
     },
-    "112:15-112:63": {
+    "114:15-114:63": {
       "call": {
         "calls": [
           {
@@ -1047,7 +1047,7 @@ Higher order call graphs
   "callable": "private_variables.Other.private_into_sink",
   "returned_callables": [],
   "calls": {
-    "82:8-82:29": {
+    "84:8-84:29": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -1060,7 +1060,7 @@ Higher order call graphs
   "callable": "private_variables.PrivateAttributeSinkModels.__init__",
   "returned_callables": [],
   "calls": {
-    "118:8-118:28": {
+    "120:8-120:28": {
       "attribute_access": {
         "globals": [
           {
@@ -1071,7 +1071,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "119:8-119:30": {
+    "121:8-121:30": {
       "attribute_access": {
         "globals": [
           {
@@ -1082,7 +1082,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "120:8-120:26": {
+    "122:8-122:26": {
       "attribute_access": {
         "globals": [
           {
@@ -1099,7 +1099,7 @@ Higher order call graphs
   "callable": "private_variables.PrivateAttributeSinkModels.set_model_mangled",
   "returned_callables": [],
   "calls": {
-    "123:8-123:28": {
+    "125:8-125:28": {
       "attribute_access": {
         "globals": [
           {
@@ -1116,7 +1116,7 @@ Higher order call graphs
   "callable": "private_variables.PrivateAttributeSinkModels.set_model_query",
   "returned_callables": [],
   "calls": {
-    "129:8-129:26": {
+    "131:8-131:26": {
       "attribute_access": {
         "globals": [
           {
@@ -1133,7 +1133,7 @@ Higher order call graphs
   "callable": "private_variables.PrivateAttributeSinkModels.set_model_unmangled",
   "returned_callables": [],
   "calls": {
-    "126:8-126:30": {
+    "128:8-128:30": {
       "attribute_access": {
         "globals": [
           {
@@ -1150,7 +1150,7 @@ Higher order call graphs
   "callable": "private_variables.PrivateAttributeSourceModels.__init__",
   "returned_callables": [],
   "calls": {
-    "92:8-92:28": {
+    "94:8-94:28": {
       "attribute_access": {
         "globals": [
           {
@@ -1161,7 +1161,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "93:8-93:30": {
+    "95:8-95:30": {
       "attribute_access": {
         "globals": [
           {
@@ -1172,7 +1172,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "94:8-94:26": {
+    "96:8-96:26": {
       "attribute_access": {
         "globals": [
           {
@@ -1189,7 +1189,7 @@ Higher order call graphs
   "callable": "private_variables.PrivateAttributeSourceModels.get_model_mangled",
   "returned_callables": [],
   "calls": {
-    "97:15-97:35": {
+    "99:15-99:35": {
       "attribute_access": {
         "globals": [
           {
@@ -1206,7 +1206,7 @@ Higher order call graphs
   "callable": "private_variables.PrivateAttributeSourceModels.get_model_query",
   "returned_callables": [],
   "calls": {
-    "103:15-103:33": {
+    "105:15-105:33": {
       "attribute_access": {
         "globals": [
           {
@@ -1223,7 +1223,7 @@ Higher order call graphs
   "callable": "private_variables.PrivateAttributeSourceModels.get_model_unmangled",
   "returned_callables": [],
   "calls": {
-    "100:15-100:37": {
+    "102:15-102:37": {
       "attribute_access": {
         "globals": [
           {

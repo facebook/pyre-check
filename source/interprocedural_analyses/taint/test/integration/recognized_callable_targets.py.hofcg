@@ -89,6 +89,15 @@ Higher order call graphs
     },
     "16:4-16:37": {
       "call": {
+        "calls": [
+          {
+            "target": "pysa.TestCallableTarget.async_schedule",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "pysa.TestCallableTarget"
+          }
+        ],
         "shim": {
           "calls": [
             {
@@ -106,8 +115,7 @@ Higher order call graphs
             },
             "arguments": [ { "value": { "kind": "argument", "index": 0 } } ]
           }
-        },
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+        }
       }
     }
   }

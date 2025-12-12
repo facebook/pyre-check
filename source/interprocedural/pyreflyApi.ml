@@ -4914,7 +4914,6 @@ let builtins_symbols =
       "KeyboardInterrupt";
       "len";
       "list";
-      "locals";
       "map";
       "max";
       "memoryview";

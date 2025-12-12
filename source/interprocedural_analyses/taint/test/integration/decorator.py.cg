@@ -2,7 +2,7 @@
 Call dependencies
 {
   "decorator.$toplevel (fun)": [
-    "pyre_extensions.ParameterSpecification (fun)"
+    "object.__new__ (method)", "typing.ParamSpec.__init__ (method)"
   ],
   "decorator.Foo.bar (method)": [ "print (fun)" ],
   "decorator.Foo.bar@decorated (method)": [

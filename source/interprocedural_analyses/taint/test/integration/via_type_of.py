@@ -7,6 +7,7 @@ import enum
 from pysa import _test_sink, _test_source
 from typing import Annotated, Any, Dict, List
 from dataclasses import dataclass
+import random
 
 
 class Test1_C:
@@ -38,9 +39,9 @@ def test1_alarm4(foo):
     # via-type:int, via-type:str, via-type:typing.Annotated[str]
     c = Test1_C(**_test_source())
     foo = c.x
-    if 1:
+    if random.random() > 0.5:
         foo = c.y
-    elif 2:
+    elif random.random() > 0.5:
         foo = c.z
     _test_sink(foo)
 
@@ -74,16 +75,16 @@ def test2_alarm4(foo):
     # via-type:Dict[str, int], via-type:List[str], via-type:float
     c = Test2_C(**_test_source())
     foo = c.x
-    if 1:
+    if random.random() > 0.5:
         foo = c.y
-    elif 2:
+    elif random.random() > 0.5:
         foo = c.z
     _test_sink(foo)
 
 
 def test2_alarm5_via_constructor():
     taint: str = _test_source()
-    _test_sink(Test2_C(x={}, y=[], z=taint))
+    _test_sink(Test2_C(x={}, y=[], z=taint)) # pyrefly: ignore[bad-argument-type]
 
 
 class Test3_Foo:
@@ -117,9 +118,9 @@ def test3_alarm4(c: Test3_C):
     # via-type:Test3_Foo,
     # via-type:typing.Annotated[List[List[str]]
     foo = c.x
-    if 1:
+    if random.random() > 0.5:
         foo = c.y
-    elif 2:
+    elif random.random() > 0.5:
         foo = c.z
     _test_sink(foo)
 

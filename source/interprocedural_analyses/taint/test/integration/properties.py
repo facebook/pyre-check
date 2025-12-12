@@ -119,7 +119,7 @@ def setters_are_simulated() -> None:
 
 class ClassProperty:
     # pyre-ignore[10]: __classproperty__ is a made-up name to allow testing
-    @__classproperty__
+    @__classproperty__ # pyrefly: ignore[unknown-name]
     def my_class_property(cls) -> str:
         return ""
 
@@ -168,7 +168,7 @@ class PropertyCallableReturn:
     def __call__(self, y):
         _test_sink(self.x)
         _test_sink(y)
-        return x
+        return self.x
 
 
 class PropertyCallable:
@@ -223,6 +223,7 @@ def bar():
 
 def function_with_nested_properties():
     # Property setters within a function, not a class
+    # pyrefly: ignore[invalid-decorator]
     @property
     def my_property(self) -> int:
         foo()
@@ -256,6 +257,9 @@ class CollidePropertySetterName:
 
 
 class PropertySetterTitoModel:
+    def __init__(self, foo) -> None:
+        self.foo = foo
+
     @property
     def my_property(self):
         return self.foo

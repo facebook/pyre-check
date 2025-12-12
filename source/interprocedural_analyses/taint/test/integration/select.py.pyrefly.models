@@ -1,0 +1,741 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.eval",
+    "filename": "builtins.pyi",
+    "callable_line": 4297,
+    "sinks": [
+      {
+        "port": "formal(source, position=0, positional_only)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "select.first_index",
+    "filename": "select.py",
+    "callable_line": 20,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "access_token" }
+            ],
+            "origin": { "line": 21, "start": 8, "end": 22 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "select.first_index_numeric",
+    "filename": "select.py",
+    "callable_line": 25,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "<numeric>" }
+            ],
+            "origin": { "line": 26, "start": 8, "end": 22 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "select.first_index_unknown",
+    "filename": "select.py",
+    "callable_line": 30,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "<unknown>" }
+            ],
+            "origin": { "line": 31, "start": 8, "end": 22 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "select.return_is_RCE",
+    "filename": "select.py",
+    "callable_line": 40,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{django.http.Request.GET}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "payload" }
+            ],
+            "tito_positions": [ { "line": 41, "start": 11, "end": 22 } ],
+            "origin": { "line": 41, "start": 11, "end": 22 }
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(request, position=0)[GET][payload]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "select.return_is_RCE", "port": "leaf:return" }
+                ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "always-via": "propagated-return-sink" }
+            ],
+            "tito_positions": [ { "line": 41, "start": 11, "end": 22 } ],
+            "origin": { "line": 41, "start": 4, "end": 48 }
+          }
+        ]
+      },
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(request, position=0)[GET][payload]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "payload" }
+            ],
+            "tito_positions": [ { "line": 41, "start": 11, "end": 22 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "select.return_is_RCE",
+    "callable_line": 40,
+    "code": 5001,
+    "line": 41,
+    "start": 4,
+    "end": 48,
+    "filename": "select.py",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{django.http.Request.GET}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "payload" }
+            ],
+            "tito_positions": [ { "line": 41, "start": 11, "end": 22 } ],
+            "origin": { "line": 41, "start": 11, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "select.return_is_RCE", "port": "leaf:return" }
+                ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": { "line": 41, "start": 4, "end": 48 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "has": "first-index" }, { "first-index": "payload" } ],
+    "sink_handle": { "kind": "Return" },
+    "master_handle": "select.return_is_RCE:5001:0:Return:75714e82b1119786167df4c408a8f7c4"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "select.view_entry_field",
+    "filename": "select.py",
+    "callable_line": 12,
+    "sinks": [
+      {
+        "port": "formal(request, position=0)[payload]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": { "line": 13, "start": 9, "end": 24 },
+            "call_site": "13:4-13:25"
+          }
+        ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(request, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "select.view_entry_field",
+    "callable_line": 12,
+    "code": 5001,
+    "line": 13,
+    "start": 9,
+    "end": 24,
+    "filename": "select.py",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "select.view_entry_field",
+                    "port": "leaf:request"
+                  }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" }, { "first-field": "payload" }
+            ],
+            "origin": { "line": 12, "start": 21, "end": 28 },
+            "call_site": "12:0-13:25"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": { "line": 13, "start": 9, "end": 24 },
+            "call_site": "13:4-13:25"
+          }
+        ]
+      }
+    ],
+    "features": [ { "has": "first-field" }, { "first-field": "payload" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "builtins.eval",
+      "index": 0,
+      "parameter": "formal(source)"
+    },
+    "master_handle": "select.view_entry_field:5001:0:Call|builtins.eval|0|formal(source):8a3d678a5ab41e7c307e83731de50ccf"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "select.view_entry_get",
+    "filename": "select.py",
+    "callable_line": 36,
+    "sinks": [
+      {
+        "port": "formal(request, position=0)[GET][payload]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "payload" }
+            ],
+            "tito_positions": [ { "line": 37, "start": 9, "end": 20 } ],
+            "origin": { "line": 37, "start": 9, "end": 46 },
+            "call_site": "37:4-37:47"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "select.view_entry_get",
+    "callable_line": 36,
+    "code": 5001,
+    "line": 37,
+    "start": 9,
+    "end": 46,
+    "filename": "select.py",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{django.http.Request.GET}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "payload" }
+            ],
+            "tito_positions": [ { "line": 37, "start": 9, "end": 20 } ],
+            "origin": { "line": 37, "start": 9, "end": 20 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": { "line": 37, "start": 9, "end": 46 },
+            "call_site": "37:4-37:47"
+          }
+        ]
+      }
+    ],
+    "features": [ { "has": "first-index" }, { "first-index": "payload" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "builtins.eval",
+      "index": 0,
+      "parameter": "formal(source)"
+    },
+    "master_handle": "select.view_entry_get:5001:0:Call|builtins.eval|0|formal(source):f74ec044a873775640a341a06e22aef8"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "select.view_entry_index",
+    "filename": "select.py",
+    "callable_line": 16,
+    "sinks": [
+      {
+        "port": "formal(request, position=0)[GET][payload]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "payload" }
+            ],
+            "origin": { "line": 17, "start": 9, "end": 31 },
+            "call_site": "17:4-17:32"
+          }
+        ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(request, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "select.view_entry_index",
+    "callable_line": 16,
+    "code": 5001,
+    "line": 17,
+    "start": 9,
+    "end": 31,
+    "filename": "select.py",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "select.view_entry_index",
+                    "port": "leaf:request"
+                  }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "has": "first-field" },
+              { "first-field": "GET" }
+            ],
+            "origin": { "line": 16, "start": 21, "end": 28 },
+            "call_site": "16:0-17:32"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": { "line": 17, "start": 9, "end": 31 },
+            "call_site": "17:4-17:32"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "payload" },
+      { "has": "first-field" },
+      { "first-field": "GET" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "builtins.eval",
+      "index": 0,
+      "parameter": "formal(source)"
+    },
+    "master_handle": "select.view_entry_index:5001:0:Call|builtins.eval|0|formal(source):3481d83246062f3bb10487bb628c4633"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.dict.get",
+    "filename": "builtins.pyi",
+    "callable_line": 3585,
+    "tito": [
+      {
+        "port": "formal(self, position=0, positional_only)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "SkipObscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{django.http.Request.GET}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}

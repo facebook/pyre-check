@@ -150,6 +150,7 @@ class PartiallyZonedDict(MutableMapping[str, str]):
 @dataclass(frozen=True)
 class ZonedForm:
     def __init__(self, data: PartiallyZonedDict):
+        # pyrefly: ignore[read-only]
         self._data: PartiallyZonedDict = data
 
     @property
@@ -160,7 +161,7 @@ class RegularForm:
     def __init__(self, data: Dict[str, str]):
         self.data: Dict[str, str] = data
 
-def tito_copy_multiple_possible_dictlike_objects(d: RegularForm | ZonedForm) -> Dict[str, str]:
+def tito_copy_multiple_possible_dictlike_objects(d: RegularForm | ZonedForm) -> MutableMapping[str, str]:
     # pyre-ignore[16]: For some reason Pyre doesn't understand that Dict.copy() is a valid method: D55542716
     return d.data.copy()
 

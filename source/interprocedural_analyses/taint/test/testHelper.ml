@@ -583,11 +583,13 @@ let initialize_pyre_and_fail_on_errors ~context ~force_pyre1 ~handle ~source_con
   (if not (List.is_empty errors) then
      let errors =
        errors
-       |> List.map ~f:(fun error ->
+       |> List.map
+            ~f:(fun ({ PyrePysaLogic.Testing.AnalysisError.Instantiated.name; _ } as error) ->
               Format.asprintf
-                "%a:%s"
+                "%a:[%s]:%s"
                 Location.WithPath.pp
                 (PyrePysaLogic.Testing.AnalysisError.Instantiated.location error)
+                name
                 (PyrePysaLogic.Testing.AnalysisError.Instantiated.description error))
        |> String.concat ~sep:"\n"
      in

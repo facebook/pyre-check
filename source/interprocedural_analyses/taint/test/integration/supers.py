@@ -4,25 +4,26 @@
 # LICENSE file in the root directory of this source tree.
 
 from pysa import _test_sink, _test_source
+from typing import Any
 
 
 class A:
     def __init__(self):
         self.attribute = _test_source()
 
-    def f1(self):
+    def f1(self) -> Any:
         _test_sink(self.attribute)
 
-    def f2(self, x):
+    def f2(self, x) -> Any:
         _test_sink(x)
 
-    def f3(self):
+    def f3(self) -> Any:
         return _test_source()
 
-    def f4(self):
+    def f4(self) -> Any:
         return "1"
 
-    def f5(self, x):
+    def f5(self, x) -> Any:
         pass
 
 

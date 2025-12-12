@@ -1,0 +1,1071 @@
+@generated
+Higher order call graphs
+{
+  "callable": "attributes.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "145:1-145:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "dataclasses.dataclass",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "146:25-146:39|identifier|MutableMapping": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "attributes.PartiallyZonedDict.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "typing.MutableMapping"
+            },
+            {
+              "target": "builtins.dict.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "typing.MutableMapping"
+            },
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "typing.MutableMapping"
+            },
+            {
+              "target": "collections.ChainMap.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "typing.MutableMapping"
+            },
+            {
+              "target": "collections.UserDict.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "typing.MutableMapping"
+            },
+            {
+              "target": "os._Environ.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "typing.MutableMapping"
+            }
+          ]
+        }
+      }
+    },
+    "146:25-146:49|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttr" ] }
+    },
+    "146:40-146:43|identifier|str": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.str.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "146:45-146:48|identifier|str": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.str.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "150:1-150:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "dataclasses.dataclass",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.Request.$class_toplevel",
+  "returned_callables": [],
+  "calls": {
+    "20:33-20:47": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "attributes.OAuthRequest"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.test_attribute",
+  "returned_callables": [],
+  "calls": {
+    "40:11-40:18": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{attributes.Token.token}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.test_attribute_union_sink",
+  "returned_callables": [],
+  "calls": {
+    "90:4-90:11": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{attributes.Sink.token}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "90:14-90:28": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "91:7-91:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.isinstance",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "91:21-91:25|identifier|Sink": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "attributes.Sink"
+            }
+          ]
+        }
+      }
+    },
+    "92:8-92:15": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{attributes.Sink.token}",
+            "index": 1,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "92:18-92:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "93:9-93:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.isinstance",
+            "index": 1,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "93:23-93:32|identifier|Untainted": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "attributes.Untainted"
+            }
+          ]
+        }
+      }
+    },
+    "94:18-94:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 2, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.test_attribute_union_source",
+  "returned_callables": [],
+  "calls": {
+    "78:4-78:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "78:15-78:22": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{attributes.Token.token}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "79:7-79:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.isinstance",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "79:21-79:26|identifier|Token": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "attributes.Token"
+            }
+          ]
+        }
+      }
+    },
+    "80:8-80:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "80:19-80:26": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{attributes.Token.token}",
+            "index": 1,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "81:9-81:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.isinstance",
+            "index": 1,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "81:23-81:32|identifier|Untainted": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "attributes.Untainted"
+            }
+          ]
+        }
+      }
+    },
+    "82:8-82:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 2, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.test_attribute_via_dunder_dict",
+  "returned_callables": [],
+  "calls": {
+    "66:10-66:46": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "attributes.UseViaDict.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "attributes.UseViaDict"
+          }
+        ]
+      }
+    },
+    "66:23-66:37": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "68:4-68:28": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "69:4-69:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "69:15-69:32|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "70:4-70:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "70:15-70:32|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.test_getattr_backwards",
+  "returned_callables": [],
+  "calls": {
+    "52:4-52:41": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "52:15-52:40": {
+      "call": {
+        "calls": [
+          { "target": "builtins.getattr", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "52:15-52:40|artificial-attribute-access|get-attr-constant-literal": {
+      "attribute_access": {
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.test_getattr_backwards_default",
+  "returned_callables": [],
+  "calls": {
+    "56:4-56:42": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "56:15-56:41": {
+      "call": {
+        "calls": [
+          { "target": "builtins.getattr", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "56:15-56:41|artificial-attribute-access|get-attr-constant-literal": {
+      "attribute_access": {
+        "if_called": { "unresolved": [ "UnresolvedMagicDunderAttr" ] }
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.test_getattr_default",
+  "returned_callables": [],
+  "calls": {
+    "48:11-48:50": {
+      "call": {
+        "calls": [
+          { "target": "builtins.getattr", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "48:11-48:50|artificial-attribute-access|get-attr-constant-literal": {
+      "attribute_access": {
+        "if_called": { "unresolved": [ "UnresolvedMagicDunderAttr" ] }
+      }
+    },
+    "48:35-48:49": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.test_getattr_forward",
+  "returned_callables": [],
+  "calls": {
+    "44:11-44:36": {
+      "call": {
+        "calls": [
+          { "target": "builtins.getattr", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "44:11-44:36|artificial-attribute-access|get-attr-constant-literal": {
+      "attribute_access": {
+        "if_called": { "unresolved": [ "EmptyPyreflyTarget" ] }
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.test_issue_with_text_key_of_dictionary",
+  "returned_callables": [],
+  "calls": {
+    "102:4-102:36": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "102:15-102:27": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{attributes.C.dictionary}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "102:15-102:35|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.test_issue_with_tito_copy_dict",
+  "returned_callables": [],
+  "calls": {
+    "140:20-140:34": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "141:15-141:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "attributes.tito_copy_dict",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "143:4-143:35": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "143:15-143:34|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "attributes.test_issue_with_tito_copy_multiple_possible_dictlike_objects",
+  "returned_callables": [],
+  "calls": {
+    "169:8-169:48": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "attributes.RegularForm.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "attributes.RegularForm"
+          }
+        ]
+      }
+    },
+    "169:32-169:46": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "170:15-170:62": {
+      "call": {
+        "calls": [
+          {
+            "target": "attributes.tito_copy_multiple_possible_dictlike_objects",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "172:4-172:35": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "172:15-172:34|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.MutableMapping"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.test_issue_with_update_to_self_attribute",
+  "returned_callables": [],
+  "calls": {
+    "114:4-114:12": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{attributes.D.buffer}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "114:4-114:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.append",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "114:20-114:34": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.test_no_issue_sanitize",
+  "returned_callables": [],
+  "calls": {
+    "178:8-178:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "attributes.A"
+          }
+        ]
+      }
+    },
+    "179:18-179:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "181:4-181:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.test_no_issue_sanitize_via_call",
+  "returned_callables": [],
+  "calls": {
+    "187:8-187:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "attributes.A"
+          }
+        ]
+      }
+    },
+    "188:18-188:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "189:4-189:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "attributes.sanitize_attribute",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "190:4-190:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.test_no_issue_with_other_key_of_dictionary",
+  "returned_callables": [],
+  "calls": {
+    "106:4-106:37": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "106:15-106:27": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{attributes.C.dictionary}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "106:15-106:36|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.test_no_list_inference",
+  "returned_callables": [],
+  "calls": {
+    "130:8-130:25": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "attributes.NoListInference.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "attributes.NoListInference"
+          }
+        ]
+      }
+    },
+    "131:4-131:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "attributes.NoListInference.append",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "attributes.NoListInference"
+          }
+        ]
+      }
+    },
+    "131:13-131:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "132:4-132:12": {
+      "call": {
+        "calls": [
+          {
+            "target": "attributes.NoListInference.sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "attributes.NoListInference"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.test_via_non_optional",
+  "returned_callables": [],
+  "calls": {
+    "35:15-35:33": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{attributes.Token.token}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.test_via_optional",
+  "returned_callables": [],
+  "calls": {
+    "28:19-28:37": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{attributes.Token.token}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.tito_copy_dict",
+  "returned_callables": [],
+  "calls": {
+    "136:11-136:19": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "attributes.tito_copy_multiple_possible_dictlike_objects",
+  "returned_callables": [],
+  "calls": {
+    "166:11-166:17": {
+      "attribute_access": {
+        "properties": [
+          {
+            "target": "attributes.ZonedForm.data",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "166:11-166:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "attributes.PartiallyZonedDict.copy",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          },
+          {
+            "target": "builtins.dict.copy",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.NoListInference.append",
+  "returned_callables": [],
+  "calls": {
+    "123:8-123:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.append",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "attributes.NoListInference.sink",
+  "returned_callables": [],
+  "calls": {
+    "126:8-126:31": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

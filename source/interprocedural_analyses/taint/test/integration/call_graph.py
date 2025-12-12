@@ -22,7 +22,7 @@ class NotSource:
         pass
 
     def method(self) -> IsSource:
-        pass
+        return IsSource()
 
 
 def test_chained_assign():

@@ -1,0 +1,5 @@
+@generated
+Overrides
+builtins.object.__init__ (override) -> [builtins.object.__init__ (method) joined_tito.C.__init__ (override) joined_tito.Wrapper.__init__ (override)]
+joined_tito.C.__init__ (override) -> [joined_tito.C.__init__ (method)]
+joined_tito.Wrapper.__init__ (override) -> [joined_tito.Wrapper.__init__ (method)]

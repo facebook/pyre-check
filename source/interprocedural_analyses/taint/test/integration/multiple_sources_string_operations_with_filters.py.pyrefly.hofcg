@@ -1,0 +1,325 @@
+@generated
+Higher order call graphs
+{
+  "callable": "multiple_sources_string_operations_with_filters.first_source_distance_one",
+  "returned_callables": [],
+  "calls": {
+    "14:11-14:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources_string_operations_with_filters.first_source_distance_zero",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations_with_filters.first_source_distance_zero",
+  "returned_callables": [],
+  "calls": {
+    "11:11-11:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources_string_operations_with_filters.first_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations_with_filters.second_source_distance_one",
+  "returned_callables": [],
+  "calls": {
+    "20:11-20:40": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources_string_operations_with_filters.second_source_distance_zero",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations_with_filters.sink_distance_one",
+  "returned_callables": [],
+  "calls": {
+    "41:4-41:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources_string_operations_with_filters.sink_distance_zero",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations_with_filters.sink_distance_zero",
+  "returned_callables": [],
+  "calls": {
+    "38:4-38:17|artificial-call|binary": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.__add__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations_with_filters.test_first_source_one_second_source_one",
+  "returned_callables": [],
+  "calls": {
+    "32:4-32:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources_string_operations_with_filters.second_source_distance_zero",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "32:4-32:64|artificial-call|binary": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.__add__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.str"
+          }
+        ]
+      }
+    },
+    "32:36-32:64": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources_string_operations_with_filters.first_source_distance_zero",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations_with_filters.test_first_source_one_second_source_zero",
+  "returned_callables": [],
+  "calls": {
+    "29:4-29:44|artificial-call|binary": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.__add__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "29:16-29:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources_string_operations_with_filters.first_source_distance_zero",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations_with_filters.test_first_source_two_second_source_two",
+  "returned_callables": [],
+  "calls": {
+    "35:4-35:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources_string_operations_with_filters.second_source_distance_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "35:4-35:62|artificial-call|binary": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.__add__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.str"
+          }
+        ]
+      }
+    },
+    "35:35-35:62": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources_string_operations_with_filters.first_source_distance_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations_with_filters.test_first_source_zero_second_source_one",
+  "returned_callables": [],
+  "calls": {
+    "26:4-26:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources_string_operations_with_filters.second_source_distance_zero",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "26:4-26:50|artificial-call|binary": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.__add__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.str"
+          }
+        ]
+      }
+    },
+    "26:36-26:50": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources_string_operations_with_filters.first_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations_with_filters.test_first_source_zero_second_source_zero",
+  "returned_callables": [],
+  "calls": {
+    "23:4-23:30|artificial-call|binary": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.__add__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "23:16-23:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources_string_operations_with_filters.first_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations_with_filters.test_sink_one_first_source_zero",
+  "returned_callables": [],
+  "calls": {
+    "47:4-47:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources_string_operations_with_filters.sink_distance_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "47:22-47:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources_string_operations_with_filters.first_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations_with_filters.test_sink_zero_first_source_zero",
+  "returned_callables": [],
+  "calls": {
+    "44:4-44:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources_string_operations_with_filters.sink_distance_zero",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "44:23-44:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "multiple_sources_string_operations_with_filters.first_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}

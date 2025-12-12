@@ -5,7 +5,7 @@
 
 
 def first_source() -> str:
-    pass
+    return ""
 
 def first_source_distance_zero() -> str:
     return first_source()

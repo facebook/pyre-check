@@ -5,7 +5,8 @@
 
 from abc import abstractmethod
 from pysa import _test_sink, _test_source
-from typing import Union
+from typing import Union, Any
+import random
 
 """
   A0
@@ -236,30 +237,30 @@ class A6:
     def m1(self):
         return self.m0()  # Interval: [2,5] /\ [1,8] = [2,5]
 
-    def m0(self):
-        pass
+    def m0(self) -> Any:
+        return
 
 
 class B6(A6):
-    def m0(self):
-        if 1 == 1:
+    def m0(self) -> Any:
+        if random.random() > 0.5:
             return _test_source()  # Interval: (-∞,+∞) /\ [2,5] = [2,5]
         else:
             return E6().m3()  # Interval: [2,5]
 
 
 class C6(A6):
-    def m2(self):
+    def m2(self) -> Any:
         return self.m1()  # Interval: [2,5] /\ [6,7] = Empty
 
 
 class D6(B6):
-    def m0(self):
-        super().m0()
+    def m0(self) -> Any:
+        return super().m0()
 
 
 class E6:
-    def m3(self):
+    def m3(self) -> Any:
         return _test_source()  # Interval: (-∞,+∞) /\ [9,10] = [9,10]
 
 
@@ -274,18 +275,18 @@ B7: [3,4]
 
 
 class B7:
-    def foo(self):
+    def foo(self) -> Any:
         return self.bar()  # Interval: [3,4]
 
-    def bar(self):
+    def bar(self) -> Any:
         return _test_source()  # Interval: [3,4]
 
 
 class A7:
-    def bar(self, x):
+    def bar(self, x) -> Any:
         return x
 
-    def f(self, b: B7):
+    def f(self, b: B7) -> Any:
         y = b.foo()  # Interval: [1,2]
         return y
 
@@ -298,17 +299,17 @@ C8: [5,6]
 
 
 class B8:
-    def foo(self, x):
+    def foo(self, x) -> Any:
         return _test_source()  # Interval: [3,4]
 
 
 class C8:
-    def foo(self, x):
+    def foo(self, x) -> Any:
         pass
 
 
 class A8:
-    def bar(self, b: Union[B8, C8], x):  # Interval: [1,2]
+    def bar(self, b: Union[B8, C8], x) -> Any:  # Interval: [1,2]
         if x == 1:
             return self.baz()  # Interval: [1,2] /\ [1,2] = [1,2]
         elif x == 2:
@@ -324,12 +325,12 @@ class A8:
         else:
             return x  # No taint (or interval)
 
-    def baz(self):
+    def baz(self) -> Any:
         return _test_source()  # Interval: (-∞,+∞) /\ [1,2] = [1,2]
 
 
 class A9:
-    def f(self):
+    def f(self) -> Any:
         return _test_source()
 
 
@@ -340,23 +341,24 @@ def call_method_via_class_name(a: A9):
 class A10:
     f: int = 0
 
-    def object_target(x):
+    def object_target(self, x):
         a = A10()
         a.f = x
 
 
 class A12:
-    def f(self):
-        return self.g()  # Pyre reports a type error here
+    def f(self) -> Any:
+        # pyrefly: ignore[missing-attribute]
+        return self.g()  # pyre-ignore
 
 
 class B12(A12):
-    def g(self):
+    def g(self) -> Any:
         return 0
 
 
 class C12(A12):
-    def g(self):
+    def g(self) -> Any:
         return _test_source()
 
 
@@ -368,21 +370,21 @@ def undetected_issue(c: C12):
 
 
 class A13:
-    def f(self):
+    def f(self) -> Any:
         return self.g()
 
     @abstractmethod
-    def g(self):
-        pass
+    def g(self) -> Any:
+        return
 
 
 class B13(A13):
-    def g(self):
+    def g(self) -> Any:
         return 0
 
 
 class C13(A13):
-    def g(self):
+    def g(self) -> Any:
         return _test_source()
 
 
@@ -407,23 +409,23 @@ B: [2,5]   C: [6,7] \/ [3,4]
 
 
 class A14:
-    def m1(self):
+    def m1(self) -> Any:
         return self.m2()
 
-    def m2(self):
-        pass
+    def m2(self) -> Any:
+        return
 
 
 class C14(A14):
-    def m2(self):
+    def m2(self) -> Any:
         return _test_source()
 
 
 class B14(A14):
-    def m0(self):
+    def m0(self) -> Any:
         return self.m1()
 
-    def m2(self):
+    def m2(self) -> Any:
         return 0
 
 
@@ -436,23 +438,23 @@ def multi_inheritance_no_issue_one_hop(b: B14):
 
 
 class A15:
-    def m1(self):
+    def m1(self) -> Any:
         return self.m2()
 
-    def m2(self):
-        pass
+    def m2(self) -> Any:
+        return
 
 
 class E15(A15):
-    def m2(self):
+    def m2(self) -> Any:
         return _test_source()
 
 
 class B15(A15):
-    def m0(self):
+    def m0(self) -> Any:
         return self.m1()
 
-    def m2(self):
+    def m2(self) -> Any:
         return 0
 
 
@@ -469,28 +471,28 @@ def multi_inheritance_no_issue_two_hops(b: B15):
 
 
 class A16:
-    def m1(self):
+    def m1(self) -> Any:
         return self.m2()
 
-    def m2(self):
-        pass
+    def m2(self) -> Any:
+        return
 
 
 class C16(A16):
-    def m2(self):
+    def m2(self) -> Any:
         return 0
 
 
 class B16(A16):
-    def m0(self):
+    def m0(self) -> Any:
         return self.m1()
 
-    def m2(self):
+    def m2(self) -> Any:
         return 0
 
 
 class D16(B16, C16):
-    def m2(self):
+    def m2(self) -> Any:
         return _test_source()
 
 
@@ -558,15 +560,15 @@ class A18:
 
 class B18(A18):
     @staticmethod
-    def m(arg):
+    def m0(arg):
         sink_b(arg)
 
 
 class C18(A18):
     @staticmethod
-    def m(arg):
+    def m0(arg):
         # Expect an issue
-        B18.m(arg)
+        B18.m0(arg)
 
 
 def test_static_methods():
@@ -649,23 +651,23 @@ def sink_d(arg):
 
 class A21:
     @classmethod
-    def m0(cls, arg):
+    def m0(cls, arg) -> Any:
         return cls.m1(arg)
 
     @classmethod
-    def m1(cls, arg):
-        pass
+    def m1(cls, arg) -> Any:
+        return
 
 
 class B21(A21):
     @classmethod
-    def m1(cls, arg):
+    def m1(cls, arg) -> Any:
         return transformX(arg)
 
 
 class C21(A21):
     @classmethod
-    def m1(cls, arg):
+    def m1(cls, arg) -> Any:
         return arg
 
 
@@ -675,20 +677,20 @@ def no_issue_taint_transform_with_class_interval_for_classmethods():
 
 
 class A22:
-    def m0(self, arg):
+    def m0(self, arg) -> Any:
         return self.m1(arg)
 
-    def m1(self, arg):
-        pass
+    def m1(self, arg) -> Any:
+        return
 
 
 class B22(A22):
-    def m1(self, arg):
+    def m1(self, arg) -> Any:
         return transformX(arg)
 
 
 class C22(A22):
-    def m1(self, arg):
+    def m1(self, arg) -> Any:
         return arg
 
 
@@ -697,23 +699,23 @@ def no_issue_taint_transform_with_class_interval(c: C22):
     sink_d(c.m0(_test_source()))
 
 
-def add_feature_c(arg):
+def add_feature_c(arg) -> Any:
     return arg
 
 
-def add_feature_d(arg):
+def add_feature_d(arg) -> Any:
     return arg
 
 
-def add_feature_e(arg):
+def add_feature_e(arg) -> Any:
     return arg
 
 
 class A23:
-    def m0(self, a):
+    def m0(self, a) -> Any:
         return self.m1(a)
 
-    def m1(self, a):
+    def m1(self, a) -> Any:
         return a
 
 
@@ -722,17 +724,17 @@ class B23(A23):
 
 
 class C23(B23):
-    def m1(self, a):
+    def m1(self, a) -> Any:
         return add_feature_c(a)
 
 
 class D23(B23):
-    def m1(self, a):
+    def m1(self, a) -> Any:
         return add_feature_d(a)
 
 
 class E23(A23):
-    def m1(self, a):
+    def m1(self, a) -> Any:
         return add_feature_e(a)
 
 
@@ -743,19 +745,19 @@ def issue_precise_tito_intervals(b: B23):
 
 
 class A24:
-    def m0(self):
+    def m0(self) -> Any:
         return A24.tito(self.m1())
 
-    def m1(self):
+    def m1(self) -> Any:
         return 0
 
     @staticmethod
-    def tito(a):
+    def tito(a) -> Any:
         return a
 
 
 class B24(A24):
-    def m1(self):
+    def m1(self) -> Any:
         return _test_source()
 
 

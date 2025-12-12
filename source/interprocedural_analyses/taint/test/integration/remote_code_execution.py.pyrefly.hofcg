@@ -1,0 +1,26 @@
+@generated
+Higher order call graphs
+{
+  "callable": "remote_code_execution.rce_problem",
+  "returned_callables": [],
+  "calls": {
+    "10:8-10:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa._user_controlled",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "11:4-11:11": {
+      "call": {
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

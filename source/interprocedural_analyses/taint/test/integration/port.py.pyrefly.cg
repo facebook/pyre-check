@@ -1,0 +1,33 @@
+@generated
+Call dependencies
+{
+  "port.Foo.some_source (method)": [ "pysa._test_source (fun)" ],
+  "port.match_flows (fun)": [
+    "port.sink_field (fun)", "port.source_field (fun)"
+  ],
+  "port.match_star_arg_directly (fun)": [
+    "port.source_field (fun)", "port.star_arg_wrapper (fun)"
+  ],
+  "port.match_star_arg_with_star (fun)": [
+    "port.source_field (fun)", "port.star_arg_wrapper (fun)"
+  ],
+  "port.match_star_star_arg_directly (fun)": [
+    "port.source_field (fun)", "port.star_star_arg_wrapper (fun)"
+  ],
+  "port.match_star_star_arg_with_star (fun)": [
+    "port.source_field (fun)", "port.star_star_arg_wrapper (fun)"
+  ],
+  "port.refer_to_method_as_field (fun)": [
+    "port.Foo.some_source (method)", "pysa._test_sink (fun)"
+  ],
+  "port.sink_field (fun)": [ "pysa._test_sink (fun)" ],
+  "port.source_field (fun)": [ "pysa._test_source (fun)" ],
+  "port.star_arg (fun)": [
+    "builtins.tuple.__getitem__ (method)", "port.sink_field (fun)"
+  ],
+  "port.star_arg_wrapper (fun)": [ "port.star_arg (fun)" ],
+  "port.star_star_arg (fun)": [
+    "builtins.dict.__getitem__ (method)", "port.sink_field (fun)"
+  ],
+  "port.star_star_arg_wrapper (fun)": [ "port.star_star_arg (fun)" ]
+}

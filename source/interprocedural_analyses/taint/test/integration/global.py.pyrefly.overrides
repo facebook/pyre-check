@@ -1,0 +1,4 @@
+@generated
+Overrides
+builtins.object.__init__ (override) -> [builtins.object.__init__ (method) global.Object.__init__ (override)]
+global.Object.__init__ (override) -> [global.Object.__init__ (method)]

@@ -21,7 +21,7 @@ Higher order call graphs
   "callable": "return_sinks.propagate_returned_sink_to_arg",
   "returned_callables": [],
   "calls": {
-    "30:4-30:32": {
+    "30:4-30:35": {
       "call": {
         "calls": [
           {

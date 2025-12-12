@@ -1,0 +1,227 @@
+@generated
+Higher order call graphs
+{
+  "callable": "callables.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "13:14-13:36": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "14:15-14:38": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "17:29-17:63|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "29:29-29:51|identifier|AbstractEventProcessor": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "callables.AbstractEventProcessor.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "callables.AbstractEventProcessor"
+            }
+          ]
+        }
+      }
+    },
+    "29:29-29:78|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttr" ] }
+    },
+    "37:14-37:36": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "38:15-38:38": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "41:20-41:54|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    }
+  }
+}
+{
+  "callable": "callables.async_execute_event_processor",
+  "returned_callables": [],
+  "calls": {
+    "56:18-56:40": {
+      "call": {
+        "calls": [
+          {
+            "target": "callables.get_event_processors",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "56:18-56:40|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    },
+    "56:18-56:40|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "57:20-57:67": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "callables.AbstractEventProcessor.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "callables.AbstractEventProcessor"
+          }
+        ]
+      }
+    },
+    "57:42-57:56": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "58:14-58:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{callables.AbstractEventProcessor.async_run}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "callables.AbstractEventProcessor"
+          }
+        ]
+      }
+    },
+    "59:14-59:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{callables.AbstractEventProcessor.async_call_tainted}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "callables.AbstractEventProcessor"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "callables.ConcreteEventProcessor.async_call_tainted",
+  "returned_callables": [],
+  "calls": {
+    "34:8-34:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "callables.ConcreteEventProcessor.async_run",
+  "returned_callables": [],
+  "calls": {
+    "31:8-31:31": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "callables.ProcessorInfo.__init__",
+  "returned_callables": [],
+  "calls": {
+    "46:8-46:27": {
+      "attribute_access": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "callables.AbstractEventProcessor.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "callables.AbstractEventProcessor"
+            }
+          ]
+        }
+      }
+    },
+    "48:12-48:26|identifier|processor_type": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "callables.AbstractEventProcessor.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "callables.AbstractEventProcessor"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

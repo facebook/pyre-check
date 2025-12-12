@@ -1,0 +1,23 @@
+@generated
+Call dependencies
+{
+  "functions_as_locals.C.m (method)": [ "pysa._test_sink (fun)" ],
+  "functions_as_locals.a_or_b (fun)": [
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "functions_as_locals.barA (fun)", "functions_as_locals.barB (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "functions_as_locals.barA (fun)": [ "pysa._test_sink (fun)" ],
+  "functions_as_locals.barB (fun)": [ "pysa._test_sink (fun)" ],
+  "functions_as_locals.foo (fun)": [ "pysa._test_sink (fun)" ],
+  "functions_as_locals.foo_as_local (fun)": [
+    "functions_as_locals.foo (fun)", "pysa._test_source (fun)"
+  ],
+  "functions_as_locals.local_function_with_method_sink (fun)": [
+    "functions_as_locals.C.m (method)", "pysa._test_source (fun)"
+  ],
+  "functions_as_locals.local_tito (fun)": [ "functions_as_locals.foo (fun)" ],
+  "functions_as_locals.method_tito (fun)": [
+    "functions_as_locals.C.m (method)"
+  ]
+}

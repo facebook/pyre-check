@@ -1,0 +1,243 @@
+@generated
+Higher order call graphs
+{
+  "callable": "shims.async_callable",
+  "returned_callables": [],
+  "calls": {
+    "15:4-15:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "shims.async_callable@decorated",
+  "returned_callables": [
+    { "target": "shims.async_callable", "index": 0, "return_type": [] }
+  ],
+  "calls": {
+    "13:1-13:19|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa.to_callable_target",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "14:0-15:17|identifier|async_callable": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "shims.async_callable",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "shims.test_async_delay",
+  "returned_callables": [],
+  "calls": {
+    "19:4-19:18|identifier|async_callable": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "shims.async_callable@decorated",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "19:4-19:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa.TestCallableTarget.async_delay",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "pysa.TestCallableTarget"
+          }
+        ]
+      }
+    },
+    "20:4-20:18|identifier|async_callable": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "shims.async_callable@decorated",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "20:4-20:49": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa.TestCallableTarget.async_delay",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "pysa.TestCallableTarget"
+          }
+        ]
+      }
+    },
+    "20:34-20:48": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "21:4-21:18|identifier|async_callable": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "shims.async_callable@decorated",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "21:4-21:49": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa.TestCallableTarget.async_delay",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "pysa.TestCallableTarget"
+          }
+        ]
+      }
+    },
+    "21:31-21:45": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "shims.test_async_schedule",
+  "returned_callables": [],
+  "calls": {
+    "25:4-25:18|identifier|async_callable": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "shims.async_callable@decorated",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "25:4-25:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa.TestCallableTarget.async_schedule",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "pysa.TestCallableTarget"
+          }
+        ]
+      }
+    },
+    "26:4-26:18|identifier|async_callable": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "shims.async_callable@decorated",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "26:4-26:52": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa.TestCallableTarget.async_schedule",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "pysa.TestCallableTarget"
+          }
+        ]
+      }
+    },
+    "26:37-26:51": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "27:4-27:18|identifier|async_callable": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "shims.async_callable@decorated",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "27:4-27:52": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa.TestCallableTarget.async_schedule",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "pysa.TestCallableTarget"
+          }
+        ]
+      }
+    },
+    "27:34-27:48": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

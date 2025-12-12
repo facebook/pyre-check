@@ -34,7 +34,7 @@
   "data": {
     "callable": "via_type_of.meta",
     "filename": "via_type_of.py",
-    "callable_line": 165,
+    "callable_line": 166,
     "sources": [
       {
         "port": "result",
@@ -52,7 +52,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "typing.Any" } ],
-            "origin": { "line": 166, "start": 11, "end": 47 }
+            "origin": { "line": 167, "start": 11, "end": 47 }
           }
         ]
       }
@@ -64,7 +64,7 @@
   "data": {
     "callable": "via_type_of.return_via_parameter_type",
     "filename": "via_type_of.py",
-    "callable_line": 149,
+    "callable_line": 150,
     "sources": [
       {
         "port": "result",
@@ -90,7 +90,7 @@
   "data": {
     "callable": "via_type_of.sink_via_type_of",
     "filename": "via_type_of.py",
-    "callable_line": 182,
+    "callable_line": 183,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -119,9 +119,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test1_alarm1",
-    "callable_line": 19,
+    "callable_line": 20,
     "code": 5002,
-    "line": 22,
+    "line": 23,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -147,8 +147,8 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 21, "start": 16, "end": 32 } ],
-            "origin": { "line": 21, "start": 18, "end": 32 }
+            "tito_positions": [ { "line": 22, "start": 16, "end": 32 } ],
+            "origin": { "line": 22, "start": 18, "end": 32 }
           }
         ]
       },
@@ -164,8 +164,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 22, "start": 15, "end": 18 },
-            "call_site": "22:4-22:19"
+            "origin": { "line": 23, "start": 15, "end": 18 },
+            "call_site": "23:4-23:19"
           }
         ]
       }
@@ -191,9 +191,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test1_alarm2",
-    "callable_line": 25,
+    "callable_line": 26,
     "code": 5002,
-    "line": 28,
+    "line": 29,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -217,8 +217,8 @@
               { "always-via-type": "str" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 27, "start": 16, "end": 32 } ],
-            "origin": { "line": 27, "start": 18, "end": 32 }
+            "tito_positions": [ { "line": 28, "start": 16, "end": 32 } ],
+            "origin": { "line": 28, "start": 18, "end": 32 }
           }
         ]
       },
@@ -234,8 +234,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 28, "start": 15, "end": 18 },
-            "call_site": "28:4-28:19"
+            "origin": { "line": 29, "start": 15, "end": 18 },
+            "call_site": "29:4-29:19"
           }
         ]
       }
@@ -259,9 +259,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test1_alarm3",
-    "callable_line": 31,
+    "callable_line": 32,
     "code": 5002,
-    "line": 34,
+    "line": 35,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -285,8 +285,8 @@
               { "always-via-TheZ-type": "str" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 33, "start": 16, "end": 32 } ],
-            "origin": { "line": 33, "start": 18, "end": 32 }
+            "tito_positions": [ { "line": 34, "start": 16, "end": 32 } ],
+            "origin": { "line": 34, "start": 18, "end": 32 }
           }
         ]
       },
@@ -302,8 +302,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 34, "start": 15, "end": 18 },
-            "call_site": "34:4-34:19"
+            "origin": { "line": 35, "start": 15, "end": 18 },
+            "call_site": "35:4-35:19"
           }
         ]
       }
@@ -327,9 +327,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test1_alarm4",
-    "callable_line": 37,
+    "callable_line": 38,
     "code": 5002,
-    "line": 45,
+    "line": 46,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -359,8 +359,8 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 39, "start": 16, "end": 32 } ],
-            "origin": { "line": 39, "start": 18, "end": 32 }
+            "tito_positions": [ { "line": 40, "start": 16, "end": 32 } ],
+            "origin": { "line": 40, "start": 18, "end": 32 }
           }
         ]
       },
@@ -376,8 +376,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 45, "start": 15, "end": 18 },
-            "call_site": "45:4-45:19"
+            "origin": { "line": 46, "start": 15, "end": 18 },
+            "call_site": "46:4-46:19"
           }
         ]
       }
@@ -407,9 +407,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test2_alarm1",
-    "callable_line": 55,
+    "callable_line": 56,
     "code": 5002,
-    "line": 58,
+    "line": 59,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -434,8 +434,8 @@
               { "always-via-type": "typing.Dict[str, int]" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 57, "start": 16, "end": 32 } ],
-            "origin": { "line": 57, "start": 18, "end": 32 }
+            "tito_positions": [ { "line": 58, "start": 16, "end": 32 } ],
+            "origin": { "line": 58, "start": 18, "end": 32 }
           }
         ]
       },
@@ -451,8 +451,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 58, "start": 15, "end": 18 },
-            "call_site": "58:4-58:19"
+            "origin": { "line": 59, "start": 15, "end": 18 },
+            "call_site": "59:4-59:19"
           }
         ]
       }
@@ -477,9 +477,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test2_alarm2",
-    "callable_line": 61,
+    "callable_line": 62,
     "code": 5002,
-    "line": 64,
+    "line": 65,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -504,8 +504,8 @@
               { "always-via-type": "typing.List[str]" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 63, "start": 16, "end": 32 } ],
-            "origin": { "line": 63, "start": 18, "end": 32 }
+            "tito_positions": [ { "line": 64, "start": 16, "end": 32 } ],
+            "origin": { "line": 64, "start": 18, "end": 32 }
           }
         ]
       },
@@ -521,8 +521,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 64, "start": 15, "end": 18 },
-            "call_site": "64:4-64:19"
+            "origin": { "line": 65, "start": 15, "end": 18 },
+            "call_site": "65:4-65:19"
           }
         ]
       }
@@ -547,9 +547,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test2_alarm3",
-    "callable_line": 67,
+    "callable_line": 68,
     "code": 5002,
-    "line": 70,
+    "line": 71,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -574,8 +574,8 @@
               { "always-via-TheZ-type": "unknown" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 69, "start": 16, "end": 32 } ],
-            "origin": { "line": 69, "start": 18, "end": 32 }
+            "tito_positions": [ { "line": 70, "start": 16, "end": 32 } ],
+            "origin": { "line": 70, "start": 18, "end": 32 }
           }
         ]
       },
@@ -591,8 +591,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 70, "start": 15, "end": 18 },
-            "call_site": "70:4-70:19"
+            "origin": { "line": 71, "start": 15, "end": 18 },
+            "call_site": "71:4-71:19"
           }
         ]
       }
@@ -617,9 +617,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test2_alarm4",
-    "callable_line": 73,
+    "callable_line": 74,
     "code": 5002,
-    "line": 81,
+    "line": 82,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -649,8 +649,8 @@
               { "via-TheZ-type": "unknown" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 75, "start": 16, "end": 32 } ],
-            "origin": { "line": 75, "start": 18, "end": 32 }
+            "tito_positions": [ { "line": 76, "start": 16, "end": 32 } ],
+            "origin": { "line": 76, "start": 18, "end": 32 }
           }
         ]
       },
@@ -666,8 +666,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 81, "start": 15, "end": 18 },
-            "call_site": "81:4-81:19"
+            "origin": { "line": 82, "start": 15, "end": 18 },
+            "call_site": "82:4-82:19"
           }
         ]
       }
@@ -697,9 +697,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test2_alarm5_via_constructor",
-    "callable_line": 84,
+    "callable_line": 85,
     "code": 5002,
-    "line": 86,
+    "line": 87,
     "start": 15,
     "end": 43,
     "filename": "via_type_of.py",
@@ -723,8 +723,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 86, "start": 37, "end": 42 } ],
-            "origin": { "line": 85, "start": 17, "end": 31 }
+            "tito_positions": [ { "line": 87, "start": 37, "end": 42 } ],
+            "origin": { "line": 86, "start": 17, "end": 31 }
           }
         ]
       },
@@ -740,8 +740,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 86, "start": 15, "end": 43 },
-            "call_site": "86:4-86:44"
+            "origin": { "line": 87, "start": 15, "end": 43 },
+            "call_site": "87:4-87:44"
           }
         ]
       }
@@ -766,7 +766,7 @@
   "data": {
     "callable": "via_type_of.test3_alarm1",
     "filename": "via_type_of.py",
-    "callable_line": 100,
+    "callable_line": 101,
     "sinks": [
       {
         "port": "formal(c, position=0)[x]",
@@ -780,8 +780,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 102, "start": 15, "end": 18 },
-            "call_site": "102:4-102:19"
+            "origin": { "line": 103, "start": 15, "end": 18 },
+            "call_site": "103:4-103:19"
           }
         ]
       }
@@ -792,9 +792,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test3_alarm1",
-    "callable_line": 100,
+    "callable_line": 101,
     "code": 5002,
-    "line": 102,
+    "line": 103,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -818,7 +818,7 @@
             "local_features": [
               { "always-via-type": "typing.Dict[str, typing.List[int]]" }
             ],
-            "origin": { "line": 102, "start": 15, "end": 18 }
+            "origin": { "line": 103, "start": 15, "end": 18 }
           }
         ]
       },
@@ -834,8 +834,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 102, "start": 15, "end": 18 },
-            "call_site": "102:4-102:19"
+            "origin": { "line": 103, "start": 15, "end": 18 },
+            "call_site": "103:4-103:19"
           }
         ]
       }
@@ -857,7 +857,7 @@
   "data": {
     "callable": "via_type_of.test3_alarm2",
     "filename": "via_type_of.py",
-    "callable_line": 105,
+    "callable_line": 106,
     "sinks": [
       {
         "port": "formal(c, position=0)[y]",
@@ -871,8 +871,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 107, "start": 15, "end": 18 },
-            "call_site": "107:4-107:19"
+            "origin": { "line": 108, "start": 15, "end": 18 },
+            "call_site": "108:4-108:19"
           }
         ]
       }
@@ -883,9 +883,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test3_alarm2",
-    "callable_line": 105,
+    "callable_line": 106,
     "code": 5002,
-    "line": 107,
+    "line": 108,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -909,7 +909,7 @@
             "local_features": [
               { "always-via-type": "via_type_of.Test3_Foo" }
             ],
-            "origin": { "line": 107, "start": 15, "end": 18 }
+            "origin": { "line": 108, "start": 15, "end": 18 }
           }
         ]
       },
@@ -925,8 +925,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 107, "start": 15, "end": 18 },
-            "call_site": "107:4-107:19"
+            "origin": { "line": 108, "start": 15, "end": 18 },
+            "call_site": "108:4-108:19"
           }
         ]
       }
@@ -946,7 +946,7 @@
   "data": {
     "callable": "via_type_of.test3_alarm3",
     "filename": "via_type_of.py",
-    "callable_line": 110,
+    "callable_line": 111,
     "sinks": [
       {
         "port": "formal(c, position=0)[z]",
@@ -960,8 +960,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 112, "start": 15, "end": 18 },
-            "call_site": "112:4-112:19"
+            "origin": { "line": 113, "start": 15, "end": 18 },
+            "call_site": "113:4-113:19"
           }
         ]
       }
@@ -972,9 +972,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test3_alarm3",
-    "callable_line": 110,
+    "callable_line": 111,
     "code": 5002,
-    "line": 112,
+    "line": 113,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -998,7 +998,7 @@
             "local_features": [
               { "always-via-TheZ-type": "typing.List[typing.List[str]]" }
             ],
-            "origin": { "line": 112, "start": 15, "end": 18 }
+            "origin": { "line": 113, "start": 15, "end": 18 }
           }
         ]
       },
@@ -1014,8 +1014,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 112, "start": 15, "end": 18 },
-            "call_site": "112:4-112:19"
+            "origin": { "line": 113, "start": 15, "end": 18 },
+            "call_site": "113:4-113:19"
           }
         ]
       }
@@ -1037,7 +1037,7 @@
   "data": {
     "callable": "via_type_of.test3_alarm4",
     "filename": "via_type_of.py",
-    "callable_line": 115,
+    "callable_line": 116,
     "sinks": [
       {
         "port": "formal(c, position=0)[x]",
@@ -1051,8 +1051,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 124, "start": 15, "end": 18 },
-            "call_site": "124:4-124:19"
+            "origin": { "line": 125, "start": 15, "end": 18 },
+            "call_site": "125:4-125:19"
           }
         ]
       },
@@ -1068,8 +1068,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 124, "start": 15, "end": 18 },
-            "call_site": "124:4-124:19"
+            "origin": { "line": 125, "start": 15, "end": 18 },
+            "call_site": "125:4-125:19"
           }
         ]
       },
@@ -1085,8 +1085,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 124, "start": 15, "end": 18 },
-            "call_site": "124:4-124:19"
+            "origin": { "line": 125, "start": 15, "end": 18 },
+            "call_site": "125:4-125:19"
           }
         ]
       }
@@ -1097,9 +1097,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test3_alarm4",
-    "callable_line": 115,
+    "callable_line": 116,
     "code": 5002,
-    "line": 124,
+    "line": 125,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -1123,7 +1123,7 @@
             "local_features": [
               { "always-via-type": "typing.Dict[str, typing.List[int]]" }
             ],
-            "origin": { "line": 119, "start": 10, "end": 13 }
+            "origin": { "line": 120, "start": 10, "end": 13 }
           },
           {
             "kinds": [
@@ -1140,7 +1140,7 @@
             "local_features": [
               { "always-via-type": "via_type_of.Test3_Foo" }
             ],
-            "origin": { "line": 121, "start": 14, "end": 17 }
+            "origin": { "line": 122, "start": 14, "end": 17 }
           },
           {
             "kinds": [
@@ -1157,7 +1157,7 @@
             "local_features": [
               { "always-via-TheZ-type": "typing.List[typing.List[str]]" }
             ],
-            "origin": { "line": 123, "start": 14, "end": 17 }
+            "origin": { "line": 124, "start": 14, "end": 17 }
           }
         ]
       },
@@ -1173,8 +1173,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 124, "start": 15, "end": 18 },
-            "call_site": "124:4-124:19"
+            "origin": { "line": 125, "start": 15, "end": 18 },
+            "call_site": "125:4-125:19"
           }
         ]
       }
@@ -1197,9 +1197,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test4_alarm1",
-    "callable_line": 134,
+    "callable_line": 135,
     "code": 5002,
-    "line": 136,
+    "line": 137,
     "start": 4,
     "end": 7,
     "filename": "via_type_of.py",
@@ -1217,7 +1217,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 136, "start": 10, "end": 24 }
+            "origin": { "line": 137, "start": 10, "end": 24 }
           }
         ]
       },
@@ -1237,7 +1237,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "unknown" } ],
-            "origin": { "line": 136, "start": 4, "end": 7 }
+            "origin": { "line": 137, "start": 4, "end": 7 }
           }
         ]
       }
@@ -1255,9 +1255,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test4_alarm2",
-    "callable_line": 139,
+    "callable_line": 140,
     "code": 5002,
-    "line": 141,
+    "line": 142,
     "start": 4,
     "end": 7,
     "filename": "via_type_of.py",
@@ -1275,7 +1275,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 141, "start": 10, "end": 24 }
+            "origin": { "line": 142, "start": 10, "end": 24 }
           }
         ]
       },
@@ -1295,7 +1295,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "typing.Any" } ],
-            "origin": { "line": 141, "start": 4, "end": 7 }
+            "origin": { "line": 142, "start": 4, "end": 7 }
           }
         ]
       }
@@ -1313,9 +1313,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test4_alarm3",
-    "callable_line": 144,
+    "callable_line": 145,
     "code": 5002,
-    "line": 146,
+    "line": 147,
     "start": 4,
     "end": 7,
     "filename": "via_type_of.py",
@@ -1333,7 +1333,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 146, "start": 10, "end": 24 }
+            "origin": { "line": 147, "start": 10, "end": 24 }
           }
         ]
       },
@@ -1353,7 +1353,7 @@
               }
             ],
             "local_features": [ { "always-via-TheZ-type": "object" } ],
-            "origin": { "line": 146, "start": 4, "end": 7 }
+            "origin": { "line": 147, "start": 4, "end": 7 }
           }
         ]
       }
@@ -1372,7 +1372,7 @@
   "data": {
     "callable": "via_type_of.test_backwards_tito",
     "filename": "via_type_of.py",
-    "callable_line": 190,
+    "callable_line": 191,
     "tito": [
       {
         "port": "formal(parameter, position=0)",
@@ -1388,7 +1388,7 @@
             "local_features": [
               { "always-via-type": "str" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 191, "start": 16, "end": 25 } ],
+            "tito_positions": [ { "line": 192, "start": 16, "end": 25 } ],
             "tito": {}
           }
         ]
@@ -1401,7 +1401,7 @@
   "data": {
     "callable": "via_type_of.test_lists",
     "filename": "via_type_of.py",
-    "callable_line": 161,
+    "callable_line": 162,
     "sources": [
       {
         "port": "result",
@@ -1419,7 +1419,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "typing.List[str]" } ],
-            "origin": { "line": 162, "start": 11, "end": 48 }
+            "origin": { "line": 163, "start": 11, "end": 48 }
           }
         ]
       }
@@ -1431,7 +1431,7 @@
   "data": {
     "callable": "via_type_of.test_numerals",
     "filename": "via_type_of.py",
-    "callable_line": 157,
+    "callable_line": 158,
     "sources": [
       {
         "port": "result",
@@ -1449,7 +1449,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "int" } ],
-            "origin": { "line": 158, "start": 11, "end": 39 }
+            "origin": { "line": 159, "start": 11, "end": 39 }
           }
         ]
       }
@@ -1461,7 +1461,7 @@
   "data": {
     "callable": "via_type_of.test_sink",
     "filename": "via_type_of.py",
-    "callable_line": 186,
+    "callable_line": 187,
     "sinks": [
       {
         "port": "formal(element, position=0)",
@@ -1479,8 +1479,8 @@
               }
             ],
             "local_features": [ { "always-via-TheY-type": "int" } ],
-            "origin": { "line": 187, "start": 28, "end": 35 },
-            "call_site": "187:11-187:39"
+            "origin": { "line": 188, "start": 28, "end": 35 },
+            "call_site": "188:11-188:39"
           }
         ]
       }
@@ -1492,7 +1492,7 @@
   "data": {
     "callable": "via_type_of.test_strings",
     "filename": "via_type_of.py",
-    "callable_line": 153,
+    "callable_line": 154,
     "sources": [
       {
         "port": "result",
@@ -1510,7 +1510,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "str" } ],
-            "origin": { "line": 154, "start": 11, "end": 41 }
+            "origin": { "line": 155, "start": 11, "end": 41 }
           }
         ]
       }
@@ -1522,7 +1522,7 @@
   "data": {
     "callable": "via_type_of.test_tito",
     "filename": "via_type_of.py",
-    "callable_line": 177,
+    "callable_line": 178,
     "sources": [
       {
         "port": "result",
@@ -1540,8 +1540,8 @@
               { "always-via-type": "typing.List[int]" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 178, "start": 13, "end": 27 } ],
-            "origin": { "line": 178, "start": 13, "end": 27 }
+            "tito_positions": [ { "line": 179, "start": 13, "end": 27 } ],
+            "origin": { "line": 179, "start": 13, "end": 27 }
           }
         ]
       }
@@ -1553,7 +1553,7 @@
   "data": {
     "callable": "via_type_of.test_via_type_of_does_not_propagate",
     "filename": "via_type_of.py",
-    "callable_line": 169,
+    "callable_line": 170,
     "sources": [
       {
         "port": "result",
@@ -1567,7 +1567,7 @@
               }
             ],
             "call": {
-              "position": { "line": 170, "start": 11, "end": 23 },
+              "position": { "line": 171, "start": 11, "end": 23 },
               "resolves_to": [ "via_type_of.meta" ],
               "port": "result"
             }
@@ -1582,7 +1582,7 @@
   "data": {
     "callable": "via_type_of.tito",
     "filename": "via_type_of.py",
-    "callable_line": 173,
+    "callable_line": 174,
     "tito": [
       {
         "port": "formal(parameter, position=0)",
@@ -1609,7 +1609,7 @@
   "data": {
     "callable": "via_type_of.Test1_C.__init__",
     "filename": "via_type_of.py",
-    "callable_line": 13,
+    "callable_line": 14,
     "tito": [
       {
         "port": "formal(z, position=3)",

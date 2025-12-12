@@ -1,0 +1,1762 @@
+@generated
+Higher order call graphs
+{
+  "callable": "higher_order_functions.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "198:0-198:81": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables[formal(f, position=0)=builtins.print]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "198:59-198:64|identifier|print": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            { "target": "builtins.print", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "198:66-198:80": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.apply",
+  "returned_callables": [],
+  "calls": {
+    "61:11-61:15": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.apply_without_return",
+  "returned_callables": [],
+  "calls": {
+    "87:4-87:8": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
+  }
+}
+{
+  "callable": "higher_order_functions.callable_class",
+  "returned_callables": [],
+  "calls": {
+    "104:8-104:32": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "higher_order_functions.Callable.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "higher_order_functions.Callable"
+          }
+        ]
+      }
+    },
+    "104:17-104:31": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "106:4-106:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "higher_order_functions.Callable.__call__",
+                "index": 0,
+                "implicit_receiver": true,
+                "implicit_dunder_call": true,
+                "return_type": [],
+                "receiver_class": "higher_order_functions.Callable"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "106:15-106:16|identifier|c": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.Callable.__call__",
+              "index": 0,
+              "implicit_receiver": true,
+              "implicit_dunder_call": true,
+              "return_type": [],
+              "receiver_class": "higher_order_functions.Callable"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.conditional_apply",
+  "returned_callables": [],
+  "calls": {
+    "120:15-120:19": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "122:15-122:19": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.goes_to_sink",
+  "returned_callables": [],
+  "calls": {
+    "10:4-10:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.higher_order_function",
+  "returned_callables": [],
+  "calls": {
+    "18:4-18:10": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
+  }
+}
+{
+  "callable": "higher_order_functions.higher_order_function_and_sink",
+  "returned_callables": [],
+  "calls": {
+    "47:4-47:10": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } },
+    "48:4-48:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.higher_order_method",
+  "returned_callables": [],
+  "calls": {
+    "34:4-34:48": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.C.method_to_sink]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "34:26-34:42": {
+      "attribute_access": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.C.method_to_sink",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "higher_order_functions.C"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.sink_after_apply",
+  "returned_callables": [],
+  "calls": {
+    "79:4-79:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "79:15-79:18": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.sink_args",
+  "returned_callables": [],
+  "calls": {
+    "110:15-110:19|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.tuple.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.tuple"
+          }
+        ]
+      }
+    },
+    "110:15-110:19|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "111:8-111:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.source_through_tito",
+  "returned_callables": [],
+  "calls": {
+    "69:8-69:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "70:8-70:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.apply[formal(f, position=0)=higher_order_functions.has_tito]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "70:14-70:22|identifier|has_tito": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.has_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_apply_source",
+  "returned_callables": [],
+  "calls": {
+    "75:11-75:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.apply[formal(f, position=0)=pysa._test_source]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "75:17-75:29|identifier|_test_source": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            { "target": "pysa._test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_apply_tito",
+  "returned_callables": [],
+  "calls": {
+    "65:11-65:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.apply[formal(f, position=0)=higher_order_functions.has_tito]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "65:17-65:25|identifier|has_tito": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.has_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_apply_without_return",
+  "returned_callables": [],
+  "calls": {
+    "91:4-91:52": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.apply_without_return[formal(f, position=0)=pysa._test_sink]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "91:25-91:35|identifier|_test_sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "91:37-91:51": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "92:4-92:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.apply_without_return",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "92:25-92:28|identifier|str": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.str.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "92:30-92:44": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_callable_class_to_obscure",
+  "returned_callables": [],
+  "calls": {
+    "156:4-156:28": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_callable_class_to_obscure.obscure_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "158:8-158:24": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "higher_order_functions.CallableSource.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "higher_order_functions.CallableSource"
+          }
+        ]
+      }
+    },
+    "159:11-159:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.test_callable_class_to_obscure.obscure_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "higher_order_functions.CallableSource.__call__",
+                "index": 0,
+                "implicit_receiver": true,
+                "implicit_dunder_call": true,
+                "return_type": [],
+                "receiver_class": "higher_order_functions.CallableSource"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "159:24-159:25|identifier|c": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.CallableSource.__call__",
+              "index": 0,
+              "implicit_receiver": true,
+              "implicit_dunder_call": true,
+              "return_type": [],
+              "receiver_class": "higher_order_functions.CallableSource"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_callable_class_to_perfect_tito",
+  "returned_callables": [
+    {
+      "target": "higher_order_functions.CallableSource.__call__",
+      "index": 0,
+      "implicit_receiver": true,
+      "implicit_dunder_call": true,
+      "return_type": [],
+      "receiver_class": "higher_order_functions.CallableSource"
+    }
+  ],
+  "calls": {
+    "163:4-164:16": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_callable_class_to_perfect_tito.perfect_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "166:8-166:24": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "higher_order_functions.CallableSource.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "higher_order_functions.CallableSource"
+          }
+        ]
+      }
+    },
+    "167:11-167:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.test_callable_class_to_perfect_tito.perfect_tito[formal(x, position=0)=higher_order_functions.CallableSource.__call__]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "167:24-167:25|identifier|c": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.CallableSource.__call__",
+              "index": 0,
+              "implicit_receiver": true,
+              "implicit_dunder_call": true,
+              "return_type": [],
+              "receiver_class": "higher_order_functions.CallableSource"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_callable_class_to_perfect_tito.perfect_tito",
+  "returned_callables": [
+    {
+      "target": "higher_order_functions.CallableSource.__call__",
+      "index": 0,
+      "implicit_receiver": true,
+      "implicit_dunder_call": true,
+      "return_type": [],
+      "receiver_class": "higher_order_functions.CallableSource"
+    }
+  ],
+  "calls": {
+    "164:15-164:16|identifier|x": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.CallableSource.__call__",
+              "index": 0,
+              "implicit_receiver": true,
+              "implicit_dunder_call": true,
+              "return_type": [],
+              "receiver_class": "higher_order_functions.CallableSource"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_callable_default_value",
+  "returned_callables": [],
+  "calls": {
+    "201:36-201:48|identifier|_test_source": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            { "target": "pysa._test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "202:4-202:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "202:15-202:18": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ],
+        "unresolved": [ "Mixed" ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_conditional_apply_backward",
+  "returned_callables": [],
+  "calls": {
+    "139:4-139:48": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.conditional_apply[formal(f, position=0)=pysa._test_sink, formal(g, position=1)=higher_order_functions.safe]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "139:22-139:32|identifier|_test_sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "139:34-139:38|identifier|safe": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.safe",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "141:4-141:49": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.conditional_apply[formal(f, position=0)=pysa._test_sink, formal(g, position=1)=higher_order_functions.safe]",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "141:22-141:32|identifier|_test_sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "141:34-141:38|identifier|safe": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.safe",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "143:4-143:48": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.conditional_apply[formal(f, position=0)=higher_order_functions.safe, formal(g, position=1)=pysa._test_sink]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "143:22-143:26|identifier|safe": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.safe",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "143:28-143:38|identifier|_test_sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "144:4-144:49": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.conditional_apply[formal(f, position=0)=higher_order_functions.safe, formal(g, position=1)=pysa._test_sink]",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "144:22-144:26|identifier|safe": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.safe",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "144:28-144:38|identifier|_test_sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_conditional_apply_forward",
+  "returned_callables": [],
+  "calls": {
+    "130:4-130:62": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "130:15-130:61": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.conditional_apply[formal(f, position=0)=pysa._test_source, formal(g, position=1)=higher_order_functions.safe]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "130:33-130:45|identifier|_test_source": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            { "target": "pysa._test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "130:47-130:51|identifier|safe": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.safe",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "132:4-132:63": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "132:15-132:62": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.conditional_apply[formal(f, position=0)=pysa._test_source, formal(g, position=1)=higher_order_functions.safe]",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "132:33-132:45|identifier|_test_source": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            { "target": "pysa._test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "132:47-132:51|identifier|safe": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.safe",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "134:4-134:62": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "134:15-134:61": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.conditional_apply[formal(f, position=0)=higher_order_functions.safe, formal(g, position=1)=pysa._test_source]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "134:33-134:37|identifier|safe": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.safe",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "134:39-134:51|identifier|_test_source": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            { "target": "pysa._test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "135:4-135:63": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 3, "return_type": [] }
+        ]
+      }
+    },
+    "135:15-135:62": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.conditional_apply[formal(f, position=0)=higher_order_functions.safe, formal(g, position=1)=pysa._test_source]",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "135:33-135:37|identifier|safe": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.safe",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "135:39-135:51|identifier|_test_source": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            { "target": "pysa._test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables",
+  "returned_callables": [],
+  "calls": {
+    "171:4-172:23": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "174:4-175:14": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.foo",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "177:4-178:14": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.bar",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "180:8-180:11|identifier|foo": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.foo",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "182:12-182:15|identifier|bar": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.bar",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "184:4-186:5": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.bar]",
+            "index": 0,
+            "return_type": []
+          },
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.foo]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "185:11-185:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "188:4-189:23": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "191:8-191:18|identifier|_test_sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "193:12-193:25|identifier|sink_wrapper2": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "194:4-194:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.apply[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2]",
+            "index": 0,
+            "return_type": []
+          },
+          {
+            "target": "higher_order_functions.apply[formal(f, position=0)=pysa._test_sink]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "194:13-194:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper",
+  "returned_callables": [],
+  "calls": {
+    "172:8-172:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2",
+  "returned_callables": [],
+  "calls": {
+    "189:8-189:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_higher_order_function",
+  "returned_callables": [],
+  "calls": {
+    "22:4-22:55": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.goes_to_sink]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "22:26-22:38|identifier|goes_to_sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.goes_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "22:40-22:54": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_higher_order_function_and_sink",
+  "returned_callables": [],
+  "calls": {
+    "52:4-52:64": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.higher_order_function_and_sink[formal(f, position=0)=higher_order_functions.goes_to_sink]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "52:35-52:47|identifier|goes_to_sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.goes_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "52:49-52:63": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_higher_order_method",
+  "returned_callables": [],
+  "calls": {
+    "38:4-38:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.higher_order_method",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "38:24-38:27": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "higher_order_functions.C"
+          }
+        ]
+      }
+    },
+    "38:29-38:43": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_higher_order_method_self",
+  "returned_callables": [],
+  "calls": {
+    "42:11-42:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "43:4-43:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.C.self_to_sink]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "43:26-43:40": {
+      "attribute_access": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.C.self_to_sink",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "higher_order_functions.C"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_higher_order_tito",
+  "returned_callables": [],
+  "calls": {
+    "57:11-57:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.has_tito]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "57:33-57:41|identifier|has_tito": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.has_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_location",
+  "returned_callables": [],
+  "calls": {
+    "115:4-115:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.sink_args",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 1,
+            "calls": [
+              {
+                "target": "higher_order_functions.Callable.__call__",
+                "index": 0,
+                "implicit_receiver": true,
+                "implicit_dunder_call": true,
+                "return_type": [],
+                "receiver_class": "higher_order_functions.Callable"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "115:17-115:18|identifier|y": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.Callable.__call__",
+              "index": 0,
+              "implicit_receiver": true,
+              "implicit_dunder_call": true,
+              "return_type": [],
+              "receiver_class": "higher_order_functions.Callable"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_parameterized_target_in_issue_handle",
+  "returned_callables": [],
+  "calls": {
+    "83:4-83:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.sink_after_apply[formal(f, position=0)=pysa._test_source]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "83:21-83:33|identifier|_test_source": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            { "target": "pysa._test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.C.method_to_sink",
+  "returned_callables": [],
+  "calls": {
+    "27:8-27:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.C.self_to_sink",
+  "returned_callables": [],
+  "calls": {
+    "30:8-30:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.CallableSource.__call__",
+  "returned_callables": [],
+  "calls": {
+    "152:15-152:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.apply[formal(f, position=0)=higher_order_functions.has_tito]",
+  "returned_callables": [],
+  "calls": {
+    "61:11-61:15": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.apply[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2]",
+  "returned_callables": [],
+  "calls": {
+    "61:11-61:15": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.apply[formal(f, position=0)=pysa._test_sink]",
+  "returned_callables": [],
+  "calls": {
+    "61:11-61:15": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.apply[formal(f, position=0)=pysa._test_source]",
+  "returned_callables": [],
+  "calls": {
+    "61:11-61:15": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.apply_without_return[formal(f, position=0)=pysa._test_sink]",
+  "returned_callables": [],
+  "calls": {
+    "87:4-87:8": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
+  }
+}
+{
+  "callable": "higher_order_functions.conditional_apply[formal(f, position=0)=higher_order_functions.safe, formal(g, position=1)=pysa._test_sink]",
+  "returned_callables": [],
+  "calls": {
+    "120:15-120:19": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "122:15-122:19": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.conditional_apply[formal(f, position=0)=higher_order_functions.safe, formal(g, position=1)=pysa._test_source]",
+  "returned_callables": [],
+  "calls": {
+    "120:15-120:19": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "122:15-122:19": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.conditional_apply[formal(f, position=0)=pysa._test_sink, formal(g, position=1)=higher_order_functions.safe]",
+  "returned_callables": [],
+  "calls": {
+    "120:15-120:19": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "122:15-122:19": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.conditional_apply[formal(f, position=0)=pysa._test_source, formal(g, position=1)=higher_order_functions.safe]",
+  "returned_callables": [],
+  "calls": {
+    "120:15-120:19": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "122:15-122:19": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.goes_to_sink]",
+  "returned_callables": [],
+  "calls": {
+    "18:4-18:10": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
+  }
+}
+{
+  "callable": "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.has_tito]",
+  "returned_callables": [],
+  "calls": {
+    "18:4-18:10": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
+  }
+}
+{
+  "callable": "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.C.method_to_sink]",
+  "returned_callables": [],
+  "calls": {
+    "18:4-18:10": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
+  }
+}
+{
+  "callable": "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.C.self_to_sink]",
+  "returned_callables": [],
+  "calls": {
+    "18:4-18:10": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
+  }
+}
+{
+  "callable": "higher_order_functions.higher_order_function_and_sink[formal(f, position=0)=higher_order_functions.goes_to_sink]",
+  "returned_callables": [],
+  "calls": {
+    "47:4-47:10": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } },
+    "48:4-48:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.sink_after_apply[formal(f, position=0)=pysa._test_source]",
+  "returned_callables": [],
+  "calls": {
+    "79:4-79:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "79:15-79:18": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_callable_class_to_perfect_tito.perfect_tito[formal(x, position=0)=higher_order_functions.CallableSource.__call__]",
+  "returned_callables": [
+    {
+      "target": "higher_order_functions.CallableSource.__call__",
+      "index": 0,
+      "implicit_receiver": true,
+      "implicit_dunder_call": true,
+      "return_type": [],
+      "receiver_class": "higher_order_functions.CallableSource"
+    }
+  ],
+  "calls": {
+    "164:15-164:16|identifier|x": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.CallableSource.__call__",
+              "index": 0,
+              "implicit_receiver": true,
+              "implicit_dunder_call": true,
+              "return_type": [],
+              "receiver_class": "higher_order_functions.CallableSource"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables[formal(f, position=0)=builtins.print]",
+  "returned_callables": [],
+  "calls": {
+    "171:4-172:23": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "174:4-175:14": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.foo",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "177:4-178:14": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.bar",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "180:8-180:11|identifier|foo": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.foo",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "182:12-182:15|identifier|bar": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.bar",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "184:4-186:5": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.bar]",
+            "index": 0,
+            "return_type": []
+          },
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.foo]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "185:11-185:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "188:4-189:23": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "191:8-191:18|identifier|_test_sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "193:12-193:25|identifier|sink_wrapper2": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "194:4-194:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.apply[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2]",
+            "index": 0,
+            "return_type": []
+          },
+          {
+            "target": "higher_order_functions.apply[formal(f, position=0)=pysa._test_sink]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "194:13-194:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.bar]",
+  "returned_callables": [],
+  "calls": {
+    "172:8-172:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.foo]",
+  "returned_callables": [],
+  "calls": {
+    "172:8-172:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

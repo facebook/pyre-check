@@ -92,12 +92,12 @@ def multiprocessing_shim_fail(x: MyClass):
 
 def multiprocessing_nested_sink(x):
     d = {"a": MyClass(foo=x)}
-    multiprocessing.Process(target=sink_on_foo, args=(d["a"]))
+    multiprocessing.Process(target=sink_on_foo, args=(d["a"],))
 
 
 def multiprocessing_no_sink(x):
     d = {"a": MyClass(bar=x)}
-    multiprocessing.Process(target=sink_on_foo, args=(d["a"]))
+    multiprocessing.Process(target=sink_on_foo, args=(d["a"],))
 
 
 def multiprocessing_tainted_access_path():
@@ -124,7 +124,7 @@ class PartialConstructor:
         self.y = y
 
 
-def dunder_call_partial_constructor(x: str, y: str) -> C:
+def dunder_call_partial_constructor(x: str, y: str) -> PartialConstructor:
     # pyre-ignore: Type[PartialConstructor] is not a function.
     return PartialConstructor(x, y)
 
@@ -152,5 +152,5 @@ class NestedDefineConstructor:
         self.y = y
 
 
-def dunder_call_nested_define_constructor(x: str, y: str) -> C:
+def dunder_call_nested_define_constructor(x: str, y: str) -> NestedDefineConstructor:
     return NestedDefineConstructor(x, y)

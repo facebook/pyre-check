@@ -41,7 +41,7 @@ Call dependencies
   "class_interval.B14.m0 (method)": [ "class_interval.A14.m1 (method)" ],
   "class_interval.B15.m0 (method)": [ "class_interval.A15.m1 (method)" ],
   "class_interval.B16.m0 (method)": [ "class_interval.A16.m1 (method)" ],
-  "class_interval.B18.m (method)": [ "class_interval.sink_b (fun)" ],
+  "class_interval.B18.m0 (method)": [ "class_interval.sink_b (fun)" ],
   "class_interval.B2.m0 (method)": [ "class_interval.A2.m1 (method)" ],
   "class_interval.B21.m1 (method)": [ "class_interval.transformX (fun)" ],
   "class_interval.B22.m1 (method)": [ "class_interval.transformX (fun)" ],
@@ -50,9 +50,10 @@ Call dependencies
   "class_interval.B4.m1 (method)": [ "class_interval.A4.m2 (method)" ],
   "class_interval.B5.m0 (method)": [ "class_interval.A5.m1 (method)" ],
   "class_interval.B6.m0 (method)": [
-    "class_interval.E6.m3 (method)", "int.__eq__ (method)",
-    "int.__ne__ (method)", "object.__init__ (method)",
-    "object.__new__ (method)", "pysa._test_source (fun)"
+    "class_interval.E6.m3 (method)", "float.__gt__ (method)",
+    "float.__le__ (method)", "object.__init__ (method)",
+    "object.__new__ (method)", "pysa._test_source (fun)",
+    "random.random (fun)"
   ],
   "class_interval.B7.bar (method)": [ "pysa._test_source (fun)" ],
   "class_interval.B7.foo (method)": [ "class_interval.B7.bar (method)" ],
@@ -63,7 +64,7 @@ Call dependencies
   "class_interval.C13.g (method)": [ "pysa._test_source (fun)" ],
   "class_interval.C14.m2 (method)": [ "pysa._test_source (fun)" ],
   "class_interval.C17.m1 (method)": [ "class_interval.sink_c (fun)" ],
-  "class_interval.C18.m (method)": [ "class_interval.B18.m (method)" ],
+  "class_interval.C18.m0 (method)": [ "class_interval.B18.m0 (method)" ],
   "class_interval.C20.m0 (method)": [ "pysa._test_sink (fun)" ],
   "class_interval.C23.m1 (method)": [ "class_interval.add_feature_c (fun)" ],
   "class_interval.C3.m0 (method)": [ "class_interval.A3.m1 (method)" ],
@@ -147,8 +148,8 @@ Call dependencies
     "object.__init__ (method)", "object.__new__ (method)"
   ],
   "class_interval.test_static_methods (fun)": [
-    "object.__init__ (method)", "object.__new__ (method)",
-    "pysa._test_source (fun)"
+    "class_interval.C18.m0 (method)", "object.__init__ (method)",
+    "object.__new__ (method)", "pysa._test_source (fun)"
   ],
   "class_interval.undetected_issue (fun)": [
     "class_interval.A12.f (method)", "pysa._test_sink (fun)"

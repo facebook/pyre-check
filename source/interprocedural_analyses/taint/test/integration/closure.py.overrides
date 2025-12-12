@@ -1,2 +1,4 @@
 @generated
 Overrides
+closure.Object.__init__ (override) -> [closure.Object.__init__ (method)]
+object.__init__ (override) -> [closure.Object.__init__ (override) object.__init__ (method)]

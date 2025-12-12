@@ -107,7 +107,7 @@ def sanitize_parameter_source_a_tito(x, y):
 
 def no_propagation_of_a_source_via_parameter_tito():
     x = a_source()
-    return sanitize_parameter_source_a_tito(x)
+    return sanitize_parameter_source_a_tito(x, 0)
 
 
 def propagation_of_a_source_via_other_parameter_tito():
@@ -117,7 +117,7 @@ def propagation_of_a_source_via_other_parameter_tito():
 
 def propagation_of_b_source_via_parameter_tito():
     x = b_source()
-    return sanitize_parameter_source_a_tito(x)
+    return sanitize_parameter_source_a_tito(x, 0)
 
 
 def sanitize_parameter_sink_a_tito(x, y):
@@ -125,7 +125,7 @@ def sanitize_parameter_sink_a_tito(x, y):
 
 
 def no_propagation_of_a_sink_via_parameter_tito(x):
-    y = sanitize_parameter_sink_a_tito(x)
+    y = sanitize_parameter_sink_a_tito(x, 0)
     a_sink(y)
 
 
@@ -135,7 +135,7 @@ def propagation_of_a_sink_via_other_parameter_tito(x):
 
 
 def propagation_of_b_sink_via_parameter_tito(x):
-    y = sanitize_parameter_sink_a_tito(x)
+    y = sanitize_parameter_sink_a_tito(x, 0)
     b_sink(y)
 
 

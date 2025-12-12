@@ -1,0 +1,1495 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.branch_tito_backward",
+    "filename": "extra_trace.py",
+    "callable_line": 70,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 72, "start": 34, "end": 37 },
+                      "resolves_to": [ "extra_trace.nested_transform_x" ],
+                      "port": "formal(arg, position=0)",
+                      "call_site": "72:15-72:38"
+                    },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:2" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "TransformX@TestSink"
+              },
+              {
+                "extra_traces": [
+                  {
+                    "message": "TransformY",
+                    "origin": { "line": 74, "start": 27, "end": 30 },
+                    "call_site": "74:15-74:31",
+                    "leaf_kind": "TransformY:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:1" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "TransformY@TestSink"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 72, "start": 34, "end": 37 },
+              { "line": 74, "start": 27, "end": 30 }
+            ],
+            "origin": { "line": 75, "start": 15, "end": 19 },
+            "call_site": "75:4-75:20"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.branch_tito_forward",
+    "filename": "extra_trace.py",
+    "callable_line": 60,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 63, "start": 32, "end": 34 },
+                      "resolves_to": [ "extra_trace.nested_transform_x" ],
+                      "port": "formal(arg, position=0)",
+                      "call_site": "63:13-63:35"
+                    },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:2" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "TransformX@TestSource"
+              },
+              {
+                "extra_traces": [
+                  {
+                    "message": "TransformY",
+                    "origin": { "line": 66, "start": 25, "end": 27 },
+                    "call_site": "66:13-66:28",
+                    "leaf_kind": "TransformY:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  },
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 65, "start": 32, "end": 34 },
+                      "resolves_to": [ "extra_trace.nested_transform_x" ],
+                      "port": "formal(arg, position=0)",
+                      "call_site": "65:13-65:35"
+                    },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:1" },
+                  { "always-via": "transform-tito-depth:2" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "TransformY:TransformX@TestSource"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 63, "start": 32, "end": 34 },
+              { "line": 65, "start": 32, "end": 34 },
+              { "line": 66, "start": 25, "end": 27 }
+            ],
+            "origin": { "line": 61, "start": 9, "end": 23 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.double_nested_transform_x",
+    "filename": "extra_trace.py",
+    "callable_line": 41,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "TransformX:ExtraTraceSink" } ],
+            "call": {
+              "position": { "line": 42, "start": 30, "end": 33 },
+              "resolves_to": [ "extra_trace.nested_transform_x" ],
+              "port": "formal(arg, position=0)",
+              "call_site": "42:11-42:34"
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 2,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 42, "start": 30, "end": 33 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "extra_trace.extra_trace_sink_as_origin",
+    "callable_line": 99,
+    "code": 6000,
+    "line": 102,
+    "start": 15,
+    "end": 23,
+    "filename": "extra_trace.py",
+    "message": "[TestSource] may reach [TestSink]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "origin": { "line": 101, "start": 27, "end": 33 },
+                    "call_site": "101:15-101:34",
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:1" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "TransformX@TestSource"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 101, "start": 27, "end": 33 } ],
+            "origin": { "line": 100, "start": 13, "end": 27 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "TestSink"
+              }
+            ],
+            "origin": { "line": 102, "start": 15, "end": 23 },
+            "call_site": "102:4-102:24"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "extra_trace.extra_trace_sink_as_origin:6000:0:Call|pysa._test_sink|0|formal(arg):4e80ac9e12b78d70f72b52153ce11da1"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "extra_trace.extra_trace_through_override",
+    "callable_line": 115,
+    "code": 6000,
+    "line": 118,
+    "start": 15,
+    "end": 23,
+    "filename": "extra_trace.py",
+    "message": "[TestSource] may reach [TestSink]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 117, "start": 27, "end": 33 },
+                      "resolves_to": [
+                        "extra_trace.OverrideTransform.transform"
+                      ],
+                      "port": "formal(arg, position=1)",
+                      "call_site": "117:15-117:34"
+                    },
+                    "receiver_interval": [ { "lower": 2, "upper": 5 } ],
+                    "is_self_call": false,
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:2" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "TransformX@TestSource"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 117, "start": 27, "end": 33 } ],
+            "origin": { "line": 116, "start": 13, "end": 27 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "TestSink"
+              }
+            ],
+            "origin": { "line": 118, "start": 15, "end": 23 },
+            "call_site": "118:4-118:24"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "transform-tito-depth:2" }, { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "extra_trace.extra_trace_through_override:6000:0:Call|pysa._test_sink|0|formal(arg):d30d30592317f7f8db6c3f6b7f7b253c"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "extra_trace.issue_via_transfom_captured_variable",
+    "callable_line": 170,
+    "code": 6000,
+    "line": 177,
+    "start": 15,
+    "end": 32,
+    "filename": "extra_trace.py",
+    "message": "[TestSource] may reach [TestSink]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "origin": { "line": 177, "start": 15, "end": 32 },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:1" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "TransformX@TestSource"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 177, "start": 15, "end": 32 } ],
+            "origin": { "line": 171, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "TestSink"
+              }
+            ],
+            "origin": { "line": 177, "start": 15, "end": 32 },
+            "call_site": "177:4-177:33"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "extra_trace.issue_via_transfom_captured_variable:6000:0:Call|pysa._test_sink|0|formal(arg):2b40e5d62fff593ba13ccb716291eab1"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.issue_via_transfom_captured_variable.nested_function",
+    "filename": "extra_trace.py",
+    "callable_line": 174,
+    "sinks": [
+      {
+        "port": "captured_variable(x)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "TransformX@ExtraTraceSink" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "captured_variable(x)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "TransformX@LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "model_generators": [ "transform_on_captured_variable" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.loop_tito_backward",
+    "filename": "extra_trace.py",
+    "callable_line": 85,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "TestSink"
+              },
+              {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "origin": { "line": 87, "start": 26, "end": 29 },
+                    "call_site": "87:14-87:30",
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:1" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "TransformX@TestSink"
+              }
+            ],
+            "local_features": [ { "via": "tito" } ],
+            "tito_positions": [ { "line": 87, "start": 26, "end": 29 } ],
+            "origin": { "line": 88, "start": 15, "end": 18 },
+            "call_site": "88:4-88:19"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.loop_tito_forward",
+    "filename": "extra_trace.py",
+    "callable_line": 78,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "TestSource"
+              },
+              {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "origin": { "line": 81, "start": 25, "end": 27 },
+                    "call_site": "81:13-81:28",
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:1" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "TransformX@TestSource"
+              }
+            ],
+            "local_features": [ { "via": "tito" } ],
+            "tito_positions": [ { "line": 81, "start": 25, "end": 27 } ],
+            "origin": { "line": 79, "start": 9, "end": 23 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.mismatching_tito_extra_sink",
+    "filename": "extra_trace.py",
+    "callable_line": 140,
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[transformed_key]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "transformed_key" }
+                ],
+                "length": 1,
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
+            "call": {
+              "position": { "line": 142, "start": 41, "end": 45 },
+              "resolves_to": [ "extra_trace.tito_transform_attribute" ],
+              "port": "formal(self, position=0)[transformed_key]",
+              "call_site": "142:16-142:46"
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "LocalReturn" },
+              {
+                "return_paths": { "": 0 },
+                "length": 2,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "c" },
+              { "first-index": "f" },
+              { "first-index": "d" },
+              { "first-index": "e" },
+              { "first-index": "b" },
+              { "first-index": "a" },
+              { "via": "obscure:model" },
+              { "always-via": "model-broadening" },
+              { "via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "model-tito-broadening" }
+            ],
+            "tito_positions": [ { "line": 142, "start": 41, "end": 45 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.nested_transform_x",
+    "filename": "extra_trace.py",
+    "callable_line": 37,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "extra_trace.transform_x", "port": "leaf:arg" }
+                ],
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
+            "origin": { "line": 38, "start": 23, "end": 26 },
+            "call_site": "38:11-38:27"
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 38, "start": 23, "end": 26 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.sequential_tito_backward",
+    "filename": "extra_trace.py",
+    "callable_line": 53,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 54, "start": 30, "end": 33 },
+                      "resolves_to": [ "extra_trace.nested_transform_x" ],
+                      "port": "formal(arg, position=0)",
+                      "call_site": "54:11-54:34"
+                    },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  },
+                  {
+                    "message": "TransformY:TransformZ",
+                    "call": {
+                      "position": { "line": 56, "start": 24, "end": 28 },
+                      "resolves_to": [ "extra_trace.transform_yz" ],
+                      "port": "formal(arg, position=0)",
+                      "call_site": "56:11-56:29"
+                    },
+                    "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:2" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "TransformX:TransformY:TransformZ@TestSink"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 54, "start": 30, "end": 33 },
+              { "line": 55, "start": 16, "end": 20 },
+              { "line": 56, "start": 24, "end": 28 }
+            ],
+            "origin": { "line": 57, "start": 15, "end": 19 },
+            "call_site": "57:4-57:20"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.sequential_tito_forward",
+    "filename": "extra_trace.py",
+    "callable_line": 45,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 47, "start": 28, "end": 30 },
+                      "resolves_to": [ "extra_trace.nested_transform_x" ],
+                      "port": "formal(arg, position=0)",
+                      "call_site": "47:9-47:31"
+                    },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  },
+                  {
+                    "message": "TransformY:TransformZ",
+                    "call": {
+                      "position": { "line": 49, "start": 22, "end": 24 },
+                      "resolves_to": [ "extra_trace.transform_yz" ],
+                      "port": "formal(arg, position=0)",
+                      "call_site": "49:9-49:25"
+                    },
+                    "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:2" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "TransformZ:TransformY:TransformX@TestSource"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 47, "start": 28, "end": 30 },
+              { "line": 48, "start": 14, "end": 16 },
+              { "line": 49, "start": 22, "end": 24 }
+            ],
+            "origin": { "line": 46, "start": 9, "end": 23 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.source_transform_nested_x_y",
+    "filename": "extra_trace.py",
+    "callable_line": 95,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "TransformX:TransformY",
+                    "call": {
+                      "position": { "line": 96, "start": 32, "end": 46 },
+                      "resolves_to": [ "extra_trace.transform_nested_x_y" ],
+                      "port": "formal(arg, position=0)",
+                      "call_site": "96:11-96:47"
+                    },
+                    "leaf_kind": "TransformX:TransformY:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:3" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "TransformY:TransformX@TestSource"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 96, "start": 32, "end": 46 } ],
+            "origin": { "line": 96, "start": 32, "end": 46 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.tito",
+    "filename": "extra_trace.py",
+    "callable_line": 13,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.tito_transform_attribute",
+    "filename": "extra_trace.py",
+    "callable_line": 131,
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[transformed_key]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "extra_trace.transform_x", "port": "leaf:arg" }
+                ],
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "transformed_key" }
+            ],
+            "origin": { "line": 133, "start": 27, "end": 50 },
+            "call_site": "133:15-133:51"
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self, position=0)[transformed_key]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              },
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "transformed_key" },
+              { "via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 133, "start": 27, "end": 50 },
+              { "line": 135, "start": 29, "end": 52 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.transform_nested_x_y",
+    "filename": "extra_trace.py",
+    "callable_line": 91,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "call": {
+                      "position": { "line": 92, "start": 42, "end": 45 },
+                      "resolves_to": [ "extra_trace.nested_transform_x" ],
+                      "port": "formal(arg, position=0)",
+                      "call_site": "92:23-92:46"
+                    },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:2" }
+                ],
+                "leaves": [
+                  { "name": "extra_trace.transform_y", "port": "leaf:arg" }
+                ],
+                "kind": "TransformX@TransformY:ExtraTraceSink"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 92, "start": 42, "end": 45 } ],
+            "origin": { "line": 92, "start": 23, "end": 46 },
+            "call_site": "92:11-92:47"
+          },
+          {
+            "kinds": [ { "length": 1, "kind": "TransformX:ExtraTraceSink" } ],
+            "call": {
+              "position": { "line": 92, "start": 42, "end": 45 },
+              "resolves_to": [ "extra_trace.nested_transform_x" ],
+              "port": "formal(arg, position=0)",
+              "call_site": "92:23-92:46"
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 2,
+                "kind": "TransformX:TransformY@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 92, "start": 23, "end": 46 },
+              { "line": 92, "start": 42, "end": 45 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.transform_tito_with_missing_extra_sink",
+    "filename": "extra_trace.py",
+    "callable_line": 159,
+    "tito": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              },
+              {
+                "return_paths": { "": 0 },
+                "length": 3,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-via": "model-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "model-tito-broadening" }
+            ],
+            "tito_positions": [ { "line": 161, "start": 39, "end": 43 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.transform_x",
+    "filename": "extra_trace.py",
+    "callable_line": 17,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "TransformX@ExtraTraceSink" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "TransformX@LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.transform_y",
+    "filename": "extra_trace.py",
+    "callable_line": 21,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "TransformY@ExtraTraceSink" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "TransformY@LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.transform_yz",
+    "filename": "extra_trace.py",
+    "callable_line": 29,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "extra_trace.transform_y", "port": "leaf:arg" }
+                ],
+                "kind": "TransformY:ExtraTraceSink"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 30, "start": 16, "end": 19 } ],
+            "origin": { "line": 31, "start": 23, "end": 27 },
+            "call_site": "31:11-31:28"
+          },
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "TransformY",
+                    "origin": { "line": 31, "start": 23, "end": 27 },
+                    "call_site": "31:11-31:28",
+                    "leaf_kind": "TransformY:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:1" }
+                ],
+                "leaves": [
+                  { "name": "extra_trace.transform_z", "port": "leaf:arg" }
+                ],
+                "kind": "TransformY@TransformZ:ExtraTraceSink"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 30, "start": 16, "end": 19 },
+              { "line": 31, "start": 23, "end": 27 },
+              { "line": 32, "start": 16, "end": 20 }
+            ],
+            "origin": { "line": 33, "start": 23, "end": 27 },
+            "call_site": "33:11-33:28"
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "TransformY:TransformZ@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 30, "start": 16, "end": 19 },
+              { "line": 31, "start": 23, "end": 27 },
+              { "line": 32, "start": 16, "end": 20 },
+              { "line": 33, "start": 23, "end": 27 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.transform_z",
+    "filename": "extra_trace.py",
+    "callable_line": 25,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "TransformZ@ExtraTraceSink" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "TransformZ@LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "TestSink" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "TestSource" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.OverrideTransform.transform",
+    "filename": "extra_trace.py",
+    "callable_line": 111,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "extra_trace.transform_x", "port": "leaf:arg" }
+                ],
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
+            "origin": { "line": 112, "start": 27, "end": 30 },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false,
+            "call_site": "112:15-112:31"
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 112, "start": 27, "end": 30 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 3, "upper": 4 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.TransformBase.transform",
+    "filename": "extra_trace.py",
+    "callable_line": 106,
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{extra_trace.OverrideTransform.transform}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "extra_trace.transform_x", "port": "leaf:arg" }
+                ],
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": {
+              "caller_interval": [ { "lower": 3, "upper": 4 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{extra_trace.TransformBase.transform}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "extra_trace.transform_x", "port": "leaf:arg" }
+                ],
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          },
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": {
+              "caller_interval": [ { "lower": 3, "upper": 4 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

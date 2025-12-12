@@ -1,6 +1,6 @@
 @generated
 Overrides
-object.__init__ (override) -> [object.__init__ (method) properties.Class.__init__ (override) properties.PropertyCallable.__init__ (override) properties.PropertyCallableReturn.__init__ (override) properties.PropertySetterInConstructor.__init__ (override) properties.RegularAttribute.__init__ (override) properties.SetterMutatesValue.__init__ (override)]
+object.__init__ (override) -> [object.__init__ (method) properties.Class.__init__ (override) properties.PropertyCallable.__init__ (override) properties.PropertyCallableReturn.__init__ (override) properties.PropertySetterInConstructor.__init__ (override) properties.PropertySetterTitoModel.__init__ (override) properties.RegularAttribute.__init__ (override) properties.SetterMutatesValue.__init__ (override)]
 properties.A.foo (override) -> [properties.A.foo (method)]
 properties.Base.foo (override) -> [properties.A.foo (override) properties.Base.foo (method)]
 properties.Class.__init__ (override) -> [properties.Class.__init__ (method)]
@@ -19,6 +19,7 @@ properties.PropertyCallable.__init__ (override) -> [properties.PropertyCallable.
 properties.PropertyCallableReturn.__call__ (override) -> [properties.PropertyCallableReturn.__call__ (method)]
 properties.PropertyCallableReturn.__init__ (override) -> [properties.PropertyCallableReturn.__init__ (method)]
 properties.PropertySetterInConstructor.__init__ (override) -> [properties.PropertySetterInConstructor.__init__ (method)]
+properties.PropertySetterTitoModel.__init__ (override) -> [properties.PropertySetterTitoModel.__init__ (method)]
 properties.RegularAttribute.__init__ (override) -> [properties.RegularAttribute.__init__ (method)]
 properties.SetterMutatesValue.__init__ (override) -> [properties.SetterMutatesValue.__init__ (method)]
 properties.TaintedGetterAndSetter.my_property (override) -> [properties.DerivedTaintedSetter.my_property (override) properties.TaintedGetterAndSetter.my_property (method)]

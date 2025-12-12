@@ -1,0 +1,1995 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.a_sink",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 13,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "TestA" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.a_source",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 7,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "TestA" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.add_feature",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 46,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "via": "feature" } ],
+                "return_paths": { "": 4 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.b_sink",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 16,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "TestB" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.b_source",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 10,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "TestB" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "sanitize_tito_shaping.issue_multiple_titos_different_input_output_paths",
+    "callable_line": 163,
+    "code": 1000,
+    "line": 164,
+    "start": 11,
+    "end": 66,
+    "filename": "sanitize_tito_shaping.py",
+    "message": "[TestA] to [TestA]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.a_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestA"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 164, "start": 55, "end": 65 } ],
+            "origin": { "line": 164, "start": 55, "end": 65 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.a_sink",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "TestA"
+              }
+            ],
+            "origin": { "line": 164, "start": 11, "end": 66 },
+            "call_site": "164:4-164:67"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" },
+      { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize_tito_shaping.a_sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "sanitize_tito_shaping.issue_multiple_titos_different_input_output_paths:1000:0:Call|sanitize_tito_shaping.a_sink|0|formal(x):63008f8bb459cd66ad3fd9fc2df3e6ee"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "sanitize_tito_shaping.issue_multiple_titos_different_input_output_paths",
+    "callable_line": 163,
+    "code": 1000,
+    "line": 165,
+    "start": 11,
+    "end": 66,
+    "filename": "sanitize_tito_shaping.py",
+    "message": "[TestB] to [TestB]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.b_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestB"
+              }
+            ],
+            "local_features": [
+              { "via": "feature" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 165, "start": 55, "end": 65 } ],
+            "origin": { "line": 165, "start": 55, "end": 65 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.b_sink",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "TestB"
+              }
+            ],
+            "origin": { "line": 165, "start": 11, "end": 66 },
+            "call_site": "165:4-165:67"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "via": "feature" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" },
+      { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize_tito_shaping.b_sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "sanitize_tito_shaping.issue_multiple_titos_different_input_output_paths:1000:0:Call|sanitize_tito_shaping.b_sink|0|formal(x):e24bc0421595602486907b665f5554f9"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "sanitize_tito_shaping.issue_multiple_titos_different_input_paths",
+    "callable_line": 138,
+    "code": 1000,
+    "line": 139,
+    "start": 11,
+    "end": 59,
+    "filename": "sanitize_tito_shaping.py",
+    "message": "[TestA] to [TestA]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.a_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestA"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" }, { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 139, "start": 48, "end": 58 } ],
+            "origin": { "line": 139, "start": 48, "end": 58 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.a_sink",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "TestA"
+              }
+            ],
+            "origin": { "line": 139, "start": 11, "end": 59 },
+            "call_site": "139:4-139:60"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" }, { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize_tito_shaping.a_sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "sanitize_tito_shaping.issue_multiple_titos_different_input_paths:1000:0:Call|sanitize_tito_shaping.a_sink|0|formal(x):7179bdc1139b9329daee2c1c69e8cd0d"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "sanitize_tito_shaping.issue_multiple_titos_different_input_paths",
+    "callable_line": 138,
+    "code": 1000,
+    "line": 140,
+    "start": 11,
+    "end": 59,
+    "filename": "sanitize_tito_shaping.py",
+    "message": "[TestB] to [TestB]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.b_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestB"
+              }
+            ],
+            "local_features": [
+              { "via": "feature" },
+              { "always-via": "tito" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 140, "start": 48, "end": 58 } ],
+            "origin": { "line": 140, "start": 48, "end": 58 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.b_sink",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "TestB"
+              }
+            ],
+            "origin": { "line": 140, "start": 11, "end": 59 },
+            "call_site": "140:4-140:60"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "via": "feature" },
+      { "always-via": "tito" },
+      { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize_tito_shaping.b_sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "sanitize_tito_shaping.issue_multiple_titos_different_input_paths:1000:0:Call|sanitize_tito_shaping.b_sink|0|formal(x):857f4b721e5393e53e073ad46d6ad6dc"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "sanitize_tito_shaping.issue_multiple_titos_different_output_paths",
+    "callable_line": 113,
+    "code": 1000,
+    "line": 114,
+    "start": 11,
+    "end": 60,
+    "filename": "sanitize_tito_shaping.py",
+    "message": "[TestA] to [TestA]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.a_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestA"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 114, "start": 49, "end": 59 } ],
+            "origin": { "line": 114, "start": 49, "end": 59 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.a_sink",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "TestA"
+              }
+            ],
+            "origin": { "line": 114, "start": 11, "end": 60 },
+            "call_site": "114:4-114:61"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" },
+      { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize_tito_shaping.a_sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "sanitize_tito_shaping.issue_multiple_titos_different_output_paths:1000:0:Call|sanitize_tito_shaping.a_sink|0|formal(x):3fbdf09a285926e4399d63e0922e24f4"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "sanitize_tito_shaping.issue_multiple_titos_different_output_paths",
+    "callable_line": 113,
+    "code": 1000,
+    "line": 115,
+    "start": 11,
+    "end": 60,
+    "filename": "sanitize_tito_shaping.py",
+    "message": "[TestB] to [TestB]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.b_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestB"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 115, "start": 49, "end": 59 } ],
+            "origin": { "line": 115, "start": 49, "end": 59 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.b_sink",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "TestB"
+              }
+            ],
+            "origin": { "line": 115, "start": 11, "end": 60 },
+            "call_site": "115:4-115:61"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" },
+      { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize_tito_shaping.b_sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "sanitize_tito_shaping.issue_multiple_titos_different_output_paths:1000:0:Call|sanitize_tito_shaping.b_sink|0|formal(x):29ef7576bd32d079778dc4773b27b61b"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "sanitize_tito_shaping.issue_multiple_titos_same_path",
+    "callable_line": 88,
+    "code": 1000,
+    "line": 89,
+    "start": 11,
+    "end": 47,
+    "filename": "sanitize_tito_shaping.py",
+    "message": "[TestA] to [TestA]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.a_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestA"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" }, { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 89, "start": 36, "end": 46 } ],
+            "origin": { "line": 89, "start": 36, "end": 46 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.a_sink",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "TestA"
+              }
+            ],
+            "origin": { "line": 89, "start": 11, "end": 47 },
+            "call_site": "89:4-89:48"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" }, { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize_tito_shaping.a_sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "sanitize_tito_shaping.issue_multiple_titos_same_path:1000:0:Call|sanitize_tito_shaping.a_sink|0|formal(x):e9fdc925e4f6eda0c46c76de0aa96895"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "sanitize_tito_shaping.issue_multiple_titos_same_path",
+    "callable_line": 88,
+    "code": 1000,
+    "line": 90,
+    "start": 11,
+    "end": 47,
+    "filename": "sanitize_tito_shaping.py",
+    "message": "[TestB] to [TestB]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.b_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestB"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" }, { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 90, "start": 36, "end": 46 } ],
+            "origin": { "line": 90, "start": 36, "end": 46 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.b_sink",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "TestB"
+              }
+            ],
+            "origin": { "line": 90, "start": 11, "end": 47 },
+            "call_site": "90:4-90:48"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" }, { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize_tito_shaping.b_sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "sanitize_tito_shaping.issue_multiple_titos_same_path:1000:0:Call|sanitize_tito_shaping.b_sink|0|formal(x):2a8465f42e8e2377bfd80170dcab5f75"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "sanitize_tito_shaping.issue_multiple_titos_same_path_with_transform",
+    "callable_line": 196,
+    "code": 1000,
+    "line": 197,
+    "start": 11,
+    "end": 62,
+    "filename": "sanitize_tito_shaping.py",
+    "message": "[TestA] to [TestA]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.a_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestA"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" }, { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 197, "start": 51, "end": 61 } ],
+            "origin": { "line": 197, "start": 51, "end": 61 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.a_sink",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "TestA"
+              }
+            ],
+            "origin": { "line": 197, "start": 11, "end": 62 },
+            "call_site": "197:4-197:63"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" }, { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize_tito_shaping.a_sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "sanitize_tito_shaping.issue_multiple_titos_same_path_with_transform:1000:0:Call|sanitize_tito_shaping.a_sink|0|formal(x):fcb7a2af36f898b69600ddc26dc96426"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "sanitize_tito_shaping.issue_multiple_titos_same_path_with_transform",
+    "callable_line": 196,
+    "code": 1000,
+    "line": 198,
+    "start": 11,
+    "end": 62,
+    "filename": "sanitize_tito_shaping.py",
+    "message": "[TestB] to [TestB]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.b_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestB"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" }, { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 198, "start": 51, "end": 61 } ],
+            "origin": { "line": 198, "start": 51, "end": 61 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.b_sink",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "TestB"
+              }
+            ],
+            "origin": { "line": 198, "start": 11, "end": 62 },
+            "call_site": "198:4-198:63"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" }, { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize_tito_shaping.b_sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "sanitize_tito_shaping.issue_multiple_titos_same_path_with_transform:1000:0:Call|sanitize_tito_shaping.b_sink|0|formal(x):48cb3c4bb8ff7db6e96d3fb11d4e0bb2"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "sanitize_tito_shaping.issue_multiple_titos_same_path_with_transform",
+    "callable_line": 196,
+    "code": 1002,
+    "line": 198,
+    "start": 11,
+    "end": 62,
+    "filename": "sanitize_tito_shaping.py",
+    "message": "[TestB] transformed by [TransformY] to [TestB]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "TransformY",
+                    "call": {
+                      "position": { "line": 198, "start": 51, "end": 61 },
+                      "resolves_to": [
+                        "sanitize_tito_shaping.multiple_titos_same_path_with_transform"
+                      ],
+                      "port": "formal(x, position=0)",
+                      "call_site": "198:11-198:62"
+                    },
+                    "leaf_kind": "TransformY:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:3" }
+                ],
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.b_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "NotSink[TestA]:TransformY@TestB"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" }, { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 198, "start": 51, "end": 61 } ],
+            "origin": { "line": 198, "start": 51, "end": 61 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.b_sink",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "TestB"
+              }
+            ],
+            "origin": { "line": 198, "start": 11, "end": 62 },
+            "call_site": "198:4-198:63"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "transform-tito-depth:3" },
+      { "always-via": "tito" },
+      { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize_tito_shaping.b_sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "sanitize_tito_shaping.issue_multiple_titos_same_path_with_transform:1002:0:Call|sanitize_tito_shaping.b_sink|0|formal(x):376cbc14eb42e66b8e2c0c54eda625ce"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.loop_multiple_titos_different_input_output_paths",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 156,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": {
+                  "[d]": 0,
+                  "[c]": 0,
+                  "[b]": 0,
+                  "[a]": 0,
+                  "": 4
+                },
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "model-shaping" },
+              { "via": "tito" },
+              { "via": "broadening" },
+              { "via": "model-tito-shaping" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 158, "start": 56, "end": 57 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)[e]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[e]": 3 },
+                "length": 2,
+                "kind": "NotSource[TestA]:NotSink[TestB]@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "feature" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 158, "start": 56, "end": 57 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.loop_multiple_titos_different_input_paths",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 131,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [
+              { "via": "feature" },
+              { "via": "model-shaping" },
+              { "via": "tito-broadening" },
+              { "via": "tito" },
+              { "via": "broadening" },
+              { "via": "widen-broadening" },
+              { "via": "model-tito-shaping" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 133, "start": 49, "end": 50 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)[a]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 2,
+                "kind": "NotSource[TestA]:NotSink[TestB]@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "feature" },
+              { "always-via": "model-broadening" },
+              { "via": "model-shaping" },
+              { "via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "widen-broadening" },
+              { "via": "model-tito-shaping" },
+              { "always-via": "model-tito-broadening" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 133, "start": 49, "end": 50 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)[b]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 2,
+                "kind": "NotSource[TestA]:NotSink[TestB]@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "feature" },
+              { "via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "via": "broadening" },
+              { "via": "widen-broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 133, "start": 49, "end": 50 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)[c]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 2,
+                "kind": "NotSource[TestA]:NotSink[TestB]@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "feature" },
+              { "via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "via": "broadening" },
+              { "via": "widen-broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 133, "start": 49, "end": 50 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)[d]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 2,
+                "kind": "NotSource[TestA]:NotSink[TestB]@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "feature" },
+              { "via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "via": "broadening" },
+              { "via": "widen-broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 133, "start": 49, "end": 50 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)[e]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 2,
+                "kind": "NotSource[TestA]:NotSink[TestB]@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "feature" },
+              { "via": "model-shaping" },
+              { "via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "via": "broadening" },
+              { "via": "widen-broadening" },
+              { "via": "model-tito-shaping" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 133, "start": 49, "end": 50 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.loop_multiple_titos_different_output_paths",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 106,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": {
+                  "[d]": 0,
+                  "[c]": 0,
+                  "[b]": 0,
+                  "[a][d]": 0,
+                  "[a][c]": 0,
+                  "[a][b]": 0,
+                  "[a][a][d]": 0,
+                  "[a][a][c]": 0,
+                  "[a][a][b]": 0,
+                  "[a][a][a]": 0,
+                  "[a][a]": 2,
+                  "[a]": 3,
+                  "": 4
+                },
+                "kind": "LocalReturn"
+              },
+              {
+                "return_paths": {
+                  "[e]": 0,
+                  "[d]": 0,
+                  "[c]": 0,
+                  "[b]": 0,
+                  "[a]": 0
+                },
+                "length": 2,
+                "kind": "NotSource[TestA]:NotSink[TestB]@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "tito" }, { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 108, "start": 50, "end": 51 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.loop_multiple_titos_same_path",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 81,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "LocalReturn" },
+              {
+                "return_paths": { "": 0 },
+                "length": 2,
+                "kind": "NotSource[TestA]:NotSink[TestB]@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "tito" }, { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 83, "start": 37, "end": 38 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.multiple_titos_different_input_output_paths",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 143,
+    "tito": [
+      {
+        "port": "formal(x, position=0)[a]",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[a]": 3 }, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "a" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)[b]",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[b]": 0 }, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "b" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 147, "start": 33, "end": 58 },
+              { "line": 147, "start": 51, "end": 57 }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)[c]",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[c]": 0 }, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "c" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 149, "start": 39, "end": 45 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)[d]",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[d]": 0 }, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "d" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 151, "start": 47, "end": 53 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)[e]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[e]": 3 },
+                "length": 1,
+                "kind": "NotSource[TestA]:NotSink[TestB]@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "e" },
+              { "via": "feature" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 153, "start": 33, "end": 75 },
+              { "line": 153, "start": 51, "end": 74 },
+              { "line": 153, "start": 67, "end": 73 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.multiple_titos_different_input_paths",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 118,
+    "tito": [
+      {
+        "port": "formal(x, position=0)[a]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "a" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)[b]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "b" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 122, "start": 27, "end": 52 },
+              { "line": 122, "start": 45, "end": 51 }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)[c]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "c" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 124, "start": 33, "end": 39 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)[d]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "d" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 126, "start": 41, "end": 47 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)[e]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "NotSource[TestA]:NotSink[TestB]@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "e" },
+              { "via": "feature" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 128, "start": 27, "end": 69 },
+              { "line": 128, "start": 45, "end": 68 },
+              { "line": 128, "start": 61, "end": 67 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.multiple_titos_different_output_paths",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 93,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[d]": 0, "[c]": 0, "[b]": 0, "[a]": 3 },
+                "kind": "LocalReturn"
+              },
+              {
+                "return_paths": { "[e]": 3 },
+                "length": 1,
+                "kind": "NotSource[TestA]:NotSink[TestB]@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "tito" }, { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 97, "start": 33, "end": 53 },
+              { "line": 97, "start": 51, "end": 52 },
+              { "line": 99, "start": 39, "end": 40 },
+              { "line": 101, "start": 47, "end": 48 },
+              { "line": 103, "start": 39, "end": 57 },
+              { "line": 103, "start": 55, "end": 56 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.multiple_titos_same_path",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 62,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "LocalReturn" },
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "NotSource[TestA]:NotSink[TestB]@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "tito" }, { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 66, "start": 27, "end": 47 },
+              { "line": 66, "start": 45, "end": 46 },
+              { "line": 68, "start": 33, "end": 34 },
+              { "line": 70, "start": 41, "end": 42 },
+              { "line": 72, "start": 27, "end": 45 },
+              { "line": 72, "start": 43, "end": 44 },
+              { "line": 74, "start": 41, "end": 61 },
+              { "line": 74, "start": 59, "end": 60 },
+              { "line": 76, "start": 33, "end": 51 },
+              { "line": 76, "start": 49, "end": 50 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.multiple_titos_same_path_different_collapse_depth",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 168,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "LocalReturn" },
+              {
+                "return_paths": { "": 0 },
+                "length": 2,
+                "kind": "NotSink[TestA]@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "via": "tito" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 170, "start": 34, "end": 35 },
+              { "line": 172, "start": 33, "end": 53 },
+              { "line": 172, "start": 51, "end": 52 },
+              { "line": 174, "start": 34, "end": 62 },
+              { "line": 174, "start": 60, "end": 61 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.multiple_titos_same_path_with_transform",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 179,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_tito_shaping.transform_y",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "TransformY:ExtraTraceSink"
+              }
+            ],
+            "origin": { "line": 193, "start": 53, "end": 54 },
+            "call_site": "193:41-193:55"
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "LocalReturn" },
+              {
+                "return_paths": { "": 4 },
+                "length": 2,
+                "kind": "TransformY:NotSink[TestA]@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "tito" }, { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 183, "start": 33, "end": 34 },
+              { "line": 185, "start": 27, "end": 28 },
+              { "line": 187, "start": 27, "end": 47 },
+              { "line": 187, "start": 45, "end": 46 },
+              { "line": 189, "start": 33, "end": 47 },
+              { "line": 189, "start": 45, "end": 46 },
+              { "line": 191, "start": 27, "end": 28 },
+              { "line": 193, "start": 41, "end": 55 },
+              { "line": 193, "start": 53, "end": 54 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.sanitize_sink_a",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 25,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "kind": "NotSink[TestA]@LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "sanitizers": [
+      { "port": "formal(x, position=0)", "sinks": [ "TestA" ] }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.sanitize_sink_a_depth_two",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 34,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "NotSink[TestA]@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 35, "start": 27, "end": 28 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.sanitize_sink_b",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 28,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "kind": "NotSink[TestB]@LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "sanitizers": [
+      { "port": "formal(x, position=0)", "sinks": [ "TestB" ] }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.sanitize_source_a",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 19,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "kind": "NotSource[TestA]@LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "sanitizers": [
+      { "port": "formal(x, position=0)", "sources": [ "TestA" ] }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.sanitize_source_a_depth_two",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 31,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "NotSource[TestA]@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 32, "start": 29, "end": 30 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.sanitize_source_b",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 22,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "kind": "NotSource[TestB]@LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "sanitizers": [
+      { "port": "formal(x, position=0)", "sources": [ "TestB" ] }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.tito_collapse_one",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 55,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 1 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "c" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 56, "start": 39, "end": 40 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.tito_collapse_one_append_a_b_c",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 52,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[a][b][c]": 1 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.transform_x",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 37,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "TransformX@ExtraTraceSink" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 999999 },
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.transform_y",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 40,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "TransformY@ExtraTraceSink" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 999999 },
+                "kind": "TransformY@LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.transform_z",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 43,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "TransformZ@ExtraTraceSink" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 999999 },
+                "kind": "TransformZ@LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}

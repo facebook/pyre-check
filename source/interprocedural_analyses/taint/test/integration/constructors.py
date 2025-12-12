@@ -63,12 +63,13 @@ def test_new_thing():
 
 class BothNewAndInit:
     def __new__(cls):
-        obj = super(BothNewAndInit, cls).__new__()
+        obj = super(BothNewAndInit, cls).__new__()  # pyrefly: ignore[missing-argument]
         obj.foo = _test_source()
         return obj
 
     def __init__(self):
         _test_sink(self.foo)
+        self.foo = "" # declare the attribute
 
 
 def test_both_new_and_init_callgraph():
@@ -112,7 +113,7 @@ class ClassStub:
 
 def test_class_stub():
     # Assume anything can happen.
-    _test_sink(ClassStub(_test_source()))
+    _test_sink(ClassStub(_test_source())) # pyrefly: ignore[bad-argument-count]
 
 
 class ConstructorWithSourceModel:
@@ -143,7 +144,8 @@ def test_constructor_with_tito_model():
 
 class ConstructorTitoModelQuery:
     def __init__(self, a, b):
-        pass
+        self.a = ""
+        self.b = ""
 
 
 class DerivedConstructorTitoModelQuery(ConstructorTitoModelQuery):
@@ -178,7 +180,7 @@ class NoConstructor:
 
 class ParentWithNoConstructor(NoConstructor):
     def __init__(self, a, b):
-        super().__init__(a, b)
+        super().__init__(a, b) # pyrefly: ignore[bad-argument-count]
 
 
 def test_parent_with_no_constructor():

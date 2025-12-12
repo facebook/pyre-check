@@ -1,0 +1,1451 @@
+@generated
+Higher order call graphs
+{
+  "callable": "supers.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "30:8-30:9|identifier|A": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.A"
+            }
+          ]
+        }
+      }
+    },
+    "57:8-57:9|identifier|A": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.A"
+            }
+          ]
+        }
+      }
+    },
+    "65:8-65:9|identifier|C": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.C"
+            }
+          ]
+        }
+      }
+    },
+    "70:8-70:9|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.B"
+            }
+          ]
+        }
+      }
+    },
+    "70:11-70:12|identifier|A": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.A"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "supers.B_overwrite_both",
+  "returned_callables": [],
+  "calls": {
+    "92:8-92:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "supers.A.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    },
+    "93:4-93:10": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{supers.B.g2}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.B_overwrite_partial",
+  "returned_callables": [],
+  "calls": {
+    "97:8-97:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "supers.A.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    },
+    "98:4-98:10": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{supers.B.g3}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.B_standard",
+  "returned_callables": [],
+  "calls": {
+    "102:8-102:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "supers.A.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    },
+    "103:4-103:10": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.B.g4",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.attribute_B_not_overwritten",
+  "returned_callables": [],
+  "calls": {
+    "82:4-82:7": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "supers.A.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    },
+    "82:4-82:12": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{supers.B.g1}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.attribute_B_overwritten",
+  "returned_callables": [],
+  "calls": {
+    "86:8-86:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "supers.A.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    },
+    "88:4-88:10": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{supers.B.g1}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.attribute_C_not_overwritten",
+  "returned_callables": [],
+  "calls": {
+    "107:4-107:7": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "supers.A.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.C"
+          }
+        ]
+      }
+    },
+    "107:4-107:12": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{supers.C.g1}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.C"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.attribute_C_overwritten",
+  "returned_callables": [],
+  "calls": {
+    "111:8-111:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "supers.A.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.C"
+          }
+        ]
+      }
+    },
+    "113:4-113:10": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{supers.C.g1}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.C"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.attribute_D_not_overwritten",
+  "returned_callables": [],
+  "calls": {
+    "117:8-117:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "supers.A.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.D"
+          }
+        ]
+      }
+    },
+    "118:4-118:10": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.D.g1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.D"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.attribute_D_overwritten",
+  "returned_callables": [],
+  "calls": {
+    "122:8-122:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "supers.A.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.D"
+          }
+        ]
+      }
+    },
+    "124:4-124:10": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.D.g1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.D"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.attribute_E_not_overwritten",
+  "returned_callables": [],
+  "calls": {
+    "128:8-128:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "supers.A.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.E"
+          }
+        ]
+      }
+    },
+    "129:4-129:10": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.E.g1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.E"
+          }
+        ]
+      }
+    },
+    "130:4-130:10": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.E.g2",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.E"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.attribute_E_not_overwritten_RCE",
+  "returned_callables": [],
+  "calls": {
+    "135:8-135:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "supers.A.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.E"
+          }
+        ]
+      }
+    },
+    "136:4-136:10": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.E.g3",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.E"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.attribute_E_overwritten",
+  "returned_callables": [],
+  "calls": {
+    "140:8-140:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "supers.A.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.E"
+          }
+        ]
+      }
+    },
+    "142:4-142:10": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.E.g1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.E"
+          }
+        ]
+      }
+    },
+    "143:4-143:10": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.E.g2",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.E"
+          }
+        ]
+      }
+    },
+    "144:4-144:10": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.E.g3",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.E"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.A.__init__",
+  "returned_callables": [],
+  "calls": {
+    "12:25-12:39": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.A.f1",
+  "returned_callables": [],
+  "calls": {
+    "15:8-15:34": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.A.f2",
+  "returned_callables": [],
+  "calls": {
+    "18:8-18:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.A.f3",
+  "returned_callables": [],
+  "calls": {
+    "21:15-21:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.B.f4",
+  "returned_callables": [],
+  "calls": {
+    "35:15-35:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.B.f5",
+  "returned_callables": [],
+  "calls": {
+    "38:15-38:28": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.B.g1",
+  "returned_callables": [],
+  "calls": {
+    "41:8-41:22": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "41:8-41:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.A.f1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    },
+    "41:14-41:15|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.B"
+            }
+          ]
+        }
+      }
+    },
+    "42:8-42:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "42:8-42:20": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.A.f1",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    },
+    "43:8-43:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 2,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "43:8-43:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.A.f2",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    },
+    "43:19-43:26": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 3,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "43:19-43:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.A.f3",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.B.g2",
+  "returned_callables": [],
+  "calls": {
+    "46:8-46:22": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "46:8-46:46": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.A.f5",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    },
+    "46:14-46:15|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.B"
+            }
+          ]
+        }
+      }
+    },
+    "46:26-46:40": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "46:26-46:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.A.f4",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    },
+    "46:32-46:33|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.B"
+            }
+          ]
+        }
+      }
+    },
+    "47:8-47:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 2,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "47:8-47:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.A.f5",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    },
+    "47:19-47:26": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 3,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "47:19-47:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.A.f4",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.B.g3",
+  "returned_callables": [],
+  "calls": {
+    "50:8-50:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.B.f5",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    },
+    "50:16-50:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "50:16-50:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.A.f4",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    },
+    "51:8-51:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "51:8-51:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.A.f5",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    },
+    "51:19-51:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.B.f4",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.B.g4",
+  "returned_callables": [],
+  "calls": {
+    "54:8-54:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.B.f5",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    },
+    "54:16-54:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.B.f4",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.B"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.C.g1",
+  "returned_callables": [],
+  "calls": {
+    "62:15-62:22": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "62:15-62:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.A.f1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.C"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.D.g1",
+  "returned_callables": [],
+  "calls": {
+    "67:8-67:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "67:8-67:20": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.A.f1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.D"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.E.g1",
+  "returned_callables": [],
+  "calls": {
+    "72:8-72:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "72:8-72:20": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.B.f1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.E"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.E.g2",
+  "returned_callables": [],
+  "calls": {
+    "75:8-75:22": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "75:8-75:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.B.f1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.E"
+          }
+        ]
+      }
+    },
+    "75:14-75:15|identifier|E": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.E"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "supers.E.g3",
+  "returned_callables": [],
+  "calls": {
+    "78:8-78:22": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "78:8-78:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.A.f1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.E"
+          }
+        ]
+      }
+    },
+    "78:14-78:15|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.B"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

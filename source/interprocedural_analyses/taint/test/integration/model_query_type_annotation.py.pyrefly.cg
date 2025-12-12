@@ -1,0 +1,13 @@
+@generated
+Call dependencies
+{
+  "model_query_type_annotation.test5_no_taint_1 (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)"
+  ],
+  "model_query_type_annotation.test5_taint_1 (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)"
+  ],
+  "model_query_type_annotation.test5_taint_2 (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)"
+  ]
+}

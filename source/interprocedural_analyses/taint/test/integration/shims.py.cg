@@ -6,9 +6,11 @@ Call dependencies
     "pysa.to_callable_target (fun)", "shims.async_callable (fun)"
   ],
   "shims.test_async_delay (fun)": [
+    "pysa.TestCallableTarget.async_delay (method)",
     "pysa._test_source (fun)", "shims.async_callable (fun)"
   ],
   "shims.test_async_schedule (fun)": [
+    "pysa.TestCallableTarget.async_schedule (method)",
     "pysa._test_source (fun)", "shims.async_callable (fun)"
   ]
 }

@@ -1,0 +1,90 @@
+@generated
+Higher order call graphs
+{
+  "callable": "recognized_callable_targets.callable_target",
+  "returned_callables": [],
+  "calls": {
+    "11:4-11:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "recognized_callable_targets.callable_target@decorated",
+  "returned_callables": [
+    {
+      "target": "recognized_callable_targets.callable_target",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "9:1-9:19|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa.to_callable_target",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "10:0-11:19|identifier|callable_target": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "recognized_callable_targets.callable_target",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "recognized_callable_targets.test_callable_target",
+  "returned_callables": [],
+  "calls": {
+    "15:8-15:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "16:4-16:19|identifier|callable_target": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "recognized_callable_targets.callable_target@decorated",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "16:4-16:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "pysa.TestCallableTarget.async_schedule",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "pysa.TestCallableTarget"
+          }
+        ]
+      }
+    }
+  }
+}

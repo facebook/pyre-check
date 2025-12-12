@@ -1,0 +1,48 @@
+@generated
+Call dependencies
+{
+  "deadcode.EarlyReturns.__init__ (method)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "deadcode.dead_code_by_type_refinement (fun)": [
+    "builtins.isinstance (fun)", "builtins.print (fun)",
+    "deadcode.MyCallable.__call__ (method)", "pysa._test_sink (fun)"
+  ],
+  "deadcode.early_break_no_issue_for (fun)": [
+    "builtins.object.__init__ (method)", "builtins.range.__iter__ (method)",
+    "builtins.range.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "typing.Iterator.__next__ (method)"
+  ],
+  "deadcode.early_break_no_issue_while (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "deadcode.early_continue_no_issue_for (fun)": [
+    "builtins.object.__init__ (method)", "builtins.range.__iter__ (method)",
+    "builtins.range.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "typing.Iterator.__next__ (method)"
+  ],
+  "deadcode.early_raise_no_issue (fun)": [
+    "builtins.BaseException.__init__ (method)",
+    "builtins.BaseException.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "deadcode.early_return_no_issue (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "deadcode.early_return_no_issue_class (fun)": [
+    "builtins.object.__new__ (method)",
+    "deadcode.EarlyReturns.__init__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "deadcode.early_return_no_issue_for_else (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "deadcode.early_return_no_issue_if (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "deadcode.early_return_no_issue_while (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "deadcode.early_return_no_sink (fun)": [ "pysa._test_sink (fun)" ],
+  "deadcode.early_return_no_source (fun)": [ "pysa._test_source (fun)" ]
+}

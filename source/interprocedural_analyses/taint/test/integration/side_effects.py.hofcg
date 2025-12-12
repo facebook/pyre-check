@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "side_effects.dict_to_sink_via_side_effect",
   "returned_callables": [],
   "calls": {
-    "55:4-55:28": {
+    "67:4-67:28": {
       "call": {
         "calls": [
           {
@@ -15,7 +15,7 @@ Higher order call graphs
         ]
       }
     },
-    "55:16-55:24|artificial-call|subscript-get-item": {
+    "67:16-67:24|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -28,7 +28,7 @@ Higher order call graphs
         ]
       }
     },
-    "56:4-56:17": {
+    "68:4-68:17": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -41,7 +41,7 @@ Higher order call graphs
   "callable": "side_effects.test_from_0_to_1",
   "returned_callables": [],
   "calls": {
-    "17:4-17:34": {
+    "29:4-29:34": {
       "call": {
         "calls": [
           {
@@ -52,7 +52,7 @@ Higher order call graphs
         ]
       }
     },
-    "17:16-17:30": {
+    "29:16-29:30": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -65,7 +65,7 @@ Higher order call graphs
   "callable": "side_effects.test_from_1_to_0",
   "returned_callables": [],
   "calls": {
-    "11:4-11:34": {
+    "23:4-23:34": {
       "call": {
         "calls": [
           {
@@ -76,7 +76,7 @@ Higher order call graphs
         ]
       }
     },
-    "11:19-11:33": {
+    "23:19-23:33": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -89,7 +89,27 @@ Higher order call graphs
   "callable": "side_effects.test_from_1_to_0_nested",
   "returned_callables": [],
   "calls": {
-    "23:4-23:38": {
+    "34:8-34:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "side_effects.Object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "35:4-35:38": {
       "call": {
         "calls": [
           {
@@ -100,7 +120,7 @@ Higher order call graphs
         ]
       }
     },
-    "23:23-23:37": {
+    "35:23-35:37": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -113,7 +133,27 @@ Higher order call graphs
   "callable": "side_effects.test_from_1_to_0_nested_distinct",
   "returned_callables": [],
   "calls": {
-    "29:4-29:38": {
+    "40:8-40:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "side_effects.Object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "41:4-41:38": {
       "call": {
         "calls": [
           {
@@ -124,7 +164,7 @@ Higher order call graphs
         ]
       }
     },
-    "29:23-29:37": {
+    "41:23-41:37": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -137,7 +177,7 @@ Higher order call graphs
   "callable": "side_effects.test_list_append",
   "returned_callables": [],
   "calls": {
-    "34:8-34:16": {
+    "46:8-46:16": {
       "call": {
         "new_calls": [
           {
@@ -157,7 +197,7 @@ Higher order call graphs
         ]
       }
     },
-    "35:4-35:28": {
+    "47:4-47:28": {
       "call": {
         "calls": [
           {
@@ -170,7 +210,7 @@ Higher order call graphs
         ]
       }
     },
-    "35:13-35:27": {
+    "47:13-47:27": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -183,7 +223,7 @@ Higher order call graphs
   "callable": "side_effects.to_sink_via_side_effect",
   "returned_callables": [],
   "calls": {
-    "49:4-49:21": {
+    "61:4-61:21": {
       "call": {
         "calls": [
           {
@@ -194,7 +234,7 @@ Higher order call graphs
         ]
       }
     },
-    "50:4-50:17": {
+    "62:4-62:17": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -207,7 +247,7 @@ Higher order call graphs
   "callable": "side_effects.wrapper_from_0_to_1",
   "returned_callables": [],
   "calls": {
-    "44:4-44:21": {
+    "56:4-56:21": {
       "call": {
         "calls": [
           {
@@ -224,7 +264,7 @@ Higher order call graphs
   "callable": "side_effects.wrapper_from_1_to_0",
   "returned_callables": [],
   "calls": {
-    "40:4-40:21": {
+    "52:4-52:21": {
       "call": {
         "calls": [
           {

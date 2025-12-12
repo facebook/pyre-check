@@ -6,12 +6,9 @@
 # flake8: noqa
 
 from pysa import _test_sink, _test_source
-from typing import Awaitable, Callable, TypeVar
+from typing import Awaitable, Callable, TypeVar, ParamSpec, Concatenate
 
-from pyre_extensions import ParameterSpecification
-from pyre_extensions.type_variable_operators import Concatenate
-
-P = ParameterSpecification("P")
+P = ParamSpec("P")
 
 
 def with_logging(f: Callable[[int], None]) -> Callable[[int], None]:
@@ -171,7 +168,7 @@ async def foo_with_helper_function(x: int, y: str) -> None:
     print(x, y)
 
 
-TFoo = TypeVar("T", bound="Foo")
+TFoo = TypeVar("TFoo", bound="Foo")
 
 
 class Foo:
@@ -281,7 +278,7 @@ def issue_via_trivial_decorator() -> None:
 
 def _strip_first_parameter_(
     f: Callable[Concatenate[int, P], None],
-) -> Callable[Concatenate[P], None]:
+) -> Callable[P, None]:
     def inner(*args: P.args, **kwargs: P.kwargs) -> None:
         f(0, *args, **kwargs)
 
@@ -316,7 +313,7 @@ def issue_via_no_op_decorator() -> None:
 # pyre-ignore
 def no_op_decorator_factory(flag: bool) -> Callable[[T], T]:
     def inner(f: T) -> T:
-        f.__doc___ = "dummy doc"
+        f.__doc___ = "dummy doc"  # pyrefly: ignore[missing-attribute]
         return f
 
     return inner

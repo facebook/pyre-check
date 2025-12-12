@@ -1,0 +1,291 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_any_decorator.decorator_ignored",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 139,
+    "tito": [
+      {
+        "port": "formal(f, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "IgnoreDecorator" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_any_decorator.source_on_decorator_ignored",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 144,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "model_generators": [ "get_model_query_any_decorator_ignored_decorator" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_any_decorator.test1_alarm1",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 37,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "get_model_query_any_decorator_test1_sources" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_any_decorator.test2_alarm1",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 47,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "get_model_query_any_decorator_test2_sources" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_any_decorator.test3_alarm1",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 60,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "get_model_query_any_decorator_test3_sources" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_any_decorator.test3_alarm2",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 65,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "get_model_query_any_decorator_test3_sources" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_any_decorator.test3_alarm3",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 70,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "get_model_query_any_decorator_test3_sources" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_any_decorator.test4_alarm1",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 85,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "get_model_query_any_decorator_test4_sources" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_any_decorator.test5_alarm1",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 105,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "get_model_query_any_decorator_test5_sources" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_any_decorator.test5_alarm2",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 110,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "get_model_query_any_decorator_test5_sources" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_any_decorator.test_local_variable_method_decorator",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 133,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [
+      "get_model_query_any_decorator_local_variable_method_decorator"
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}

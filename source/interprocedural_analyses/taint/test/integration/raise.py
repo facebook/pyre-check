@@ -7,10 +7,12 @@ from pysa import _test_sink, _test_source
 
 
 def forward():
+    # pyrefly: ignore[bad-raise]
     raise _test_sink(_test_source())
 
 
 def backward(x):
+    # pyrefly: ignore[bad-raise]
     raise _test_sink(x)
 
 

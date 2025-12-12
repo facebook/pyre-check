@@ -7,6 +7,9 @@ Call dependencies
     "call_graph.no_op_decorator_factory.inner (fun)[formal(original, position=0)=call_graph.CallableKindConfusion.foo (method)]"
   ],
   "call_graph.IsSource.method (method)": [ "pysa._test_source (fun)" ],
+  "call_graph.NotSource.method (method)": [
+    "call_graph.IsSource.__init__ (method)", "object.__new__ (method)"
+  ],
   "call_graph.is_dict (fun)": [ "isinstance (fun)" ],
   "call_graph.test_chained_assign (fun)": [
     "call_graph.NotSource.__init__ (method)",

@@ -514,6 +514,32 @@ Higher order call graphs
   }
 }
 {
+  "callable": "call_graph.NotSource.method",
+  "returned_callables": [],
+  "calls": {
+    "25:15-25:25": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "call_graph.IsSource.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "call_graph.no_op_decorator[formal(f, position=0)=call_graph.CallableKindConfusion.foo]",
   "returned_callables": [
     {

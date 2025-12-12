@@ -1,0 +1,396 @@
+@generated
+Higher order call graphs
+{
+  "callable": "constant_fields.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "10:17-10:21|identifier|Enum": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "enum.Enum.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constant_fields.test_untracked_constant",
+  "returned_callables": [],
+  "calls": {
+    "53:4-53:42|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "53:28-53:42": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "54:11-54:32|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "constant_fields.tracked_constant_A",
+  "returned_callables": [],
+  "calls": {
+    "41:4-41:34|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "41:20-41:34": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "42:11-42:24|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "constant_fields.tracked_constant_B",
+  "returned_callables": [],
+  "calls": {
+    "47:4-47:34|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "47:20-47:34": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "48:11-48:24|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "constant_fields.tracked_index",
+  "returned_callables": [],
+  "calls": {
+    "18:4-18:48|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "18:6-18:16|identifier|CustomEnum": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "enum.Enum.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "18:34-18:48": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "19:11-19:38|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "19:13-19:23|identifier|CustomEnum": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "enum.Enum.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constant_fields.untracked_index_a",
+  "returned_callables": [],
+  "calls": {
+    "24:4-24:50|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "24:6-24:16|identifier|CustomEnum": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "enum.Enum.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "24:36-24:50": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "25:11-25:40|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "25:13-25:23|identifier|CustomEnum": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "enum.Enum.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constant_fields.untracked_index_b",
+  "returned_callables": [],
+  "calls": {
+    "30:4-30:50|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "30:6-30:16|identifier|CustomEnum": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "enum.Enum.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "30:36-30:50": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "31:11-31:40|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "31:13-31:23|identifier|CustomEnum": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "enum.Enum.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+@generated
+Call dependencies
+{
+  "http_request.request_get_flows_to_sink (fun)": [
+    "django.http.request.HttpRequest.GET (object)", "pysa._test_sink (fun)"
+  ],
+  "http_request.test_hop_is_cut_off (fun)": [
+    "django.http.request.HttpRequest.GET (object)",
+    "http_request.request_get_flows_to_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "http_request.test_trace_has_no_tito (fun)": [
+    "django.http.request.HttpRequest.GET (object)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "http_request.test_untainted_assign (fun)": [
+    "django.http.request.HttpRequest.GET (object)", "pysa._test_sink (fun)"
+  ]
+}

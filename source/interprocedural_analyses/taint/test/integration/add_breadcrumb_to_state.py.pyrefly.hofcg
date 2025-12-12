@@ -1,0 +1,245 @@
+@generated
+Higher order call graphs
+{
+  "callable": "add_breadcrumb_to_state.add_breadcrumb_to_state_wrapper",
+  "returned_callables": [],
+  "calls": {
+    "56:11-56:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "add_breadcrumb_to_state.add_breadcrumb_to_state",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "add_breadcrumb_to_state.test_add_breadcrumb_context_manager",
+  "returned_callables": [],
+  "calls": {
+    "80:8-80:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "81:9-81:28": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "add_breadcrumb_to_state.BreadcrumbOnEnter.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "add_breadcrumb_to_state.BreadcrumbOnEnter"
+          }
+        ]
+      }
+    },
+    "81:9-81:28|artificial-call|with-enter": {
+      "call": {
+        "calls": [
+          {
+            "target": "add_breadcrumb_to_state.BreadcrumbOnEnter.__enter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "add_breadcrumb_to_state.BreadcrumbOnEnter"
+          }
+        ]
+      }
+    },
+    "82:8-82:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "add_breadcrumb_to_state.test_if_issue",
+  "returned_callables": [],
+  "calls": {
+    "15:8-15:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "17:4-17:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "19:7-19:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "add_breadcrumb_to_state.add_breadcrumb_to_state",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "20:8-20:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "22:4-22:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 2, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "add_breadcrumb_to_state.test_if_sink_outside_condition",
+  "returned_callables": [],
+  "calls": {
+    "49:7-49:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "add_breadcrumb_to_state.add_breadcrumb_to_state",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "52:4-52:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "add_breadcrumb_to_state.test_if_sink_within_condition",
+  "returned_callables": [],
+  "calls": {
+    "44:7-44:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "add_breadcrumb_to_state.add_breadcrumb_to_state",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "45:8-45:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "add_breadcrumb_to_state.test_if_source_outside_condition",
+  "returned_callables": [],
+  "calls": {
+    "35:8-35:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "37:7-37:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "add_breadcrumb_to_state.add_breadcrumb_to_state",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "add_breadcrumb_to_state.test_if_source_within_condition",
+  "returned_callables": [],
+  "calls": {
+    "26:8-26:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "28:7-28:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "add_breadcrumb_to_state.add_breadcrumb_to_state",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "add_breadcrumb_to_state.test_wrapper",
+  "returned_callables": [],
+  "calls": {
+    "60:8-60:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "63:7-63:40": {
+      "call": {
+        "calls": [
+          {
+            "target": "add_breadcrumb_to_state.add_breadcrumb_to_state_wrapper",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "64:8-64:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

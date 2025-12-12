@@ -1,0 +1,46 @@
+@generated
+Call dependencies
+{
+  "model_query_return_annotation_extends.Test2.test2_alarm1 (method)": [
+    "pysa._test_source (fun)"
+  ],
+  "model_query_return_annotation_extends.Test2.test2_alarm2 (method)": [
+    "pysa._test_source (fun)"
+  ],
+  "model_query_return_annotation_extends.Test2.test2_noalarm1 (method)": [
+    "pysa._test_source (fun)"
+  ],
+  "model_query_return_annotation_extends.Test2.test2_noalarm2 (method)": [
+    "pysa._test_source (fun)"
+  ],
+  "model_query_return_annotation_extends.test1_alarm1 (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "model_query_return_annotation_extends.test1_alarm2 (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "model_query_return_annotation_extends.test1_alarm3 (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "model_query_return_annotation_extends.test1_alarm4 (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "model_query_return_annotation_extends.test1_noalarm1 (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "model_query_return_annotation_extends.test3_alarm1 (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "model_query_return_annotation_extends.test3_alarm2 (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "model_query_return_annotation_extends.test3_alarm3 (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "model_query_return_annotation_extends.test3_alarm4 (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "model_query_return_annotation_extends.test3_noalarm1 (fun)": [
+    "pysa._test_source (fun)"
+  ]
+}

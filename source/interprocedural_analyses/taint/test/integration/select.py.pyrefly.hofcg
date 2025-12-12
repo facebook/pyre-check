@@ -1,0 +1,148 @@
+@generated
+Higher order call graphs
+{
+  "callable": "select.first_index",
+  "returned_callables": [],
+  "calls": {
+    "21:8-21:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "22:11-22:28|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "select.first_index_numeric",
+  "returned_callables": [],
+  "calls": {
+    "26:8-26:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "27:11-27:15|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "select.first_index_unknown",
+  "returned_callables": [],
+  "calls": {
+    "31:8-31:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "33:11-33:21|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "select.return_is_RCE",
+  "returned_callables": [],
+  "calls": {
+    "41:11-41:22": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{django.http.Request.GET}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "41:11-41:48": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.get",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "select.view_entry_field",
+  "returned_callables": [],
+  "calls": {
+    "13:4-13:25": {
+      "call": {
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "select.view_entry_get",
+  "returned_callables": [],
+  "calls": {
+    "37:4-37:47": {
+      "call": {
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "37:9-37:20": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{django.http.Request.GET}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "37:9-37:46": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.get",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "select.view_entry_index",
+  "returned_callables": [],
+  "calls": {
+    "17:4-17:32": {
+      "call": {
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "17:9-17:31|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}

@@ -1,0 +1,989 @@
+@generated
+Higher order call graphs
+{
+  "callable": "class_methods.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "21:9-21:26": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } },
+    "24:8-24:23|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "80:8-80:9|identifier|C": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.C"
+            }
+          ]
+        }
+      }
+    },
+    "80:8-80:14|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttr" ] }
+    },
+    "80:10-80:13|identifier|str": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.str.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.bar",
+  "returned_callables": [],
+  "calls": {
+    "18:4-18:8|identifier|Test": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.Test"
+            }
+          ]
+        }
+      }
+    },
+    "18:4-18:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_methods.Test.foo",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_methods.Test",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "18:13-18:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.issue_with_abstract_class_method",
+  "returned_callables": [],
+  "calls": {
+    "102:4-102:5|identifier|D": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.D"
+            }
+          ]
+        }
+      }
+    },
+    "102:4-102:51": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_methods.C.one_hop_abstract_class_method",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_methods.D",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "102:36-102:50": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "103:4-103:5|identifier|D": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.D"
+            }
+          ]
+        }
+      }
+    },
+    "103:4-103:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_methods.C.one_hop_class_method",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_methods.D",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "103:27-103:41": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "104:4-104:5|identifier|D": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.D"
+            }
+          ]
+        }
+      }
+    },
+    "104:4-106:5": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_methods.C.one_hop_abstract_method",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_methods.D",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "105:8-105:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "107:4-107:5|identifier|D": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.D"
+            }
+          ]
+        }
+      }
+    },
+    "107:4-107:50": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_methods.C.one_hop_class_abstractmethod",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_methods.D",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "107:35-107:49": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 3, "return_type": [] }
+        ]
+      }
+    },
+    "108:4-108:5|identifier|D": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.D"
+            }
+          ]
+        }
+      }
+    },
+    "108:4-108:51": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_methods.C.one_hop_static_abstractmethod",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_methods.D",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "108:36-108:50": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 4, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.issue_with_abstract_property",
+  "returned_callables": [],
+  "calls": {
+    "112:8-112:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_methods.D"
+          }
+        ]
+      }
+    },
+    "113:4-113:26": {
+      "attribute_access": {
+        "properties": [
+          {
+            "target": "class_methods.D.my_abstract_property",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_methods.D"
+          }
+        ]
+      }
+    },
+    "113:29-113:43": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "114:4-114:38": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "114:15-114:37": {
+      "attribute_access": {
+        "properties": [
+          {
+            "target": "class_methods.D.my_abstract_property",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_methods.D"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.test_obscure_class_method_tito",
+  "returned_callables": [],
+  "calls": {
+    "126:8-126:46": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "class_methods.ObscureClassMethodTito.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_methods.ObscureClassMethodTito"
+          }
+        ]
+      }
+    },
+    "126:31-126:45": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "128:4-128:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "128:15-128:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_methods.ObscureClassMethodTito.method",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_methods.ObscureClassMethodTito",
+            "is_class_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.C.abstract_method@decorated",
+  "returned_callables": [
+    {
+      "target": "class_methods.C.abstract_method",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "41:5-41:19|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          { "target": "abc.abstractmethod", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "42:4-43:12|identifier|abstract_method": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "class_methods.C.abstract_method",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.C.class_abstractmethod@decorated",
+  "returned_callables": [
+    {
+      "target": "class_methods.C.class_abstractmethod",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": [],
+      "is_class_method": true
+    }
+  ],
+  "calls": {
+    "50:5-50:16|artificial-call|for-decorated-target": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.classmethod.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.classmethod"
+          }
+        ]
+      }
+    },
+    "51:5-51:19|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          { "target": "abc.abstractmethod", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "52:4-53:12|identifier|class_abstractmethod": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "class_methods.C.class_abstractmethod",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "is_class_method": true
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.C.class_method",
+  "returned_callables": [],
+  "calls": {
+    "35:8-35:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.C.my_abstract_property@decorated",
+  "returned_callables": [
+    {
+      "target": "class_methods.C.my_abstract_property",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "69:5-69:13|artificial-call|for-decorated-target": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.property.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.property"
+          }
+        ]
+      }
+    },
+    "70:5-70:19|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          { "target": "abc.abstractmethod", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "71:4-72:12|identifier|my_abstract_property": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "class_methods.C.my_abstract_property",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.C.one_hop_abstract_class_method",
+  "returned_callables": [],
+  "calls": {
+    "31:8-31:11|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.C"
+            }
+          ]
+        }
+      }
+    },
+    "31:8-31:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_methods.C.abstract_class_method",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "is_class_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.C.one_hop_abstract_method",
+  "returned_callables": [],
+  "calls": {
+    "48:8-48:11|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.C"
+            }
+          ]
+        }
+      }
+    },
+    "48:8-48:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_methods.C.abstract_method",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.C.one_hop_class_abstractmethod",
+  "returned_callables": [],
+  "calls": {
+    "57:8-57:11|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.C"
+            }
+          ]
+        }
+      }
+    },
+    "57:8-57:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_methods.C.class_abstractmethod",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "is_class_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.C.one_hop_class_method",
+  "returned_callables": [],
+  "calls": {
+    "39:8-39:11|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.C"
+            }
+          ]
+        }
+      }
+    },
+    "39:8-39:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_methods.C.class_method",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "is_class_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.C.one_hop_static_abstractmethod",
+  "returned_callables": [],
+  "calls": {
+    "67:8-67:11|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.C"
+            }
+          ]
+        }
+      }
+    },
+    "67:8-67:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_methods.C.static_abstractmethod",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.C.static_abstractmethod",
+  "returned_callables": [],
+  "calls": {
+    "62:8-62:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.C.static_abstractmethod@decorated",
+  "returned_callables": [
+    {
+      "target": "class_methods.C.static_abstractmethod",
+      "index": 0,
+      "return_type": [],
+      "is_static_method": true
+    }
+  ],
+  "calls": {
+    "59:5-59:17|artificial-call|for-decorated-target": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.staticmethod.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.staticmethod"
+          }
+        ]
+      }
+    },
+    "60:5-60:19|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          { "target": "abc.abstractmethod", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "61:4-62:23|identifier|static_abstractmethod": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "class_methods.C.static_abstractmethod",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.D.abstract_class_method",
+  "returned_callables": [],
+  "calls": {
+    "83:8-83:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.D.abstract_method",
+  "returned_callables": [],
+  "calls": {
+    "86:8-86:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.D.class_abstractmethod",
+  "returned_callables": [],
+  "calls": {
+    "90:8-90:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.D.my_abstract_property$2@decorated",
+  "returned_callables": [
+    {
+      "target": "class_methods.D.my_abstract_property$2",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "96:5-96:25|identifier|my_abstract_property": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "class_methods.D.my_abstract_property",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "96:5-96:32|artificial-call|for-decorated-target": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "97:4-98:57|identifier|my_abstract_property$2": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "class_methods.D.my_abstract_property$2",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "class_methods.Test.foo",
+  "returned_callables": [],
+  "calls": {
+    "14:15-14:28": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

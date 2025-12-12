@@ -487,7 +487,7 @@ def transform_x_tito_sanitize_b(x, y):
 
 def no_issue_transform_x_tito_sanitize_b():
     alpha = source_a()
-    beta = transform_x_tito_sanitize_b(alpha)
+    beta = transform_x_tito_sanitize_b(alpha, 0)
     sink_b(beta)
 
 
@@ -497,7 +497,7 @@ def transform_x_tito_sanitize_b_all_parameters(x, y):
 
 def no_issue_transform_x_tito_sanitize_b_all_parameters():
     alpha = source_a()
-    beta = transform_x_tito_sanitize_b_all_parameters(alpha)
+    beta = transform_x_tito_sanitize_b_all_parameters(alpha, 0)
     sink_b(beta)
 
 
@@ -507,7 +507,7 @@ def transform_x_tito_global_sanitize_b(x, y):
 
 def no_issue_transform_x_tito_global_sanitize_b():
     alpha = source_a()
-    beta = transform_x_tito_global_sanitize_b(alpha)
+    beta = transform_x_tito_global_sanitize_b(alpha, 0)
     sink_b(beta)
 
 
@@ -517,7 +517,7 @@ def transform_x_tito_sanitize_return(x, y):
 
 def no_issue_transform_x_tito_sanitize_return():
     alpha = source_a()
-    beta = transform_x_tito_sanitize_return(alpha)
+    beta = transform_x_tito_sanitize_return(alpha, 0)
     sink_b(beta)
 
 

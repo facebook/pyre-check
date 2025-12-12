@@ -1,0 +1,149 @@
+@generated
+Higher order call graphs
+{
+  "callable": "model_query_cache.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "13:8-13:12|identifier|Base": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_cache.Base"
+            }
+          ]
+        }
+      }
+    },
+    "21:8-21:12|identifier|Base": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_cache.Base"
+            }
+          ]
+        }
+      }
+    },
+    "29:8-29:12|identifier|Base": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_cache.Base"
+            }
+          ]
+        }
+      }
+    },
+    "49:1-49:10|identifier|decorated": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_cache.decorated",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "58:1-58:10|identifier|decorated": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_cache.decorated",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "79:15-79:20|identifier|Table": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_cache.Table"
+            }
+          ]
+        }
+      }
+    },
+    "87:15-87:20|identifier|Table": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_cache.Table"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

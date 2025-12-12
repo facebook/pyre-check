@@ -3877,12 +3877,8 @@ let test_resolve_type_for_symbol context =
                     parameters =
                       Type.Callable.Defined
                         [
-                          Type.Callable.CallableParamType.Named
-                            {
-                              name = "$parameter$self";
-                              annotation = Type.list Type.integer;
-                              default = false;
-                            };
+                          Type.Callable.CallableParamType.PositionalOnly
+                            { index = 0; annotation = Type.list Type.integer; default = false };
                           Type.Callable.CallableParamType.PositionalOnly
                             { index = 1; annotation = Type.integer; default = false };
                         ];

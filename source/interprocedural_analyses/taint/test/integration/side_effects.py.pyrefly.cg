@@ -1,0 +1,35 @@
+@generated
+Call dependencies
+{
+  "side_effects.dict_to_sink_via_side_effect (fun)": [
+    "builtins.dict.__getitem__ (method)", "pysa._test_sink (fun)",
+    "side_effects.change_arg0 (fun)"
+  ],
+  "side_effects.test_from_0_to_1 (fun)": [
+    "pysa._test_source (fun)", "side_effects.change_arg1 (fun)"
+  ],
+  "side_effects.test_from_1_to_0 (fun)": [
+    "pysa._test_source (fun)", "side_effects.change_arg0 (fun)"
+  ],
+  "side_effects.test_from_1_to_0_nested (fun)": [
+    "builtins.object.__new__ (method)", "pysa._test_source (fun)",
+    "side_effects.Object.__init__ (method)", "side_effects.change_arg0 (fun)"
+  ],
+  "side_effects.test_from_1_to_0_nested_distinct (fun)": [
+    "builtins.object.__new__ (method)", "pysa._test_source (fun)",
+    "side_effects.Object.__init__ (method)", "side_effects.change_arg0 (fun)"
+  ],
+  "side_effects.test_list_append (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "pysa._test_source (fun)", "side_effects.MyList.append (method)"
+  ],
+  "side_effects.to_sink_via_side_effect (fun)": [
+    "pysa._test_sink (fun)", "side_effects.change_arg0 (fun)"
+  ],
+  "side_effects.wrapper_from_0_to_1 (fun)": [
+    "side_effects.change_arg1 (fun)"
+  ],
+  "side_effects.wrapper_from_1_to_0 (fun)": [
+    "side_effects.change_arg0 (fun)"
+  ]
+}

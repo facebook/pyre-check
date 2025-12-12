@@ -1,0 +1,204 @@
+@generated
+Higher order call graphs
+{
+  "callable": "combinatory_ports.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "23:8-23:12|identifier|Base": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "combinatory_ports.Base"
+            },
+            {
+              "target": "combinatory_ports.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "combinatory_ports.Base"
+            },
+            {
+              "target": "combinatory_ports.B.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "combinatory_ports.Base"
+            },
+            {
+              "target": "combinatory_ports.C.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "combinatory_ports.Base"
+            }
+          ]
+        }
+      }
+    },
+    "31:8-31:12|identifier|Base": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "combinatory_ports.Base"
+            },
+            {
+              "target": "combinatory_ports.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "combinatory_ports.Base"
+            },
+            {
+              "target": "combinatory_ports.B.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "combinatory_ports.Base"
+            },
+            {
+              "target": "combinatory_ports.C.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "combinatory_ports.Base"
+            }
+          ]
+        }
+      }
+    },
+    "39:8-39:12|identifier|Base": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "combinatory_ports.Base"
+            },
+            {
+              "target": "combinatory_ports.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "combinatory_ports.Base"
+            },
+            {
+              "target": "combinatory_ports.B.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "combinatory_ports.Base"
+            },
+            {
+              "target": "combinatory_ports.C.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "combinatory_ports.Base"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "combinatory_ports.A.method",
+  "returned_callables": [],
+  "calls": {
+    "28:8-28:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{combinatory_ports.Base.method}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "combinatory_ports.Base"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "combinatory_ports.B.method",
+  "returned_callables": [],
+  "calls": {
+    "36:8-36:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{combinatory_ports.Base.method}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "combinatory_ports.Base"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "combinatory_ports.C.method",
+  "returned_callables": [],
+  "calls": {
+    "45:8-45:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "46:8-46:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{combinatory_ports.Base.method}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "combinatory_ports.Base"
+          }
+        ]
+      }
+    }
+  }
+}

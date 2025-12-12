@@ -1,0 +1,28 @@
+@generated
+Call dependencies
+{
+  "constant_fields.test_untracked_constant (fun)": [
+    "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
+  ],
+  "constant_fields.tracked_constant_A (fun)": [
+    "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
+  ],
+  "constant_fields.tracked_constant_B (fun)": [
+    "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
+  ],
+  "constant_fields.tracked_index (fun)": [
+    "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
+  ],
+  "constant_fields.untracked_index_a (fun)": [
+    "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
+  ],
+  "constant_fields.untracked_index_b (fun)": [
+    "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
+  ]
+}

@@ -41,11 +41,11 @@ class Test2_C:
 
 
 def test4_taint_1(x) -> str:
-    pass
+    return ""
 
 
 def test4_no_taint_1(x) -> int:
-    pass
+    return 0
 
 
 class Test5_T1:
@@ -61,15 +61,15 @@ class Test5_Foo:
 
 
 def test5_taint_1(x) -> Test5_T1:
-    pass
+    return Test5_T1()
 
 
 def test5_taint_2(x) -> Test5_T2:
-    pass
+    return Test5_T2()
 
 
 def test5_no_taint_1(x) -> Test5_Foo:
-    pass
+    return Test5_Foo()
 
 
 class Test7_C:

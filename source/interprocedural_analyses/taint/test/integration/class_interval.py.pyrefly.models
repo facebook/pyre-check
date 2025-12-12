@@ -1,0 +1,4081 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_interval.abstract_method",
+    "callable_line": 391,
+    "code": 123,
+    "line": 393,
+    "start": 15,
+    "end": 16,
+    "filename": "class_interval.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 392, "start": 8, "end": 13 },
+              "resolves_to": [ "class_interval.A13.f" ],
+              "port": "result"
+            },
+            "receiver_interval": [ { "lower": 25, "upper": 26 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 393, "start": 15, "end": 16 },
+            "call_site": "393:4-393:17"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "class_interval.abstract_method:123:0:Call|pysa._test_sink|0|formal(arg):a01854a32b3d7556f6eb2e64b6662b4d"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.add_feature_c",
+    "filename": "class_interval.py",
+    "callable_line": 702,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "via": "feature_c" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.add_feature_d",
+    "filename": "class_interval.py",
+    "callable_line": 706,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "via": "feature_d" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.add_feature_e",
+    "filename": "class_interval.py",
+    "callable_line": 710,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "via": "feature_e" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.call_method_via_class_name",
+    "filename": "class_interval.py",
+    "callable_line": 337,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 338, "start": 11, "end": 18 },
+              "resolves_to": [ "class_interval.A9.f" ],
+              "port": "result"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_interval.issue_precise_tito_intervals",
+    "callable_line": 741,
+    "code": 123,
+    "line": 744,
+    "start": 15,
+    "end": 35,
+    "filename": "class_interval.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "via": "feature_e" },
+              { "via": "feature_d" },
+              { "via": "feature_c" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 744, "start": 20, "end": 34 } ],
+            "origin": { "line": 744, "start": 20, "end": 34 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 744, "start": 15, "end": 35 },
+            "call_site": "744:4-744:36"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "via": "feature_e" },
+      { "always-via": "special_source" },
+      { "via": "feature_d" },
+      { "always-via": "special_sink" },
+      { "via": "feature_c" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "class_interval.issue_precise_tito_intervals:123:0:Call|pysa._test_sink|0|formal(arg):22ab63fdbe56859bdcfc682552154fe3"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_interval.multi_inheritance_issue",
+    "callable_line": 499,
+    "code": 123,
+    "line": 500,
+    "start": 15,
+    "end": 21,
+    "filename": "class_interval.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 500, "start": 15, "end": 21 },
+              "resolves_to": [ "class_interval.B16.m0" ],
+              "port": "result"
+            },
+            "receiver_interval": [ { "lower": 47, "upper": 50 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 500, "start": 15, "end": 21 },
+            "call_site": "500:4-500:22"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "class_interval.multi_inheritance_issue:123:0:Call|pysa._test_sink|0|formal(arg):79df445e7522d403f0b05f9d842fb6ef"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_interval.multiple_inheritance",
+    "callable_line": 106,
+    "code": 123,
+    "line": 107,
+    "start": 9,
+    "end": 23,
+    "filename": "class_interval.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 107, "start": 9, "end": 23 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 107, "start": 9, "end": 23 },
+              "resolves_to": [ "class_interval.B2.m0" ],
+              "port": "formal(x, position=1)",
+              "call_site": "107:4-107:24"
+            },
+            "receiver_interval": [ { "lower": 71, "upper": 74 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "class_interval.B2.m0",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "class_interval.multiple_inheritance:123:0:Call|class_interval.B2.m0|0|formal(x):3d5089c1eee187483afe31f2f3c0ead5"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.sink_b",
+    "filename": "class_interval.py",
+    "callable_line": 503,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "SinkB" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.sink_c",
+    "filename": "class_interval.py",
+    "callable_line": 507,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "SinkC" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.sink_d",
+    "filename": "class_interval.py",
+    "callable_line": 648,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "SinkD" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_interval.sink_in_subclass",
+    "callable_line": 148,
+    "code": 123,
+    "line": 149,
+    "start": 9,
+    "end": 23,
+    "filename": "class_interval.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 149, "start": 9, "end": 23 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 149, "start": 9, "end": 23 },
+              "resolves_to": [
+                "class_interval.B3.m0", "class_interval.C3.m0"
+              ],
+              "port": "formal(x, position=1)",
+              "call_site": "149:4-149:24"
+            },
+            "receiver_interval": [ { "lower": 115, "upper": 120 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "class_interval.B3.m0",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "class_interval.sink_in_subclass:123:0:Call|class_interval.B3.m0|0|formal(x):a34fcf357db2aac9f59c5cb6987f0011"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_interval.test_class_methods",
+    "callable_line": 543,
+    "code": 123,
+    "line": 554,
+    "start": 11,
+    "end": 25,
+    "filename": "class_interval.py",
+    "message": "Data from [Test] source(s) may reach [SinkC] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 554, "start": 11, "end": 25 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "class_interval.sink_c", "port": "leaf:arg" }
+                ],
+                "length": 2,
+                "kind": "SinkC"
+              }
+            ],
+            "call": {
+              "position": { "line": 554, "start": 11, "end": 25 },
+              "resolves_to": [ "class_interval.A17.m2" ],
+              "port": "formal(arg, position=1)",
+              "call_site": "554:4-554:26"
+            },
+            "receiver_interval": [ { "lower": 55, "upper": 56 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "class_interval.A17.m2",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "class_interval.test_class_methods:123:0:Call|class_interval.A17.m2|0|formal(arg):74c31f68ebd2f9da53a0c5a7aa45db81"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_interval.test_static_methods",
+    "callable_line": 574,
+    "code": 123,
+    "line": 576,
+    "start": 11,
+    "end": 25,
+    "filename": "class_interval.py",
+    "message": "Data from [Test] source(s) may reach [SinkB] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 576, "start": 11, "end": 25 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "class_interval.sink_b", "port": "leaf:arg" }
+                ],
+                "length": 2,
+                "kind": "SinkB"
+              }
+            ],
+            "call": {
+              "position": { "line": 576, "start": 11, "end": 25 },
+              "resolves_to": [ "class_interval.C18.m0" ],
+              "port": "formal(arg, position=0)",
+              "call_site": "576:4-576:26"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "class_interval.C18.m0",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "class_interval.test_static_methods:123:0:Call|class_interval.C18.m0|0|formal(arg):2be611b3291d2d1a98c43ca188198c63"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_interval.test_static_methods",
+    "callable_line": 574,
+    "code": 123,
+    "line": 580,
+    "start": 9,
+    "end": 23,
+    "filename": "class_interval.py",
+    "message": "Data from [Test] source(s) may reach [SinkB] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 580, "start": 9, "end": 23 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "class_interval.sink_b", "port": "leaf:arg" }
+                ],
+                "length": 2,
+                "kind": "SinkB"
+              }
+            ],
+            "call": {
+              "position": { "line": 580, "start": 9, "end": 23 },
+              "resolves_to": [ "class_interval.C18.m0" ],
+              "port": "formal(arg, position=0)",
+              "call_site": "580:4-580:24"
+            },
+            "receiver_interval": [ { "lower": 65, "upper": 66 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "class_interval.C18.m0",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "class_interval.test_static_methods:123:0:Call|class_interval.C18.m0|1|formal(arg):88a4b3a9522360922452bf85b23e655e"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.transformX",
+    "filename": "class_interval.py",
+    "callable_line": 644,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "TransformX@ExtraTraceSink" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "TransformX@LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.undetected_issue",
+    "filename": "class_interval.py",
+    "callable_line": 365,
+    "sinks": [
+      {
+        "port": "formal(c, position=0)[g]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 366, "start": 8, "end": 9 } ],
+            "origin": { "line": 369, "start": 15, "end": 16 },
+            "call_site": "369:4-369:17"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A0.m1",
+    "filename": "class_interval.py",
+    "callable_line": 19,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 20, "start": 16, "end": 17 },
+              "resolves_to": [ "class_interval.C0.m2" ],
+              "port": "formal(x, position=1)",
+              "call_site": "20:8-20:18"
+            },
+            "caller_interval": [ { "lower": 5, "upper": 6 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 7 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A1.m1",
+    "filename": "class_interval.py",
+    "callable_line": 50,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 51, "start": 16, "end": 17 },
+              "resolves_to": [ "class_interval.C1.m2" ],
+              "port": "formal(x, position=1)",
+              "call_site": "51:8-51:18"
+            },
+            "caller_interval": [ { "lower": 11, "upper": 12 } ],
+            "receiver_interval": [ { "lower": 8, "upper": 13 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A10.object_target",
+    "filename": "class_interval.py",
+    "callable_line": 344,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{class_interval.A10.f}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": { "line": 346, "start": 8, "end": 11 },
+            "caller_interval": [ { "lower": 14, "upper": 15 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A12.f",
+    "filename": "class_interval.py",
+    "callable_line": 350,
+    "tito": [
+      {
+        "port": "formal(self, position=0)[g]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A13.f",
+    "filename": "class_interval.py",
+    "callable_line": 373,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 374, "start": 15, "end": 23 },
+              "resolves_to": [ "class_interval.C13.g" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 25, "upper": 26 } ],
+            "receiver_interval": [ { "lower": 22, "upper": 27 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A14.m1",
+    "filename": "class_interval.py",
+    "callable_line": 412,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 413, "start": 15, "end": 24 },
+              "resolves_to": [ "class_interval.C14.m2" ],
+              "port": "result"
+            },
+            "caller_interval": [
+              { "lower": 30, "upper": 31 }, { "lower": 33, "upper": 34 }
+            ],
+            "receiver_interval": [ { "lower": 28, "upper": 35 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A15.m1",
+    "filename": "class_interval.py",
+    "callable_line": 441,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 442, "start": 15, "end": 24 },
+              "resolves_to": [ "class_interval.E15.m2" ],
+              "port": "result"
+            },
+            "caller_interval": [
+              { "lower": 39, "upper": 40 }, { "lower": 43, "upper": 44 }
+            ],
+            "receiver_interval": [ { "lower": 36, "upper": 45 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A16.m1",
+    "filename": "class_interval.py",
+    "callable_line": 474,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 475, "start": 15, "end": 24 },
+              "resolves_to": [ "class_interval.D16.m2" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "receiver_interval": [ { "lower": 46, "upper": 53 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A17.m2",
+    "filename": "class_interval.py",
+    "callable_line": 521,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "SinkC" } ],
+            "call": {
+              "position": { "line": 522, "start": 15, "end": 18 },
+              "resolves_to": [ "class_interval.D17.m1" ],
+              "port": "formal(arg, position=1)",
+              "call_site": "522:8-522:19"
+            },
+            "caller_interval": [ { "lower": 54, "upper": 61 } ],
+            "receiver_interval": [ { "lower": 59, "upper": 60 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A19.m0",
+    "filename": "class_interval.py",
+    "callable_line": 585,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 588, "start": 13, "end": 16 },
+              "resolves_to": [ "class_interval.A19.m1" ],
+              "port": "formal(arg, position=1)",
+              "call_site": "588:8-588:17"
+            },
+            "caller_interval": [ { "lower": 68, "upper": 69 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A19.m1",
+    "filename": "class_interval.py",
+    "callable_line": 591,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 592, "start": 19, "end": 22 },
+            "caller_interval": [ { "lower": 68, "upper": 69 } ],
+            "is_self_call": false,
+            "call_site": "592:8-592:23"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A19.m2",
+    "filename": "class_interval.py",
+    "callable_line": 594,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 597, "start": 13, "end": 16 },
+              "resolves_to": [ "class_interval.A19.m3" ],
+              "port": "formal(arg, position=1)",
+              "call_site": "597:8-597:17"
+            },
+            "caller_interval": [ { "lower": 68, "upper": 69 } ],
+            "receiver_interval": [ { "lower": 68, "upper": 69 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A19.m3",
+    "filename": "class_interval.py",
+    "callable_line": 599,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 600, "start": 19, "end": 22 },
+            "caller_interval": [ { "lower": 68, "upper": 69 } ],
+            "is_self_call": false,
+            "call_site": "600:8-600:23"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A2.m1",
+    "filename": "class_interval.py",
+    "callable_line": 84,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 85, "start": 16, "end": 17 },
+              "resolves_to": [ "class_interval.D2.m2" ],
+              "port": "formal(x, position=1)",
+              "call_site": "85:8-85:18"
+            },
+            "caller_interval": [ { "lower": 72, "upper": 73 } ],
+            "receiver_interval": [ { "lower": 70, "upper": 77 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A22.m0",
+    "filename": "class_interval.py",
+    "callable_line": 680,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "TransformX:ExtraTraceSink" } ],
+            "call": {
+              "position": { "line": 681, "start": 23, "end": 26 },
+              "resolves_to": [ "class_interval.B22.m1" ],
+              "port": "formal(arg, position=1)",
+              "call_site": "681:15-681:27"
+            },
+            "caller_interval": [ { "lower": 93, "upper": 94 } ],
+            "receiver_interval": [ { "lower": 92, "upper": 97 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 681, "start": 23, "end": 26 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 92, "upper": 97 } ],
+              "is_self_call": false
+            }
+          },
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 2,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 681, "start": 23, "end": 26 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 93, "upper": 94 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A23.m0",
+    "filename": "class_interval.py",
+    "callable_line": 715,
+    "tito": [
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "feature_e" },
+              { "via": "feature_d" },
+              { "via": "feature_c" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 716, "start": 23, "end": 24 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 98, "upper": 107 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A23.m1",
+    "filename": "class_interval.py",
+    "callable_line": 718,
+    "tito": [
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A24.m0",
+    "filename": "class_interval.py",
+    "callable_line": 748,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 749, "start": 24, "end": 33 } ],
+            "call": {
+              "position": { "line": 749, "start": 24, "end": 33 },
+              "resolves_to": [ "class_interval.B24.m1" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 109, "upper": 110 } ],
+            "receiver_interval": [ { "lower": 108, "upper": 113 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A24.tito",
+    "filename": "class_interval.py",
+    "callable_line": 755,
+    "tito": [
+      {
+        "port": "formal(a, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A3.m1",
+    "filename": "class_interval.py",
+    "callable_line": 120,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 121, "start": 16, "end": 17 },
+              "resolves_to": [ "class_interval.C3.m2" ],
+              "port": "formal(x, position=1)",
+              "call_site": "121:8-121:18"
+            },
+            "caller_interval": [ { "lower": 116, "upper": 117 } ],
+            "receiver_interval": [ { "lower": 114, "upper": 121 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A4.m2",
+    "filename": "class_interval.py",
+    "callable_line": 162,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 163, "start": 16, "end": 17 },
+              "resolves_to": [ "class_interval.C4.m3" ],
+              "port": "formal(x, position=1)",
+              "call_site": "163:8-163:18"
+            },
+            "caller_interval": [ { "lower": 127, "upper": 128 } ],
+            "receiver_interval": [ { "lower": 122, "upper": 129 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A5.m1",
+    "filename": "class_interval.py",
+    "callable_line": 198,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 199, "start": 16, "end": 17 },
+              "resolves_to": [ "class_interval.D5.m2" ],
+              "port": "formal(x, position=1)",
+              "call_site": "199:8-199:18"
+            },
+            "caller_interval": [ { "lower": 134, "upper": 135 } ],
+            "receiver_interval": [ { "lower": 130, "upper": 137 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A6.m1",
+    "filename": "class_interval.py",
+    "callable_line": 237,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 238, "start": 15, "end": 24 },
+              "resolves_to": [
+                "class_interval.B6.m0", "class_interval.D6.m0"
+              ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 139, "upper": 142 } ],
+            "receiver_interval": [ { "lower": 138, "upper": 145 } ],
+            "is_self_call": true
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 238, "start": 15, "end": 24 },
+              "resolves_to": [
+                "class_interval.B6.m0", "class_interval.D6.m0"
+              ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 140, "upper": 141 } ],
+            "receiver_interval": [ { "lower": 138, "upper": 145 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A7.bar",
+    "filename": "class_interval.py",
+    "callable_line": 286,
+    "tito": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A7.f",
+    "filename": "class_interval.py",
+    "callable_line": 289,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 290, "start": 12, "end": 19 },
+              "resolves_to": [ "class_interval.B7.foo" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 146, "upper": 147 } ],
+            "receiver_interval": [ { "lower": 152, "upper": 153 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A8.bar",
+    "filename": "class_interval.py",
+    "callable_line": 312,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 314, "start": 19, "end": 29 },
+              "resolves_to": [ "class_interval.A8.baz" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 148, "upper": 149 } ],
+            "receiver_interval": [ { "lower": 148, "upper": 149 } ],
+            "is_self_call": true
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 321, "start": 19, "end": 27 },
+              "resolves_to": [ "class_interval.B8.foo" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 148, "upper": 149 } ],
+            "is_self_call": false
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 324, "start": 19, "end": 29 },
+              "resolves_to": [ "class_interval.A8.baz" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 148, "upper": 149 } ],
+            "receiver_interval": [ { "lower": 148, "upper": 149 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(x, position=2)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A8.baz",
+    "filename": "class_interval.py",
+    "callable_line": 328,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 329, "start": 15, "end": 29 },
+            "caller_interval": [ { "lower": 148, "upper": 149 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A9.f",
+    "filename": "class_interval.py",
+    "callable_line": 333,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 334, "start": 15, "end": 29 },
+            "caller_interval": [ { "lower": 150, "upper": 151 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.B16.m0",
+    "filename": "class_interval.py",
+    "callable_line": 487,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 488, "start": 15, "end": 24 },
+              "resolves_to": [ "class_interval.A16.m1" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "receiver_interval": [ { "lower": 47, "upper": 50 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.B18.m0",
+    "filename": "class_interval.py",
+    "callable_line": 563,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "class_interval.sink_b", "port": "leaf:arg" }
+                ],
+                "kind": "SinkB"
+              }
+            ],
+            "origin": { "line": 564, "start": 15, "end": 18 },
+            "call_site": "564:8-564:19"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.B2.m0",
+    "filename": "class_interval.py",
+    "callable_line": 92,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 93, "start": 16, "end": 17 },
+              "resolves_to": [ "class_interval.A2.m1" ],
+              "port": "formal(x, position=1)",
+              "call_site": "93:8-93:18"
+            },
+            "caller_interval": [ { "lower": 72, "upper": 73 } ],
+            "receiver_interval": [ { "lower": 71, "upper": 74 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.B21.m1",
+    "filename": "class_interval.py",
+    "callable_line": 664,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "class_interval.transformX", "port": "leaf:arg" }
+                ],
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
+            "origin": { "line": 665, "start": 26, "end": 29 },
+            "caller_interval": [ { "lower": 87, "upper": 88 } ],
+            "is_self_call": false,
+            "call_site": "665:15-665:30"
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 665, "start": 26, "end": 29 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 87, "upper": 88 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.B22.m1",
+    "filename": "class_interval.py",
+    "callable_line": 688,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "class_interval.transformX", "port": "leaf:arg" }
+                ],
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
+            "origin": { "line": 689, "start": 26, "end": 29 },
+            "caller_interval": [ { "lower": 93, "upper": 94 } ],
+            "is_self_call": false,
+            "call_site": "689:15-689:30"
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 689, "start": 26, "end": 29 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 93, "upper": 94 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.B24.m1",
+    "filename": "class_interval.py",
+    "callable_line": 760,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 761, "start": 15, "end": 29 },
+            "caller_interval": [ { "lower": 109, "upper": 110 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.B3.m0",
+    "filename": "class_interval.py",
+    "callable_line": 128,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 129, "start": 16, "end": 17 },
+              "resolves_to": [ "class_interval.A3.m1" ],
+              "port": "formal(x, position=1)",
+              "call_site": "129:8-129:18"
+            },
+            "caller_interval": [ { "lower": 116, "upper": 117 } ],
+            "receiver_interval": [ { "lower": 115, "upper": 120 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.B6.m0",
+    "filename": "class_interval.py",
+    "callable_line": 245,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 247, "start": 19, "end": 33 },
+            "caller_interval": [ { "lower": 139, "upper": 142 } ],
+            "is_self_call": false
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 249, "start": 19, "end": 28 },
+              "resolves_to": [ "class_interval.E6.m3" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 139, "upper": 142 } ],
+            "receiver_interval": [ { "lower": 158, "upper": 159 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.B7.bar",
+    "filename": "class_interval.py",
+    "callable_line": 281,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 282, "start": 15, "end": 29 },
+            "caller_interval": [ { "lower": 152, "upper": 153 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.B7.foo",
+    "filename": "class_interval.py",
+    "callable_line": 278,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 279, "start": 15, "end": 25 },
+              "resolves_to": [ "class_interval.B7.bar" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 152, "upper": 153 } ],
+            "receiver_interval": [ { "lower": 152, "upper": 153 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.B8.foo",
+    "filename": "class_interval.py",
+    "callable_line": 302,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 303, "start": 15, "end": 29 },
+            "caller_interval": [ { "lower": 154, "upper": 155 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.C0.m2",
+    "filename": "class_interval.py",
+    "callable_line": 34,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 35, "start": 19, "end": 20 },
+            "caller_interval": [ { "lower": 5, "upper": 6 } ],
+            "is_self_call": false,
+            "call_site": "35:8-35:21"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.C1.m2",
+    "filename": "class_interval.py",
+    "callable_line": 66,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 67, "start": 19, "end": 20 },
+            "caller_interval": [ { "lower": 11, "upper": 12 } ],
+            "is_self_call": false,
+            "call_site": "67:8-67:21"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.C12.g",
+    "filename": "class_interval.py",
+    "callable_line": 361,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 362, "start": 15, "end": 29 },
+            "caller_interval": [ { "lower": 19, "upper": 20 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.C13.g",
+    "filename": "class_interval.py",
+    "callable_line": 387,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 388, "start": 15, "end": 29 },
+            "caller_interval": [ { "lower": 25, "upper": 26 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.C14.m2",
+    "filename": "class_interval.py",
+    "callable_line": 420,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 421, "start": 15, "end": 29 },
+            "caller_interval": [
+              { "lower": 30, "upper": 31 }, { "lower": 33, "upper": 34 }
+            ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.C17.m1",
+    "filename": "class_interval.py",
+    "callable_line": 533,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "class_interval.sink_c", "port": "leaf:arg" }
+                ],
+                "kind": "SinkC"
+              }
+            ],
+            "origin": { "line": 534, "start": 15, "end": 18 },
+            "caller_interval": [ { "lower": 57, "upper": 58 } ],
+            "is_self_call": false,
+            "call_site": "534:8-534:19"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.C18.m0",
+    "filename": "class_interval.py",
+    "callable_line": 569,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "SinkB" } ],
+            "call": {
+              "position": { "line": 571, "start": 15, "end": 18 },
+              "resolves_to": [ "class_interval.B18.m0" ],
+              "port": "formal(arg, position=0)",
+              "call_site": "571:8-571:19"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.C20.m0",
+    "filename": "class_interval.py",
+    "callable_line": 626,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 627, "start": 19, "end": 22 },
+            "caller_interval": [
+              { "lower": 80, "upper": 81 }, { "lower": 83, "upper": 84 }
+            ],
+            "is_self_call": false,
+            "call_site": "627:8-627:23"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.C21.m1",
+    "filename": "class_interval.py",
+    "callable_line": 670,
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.C22.m1",
+    "filename": "class_interval.py",
+    "callable_line": 693,
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.C23.m1",
+    "filename": "class_interval.py",
+    "callable_line": 727,
+    "tito": [
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "feature_c" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 728, "start": 29, "end": 30 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 100, "upper": 101 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.C3.m0",
+    "filename": "class_interval.py",
+    "callable_line": 133,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 134, "start": 16, "end": 17 },
+              "resolves_to": [ "class_interval.A3.m1" ],
+              "port": "formal(x, position=1)",
+              "call_site": "134:8-134:18"
+            },
+            "caller_interval": [ { "lower": 116, "upper": 117 } ],
+            "receiver_interval": [ { "lower": 116, "upper": 117 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.C3.m2",
+    "filename": "class_interval.py",
+    "callable_line": 136,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 137, "start": 19, "end": 20 },
+            "caller_interval": [ { "lower": 116, "upper": 117 } ],
+            "is_self_call": false,
+            "call_site": "137:8-137:21"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.C4.m3",
+    "filename": "class_interval.py",
+    "callable_line": 175,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 176, "start": 19, "end": 20 },
+            "caller_interval": [ { "lower": 127, "upper": 128 } ],
+            "is_self_call": false,
+            "call_site": "176:8-176:21"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.D16.m2",
+    "filename": "class_interval.py",
+    "callable_line": 495,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 496, "start": 15, "end": 29 },
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.D17.m1",
+    "filename": "class_interval.py",
+    "callable_line": 539,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "class_interval.sink_c", "port": "leaf:arg" }
+                ],
+                "kind": "SinkC"
+              }
+            ],
+            "origin": { "line": 540, "start": 15, "end": 18 },
+            "caller_interval": [ { "lower": 59, "upper": 60 } ],
+            "is_self_call": false,
+            "call_site": "540:8-540:19"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.D2.m2",
+    "filename": "class_interval.py",
+    "callable_line": 102,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 103, "start": 19, "end": 20 },
+            "caller_interval": [ { "lower": 72, "upper": 73 } ],
+            "is_self_call": false,
+            "call_site": "103:8-103:21"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.D23.m1",
+    "filename": "class_interval.py",
+    "callable_line": 732,
+    "tito": [
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "feature_d" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 733, "start": 29, "end": 30 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 102, "upper": 103 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.D5.m2",
+    "filename": "class_interval.py",
+    "callable_line": 215,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 216, "start": 19, "end": 20 },
+            "caller_interval": [ { "lower": 134, "upper": 135 } ],
+            "is_self_call": false,
+            "call_site": "216:8-216:21"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.D6.m0",
+    "filename": "class_interval.py",
+    "callable_line": 258,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 259, "start": 15, "end": 27 },
+              "resolves_to": [ "class_interval.B6.m0" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 140, "upper": 141 } ],
+            "receiver_interval": [ { "lower": 140, "upper": 141 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.E15.m2",
+    "filename": "class_interval.py",
+    "callable_line": 449,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 450, "start": 15, "end": 29 },
+            "caller_interval": [
+              { "lower": 39, "upper": 40 }, { "lower": 43, "upper": 44 }
+            ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.E23.m1",
+    "filename": "class_interval.py",
+    "callable_line": 737,
+    "tito": [
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "feature_e" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 738, "start": 29, "end": 30 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 105, "upper": 106 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.E6.m3",
+    "filename": "class_interval.py",
+    "callable_line": 263,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 264, "start": 15, "end": 29 },
+            "caller_interval": [ { "lower": 158, "upper": 159 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.A0.m2}",
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 5, "upper": 6 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.A1.m2}",
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 11, "upper": 12 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.A13.g}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 25, "upper": 26 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.A14.m2}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [
+              { "lower": 30, "upper": 31 }, { "lower": 33, "upper": 34 }
+            ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.A15.m2}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [
+              { "lower": 39, "upper": 40 }, { "lower": 43, "upper": 44 }
+            ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.A16.m2}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.A2.m2}",
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 72, "upper": 73 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.A22.m1}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "class_interval.transformX", "port": "leaf:arg" }
+                ],
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 93, "upper": 94 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          },
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": {
+              "caller_interval": [ { "lower": 93, "upper": 94 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.A23.m1}",
+    "tito": [
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          },
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "feature_c" }, { "always-via": "tito" }
+            ],
+            "tito": {
+              "caller_interval": [ { "lower": 100, "upper": 101 } ],
+              "is_self_call": false
+            }
+          },
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "feature_d" }, { "always-via": "tito" }
+            ],
+            "tito": {
+              "caller_interval": [ { "lower": 102, "upper": 103 } ],
+              "is_self_call": false
+            }
+          },
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "feature_e" }, { "always-via": "tito" }
+            ],
+            "tito": {
+              "caller_interval": [ { "lower": 105, "upper": 106 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.A24.m1}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 109, "upper": 110 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.A3.m2}",
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 116, "upper": 117 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.A4.m3}",
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 127, "upper": 128 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.A5.m2}",
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 134, "upper": 135 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.A6.m0}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 139, "upper": 142 } ],
+            "is_self_call": false
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": -1, "start": -1, "end": -1 },
+              "resolves_to": [ "class_interval.B6.m0" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 140, "upper": 141 } ],
+            "receiver_interval": [ { "lower": 140, "upper": 141 } ],
+            "is_self_call": false
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": -1, "start": -1, "end": -1 },
+              "resolves_to": [ "class_interval.E6.m3" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 139, "upper": 142 } ],
+            "receiver_interval": [ { "lower": 158, "upper": 159 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.B16.m2}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.B22.m1}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "class_interval.transformX", "port": "leaf:arg" }
+                ],
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 93, "upper": 94 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": {
+              "caller_interval": [ { "lower": 93, "upper": 94 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.B24.m1}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 109, "upper": 110 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.B3.m0}",
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": -1, "start": -1, "end": -1 },
+              "resolves_to": [ "class_interval.A3.m1" ],
+              "port": "formal(x, position=1)"
+            },
+            "caller_interval": [ { "lower": 116, "upper": 117 } ],
+            "receiver_interval": [ { "lower": 115, "upper": 120 } ],
+            "is_self_call": true
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": -1, "start": -1, "end": -1 },
+              "resolves_to": [ "class_interval.A3.m1" ],
+              "port": "formal(x, position=1)"
+            },
+            "caller_interval": [ { "lower": 116, "upper": 117 } ],
+            "receiver_interval": [ { "lower": 116, "upper": 117 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.B6.m0}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 139, "upper": 142 } ],
+            "is_self_call": false
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": -1, "start": -1, "end": -1 },
+              "resolves_to": [ "class_interval.B6.m0" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 140, "upper": 141 } ],
+            "receiver_interval": [ { "lower": 140, "upper": 141 } ],
+            "is_self_call": false
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": -1, "start": -1, "end": -1 },
+              "resolves_to": [ "class_interval.E6.m3" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 139, "upper": 142 } ],
+            "receiver_interval": [ { "lower": 158, "upper": 159 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.C0.m2}",
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 5, "upper": 6 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.C1.m2}",
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 11, "upper": 12 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.C13.g}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 25, "upper": 26 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.C14.m2}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [
+              { "lower": 30, "upper": 31 }, { "lower": 33, "upper": 34 }
+            ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.C2.m2}",
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 72, "upper": 73 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.C22.m1}",
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.C23.m1}",
+    "tito": [
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "feature_c" }, { "always-via": "tito" }
+            ],
+            "tito": {
+              "caller_interval": [ { "lower": 100, "upper": 101 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.C3.m0}",
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": -1, "start": -1, "end": -1 },
+              "resolves_to": [ "class_interval.A3.m1" ],
+              "port": "formal(x, position=1)"
+            },
+            "caller_interval": [ { "lower": 116, "upper": 117 } ],
+            "receiver_interval": [ { "lower": 116, "upper": 117 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.C3.m2}",
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 116, "upper": 117 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.C4.m3}",
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 127, "upper": 128 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.D16.m2}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.D2.m2}",
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 72, "upper": 73 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.D23.m1}",
+    "tito": [
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "feature_d" }, { "always-via": "tito" }
+            ],
+            "tito": {
+              "caller_interval": [ { "lower": 102, "upper": 103 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.D5.m2}",
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 134, "upper": 135 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.D6.m0}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": -1, "start": -1, "end": -1 },
+              "resolves_to": [ "class_interval.B6.m0" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 140, "upper": 141 } ],
+            "receiver_interval": [ { "lower": 140, "upper": 141 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.E15.m2}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [
+              { "lower": 39, "upper": 40 }, { "lower": 43, "upper": 44 }
+            ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.E23.m1}",
+    "tito": [
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "feature_e" }, { "always-via": "tito" }
+            ],
+            "tito": {
+              "caller_interval": [ { "lower": 105, "upper": 106 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{class_interval.A10.f}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -3,8 +3,9 @@ Call dependencies
 {
   "functions_as_locals.C.m (method)": [ "pysa._test_sink (fun)" ],
   "functions_as_locals.a_or_b (fun)": [
+    "float.__gt__ (method)", "float.__le__ (method)",
     "functions_as_locals.barA (fun)", "functions_as_locals.barB (fun)",
-    "int.__gt__ (method)", "int.__le__ (method)", "pysa._test_source (fun)"
+    "pysa._test_source (fun)", "random.random (fun)"
   ],
   "functions_as_locals.barA (fun)": [ "pysa._test_sink (fun)" ],
   "functions_as_locals.barB (fun)": [ "pysa._test_sink (fun)" ],

@@ -1,0 +1,17 @@
+@generated
+Call dependencies
+{
+  "implicit_sources.bar_dot_format (fun)": [ "builtins.str.format (method)" ],
+  "implicit_sources.bar_format_strings (fun)": [
+    "builtins.int.__format__ (method)"
+  ],
+  "implicit_sources.bar_percent_format (fun)": [
+    "builtins.str.__mod__ (method)"
+  ],
+  "implicit_sources.string_literal_arguments_source (fun)": [
+    "builtins.int.__eq__ (method)", "builtins.str.format (method)"
+  ],
+  "implicit_sources.toplevel_simultaneous_assignment (fun)": [
+    "builtins.str.__add__ (method)"
+  ]
+}

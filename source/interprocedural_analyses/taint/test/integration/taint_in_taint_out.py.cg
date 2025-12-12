@@ -23,7 +23,7 @@ Call dependencies
     "taint_in_taint_out.perfect_tito (fun)"
   ],
   "taint_in_taint_out.TitoSelf.set_join (method)": [
-    "int.__ge__ (method)", "int.__lt__ (method)"
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)"
   ],
   "taint_in_taint_out.TitoSelf.set_subfield (method)": [
     "taint_in_taint_out.perfect_tito (fun)"
@@ -82,13 +82,13 @@ Call dependencies
     "taint_in_taint_out.obscure_tito (fun)"
   ],
   "taint_in_taint_out.issue_approximate_return_access_paths (fun)": [
-    "object.__init__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "taint_in_taint_out.Object.__init__ (method)",
     "taint_in_taint_out.approximate_return_access_paths (fun)"
   ],
   "taint_in_taint_out.issue_approximate_return_access_paths_common_prefix (fun)": [
-    "object.__init__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "taint_in_taint_out.Object.__init__ (method)",
     "taint_in_taint_out.approximate_return_access_paths (fun)"
   ],
   "taint_in_taint_out.issue_join_tito_collapse_test_3 (fun)": [
@@ -108,18 +108,21 @@ Call dependencies
     "taint_in_taint_out.into_dict_then_tito_collapse (fun)"
   ],
   "taint_in_taint_out.join_tito_collapse_test_1 (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "object.__init__ (method)",
-    "object.__new__ (method)", "taint_in_taint_out.tito_collapse_one (fun)",
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "object.__new__ (method)", "random.random (fun)",
+    "taint_in_taint_out.Object.__init__ (method)",
+    "taint_in_taint_out.tito_collapse_one (fun)",
     "taint_in_taint_out.tito_collapse_two (fun)"
   ],
   "taint_in_taint_out.join_tito_collapse_test_2 (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "object.__init__ (method)",
-    "object.__new__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "object.__new__ (method)", "random.random (fun)",
+    "taint_in_taint_out.Object.__init__ (method)",
     "taint_in_taint_out.tito_collapse_three (fun)",
     "taint_in_taint_out.tito_collapse_two (fun)"
   ],
   "taint_in_taint_out.join_tito_collapse_test_3 (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
     "taint_in_taint_out.tito_collapse_one (fun)",
     "taint_in_taint_out.tito_collapse_two (fun)"
   ],
@@ -166,8 +169,8 @@ Call dependencies
     "dict.__setitem__ (method)"
   ],
   "taint_in_taint_out.non_issue_approximate_return_access_paths_common_prefix (fun)": [
-    "object.__init__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "taint_in_taint_out.Object.__init__ (method)",
     "taint_in_taint_out.approximate_return_access_paths (fun)"
   ],
   "taint_in_taint_out.perfect_tito_then_into_deep_dict (fun)": [
@@ -193,8 +196,8 @@ Call dependencies
     "taint_in_taint_out.tito_with_feature (fun)"
   ],
   "taint_in_taint_out.test_complex_argument_tito (fun)": [
-    "object.__init__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "taint_in_taint_out.Object.__init__ (method)",
     "taint_in_taint_out.complex_argument_tito (fun)"
   ],
   "taint_in_taint_out.test_complex_evaluator (fun)": [

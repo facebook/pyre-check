@@ -1,0 +1,835 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "cross_repository.cross_repository_anchor_sink",
+    "filename": "cross_repository.py",
+    "callable_line": 25,
+    "sinks": [
+      {
+        "port": "formal(sink_parameter, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "crossRepositoryAnchor",
+                    "port": "anchor:formal(0)"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "cross_repository.cross_repository_source",
+    "filename": "cross_repository.py",
+    "callable_line": 8,
+    "sinks": [
+      {
+        "port": "formal(source_parameter, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 9, "start": 15, "end": 31 },
+            "call_site": "9:4-9:32"
+          }
+        ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(source_parameter, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "crtex" } ],
+                "leaves": [
+                  {
+                    "name": "crossRepositorySource",
+                    "port": "producer:1:formal(0)"
+                  }
+                ],
+                "length": 2,
+                "kind": "UserControlled"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "cross_repository.cross_repository_source",
+    "callable_line": 8,
+    "code": 5002,
+    "line": 9,
+    "start": 15,
+    "end": 31,
+    "filename": "cross_repository.py",
+    "message": "Data from [UserControlled] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "crtex" } ],
+                "leaves": [
+                  {
+                    "name": "crossRepositorySource",
+                    "port": "producer:1:formal(0)"
+                  }
+                ],
+                "length": 2,
+                "kind": "UserControlled"
+              }
+            ],
+            "origin": { "line": 8, "start": 28, "end": 44 },
+            "call_site": "8:0-9:32"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 9, "start": 15, "end": 31 },
+            "call_site": "9:4-9:32"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "crtex" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "cross_repository.cross_repository_source:5002:0:Call|pysa._test_sink|0|formal(arg):2bf0c3a0ae0a07cdd09ca0ab98d2d24a"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "cross_repository.reaches_crtex_sink",
+    "filename": "cross_repository.py",
+    "callable_line": 16,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "crtex" } ],
+                "leaves": [
+                  {
+                    "name": "crossRepositorySink",
+                    "port": "producer:1:formal(x)"
+                  }
+                ],
+                "length": 5,
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "cross_repository.returns_crtex_source",
+    "filename": "cross_repository.py",
+    "callable_line": 12,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "crtex" } ],
+                "leaves": [
+                  {
+                    "name": "crossRepositorySource",
+                    "port": "producer:1:result"
+                  }
+                ],
+                "length": 3,
+                "kind": "UserControlled"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "cross_repository.test",
+    "callable_line": 20,
+    "code": 5002,
+    "line": 22,
+    "start": 15,
+    "end": 16,
+    "filename": "cross_repository.py",
+    "message": "Data from [UserControlled] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "crtex" } ],
+                "leaves": [
+                  {
+                    "name": "crossRepositorySource",
+                    "port": "producer:1:result"
+                  }
+                ],
+                "length": 3,
+                "kind": "UserControlled"
+              }
+            ],
+            "origin": { "line": 21, "start": 8, "end": 30 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 22, "start": 15, "end": 16 },
+            "call_site": "22:4-22:17"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "crtex" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "cross_repository.test:5002:0:Call|pysa._test_sink|0|formal(arg):79ea5b5a5fe8d8467c308698e78f2560"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "cross_repository.test_cross_repository_anchor",
+    "callable_line": 29,
+    "code": 5002,
+    "line": 31,
+    "start": 33,
+    "end": 39,
+    "filename": "cross_repository.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 30, "start": 13, "end": 27 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "crossRepositoryAnchor",
+                    "port": "anchor:formal(0)"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 31, "start": 33, "end": 39 },
+            "call_site": "31:4-31:40"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "cross_repository.cross_repository_anchor_sink",
+      "index": 0,
+      "parameter": "formal(sink_parameter)"
+    },
+    "master_handle": "cross_repository.test_cross_repository_anchor:5002:0:Call|cross_repository.cross_repository_anchor_sink|0|formal(sink_parameter):74ee8def1faa44962b9d423b58cd1772"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "cross_repository.test_propagate_cross_repository_sink_once",
+    "filename": "cross_repository.py",
+    "callable_line": 42,
+    "sinks": [
+      {
+        "port": "formal(y, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "crtex" } ],
+                "leaves": [
+                  {
+                    "name": "crossRepositorySink",
+                    "port": "producer:1:formal(x)"
+                  }
+                ],
+                "length": 5,
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 43, "start": 23, "end": 24 },
+            "call_site": "43:4-43:25"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "cross_repository.test_propagate_cross_repository_sink_twice",
+    "filename": "cross_repository.py",
+    "callable_line": 46,
+    "sinks": [
+      {
+        "port": "formal(z, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "crtex" } ],
+                "length": 6,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 47, "start": 46, "end": 47 },
+              "resolves_to": [
+                "cross_repository.test_propagate_cross_repository_sink_once"
+              ],
+              "port": "formal(y, position=0)",
+              "call_site": "47:4-47:48"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "cross_repository.test_propagate_cross_repository_source_once",
+    "filename": "cross_repository.py",
+    "callable_line": 34,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "crtex" } ],
+                "leaves": [
+                  {
+                    "name": "crossRepositorySource",
+                    "port": "producer:1:result"
+                  }
+                ],
+                "length": 3,
+                "kind": "UserControlled"
+              }
+            ],
+            "origin": { "line": 35, "start": 11, "end": 33 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "cross_repository.test_propagate_cross_repository_source_twice",
+    "filename": "cross_repository.py",
+    "callable_line": 38,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "crtex" } ],
+                "length": 4,
+                "kind": "UserControlled"
+              }
+            ],
+            "call": {
+              "position": { "line": 39, "start": 11, "end": 56 },
+              "resolves_to": [
+                "cross_repository.test_propagate_cross_repository_source_once"
+              ],
+              "port": "result"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "cross_repository.TestDSLAnchor.bar",
+    "filename": "cross_repository.py",
+    "callable_line": 54,
+    "sinks": [
+      {
+        "port": "formal(yet_another_c, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "test_3:TestDSLAnchor:bar",
+                    "port": "anchor:formal(7)"
+                  },
+                  {
+                    "name": "test_2:TestDSLAnchor:yet_another_c",
+                    "port": "anchor:formal(2)"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(crtex_b, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "test_2:TestDSLAnchor:crtex_b",
+                    "port": "anchor:formal(1)"
+                  },
+                  {
+                    "name": "test_1:TestDSLAnchor:bar",
+                    "port": "anchor:formal(1).b"
+                  },
+                  {
+                    "name": "test_3:TestDSLAnchor:bar",
+                    "port": "anchor:formal(4)"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "test_2:TestDSLAnchor:self",
+                    "port": "anchor:formal(0)"
+                  },
+                  {
+                    "name": "test_3:TestDSLAnchor:bar",
+                    "port": "anchor:formal(1)"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "model_generators": [
+      "cross_repository_taint_anchor_1", "cross_repository_taint_anchor_2",
+      "cross_repository_taint_anchor_3"
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "cross_repository.TestDSLAnchor.foo",
+    "filename": "cross_repository.py",
+    "callable_line": 51,
+    "sinks": [
+      {
+        "port": "formal(**kwargs, excluded=[other_b,crtex_a,self])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "test_2:TestDSLAnchor:**kwargs",
+                    "port": "anchor:formal(-1)"
+                  },
+                  {
+                    "name": "test_3:TestDSLAnchor:foo",
+                    "port": "anchor:formal(-2)"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(*args, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "test_3:TestDSLAnchor:foo",
+                    "port": "anchor:formal(10)"
+                  },
+                  {
+                    "name": "test_2:TestDSLAnchor:*args",
+                    "port": "anchor:formal(3)"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(other_b, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "test_3:TestDSLAnchor:foo",
+                    "port": "anchor:formal(7)"
+                  },
+                  {
+                    "name": "test_2:TestDSLAnchor:other_b",
+                    "port": "anchor:formal(2)"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(crtex_a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "test_1:TestDSLAnchor:foo",
+                    "port": "anchor:formal(1).a"
+                  },
+                  {
+                    "name": "test_3:TestDSLAnchor:foo",
+                    "port": "anchor:formal(4)"
+                  },
+                  {
+                    "name": "test_2:TestDSLAnchor:crtex_a",
+                    "port": "anchor:formal(1)"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "test_2:TestDSLAnchor:self",
+                    "port": "anchor:formal(0)"
+                  },
+                  {
+                    "name": "test_3:TestDSLAnchor:foo",
+                    "port": "anchor:formal(1)"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "model_generators": [
+      "cross_repository_taint_anchor_1", "cross_repository_taint_anchor_2",
+      "cross_repository_taint_anchor_3"
+    ]
+  }
+}

@@ -35,12 +35,12 @@ Higher order call graphs
   "callable": "optionals.test",
   "returned_callables": [],
   "calls": {
-    "24:4-24:10|identifier|$local_optionals$client": {
+    "25:4-25:10|identifier|$local_optionals$client": {
       "identifier": {
         "globals": [ { "target": "Obj{optionals.client}", "index": 0 } ]
       }
     },
-    "24:4-24:25": {
+    "25:4-25:25": {
       "call": {
         "calls": [
           {
@@ -53,7 +53,7 @@ Higher order call graphs
         ]
       }
     },
-    "24:4-24:47": {
+    "25:4-25:47": {
       "call": {
         "calls": [
           {
@@ -66,7 +66,7 @@ Higher order call graphs
         ]
       }
     },
-    "24:32-24:46": {
+    "25:32-25:46": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }

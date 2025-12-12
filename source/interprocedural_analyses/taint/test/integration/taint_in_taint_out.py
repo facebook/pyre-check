@@ -4,11 +4,19 @@
 # LICENSE file in the root directory of this source tree.
 
 from pysa import _test_sink, _test_source
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
+import random
 
 
 class Object:
-    pass
+    def __init__(self) -> None:
+        self.a: Any = 0
+        self.b: Any = 0
+        self.x: Any = 0
+        self.y: Any = 0
+        self.foo: Any = 0
+        self.bar: Any = 0
+        self.baz: Any = 0
 
 
 def some_service(id):
@@ -41,13 +49,13 @@ def product_data(x):
     else:
         parent = None
 
-    is_blocked = some_service(data.id)
-    report_tuple = DataRecord(id=data.id, username=data.name, isBlocked=is_blocked)
+    is_blocked = some_service(data["id"])
+    report_tuple = DataRecord(id=data["id"], username=data["name"], isBlocked=is_blocked) # pyrefly: ignore
     return {
         "report": _unpack(report_tuple),
-        "id": data.id,
+        "id": data["id"],
         "parent_data": parent,
-        "name": data.name,
+        "name": data["name"],
     }
 
 
@@ -197,7 +205,7 @@ def test_complex_evaluator(evaluator: ComplexEvaluator):
 # Test tito collapse depth.
 
 
-def obscure_tito(x):
+def obscure_tito(x) -> Any:
     ...
 
 
@@ -386,7 +394,7 @@ def loop_tito_collapse_two(x):
 
 def join_tito_collapse_test_1(x):
     result = Object()
-    if 1 > 2:
+    if random.random() > 0.5:
         result.a = tito_collapse_two(x)
     else:
         result.a.b = tito_collapse_one(x)
@@ -395,7 +403,7 @@ def join_tito_collapse_test_1(x):
 
 def join_tito_collapse_test_2(x):
     result = Object()
-    if 1 > 2:
+    if random.random() > 0.5:
         result.a = tito_collapse_two(x)
     else:
         result.a.b = tito_collapse_three(x)
@@ -417,7 +425,7 @@ def no_issue_tito_collapse_two_with_input_path():
 
 
 def join_tito_collapse_test_3(x):
-    if 1 > 2:
+    if random.random() > 0.5:
         return tito_collapse_one(x)
     else:
         return {"foo": tito_collapse_two(x)}
@@ -429,7 +437,7 @@ def issue_join_tito_collapse_test_3():
     _test_sink(y["foo"]["a"])  # This is an issue.
 
 
-def user_declared_tito_no_collapse(arg):
+def user_declared_tito_no_collapse(arg) -> Any:
     return
 
 
@@ -439,7 +447,7 @@ def no_issue_user_declared_tito_no_collapse():
     _test_sink(y["b"])
 
 
-def user_declared_tito_collapse_one(arg):
+def user_declared_tito_collapse_one(arg) -> Any:
     return
 
 
@@ -486,7 +494,7 @@ class TitoSelf:
         self.a = a
 
     def set_join(self, x, y):
-        if 1 < 1:
+        if random.random() > 0.5:
             self.a = x
         else:
             self.a = y

@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "raise.backward",
   "returned_callables": [],
   "calls": {
-    "14:10-14:23": {
+    "16:10-16:23": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -17,14 +17,14 @@ Higher order call graphs
   "callable": "raise.conditional_unreachability",
   "returned_callables": [],
   "calls": {
-    "52:12-52:26": {
+    "54:12-54:26": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "53:14-53:25": {
+    "55:14-55:25": {
       "call": {
         "new_calls": [
           {
@@ -44,7 +44,7 @@ Higher order call graphs
         ]
       }
     },
-    "56:4-56:17": {
+    "58:4-58:17": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -57,14 +57,14 @@ Higher order call graphs
   "callable": "raise.forward",
   "returned_callables": [],
   "calls": {
-    "10:10-10:36": {
+    "11:10-11:36": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "10:21-10:35": {
+    "11:21-11:35": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -77,7 +77,7 @@ Higher order call graphs
   "callable": "raise.no_sink",
   "returned_callables": [],
   "calls": {
-    "29:10-29:21": {
+    "31:10-31:21": {
       "call": {
         "new_calls": [
           {
@@ -103,7 +103,7 @@ Higher order call graphs
   "callable": "raise.no_source",
   "returned_callables": [],
   "calls": {
-    "34:10-34:21": {
+    "36:10-36:21": {
       "call": {
         "new_calls": [
           {
@@ -129,14 +129,14 @@ Higher order call graphs
   "callable": "raise.unreachable",
   "returned_callables": [],
   "calls": {
-    "18:8-18:22": {
+    "20:8-20:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "19:10-19:21": {
+    "21:10-21:21": {
       "call": {
         "new_calls": [
           {
@@ -162,21 +162,21 @@ Higher order call graphs
   "callable": "raise.unreachable_code_do_to_always_exception",
   "returned_callables": [],
   "calls": {
-    "45:4-45:15": {
+    "47:4-47:15": {
       "call": {
         "calls": [
           { "target": "raise.no_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "46:8-46:22": {
+    "48:8-48:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "47:4-47:17": {
+    "49:4-49:17": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -189,14 +189,14 @@ Higher order call graphs
   "callable": "raise.unreachable_through_function_call_sink",
   "returned_callables": [],
   "calls": {
-    "24:8-24:22": {
+    "26:8-26:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "25:4-25:14": {
+    "27:4-27:14": {
       "call": {
         "calls": [
           { "target": "raise.no_sink", "index": 0, "return_type": [] }
@@ -209,14 +209,14 @@ Higher order call graphs
   "callable": "raise.unreachable_through_function_call_source",
   "returned_callables": [],
   "calls": {
-    "39:8-39:19": {
+    "41:8-41:19": {
       "call": {
         "calls": [
           { "target": "raise.no_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "40:4-40:17": {
+    "42:4-42:17": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }

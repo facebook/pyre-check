@@ -1,0 +1,1523 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_sanitize_field",
+    "callable_line": 57,
+    "code": 5002,
+    "line": 59,
+    "start": 15,
+    "end": 27,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "genuine" }
+            ],
+            "origin": { "line": 58, "start": 25, "end": 39 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 59, "start": 15, "end": 27 },
+            "call_site": "59:4-59:28"
+          }
+        ]
+      }
+    ],
+    "features": [ { "has": "first-index" }, { "first-index": "genuine" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_sanitize_field:5002:0:Call|pysa._test_sink|0|formal(arg):1573b24793c6447dc5c762a34d668a2e"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_sanitize_field",
+    "callable_line": 57,
+    "code": 5002,
+    "line": 63,
+    "start": 15,
+    "end": 39,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "nested" }
+            ],
+            "origin": { "line": 61, "start": 25, "end": 39 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 63, "start": 15, "end": 39 },
+            "call_site": "63:4-63:40"
+          }
+        ]
+      }
+    ],
+    "features": [ { "has": "first-index" }, { "first-index": "nested" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_sanitize_field:5002:0:Call|pysa._test_sink|1|formal(arg):6dc339b78287ae7caf8f657fa1de9104"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_sanitize_field",
+    "callable_line": 57,
+    "code": 5002,
+    "line": 66,
+    "start": 15,
+    "end": 36,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "nested" }
+            ],
+            "origin": { "line": 65, "start": 27, "end": 41 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 66, "start": 15, "end": 36 },
+            "call_site": "66:4-66:37"
+          }
+        ]
+      }
+    ],
+    "features": [ { "has": "first-index" }, { "first-index": "nested" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 2,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_sanitize_field:5002:0:Call|pysa._test_sink|2|formal(arg):4648e1f75fd3811007ef0c336a4f4ec4"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_typed_dict_constructor",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 24,
+    "start": 15,
+    "end": 23,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "bar" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 23, "start": 35, "end": 49 } ],
+            "origin": { "line": 23, "start": 35, "end": 49 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 24, "start": 15, "end": 23 },
+            "call_site": "24:4-24:24"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "bar" },
+      { "always-via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|pysa._test_sink|0|formal(arg):cd53558390d9cc6e7782fd39d3be47e3"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_typed_dict_constructor",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 25,
+    "start": 15,
+    "end": 23,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 23, "start": 35, "end": 49 } ],
+            "origin": { "line": 23, "start": 35, "end": 49 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 25, "start": 15, "end": 23 },
+            "call_site": "25:4-25:24"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "foo" },
+      { "always-via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|pysa._test_sink|1|formal(arg):e324bad73aef173080e16063983c4632"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_typed_dict_constructor",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 28,
+    "start": 15,
+    "end": 28,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "bar" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 27, "start": 35, "end": 56 } ],
+            "origin": { "line": 27, "start": 41, "end": 55 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 28, "start": 15, "end": 28 },
+            "call_site": "28:4-28:29"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "bar" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "broadening" },
+      { "always-via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 2,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|pysa._test_sink|2|formal(arg):dd0584de73896bf4c2f489586b5c1f34"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_typed_dict_constructor",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 29,
+    "start": 15,
+    "end": 28,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "bar" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 27, "start": 35, "end": 56 } ],
+            "origin": { "line": 27, "start": 41, "end": 55 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 29, "start": 15, "end": 28 },
+            "call_site": "29:4-29:29"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "bar" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "broadening" },
+      { "always-via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 3,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|pysa._test_sink|3|formal(arg):17247971abaf4d5c1cf04da72db05489"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_typed_dict_constructor",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 30,
+    "start": 15,
+    "end": 28,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 27, "start": 35, "end": 56 } ],
+            "origin": { "line": 27, "start": 41, "end": 55 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 30, "start": 15, "end": 28 },
+            "call_site": "30:4-30:29"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "foo" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "broadening" },
+      { "always-via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 4,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|pysa._test_sink|4|formal(arg):217f294c147f2fcebae7d30169889995"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_typed_dict_constructor",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 31,
+    "start": 15,
+    "end": 28,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 27, "start": 35, "end": 56 } ],
+            "origin": { "line": 27, "start": 41, "end": 55 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 31, "start": 15, "end": 28 },
+            "call_site": "31:4-31:29"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "foo" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "broadening" },
+      { "always-via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 5,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|pysa._test_sink|5|formal(arg):9c320fe32fabeb1d37ff9d171bce3a9a"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_typed_dict_constructor",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 34,
+    "start": 15,
+    "end": 23,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "bar" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 33, "start": 24, "end": 57 } ],
+            "origin": { "line": 33, "start": 42, "end": 56 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 34, "start": 15, "end": 23 },
+            "call_site": "34:4-34:24"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "bar" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "broadening" },
+      { "always-via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 6,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|pysa._test_sink|6|formal(arg):c9b3d06397c3d8833220ed5ba5e13bd5"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_typed_dict_constructor",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 35,
+    "start": 15,
+    "end": 23,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 33, "start": 24, "end": 57 } ],
+            "origin": { "line": 33, "start": 42, "end": 56 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 35, "start": 15, "end": 23 },
+            "call_site": "35:4-35:24"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "foo" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "broadening" },
+      { "always-via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 7,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|pysa._test_sink|7|formal(arg):f9082a04827ab76ea3c8f903d832bf13"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_typed_dict_constructor",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 38,
+    "start": 15,
+    "end": 23,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 37, "start": 24, "end": 43 },
+              { "line": 38, "start": 15, "end": 16 }
+            ],
+            "origin": { "line": 37, "start": 25, "end": 39 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 38, "start": 15, "end": 23 },
+            "call_site": "38:4-38:24"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "obscure:model" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 8,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|pysa._test_sink|8|formal(arg):7fb9860f39ec7d16dab8f7de6cfb1dbe"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_typed_dict_constructor",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 39,
+    "start": 15,
+    "end": 23,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 37, "start": 24, "end": 43 } ],
+            "origin": { "line": 37, "start": 25, "end": 39 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 39, "start": 15, "end": 23 },
+            "call_site": "39:4-39:24"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "foo" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "broadening" },
+      { "always-via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 9,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|pysa._test_sink|9|formal(arg):f60c60078d817042b073a0253afc0a14"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_typed_dict_constructor",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 40,
+    "start": 15,
+    "end": 23,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "bar" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 37, "start": 24, "end": 43 } ],
+            "origin": { "line": 37, "start": 25, "end": 39 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 40, "start": 15, "end": 23 },
+            "call_site": "40:4-40:24"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "bar" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "broadening" },
+      { "always-via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 10,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|pysa._test_sink|10|formal(arg):a94c52a5e087fcc854b305e0d3c0801b"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_typed_dict_constructor",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 43,
+    "start": 15,
+    "end": 23,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "bar" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 42, "start": 24, "end": 61 } ],
+            "origin": { "line": 42, "start": 45, "end": 59 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 43, "start": 15, "end": 23 },
+            "call_site": "43:4-43:24"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "bar" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "broadening" },
+      { "always-via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 11,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|pysa._test_sink|11|formal(arg):b3371c4decb71d61c15c14fb72c4e0ee"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_typed_dict_constructor",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 44,
+    "start": 15,
+    "end": 23,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 42, "start": 24, "end": 61 } ],
+            "origin": { "line": 42, "start": 45, "end": 59 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 44, "start": 15, "end": 23 },
+            "call_site": "44:4-44:24"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "foo" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "broadening" },
+      { "always-via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 12,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|pysa._test_sink|12|formal(arg):3e7adf2c9849ec80bae79808664860e7"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_typed_dict_setitem",
+    "callable_line": 15,
+    "code": 5002,
+    "line": 18,
+    "start": 15,
+    "end": 23,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "bar" }
+            ],
+            "origin": { "line": 17, "start": 15, "end": 29 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 18, "start": 15, "end": 23 },
+            "call_site": "18:4-18:24"
+          }
+        ]
+      }
+    ],
+    "features": [ { "has": "first-index" }, { "first-index": "bar" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_typed_dict_setitem:5002:0:Call|pysa._test_sink|0|formal(arg):15cc7aa3d3294e1e47f0e52dfa436bfa"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "typed_dict.NestedTypedDict.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[genuine,nested])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(nested)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[nested]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(genuine)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[genuine]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "typed_dict.SanitizedFieldTypedDict.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[sanitized,safe])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(sanitized)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[sanitized]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(safe)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[safe]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "typed_dict.SimpleTypedDict.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[foo,bar])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(foo)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[foo]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(bar)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[bar]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{typed_dict.SanitizedFieldTypedDict.sanitized}",
+    "global_sanitizer": { "sources": [ "Test" ] }
+  }
+}

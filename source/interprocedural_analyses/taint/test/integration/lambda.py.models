@@ -1606,7 +1606,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "filter.__init__",
+    "callable": "filter.__new__",
     "filename": "builtins.pyi",
     "callable_line": 522,
     "tito": [
@@ -1615,10 +1615,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "return_paths": { "[*]": 999999 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
+              { "return_paths": { "[*]": 999999 }, "kind": "LocalReturn" }
             ],
             "tito": {}
           }
@@ -1629,10 +1626,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "return_paths": { "[*]": 999999 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
+              { "return_paths": { "[*]": 999999 }, "kind": "LocalReturn" }
             ],
             "tito": {}
           }

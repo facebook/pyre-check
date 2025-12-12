@@ -25,8 +25,10 @@ Call dependencies
     "via_type_of.Test1_C.z (object)"
   ],
   "via_type_of.test1_alarm4 (fun)": [
+    "float.__gt__ (method)", "float.__le__ (method)",
     "object.__new__ (method)", "pysa._test_sink (fun)",
-    "pysa._test_source (fun)", "via_type_of.Test1_C.__init__ (method)",
+    "pysa._test_source (fun)", "random.random (fun)",
+    "via_type_of.Test1_C.__init__ (method)",
     "via_type_of.Test1_C.x (object)", "via_type_of.Test1_C.y (object)",
     "via_type_of.Test1_C.z (object)"
   ],
@@ -46,8 +48,10 @@ Call dependencies
     "via_type_of.Test2_C.z (object)"
   ],
   "via_type_of.test2_alarm4 (fun)": [
+    "float.__gt__ (method)", "float.__le__ (method)",
     "object.__new__ (method)", "pysa._test_sink (fun)",
-    "pysa._test_source (fun)", "via_type_of.Test2_C.__init__ (method)",
+    "pysa._test_source (fun)", "random.random (fun)",
+    "via_type_of.Test2_C.__init__ (method)",
     "via_type_of.Test2_C.x (object)", "via_type_of.Test2_C.y (object)",
     "via_type_of.Test2_C.z (object)"
   ],
@@ -65,8 +69,10 @@ Call dependencies
     "pysa._test_sink (fun)", "via_type_of.Test3_C.z (object)"
   ],
   "via_type_of.test3_alarm4 (fun)": [
-    "pysa._test_sink (fun)", "via_type_of.Test3_C.x (object)",
-    "via_type_of.Test3_C.y (object)", "via_type_of.Test3_C.z (object)"
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "pysa._test_sink (fun)", "random.random (fun)",
+    "via_type_of.Test3_C.x (object)", "via_type_of.Test3_C.y (object)",
+    "via_type_of.Test3_C.z (object)"
   ],
   "via_type_of.test4_alarm1 (fun)": [
     "pysa._test_source (fun)", "via_type_of.Test4_C.x (object)"

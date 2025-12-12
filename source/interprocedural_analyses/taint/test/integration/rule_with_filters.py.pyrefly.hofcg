@@ -1,0 +1,219 @@
+@generated
+Higher order call graphs
+{
+  "callable": "rule_with_filters.sink_distance_one",
+  "returned_callables": [],
+  "calls": {
+    "18:4-18:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "rule_with_filters.sink_distance_three",
+  "returned_callables": [],
+  "calls": {
+    "26:4-26:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "rule_with_filters.sink_distance_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "rule_with_filters.sink_distance_two",
+  "returned_callables": [],
+  "calls": {
+    "22:4-22:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "rule_with_filters.sink_distance_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "rule_with_filters.source_distance_one",
+  "returned_callables": [],
+  "calls": {
+    "10:11-10:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "rule_with_filters.source_distance_two",
+  "returned_callables": [],
+  "calls": {
+    "14:11-14:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "rule_with_filters.source_distance_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "rule_with_filters.test_source_one_sink_one",
+  "returned_callables": [],
+  "calls": {
+    "30:4-30:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "rule_with_filters.sink_distance_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "30:22-30:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "rule_with_filters.source_distance_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "rule_with_filters.test_source_one_sink_three",
+  "returned_callables": [],
+  "calls": {
+    "49:4-49:46": {
+      "call": {
+        "calls": [
+          {
+            "target": "rule_with_filters.sink_distance_three",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "49:24-49:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "rule_with_filters.source_distance_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "rule_with_filters.test_source_one_sink_two",
+  "returned_callables": [],
+  "calls": {
+    "39:4-39:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "rule_with_filters.sink_distance_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "39:22-39:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "rule_with_filters.source_distance_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "rule_with_filters.test_source_two_sink_one",
+  "returned_callables": [],
+  "calls": {
+    "35:4-35:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "rule_with_filters.sink_distance_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "35:22-35:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "rule_with_filters.source_distance_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "rule_with_filters.test_source_two_sink_two",
+  "returned_callables": [],
+  "calls": {
+    "44:4-44:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "rule_with_filters.sink_distance_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "44:22-44:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "rule_with_filters.source_distance_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}

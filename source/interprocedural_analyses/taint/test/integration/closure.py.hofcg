@@ -4,22 +4,22 @@ Higher order call graphs
   "callable": "closure.$toplevel",
   "returned_callables": [],
   "calls": {
-    "352:0-352:1|identifier|$local_closure$T": {
+    "353:0-353:1|identifier|$local_closure$T": {
       "identifier": {
         "globals": [ { "target": "Obj{closure.T}", "index": 0 } ]
       }
     },
-    "352:4-352:16": {
+    "353:4-353:16": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
     },
-    "358:0-358:1|identifier|$local_closure$V": {
+    "359:0-359:1|identifier|$local_closure$V": {
       "identifier": {
         "globals": [ { "target": "Obj{closure.V}", "index": 0 } ]
       }
     },
-    "358:4-358:27|artificial-call|subscript-get-item": {
+    "359:4-359:27|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -31,7 +31,7 @@ Higher order call graphs
         ]
       }
     },
-    "358:9-358:26|artificial-call|subscript-get-item": {
+    "359:9-359:26|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -43,12 +43,12 @@ Higher order call graphs
         ]
       }
     },
-    "359:0-359:1|identifier|$local_closure$P": {
+    "360:0-360:1|identifier|$local_closure$P": {
       "identifier": {
         "globals": [ { "target": "Obj{closure.P}", "index": 0 } ]
       }
     },
-    "359:4-359:18": {
+    "360:4-360:18": {
       "call": {
         "new_calls": [
           {
@@ -74,14 +74,14 @@ Higher order call graphs
   "callable": "closure.async_nonlocal_closure_tito_ignore_decorator",
   "returned_callables": [],
   "calls": {
-    "389:8-389:22": {
+    "390:8-390:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "391:4-392:24": {
+    "392:4-393:24": {
       "define": {
         "define_targets": [
           {
@@ -92,7 +92,7 @@ Higher order call graphs
         ]
       }
     },
-    "394:19-394:36": {
+    "395:19-395:36": {
       "call": {
         "calls": [
           {
@@ -103,7 +103,7 @@ Higher order call graphs
         ]
       }
     },
-    "395:4-395:22": {
+    "396:4-396:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -116,7 +116,7 @@ Higher order call graphs
   "callable": "closure.async_nonlocal_closure_tito_ignore_decorator.inner",
   "returned_callables": [],
   "calls": {
-    "392:22-392:23|identifier|$local_closure?async_nonlocal_closure_tito_ignore_decorator$z": {
+    "393:22-393:23|identifier|$local_closure?async_nonlocal_closure_tito_ignore_decorator$z": {
       "identifier": {
         "nonlocals": [
           {
@@ -132,14 +132,14 @@ Higher order call graphs
   "callable": "closure.async_nonlocal_closure_tito_with_decorator",
   "returned_callables": [],
   "calls": {
-    "378:8-378:22": {
+    "379:8-379:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "380:4-382:24": {
+    "381:4-383:24": {
       "define": {
         "define_targets": [
           {
@@ -150,7 +150,7 @@ Higher order call graphs
         ]
       }
     },
-    "384:19-384:36": {
+    "385:19-385:36": {
       "call": {
         "calls": [
           {
@@ -161,7 +161,7 @@ Higher order call graphs
         ]
       }
     },
-    "385:4-385:22": {
+    "386:4-386:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -174,7 +174,7 @@ Higher order call graphs
   "callable": "closure.async_nonlocal_closure_tito_with_decorator.inner",
   "returned_callables": [],
   "calls": {
-    "382:22-382:23|identifier|$local_closure?async_nonlocal_closure_tito_with_decorator$z": {
+    "383:22-383:23|identifier|$local_closure?async_nonlocal_closure_tito_with_decorator$z": {
       "identifier": {
         "nonlocals": [
           {
@@ -196,7 +196,7 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "380:5-380:14|artificial-call|for-decorated-target": {
+    "381:5-381:14|artificial-call|for-decorated-target": {
       "call": {
         "calls": [
           {
@@ -207,7 +207,7 @@ Higher order call graphs
         ]
       }
     },
-    "381:4-382:24|artificial-attribute-access|for-decorated-target-callee:closure.async_nonlocal_closure_tito_with_decorator": {
+    "382:4-383:24|artificial-attribute-access|for-decorated-target-callee:closure.async_nonlocal_closure_tito_with_decorator": {
       "attribute_access": {
         "is_attribute": true,
         "if_called": {
@@ -221,7 +221,7 @@ Higher order call graphs
         }
       }
     },
-    "381:4-382:24|artificial-attribute-access|for-decorated-target-callee:closure.async_nonlocal_closure_tito_with_decorator.inner": {
+    "382:4-383:24|artificial-attribute-access|for-decorated-target-callee:closure.async_nonlocal_closure_tito_with_decorator.inner": {
       "attribute_access": {
         "is_attribute": true,
         "if_called": {
@@ -241,7 +241,7 @@ Higher order call graphs
   "callable": "closure.async_tito",
   "returned_callables": [],
   "calls": {
-    "374:17-374:27": {
+    "375:17-375:27": {
       "call": {
         "unresolved": [
           "BypassingDecorators", [ "UnknownIdentifierCallee" ]
@@ -254,7 +254,7 @@ Higher order call graphs
   "callable": "closure.closure",
   "returned_callables": [],
   "calls": {
-    "101:10-101:18": {
+    "102:10-102:18": {
       "call": {
         "new_calls": [
           {
@@ -266,7 +266,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "closure.Object.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
@@ -274,7 +274,7 @@ Higher order call graphs
         ]
       }
     },
-    "103:4-104:30": {
+    "104:4-105:30": {
       "define": {
         "define_targets": [
           {
@@ -285,7 +285,7 @@ Higher order call graphs
         ]
       }
     },
-    "106:4-107:25": {
+    "107:4-108:25": {
       "define": {
         "define_targets": [
           { "target": "closure.closure.sink", "index": 0, "return_type": [] }
@@ -298,14 +298,14 @@ Higher order call graphs
   "callable": "closure.closure.sink",
   "returned_callables": [],
   "calls": {
-    "107:8-107:25": {
+    "108:8-108:25": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "107:19-107:22|identifier|$local_closure?closure$obj": {
+    "108:19-108:22|identifier|$local_closure?closure$obj": {
       "identifier": {
         "nonlocals": [ { "target": "Obj{closure.closure.obj}", "index": 0 } ]
       }
@@ -316,12 +316,12 @@ Higher order call graphs
   "callable": "closure.closure.source",
   "returned_callables": [],
   "calls": {
-    "104:8-104:11|identifier|$local_closure?closure$obj": {
+    "105:8-105:11|identifier|$local_closure?closure$obj": {
       "identifier": {
         "nonlocals": [ { "target": "Obj{closure.closure.obj}", "index": 0 } ]
       }
     },
-    "104:16-104:30": {
+    "105:16-105:30": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -334,21 +334,21 @@ Higher order call graphs
   "callable": "closure.closure_flow",
   "returned_callables": [],
   "calls": {
-    "114:19-114:28": {
+    "115:19-115:28": {
       "call": {
         "calls": [
           { "target": "closure.closure", "index": 0, "return_type": [] }
         ]
       }
     },
-    "115:4-115:12": {
+    "116:4-116:12": {
       "call": {
         "unresolved": [
           "BypassingDecorators", [ "UnknownIdentifierCallee" ]
         ]
       }
     },
-    "116:4-116:10": {
+    "117:4-117:10": {
       "call": {
         "unresolved": [
           "BypassingDecorators", [ "UnknownIdentifierCallee" ]
@@ -361,21 +361,21 @@ Higher order call graphs
   "callable": "closure.closure_no_flow",
   "returned_callables": [],
   "calls": {
-    "120:19-120:28": {
+    "121:19-121:28": {
       "call": {
         "calls": [
           { "target": "closure.closure", "index": 0, "return_type": [] }
         ]
       }
     },
-    "121:4-121:10": {
+    "122:4-122:10": {
       "call": {
         "unresolved": [
           "BypassingDecorators", [ "UnknownIdentifierCallee" ]
         ]
       }
     },
-    "122:4-122:12": {
+    "123:4-123:12": {
       "call": {
         "unresolved": [
           "BypassingDecorators", [ "UnknownIdentifierCallee" ]
@@ -390,7 +390,7 @@ Higher order call graphs
     { "target": "closure.decorator.wrapper", "index": 0, "return_type": [] }
   ],
   "calls": {
-    "362:4-363:46": {
+    "363:4-364:46": {
       "define": {
         "define_targets": [
           {
@@ -407,7 +407,7 @@ Higher order call graphs
   "callable": "closure.decorator.wrapper",
   "returned_callables": [],
   "calls": {
-    "363:21-363:46": {
+    "364:21-364:46": {
       "call": {
         "unresolved": [
           "BypassingDecorators", [ "UnknownIdentifierCallee" ]
@@ -439,7 +439,7 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "368:4-369:46": {
+    "369:4-370:46": {
       "define": {
         "define_targets": [
           {
@@ -456,7 +456,7 @@ Higher order call graphs
   "callable": "closure.ignored_decorator.wrapper",
   "returned_callables": [],
   "calls": {
-    "369:21-369:46": {
+    "370:21-370:46": {
       "call": {
         "unresolved": [
           "BypassingDecorators", [ "UnknownIdentifierCallee" ]
@@ -469,14 +469,14 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_conditional_write",
   "returned_callables": [],
   "calls": {
-    "289:10-289:24": {
+    "290:10-290:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "291:4-294:33": {
+    "292:4-295:33": {
       "define": {
         "define_targets": [
           {
@@ -487,7 +487,7 @@ Higher order call graphs
         ]
       }
     },
-    "296:4-298:15": {
+    "297:4-299:15": {
       "define": {
         "define_targets": [
           {
@@ -498,7 +498,7 @@ Higher order call graphs
         ]
       }
     },
-    "300:4-300:27": {
+    "301:4-301:27": {
       "call": {
         "calls": [
           {
@@ -509,21 +509,21 @@ Higher order call graphs
         ]
       }
     },
-    "301:4-301:19": {
+    "302:4-302:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "304:10-304:24": {
+    "305:10-305:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 1, "return_type": [] }
         ]
       }
     },
-    "305:4-305:11": {
+    "306:4-306:11": {
       "call": {
         "calls": [
           {
@@ -534,7 +534,7 @@ Higher order call graphs
         ]
       }
     },
-    "307:4-307:19": {
+    "308:4-308:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 1, "return_type": [] }
@@ -547,7 +547,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_conditional_write.clear",
   "returned_callables": [],
   "calls": {
-    "298:8-298:11|identifier|$local_closure?nonlocal_closure_conditional_write$obj": {
+    "299:8-299:11|identifier|$local_closure?nonlocal_closure_conditional_write$obj": {
       "identifier": {
         "nonlocals": [
           {
@@ -563,7 +563,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_conditional_write.conditional_write",
   "returned_callables": [],
   "calls": {
-    "294:12-294:15|identifier|$local_closure?nonlocal_closure_conditional_write$obj": {
+    "295:12-295:15|identifier|$local_closure?nonlocal_closure_conditional_write$obj": {
       "identifier": {
         "nonlocals": [
           {
@@ -573,7 +573,7 @@ Higher order call graphs
         ]
       }
     },
-    "294:18-294:33": {
+    "295:18-295:33": {
       "call": {
         "calls": [
           {
@@ -648,7 +648,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_flow",
   "returned_callables": [],
   "calls": {
-    "188:4-190:28": {
+    "189:4-191:28": {
       "define": {
         "define_targets": [
           {
@@ -659,7 +659,7 @@ Higher order call graphs
         ]
       }
     },
-    "192:4-193:23": {
+    "193:4-194:23": {
       "define": {
         "define_targets": [
           {
@@ -670,7 +670,7 @@ Higher order call graphs
         ]
       }
     },
-    "195:4-195:12": {
+    "196:4-196:12": {
       "call": {
         "calls": [
           {
@@ -681,7 +681,7 @@ Higher order call graphs
         ]
       }
     },
-    "196:4-196:10": {
+    "197:4-197:10": {
       "call": {
         "calls": [
           {
@@ -698,14 +698,14 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_flow.sink",
   "returned_callables": [],
   "calls": {
-    "193:8-193:23": {
+    "194:8-194:23": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "193:19-193:22|identifier|$local_closure?nonlocal_closure_flow$obj": {
+    "194:19-194:22|identifier|$local_closure?nonlocal_closure_flow$obj": {
       "identifier": {
         "nonlocals": [
           { "target": "Obj{closure.nonlocal_closure_flow.obj}", "index": 0 }
@@ -718,14 +718,14 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_flow.source",
   "returned_callables": [],
   "calls": {
-    "190:8-190:11|identifier|$local_closure?nonlocal_closure_flow$obj": {
+    "191:8-191:11|identifier|$local_closure?nonlocal_closure_flow$obj": {
       "identifier": {
         "nonlocals": [
           { "target": "Obj{closure.nonlocal_closure_flow.obj}", "index": 0 }
         ]
       }
     },
-    "190:14-190:28": {
+    "191:14-191:28": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -738,7 +738,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_inner_flow",
   "returned_callables": [],
   "calls": {
-    "216:4-219:23": {
+    "217:4-220:23": {
       "define": {
         "define_targets": [
           {
@@ -749,7 +749,7 @@ Higher order call graphs
         ]
       }
     },
-    "221:4-221:10": {
+    "222:4-222:10": {
       "call": {
         "calls": [
           {
@@ -766,7 +766,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_inner_flow.flow",
   "returned_callables": [],
   "calls": {
-    "218:8-218:11|identifier|$local_closure?nonlocal_closure_inner_flow$obj": {
+    "219:8-219:11|identifier|$local_closure?nonlocal_closure_inner_flow$obj": {
       "identifier": {
         "nonlocals": [
           {
@@ -776,21 +776,21 @@ Higher order call graphs
         ]
       }
     },
-    "218:14-218:28": {
+    "219:14-219:28": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "219:8-219:23": {
+    "220:8-220:23": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "219:19-219:22|identifier|$local_closure?nonlocal_closure_inner_flow$obj": {
+    "220:19-220:22|identifier|$local_closure?nonlocal_closure_inner_flow$obj": {
       "identifier": {
         "nonlocals": [
           {
@@ -824,7 +824,7 @@ Higher order call graphs
         ]
       }
     },
-    "76:4-76:22": {
+    "76:4-76:23": {
       "call": {
         "calls": [
           {
@@ -857,7 +857,7 @@ Higher order call graphs
         ]
       }
     },
-    "85:4-85:22": {
+    "85:4-85:23": {
       "call": {
         "calls": [
           {
@@ -927,7 +927,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_multiple_writes",
   "returned_callables": [],
   "calls": {
-    "166:4-171:17": {
+    "167:4-172:17": {
       "define": {
         "define_targets": [
           {
@@ -938,7 +938,7 @@ Higher order call graphs
         ]
       }
     },
-    "173:4-173:27": {
+    "174:4-174:27": {
       "call": {
         "calls": [
           {
@@ -949,14 +949,14 @@ Higher order call graphs
         ]
       }
     },
-    "174:4-174:17": {
+    "175:4-175:17": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "176:4-179:13": {
+    "177:4-180:13": {
       "define": {
         "define_targets": [
           {
@@ -967,7 +967,7 @@ Higher order call graphs
         ]
       }
     },
-    "181:4-181:15": {
+    "182:4-182:15": {
       "call": {
         "calls": [
           {
@@ -978,7 +978,7 @@ Higher order call graphs
         ]
       }
     },
-    "182:4-182:17": {
+    "183:4-183:17": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 1, "return_type": [] }
@@ -991,7 +991,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_multiple_writes.conditional_write",
   "returned_callables": [],
   "calls": {
-    "169:12-169:13|identifier|$local_closure?nonlocal_closure_multiple_writes$x": {
+    "170:12-170:13|identifier|$local_closure?nonlocal_closure_multiple_writes$x": {
       "identifier": {
         "nonlocals": [
           {
@@ -1001,14 +1001,14 @@ Higher order call graphs
         ]
       }
     },
-    "169:16-169:30": {
+    "170:16-170:30": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "171:12-171:13|identifier|$local_closure?nonlocal_closure_multiple_writes$x": {
+    "172:12-172:13|identifier|$local_closure?nonlocal_closure_multiple_writes$x": {
       "identifier": {
         "nonlocals": [
           {
@@ -1024,7 +1024,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_multiple_writes.overwrite",
   "returned_callables": [],
   "calls": {
-    "178:8-178:9|identifier|$local_closure?nonlocal_closure_multiple_writes$x": {
+    "179:8-179:9|identifier|$local_closure?nonlocal_closure_multiple_writes$x": {
       "identifier": {
         "nonlocals": [
           {
@@ -1034,14 +1034,14 @@ Higher order call graphs
         ]
       }
     },
-    "178:12-178:26": {
+    "179:12-179:26": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "179:8-179:9|identifier|$local_closure?nonlocal_closure_multiple_writes$x": {
+    "180:8-180:9|identifier|$local_closure?nonlocal_closure_multiple_writes$x": {
       "identifier": {
         "nonlocals": [
           {
@@ -1057,7 +1057,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_nested_flow",
   "returned_callables": [],
   "calls": {
-    "254:4-265:21": {
+    "255:4-266:21": {
       "define": {
         "define_targets": [
           {
@@ -1068,7 +1068,7 @@ Higher order call graphs
         ]
       }
     },
-    "267:4-267:13": {
+    "268:4-268:13": {
       "call": {
         "calls": [
           {
@@ -1079,7 +1079,7 @@ Higher order call graphs
         ]
       }
     },
-    "268:4-268:21": {
+    "269:4-269:21": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -1092,7 +1092,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_nested_flow.source1",
   "returned_callables": [],
   "calls": {
-    "256:8-261:29": {
+    "257:8-262:29": {
       "define": {
         "define_targets": [
           {
@@ -1103,7 +1103,7 @@ Higher order call graphs
         ]
       }
     },
-    "262:8-262:17": {
+    "263:8-263:17": {
       "call": {
         "calls": [
           {
@@ -1114,14 +1114,14 @@ Higher order call graphs
         ]
       }
     },
-    "263:8-263:25": {
+    "264:8-264:25": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "265:8-265:13|identifier|$local_closure?nonlocal_closure_nested_flow$outer": {
+    "266:8-266:13|identifier|$local_closure?nonlocal_closure_nested_flow$outer": {
       "identifier": {
         "nonlocals": [
           {
@@ -1137,7 +1137,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_nested_flow.source1.source2",
   "returned_callables": [],
   "calls": {
-    "257:12-259:38": {
+    "258:12-260:38": {
       "define": {
         "define_targets": [
           {
@@ -1148,7 +1148,7 @@ Higher order call graphs
         ]
       }
     },
-    "260:12-260:21": {
+    "261:12-261:21": {
       "call": {
         "calls": [
           {
@@ -1159,14 +1159,14 @@ Higher order call graphs
         ]
       }
     },
-    "261:12-261:29": {
+    "262:12-262:29": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "261:23-261:28|identifier|$local_closure?nonlocal_closure_nested_flow?source1$inner": {
+    "262:23-262:28|identifier|$local_closure?nonlocal_closure_nested_flow?source1$inner": {
       "identifier": {
         "nonlocals": [
           {
@@ -1182,7 +1182,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_nested_flow.source1.source2.source3",
   "returned_callables": [],
   "calls": {
-    "259:16-259:21|identifier|$local_closure?nonlocal_closure_nested_flow?source1$inner": {
+    "260:16-260:21|identifier|$local_closure?nonlocal_closure_nested_flow?source1$inner": {
       "identifier": {
         "nonlocals": [
           {
@@ -1192,7 +1192,7 @@ Higher order call graphs
         ]
       }
     },
-    "259:24-259:38": {
+    "260:24-260:38": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -1205,7 +1205,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_no_flow",
   "returned_callables": [],
   "calls": {
-    "202:4-204:28": {
+    "203:4-205:28": {
       "define": {
         "define_targets": [
           {
@@ -1216,7 +1216,7 @@ Higher order call graphs
         ]
       }
     },
-    "206:4-207:23": {
+    "207:4-208:23": {
       "define": {
         "define_targets": [
           {
@@ -1227,7 +1227,7 @@ Higher order call graphs
         ]
       }
     },
-    "209:4-209:10": {
+    "210:4-210:10": {
       "call": {
         "calls": [
           {
@@ -1238,7 +1238,7 @@ Higher order call graphs
         ]
       }
     },
-    "210:4-210:12": {
+    "211:4-211:12": {
       "call": {
         "calls": [
           {
@@ -1255,14 +1255,14 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_no_flow.sink",
   "returned_callables": [],
   "calls": {
-    "207:8-207:23": {
+    "208:8-208:23": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "207:19-207:22|identifier|$local_closure?nonlocal_closure_no_flow$obj": {
+    "208:19-208:22|identifier|$local_closure?nonlocal_closure_no_flow$obj": {
       "identifier": {
         "nonlocals": [
           {
@@ -1278,7 +1278,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_no_flow.source",
   "returned_callables": [],
   "calls": {
-    "204:8-204:11|identifier|$local_closure?nonlocal_closure_no_flow$obj": {
+    "205:8-205:11|identifier|$local_closure?nonlocal_closure_no_flow$obj": {
       "identifier": {
         "nonlocals": [
           {
@@ -1288,7 +1288,7 @@ Higher order call graphs
         ]
       }
     },
-    "204:14-204:28": {
+    "205:14-205:28": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -1301,7 +1301,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_obscure",
   "returned_callables": [],
   "calls": {
-    "227:4-229:28": {
+    "228:4-230:28": {
       "define": {
         "define_targets": [
           {
@@ -1312,7 +1312,7 @@ Higher order call graphs
         ]
       }
     },
-    "231:4-232:23": {
+    "232:4-233:23": {
       "define": {
         "define_targets": [
           {
@@ -1329,14 +1329,14 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_obscure.sink",
   "returned_callables": [],
   "calls": {
-    "232:8-232:23": {
+    "233:8-233:23": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "232:19-232:22|identifier|$local_closure?nonlocal_closure_obscure$obj": {
+    "233:19-233:22|identifier|$local_closure?nonlocal_closure_obscure$obj": {
       "identifier": {
         "nonlocals": [
           {
@@ -1352,7 +1352,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_obscure.source",
   "returned_callables": [],
   "calls": {
-    "229:8-229:11|identifier|$local_closure?nonlocal_closure_obscure$obj": {
+    "230:8-230:11|identifier|$local_closure?nonlocal_closure_obscure$obj": {
       "identifier": {
         "nonlocals": [
           {
@@ -1362,7 +1362,7 @@ Higher order call graphs
         ]
       }
     },
-    "229:14-229:28": {
+    "230:14-230:28": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -1447,7 +1447,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_reduction",
   "returned_callables": [],
   "calls": {
-    "142:4-146:19": {
+    "143:4-147:19": {
       "define": {
         "define_targets": [
           {
@@ -1458,7 +1458,7 @@ Higher order call graphs
         ]
       }
     },
-    "148:4-149:25": {
+    "149:4-150:25": {
       "define": {
         "define_targets": [
           {
@@ -1469,7 +1469,7 @@ Higher order call graphs
         ]
       }
     },
-    "151:11-151:19": {
+    "152:11-152:19": {
       "call": {
         "calls": [
           {
@@ -1480,7 +1480,7 @@ Higher order call graphs
         ]
       }
     },
-    "152:17-152:27": {
+    "153:17-153:27": {
       "call": {
         "calls": [
           {
@@ -1491,7 +1491,7 @@ Higher order call graphs
         ]
       }
     },
-    "155:4-158:24": {
+    "156:4-159:24": {
       "define": {
         "define_targets": [
           {
@@ -1502,7 +1502,7 @@ Higher order call graphs
         ]
       }
     },
-    "160:4-160:14": {
+    "161:4-161:14": {
       "call": {
         "calls": [
           {
@@ -1519,14 +1519,14 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_reduction.sink",
   "returned_callables": [],
   "calls": {
-    "156:8-156:24": {
+    "157:8-157:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "156:19-156:23|identifier|$local_closure?nonlocal_closure_reduction$obj1": {
+    "157:19-157:23|identifier|$local_closure?nonlocal_closure_reduction$obj1": {
       "identifier": {
         "nonlocals": [
           {
@@ -1536,21 +1536,21 @@ Higher order call graphs
         ]
       }
     },
-    "157:8-157:24": {
+    "158:8-158:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "158:8-158:24": {
+    "159:8-159:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 2, "return_type": [] }
         ]
       }
     },
-    "158:19-158:23|identifier|$local_closure?nonlocal_closure_reduction$obj3": {
+    "159:19-159:23|identifier|$local_closure?nonlocal_closure_reduction$obj3": {
       "identifier": {
         "nonlocals": [
           {
@@ -1566,7 +1566,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_reduction.source",
   "returned_callables": [],
   "calls": {
-    "144:8-144:12|identifier|$local_closure?nonlocal_closure_reduction$obj1": {
+    "145:8-145:12|identifier|$local_closure?nonlocal_closure_reduction$obj1": {
       "identifier": {
         "nonlocals": [
           {
@@ -1576,14 +1576,14 @@ Higher order call graphs
         ]
       }
     },
-    "144:15-144:29": {
+    "145:15-145:29": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "145:15-145:29": {
+    "146:15-146:29": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 1, "return_type": [] }
@@ -1596,7 +1596,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_reduction.tito",
   "returned_callables": [],
   "calls": {
-    "149:21-149:25|identifier|$local_closure?nonlocal_closure_reduction$obj1": {
+    "150:21-150:25|identifier|$local_closure?nonlocal_closure_reduction$obj1": {
       "identifier": {
         "nonlocals": [
           {
@@ -1612,14 +1612,14 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_tito",
   "returned_callables": [],
   "calls": {
-    "311:8-311:22": {
+    "312:8-312:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "313:4-314:16": {
+    "314:4-315:16": {
       "define": {
         "define_targets": [
           {
@@ -1630,7 +1630,7 @@ Higher order call graphs
         ]
       }
     },
-    "316:13-316:20": {
+    "317:13-317:20": {
       "call": {
         "calls": [
           {
@@ -1641,7 +1641,7 @@ Higher order call graphs
         ]
       }
     },
-    "317:4-317:22": {
+    "318:4-318:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -1654,7 +1654,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_tito.inner",
   "returned_callables": [],
   "calls": {
-    "314:15-314:16|identifier|$local_closure?nonlocal_closure_tito$x": {
+    "315:15-315:16|identifier|$local_closure?nonlocal_closure_tito$x": {
       "identifier": {
         "nonlocals": [
           { "target": "Obj{closure.nonlocal_closure_tito.x}", "index": 0 }
@@ -1667,7 +1667,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_wrapper_flow",
   "returned_callables": [],
   "calls": {
-    "274:4-276:28": {
+    "275:4-277:28": {
       "define": {
         "define_targets": [
           {
@@ -1678,7 +1678,7 @@ Higher order call graphs
         ]
       }
     },
-    "278:4-279:16": {
+    "279:4-280:16": {
       "define": {
         "define_targets": [
           {
@@ -1689,7 +1689,7 @@ Higher order call graphs
         ]
       }
     },
-    "281:4-281:13": {
+    "282:4-282:13": {
       "call": {
         "calls": [
           {
@@ -1705,7 +1705,7 @@ Higher order call graphs
         ]
       }
     },
-    "282:4-282:19": {
+    "283:4-283:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -1718,7 +1718,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_wrapper_flow.source",
   "returned_callables": [],
   "calls": {
-    "276:8-276:11|identifier|$local_closure?nonlocal_closure_wrapper_flow$obj": {
+    "277:8-277:11|identifier|$local_closure?nonlocal_closure_wrapper_flow$obj": {
       "identifier": {
         "nonlocals": [
           {
@@ -1728,7 +1728,7 @@ Higher order call graphs
         ]
       }
     },
-    "276:14-276:28": {
+    "277:14-277:28": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -1741,7 +1741,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_wrapper_flow.wrapper",
   "returned_callables": [],
   "calls": {
-    "279:8-279:16": {
+    "280:8-280:16": {
       "call": {
         "calls": [
           {
@@ -1758,7 +1758,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_write_reduction",
   "returned_callables": [],
   "calls": {
-    "129:4-132:29": {
+    "130:4-133:29": {
       "define": {
         "define_targets": [
           {
@@ -1769,7 +1769,7 @@ Higher order call graphs
         ]
       }
     },
-    "134:8-134:16": {
+    "135:8-135:16": {
       "call": {
         "calls": [
           {
@@ -1780,14 +1780,14 @@ Higher order call graphs
         ]
       }
     },
-    "135:4-135:17": {
+    "136:4-136:17": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "136:4-136:17": {
+    "137:4-137:17": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 1, "return_type": [] }
@@ -1800,7 +1800,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_write_reduction.source",
   "returned_callables": [],
   "calls": {
-    "131:8-131:9|identifier|$local_closure?nonlocal_closure_write_reduction$x": {
+    "132:8-132:9|identifier|$local_closure?nonlocal_closure_write_reduction$x": {
       "identifier": {
         "nonlocals": [
           {
@@ -1810,14 +1810,14 @@ Higher order call graphs
         ]
       }
     },
-    "131:12-131:26": {
+    "132:12-132:26": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "132:15-132:29": {
+    "133:15-133:29": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 1, "return_type": [] }
@@ -1830,7 +1830,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_obscure_flow",
   "returned_callables": [],
   "calls": {
-    "240:19-240:45": {
+    "241:19-241:45": {
       "call": {
         "calls": [
           {
@@ -1841,14 +1841,14 @@ Higher order call graphs
         ]
       }
     },
-    "241:4-241:12": {
+    "242:4-242:12": {
       "call": {
         "unresolved": [
           "BypassingDecorators", [ "UnknownIdentifierCallee" ]
         ]
       }
     },
-    "242:4-242:10": {
+    "243:4-243:10": {
       "call": {
         "unresolved": [
           "BypassingDecorators", [ "UnknownIdentifierCallee" ]
@@ -1861,7 +1861,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_obscure_no_flow",
   "returned_callables": [],
   "calls": {
-    "246:19-246:45": {
+    "247:19-247:45": {
       "call": {
         "calls": [
           {
@@ -1872,14 +1872,14 @@ Higher order call graphs
         ]
       }
     },
-    "247:4-247:10": {
+    "248:4-248:10": {
       "call": {
         "unresolved": [
           "BypassingDecorators", [ "UnknownIdentifierCallee" ]
         ]
       }
     },
-    "248:4-248:12": {
+    "249:4-249:12": {
       "call": {
         "unresolved": [
           "BypassingDecorators", [ "UnknownIdentifierCallee" ]
@@ -2032,7 +2032,7 @@ Higher order call graphs
   "callable": "closure.parameter_order_swap_tito",
   "returned_callables": [],
   "calls": {
-    "347:4-348:22": {
+    "348:4-349:22": {
       "define": {
         "define_targets": [
           {
@@ -2043,14 +2043,14 @@ Higher order call graphs
         ]
       }
     },
-    "349:4-349:26": {
+    "350:4-350:26": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "349:15-349:22": {
+    "350:15-350:22": {
       "call": {
         "calls": [
           {
@@ -2061,7 +2061,7 @@ Higher order call graphs
         ]
       }
     },
-    "349:15-349:25|artificial-call|subscript-get-item": {
+    "350:15-350:25|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
@@ -2134,14 +2134,14 @@ Higher order call graphs
   "callable": "closure.tito_hof",
   "returned_callables": [],
   "calls": {
-    "343:4-343:19": {
+    "344:4-344:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "343:15-343:18": {
+    "344:15-344:18": {
       "call": {
         "unresolved": [
           "BypassingDecorators", [ "UnknownIdentifierCallee" ]
@@ -2154,7 +2154,7 @@ Higher order call graphs
   "callable": "closure.tito_propagation",
   "returned_callables": [],
   "calls": {
-    "321:4-321:48": {
+    "322:4-322:48": {
       "call": {
         "calls": [
           {
@@ -2165,7 +2165,7 @@ Higher order call graphs
         ]
       }
     },
-    "321:33-321:47": {
+    "322:33-322:47": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -2178,7 +2178,7 @@ Higher order call graphs
   "callable": "closure.tito_propagation_hof",
   "returned_callables": [],
   "calls": {
-    "332:4-332:52": {
+    "333:4-333:52": {
       "call": {
         "calls": [
           {
@@ -2189,7 +2189,7 @@ Higher order call graphs
         ]
       }
     },
-    "332:37-332:51": {
+    "333:37-333:51": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -2298,7 +2298,7 @@ Higher order call graphs
   "callable": "closure.wrapper_for_tito_propagation",
   "returned_callables": [],
   "calls": {
-    "325:4-326:16": {
+    "326:4-327:16": {
       "define": {
         "define_targets": [
           {
@@ -2309,14 +2309,14 @@ Higher order call graphs
         ]
       }
     },
-    "328:4-328:23": {
+    "329:4-329:23": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "328:15-328:22": {
+    "329:15-329:22": {
       "call": {
         "calls": [
           {
@@ -2333,7 +2333,7 @@ Higher order call graphs
   "callable": "closure.wrapper_for_tito_propagation_hof",
   "returned_callables": [],
   "calls": {
-    "336:4-337:16": {
+    "337:4-338:16": {
       "define": {
         "define_targets": [
           {
@@ -2344,7 +2344,7 @@ Higher order call graphs
         ]
       }
     },
-    "339:4-339:19": {
+    "340:4-340:19": {
       "call": {
         "calls": [
           {
@@ -2361,7 +2361,7 @@ Higher order call graphs
   "callable": "closure.async_tito[formal(function, position=0)=closure.async_nonlocal_closure_tito_ignore_decorator.inner]",
   "returned_callables": [],
   "calls": {
-    "374:17-374:27": {
+    "375:17-375:27": {
       "call": {
         "calls": [
           {
@@ -2378,7 +2378,7 @@ Higher order call graphs
   "callable": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper[local($parameter$function)=closure.async_nonlocal_closure_tito_with_decorator.inner]]",
   "returned_callables": [],
   "calls": {
-    "374:17-374:27": {
+    "375:17-375:27": {
       "call": {
         "calls": [
           {
@@ -2401,7 +2401,7 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "362:4-363:46": {
+    "363:4-364:46": {
       "define": {
         "define_targets": [
           {
@@ -2418,7 +2418,7 @@ Higher order call graphs
   "callable": "closure.decorator.wrapper[local($parameter$function)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
   "returned_callables": [],
   "calls": {
-    "363:21-363:46": {
+    "364:21-364:46": {
       "call": {
         "calls": [
           {
@@ -2452,7 +2452,7 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_wrapper_flow.wrapper[local($local_closure?nonlocal_closure_wrapper_flow$source)=closure.nonlocal_closure_wrapper_flow.source]",
   "returned_callables": [],
   "calls": {
-    "279:8-279:16": {
+    "280:8-280:16": {
       "call": {
         "calls": [
           {
@@ -2469,14 +2469,14 @@ Higher order call graphs
   "callable": "closure.tito_hof[formal(f, position=0)=closure.wrapper_for_tito_propagation_hof.inner]",
   "returned_callables": [],
   "calls": {
-    "343:4-343:19": {
+    "344:4-344:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "343:15-343:18": {
+    "344:15-344:18": {
       "call": {
         "calls": [
           {

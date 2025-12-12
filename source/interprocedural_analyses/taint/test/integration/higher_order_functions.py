@@ -40,7 +40,7 @@ def test_higher_order_method():
 
 def test_higher_order_method_self():
     c: C = _test_source()
-    higher_order_function(c.self_to_sink)
+    higher_order_function(c.self_to_sink, 0)
 
 
 def higher_order_function_and_sink(f, arg):

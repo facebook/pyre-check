@@ -767,9 +767,9 @@
   "kind": "issue",
   "data": {
     "callable": "attributes.test_no_issue_sanitize_via_call",
-    "callable_line": 185,
+    "callable_line": 186,
     "code": 5002,
-    "line": 189,
+    "line": 190,
     "start": 15,
     "end": 26,
     "filename": "attributes.py",
@@ -791,7 +791,7 @@
             "local_features": [
               { "has": "first-field" }, { "first-field": "attribute" }
             ],
-            "origin": { "line": 187, "start": 18, "end": 32 }
+            "origin": { "line": 188, "start": 18, "end": 32 }
           }
         ]
       },
@@ -808,8 +808,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 189, "start": 15, "end": 26 },
-            "call_site": "189:4-189:27"
+            "origin": { "line": 190, "start": 15, "end": 26 },
+            "call_site": "190:4-190:27"
           }
         ]
       }
@@ -965,7 +965,7 @@
   "data": {
     "callable": "attributes.tito_copy_multiple_possible_dictlike_objects",
     "filename": "attributes.py",
-    "callable_line": 163,
+    "callable_line": 164,
     "tito": [
       {
         "port": "formal(d, position=0)[_data][copy]",
@@ -982,7 +982,7 @@
               { "always-via": "tito" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [ { "line": 165, "start": 11, "end": 12 } ],
+            "tito_positions": [ { "line": 166, "start": 11, "end": 12 } ],
             "tito": {}
           }
         ]
@@ -1104,7 +1104,7 @@
   "data": {
     "callable": "attributes.RegularForm.__init__",
     "filename": "attributes.py",
-    "callable_line": 160,
+    "callable_line": 161,
     "tito": [
       {
         "port": "formal(data, position=1)",
@@ -1190,7 +1190,7 @@
   "data": {
     "callable": "attributes.ZonedForm.data",
     "filename": "attributes.py",
-    "callable_line": 156,
+    "callable_line": 157,
     "tito": [
       {
         "port": "formal(self, position=0)[_data]",

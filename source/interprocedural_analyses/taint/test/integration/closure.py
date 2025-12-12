@@ -65,7 +65,7 @@ def parameter_order_swap_different_variable_names(x, y, z):
     inner()
 
 
-def nonlocal_closure_multiple_reads():
+def nonlocal_closure_multiple_reads(c):
     x = _test_source()
 
     def conditional_read(conditional):
@@ -73,7 +73,7 @@ def nonlocal_closure_multiple_reads():
             _test_sink(x)
         else:
             _test_sink(0)
-    conditional_read()
+    conditional_read(c)
 
     def overread():
         y = x
@@ -82,7 +82,7 @@ def nonlocal_closure_multiple_reads():
     overread()
 
     x = 0
-    conditional_read()
+    conditional_read(c)
 
 
 def nonlocal_closure_define_before_variable_initialization():
@@ -94,7 +94,8 @@ def nonlocal_closure_define_before_variable_initialization():
 
 
 class Object:
-    pass
+    def __init__(self) -> None:
+        self.x = ""
 
 
 def closure():
