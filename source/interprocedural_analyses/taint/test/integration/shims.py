@@ -7,21 +7,6 @@
 import functools
 import multiprocessing
 import typing
-from pysa import _test_sink, _test_source, to_callable_target
+from pysa import _test_sink, _test_source
 
-
-@to_callable_target
-def async_callable(x, y):
-    _test_sink(x)
-
-
-def test_async_delay():
-    async_callable.async_delay(0, 0)
-    async_callable.async_delay(0, _test_source())
-    async_callable.async_delay(_test_source(), 0)
-
-
-def test_async_schedule():
-    async_callable.async_schedule(0, 0)
-    async_callable.async_schedule(0, _test_source())
-    async_callable.async_schedule(_test_source(), 0)
+# TODO(T225700656): Add more tests for shimming

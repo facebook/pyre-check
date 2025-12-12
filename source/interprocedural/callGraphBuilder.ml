@@ -1223,24 +1223,6 @@ let resolve_recognized_callees
         ~callee
         ~return_type
         ~implementing_class
-  | Expression.Name name, _
-    when is_all_names (Node.value callee)
-         && Set.mem SpecialCallResolution.recognized_callable_target_types callee_type ->
-      Ast.Expression.name_to_reference name
-      >>| fun name ->
-      let return_type =
-        let pyre_api = PyrePysaApi.InContext.pyre_api pyre_in_context in
-        ReturnTypeBuilder.from_annotation ~pyre_api (Lazy.force return_type)
-      in
-      CallCallees.create
-        ~call_targets:
-          [
-            CallTargetBuilder.create_with_default_index
-              ~implicit_dunder_call:false
-              ~return_type:(Some return_type)
-              (Target.create_function name);
-          ]
-        ()
   | _ -> None)
   >>| fun call_callees -> { call_callees with recognized_call = CallCallees.RecognizedCall.True }
 

@@ -250,34 +250,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "shims.async_callable",
-    "filename": "shims.py",
-    "callable_line": 14,
-    "sinks": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 15, "start": 15, "end": 16 },
-            "call_site": "15:4-15:17"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "ast._Attributes.__init__",
     "filename": "*",
     "tito": [

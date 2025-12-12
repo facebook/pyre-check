@@ -1,13 +1,3 @@
 @generated
 Call dependencies
-{
-  "shims.async_callable (fun)": [ "pysa._test_sink (fun)" ],
-  "shims.async_callable@decorated (fun)": [ "pysa.to_callable_target (fun)" ],
-  "shims.test_async_delay (fun)": [
-    "pysa.TestCallableTarget.async_delay (method)", "pysa._test_source (fun)"
-  ],
-  "shims.test_async_schedule (fun)": [
-    "pysa.TestCallableTarget.async_schedule (method)",
-    "pysa._test_source (fun)"
-  ]
-}
+{}
