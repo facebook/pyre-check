@@ -91,7 +91,7 @@ def join_source_and_attribute_source(i: int):
     if i > 0:
         a: str = request.GET["tainted"]
     else:
-        a: C = C()
+        a: C = C() # pyrefly: ignore
     eval(f"{a}")  # noqa: P204
 
 

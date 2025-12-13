@@ -1224,6 +1224,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~skip_for_pyrefly:false
            ~_migrated_to_pyrefly:true
            ~source:
              {|
@@ -1236,6 +1237,30 @@ let test_call_graph_of_define =
            ~define_name:"test.foo"
            ~expected:
              [
+               ( "6:2-6:9|artificial-call|repr-call",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~receiver_class:"test.C"
+                            (Target.Regular.Method
+                               { class_name = "test.C"; method_name = "__repr__"; kind = Normal });
+                        ]
+                      ()) );
+             ]
+           ~pyrefly_expected:
+             [
+               ( "6:2-6:9",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            (Target.Regular.Function { name = "builtins.repr"; kind = Normal });
+                        ]
+                      ()) );
                ( "6:2-6:9|artificial-call|repr-call",
                  ExpressionCallees.from_call
                    (CallCallees.create

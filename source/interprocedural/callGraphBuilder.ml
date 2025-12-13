@@ -2277,7 +2277,7 @@ module CallGraphBuilder = struct
        Call.callee = { Node.value = Name (Name.Identifier "getattr"); _ };
        arguments =
          [
-           { Call.Argument.value = base; _ };
+           { Call.Argument.value = base; name = None };
            {
              Call.Argument.value =
                {
@@ -2285,9 +2285,9 @@ module CallGraphBuilder = struct
                    Expression.Constant (Constant.String { StringLiteral.value = attribute; _ });
                  _;
                };
-             _;
+             name = None;
            };
-           { Call.Argument.value = _; _ };
+           { Call.Argument.value = _; name = None };
          ];
        _;
       } ->

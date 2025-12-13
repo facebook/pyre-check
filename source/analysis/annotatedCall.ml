@@ -77,7 +77,7 @@ let preprocess_special_calls
           arguments = [];
           origin;
         }
-  | Name (Name.Identifier "repr"), [{ Call.Argument.value; _ }] ->
+  | Name (Name.Identifier "repr"), [{ Call.Argument.value; name = None }] ->
       let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.ReprCall) in
       Some
         {
