@@ -700,7 +700,7 @@ let resolve_stringify_call ~pyre_in_context ~type_of_expression_shared_memory ex
 (* Rewrite certain calls for the interprocedural analysis (e.g, pysa).
  * These rewrites are done symbolically during the analysis.
  * These should be preferred over AST transformations (see `preprocess_special_calls`). *)
-let shim_special_calls_impl ~identified_callee ~arguments =
+let apply_identified_shim_call ~identified_callee ~arguments =
   let open Shims.ShimArgumentMapping in
   match identified_callee, arguments with
   | Some Shims.IdentifiedCallee.FunctoolsPartial, _actual_callable :: actual_arguments ->
@@ -760,7 +760,7 @@ let shim_special_calls_for_pyre1 { Call.callee; arguments; origin = _ } =
         Some Shims.IdentifiedCallee.MultiprocessingProcess
     | _ -> None
   in
-  shim_special_calls_impl ~identified_callee ~arguments
+  apply_identified_shim_call ~identified_callee ~arguments
 
 
 let shim_special_calls_for_pyrefly ~callees ~arguments =
@@ -783,7 +783,7 @@ let shim_special_calls_for_pyrefly ~callees ~arguments =
     else
       None
   in
-  shim_special_calls_impl ~identified_callee ~arguments
+  apply_identified_shim_call ~identified_callee ~arguments
 
 
 (* Rewrite certain calls for the interprocedural analysis (e.g, pysa).
@@ -860,10 +860,10 @@ let shim_for_call ~pyre_in_context ~callables_to_definitions_map call =
         call
 
 
-let shim_for_call_for_pyrefly ~callees ~arguments =
+let shim_for_call_for_pyrefly ~callees ~nested_callees ~arguments =
   match shim_special_calls_for_pyrefly ~callees ~arguments with
   | Some identified_callee -> Some identified_callee
-  | None -> SpecialCallResolution.shim_calls_for_pyrefly ~callees ~arguments
+  | None -> SpecialCallResolution.shim_calls_for_pyrefly ~callees ~nested_callees ~arguments
 
 
 let create_shim_callee_expression ~debug ~callable ~location ~call shim =
@@ -4930,8 +4930,23 @@ let build_whole_program_call_graph_for_pyrefly
             call_graph
         in
         let add_shim_target ~debug ~expression_location ~call ~arguments call_graph =
+          let fetch_regular_targets call_callees =
+            call_callees.CallCallees.call_targets
+            |> List.rev_append call_callees.CallCallees.init_targets
+            |> List.rev_append call_callees.CallCallees.new_targets
+            |> List.map ~f:CallTarget.target
+          in
           DefineCallGraph.resolve_call ~location:expression_location ~call call_graph
           >>= fun original_call_callees ->
+          let { Node.value = callee_expression; location = callee_location } = call.Call.callee in
+          (* This is the call inside `call`, if any *)
+          let nested_callees =
+            match callee_expression with
+            | Expression.Call nested_call ->
+                DefineCallGraph.resolve_call ~location:callee_location ~call:nested_call call_graph
+                >>| fetch_regular_targets
+            | _ -> None
+          in
           let () =
             log
               ~debug
@@ -4942,11 +4957,8 @@ let build_whole_program_call_graph_for_pyrefly
               original_call_callees
           in
           shim_for_call_for_pyrefly
-            ~callees:
-              (original_call_callees.call_targets
-              |> List.rev_append original_call_callees.init_targets
-              |> List.rev_append original_call_callees.new_targets
-              |> List.map ~f:CallTarget.target)
+            ~callees:(fetch_regular_targets original_call_callees)
+            ~nested_callees:(Option.value ~default:[] nested_callees)
             ~arguments
           >>= fun shim ->
           create_shim_callee_expression ~debug ~callable ~location ~call shim

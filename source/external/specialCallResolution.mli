@@ -14,5 +14,6 @@ val shim_calls_for_pyre1
 
 val shim_calls_for_pyrefly
   :  callees:Target.t list ->
+  nested_callees:Target.t list ->
   arguments:Expression.Call.Argument.t list ->
   Shims.ShimArgumentMapping.t option

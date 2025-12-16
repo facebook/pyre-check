@@ -9,4 +9,4 @@
 
 let shim_calls_for_pyre1 ~resolve_expression_to_type:_ _ = None
 
-let shim_calls_for_pyrefly ~callees:_ ~arguments:_ = None
+let shim_calls_for_pyrefly ~callees:_ ~nested_callees:_ ~arguments:_ = None
