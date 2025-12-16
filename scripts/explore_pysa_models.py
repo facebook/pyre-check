@@ -1084,8 +1084,10 @@ def get_closest_next_frame(
     callee: str,
     port: str,
     taint_kind: str,
-    seen: Set[TaintFrame] = set(),
+    seen: Optional[Set[TaintFrame]] = None,
 ) -> Optional[TaintFrame]:
+    if seen is None:
+        seen = set()
     model = get_raw_model(callee)
 
     shortest_frame = None
