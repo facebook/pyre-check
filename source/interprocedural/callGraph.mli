@@ -203,6 +203,13 @@ module ShimTarget : sig
   val regenerate_call_indices : indexer:Indexer.t -> t -> t
 end
 
+module AllTargetsUseCase : sig
+  type t =
+    | TaintAnalysisDependency
+    | CallGraphDependency
+    | Everything
+end
+
 (** An aggregate of all possible callees at a call site. *)
 module CallCallees : sig
   module RecognizedCall : sig
@@ -279,6 +286,8 @@ module CallCallees : sig
   val should_redirect_to_decorated : t -> bool
 
   val regenerate_call_indices : indexer:Indexer.t -> t -> t
+
+  val all_targets : use_case:AllTargetsUseCase.t -> t -> Target.t list
 end
 
 (** An aggregrate of all possible callees for a given attribute access. *)
@@ -448,13 +457,6 @@ module DefineCallGraphForTest : sig
   val from_expected : (string * ExpressionCallees.t) list -> t
 
   val equal_ignoring_types : t -> t -> bool
-end
-
-module AllTargetsUseCase : sig
-  type t =
-    | TaintAnalysisDependency
-    | CallGraphDependency
-    | Everything
 end
 
 (** The call graph of a function or method definition. *)

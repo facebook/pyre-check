@@ -235,6 +235,57 @@
               "resolves_to": [ "partial.a_flows_to_sink" ],
               "port": "formal(a, position=0)"
             }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 71, "start": 58, "end": 59 },
+              "resolves_to": [ "partial.a_flows_to_sink" ],
+              "port": "formal(a, position=0)",
+              "call_site": "71:4-71:64"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.multiprocessing_nested_sink",
+    "filename": "partial.py",
+    "callable_line": 93,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "a" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 94, "start": 26, "end": 27 } ],
+            "call": {
+              "position": { "line": 95, "start": 54, "end": 60 },
+              "resolves_to": [ "partial.sink_on_foo" ],
+              "port": "formal(x, position=0)[foo]",
+              "call_site": "95:4-95:63"
+            }
           }
         ]
       }
@@ -413,9 +464,9 @@
               }
             ],
             "local_features": [
-              { "always-via": "higher-order-parameter" },
-              { "always-via": "broadening" },
-              { "always-via": "issue-broadening" }
+              { "via": "higher-order-parameter" },
+              { "via": "broadening" },
+              { "via": "issue-broadening" }
             ],
             "origin": { "line": 63, "start": 58, "end": 72 }
           }
@@ -440,6 +491,24 @@
               "resolves_to": [ "partial.a_flows_to_sink" ],
               "port": "formal(a, position=0)"
             }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 63, "start": 58, "end": 72 },
+              "resolves_to": [ "partial.a_flows_to_sink" ],
+              "port": "formal(a, position=0)",
+              "call_site": "63:4-63:77"
+            }
           }
         ]
       }
@@ -447,9 +516,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "always-via": "higher-order-parameter" },
-      { "always-via": "broadening" },
-      { "always-via": "issue-broadening" }
+      { "via": "higher-order-parameter" },
+      { "via": "broadening" },
+      { "via": "issue-broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -458,6 +527,75 @@
       "parameter": "formal(a)"
     },
     "master_handle": "partial.multiprocessing_tainted:5002:0:Call|partial.a_flows_to_sink|0|formal(a):869b7105b8715dde7f3556295c7b0a37"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "partial.multiprocessing_tainted_access_path",
+    "callable_line": 103,
+    "code": 5002,
+    "line": 104,
+    "start": 54,
+    "end": 81,
+    "filename": "partial.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 104, "start": 66, "end": 80 } ],
+            "origin": { "line": 104, "start": 66, "end": 80 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 104, "start": 54, "end": 81 },
+              "resolves_to": [ "partial.sink_on_foo" ],
+              "port": "formal(x, position=0)[foo]",
+              "call_site": "104:4-104:86"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "partial.sink_on_foo",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "partial.multiprocessing_tainted_access_path:5002:0:Call|partial.sink_on_foo|0|formal(x):b3be09b6804e36d59c7eaeefb8a08f69"
   }
 }
 {
@@ -513,10 +651,12 @@
               }
             ],
             "local_features": [
-              { "always-via": "higher-order-parameter" },
-              { "always-via": "tito" }
+              { "via": "higher-order-parameter" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 58, "start": 22, "end": 31 } ],
+            "tito_positions": [
+              { "line": 58, "start": 22, "end": 31 },
+              { "line": 58, "start": 33, "end": 47 }
+            ],
             "origin": { "line": 58, "start": 33, "end": 47 }
           }
         ]
@@ -549,7 +689,7 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "higher-order-parameter" } ],
+            "local_features": [ { "via": "higher-order-parameter" } ],
             "origin": { "line": 44, "start": 8, "end": 22 }
           }
         ]
@@ -573,6 +713,24 @@
               "resolves_to": [ "partial.a_flows_to_sink" ],
               "port": "formal(a, position=0)"
             }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 45, "start": 41, "end": 42 },
+              "resolves_to": [ "partial.a_flows_to_sink" ],
+              "port": "formal(a, position=0)",
+              "call_site": "45:4-45:43"
+            }
           }
         ]
       }
@@ -580,7 +738,7 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "always-via": "higher-order-parameter" }
+      { "via": "higher-order-parameter" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -683,7 +841,7 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "higher-order-parameter" } ],
+            "local_features": [ { "via": "higher-order-parameter" } ],
             "origin": { "line": 34, "start": 8, "end": 22 }
           }
         ]
@@ -707,6 +865,24 @@
               "resolves_to": [ "partial.a_flows_to_sink" ],
               "port": "formal(a, position=0)"
             }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 35, "start": 39, "end": 40 },
+              "resolves_to": [ "partial.a_flows_to_sink" ],
+              "port": "formal(a, position=0)",
+              "call_site": "35:4-35:41"
+            }
           }
         ]
       }
@@ -714,7 +890,7 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "always-via": "higher-order-parameter" }
+      { "via": "higher-order-parameter" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1309,12 +1485,15 @@
               }
             ],
             "local_features": [
+              { "via": "shim-broadening" },
               { "via": "higher-order-parameter" },
-              { "always-via": "obscure:model" },
+              { "via": "obscure:model" },
               { "always-via": "tito" },
+              { "via": "broadening" },
               { "via": "obscure:unknown-callee" }
             ],
             "tito_positions": [
+              { "line": 113, "start": 33, "end": 37 },
               { "line": 113, "start": 33, "end": 46 },
               { "line": 113, "start": 57, "end": 65 }
             ],
@@ -1337,8 +1516,10 @@
               }
             ],
             "local_features": [
-              { "always-via": "obscure:model" },
+              { "via": "shim-broadening" },
+              { "via": "obscure:model" },
               { "always-via": "tito" },
+              { "via": "broadening" },
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito_positions": [

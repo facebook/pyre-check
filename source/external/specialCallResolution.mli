@@ -7,7 +7,12 @@
 
 open Ast
 
-val shim_calls
+val shim_calls_for_pyre1
   :  resolve_expression_to_type:(Expression.t -> Type.t) ->
   Expression.Call.t ->
+  Shims.ShimArgumentMapping.t option
+
+val shim_calls_for_pyrefly
+  :  callees:Target.t list ->
+  arguments:Expression.Call.Argument.t list ->
   Shims.ShimArgumentMapping.t option

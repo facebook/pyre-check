@@ -8,6 +8,16 @@
 open Ast
 open Expression
 
+module IdentifiedCallee : sig
+  type t =
+    | FunctoolsPartial
+    | MultiprocessingProcess
+    | PromoteQueue
+    | ApiClient
+    | WeatherDatatype of string
+  [@@deriving show]
+end
+
 (* Represents how a specific call should be shimmed to another call, as a syntactic
    transformation. *)
 module ShimArgumentMapping : sig

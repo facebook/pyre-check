@@ -14,6 +14,16 @@ open Core
 open Ast
 open Expression
 
+module IdentifiedCallee = struct
+  type t =
+    | FunctoolsPartial
+    | MultiprocessingProcess
+    | PromoteQueue
+    | ApiClient
+    | WeatherDatatype of string
+  [@@deriving show]
+end
+
 (* Represents how a specific call should be shimmed to another call, as a syntactic
    transformation. *)
 module ShimArgumentMapping = struct

@@ -239,15 +239,21 @@ module Regular = struct
     | Object name -> Object name
 
 
+  let define_name = function
+    | Function { name; _ } -> Some (Reference.create name)
+    | Method { class_name; method_name; _ } ->
+        Some (Reference.create ~prefix:(Reference.create class_name) method_name)
+    | Override _
+    | Object _ ->
+        None
+
+
   (** Return the define name of a Function or Method target. Note that multiple targets can match to
       the same define name (e.g, property getters and setters). Hence, use this at your own risk. *)
-  let define_name_exn = function
-    | Function { name; _ } -> Reference.create name
-    | Method { class_name; method_name; _ } ->
-        Reference.create ~prefix:(Reference.create class_name) method_name
-    | (Override _ as regular)
-    | (Object _ as regular) ->
-        Format.asprintf "Unexpected: %a" pp_pretty_with_kind regular |> failwith
+  let define_name_exn regular =
+    match define_name regular with
+    | Some name -> name
+    | None -> Format.asprintf "Unexpected: %a" pp_pretty_with_kind regular |> failwith
 
 
   let create_derived_override_exn ~at_type = function

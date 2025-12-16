@@ -1277,6 +1277,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~skip_for_pyrefly:false
            ~_migrated_to_pyrefly:false
            ~source:
              {|
@@ -1323,6 +1324,78 @@ let test_call_graph_of_define =
                             (Target.Regular.Method
                                { class_name = "object"; method_name = "__new__"; kind = Normal });
                         ]
+                      ~shim_target:
+                        (Some
+                           {
+                             ShimTarget.call_targets =
+                               [
+                                 CallTarget.create_regular
+                                   (Target.Regular.Function { name = "test.f"; kind = Normal });
+                               ];
+                             decorated_targets = [];
+                             argument_mapping =
+                               {
+                                 ShimArgumentMapping.identifier = "functools.partial";
+                                 callee = ShimArgumentMapping.Target.Argument { index = 0 };
+                                 arguments =
+                                   [
+                                     {
+                                       ShimArgumentMapping.Argument.name = None;
+                                       value = ShimArgumentMapping.Target.Argument { index = 1 };
+                                     };
+                                   ];
+                               };
+                           })
+                      ()) );
+             ]
+           ~pyrefly_expected:
+             [
+               ( "7:10-7:11|identifier|f",
+                 ExpressionCallees.from_identifier
+                   (IdentifierCallees.create
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 (Target.Regular.Function { name = "test.f"; kind = Normal });
+                             ]
+                           ())
+                      ()) );
+               ( "7:2-7:15",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~new_targets:
+                        [
+                          CallTarget.create_regular
+                            ~is_static_method:true
+                            (Target.Regular.Method
+                               {
+                                 class_name = "functools.partial";
+                                 method_name = "__new__";
+                                 kind = Normal;
+                               });
+                        ]
+                      ~init_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            (Target.Regular.Method
+                               { class_name = "object"; method_name = "__init__"; kind = Normal });
+                        ]
+                      ~higher_order_parameters:
+                        (HigherOrderParameterMap.from_list
+                           [
+                             {
+                               index = 0;
+                               call_targets =
+                                 [
+                                   CallTarget.create_regular
+                                     (Target.Regular.Function { name = "test.f"; kind = Normal });
+                                 ];
+                               unresolved = CallGraph.Unresolved.False;
+                             };
+                           ])
                       ~shim_target:
                         (Some
                            {
@@ -5002,13 +5075,14 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~skip_for_pyrefly:false
            ~_migrated_to_pyrefly:false
            ~source:
              {|
       from abc import abstractclassmethod
       from typing import TypeVar, Generic
+      import functools
       TInput = TypeVar("TInput")
-
       class C(Generic[TInput]):
         @abstractclassmethod
         def f(cls, arg: TInput) -> TInput:
@@ -5131,6 +5205,317 @@ let test_call_graph_of_define =
                                    ~implicit_receiver:true
                                    ~is_class_method:true
                                    ~receiver_class:"test.C"
+                                   ~index:1
+                                   (Target.Regular.Method
+                                      { class_name = "test.C"; method_name = "h"; kind = Normal });
+                               ];
+                             decorated_targets = [];
+                             argument_mapping =
+                               {
+                                 ShimArgumentMapping.identifier = "functools.partial";
+                                 callee = ShimArgumentMapping.Target.Argument { index = 0 };
+                                 arguments =
+                                   [
+                                     {
+                                       ShimArgumentMapping.Argument.name = None;
+                                       value = ShimArgumentMapping.Target.Argument { index = 1 };
+                                     };
+                                   ];
+                               };
+                           })
+                      ()) );
+             ]
+           ~pyrefly_expected:
+             [
+               ( "15:4-15:14",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~is_class_method:true
+                            (Target.Regular.Method
+                               { class_name = "test.C"; method_name = "f"; kind = Normal });
+                        ]
+                      ()) );
+               ( "15:4-15:7|identifier|cls",
+                 ExpressionCallees.from_identifier
+                   (IdentifierCallees.create
+                      ~if_called:
+                        (CallCallees.create
+                           ~new_targets:
+                             [
+                               CallTarget.create_regular
+                                 ~is_static_method:true
+                                 (Target.Regular.Method
+                                    {
+                                      class_name = "object";
+                                      method_name = "__new__";
+                                      kind = Normal;
+                                    });
+                             ]
+                           ~init_targets:
+                             [
+                               CallTarget.create_regular
+                                 ~implicit_receiver:true
+                                 ~receiver_class:"test.C"
+                                 (Target.Regular.Method
+                                    {
+                                      class_name = "object";
+                                      method_name = "__init__";
+                                      kind = Normal;
+                                    });
+                             ]
+                           ())
+                      ()) );
+               ( "16:22-16:25|identifier|cls",
+                 ExpressionCallees.from_identifier
+                   (IdentifierCallees.create
+                      ~if_called:
+                        (CallCallees.create
+                           ~new_targets:
+                             [
+                               CallTarget.create_regular
+                                 ~is_static_method:true
+                                 (Target.Regular.Method
+                                    {
+                                      class_name = "object";
+                                      method_name = "__new__";
+                                      kind = Normal;
+                                    });
+                             ]
+                           ~init_targets:
+                             [
+                               CallTarget.create_regular
+                                 ~implicit_receiver:true
+                                 ~receiver_class:"test.C"
+                                 (Target.Regular.Method
+                                    {
+                                      class_name = "object";
+                                      method_name = "__init__";
+                                      kind = Normal;
+                                    });
+                             ]
+                           ())
+                      ()) );
+               ( "16:22-16:27",
+                 ExpressionCallees.from_attribute_access
+                   (AttributeAccessCallees.create
+                      ~is_attribute:false
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 ~implicit_receiver:true
+                                 ~is_class_method:true
+                                 (Target.Regular.Method
+                                    { class_name = "test.C"; method_name = "f"; kind = Normal });
+                             ]
+                           ())
+                      ()) );
+               ( "16:4-16:33",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~new_targets:
+                        [
+                          CallTarget.create_regular
+                            ~is_static_method:true
+                            (Target.Regular.Method
+                               {
+                                 class_name = "functools.partial";
+                                 method_name = "__new__";
+                                 kind = Normal;
+                               });
+                        ]
+                      ~init_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            (Target.Regular.Method
+                               { class_name = "object"; method_name = "__init__"; kind = Normal });
+                        ]
+                      ~higher_order_parameters:
+                        (HigherOrderParameterMap.from_list
+                           [
+                             {
+                               index = 0;
+                               call_targets =
+                                 [
+                                   CallTarget.create_regular
+                                     ~implicit_receiver:true
+                                     ~is_class_method:true
+                                     ~index:1
+                                     (Target.Regular.Method
+                                        { class_name = "test.C"; method_name = "f"; kind = Normal });
+                                 ];
+                               unresolved = CallGraph.Unresolved.False;
+                             };
+                           ])
+                      ~shim_target:
+                        (Some
+                           {
+                             ShimTarget.call_targets =
+                               [
+                                 CallTarget.create_regular
+                                   ~implicit_receiver:true
+                                   ~is_class_method:true
+                                   ~index:1
+                                   (Target.Regular.Method
+                                      { class_name = "test.C"; method_name = "f"; kind = Normal });
+                               ];
+                             decorated_targets = [];
+                             argument_mapping =
+                               {
+                                 ShimArgumentMapping.identifier = "functools.partial";
+                                 callee = ShimArgumentMapping.Target.Argument { index = 0 };
+                                 arguments =
+                                   [
+                                     {
+                                       ShimArgumentMapping.Argument.name = None;
+                                       value = ShimArgumentMapping.Target.Argument { index = 1 };
+                                     };
+                                   ];
+                               };
+                           })
+                      ()) );
+               ( "17:4-17:14",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~is_class_method:true
+                            (Target.Regular.Method
+                               { class_name = "test.C"; method_name = "h"; kind = Normal });
+                        ]
+                      ()) );
+               ( "17:4-17:7|identifier|cls",
+                 ExpressionCallees.from_identifier
+                   (IdentifierCallees.create
+                      ~if_called:
+                        (CallCallees.create
+                           ~new_targets:
+                             [
+                               CallTarget.create_regular
+                                 ~is_static_method:true
+                                 (Target.Regular.Method
+                                    {
+                                      class_name = "object";
+                                      method_name = "__new__";
+                                      kind = Normal;
+                                    });
+                             ]
+                           ~init_targets:
+                             [
+                               CallTarget.create_regular
+                                 ~implicit_receiver:true
+                                 ~receiver_class:"test.C"
+                                 (Target.Regular.Method
+                                    {
+                                      class_name = "object";
+                                      method_name = "__init__";
+                                      kind = Normal;
+                                    });
+                             ]
+                           ())
+                      ()) );
+               ( "18:22-18:25|identifier|cls",
+                 ExpressionCallees.from_identifier
+                   (IdentifierCallees.create
+                      ~if_called:
+                        (CallCallees.create
+                           ~new_targets:
+                             [
+                               CallTarget.create_regular
+                                 ~is_static_method:true
+                                 (Target.Regular.Method
+                                    {
+                                      class_name = "object";
+                                      method_name = "__new__";
+                                      kind = Normal;
+                                    });
+                             ]
+                           ~init_targets:
+                             [
+                               CallTarget.create_regular
+                                 ~implicit_receiver:true
+                                 ~receiver_class:"test.C"
+                                 (Target.Regular.Method
+                                    {
+                                      class_name = "object";
+                                      method_name = "__init__";
+                                      kind = Normal;
+                                    });
+                             ]
+                           ())
+                      ()) );
+               ( "18:22-18:27",
+                 ExpressionCallees.from_attribute_access
+                   (AttributeAccessCallees.create
+                      ~is_attribute:false
+                      ~if_called:
+                        (CallCallees.create
+                           ~call_targets:
+                             [
+                               CallTarget.create_regular
+                                 ~implicit_receiver:true
+                                 ~is_class_method:true
+                                 (Target.Regular.Method
+                                    { class_name = "test.C"; method_name = "h"; kind = Normal });
+                             ]
+                           ())
+                      ()) );
+               ( "18:4-18:33",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~new_targets:
+                        [
+                          CallTarget.create_regular
+                            ~is_static_method:true
+                            ~index:1
+                            (Target.Regular.Method
+                               {
+                                 class_name = "functools.partial";
+                                 method_name = "__new__";
+                                 kind = Normal;
+                               });
+                        ]
+                      ~init_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~index:1
+                            (Target.Regular.Method
+                               { class_name = "object"; method_name = "__init__"; kind = Normal });
+                        ]
+                      ~higher_order_parameters:
+                        (HigherOrderParameterMap.from_list
+                           [
+                             {
+                               index = 0;
+                               call_targets =
+                                 [
+                                   CallTarget.create_regular
+                                     ~implicit_receiver:true
+                                     ~is_class_method:true
+                                     ~index:1
+                                     (Target.Regular.Method
+                                        { class_name = "test.C"; method_name = "h"; kind = Normal });
+                                 ];
+                               unresolved = CallGraph.Unresolved.False;
+                             };
+                           ])
+                      ~shim_target:
+                        (Some
+                           {
+                             ShimTarget.call_targets =
+                               [
+                                 CallTarget.create_regular
+                                   ~implicit_receiver:true
+                                   ~is_class_method:true
                                    ~index:1
                                    (Target.Regular.Method
                                       { class_name = "test.C"; method_name = "h"; kind = Normal });
