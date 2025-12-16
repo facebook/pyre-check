@@ -10,7 +10,6 @@
 open Core
 open Pyre
 open Taint
-module Target = Interprocedural.Target
 module PyrePysaApi = Interprocedural.PyrePysaApi
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
@@ -345,7 +344,7 @@ let initialize_models
   in
   let stubs_list = Interprocedural.FetchCallables.get_stubs initial_callables in
   let stubs_hashset = Target.HashSet.of_list stubs_list in
-  let stubs_shared_memory = Interprocedural.Target.HashsetSharedMemory.from_heap stubs_list in
+  let stubs_shared_memory = Target.HashsetSharedMemory.from_heap stubs_list in
   let { ModelParseResult.models = regular_models; queries; errors } =
     parse_models_and_queries_from_configuration
       ~scheduler
@@ -354,7 +353,7 @@ let initialize_models
       ~taint_configuration:taint_configuration_shared_memory
       ~source_sink_filter:taint_configuration.source_sink_filter
       ~definitions:(Some definitions_hashset)
-      ~stubs:(Interprocedural.Target.HashsetSharedMemory.read_only stubs_shared_memory)
+      ~stubs:(Target.HashsetSharedMemory.read_only stubs_shared_memory)
   in
   let () =
     StepLogger.finish
@@ -386,7 +385,7 @@ let initialize_models
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~definitions_and_stubs:
               (Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true)
-            ~stubs:(Interprocedural.Target.HashsetSharedMemory.read_only stubs_shared_memory)
+            ~stubs:(Target.HashsetSharedMemory.read_only stubs_shared_memory)
             queries
         in
         let () =
@@ -433,7 +432,7 @@ let initialize_models
       ~initial_models:models
   in
 
-  let () = Interprocedural.Target.HashsetSharedMemory.cleanup stubs_shared_memory in
+  let () = Target.HashsetSharedMemory.cleanup ~clean_old:true stubs_shared_memory in
 
   { ModelGenerationResult.models; errors }
 

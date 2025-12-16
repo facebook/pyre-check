@@ -348,7 +348,7 @@ module ModelQuery : sig
   module ExpectedModel : sig
     type t = {
       model: Model.t;
-      target: Interprocedural.Target.t;
+      target: Target.t;
       model_source: string;
     }
 
@@ -433,7 +433,7 @@ module CallableDecorator : sig
     :  pyre_api:PyrePysaApi.ReadOnly.t ->
     callables_to_definitions_map:Interprocedural.CallablesSharedMemory.ReadOnly.t ->
     qualifier:Ast.Reference.t ->
-    target:Interprocedural.Target.t ->
+    target:Target.t ->
     Ast.Statement.Decorator.t ->
     t
 
@@ -482,14 +482,14 @@ module Modelable : sig
   val create_callable
     :  pyre_api:PyrePysaApi.ReadOnly.t ->
     callables_to_definitions_map:Interprocedural.CallablesSharedMemory.ReadOnly.t ->
-    Interprocedural.Target.t ->
+    Target.t ->
     t
 
-  val create_attribute : pyre_api:PyrePysaApi.ReadOnly.t -> Interprocedural.Target.t -> t
+  val create_attribute : pyre_api:PyrePysaApi.ReadOnly.t -> Target.t -> t
 
-  val create_global : pyre_api:PyrePysaApi.ReadOnly.t -> Interprocedural.Target.t -> t
+  val create_global : pyre_api:PyrePysaApi.ReadOnly.t -> Target.t -> t
 
-  val target : t -> Interprocedural.Target.t
+  val target : t -> Target.t
 
   val target_name : t -> Ast.Reference.t
 

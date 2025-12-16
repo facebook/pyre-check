@@ -16,7 +16,6 @@ open Core
 open Ast
 open Expression
 open Pyre
-open Interprocedural
 open Statement
 open Domains
 open ModelParseResult
@@ -4017,7 +4016,7 @@ let create_models_from_class
 let is_obscure ~definitions ~stubs call_target =
   (* The callable is obscure if and only if it is a type stub or it is not in the set of known
      definitions. *)
-  Interprocedural.Target.HashsetSharedMemory.ReadOnly.mem stubs call_target
+  Target.HashsetSharedMemory.ReadOnly.mem stubs call_target
   || definitions >>| Core.Fn.flip Hash_set.mem call_target >>| not |> Option.value ~default:false
 
 

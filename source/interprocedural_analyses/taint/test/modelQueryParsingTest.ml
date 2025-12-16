@@ -7,7 +7,6 @@
 
 open Core
 open OUnit2
-module Target = Interprocedural.Target
 module PyrePysaApi = Interprocedural.PyrePysaApi
 open Taint
 open ModelParseResult.ModelQuery
@@ -56,11 +55,8 @@ let set_up_environment ?source ~context ~model_source ~validate () =
       ~source
       ~taint_configuration
       ~source_sink_filter:(Some taint_configuration.source_sink_filter)
-      ~definitions:(Some (Interprocedural.Target.HashSet.of_list definitions))
-      ~stubs:
-        (stubs
-        |> Interprocedural.Target.HashsetSharedMemory.from_heap
-        |> Interprocedural.Target.HashsetSharedMemory.read_only)
+      ~definitions:(Some (Target.HashSet.of_list definitions))
+      ~stubs:(stubs |> Target.HashsetSharedMemory.from_heap |> Target.HashsetSharedMemory.read_only)
       ~python_version:(ModelParser.PythonVersion.create ())
       ()
   in

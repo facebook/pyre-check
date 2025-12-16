@@ -248,7 +248,7 @@ module HashsetSharedMemory : sig
 
   type t
 
-  val cleanup : t -> unit
+  val cleanup : clean_old:bool -> t -> unit
 
   val from_heap : target list -> t
 

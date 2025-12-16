@@ -125,7 +125,7 @@
    ppx_hash
    ppx_compare
    ppx_sexp_conv))
- (libraries pyrelib.analysis pyrelib.shims))
+ (libraries pyrelib.analysis pyrelib.shims pyrelib.target))
 
 (library
  (name taintAnalysisFeatureStats)

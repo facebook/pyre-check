@@ -29,9 +29,7 @@ let assert_class_models ~context ?user_models ~source ~expected () =
             ~source_sink_filter:None
             ~definitions:None
             ~stubs:
-              ([]
-              |> Interprocedural.Target.HashsetSharedMemory.from_heap
-              |> Interprocedural.Target.HashsetSharedMemory.read_only)
+              ([] |> Target.HashsetSharedMemory.from_heap |> Target.HashsetSharedMemory.read_only)
             ~python_version:(ModelParser.PythonVersion.create ())
             ()
         in

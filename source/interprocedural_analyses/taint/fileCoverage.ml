@@ -19,7 +19,7 @@ module File = struct
   module Set = SerializableSet.Make (T)
 
   let from_callable ~callables_to_definitions_map ~resolve_module_path callable =
-    Option.some_if (Interprocedural.Target.is_function_or_method callable) callable
+    Option.some_if (Target.is_function_or_method callable) callable
     >>| Interprocedural.CallablesSharedMemory.ReadOnly.get_location callables_to_definitions_map
     >>= PyrePysaEnvironment.AstResult.to_option
     >>| (fun { Ast.Location.WithModule.module_reference; _ } -> module_reference)

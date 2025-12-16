@@ -53,7 +53,7 @@ module type FUNCTION_CONTEXT = sig
 
   val definition : Statement.Define.t Node.t
 
-  val callable : Interprocedural.Target.t
+  val callable : Target.t
 
   val debug : bool
 
@@ -71,7 +71,7 @@ module type FUNCTION_CONTEXT = sig
 
   val call_graph_of_define : CallGraph.DefineCallGraph.t
 
-  val get_callee_model : Interprocedural.Target.t -> Model.t option
+  val get_callee_model : Target.t -> Model.t option
 
   val existing_model : Model.t
 
@@ -176,7 +176,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let self_variable =
-    if Interprocedural.Target.is_method FunctionContext.callable then
+    if Target.is_method FunctionContext.callable then
       let { Node.value = { Statement.Define.signature = { parameters; _ }; _ }; _ } =
         FunctionContext.definition
       in
@@ -452,7 +452,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     log
       "Forward analysis of call to `%a` with arguments (%a)@,Call site model:@,%a"
-      Interprocedural.Target.pp_pretty
+      Target.pp_pretty
       target
       Ast.Expression.pp_expression_argument_list
       arguments
@@ -1701,10 +1701,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           Lazy.force taint_and_state_after_index_access
     in
     match
-      ( Interprocedural.Target.get_regular call_target.CallGraph.CallTarget.target,
+      ( Target.get_regular call_target.CallGraph.CallTarget.target,
         call_target.CallGraph.CallTarget.receiver_class )
     with
-    | Interprocedural.Target.Regular.Method { method_name = "__getitem__"; _ }, Some receiver_class
+    | Target.Regular.Method { method_name = "__getitem__"; _ }, Some receiver_class
     | Override { method_name = "__getitem__"; _ }, Some receiver_class ->
         (* Potentially access a named tuple *)
         analyze_getitem receiver_class
@@ -2345,8 +2345,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let call_target =
           CallModel.StringFormatCall.CallTarget.create
             ~call_targets:callees.call_targets
-            ~default_target:
-              (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_add)
+            ~default_target:(CallGraph.CallTarget.create Target.ArtificialTargets.str_add)
         in
         analyze_joined_string
           ~pyre_in_context
@@ -2382,8 +2381,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let call_target =
           CallModel.StringFormatCall.CallTarget.create
             ~call_targets:callees.call_targets
-            ~default_target:
-              (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_add)
+            ~default_target:(CallGraph.CallTarget.create Target.ArtificialTargets.str_add)
         in
         analyze_joined_string
           ~pyre_in_context
@@ -2772,9 +2770,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | Call { callee; arguments; origin } ->
           analyze_call ~pyre_in_context ~location ~state ~is_result_used ~callee ~arguments ~origin
       | Constant (Constant.String { StringLiteral.value; _ }) ->
-          let call_target =
-            CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_literal
-          in
+          let call_target = CallGraph.CallTarget.create Target.ArtificialTargets.str_literal in
           analyze_joined_string
             ~pyre_in_context
             ~state
@@ -2830,7 +2826,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             match global_string with
             | Some global_string ->
                 let call_target =
-                  CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_literal
+                  CallGraph.CallTarget.create Target.ArtificialTargets.str_literal
                 in
                 analyze_joined_string
                   ~pyre_in_context
@@ -3078,7 +3074,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                       FunctionContext.type_of_expression_shared_memory
                     ~call_site
                     ~location:(Location.strip_module location)
-                    ~callee:Interprocedural.Target.ArtificialTargets.condition
+                    ~callee:Target.ArtificialTargets.condition
                     ~arguments:[]
                     ~port:
                       (AccessPath.Root.PositionalParameter
@@ -3419,7 +3415,7 @@ let extract_source_model
   let return_annotations =
     PyrePysaApi.ReadOnly.get_callable_return_annotations
       pyre_api
-      ~define_name:(Interprocedural.Target.define_name_exn callable)
+      ~define_name:(Target.define_name_exn callable)
       ~define
   in
   let normalized_parameters = AccessPath.normalize_parameters parameters in
@@ -3476,7 +3472,7 @@ let extract_source_model
         _;
       }
       :: _
-      when Interprocedural.Target.is_method callable ->
+      when Target.is_method callable ->
         ForwardState.bottom
         |> extract_model_from_variable
              ~variable:(AccessPath.Root.Variable self_variable)
@@ -3527,7 +3523,7 @@ let run
     =
     define
   in
-  let define_name = Interprocedural.Target.define_name_exn callable in
+  let define_name = Target.define_name_exn callable in
   let module FunctionContext = struct
     let qualifier = qualifier
 
@@ -3578,7 +3574,7 @@ let run
       (Statement.Define.name define.Node.value)
       CallGraph.DefineCallGraph.pp
       call_graph_of_define;
-  State.log "Forward analysis of callable: `%a`" Interprocedural.Target.pp_pretty callable;
+  State.log "Forward analysis of callable: `%a`" Target.pp_pretty callable;
   let timer = Timer.start () in
   let initial =
     TaintProfiler.track_duration ~profiler ~name:"Forward analysis - initial state" ~f:(fun () ->
@@ -3596,7 +3592,7 @@ let run
         Alarm.with_alarm
           ~max_time_in_seconds:60
           ~event_name:"forward taint analysis"
-          ~callable:(Interprocedural.Target.show_pretty callable)
+          ~callable:(Target.show_pretty callable)
           (fun () -> Fixpoint.forward ~cfg ~initial |> Fixpoint.exit)
           ())
   in
@@ -3631,7 +3627,7 @@ let run
     ~always_log_time_threshold:1.0 (* Seconds *)
     ~name:"Forward analysis"
     ~section:`Taint
-    ~normals:["callable", Interprocedural.Target.show_pretty callable]
+    ~normals:["callable", Target.show_pretty callable]
     ~timer
     ();
   model, issues, FunctionContext.triggered_sinks_to_propagate

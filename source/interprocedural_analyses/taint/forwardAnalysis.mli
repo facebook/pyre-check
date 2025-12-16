@@ -17,11 +17,11 @@ val run
   global_constants:Interprocedural.GlobalConstants.SharedMemory.ReadOnly.t ->
   type_of_expression_shared_memory:Interprocedural.TypeOfExpressionSharedMemory.t ->
   qualifier:Reference.t ->
-  callable:Interprocedural.Target.t ->
+  callable:Target.t ->
   define:Define.t Node.t ->
   cfg:Analysis.PyrePysaLogic.Cfg.t ->
   call_graph_of_define:Interprocedural.CallGraph.DefineCallGraph.t ->
-  get_callee_model:(Interprocedural.Target.t -> Model.t option) ->
+  get_callee_model:(Target.t -> Model.t option) ->
   existing_model:Model.t ->
   unit ->
   Model.Forward.t * Issue.t IssueHandle.SerializableMap.t * Issue.TriggeredSinkForBackward.t

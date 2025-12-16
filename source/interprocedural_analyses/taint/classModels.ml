@@ -17,7 +17,6 @@
 open Core
 open Pyre
 open Ast
-open Interprocedural
 open Domains
 module PyrePysaApi = Interprocedural.PyrePysaApi
 

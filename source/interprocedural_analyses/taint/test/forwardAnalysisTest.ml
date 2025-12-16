@@ -47,10 +47,7 @@ let assert_taint ?models ?models_source ?(skip_for_pyrefly = false) ~context sou
         ~taint_configuration:TaintConfiguration.Heap.default
         ~source_sink_filter:None
         ~definitions:None
-        ~stubs:
-          ([]
-          |> Interprocedural.Target.HashsetSharedMemory.from_heap
-          |> Interprocedural.Target.HashsetSharedMemory.read_only)
+        ~stubs:([] |> Target.HashsetSharedMemory.from_heap |> Target.HashsetSharedMemory.read_only)
         ~python_version:(ModelParser.PythonVersion.create ())
         ()
     in

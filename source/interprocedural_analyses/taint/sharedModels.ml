@@ -9,7 +9,6 @@
  * stored in the shared memory *)
 
 open Core
-open Interprocedural
 module T = TaintFixpoint.SharedModels
 include T
 
@@ -70,7 +69,7 @@ let object_targets models =
 
 let initialize_for_parameterized_callables ~higher_order_call_graph_fixpoint initial_models =
   let initial_model = function
-    | Interprocedural.Target.Parameterized _ as callable -> (
+    | Target.Parameterized _ as callable -> (
         (* We assume the higher order call graph should only create parameterized targets. *)
         callable
         |> Target.strip_parameters

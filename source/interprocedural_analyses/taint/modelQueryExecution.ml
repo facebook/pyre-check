@@ -1940,7 +1940,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       ~pyre_api
       ~modelable
       ~source_sink_filter
-      ~is_obscure:(Interprocedural.Target.HashsetSharedMemory.ReadOnly.mem stubs callable)
+      ~is_obscure:(Target.HashsetSharedMemory.ReadOnly.mem stubs callable)
       annotations
 end)
 

@@ -46,7 +46,7 @@ module type FUNCTION_CONTEXT = sig
 
   val definition : Statement.Define.t Node.t
 
-  val callable : Interprocedural.Target.t
+  val callable : Target.t
 
   val debug : bool
 
@@ -64,7 +64,7 @@ module type FUNCTION_CONTEXT = sig
 
   val call_graph_of_define : CallGraph.DefineCallGraph.t
 
-  val get_callee_model : Interprocedural.Target.t -> Model.t option
+  val get_callee_model : Target.t -> Model.t option
 
   val existing_model : Model.t
 
@@ -185,7 +185,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let self_variable, self_parameter =
-    if Interprocedural.Target.is_method FunctionContext.callable then
+    if Target.is_method FunctionContext.callable then
       let { Node.value = { Statement.Define.signature = { parameters; _ }; _ }; _ } =
         FunctionContext.definition
       in
@@ -467,7 +467,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     log
       "Backward analysis of call to `%a` with arguments (%a)@,Call site model:@,%a"
-      Interprocedural.Target.pp_pretty
+      Target.pp_pretty
       target
       Ast.Expression.pp_expression_argument_list
       arguments
@@ -1634,10 +1634,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           Lazy.force state_before_index_access
     in
     match
-      ( Interprocedural.Target.get_regular call_target.CallGraph.CallTarget.target,
+      ( Target.get_regular call_target.CallGraph.CallTarget.target,
         call_target.CallGraph.CallTarget.receiver_class )
     with
-    | Interprocedural.Target.Regular.Method { method_name = "__getitem__"; _ }, Some receiver_class
+    | Target.Regular.Method { method_name = "__getitem__"; _ }, Some receiver_class
     | Override { method_name = "__getitem__"; _ }, Some receiver_class ->
         (* Potentially access a named tuple *)
         analyze_getitem receiver_class
@@ -2226,8 +2226,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let call_target =
           CallModel.StringFormatCall.CallTarget.create
             ~call_targets:callees.call_targets
-            ~default_target:
-              (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_add)
+            ~default_target:(CallGraph.CallTarget.create Target.ArtificialTargets.str_add)
         in
         analyze_joined_string
           ~pyre_in_context
@@ -2264,8 +2263,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let call_target =
           CallModel.StringFormatCall.CallTarget.create
             ~call_targets:callees.call_targets
-            ~default_target:
-              (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_add)
+            ~default_target:(CallGraph.CallTarget.create Target.ArtificialTargets.str_add)
         in
         analyze_joined_string
           ~pyre_in_context
@@ -3227,7 +3225,7 @@ let run
     ()
   =
   let timer = Timer.start () in
-  let define_name = Interprocedural.Target.define_name_exn callable in
+  let define_name = Target.define_name_exn callable in
   let module FunctionContext = struct
     let qualifier = qualifier
 
@@ -3272,9 +3270,7 @@ let run
   let module State = State (FunctionContext) in
   let module Fixpoint = PyrePysaLogic.Fixpoint.Make (State) in
   let initial = State.{ taint = initial_taint } in
-  let () =
-    State.log "Backward analysis of callable: `%a`" Interprocedural.Target.pp_pretty callable
-  in
+  let () = State.log "Backward analysis of callable: `%a`" Target.pp_pretty callable in
   let entry_state =
     (* TODO(T156333229): hide side effect work behind feature flag *)
     match define.value.signature.parameters, define.value.captures with
@@ -3289,7 +3285,7 @@ let run
             Alarm.with_alarm
               ~max_time_in_seconds:60
               ~event_name:"backward taint analysis"
-              ~callable:(Interprocedural.Target.show_pretty callable)
+              ~callable:(Target.show_pretty callable)
               (fun () -> Fixpoint.backward ~cfg ~initial |> Fixpoint.entry)
               ())
   in
@@ -3321,7 +3317,7 @@ let run
     ~randomly_log_every:1000
     ~always_log_time_threshold:1.0 (* Seconds *)
     ~name:"Backward analysis"
-    ~normals:["callable", Interprocedural.Target.show_pretty callable]
+    ~normals:["callable", Target.show_pretty callable]
     ~section:`Taint
     ~timer
     ();

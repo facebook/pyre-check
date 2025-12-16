@@ -647,14 +647,12 @@ module HashsetSharedMemory = struct
   type target = T.t
 
   module T =
-    SaveLoadSharedMemory.MakeKeyValue
+    Hack_parallel.Std.SharedMemory.FirstClassWithKeys.Make
       (SharedMemoryKey)
       (struct
         type t = unit
 
         let prefix = Hack_parallel.Std.Prefix.make ()
-
-        let handle_prefix = Hack_parallel.Std.Prefix.make ()
 
         let description = "A set of targets"
       end)

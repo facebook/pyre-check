@@ -10,7 +10,6 @@ open Ast
 open Taint
 open Domains
 open Core
-module Target = Interprocedural.Target
 
 let test_no_errors _ =
   let open Issue in
@@ -151,7 +150,7 @@ let test_canonical_location _ =
         handle =
           {
             code = 1000;
-            callable = Interprocedural.Target.from_define ~define_name ~define:(Node.value define);
+            callable = Target.from_define ~define_name ~define:(Node.value define);
             sink = IssueHandle.Sink.Return;
           };
         locations;

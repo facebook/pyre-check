@@ -461,10 +461,7 @@ let get_initial_models ~pyre_api =
       ~taint_configuration:TaintConfiguration.Heap.default
       ~source_sink_filter:None
       ~definitions:None
-      ~stubs:
-        ([]
-        |> Interprocedural.Target.HashsetSharedMemory.from_heap
-        |> Interprocedural.Target.HashsetSharedMemory.read_only)
+      ~stubs:([] |> Target.HashsetSharedMemory.from_heap |> Target.HashsetSharedMemory.read_only)
       ~python_version:(ModelParser.PythonVersion.create ())
       ()
   in
@@ -487,8 +484,7 @@ module TestEnvironment = struct
     taint_configuration_shared_memory: TaintConfiguration.SharedMemory.t;
     whole_program_call_graph: CallGraph.WholeProgramCallGraph.t;
     define_call_graphs: CallGraph.SharedMemory.t;
-    get_define_call_graph:
-      Interprocedural.Target.t -> Interprocedural.CallGraph.DefineCallGraph.t option;
+    get_define_call_graph: Target.t -> Interprocedural.CallGraph.DefineCallGraph.t option;
     call_graph_fixpoint_state: CallGraphFixpoint.t;
     override_graph_heap: OverrideGraph.Heap.t;
     override_graph_shared_memory: OverrideGraph.SharedMemory.t;
@@ -540,7 +536,7 @@ module TestEnvironment = struct
     ClassIntervalSetGraph.SharedMemory.cleanup
       class_interval_graph_shared_memory
       class_interval_graph;
-    Target.HashsetSharedMemory.cleanup stubs_shared_memory_handle;
+    Target.HashsetSharedMemory.cleanup ~clean_old:true stubs_shared_memory_handle;
     GlobalConstants.SharedMemory.cleanup global_constants;
     Interprocedural.CallablesSharedMemory.ReadWrite.cleanup callables_to_definitions_map;
     Interprocedural.CallableToDecoratorsMap.SharedMemory.cleanup callables_to_decorators_map

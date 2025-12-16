@@ -10,7 +10,6 @@
 module PyreflyApi = PyreflyApi
 module PyrePysaApi = PyrePysaApi
 module FixpointAnalysis = FixpointAnalysis
-module Target = Target
 module CallablesSharedMemory = CallablesSharedMemory
 module CallableToDecoratorsMap = CallableToDecoratorsMap
 module CallGraph = CallGraph

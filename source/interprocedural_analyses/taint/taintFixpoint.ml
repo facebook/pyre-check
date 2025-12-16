@@ -27,8 +27,7 @@ module Context = struct
     pyre_api: PyrePysaApi.ReadOnly.t;
     class_interval_graph: Interprocedural.ClassIntervalSetGraph.SharedMemory.t;
     (* Avoid copying a large-sized closure for each worker, to reduce the memory usage. *)
-    get_define_call_graph:
-      Interprocedural.Target.t -> Interprocedural.CallGraph.DefineCallGraph.t option;
+    get_define_call_graph: Target.t -> Interprocedural.CallGraph.DefineCallGraph.t option;
     global_constants: Interprocedural.GlobalConstants.SharedMemory.ReadOnly.t;
     type_of_expression_shared_memory: Interprocedural.TypeOfExpressionSharedMemory.t;
     callables_to_definitions_map: Interprocedural.CallablesSharedMemory.ReadOnly.t;
@@ -49,7 +48,7 @@ module Analysis = struct
         Log.log
           ~section:`Interprocedural
           "Widened fixpoint for `%a`\nold: %anew: %a\nwidened: %a"
-          Interprocedural.Target.pp_pretty
+          Target.pp_pretty
           callable
           Model.pp
           previous
@@ -68,7 +67,7 @@ module Analysis = struct
           Log.log
             ~section:`Interprocedural
             "Reached fixpoint for `%a`\n%a"
-            Interprocedural.Target.pp_pretty
+            Target.pp_pretty
             callable
             Model.pp
             right
@@ -106,7 +105,7 @@ module Analysis = struct
     type t = {
       result: Result.t;
       model: Model.t;
-      additional_dependencies: Interprocedural.Target.t list;
+      additional_dependencies: Target.t list;
     }
   end
 
@@ -136,9 +135,7 @@ module Analysis = struct
     let call_graph_of_define =
       match get_define_call_graph callable with
       | Some call_graph -> call_graph
-      | None ->
-          Format.asprintf "Missing call graph for `%a`" Interprocedural.Target.pp callable
-          |> failwith
+      | None -> Format.asprintf "Missing call graph for `%a`" Target.pp callable |> failwith
     in
     let cfg =
       TaintProfiler.track_duration ~profiler ~name:"Control flow graph" ~f:(fun () ->
@@ -225,19 +222,13 @@ module Analysis = struct
       ~previous_model:({ Model.modes; sanitizers; _ } as previous_model)
       ~get_callee_model
     =
-    let () =
-      Log.log ~section:`Interprocedural "Analyzing %a" Interprocedural.Target.pp_pretty callable
-    in
+    let () = Log.log ~section:`Interprocedural "Analyzing %a" Target.pp_pretty callable in
     let { Interprocedural.CallablesSharedMemory.DefineAndQualifier.qualifier; define } =
       callable
-      |> Interprocedural.Target.strip_parameters
+      |> Target.strip_parameters
       |> Interprocedural.CallablesSharedMemory.ReadOnly.get_define callables_to_definitions_map
       |> AstResult.value_exn
-           ~message:
-             (Format.asprintf
-                "No definition found for `%a`"
-                Interprocedural.Target.pp_pretty
-                callable)
+           ~message:(Format.asprintf "No definition found for `%a`" Target.pp_pretty callable)
     in
     let string_combine_partial_sink_tree =
       taint_configuration
@@ -245,10 +236,7 @@ module Analysis = struct
       |> CallModel.StringFormatCall.declared_partial_sink_tree
     in
     if Model.ModeSet.contains Model.Mode.SkipAnalysis modes then
-      failwithf
-        "Expect the global fixpoint to skip analyzing %s"
-        (Interprocedural.Target.show_pretty callable)
-        ()
+      failwithf "Expect the global fixpoint to skip analyzing %s" (Target.show_pretty callable) ()
     else
       analyze_define_with_sanitizers_and_modes
         ~taint_configuration

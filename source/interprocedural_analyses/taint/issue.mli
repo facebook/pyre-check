@@ -115,7 +115,7 @@ module Candidates : sig
   val generate_issues
     :  t ->
     taint_configuration:TaintConfiguration.Heap.t ->
-    callable:Interprocedural.Target.t ->
+    callable:Target.t ->
     define_location:Location.t ->
     issue IssueHandle.SerializableMap.t
 end

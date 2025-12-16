@@ -8,7 +8,6 @@
 (* Registry: represents a mapping from targets to their model, stored in the ocaml heap. *)
 
 open Core
-open Interprocedural
 include TaintFixpoint.Registry
 
 let targets_with_mode models ~mode =

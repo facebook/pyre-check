@@ -655,8 +655,7 @@ module StringFormatCall = struct
       in
       create
         ~call_targets
-        ~default_target:
-          (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.format_string)
+        ~default_target:(CallGraph.CallTarget.create Target.ArtificialTargets.format_string)
   end
 end
 
@@ -778,9 +777,8 @@ module Callee = struct
       Some (Name.Attribute { base; attribute = method_name; origin = stringify_origin })
     in
     let name =
-      match Interprocedural.Target.get_regular target with
-      | Interprocedural.Target.Regular.Method { method_name; _ } ->
-          callee_name_from_method_name method_name
+      match Target.get_regular target with
+      | Target.Regular.Method { method_name; _ } -> callee_name_from_method_name method_name
       | Override { method_name; _ } -> callee_name_from_method_name method_name
       | Function { name; _ } -> Some (Name.Identifier name)
       | Object _ -> failwith "callees should be either methods or functions"

@@ -15,7 +15,7 @@ val from_callables
   scheduler_policies:Configuration.SchedulerPolicies.t ->
   callables_to_definitions_map:Interprocedural.CallablesSharedMemory.ReadOnly.t ->
   resolve_module_path:(Ast.Reference.t -> Interprocedural.RepositoryPath.t option) ->
-  callables:Interprocedural.Target.t list ->
+  callables:Target.t list ->
   t
 
 val empty : t

@@ -139,11 +139,8 @@ let set_up_environment
       ~source
       ~taint_configuration
       ~source_sink_filter:(Some taint_configuration.source_sink_filter)
-      ~definitions:(Some (Interprocedural.Target.HashSet.of_list definitions))
-      ~stubs:
-        (stubs
-        |> Interprocedural.Target.HashsetSharedMemory.from_heap
-        |> Interprocedural.Target.HashsetSharedMemory.read_only)
+      ~definitions:(Some (Target.HashSet.of_list definitions))
+      ~stubs:(stubs |> Target.HashsetSharedMemory.from_heap |> Target.HashsetSharedMemory.read_only)
       ~python_version:(ModelParser.PythonVersion.create ())
       ()
   in
@@ -268,10 +265,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
       ?path
       ~source:(Test.trim_extra_indentation model_source)
       ~definitions:None
-      ~stubs:
-        ([]
-        |> Interprocedural.Target.HashsetSharedMemory.from_heap
-        |> Interprocedural.Target.HashsetSharedMemory.read_only)
+      ~stubs:([] |> Target.HashsetSharedMemory.from_heap |> Target.HashsetSharedMemory.read_only)
       ~python_version:(ModelParser.PythonVersion.create ())
       ()
     |> fun { ModelParseResult.errors; _ } ->

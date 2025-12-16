@@ -822,8 +822,8 @@ let expand_via_features
         BreadcrumbSet.add (ViaFeature.via_value_of_breadcrumb ?tag ~arguments ()) breadcrumbs
     | ViaFeature.ViaTypeOf { parameter; tag } ->
         let breadcrumb =
-          match Interprocedural.Target.get_regular callee with
-          | Interprocedural.Target.Regular.Object object_target ->
+          match Target.get_regular callee with
+          | Target.Regular.Object object_target ->
               ViaFeature.via_type_of_breadcrumb_for_object ?tag ~pyre_in_context ~object_target ()
           | _ ->
               ViaFeature.via_type_of_breadcrumb
@@ -835,8 +835,8 @@ let expand_via_features
         in
         BreadcrumbSet.add breadcrumb breadcrumbs
     | ViaFeature.ViaAttributeName { tag } -> (
-        match Interprocedural.Target.get_regular callee with
-        | Interprocedural.Target.Regular.Object object_target ->
+        match Target.get_regular callee with
+        | Target.Regular.Object object_target ->
             let breadcrumb =
               ViaFeature.via_attribute_name_breadcrumb_for_object ?tag ~object_target ()
             in

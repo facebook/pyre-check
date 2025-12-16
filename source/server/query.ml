@@ -645,10 +645,7 @@ let rec process_request_exn
           ~taint_configuration
           ~source_sink_filter:None
           ~definitions:None
-          ~stubs:
-            ([]
-            |> Interprocedural.Target.HashsetSharedMemory.from_heap
-            |> Interprocedural.Target.HashsetSharedMemory.read_only)
+          ~stubs:([] |> Target.HashsetSharedMemory.from_heap |> Target.HashsetSharedMemory.read_only)
           ~python_version
           ()
         |> fun { Taint.ModelParseResult.queries; errors; _ } ->
@@ -725,7 +722,7 @@ let rec process_request_exn
         class_hierarchy_graph
       in
       let stubs_shared_memory_handle =
-        Interprocedural.Target.HashsetSharedMemory.from_heap
+        Target.HashsetSharedMemory.from_heap
           (Interprocedural.FetchCallables.get_stubs initial_callables)
       in
       let definitions_and_stubs =
@@ -766,7 +763,7 @@ let rec process_request_exn
         ~error_on_empty_result:true
         ~definitions_and_stubs:
           (Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true)
-        ~stubs:(Interprocedural.Target.HashsetSharedMemory.read_only stubs_shared_memory_handle)
+        ~stubs:(Target.HashsetSharedMemory.read_only stubs_shared_memory_handle)
         model_queries
     in
     let open Response in
@@ -1143,7 +1140,7 @@ let rec process_request_exn
                   in
                   let to_taint_model (callable, model) =
                     {
-                      Base.callable = Interprocedural.Target.external_name callable;
+                      Base.callable = Target.external_name callable;
                       model =
                         Taint.Model.to_json
                           ~expand_overrides:None

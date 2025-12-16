@@ -95,10 +95,7 @@ let assert_invalid_model
       ?path
       ~source:(Test.trim_extra_indentation model_source)
       ~definitions:None
-      ~stubs:
-        ([]
-        |> Interprocedural.Target.HashsetSharedMemory.from_heap
-        |> Interprocedural.Target.HashsetSharedMemory.read_only)
+      ~stubs:([] |> Target.HashsetSharedMemory.from_heap |> Target.HashsetSharedMemory.read_only)
       ~python_version:(ModelParser.PythonVersion.create ())
       ()
     |> fun { ModelParseResult.errors; _ } ->

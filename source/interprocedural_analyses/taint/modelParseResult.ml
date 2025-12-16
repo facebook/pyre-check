@@ -876,9 +876,9 @@ module CallableDecorator = struct
           let call_target_to_fully_qualified_name call_target =
             call_target
             |> CallGraph.CallTarget.target
-            |> Interprocedural.Target.get_regular
-            |> Interprocedural.Target.Regular.override_to_method
-            |> Interprocedural.Target.Regular.define_name_exn
+            |> Target.get_regular
+            |> Target.Regular.override_to_method
+            |> Target.Regular.define_name_exn
           in
           List.map ~f:call_target_to_fully_qualified_name call_targets
       | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->

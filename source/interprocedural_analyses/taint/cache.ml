@@ -63,10 +63,10 @@ end
 module AnalysisSetup = struct
   type t = {
     maximum_overrides: int option;
-    analyze_all_overrides_targets: Interprocedural.Target.Set.t;
-    attribute_targets: Interprocedural.Target.Set.t;
+    analyze_all_overrides_targets: Target.Set.t;
+    attribute_targets: Target.Set.t;
     skip_type_checking_callables: Ast.Reference.SerializableSet.t;
-    skip_analysis_targets: Interprocedural.Target.Set.t;
+    skip_analysis_targets: Target.Set.t;
     skip_overrides_targets: Ast.Reference.SerializableSet.t;
     skipped_overrides: Interprocedural.OverrideGraph.skipped_overrides;
     initial_callables: FetchCallables.t;
@@ -674,9 +674,7 @@ module OverrideGraphSharedMemory = struct
       Option.equal Int.equal maximum_overrides previous_maximum_overrides
     in
     let no_change_in_analyze_all_overrides_targets =
-      Interprocedural.Target.Set.equal
-        previous_analyze_all_overrides_targets
-        analyze_all_overrides_targets
+      Target.Set.equal previous_analyze_all_overrides_targets analyze_all_overrides_targets
     in
     let no_change_in_skip_overrides =
       Ast.Reference.SerializableSet.equal previous_skip_overrides_targets skip_overrides_targets
@@ -774,16 +772,14 @@ let override_graph = OverrideGraphSharedMemory.load_or_compute_if_stale_or_unloa
 
 module CallGraphSharedMemory = struct
   let compare_attribute_targets ~previous_attribute_targets ~attribute_targets =
-    let is_equal = Interprocedural.Target.Set.equal attribute_targets previous_attribute_targets in
+    let is_equal = Target.Set.equal attribute_targets previous_attribute_targets in
     if not is_equal then
       Log.info "Detected changes in the attribute targets";
     is_equal
 
 
   let compare_skip_analysis_targets ~previous_skip_analysis_targets ~skip_analysis_targets =
-    let is_equal =
-      Interprocedural.Target.HashSet.equal skip_analysis_targets previous_skip_analysis_targets
-    in
+    let is_equal = Target.HashSet.equal skip_analysis_targets previous_skip_analysis_targets in
     if not is_equal then
       Log.info "Detected changes in the skip analysis targets";
     is_equal
@@ -808,9 +804,7 @@ module CallGraphSharedMemory = struct
     && compare_attribute_targets ~previous_attribute_targets ~attribute_targets
     && compare_skip_analysis_targets
          ~previous_skip_analysis_targets:
-           (previous_skip_analysis_targets
-           |> Interprocedural.Target.Set.elements
-           |> Interprocedural.Target.HashSet.of_list)
+           (previous_skip_analysis_targets |> Target.Set.elements |> Target.HashSet.of_list)
          ~skip_analysis_targets
 
 
