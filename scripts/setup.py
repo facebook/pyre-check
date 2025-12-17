@@ -211,9 +211,8 @@ def produce_taint_test_dune_file(pyre_directory: Path) -> None:
                 dependencies = [
                     path for path in dependencies if (directory / path).exists()
                 ]
-                dune.write(
-                    f" (deps\n{textwrap.indent('\n'.join(dependencies), prefix='  ')})\n"
-                )
+                dependencies = textwrap.indent("\n".join(dependencies), prefix="  ")
+                dune.write(f" (deps\n{dependencies})\n")
 
                 action = "(run ./integrationTest.exe)"
                 action = f"(setenv\n PYSA_INTEGRATION_TEST\n {test_file.name}\n{textwrap.indent(action, prefix=' ')})"
