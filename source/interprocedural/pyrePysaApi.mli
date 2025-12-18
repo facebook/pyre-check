@@ -290,6 +290,7 @@ module InContext : sig
     :  ReadOnly.t ->
     module_qualifier:Ast.Reference.t ->
     define_name:Ast.Reference.t ->
+    call_graph:CallGraph.DefineCallGraph.t ->
     t
 
   val create_at_statement_scope
@@ -297,6 +298,7 @@ module InContext : sig
     module_qualifier:Ast.Reference.t ->
     define_name:Ast.Reference.t ->
     define:Ast.Statement.Define.t Ast.Node.t ->
+    call_graph:CallGraph.DefineCallGraph.t ->
     statement_key:int ->
     t
 

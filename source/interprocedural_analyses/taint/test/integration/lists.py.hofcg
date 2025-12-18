@@ -110,7 +110,7 @@ Higher order call graphs
         ]
       }
     },
-    "125:21-125:27|artificial-call|str-call-to-dunder-repr": {
+    "125:21-125:27|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -142,7 +142,7 @@ Higher order call graphs
   "callable": "lists.inconsistent_type_context",
   "returned_callables": [],
   "calls": {
-    "140:5-140:11|artificial-call|str-call-to-dunder-repr": {
+    "140:5-140:11|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -192,7 +192,7 @@ Higher order call graphs
         ]
       }
     },
-    "140:40-140:46|artificial-call|str-call-to-dunder-str": {
+    "140:40-140:46|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {

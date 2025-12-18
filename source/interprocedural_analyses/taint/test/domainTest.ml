@@ -23,6 +23,7 @@ let test_partition_call_map context =
       pyre_api
       ~module_qualifier:!&"test"
       ~define_name:!&"test.__toplevel__"
+      ~call_graph:Interprocedural.CallGraph.DefineCallGraph.empty
   in
   let taint =
     ForwardTaint.singleton CallInfo.declaration (Sources.NamedSource "UserControlled") Frame.initial

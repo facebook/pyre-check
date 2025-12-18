@@ -1242,8 +1242,7 @@ and Origin : sig
     | MatchValueComparisonEquals
     | MatchConditionWithGuard
     | ResolveStrCall
-    | StrCallToDunderStr (* `str(x)` is turned into `x.__str__()` *)
-    | StrCallToDunderRepr (* `str(x)` is turned into `x.__repr__()` *)
+    | StrCallToDunderMethod (* `str(x)` is turned into `x.__str__()` or `x.__repr__()` *)
     | ReprCall (* `repr(x)` is turned into `x.__repr__()` *)
     | AbsCall (* `abs(x)` is turned into `x.__abs__()` *)
     | IterCall (* `iter(x)` is turned into `x.__iter__()` *)
@@ -1371,8 +1370,7 @@ end = struct
     | MatchValueComparisonEquals
     | MatchConditionWithGuard
     | ResolveStrCall
-    | StrCallToDunderStr
-    | StrCallToDunderRepr
+    | StrCallToDunderMethod
     | ReprCall
     | AbsCall
     | IterCall
@@ -1430,8 +1428,7 @@ end = struct
       | InIter
       | InGetItem
       | InGetItemEq
-      | StrCallToDunderStr
-      | StrCallToDunderRepr
+      | StrCallToDunderMethod
       | ReprCall
       | AbsCall
       | IterCall
@@ -1528,8 +1525,7 @@ end = struct
     | MatchValueComparisonEquals -> Format.fprintf formatter "match-value-comparison-equals"
     | MatchConditionWithGuard -> Format.fprintf formatter "match-condition-with-guard"
     | ResolveStrCall -> Format.fprintf formatter "resolve-str-call"
-    | StrCallToDunderStr -> Format.fprintf formatter "str-call-to-dunder-str"
-    | StrCallToDunderRepr -> Format.fprintf formatter "str-call-to-dunder-repr"
+    | StrCallToDunderMethod -> Format.fprintf formatter "str-call-to-dunder-method"
     | ReprCall -> Format.fprintf formatter "repr-call"
     | AbsCall -> Format.fprintf formatter "abs-call"
     | IterCall -> Format.fprintf formatter "iter-call"
@@ -1635,8 +1631,7 @@ end = struct
     | "match-value-comparison-equals" -> Ok MatchValueComparisonEquals
     | "match-condition-with-guard" -> Ok MatchConditionWithGuard
     | "resolve-str-call" -> Ok ResolveStrCall
-    | "str-call-to-dunder-str" -> Ok StrCallToDunderStr
-    | "str-call-to-dunder-repr" -> Ok StrCallToDunderRepr
+    | "str-call-to-dunder-method" -> Ok StrCallToDunderMethod
     | "repr-call" -> Ok ReprCall
     | "abs-call" -> Ok AbsCall
     | "iter-call" -> Ok IterCall

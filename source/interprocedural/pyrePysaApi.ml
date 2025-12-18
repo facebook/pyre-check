@@ -474,16 +474,27 @@ module InContext = struct
     | Pyre1 of Pyre1Api.InContext.t
     | Pyrefly of PyreflyApi.InContext.t
 
-  let create_at_function_scope api ~module_qualifier ~define_name =
+  let create_at_function_scope api ~module_qualifier ~define_name ~call_graph =
     match api with
     | ReadOnly.Pyre1 pyre_api ->
         Pyre1 (Pyre1Api.InContext.create_at_function_scope pyre_api ~module_qualifier ~define_name)
     | ReadOnly.Pyrefly pyrefly_api ->
         Pyrefly
-          (PyreflyApi.InContext.create_at_function_scope pyrefly_api ~module_qualifier ~define_name)
+          (PyreflyApi.InContext.create_at_function_scope
+             pyrefly_api
+             ~module_qualifier
+             ~define_name
+             ~call_graph)
 
 
-  let create_at_statement_scope api ~module_qualifier ~define_name ~define ~statement_key =
+  let create_at_statement_scope
+      api
+      ~module_qualifier
+      ~define_name
+      ~define
+      ~call_graph
+      ~statement_key
+    =
     match api with
     | ReadOnly.Pyre1 pyre_api ->
         Pyre1
@@ -499,6 +510,7 @@ module InContext = struct
              pyrefly_api
              ~module_qualifier
              ~define_name
+             ~call_graph
              ~statement_key)
 
 

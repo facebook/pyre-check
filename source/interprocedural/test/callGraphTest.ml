@@ -4458,6 +4458,7 @@ let test_call_graph_of_define =
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
+           ~skip_for_pyrefly:false
            ~_migrated_to_pyrefly:true
            ~cmp:DefineCallGraphForTest.equal_ignoring_types
            ~source:{|
@@ -4467,7 +4468,56 @@ let test_call_graph_of_define =
            ~define_name:"test.foo"
            ~expected:
              [
-               ( "3:9-3:15|artificial-call|str-call-to-dunder-str",
+               ( "3:9-3:15|artificial-call|str-call-to-dunder-method",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~receiver_class:"Exception"
+                            (Target.Regular.Method
+                               {
+                                 class_name = "BaseException";
+                                 method_name = "__str__";
+                                 kind = Normal;
+                               });
+                        ]
+                      ()) );
+               ( "3:9-3:25|artificial-call|binary",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~receiver_class:"str"
+                            (Target.Regular.Method
+                               { class_name = "str"; method_name = "__add__"; kind = Normal });
+                        ]
+                      ()) );
+             ]
+           ~pyrefly_expected:
+             [
+               ( "3:9-3:15",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~new_targets:
+                        [
+                          CallTarget.create_regular
+                            ~is_static_method:true
+                            (Target.Regular.Method
+                               { class_name = "str"; method_name = "__new__"; kind = Normal });
+                        ]
+                      ~init_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            (Target.Regular.Method
+                               { class_name = "object"; method_name = "__init__"; kind = Normal });
+                        ]
+                      ()) );
+               ( "3:9-3:15|artificial-call|str-call-to-dunder-method",
                  ExpressionCallees.from_call
                    (CallCallees.create
                       ~call_targets:

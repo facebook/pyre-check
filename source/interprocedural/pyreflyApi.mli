@@ -276,16 +276,20 @@ module InContext : sig
     :  ReadOnly.t ->
     module_qualifier:Ast.Reference.t ->
     define_name:Ast.Reference.t ->
+    call_graph:CallGraph.DefineCallGraph.t ->
     t
 
   val create_at_statement_scope
     :  ReadOnly.t ->
     module_qualifier:Ast.Reference.t ->
     define_name:Ast.Reference.t ->
+    call_graph:CallGraph.DefineCallGraph.t ->
     statement_key:int ->
     t
 
   val pyre_api : t -> ReadOnly.t
+
+  val call_graph : t -> CallGraph.DefineCallGraph.t
 
   val is_global : t -> reference:Ast.Reference.t -> bool
 

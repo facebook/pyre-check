@@ -478,6 +478,11 @@ module DefineCallGraph : sig
 
   val merge : t -> t -> t
 
+  val resolve_expression
+    :  t ->
+    expression_identifier:ExpressionIdentifier.t ->
+    ExpressionCallees.t option
+
   val resolve_call
     :  t ->
     location:Ast.Location.t ->

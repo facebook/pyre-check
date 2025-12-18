@@ -852,7 +852,7 @@ module CallableDecorator = struct
         | _ -> decorator_expression
       in
       match pyre_api with
-      | PyrePysaApi.ReadOnly.Pyre1 _ ->
+      | PyrePysaApi.ReadOnly.Pyre1 pyre_api ->
           let return_type =
             (* Since this won't be used and resolving the return type could be expensive, let's pass
                a random type. *)
@@ -861,10 +861,11 @@ module CallableDecorator = struct
           let { Interprocedural.CallGraph.CallCallees.call_targets; new_targets; init_targets; _ } =
             Interprocedural.CallGraphBuilder.resolve_callees_from_type_external
               ~pyre_in_context:
-                (PyrePysaApi.InContext.create_at_function_scope
-                   pyre_api
-                   ~module_qualifier:qualifier
-                   ~define_name:(Target.define_name_exn target))
+                (PyrePysaApi.InContext.Pyre1
+                   (Analysis.PyrePysaEnvironment.InContext.create_at_function_scope
+                      pyre_api
+                      ~module_qualifier:qualifier
+                      ~define_name:(Target.define_name_exn target)))
               ~callables_to_definitions_map
               ~override_graph:None
               ~return_type

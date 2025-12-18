@@ -5161,6 +5161,7 @@ module InContext = struct
         api: ReadOnly.t;
         module_qualifier: ModuleQualifier.t;
         define_name: Ast.Reference.t;
+        call_graph: CallGraph.DefineCallGraph.t;
       }
     | StatementScope of {
         api: ReadOnly.t;
@@ -5168,31 +5169,39 @@ module InContext = struct
         (* Define name of the function. Note that this might be a decorated target, which is not
            visible by pyrefly. *)
         define_name: Ast.Reference.t;
+        call_graph: CallGraph.DefineCallGraph.t;
         statement_key: int;
       }
 
-  let create_at_function_scope api ~module_qualifier ~define_name =
+  let create_at_function_scope api ~module_qualifier ~define_name ~call_graph =
     FunctionScope
       {
         api;
         module_qualifier = ModuleQualifier.from_reference_unchecked module_qualifier;
         define_name;
+        call_graph;
       }
 
 
-  let create_at_statement_scope api ~module_qualifier ~define_name ~statement_key =
+  let create_at_statement_scope api ~module_qualifier ~define_name ~call_graph ~statement_key =
     StatementScope
       {
         api;
         module_qualifier = ModuleQualifier.from_reference_unchecked module_qualifier;
         define_name;
         statement_key;
+        call_graph;
       }
 
 
   let pyre_api = function
     | FunctionScope { api; _ } -> api
     | StatementScope { api; _ } -> api
+
+
+  let call_graph = function
+    | FunctionScope { call_graph; _ } -> call_graph
+    | StatementScope { call_graph; _ } -> call_graph
 
 
   let is_global _ ~reference:_ =

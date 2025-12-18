@@ -4,11 +4,26 @@ Higher order call graphs
   "callable": "string_conversion.$toplevel",
   "returned_callables": [],
   "calls": {
-    "12:0-12:7|identifier|$local_string_conversion$request": {
+    "167:18-167:23|identifier|float": {
       "identifier": {
-        "globals": [
-          { "target": "Obj{string_conversion.request}", "index": 0 }
-        ]
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.float.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -21,7 +36,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -29,25 +44,23 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "string_conversion.B"
           }
-        ]
-      }
-    },
-    "110:10-110:17|identifier|$local_string_conversion$request": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{string_conversion.request}", "index": 0 }
         ]
       }
     },
     "110:10-110:21": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{django.http.Request.GET}", "index": 0 }
+          {
+            "target": "Obj{django.http.Request.GET}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -56,24 +69,46 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "builtins.dict.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
     },
     "112:4-112:21": {
       "call": {
-        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
       }
     },
     "112:9-112:20|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
+    },
+    "112:12-112:18": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.str.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     },
     "112:12-112:18|artificial-call|str-call-to-dunder-method": {
       "call": {
@@ -88,14 +123,27 @@ Higher order call graphs
         ]
       }
     },
+    "112:12-112:18|format-string-stringify": {
+      "format_string_stringify": [
+        {
+          "target": "builtins.str.__format__",
+          "index": 0,
+          "implicit_receiver": true,
+          "return_type": [],
+          "receiver_class": "builtins.str"
+        }
+      ]
+    },
     "114:4-114:16": {
       "call": {
-        "calls": [ { "target": "eval", "index": 1, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 1, "return_type": [] }
+        ]
       }
     },
     "114:9-114:15|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 1 }
+        { "target": "Obj{<format-string>}", "index": 1, "return_type": [] }
       ]
     },
     "114:12-114:13|format-string-stringify": {
@@ -117,7 +165,7 @@ Higher order call graphs
   "calls": {
     "160:11-160:17|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     }
   }
@@ -128,17 +176,17 @@ Higher order call graphs
   "calls": {
     "152:11-152:17|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "152:14-152:15|format-string-stringify": {
       "format_string_stringify": [
         {
-          "target": "str.__str__",
+          "target": "builtins.str.__format__",
           "index": 0,
           "implicit_receiver": true,
           "return_type": [],
-          "receiver_class": "str"
+          "receiver_class": "builtins.str"
         },
         {
           "target": "string_conversion.D.__str__",
@@ -157,7 +205,18 @@ Higher order call graphs
   "calls": {
     "156:11-156:17|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
+      ]
+    },
+    "156:14-156:15|format-string-stringify": {
+      "format_string_stringify": [
+        {
+          "target": "string_conversion.D.__str__",
+          "index": 0,
+          "implicit_receiver": true,
+          "return_type": [],
+          "receiver_class": "string_conversion.D"
+        }
       ]
     }
   }
@@ -168,14 +227,14 @@ Higher order call graphs
   "calls": {
     "174:11-174:23|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "174:14-174:21": {
       "call": {
         "new_calls": [
           {
-            "target": "type.__new__",
+            "target": "builtins.type.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -183,18 +242,15 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "type.__init__",
+            "target": "builtins.type.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.type"
           }
-        ]
+        ],
+        "unresolved": [ "UnexpectedDefiningClass" ]
       }
-    },
-    "174:14-174:21|format-string-stringify": {
-      "format_string_stringify": [
-        { "target": "BaseException.__str__", "index": 0, "return_type": [] }
-      ]
     }
   }
 }
@@ -204,7 +260,7 @@ Higher order call graphs
   "calls": {
     "133:11-133:36|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "133:14-133:23": {
@@ -239,7 +295,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -247,22 +303,25 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "string_conversion.StrIsTainted"
           }
         ]
       }
     },
     "52:4-52:38": {
       "call": {
-        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
       }
     },
     "52:9-52:37|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "52:18-52:29": {
@@ -293,17 +352,17 @@ Higher order call graphs
     },
     "143:11-143:17|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "143:14-143:15|format-string-stringify": {
       "format_string_stringify": [
         {
-          "target": "str.__str__",
+          "target": "builtins.str.__format__",
           "index": 0,
           "implicit_receiver": true,
           "return_type": [],
-          "receiver_class": "str"
+          "receiver_class": "builtins.str"
         },
         {
           "target": "string_conversion.D.__str__",
@@ -329,7 +388,18 @@ Higher order call graphs
     },
     "148:11-148:17|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
+      ]
+    },
+    "148:14-148:15|format-string-stringify": {
+      "format_string_stringify": [
+        {
+          "target": "string_conversion.D.__str__",
+          "index": 0,
+          "implicit_receiver": true,
+          "return_type": [],
+          "receiver_class": "string_conversion.D"
+        }
       ]
     }
   }
@@ -340,23 +410,40 @@ Higher order call graphs
   "calls": {
     "178:4-178:19|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
+    },
+    "178:7-178:17|identifier|error_type": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.BaseException.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.BaseException.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "builtins.Exception"
+            }
+          ]
+        }
+      }
     },
     "178:7-178:17|format-string-stringify": {
       "format_string_stringify": [
         {
-          "target": "object.__str__",
-          "index": 0,
-          "implicit_receiver": true,
-          "return_type": []
-        },
-        {
-          "target": "str.__str__",
+          "target": "builtins.str.__format__",
           "index": 0,
           "implicit_receiver": true,
           "return_type": [],
-          "receiver_class": "str"
+          "receiver_class": "builtins.str"
         }
       ]
     }
@@ -368,42 +455,38 @@ Higher order call graphs
   "calls": {
     "182:4-182:20|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "182:7-182:18": {
       "attribute_access": {
-        "properties": [
-          {
-            "target": "object.__class__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "182:7-182:18|format-string-stringify": {
-      "format_string_stringify": [
-        {
-          "target": "object.__str__",
-          "index": 0,
-          "implicit_receiver": true,
-          "return_type": []
-        },
-        {
-          "target": "string_conversion.B.__str__",
-          "index": 0,
-          "implicit_receiver": true,
-          "return_type": []
-        },
-        {
-          "target": "string_conversion.C.__str__",
-          "index": 0,
-          "implicit_receiver": true,
-          "return_type": []
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "string_conversion.B"
+            },
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "string_conversion.C"
+            }
+          ]
         }
-      ]
+      }
     }
   }
 }
@@ -415,7 +498,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -423,22 +506,25 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "string_conversion.ReprIsTainted"
           }
         ]
       }
     },
     "47:4-47:28": {
       "call": {
-        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
       }
     },
     "47:9-47:27|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "47:18-47:19|format-string-stringify": {
@@ -462,7 +548,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -470,22 +556,25 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "string_conversion.StrIsTainted"
           }
         ]
       }
     },
     "42:4-42:28": {
       "call": {
-        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
       }
     },
     "42:9-42:27|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "42:18-42:19|format-string-stringify": {
@@ -509,39 +598,23 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "builtins.int.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "builtins.int"
           }
-        ]
-      }
-    },
-    "91:7-91:12|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "int.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
-          }
-        ]
-      }
-    },
-    "92:17-92:24|identifier|$local_string_conversion$request": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{string_conversion.request}", "index": 0 }
         ]
       }
     },
     "92:17-92:28": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{django.http.Request.GET}", "index": 0 }
+          {
+            "target": "Obj{django.http.Request.GET}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -550,11 +623,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "builtins.dict.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -563,7 +636,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -571,32 +644,35 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "string_conversion.C"
           }
         ]
       }
     },
     "95:4-95:16": {
       "call": {
-        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
       }
     },
     "95:9-95:15|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "95:12-95:13|format-string-stringify": {
       "format_string_stringify": [
         {
-          "target": "str.__str__",
+          "target": "builtins.str.__format__",
           "index": 0,
           "implicit_receiver": true,
           "return_type": [],
-          "receiver_class": "str"
+          "receiver_class": "builtins.str"
         },
         {
           "target": "string_conversion.C.__str__",
@@ -613,17 +689,14 @@ Higher order call graphs
   "callable": "string_conversion.joined_base",
   "returned_callables": [],
   "calls": {
-    "103:8-103:15|identifier|$local_string_conversion$request": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{string_conversion.request}", "index": 0 }
-        ]
-      }
-    },
     "103:8-103:19": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{django.http.Request.GET}", "index": 0 }
+          {
+            "target": "Obj{django.http.Request.GET}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -632,33 +705,34 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "builtins.dict.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
     },
     "105:4-105:19": {
       "call": {
-        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
       }
     },
     "105:9-105:18|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "105:15-105:16|format-string-stringify": {
       "format_string_stringify": [
         {
-          "target": "str.__str__",
+          "target": "builtins.str.__format__",
           "index": 0,
           "implicit_receiver": true,
-          "return_type": [],
-          "receiver_class": "str"
+          "return_type": []
         }
       ]
     }
@@ -672,7 +746,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -680,8 +754,29 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "string_conversion.StrIsTainted"
+          }
+        ]
+      }
+    },
+    "188:11-188:17": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.str.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 1,
             "implicit_receiver": true,
             "return_type": []
           }
@@ -703,7 +798,15 @@ Higher order call graphs
     },
     "188:11-188:27|artificial-call|binary": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.str.__add__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.str"
+          }
+        ]
       }
     }
   }
@@ -714,12 +817,14 @@ Higher order call graphs
   "calls": {
     "73:4-73:16": {
       "call": {
-        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
       }
     },
     "73:9-73:15|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "73:12-73:13|format-string-stringify": {
@@ -748,22 +853,24 @@ Higher order call graphs
   "calls": {
     "99:4-99:16": {
       "call": {
-        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
       }
     },
     "99:9-99:15|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "99:12-99:13|format-string-stringify": {
       "format_string_stringify": [
         {
-          "target": "object.__str__",
+          "target": "builtins.int.__format__",
           "index": 0,
           "implicit_receiver": true,
           "return_type": [],
-          "receiver_class": "int"
+          "receiver_class": "builtins.int"
         },
         {
           "target": "string_conversion.B.__str__",
@@ -789,17 +896,17 @@ Higher order call graphs
   "calls": {
     "120:11-120:28|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "120:14-120:15|format-string-stringify": {
       "format_string_stringify": [
         {
-          "target": "object.__repr__",
+          "target": "builtins.int.__format__",
           "index": 0,
           "implicit_receiver": true,
           "return_type": [],
-          "receiver_class": "int"
+          "receiver_class": "builtins.int"
         }
       ]
     },
@@ -824,11 +931,11 @@ Higher order call graphs
     "120:25-120:26|format-string-stringify": {
       "format_string_stringify": [
         {
-          "target": "object.__repr__",
+          "target": "builtins.int.__format__",
           "index": 1,
           "implicit_receiver": true,
           "return_type": [],
-          "receiver_class": "int"
+          "receiver_class": "builtins.int"
         }
       ]
     }
@@ -840,19 +947,21 @@ Higher order call graphs
   "calls": {
     "68:4-68:31": {
       "call": {
-        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
       }
     },
     "68:9-68:30|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "68:12-68:28": {
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -863,7 +972,8 @@ Higher order call graphs
             "target": "string_conversion.A.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "string_conversion.A"
           }
         ]
       }
@@ -887,17 +997,17 @@ Higher order call graphs
   "calls": {
     "164:11-164:17|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "164:14-164:15|format-string-stringify": {
       "format_string_stringify": [
         {
-          "target": "Overrides{object.__repr__}",
+          "target": "builtins.object.__format__",
           "index": 0,
           "implicit_receiver": true,
           "return_type": [],
-          "receiver_class": "object"
+          "receiver_class": "builtins.object"
         }
       ]
     }
@@ -911,7 +1021,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -919,28 +1029,51 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "string_conversion.StrIsTainted"
           }
         ]
       }
     },
     "195:4-195:16": {
       "call": {
-        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "195:9-195:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.str.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "195:9-195:15|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
-            "target": "string_conversion.StrIsTainted.__str__",
+            "target": "Overrides{builtins.object.__repr__}",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "string_conversion.StrIsTainted"
+            "receiver_class": "builtins.object"
           }
         ]
       }
@@ -953,19 +1086,21 @@ Higher order call graphs
   "calls": {
     "64:4-64:40": {
       "call": {
-        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
       }
     },
     "64:9-64:39|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "64:12-64:37": {
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -976,7 +1111,8 @@ Higher order call graphs
             "target": "string_conversion.A.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "string_conversion.A"
           }
         ]
       }
@@ -992,30 +1128,15 @@ Higher order call graphs
         }
       ]
     },
-    "64:14-64:21|identifier|$local_string_conversion$request": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{string_conversion.request}", "index": 0 }
-        ]
-      }
-    },
-    "64:14-64:25": {
-      "attribute_access": {
-        "globals": [
-          { "target": "Obj{django.http.Request.GET}", "index": 0 }
-        ],
-        "is_attribute": true
-      }
-    },
     "64:14-64:36|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "builtins.dict.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -1030,7 +1151,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -1038,17 +1159,27 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "string_conversion.ReprIsTainted"
           }
         ]
       }
     },
     "32:4-32:17": {
       "call": {
-        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "32:9-32:16": {
+      "call": {
+        "calls": [
+          { "target": "builtins.repr", "index": 0, "return_type": [] }
+        ]
       }
     },
     "32:9-32:16|artificial-call|repr-call": {
@@ -1074,7 +1205,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -1082,17 +1213,40 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "string_conversion.ReprIsTainted"
           }
         ]
       }
     },
     "37:4-37:16": {
       "call": {
-        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "37:9-37:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.str.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "37:9-37:15|artificial-call|str-call-to-dunder-method": {
@@ -1118,7 +1272,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -1126,17 +1280,40 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "string_conversion.StrIsTainted"
           }
         ]
       }
     },
     "27:4-27:16": {
       "call": {
-        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "27:9-27:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.str.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "27:9-27:15|artificial-call|str-call-to-dunder-method": {
@@ -1160,7 +1337,13 @@ Higher order call graphs
   "calls": {
     "87:15-87:21": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{string_conversion.C.g}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{string_conversion.C.g}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     }
@@ -1179,7 +1362,7 @@ Higher order call graphs
     },
     "170:15-170:21|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     }
   }
@@ -1188,17 +1371,14 @@ Higher order call graphs
   "callable": "string_conversion.ReprIsTainted.__repr__",
   "returned_callables": [],
   "calls": {
-    "22:15-22:22|identifier|$local_string_conversion$request": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{string_conversion.request}", "index": 0 }
-        ]
-      }
-    },
     "22:15-22:26": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{django.http.Request.GET}", "index": 0 }
+          {
+            "target": "Obj{django.http.Request.GET}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -1207,11 +1387,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "builtins.dict.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -1222,17 +1402,14 @@ Higher order call graphs
   "callable": "string_conversion.StrIsTainted.__str__",
   "returned_callables": [],
   "calls": {
-    "17:15-17:22|identifier|$local_string_conversion$request": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{string_conversion.request}", "index": 0 }
-        ]
-      }
-    },
     "17:15-17:26": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{django.http.Request.GET}", "index": 0 }
+          {
+            "target": "Obj{django.http.Request.GET}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -1241,11 +1418,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "builtins.dict.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }

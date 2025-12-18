@@ -1196,7 +1196,7 @@ Higher order call graphs
         ]
       }
     },
-    "139:10-139:21|artificial-call|str-call-to-dunder-str": {
+    "139:10-139:21|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1209,7 +1209,7 @@ Higher order call graphs
         ]
       }
     },
-    "141:10-141:22|artificial-call|str-call-to-dunder-str": {
+    "141:10-141:22|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1222,7 +1222,7 @@ Higher order call graphs
         ]
       }
     },
-    "143:10-143:16|artificial-call|str-call-to-dunder-repr": {
+    "143:10-143:16|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1235,7 +1235,7 @@ Higher order call graphs
         ]
       }
     },
-    "145:10-145:23|artificial-call|str-call-to-dunder-repr": {
+    "145:10-145:23|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1248,7 +1248,7 @@ Higher order call graphs
         ]
       }
     },
-    "147:10-147:25|artificial-call|str-call-to-dunder-repr": {
+    "147:10-147:25|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1261,7 +1261,7 @@ Higher order call graphs
         ]
       }
     },
-    "149:10-149:25|artificial-call|str-call-to-dunder-repr": {
+    "149:10-149:25|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1274,7 +1274,7 @@ Higher order call graphs
         ]
       }
     },
-    "151:10-151:25|artificial-call|str-call-to-dunder-repr": {
+    "151:10-151:25|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1287,7 +1287,7 @@ Higher order call graphs
         ]
       }
     },
-    "153:10-153:16|artificial-call|str-call-to-dunder-repr": {
+    "153:10-153:16|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1300,7 +1300,7 @@ Higher order call graphs
         ]
       }
     },
-    "155:10-155:23|artificial-call|str-call-to-dunder-str": {
+    "155:10-155:23|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1313,7 +1313,7 @@ Higher order call graphs
         ]
       }
     },
-    "157:10-157:18|artificial-call|str-call-to-dunder-repr": {
+    "157:10-157:18|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1326,7 +1326,7 @@ Higher order call graphs
         ]
       }
     },
-    "159:10-159:27|artificial-call|str-call-to-dunder-repr": {
+    "159:10-159:27|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1372,7 +1372,7 @@ Higher order call graphs
         ]
       }
     },
-    "161:10-161:16|artificial-call|str-call-to-dunder-repr": {
+    "161:10-161:16|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1385,7 +1385,7 @@ Higher order call graphs
         ]
       }
     },
-    "163:10-163:27|artificial-call|str-call-to-dunder-repr": {
+    "163:10-163:27|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1431,7 +1431,7 @@ Higher order call graphs
         ]
       }
     },
-    "165:10-165:25|artificial-call|str-call-to-dunder-repr": {
+    "165:10-165:25|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1477,7 +1477,7 @@ Higher order call graphs
         ]
       }
     },
-    "167:10-167:16|artificial-call|str-call-to-dunder-repr": {
+    "167:10-167:16|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1490,7 +1490,7 @@ Higher order call graphs
         ]
       }
     },
-    "169:10-169:16|artificial-call|str-call-to-dunder-repr": {
+    "169:10-169:16|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1503,7 +1503,7 @@ Higher order call graphs
         ]
       }
     },
-    "171:10-171:26|artificial-call|str-call-to-dunder-repr": {
+    "171:10-171:26|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1549,7 +1549,7 @@ Higher order call graphs
         ]
       }
     },
-    "173:10-173:16|artificial-call|str-call-to-dunder-repr": {
+    "173:10-173:16|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1562,7 +1562,7 @@ Higher order call graphs
         ]
       }
     },
-    "175:10-175:16|artificial-call|str-call-to-dunder-repr": {
+    "175:10-175:16|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1575,7 +1575,7 @@ Higher order call graphs
         ]
       }
     },
-    "177:10-177:25|artificial-call|str-call-to-dunder-repr": {
+    "177:10-177:25|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1621,7 +1621,7 @@ Higher order call graphs
         ]
       }
     },
-    "179:10-179:16|artificial-call|str-call-to-dunder-repr": {
+    "179:10-179:16|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1634,7 +1634,7 @@ Higher order call graphs
         ]
       }
     },
-    "181:10-181:26|artificial-call|str-call-to-dunder-str": {
+    "181:10-181:26|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1647,7 +1647,7 @@ Higher order call graphs
         ]
       }
     },
-    "183:10-183:17|artificial-call|str-call-to-dunder-repr": {
+    "183:10-183:17|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1660,7 +1660,7 @@ Higher order call graphs
         ]
       }
     },
-    "185:10-185:26|artificial-call|str-call-to-dunder-repr": {
+    "185:10-185:26|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {

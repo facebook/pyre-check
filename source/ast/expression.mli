@@ -489,8 +489,7 @@ and Origin : sig
     | MatchValueComparisonEquals
     | MatchConditionWithGuard
     | ResolveStrCall
-    | StrCallToDunderStr (* `str(x)` is turned into `x.__str__()` *)
-    | StrCallToDunderRepr (* `str(x)` is turned into `x.__repr__()` *)
+    | StrCallToDunderMethod (* `str(x)` is turned into `x.__str__()` or `x.__repr__()` *)
     | ReprCall (* `repr(x)` is turned into `x.__repr__()` *)
     | AbsCall (* `abs(x)` is turned into `x.__abs__()` *)
     | IterCall (* `iter(x)` is turned into `x.__iter__()` *)

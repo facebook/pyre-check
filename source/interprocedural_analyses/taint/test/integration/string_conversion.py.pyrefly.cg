@@ -1,0 +1,125 @@
+@generated
+Call dependencies
+{
+  "string_conversion.C.__str__ (method)": [
+    "string_conversion.C.g (object)"
+  ],
+  "string_conversion.OverrideStr.__str__ (method)": [
+    "pysa._test_source (fun)"
+  ],
+  "string_conversion.ReprIsTainted.__repr__ (method)": [
+    "builtins.dict.__getitem__ (method)", "django.http.Request.GET (object)"
+  ],
+  "string_conversion.StrIsTainted.__str__ (method)": [
+    "builtins.dict.__getitem__ (method)", "django.http.Request.GET (object)"
+  ],
+  "string_conversion.analyze_implicit_call (fun)": [
+    "builtins.dict.__getitem__ (method)", "builtins.eval (fun)",
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "builtins.str.__format__ (method)", "builtins.str.__new__ (method)",
+    "django.http.Request.GET (object)",
+    "string_conversion.B.__str__ (method)"
+  ],
+  "string_conversion.backward_unioned_callees (fun)": [
+    "builtins.str.__format__ (method)",
+    "string_conversion.D.__str__ (method)"
+  ],
+  "string_conversion.backward_unioned_callees_2 (fun)": [
+    "string_conversion.D.__str__ (method)"
+  ],
+  "string_conversion.base_exception (fun)": [
+    "builtins.type.__init__ (method)", "builtins.type.__new__ (method)"
+  ],
+  "string_conversion.compute_tito (fun)": [
+    "string_conversion.tito_f (fun)", "string_conversion.tito_g (fun)"
+  ],
+  "string_conversion.explicit_str (fun)": [
+    "builtins.eval (fun)", "builtins.object.__init__ (method)",
+    "builtins.object.__new__ (method)",
+    "string_conversion.StrIsTainted.__str__ (method)"
+  ],
+  "string_conversion.forward_unioned_callees (fun)": [
+    "builtins.str.__format__ (method)", "pysa._test_source (fun)",
+    "string_conversion.D.__str__ (method)"
+  ],
+  "string_conversion.forward_unioned_callees_2 (fun)": [
+    "pysa._test_source (fun)", "string_conversion.D.__str__ (method)"
+  ],
+  "string_conversion.function_call_target_1 (fun)": [
+    "builtins.str.__format__ (method)"
+  ],
+  "string_conversion.implicit_repr (fun)": [
+    "builtins.eval (fun)", "builtins.object.__init__ (method)",
+    "builtins.object.__new__ (method)",
+    "string_conversion.ReprIsTainted.__repr__ (method)"
+  ],
+  "string_conversion.implicit_str (fun)": [
+    "builtins.eval (fun)", "builtins.object.__init__ (method)",
+    "builtins.object.__new__ (method)",
+    "string_conversion.StrIsTainted.__str__ (method)"
+  ],
+  "string_conversion.join_source_and_attribute_source (fun)": [
+    "builtins.dict.__getitem__ (method)", "builtins.eval (fun)",
+    "builtins.int.__gt__ (method)", "builtins.object.__init__ (method)",
+    "builtins.object.__new__ (method)", "builtins.str.__format__ (method)",
+    "django.http.Request.GET (object)",
+    "string_conversion.C.__str__ (method)"
+  ],
+  "string_conversion.joined_base (fun)": [
+    "builtins.dict.__getitem__ (method)", "builtins.eval (fun)",
+    "builtins.str.__format__ (method)", "django.http.Request.GET (object)"
+  ],
+  "string_conversion.multiple_callees_same_location (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "builtins.str.__add__ (method)", "builtins.str.__new__ (method)",
+    "string_conversion.StrIsTainted.__str__ (method)"
+  ],
+  "string_conversion.multiple_targets_for_single_expression (fun)": [
+    "builtins.eval (fun)", "string_conversion.A.__str__ (method)",
+    "string_conversion.StrIsTainted.__str__ (method)"
+  ],
+  "string_conversion.multiple_targets_for_single_expression_2 (fun)": [
+    "builtins.eval (fun)", "builtins.int.__format__ (method)",
+    "string_conversion.B.__str__ (method)",
+    "string_conversion.C.__str__ (method)"
+  ],
+  "string_conversion.multiple_targets_for_single_expression_3 (fun)": [
+    "builtins.int.__format__ (method)",
+    "string_conversion.B.__str__ (method)",
+    "string_conversion.C.__str__ (method)"
+  ],
+  "string_conversion.not_propagate_taint (fun)": [
+    "builtins.eval (fun)", "builtins.object.__new__ (method)",
+    "string_conversion.A.__init__ (method)",
+    "string_conversion.A.__str__ (method)"
+  ],
+  "string_conversion.object_type (fun)": [
+    "builtins.object.__format__ (method)"
+  ],
+  "string_conversion.optional_str (fun)": [
+    "builtins.eval (fun)", "builtins.object.__init__ (method)",
+    "builtins.object.__new__ (method)",
+    "builtins.object.__repr__ (override)", "builtins.str.__new__ (method)"
+  ],
+  "string_conversion.propagate_taint (fun)": [
+    "builtins.dict.__getitem__ (method)", "builtins.eval (fun)",
+    "builtins.object.__new__ (method)",
+    "string_conversion.A.__init__ (method)",
+    "string_conversion.A.__str__ (method)"
+  ],
+  "string_conversion.repr_is_tainted (fun)": [
+    "builtins.eval (fun)", "builtins.object.__init__ (method)",
+    "builtins.object.__new__ (method)", "builtins.repr (fun)",
+    "string_conversion.ReprIsTainted.__repr__ (method)"
+  ],
+  "string_conversion.str_falls_back_to_repr (fun)": [
+    "builtins.eval (fun)", "builtins.object.__init__ (method)",
+    "builtins.object.__new__ (method)", "builtins.str.__new__ (method)",
+    "string_conversion.ReprIsTainted.__repr__ (method)"
+  ],
+  "string_conversion.str_is_tainted (fun)": [
+    "builtins.eval (fun)", "builtins.object.__init__ (method)",
+    "builtins.object.__new__ (method)", "builtins.str.__new__ (method)",
+    "string_conversion.StrIsTainted.__str__ (method)"
+  ]
+}

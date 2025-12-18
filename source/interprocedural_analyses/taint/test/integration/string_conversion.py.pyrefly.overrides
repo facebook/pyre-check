@@ -1,0 +1,13 @@
+@generated
+Overrides
+builtins.object.__init__ (override) -> [builtins.object.__init__ (method) string_conversion.A.__init__ (override)]
+builtins.object.__repr__ (override) -> [builtins.object.__repr__ (method) string_conversion.ReprIsTainted.__repr__ (override)]
+builtins.object.__str__ (override) -> [builtins.object.__str__ (method) string_conversion.A.__str__ (override) string_conversion.B.__str__ (override) string_conversion.C.__str__ (override) string_conversion.D.__str__ (override) string_conversion.OverrideStr.__str__ (override) string_conversion.StrIsTainted.__str__ (override)]
+string_conversion.A.__init__ (override) -> [string_conversion.A.__init__ (method)]
+string_conversion.A.__str__ (override) -> [string_conversion.A.__str__ (method)]
+string_conversion.B.__str__ (override) -> [string_conversion.B.__str__ (method)]
+string_conversion.C.__str__ (override) -> [string_conversion.C.__str__ (method)]
+string_conversion.D.__str__ (override) -> [string_conversion.D.__str__ (method)]
+string_conversion.OverrideStr.__str__ (override) -> [string_conversion.OverrideStr.__str__ (method)]
+string_conversion.ReprIsTainted.__repr__ (override) -> [string_conversion.ReprIsTainted.__repr__ (method)]
+string_conversion.StrIsTainted.__str__ (override) -> [string_conversion.StrIsTainted.__str__ (method)]

@@ -23,6 +23,7 @@ let test_resolve_ignoring_errors context =
         pyre_api
         ~module_qualifier:!&"test"
         ~define_name:!&"test.__toplevel__"
+        ~call_graph:Interprocedural.CallGraph.DefineCallGraph.empty
     in
     CallResolution.resolve_ignoring_errors
       ~pyre_in_context
@@ -105,6 +106,7 @@ let test_is_nonlocal context =
       pyre_api
       ~module_qualifier:!&"test"
       ~define_name:!&"test.__toplevel__"
+      ~call_graph:Interprocedural.CallGraph.DefineCallGraph.empty
   in
   let assert_nonlocal define variable () =
     variable

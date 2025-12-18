@@ -2928,6 +2928,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~module_qualifier:FunctionContext.qualifier
             ~define_name:FunctionContext.define_name
             ~define:FunctionContext.definition
+            ~call_graph:FunctionContext.call_graph_of_define
             ~statement_key
         in
         analyze_statement ~pyre_in_context state statement)

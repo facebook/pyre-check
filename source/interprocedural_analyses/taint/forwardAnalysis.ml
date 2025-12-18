@@ -3303,6 +3303,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         pyre_api
         ~module_qualifier:qualifier
         ~define_name
+        ~call_graph:FunctionContext.call_graph_of_define
     in
     let apply_call ~location ~root =
       ForwardState.read ~root ~path:[] parameter_sources
@@ -3388,6 +3389,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~module_qualifier:FunctionContext.qualifier
             ~define_name:FunctionContext.define_name
             ~define:FunctionContext.definition
+            ~call_graph:FunctionContext.call_graph_of_define
             ~statement_key
         in
         analyze_statement ~pyre_in_context statement state)
