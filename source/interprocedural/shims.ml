@@ -67,7 +67,10 @@ module ShimArgumentMapping = struct
           inner: t;
         }
       | Constant of Constant.t
-      | Reference of Reference.t
+      | StaticMethod of {
+          class_name: Reference.t;
+          method_name: string;
+        }
     [@@deriving equal, show { with_path = false }]
 
     let rec to_json = function
@@ -103,8 +106,13 @@ module ShimArgumentMapping = struct
           `Assoc ["kind", `String "get-call-argument"; "inner", to_json inner; "index", `Int index]
       | Constant constant ->
           `Assoc ["kind", `String "constant"; "value", `String (Constant.show constant)]
-      | Reference reference ->
-          `Assoc ["kind", `String "reference"; "value", `String (Reference.show reference)]
+      | StaticMethod { class_name; method_name } ->
+          `Assoc
+            [
+              "kind", `String "static-method";
+              "class_name", `String (Reference.show class_name);
+              "method_name", `String method_name;
+            ]
   end
 
   module Argument = struct
@@ -207,7 +215,8 @@ module ShimArgumentMapping = struct
               Error (Format.asprintf "expected call expression, got `%a`" Expression.pp expression))
       | Target.Constant constant ->
           Ok (Node.create_with_default_location (Expression.Constant constant))
-      | Target.Reference reference ->
+      | Target.StaticMethod { class_name; method_name } ->
+          let qualified_name = Reference.create ~prefix:class_name method_name in
           Ok
             (Ast.Expression.from_reference
                ~location:call_location
@@ -218,7 +227,7 @@ module ShimArgumentMapping = struct
                       ~location:call_location
                       (Origin.PysaCallRedirect
                          (Format.sprintf "%s:%s" identifier (String.concat ~sep:"." attributes)))))
-               reference)
+               qualified_name)
     in
     from_target shim_callee
     >>= fun callee ->

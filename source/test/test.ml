@@ -533,7 +533,7 @@ let pyre_extensions_stubs () =
 
 let django_stubs () =
   [
-    ( "django/http/__init__.pyi",
+    ( "django-stubs/http/__init__.pyi",
       {|
         import typing
         from django.http.request import HttpRequest as HttpRequest
@@ -544,7 +544,7 @@ let django_stubs () =
           POST: typing.Dict[str, typing.Any] = ...
         |}
     );
-    ( "django/http/request.pyi",
+    ( "django-stubs/http/request.pyi",
       {|
         import typing
 
@@ -553,7 +553,7 @@ let django_stubs () =
           POST: typing.Dict[str, typing.Any] = ...
         |}
     );
-    "django/__init__.pyi", "import django.http";
+    "django-stubs/__init__.pyi", "import django.http";
   ]
 
 

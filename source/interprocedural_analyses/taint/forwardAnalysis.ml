@@ -1538,7 +1538,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           (* There is no easy way to get that taint, give up *)
           ForwardState.Tree.bottom
       | Target.Constant _ -> ForwardState.Tree.bottom
-      | Target.Reference _ -> ForwardState.Tree.bottom
+      | Target.StaticMethod _ -> ForwardState.Tree.bottom
     in
     let target_requires_self_taint call_target =
       match CallGraph.ImplicitArgument.implicit_argument ~is_implicit_new:false call_target with

@@ -1372,7 +1372,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           (* There is no easy way to get that taint, give up *)
           None
       | Target.Constant _ -> None
-      | Target.Reference _ -> None
+      | Target.StaticMethod _ -> None
     in
     let shim_callee_base_taint_to_original ~taint = function
       | Target.AppendAttribute { attribute = _; inner } ->

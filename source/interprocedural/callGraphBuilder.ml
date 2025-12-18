@@ -4960,7 +4960,7 @@ let build_whole_program_call_graph_for_pyrefly
             ~callees:(fetch_regular_targets original_call_callees)
             ~nested_callees:(Option.value ~default:[] nested_callees)
             ~arguments
-          >>= fun shim ->
+          >>= fun ({ Shims.ShimArgumentMapping.callee = shim_target_callee; _ } as shim) ->
           create_shim_callee_expression ~debug ~callable ~location ~call shim
           >>= fun ({ Node.value = shim_callee; location = shim_callee_location } as
                   shim_callee_expression) ->
@@ -4968,8 +4968,8 @@ let build_whole_program_call_graph_for_pyrefly
             log
               ~debug
               "Shimmed callee: `%a` at `%a`"
-              Expression.pp
-              shim_callee_expression
+              Expression.pp_expression
+              shim_callee
               Location.pp
               shim_callee_location
           in
@@ -4994,22 +4994,28 @@ let build_whole_program_call_graph_for_pyrefly
                 ~callees:{ original_call_callees with CallCallees.shim_target }
                 call_graph
           in
-          match shim_callee with
-          | Expression.Name (Name.Identifier identifier) ->
+          match shim_callee, shim_target_callee with
+          | _, Shims.ShimArgumentMapping.Target.StaticMethod { class_name; method_name } ->
+              (* We just want to call this method, regardless of whether it exists. *)
+              Some
+                (set_shim_target
+                   ~call_targets:[CallTarget.create (Target.create_method class_name method_name)]
+                   call_graph)
+          | Expression.Name (Name.Identifier identifier), _ ->
               DefineCallGraph.resolve_identifier
                 ~location:shim_callee_location
                 ~identifier
                 call_graph
               >>| fun { IdentifierCallees.if_called = { CallCallees.call_targets; _ }; _ } ->
               set_shim_target ~call_targets call_graph
-          | Expression.Name (Name.Attribute attribute_access) ->
+          | Expression.Name (Name.Attribute attribute_access), _ ->
               DefineCallGraph.resolve_attribute_access
                 ~location:shim_callee_location
                 ~attribute_access
                 call_graph
               >>| fun { AttributeAccessCallees.if_called = { CallCallees.call_targets; _ }; _ } ->
               set_shim_target ~call_targets call_graph
-          | shim_callee ->
+          | shim_callee, _ ->
               (* If `shim_callee` does not refer to an existing AST node (i.e., it is a made-up
                  one), then we give up adding a shim target. Otherwise we fetch callees on them and
                  use those as shim targets -- see the above cases. *)
