@@ -99,7 +99,8 @@ Call dependencies
   "string_conversion.optional_str (fun)": [
     "builtins.eval (fun)", "builtins.object.__init__ (method)",
     "builtins.object.__new__ (method)",
-    "builtins.object.__repr__ (override)", "builtins.str.__new__ (method)"
+    "builtins.object.__repr__ (override)", "builtins.str.__new__ (method)",
+    "string_conversion.StrIsTainted.__str__ (method)"
   ],
   "string_conversion.propagate_taint (fun)": [
     "builtins.dict.__getitem__ (method)", "builtins.eval (fun)",

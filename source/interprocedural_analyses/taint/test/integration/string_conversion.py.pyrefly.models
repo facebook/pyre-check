@@ -1201,6 +1201,30 @@
             },
             "receiver_interval": [ { "lower": 5, "upper": 18 } ],
             "is_self_call": false
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" }, { "first-index": "tainted" }
+                ],
+                "leaves": [
+                  {
+                    "name": "Obj{django.http.Request.GET}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
+            "call": {
+              "position": { "line": 195, "start": 9, "end": 15 },
+              "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
+              "port": "result"
+            },
+            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
+            "is_self_call": false
           }
         ]
       },

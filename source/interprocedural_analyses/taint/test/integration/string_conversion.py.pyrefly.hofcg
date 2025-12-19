@@ -1069,6 +1069,13 @@ Higher order call graphs
       "call": {
         "calls": [
           {
+            "target": "string_conversion.StrIsTainted.__str__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "string_conversion.StrIsTainted"
+          },
+          {
             "target": "Overrides{builtins.object.__repr__}",
             "index": 0,
             "implicit_receiver": true,
