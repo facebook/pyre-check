@@ -1,0 +1,3076 @@
+@generated
+Higher order call graphs
+{
+  "callable": "taint_in_taint_out.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "94:23-94:34|identifier|FieldIsTITO": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "taint_in_taint_out.FieldIsTITO"
+            }
+          ]
+        }
+      }
+    },
+    "167:14-167:22|identifier|GetQuery": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{taint_in_taint_out.GetQuery.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "taint_in_taint_out.GetQuery"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate",
+  "returned_callables": [],
+  "calls": {
+    "194:15-194:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.isinstance",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "194:33-194:37|identifier|dict": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.dict.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.dict.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "builtins.dict"
+            }
+          ]
+        }
+      }
+    },
+    "195:23-195:56": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.ComplexEvaluator"
+          }
+        ]
+      }
+    },
+    "196:19-196:50": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_field",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.ComplexEvaluator"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.adds_tito",
+  "returned_callables": [],
+  "calls": {
+    "91:11-91:21": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{taint_in_taint_out.FieldIsTITO.add_tito}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.adds_tito_inherited",
+  "returned_callables": [],
+  "calls": {
+    "99:11-99:21": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{taint_in_taint_out.FieldIsTITO.add_tito}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.adds_tito_with_indirect_sink",
+  "returned_callables": [],
+  "calls": {
+    "103:4-103:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.indirect_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.collapse_two_then_into_deep_dict",
+  "returned_callables": [],
+  "calls": {
+    "330:8-330:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.collapse_two_then_into_dict",
+  "returned_callables": [],
+  "calls": {
+    "320:8-320:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.combine_collapse_one",
+  "returned_callables": [],
+  "calls": {
+    "336:8-336:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "338:8-338:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.combine_collapse_one_and_two",
+  "returned_callables": [],
+  "calls": {
+    "368:8-368:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "370:8-370:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.combine_collapse_three",
+  "returned_callables": [],
+  "calls": {
+    "352:8-352:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_three",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "354:8-354:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_three",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.combine_collapse_two",
+  "returned_callables": [],
+  "calls": {
+    "344:8-344:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "346:8-346:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.combine_collapse_two_and_one",
+  "returned_callables": [],
+  "calls": {
+    "360:8-360:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "362:8-362:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.evaluate_lazy",
+  "returned_callables": [],
+  "calls": {
+    "178:41-178:56": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.items",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "178:41-178:56|artificial-call|generator-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.ItemsView.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "_collections_abc.dict_items"
+          }
+        ]
+      }
+    },
+    "178:41-178:56|artificial-call|generator-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.get_related",
+  "returned_callables": [],
+  "calls": {
+    "83:11-83:28": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.Recursive.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Recursive"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.indirect_sink",
+  "returned_callables": [],
+  "calls": {
+    "107:4-107:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "107:15-107:25": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{taint_in_taint_out.FieldIsTITO.add_tito}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.into_dict_then_collapse_two",
+  "returned_callables": [],
+  "calls": {
+    "316:11-316:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.into_dict_then_perfect_tito",
+  "returned_callables": [],
+  "calls": {
+    "240:11-240:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.perfect_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.into_dict_then_tito_collapse",
+  "returned_callables": [],
+  "calls": {
+    "214:11-214:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.obscure_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.issue_approximate_return_access_paths",
+  "returned_callables": [],
+  "calls": {
+    "261:8-261:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.Object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Object"
+          }
+        ]
+      }
+    },
+    "262:10-262:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "263:8-263:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.approximate_return_access_paths",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "264:4-264:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "264:15-264:21|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.issue_approximate_return_access_paths_common_prefix",
+  "returned_callables": [],
+  "calls": {
+    "268:8-268:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.Object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Object"
+          }
+        ]
+      }
+    },
+    "269:12-269:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "270:8-270:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.approximate_return_access_paths",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "271:4-271:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "271:15-271:21|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.issue_join_tito_collapse_test_3",
+  "returned_callables": [],
+  "calls": {
+    "435:14-435:28": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "436:8-436:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.join_tito_collapse_test_3",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "437:4-437:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "437:15-437:23|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ],
+        "unresolved": [ "UnexpectedPyreflyTarget" ]
+      }
+    },
+    "437:15-437:28|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.issue_user_declared_tito_collapse_one",
+  "returned_callables": [],
+  "calls": {
+    "461:20-461:34": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "462:8-462:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.user_declared_tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "463:4-463:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "463:15-463:21|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "463:15-463:26|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.issue_with_indirect_sink_tito",
+  "returned_callables": [],
+  "calls": {
+    "111:8-111:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "112:4-112:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.adds_tito_with_indirect_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.issue_with_into_dict_then_tito_collapse",
+  "returned_callables": [],
+  "calls": {
+    "223:8-223:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "224:8-224:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.into_dict_then_tito_collapse",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "225:4-225:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "225:15-225:21|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.join_tito_collapse_test_1",
+  "returned_callables": [],
+  "calls": {
+    "396:13-396:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.Object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Object"
+          }
+        ]
+      }
+    },
+    "397:7-397:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "_random.Random.random",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
+          }
+        ]
+      }
+    },
+    "397:7-397:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.float"
+          }
+        ]
+      }
+    },
+    "398:19-398:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "400:21-400:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.join_tito_collapse_test_2",
+  "returned_callables": [],
+  "calls": {
+    "405:13-405:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.Object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Object"
+          }
+        ]
+      }
+    },
+    "406:7-406:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "_random.Random.random",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
+          }
+        ]
+      }
+    },
+    "406:7-406:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.float"
+          }
+        ]
+      }
+    },
+    "407:19-407:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "409:21-409:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_three",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.join_tito_collapse_test_3",
+  "returned_callables": [],
+  "calls": {
+    "428:7-428:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "_random.Random.random",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
+          }
+        ]
+      }
+    },
+    "428:7-428:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.float"
+          }
+        ]
+      }
+    },
+    "429:15-429:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "431:23-431:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.loop_perfect_tito",
+  "returned_callables": [],
+  "calls": {
+    "375:13-375:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.range.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "375:13-375:23|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.range.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.range"
+          }
+        ]
+      }
+    },
+    "375:13-375:23|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "377:12-377:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.perfect_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.loop_tito_collapse_one",
+  "returned_callables": [],
+  "calls": {
+    "382:13-382:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.range.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "382:13-382:23|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.range.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.range"
+          }
+        ]
+      }
+    },
+    "382:13-382:23|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "384:12-384:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.loop_tito_collapse_two",
+  "returned_callables": [],
+  "calls": {
+    "389:13-389:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.range.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "389:13-389:23|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.range.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.range"
+          }
+        ]
+      }
+    },
+    "389:13-389:23|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "391:12-391:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.no_issue_tito_collapse_two_with_input_path",
+  "returned_callables": [],
+  "calls": {
+    "422:26-422:40": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "423:8-423:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one_with_input_path",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "424:4-424:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "424:15-424:21|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.no_issue_user_declared_tito_collapse_one",
+  "returned_callables": [],
+  "calls": {
+    "455:14-455:28": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "456:8-456:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.user_declared_tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "457:4-457:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "457:15-457:21|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.no_issue_user_declared_tito_no_collapse",
+  "returned_callables": [],
+  "calls": {
+    "445:14-445:28": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "446:8-446:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.user_declared_tito_no_collapse",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "447:4-447:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "447:15-447:21|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.no_issue_with_into_dict_then_perfect_tito",
+  "returned_callables": [],
+  "calls": {
+    "249:8-249:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "250:8-250:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.into_dict_then_perfect_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "251:4-251:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "251:15-251:21|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.no_issue_with_perfect_tito_then_into_dict",
+  "returned_callables": [],
+  "calls": {
+    "255:8-255:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "256:8-256:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.perfect_tito_then_into_dict",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "257:4-257:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "257:15-257:21|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.no_issue_with_tito_collapse_then_into_dict",
+  "returned_callables": [],
+  "calls": {
+    "229:8-229:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "230:8-230:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_then_into_dict",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "231:4-231:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "231:15-231:21|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.no_tito_init_then_overwrite",
+  "returned_callables": [],
+  "calls": {
+    "471:4-471:14|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.no_tito_overwrite_then_init",
+  "returned_callables": [],
+  "calls": {
+    "476:4-476:14|artificial-call|subscript-set-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "477:11-477:17|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.non_issue_approximate_return_access_paths_common_prefix",
+  "returned_callables": [],
+  "calls": {
+    "275:8-275:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.Object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Object"
+          }
+        ]
+      }
+    },
+    "276:10-276:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "277:8-277:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.approximate_return_access_paths",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "279:4-279:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "279:15-279:21|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.perfect_tito_then_into_deep_dict",
+  "returned_callables": [],
+  "calls": {
+    "325:8-325:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.perfect_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.perfect_tito_then_into_dict",
+  "returned_callables": [],
+  "calls": {
+    "244:8-244:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.perfect_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.perfect_tito_with_tree_manipulation",
+  "returned_callables": [],
+  "calls": {
+    "284:11-284:17|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.product_data",
+  "returned_callables": [],
+  "calls": {
+    "45:11-45:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.get_data",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "48:17-48:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.product_data",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "52:17-52:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.some_service",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "52:30-52:40|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "53:19-53:89": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.DataRecord"
+          }
+        ]
+      }
+    },
+    "53:33-53:43|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "53:54-53:66|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "55:18-55:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out._unpack",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "56:14-56:24|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "58:16-58:28|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 4,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.product_data_wrapper",
+  "returned_callables": [],
+  "calls": {
+    "63:11-63:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.product_data",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.test_always_via_feature",
+  "returned_callables": [],
+  "calls": {
+    "156:4-156:49": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "156:15-156:48": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_with_feature",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "156:33-156:47": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.test_complex_argument_tito",
+  "returned_callables": [],
+  "calls": {
+    "583:8-583:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.Object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Object"
+          }
+        ]
+      }
+    },
+    "584:8-584:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.Object.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Object"
+          }
+        ]
+      }
+    },
+    "585:12-585:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "586:4-586:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.complex_argument_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "587:4-587:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "588:4-588:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "589:4-589:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "590:4-590:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 3, "return_type": [] }
+        ]
+      }
+    },
+    "592:12-592:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "593:4-593:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.complex_argument_tito",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "594:4-594:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 4, "return_type": [] }
+        ]
+      }
+    },
+    "595:4-595:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 5, "return_type": [] }
+        ]
+      }
+    },
+    "596:4-596:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 6, "return_type": [] }
+        ]
+      }
+    },
+    "597:4-597:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 7, "return_type": [] }
+        ]
+      }
+    },
+    "599:8-599:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 2,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.Object.__init__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Object"
+          }
+        ]
+      }
+    },
+    "600:12-600:20": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 3,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.Object.__init__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Object"
+          }
+        ]
+      }
+    },
+    "601:4-601:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.complex_argument_tito",
+            "index": 2,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "602:4-602:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 8, "return_type": [] }
+        ]
+      }
+    },
+    "603:4-603:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 9, "return_type": [] }
+        ]
+      }
+    },
+    "604:4-604:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 10, "return_type": [] }
+        ]
+      }
+    },
+    "605:4-605:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 11, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.test_complex_evaluator",
+  "returned_callables": [],
+  "calls": {
+    "202:4-202:63": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "202:15-202:62": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.ComplexEvaluator"
+          }
+        ]
+      }
+    },
+    "202:47-202:61": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.test_explicit_call_to_superclass",
+  "returned_callables": [],
+  "calls": {
+    "173:11-173:34": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.GetUser.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.GetUser"
+          }
+        ]
+      }
+    },
+    "173:19-173:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "174:4-174:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.test_simplified_evaluator",
+  "returned_callables": [],
+  "calls": {
+    "182:4-182:45": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "182:15-182:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.evaluate_lazy",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "182:29-182:43": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.test_tito_class_method",
+  "returned_callables": [],
+  "calls": {
+    "555:4-555:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "555:15-555:30|identifier|TitoClassMethod": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "taint_in_taint_out.TitoClassMethod"
+            }
+          ]
+        }
+      }
+    },
+    "556:4-556:19|identifier|TitoClassMethod": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "taint_in_taint_out.TitoClassMethod"
+            }
+          ]
+        }
+      }
+    },
+    "556:4-556:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.TitoClassMethod.set_a",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoClassMethod",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "556:26-556:40": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "557:4-557:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "557:15-557:30|identifier|TitoClassMethod": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "taint_in_taint_out.TitoClassMethod"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.test_tito_from_0_to_1",
+  "returned_callables": [],
+  "calls": {
+    "571:8-571:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "573:4-573:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_from_0_to_1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "574:4-574:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "575:4-575:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.test_tito_self",
+  "returned_callables": [],
+  "calls": {
+    "513:8-513:36": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
+          }
+        ]
+      }
+    },
+    "513:17-513:31": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "514:4-514:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "515:4-515:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "517:8-517:24": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
+          }
+        ]
+      }
+    },
+    "518:4-518:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.set_a",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
+          }
+        ]
+      }
+    },
+    "518:12-518:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "519:4-519:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "520:4-520:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 3, "return_type": [] }
+        ]
+      }
+    },
+    "522:8-522:24": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 2,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.__init__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
+          }
+        ]
+      }
+    },
+    "523:4-523:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.set_a",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
+          }
+        ]
+      }
+    },
+    "523:17-523:31": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "524:4-524:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 4, "return_type": [] }
+        ]
+      }
+    },
+    "524:15-524:21|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "525:4-525:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 5, "return_type": [] }
+        ]
+      }
+    },
+    "525:15-525:21|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "526:4-526:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 6, "return_type": [] }
+        ]
+      }
+    },
+    "528:8-528:24": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 3,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.__init__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
+          }
+        ]
+      }
+    },
+    "529:4-529:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.set_join",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
+          }
+        ]
+      }
+    },
+    "529:15-529:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 3, "return_type": [] }
+        ]
+      }
+    },
+    "530:4-530:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 7, "return_type": [] }
+        ]
+      }
+    },
+    "531:4-531:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 8, "return_type": [] }
+        ]
+      }
+    },
+    "533:4-533:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.set_join",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
+          }
+        ]
+      }
+    },
+    "533:19-533:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 4, "return_type": [] }
+        ]
+      }
+    },
+    "534:4-534:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 9, "return_type": [] }
+        ]
+      }
+    },
+    "535:4-535:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 10, "return_type": [] }
+        ]
+      }
+    },
+    "537:8-537:24": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 4,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.__init__",
+            "index": 4,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
+          }
+        ]
+      }
+    },
+    "538:4-538:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.set_subfield",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
+          }
+        ]
+      }
+    },
+    "538:19-538:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 5, "return_type": [] }
+        ]
+      }
+    },
+    "539:4-539:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 11, "return_type": [] }
+        ]
+      }
+    },
+    "540:4-540:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 12, "return_type": [] }
+        ]
+      }
+    },
+    "541:4-541:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 13, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.test_tuple_tito_indices",
+  "returned_callables": [],
+  "calls": {
+    "136:28-136:64": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.return_taint",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "136:41-136:55": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "137:4-137:18": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.tito",
+  "returned_callables": [],
+  "calls": {
+    "67:11-67:47": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.product_data_wrapper",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "67:32-67:46": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.tito_collapse_one",
+  "returned_callables": [],
+  "calls": {
+    "292:8-292:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one_append_a_b_c",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "293:11-293:17|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "293:11-293:22|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "293:11-293:27|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.tito_collapse_one_with_input_path",
+  "returned_callables": [],
+  "calls": {
+    "414:11-414:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "414:29-414:35|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "414:29-414:40|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.tito_collapse_one_with_input_path_with_hop",
+  "returned_callables": [],
+  "calls": {
+    "418:11-418:47": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one_with_input_path",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.tito_collapse_then_into_dict",
+  "returned_callables": [],
+  "calls": {
+    "218:8-218:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.obscure_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.tito_collapse_three",
+  "returned_callables": [],
+  "calls": {
+    "310:8-310:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_three_append_a",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "311:11-311:17|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.tito_collapse_two",
+  "returned_callables": [],
+  "calls": {
+    "301:8-301:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two_append_a_b",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "302:11-302:17|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "302:11-302:22|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.tito_from_0_to_1",
+  "returned_callables": [],
+  "calls": {
+    "567:4-567:27|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "567:6-567:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.random_integer",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.tito_with_feature",
+  "returned_callables": [],
+  "calls": {
+    "152:15-152:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.add_feature",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.tito_with_sink",
+  "returned_callables": [],
+  "calls": {
+    "481:8-481:14|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "482:4-482:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "482:15-482:21|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.via_getattr",
+  "returned_callables": [],
+  "calls": {
+    "71:11-71:31": {
+      "call": {
+        "calls": [
+          { "target": "builtins.getattr", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "71:11-71:31|artificial-attribute-access|get-attr-constant-literal": {
+      "attribute_access": {
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_field",
+  "returned_callables": [],
+  "calls": {
+    "187:11-187:26": {
+      "call": {
+        "calls": [
+          { "target": "builtins.callable", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "188:19-188:26": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload",
+  "returned_callables": [],
+  "calls": {
+    "193:8-196:50": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "198:21-198:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "198:56-198:71": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "198:56-198:71|artificial-call|generator-iter": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "198:56-198:71|artificial-call|generator-next": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.GetUser.__init__",
+  "returned_callables": [],
+  "calls": {
+    "169:8-169:16|identifier|GetQuery": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "Overrides{taint_in_taint_out.GetQuery.__init__}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "taint_in_taint_out.GetQuery"
+            }
+          ]
+        }
+      }
+    },
+    "169:8-169:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.GetQuery.__init__",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.Recursive.__init__",
+  "returned_callables": [],
+  "calls": {
+    "77:12-77:16|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "77:41-77:80|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "77:41-77:80|artificial-call|generator-iter": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "77:41-77:80|artificial-call|generator-next": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "77:48-77:79|artificial-call|slice": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.slice.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "79:23-79:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.get_related",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.TitoClassMethod.set_a",
+  "returned_callables": [],
+  "calls": {
+    "551:8-551:11|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "taint_in_taint_out.TitoClassMethod"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.TitoSelf.self_tito",
+  "returned_callables": [],
+  "calls": {
+    "506:15-506:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.perfect_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.TitoSelf.set_join",
+  "returned_callables": [],
+  "calls": {
+    "497:11-497:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "_random.Random.random",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
+          }
+        ]
+      }
+    },
+    "497:11-497:32|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.float"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.TitoSelf.set_subfield",
+  "returned_callables": [],
+  "calls": {
+    "503:19-503:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.perfect_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
