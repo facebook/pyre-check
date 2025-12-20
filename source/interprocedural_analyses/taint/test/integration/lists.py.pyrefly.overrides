@@ -1,0 +1,6 @@
+@generated
+Overrides
+builtins.object.__repr__ (override) -> [builtins.object.__repr__ (method) lists.HasRepr.__repr__ (override)]
+builtins.object.__str__ (override) -> [builtins.object.__str__ (method) lists.HasStr.__str__ (override)]
+lists.HasRepr.__repr__ (override) -> [lists.HasRepr.__repr__ (method)]
+lists.HasStr.__str__ (override) -> [lists.HasStr.__str__ (method)]

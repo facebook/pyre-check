@@ -1,0 +1,1479 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.eval",
+    "filename": "builtins.pyi",
+    "callable_line": 4297,
+    "sinks": [
+      {
+        "port": "formal(source, position=0, positional_only)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.getattr",
+    "filename": "builtins.pyi",
+    "callable_line": 4447,
+    "sinks": [
+      {
+        "port": "formal(name, position=1, positional_only)",
+        "taint": [
+          { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(default, position=2, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "default" },
+                  { "always-type": "integer" },
+                  { "always-type": "bool" },
+                  { "always-type": "scalar" }
+                ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(o, position=0, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "object" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "SkipObscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_shaping._asdict_inner",
+    "filename": "model_shaping.py",
+    "callable_line": 37,
+    "sinks": [
+      {
+        "port": "formal(obj, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "builtins.getattr", "port": "leaf:name" }
+                ],
+                "kind": "GetAttr"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 41, "start": 24, "end": 27 } ],
+            "origin": { "line": 42, "start": 47, "end": 53 },
+            "call_site": "42:34-42:54"
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "via": "object" },
+                  { "always-via": "obscure:model" },
+                  { "via": "model-shaping" },
+                  { "always-via": "tito-broadening" },
+                  { "always-via": "tito" },
+                  { "always-via": "broadening" },
+                  { "via": "model-sink-shaping" },
+                  { "via": "obscure:unknown-callee" }
+                ],
+                "length": 1,
+                "kind": "GetAttr"
+              }
+            ],
+            "local_features": [
+              { "always-via": "object" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 42, "start": 42, "end": 45 } ],
+            "call": {
+              "position": { "line": 42, "start": 34, "end": 54 },
+              "resolves_to": [ "model_shaping._asdict_inner" ],
+              "port": "formal(obj, position=0)",
+              "call_site": "42:20-42:69"
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "via": "object" },
+                  { "always-via": "obscure:model" },
+                  { "via": "model-shaping" },
+                  { "always-via": "tito-broadening" },
+                  { "always-via": "tito" },
+                  { "always-via": "broadening" },
+                  { "via": "model-sink-shaping" },
+                  { "via": "obscure:unknown-callee" }
+                ],
+                "length": 1,
+                "kind": "GetAttr"
+              }
+            ],
+            "local_features": [
+              { "always-via": "model-shaping" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-shaping" }
+            ],
+            "call": {
+              "position": { "line": 49, "start": 56, "end": 57 },
+              "resolves_to": [ "model_shaping._asdict_inner" ],
+              "port": "formal(obj, position=0)",
+              "call_site": "49:42-49:72"
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "via": "object" },
+                  { "always-via": "obscure:model" },
+                  { "via": "model-shaping" },
+                  { "always-via": "tito-broadening" },
+                  { "always-via": "tito" },
+                  { "always-via": "broadening" },
+                  { "via": "model-sink-shaping" },
+                  { "via": "obscure:unknown-callee" }
+                ],
+                "length": 1,
+                "kind": "GetAttr"
+              }
+            ],
+            "local_features": [
+              { "always-via": "model-shaping" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-shaping" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "call": {
+              "position": { "line": 54, "start": 34, "end": 35 },
+              "resolves_to": [ "model_shaping._asdict_inner" ],
+              "port": "formal(obj, position=0)",
+              "call_site": "54:20-54:50"
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "via": "object" },
+                  { "always-via": "obscure:model" },
+                  { "via": "model-shaping" },
+                  { "always-via": "tito-broadening" },
+                  { "always-via": "tito" },
+                  { "always-via": "broadening" },
+                  { "via": "model-sink-shaping" },
+                  { "via": "obscure:unknown-callee" }
+                ],
+                "length": 1,
+                "kind": "GetAttr"
+              }
+            ],
+            "local_features": [
+              { "always-via": "model-shaping" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-shaping" }
+            ],
+            "call": {
+              "position": { "line": 64, "start": 34, "end": 35 },
+              "resolves_to": [ "model_shaping._asdict_inner" ],
+              "port": "formal(obj, position=0)",
+              "call_site": "64:20-64:50"
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(dict_factory, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "via": "tito" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 49, "start": 25, "end": 87 },
+              { "line": 49, "start": 41, "end": 86 },
+              { "line": 49, "start": 59, "end": 71 }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(obj, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "via": "tito" },
+              { "via": "broadening" },
+              { "via": "model-tito-shaping" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 49, "start": 15, "end": 19 },
+              { "line": 49, "start": 20, "end": 23 },
+              { "line": 49, "start": 25, "end": 87 },
+              { "line": 49, "start": 41, "end": 86 },
+              { "line": 49, "start": 56, "end": 57 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_shaping.asdict",
+    "filename": "model_shaping.py",
+    "callable_line": 30,
+    "sinks": [
+      {
+        "port": "formal(obj, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "via": "object" },
+                  { "always-via": "obscure:model" },
+                  { "via": "model-shaping" },
+                  { "always-via": "tito-broadening" },
+                  { "always-via": "tito" },
+                  { "always-via": "broadening" },
+                  { "via": "model-sink-shaping" },
+                  { "via": "obscure:unknown-callee" }
+                ],
+                "length": 1,
+                "kind": "GetAttr"
+              }
+            ],
+            "call": {
+              "position": { "line": 34, "start": 25, "end": 28 },
+              "resolves_to": [ "model_shaping._asdict_inner" ],
+              "port": "formal(obj, position=0)",
+              "call_site": "34:11-34:43"
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(dict_factory)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-via": "tito" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 34, "start": 30, "end": 42 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(obj, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito" },
+              { "via": "broadening" },
+              { "via": "model-tito-shaping" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 34, "start": 25, "end": 28 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_shaping.asdict_test",
+    "filename": "model_shaping.py",
+    "callable_line": 74,
+    "sinks": [
+      {
+        "port": "formal(obj, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "via": "object" },
+                  { "always-via": "obscure:model" },
+                  { "via": "model-shaping" },
+                  { "always-via": "tito-broadening" },
+                  { "always-via": "tito" },
+                  { "always-via": "broadening" },
+                  { "via": "model-sink-shaping" },
+                  { "via": "obscure:unknown-callee" }
+                ],
+                "length": 2,
+                "kind": "GetAttr"
+              }
+            ],
+            "call": {
+              "position": { "line": 75, "start": 18, "end": 21 },
+              "resolves_to": [ "model_shaping.asdict" ],
+              "port": "formal(obj, position=0)",
+              "call_site": "75:11-75:22"
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(obj, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito" },
+              { "via": "broadening" },
+              { "via": "model-tito-shaping" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 75, "start": 18, "end": 21 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_shaping.obscure_test",
+    "filename": "model_shaping.py",
+    "callable_line": 78,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito_positions": [ { "line": 79, "start": 21, "end": 35 } ],
+            "origin": { "line": 79, "start": 21, "end": 35 }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(obj, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "via": "tito" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 79, "start": 11, "end": 15 },
+              { "line": 79, "start": 16, "end": 19 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_shaping.shape_multi_sink",
+    "filename": "model_shaping.py",
+    "callable_line": 82,
+    "sinks": [
+      {
+        "port": "formal(obj, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._rce", "port": "leaf:argument" }
+                ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "local_features": [
+              { "always-via": "model-shaping" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-shaping" }
+            ],
+            "origin": { "line": 83, "start": 9, "end": 16 },
+            "call_site": "83:4-83:17"
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._rce", "port": "leaf:argument" }
+                ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "local_features": [
+              { "always-via": "model-shaping" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-shaping" }
+            ],
+            "origin": { "line": 84, "start": 9, "end": 16 },
+            "call_site": "84:4-84:17"
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._rce", "port": "leaf:argument" }
+                ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": { "line": 85, "start": 9, "end": 12 },
+            "call_site": "85:4-85:13"
+          }
+        ]
+      },
+      {
+        "port": "formal(obj, position=0)[bar]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._sql", "port": "leaf:argument" }
+                ],
+                "kind": "SQL"
+              }
+            ],
+            "origin": { "line": 86, "start": 9, "end": 16 },
+            "call_site": "86:4-86:17"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_shaping.shape_multi_source",
+    "filename": "model_shaping.py",
+    "callable_line": 89,
+    "sources": [
+      {
+        "port": "result[a][b]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._cookies", "port": "leaf:return" }
+                ],
+                "kind": "Cookies"
+              }
+            ],
+            "origin": { "line": 98, "start": 23, "end": 33 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_shaping.test_tito_shaping",
+    "callable_line": 110,
+    "code": 5002,
+    "line": 112,
+    "start": 15,
+    "end": 25,
+    "filename": "model_shaping.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "model-tito-shaping" }
+            ],
+            "tito_positions": [ { "line": 111, "start": 23, "end": 57 } ],
+            "origin": { "line": 111, "start": 31, "end": 45 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 112, "start": 15, "end": 25 },
+            "call_site": "112:4-112:26"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "foo" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "model-shaping" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "model-tito-shaping" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|pysa._test_sink|0|formal(arg):7a1e5382a6661958914b0fc5cb1bf040"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_shaping.test_tito_shaping",
+    "callable_line": 110,
+    "code": 5002,
+    "line": 113,
+    "start": 15,
+    "end": 25,
+    "filename": "model_shaping.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "bar" },
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "model-tito-shaping" }
+            ],
+            "tito_positions": [ { "line": 111, "start": 23, "end": 57 } ],
+            "origin": { "line": 111, "start": 31, "end": 45 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 113, "start": 15, "end": 25 },
+            "call_site": "113:4-113:26"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "bar" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "model-shaping" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "model-tito-shaping" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|pysa._test_sink|1|formal(arg):f661bd37448a639c6261503ba9c9d32a"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_shaping.test_tito_shaping",
+    "callable_line": 110,
+    "code": 5002,
+    "line": 114,
+    "start": 15,
+    "end": 31,
+    "filename": "model_shaping.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "to_string" },
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "model-tito-shaping" }
+            ],
+            "tito_positions": [ { "line": 111, "start": 23, "end": 57 } ],
+            "origin": { "line": 111, "start": 31, "end": 45 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 114, "start": 15, "end": 31 },
+            "call_site": "114:4-114:32"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "to_string" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "model-shaping" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "model-tito-shaping" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 2,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|pysa._test_sink|2|formal(arg):14080668d2ac359aef43e4ca27271a0f"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_shaping.test_tito_shaping",
+    "callable_line": 110,
+    "code": 5002,
+    "line": 117,
+    "start": 15,
+    "end": 35,
+    "filename": "model_shaping.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "model-tito-shaping" }
+            ],
+            "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
+            "origin": { "line": 116, "start": 42, "end": 56 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 117, "start": 15, "end": 35 },
+            "call_site": "117:4-117:36"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "foo" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "model-shaping" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "model-tito-shaping" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 3,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|pysa._test_sink|3|formal(arg):840e28a2859f87f9e6d667d33d42cca8"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_shaping.test_tito_shaping",
+    "callable_line": 110,
+    "code": 5002,
+    "line": 118,
+    "start": 15,
+    "end": 35,
+    "filename": "model_shaping.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "model-tito-shaping" }
+            ],
+            "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
+            "origin": { "line": 116, "start": 42, "end": 56 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 118, "start": 15, "end": 35 },
+            "call_site": "118:4-118:36"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "foo" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "model-shaping" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "model-tito-shaping" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 4,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|pysa._test_sink|4|formal(arg):a6eac1197796ab01f7fe7aff92368392"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_shaping.test_tito_shaping",
+    "callable_line": 110,
+    "code": 5002,
+    "line": 119,
+    "start": 15,
+    "end": 25,
+    "filename": "model_shaping.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "bar" },
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "model-tito-shaping" }
+            ],
+            "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
+            "origin": { "line": 116, "start": 42, "end": 56 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 119, "start": 15, "end": 25 },
+            "call_site": "119:4-119:26"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "bar" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "model-shaping" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "model-tito-shaping" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 5,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|pysa._test_sink|5|formal(arg):55133109128681c4da9fcd034aef3a24"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_shaping.test_tito_shaping",
+    "callable_line": 110,
+    "code": 5002,
+    "line": 120,
+    "start": 15,
+    "end": 31,
+    "filename": "model_shaping.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "to_string" },
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "model-tito-shaping" }
+            ],
+            "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
+            "origin": { "line": 116, "start": 42, "end": 56 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 120, "start": 15, "end": 31 },
+            "call_site": "120:4-120:32"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "to_string" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "model-shaping" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "model-tito-shaping" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 6,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|pysa._test_sink|6|formal(arg):3e33c1ec487e792431d11370bee033c5"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_shaping.tito_shaping",
+    "filename": "model_shaping.py",
+    "callable_line": 102,
+    "tito": [
+      {
+        "port": "formal(parameters, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[to_string]": 0, "[foo]": 0, "[bar]": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "first-index": "bar" },
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "via": "tito" },
+              { "via": "broadening" },
+              { "via": "model-tito-shaping" }
+            ],
+            "tito_positions": [
+              { "line": 104, "start": 15, "end": 25 },
+              { "line": 105, "start": 15, "end": 25 },
+              { "line": 106, "start": 25, "end": 35 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._cookies",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 8,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "Cookies" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._rce",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 9,
+    "sinks": [
+      {
+        "port": "formal(argument, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._sql",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 10,
+    "sinks": [
+      {
+        "port": "formal(argument, position=0)",
+        "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._tito",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 6,
+    "tito": [
+      {
+        "port": "formal(**kwargs)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(*args, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._user_controlled",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 7,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa.copy",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 12,
+    "tito": [
+      {
+        "port": "formal(obj, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "copy" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{pysa.ClassWithSinkAttribute.attribute}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{pysa._global_sink}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}

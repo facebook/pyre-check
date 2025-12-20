@@ -1,0 +1,203 @@
+@generated
+Higher order call graphs
+{
+  "callable": "long_access_path_taint.test",
+  "returned_callables": [],
+  "calls": {
+    "35:16-35:17|identifier|C": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "long_access_path_taint.C.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "long_access_path_taint.C"
+            }
+          ]
+        }
+      }
+    },
+    "35:16-35:71": {
+      "call": {
+        "calls": [
+          {
+            "target": "long_access_path_taint.C.async_create",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "long_access_path_taint.C",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "35:35-35:49": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "35:51-35:65": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "36:4-36:22": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "long_access_path_taint.C.__init__",
+  "returned_callables": [],
+  "calls": {
+    "15:25-15:48": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.get",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    },
+    "16:22-16:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.get",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "long_access_path_taint.C.async_create",
+  "returned_callables": [],
+  "calls": {
+    "24:15-24:26": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.str.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "24:15-24:26|artificial-call|str-call-to-dunder-method": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.object.__repr__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.object"
+          }
+        ]
+      }
+    },
+    "25:11-25:33|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.__eq__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "29:26-29:37": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.str.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "29:26-29:37|artificial-call|str-call-to-dunder-method": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.object.__repr__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.object"
+          }
+        ]
+      }
+    },
+    "31:15-31:45": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "long_access_path_taint.C.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "long_access_path_taint.C"
+          }
+        ]
+      }
+    }
+  }
+}

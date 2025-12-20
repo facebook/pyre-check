@@ -1,0 +1,75 @@
+@generated
+Call dependencies
+{
+  "lists.create_zipped_source (fun)": [
+    "builtins.object.__init__ (method)", "builtins.zip.__new__ (method)",
+    "pysa._test_source (fun)"
+  ],
+  "lists.create_zipped_source_with_all_tainted (fun)": [
+    "builtins.object.__init__ (method)", "builtins.zip.__new__ (method)",
+    "pysa._test_source (fun)"
+  ],
+  "lists.inconsistent_redirect_expressions_in_condition (fun)": [
+    "builtins.list.__iter__ (method)", "builtins.object.__init__ (method)",
+    "builtins.str.__eq__ (method)", "builtins.str.__new__ (method)",
+    "lists.HasRepr.__repr__ (method)", "typing.Iterator.__next__ (method)"
+  ],
+  "lists.inconsistent_type_context (fun)": [
+    "builtins.list.__iter__ (method)", "builtins.object.__init__ (method)",
+    "builtins.str.__new__ (method)", "lists.HasRepr.__repr__ (method)",
+    "lists.HasStr.__str__ (method)", "lists.returns_list_repr (fun)",
+    "typing.Iterator.__next__ (method)"
+  ],
+  "lists.list_append_wrapper (fun)": [ "builtins.list.append (method)" ],
+  "lists.list_setitem_local (fun)": [
+    "builtins.list.__setitem__ (method)", "pysa._test_source (fun)"
+  ],
+  "lists.list_setitem_source (fun)": [
+    "builtins.list.__setitem__ (method)", "pysa._test_source (fun)"
+  ],
+  "lists.list_setitem_wrapper (fun)": [
+    "builtins.list.__setitem__ (method)"
+  ],
+  "lists.push_pop_no_taint (fun)": [
+    "builtins.list.append (method)", "builtins.list.pop (method)",
+    "pysa._test_source (fun)"
+  ],
+  "lists.push_pop_taint (fun)": [
+    "builtins.list.append (method)", "builtins.list.pop (method)",
+    "pysa._test_source (fun)"
+  ],
+  "lists.test_list_append_wrapper (fun)": [
+    "builtins.list.__getitem__ (method)", "builtins.list.append (method)",
+    "lists.list_append_wrapper (fun)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "lists.test_list_setitem_wrapper (fun)": [
+    "builtins.list.__getitem__ (method)", "lists.list_setitem_wrapper (fun)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "lists.test_setitem (fun)": [
+    "builtins.list.__getitem__ (method)", "builtins.list.__mul__ (method)",
+    "builtins.list.__setitem__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "lists.test_setitem_source (fun)": [
+    "builtins.list.__getitem__ (method)", "lists.list_setitem_source (fun)",
+    "pysa._test_sink (fun)"
+  ],
+  "lists.zipped_element_not_flowing_to_sink (fun)": [
+    "builtins.object.__init__ (method)", "builtins.zip.__iter__ (method)",
+    "builtins.zip.__new__ (method)", "builtins.zip.__next__ (method)",
+    "pysa._test_sink (fun)"
+  ],
+  "lists.zipped_element_to_sink (fun)": [
+    "builtins.object.__init__ (method)", "builtins.zip.__iter__ (method)",
+    "builtins.zip.__new__ (method)", "builtins.zip.__next__ (method)",
+    "pysa._test_sink (fun)"
+  ],
+  "lists.zipped_source_access_path (fun)": [
+    "builtins.list.__getitem__ (method)", "builtins.list.__init__ (method)",
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "builtins.tuple.__getitem__ (method)", "builtins.zip.__new__ (method)",
+    "pysa._test_source (fun)"
+  ]
+}

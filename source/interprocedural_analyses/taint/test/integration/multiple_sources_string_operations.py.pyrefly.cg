@@ -1,0 +1,64 @@
+@generated
+Call dependencies
+{
+  "multiple_sources_string_operations.DatabaseSchemaEditor.string_operations (method)": [
+    "builtins.str.format (method)",
+    "multiple_sources_string_operations.user_controlled_input (fun)"
+  ],
+  "multiple_sources_string_operations.format_string_issue (fun)": [
+    "builtins.int.__format__ (method)", "builtins.str.__format__ (method)",
+    "multiple_sources_string_operations.user_controlled_input (fun)"
+  ],
+  "multiple_sources_string_operations.format_string_issue_string_literal (fun)": [
+    "builtins.str.__format__ (method)",
+    "multiple_sources_string_operations.user_controlled_input (fun)"
+  ],
+  "multiple_sources_string_operations.format_string_issue_with_multiple_triggered_user_controlled (fun)": [
+    "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled (fun)",
+    "multiple_sources_string_operations.user_controlled_input (fun)"
+  ],
+  "multiple_sources_string_operations.format_string_issue_with_triggered_sql (fun)": [
+    "multiple_sources_string_operations.format_string_triggered_sql (fun)"
+  ],
+  "multiple_sources_string_operations.format_string_issue_with_triggered_user_controlled (fun)": [
+    "multiple_sources_string_operations.format_string_triggered_user_controlled (fun)",
+    "multiple_sources_string_operations.user_controlled_input (fun)"
+  ],
+  "multiple_sources_string_operations.format_string_multiple_issues_string_literal (fun)": [
+    "builtins.str.__format__ (method)",
+    "multiple_sources_string_operations.user_controlled_input (fun)"
+  ],
+  "multiple_sources_string_operations.format_string_no_issue_when_single_sink_parameter (fun)": [
+    "builtins.int.__eq__ (method)", "builtins.str.__format__ (method)"
+  ],
+  "multiple_sources_string_operations.format_string_triggered_sql (fun)": [
+    "builtins.str.__format__ (method)",
+    "multiple_sources_string_operations.user_controlled_input (fun)"
+  ],
+  "multiple_sources_string_operations.format_string_triggered_user_controlled (fun)": [
+    "builtins.str.__format__ (method)"
+  ],
+  "multiple_sources_string_operations.nested_stradd_and_fstring (fun)": [
+    "builtins.str.__add__ (method)", "builtins.str.__format__ (method)",
+    "multiple_sources_string_operations.user_controlled_input (fun)"
+  ],
+  "multiple_sources_string_operations.stradd_tito_triggered_user_controlled (fun)": [
+    "builtins.str.__add__ (method)",
+    "multiple_sources_string_operations.tito (fun)",
+    "multiple_sources_string_operations.user_controlled_input (fun)"
+  ],
+  "multiple_sources_string_operations.stradd_triggered_user_controlled (fun)": [
+    "builtins.str.__add__ (method)",
+    "multiple_sources_string_operations.user_controlled_input (fun)"
+  ],
+  "multiple_sources_string_operations.string_operations (fun)": [
+    "builtins.str.__add__ (method)", "builtins.str.__mod__ (method)",
+    "builtins.str.format (method)",
+    "multiple_sources_string_operations.user_controlled_input (fun)"
+  ],
+  "multiple_sources_string_operations.test_large_string_add (fun)": [
+    "builtins.int.__mul__ (method)", "builtins.int.__new__ (method)",
+    "builtins.object.__init__ (method)", "builtins.object.__repr__ (method)",
+    "builtins.str.__add__ (method)", "builtins.str.__new__ (method)"
+  ]
+}
