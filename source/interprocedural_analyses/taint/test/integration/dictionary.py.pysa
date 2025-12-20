@@ -22,6 +22,7 @@ def dict.get(
 def typing.Mapping.get(
     self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse],
     __key: Sanitize[TaintInTaintOut],
+    /,
     default: TaintInTaintOut[LocalReturn, NoCollapse],
 ): ...
 
@@ -36,6 +37,7 @@ def dict.__getitem__(
 def typing.Mapping.__getitem__(
     self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse],
     __key: Sanitize[TaintInTaintOut],
+    /
 ): ...
 
 @SkipOverrides
