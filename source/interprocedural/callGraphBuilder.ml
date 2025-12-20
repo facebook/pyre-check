@@ -1124,6 +1124,8 @@ let preprocess_assignments statement =
      Node.value = Statement.AugmentedAssign ({ AugmentedAssign.target; _ } as augmented_assignment);
      location;
     } ->
+        (* TODO(T225700656): Augmented assignments can be lowered into `__iadd__`, `__add__` or
+           `__radd__`. We only support the first case here. *)
         let call =
           AugmentedAssign.lower_to_expression
             ~location
