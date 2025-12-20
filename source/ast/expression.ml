@@ -1648,6 +1648,12 @@ end = struct
     | "for-test-purpose" -> Ok ForTestPurpose
     | "for-type-checking" -> Ok ForTypeChecking
     | "return-statement" -> Ok PysaReturnShim
+    | _ when String.is_substring str ~substring:">" ->
+        let index = Option.value_exn (String.rfindi str ~f:(fun _ c -> Char.equal c '>')) in
+        let tail_str = String.prefix str index in
+        let head_str = String.suffix str (String.length str - index - 1) in
+        kind_from_json tail_str
+        >>= fun tail -> kind_from_json head_str >>= fun head -> Ok (Nested { head; tail })
     | _ when String.is_prefix str ~prefix:"chained-assign:" ->
         strip_prefix ~prefix:"chained-assign:" str
         |> parse_int
@@ -1724,12 +1730,6 @@ end = struct
         strip_prefix ~prefix:"pysa-higher-order-parameter:" str
         |> parse_int
         >>= fun index -> Ok (PysaHigherOrderParameter index)
-    | _ when String.is_substring str ~substring:">" ->
-        let index = Option.value_exn (String.rfindi str ~f:(fun _ c -> Char.equal c '>')) in
-        let tail_str = String.prefix str index in
-        let head_str = String.suffix str (String.length str - index - 1) in
-        kind_from_json tail_str
-        >>= fun tail -> kind_from_json head_str >>= fun head -> Ok (Nested { head; tail })
     | _ -> Error (Format.sprintf "Unknown origin kind: `%s`" str)
 
 
