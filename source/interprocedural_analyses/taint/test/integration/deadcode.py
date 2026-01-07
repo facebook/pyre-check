@@ -17,6 +17,7 @@ def early_return_no_sink(x):
 def early_return_no_source():
     x = _test_source()
     return
+    # pyrefly: ignore[unreachable]
     return x
 
 
@@ -37,6 +38,7 @@ def early_return_no_issue_for_else(x):
     for _ in x:
         return
     else:
+        # pyrefly: ignore[unreachable]
         return
     _test_sink(_test_source()) # TODO(T182089507): Handle for loop deadcode false positive
 

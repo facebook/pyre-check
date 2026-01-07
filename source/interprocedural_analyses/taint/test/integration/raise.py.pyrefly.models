@@ -339,9 +339,9 @@
   "kind": "issue",
   "data": {
     "callable": "raise.unreachable_code_do_to_always_exception",
-    "callable_line": 45,
+    "callable_line": 46,
     "code": 5002,
-    "line": 49,
+    "line": 50,
     "start": 15,
     "end": 16,
     "filename": "raise.py",
@@ -360,7 +360,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 48, "start": 8, "end": 22 }
+            "origin": { "line": 49, "start": 8, "end": 22 }
           }
         ]
       },
@@ -377,8 +377,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 49, "start": 15, "end": 16 },
-            "call_site": "49:4-49:17"
+            "origin": { "line": 50, "start": 15, "end": 16 },
+            "call_site": "50:4-50:17"
           }
         ]
       }

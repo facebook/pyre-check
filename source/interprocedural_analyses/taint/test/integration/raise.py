@@ -34,6 +34,7 @@ def no_sink(x):
 
 def no_source():
     raise Exception()
+    # pyrefly: ignore[unreachable]
     return _test_source()
 
 

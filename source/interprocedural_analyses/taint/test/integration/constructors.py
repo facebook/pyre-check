@@ -47,7 +47,7 @@ def test_source_in_constructor():
 
 
 class ParentWithInit:
-    def __init__(self):
+    def __init__(self, input):
         pass
 
 
