@@ -1675,8 +1675,9 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
         ~mold:(essential ~preserve_return_access_paths:mold_with_return_access_paths tree)
     in
     T.partition Taint.kind By ~f:Fn.id tree
-    |> Core.Map.Poly.map ~f:shape_partitioned_tree
-    |> Core.Map.Poly.fold ~init:T.bottom ~f:(fun ~key:_ ~data:left right -> T.join left right)
+    |> Core.Map.Poly.data
+    |> List.map ~f:shape_partitioned_tree
+    |> Algorithms.fold_balanced ~f:T.join ~init:T.bottom
 
 
   let prune_maximum_length ~global_maximum ~maximum_per_kind =
