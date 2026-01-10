@@ -2026,16 +2026,21 @@ end
 module GlobalVariableQueryExecutor = struct
   let get_globals ~scheduler ~pyre_api =
     let () = Log.info "Fetching all globals..." in
-    let filter_global global_reference =
-      match PyrePysaApi.ReadOnly.get_unannotated_global pyre_api global_reference with
-      | Some (TupleAssign _)
-      | Some (SimpleAssign _) ->
-          true
-      | _ -> false
-    in
-    PyrePysaApi.ReadOnly.all_unannotated_globals pyre_api ~scheduler
-    |> List.filter ~f:filter_global
-    |> List.map ~f:Target.create_object
+    match pyre_api with
+    | PyrePysaApi.ReadOnly.Pyre1 _ ->
+        let filter_global global_reference =
+          match PyrePysaApi.ReadOnly.get_unannotated_global pyre_api global_reference with
+          | Some (TupleAssign _)
+          | Some (SimpleAssign _) ->
+              true
+          | _ -> false
+        in
+        PyrePysaApi.ReadOnly.all_unannotated_globals pyre_api ~scheduler
+        |> List.filter ~f:filter_global
+        |> List.map ~f:Target.create_object
+    | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->
+        PyreflyApi.ReadOnly.all_global_variables pyrefly_api ~scheduler
+        |> List.map ~f:Target.create_object
 
 
   include MakeQueryExecutor (struct

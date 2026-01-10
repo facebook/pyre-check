@@ -1,0 +1,509 @@
+@generated
+Higher order call graphs
+{
+  "callable": "entrypoint.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "81:3-81:25|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.str.__eq__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "82:4-82:10": {
+      "call": {
+        "calls": [
+          { "target": "entrypoint.main", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.entrypoint_into_lambda",
+  "returned_callables": [],
+  "calls": { "61:4-63:22": { "define": {} }, "65:4-65:38": { "call": {} } }
+}
+{
+  "callable": "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator",
+  "returned_callables": [],
+  "calls": {
+    "63:8-63:12|identifier|glob": {
+      "identifier": {
+        "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+      }
+    },
+    "63:8-63:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.append",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator@decorated",
+  "returned_callables": [],
+  "calls": {
+    "61:5-61:17|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "entrypoint.MyEntrypoint[formal(f, position=0)=entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "62:4-63:22|identifier|lambda_entrypoint_with_decorator": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.function_entrypoint_with_decorator",
+  "returned_callables": [],
+  "calls": {
+    "57:4-57:8|identifier|glob": {
+      "identifier": {
+        "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+      }
+    },
+    "57:4-57:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.append",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.function_entrypoint_with_decorator@decorated",
+  "returned_callables": [],
+  "calls": {
+    "55:1-55:13|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "entrypoint.MyEntrypoint[formal(f, position=0)=entrypoint.function_entrypoint_with_decorator]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "56:0-57:18|identifier|function_entrypoint_with_decorator": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "entrypoint.function_entrypoint_with_decorator",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.get_these",
+  "returned_callables": [],
+  "calls": {
+    "69:4-69:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "entrypoint.immediate_examples",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "70:4-70:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "entrypoint.leak_globals_by_passing_in",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "71:4-71:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "entrypoint.leak_globals_by_transitive_call",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "72:4-72:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "entrypoint.nested_run",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.immediate_examples",
+  "returned_callables": [],
+  "calls": {
+    "32:4-32:8|identifier|glob": {
+      "identifier": {
+        "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+      }
+    },
+    "32:4-32:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.append",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.leak_globals_by_passing_in",
+  "returned_callables": [],
+  "calls": {
+    "48:4-48:48": {
+      "call": {
+        "calls": [
+          {
+            "target": "entrypoint.transitive_call_with_globals_passed_in",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "48:43-48:47|identifier|glob": {
+      "identifier": {
+        "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.leak_globals_by_transitive_call",
+  "returned_callables": [],
+  "calls": {
+    "52:4-52:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "entrypoint.transitive_call_accessing_globals",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.main",
+  "returned_callables": [],
+  "calls": {
+    "76:4-76:15": {
+      "call": {
+        "calls": [
+          { "target": "entrypoint.get_these", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "77:4-77:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "entrypoint.this_one_shouldnt_be_found",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "78:4-78:13": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "entrypoint.MyClass"
+          }
+        ]
+      }
+    },
+    "78:4-78:40": {
+      "call": {
+        "calls": [
+          {
+            "target": "entrypoint.MyClass.some_entrypoint_function",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "entrypoint.MyClass"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.nested_run",
+  "returned_callables": [],
+  "calls": {
+    "25:4-26:22": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "entrypoint.nested_run.do_the_thing",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "28:4-28:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "entrypoint.nested_run.do_the_thing",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.nested_run.do_the_thing",
+  "returned_callables": [],
+  "calls": {
+    "26:8-26:12|identifier|glob": {
+      "identifier": {
+        "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+      }
+    },
+    "26:8-26:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.append",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.this_one_shouldnt_be_found",
+  "returned_callables": [],
+  "calls": {
+    "36:4-36:8|identifier|glob": {
+      "identifier": {
+        "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+      }
+    },
+    "36:4-36:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.append",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.transitive_call_accessing_globals",
+  "returned_callables": [],
+  "calls": {
+    "44:4-44:8|identifier|glob": {
+      "identifier": {
+        "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+      }
+    },
+    "44:4-44:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.append",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.transitive_call_with_globals_passed_in",
+  "returned_callables": [],
+  "calls": {
+    "40:4-40:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.append",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.MyClass.method_entrypoint_with_decorator",
+  "returned_callables": [],
+  "calls": {
+    "21:8-21:12|identifier|glob": {
+      "identifier": {
+        "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+      }
+    },
+    "21:8-21:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.append",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.MyClass.method_entrypoint_with_decorator@decorated",
+  "returned_callables": [],
+  "calls": {
+    "19:5-19:17|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "entrypoint.MyEntrypoint[formal(f, position=0)=entrypoint.MyClass.method_entrypoint_with_decorator]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "20:4-21:22|identifier|method_entrypoint_with_decorator": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "entrypoint.MyClass.method_entrypoint_with_decorator",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.MyClass.some_entrypoint_function",
+  "returned_callables": [],
+  "calls": {
+    "17:8-17:12|identifier|glob": {
+      "identifier": {
+        "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+      }
+    },
+    "17:8-17:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.append",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    }
+  }
+}

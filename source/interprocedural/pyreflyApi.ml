@@ -3961,6 +3961,36 @@ module ReadOnly = struct
       ()
 
 
+  let all_global_variables { qualifiers_shared_memory; module_globals_shared_memory; _ } ~scheduler =
+    let qualifiers =
+      QualifiersSharedMemory.get qualifiers_shared_memory Memory.SingletonKey.key
+      |> assert_shared_memory_key_exists "missing qualifiers with source in shared memory"
+      |> List.filter_map ~f:(fun { QualifiersSharedMemory.Value.module_qualifier; has_info; _ } ->
+             Option.some_if has_info module_qualifier)
+    in
+    let get_globals_for_qualifier module_qualifier =
+      ModuleGlobalsSharedMemory.get module_globals_shared_memory module_qualifier
+      |> assert_shared_memory_key_exists "missing module globals for qualifier"
+      |> SerializableStringMap.keys
+      |> List.map ~f:(Reference.create ~prefix:(ModuleQualifier.to_reference module_qualifier))
+    in
+    let scheduler_policy =
+      Scheduler.Policy.fixed_chunk_count
+        ~minimum_chunks_per_worker:1
+        ~minimum_chunk_size:1
+        ~preferred_chunks_per_worker:1
+        ()
+    in
+    Scheduler.map_reduce
+      scheduler
+      ~policy:scheduler_policy
+      ~initial:[]
+      ~map:(List.concat_map ~f:get_globals_for_qualifier)
+      ~reduce:List.append
+      ~inputs:qualifiers
+      ()
+
+
   let get_define_names_for_qualifier
       ({ module_callables_shared_memory; _ } as api)
       ~exclude_test_modules

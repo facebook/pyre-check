@@ -1,0 +1,62 @@
+@generated
+Call dependencies
+{
+  "entrypoint.$toplevel (fun)": [
+    "builtins.str.__eq__ (method)", "entrypoint.main (fun)"
+  ],
+  "entrypoint.MyClass.method_entrypoint_with_decorator (method)": [
+    "builtins.list.append (method)"
+  ],
+  "entrypoint.MyClass.method_entrypoint_with_decorator@decorated (method)": [
+    "entrypoint.MyEntrypoint (fun)[formal(f, position=0)=entrypoint.MyClass.method_entrypoint_with_decorator (method)]"
+  ],
+  "entrypoint.MyClass.some_entrypoint_function (method)": [
+    "builtins.list.append (method)"
+  ],
+  "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator (fun)": [
+    "builtins.list.append (method)"
+  ],
+  "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator@decorated (fun)": [
+    "entrypoint.MyEntrypoint (fun)[formal(f, position=0)=entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator (fun)]"
+  ],
+  "entrypoint.function_entrypoint_with_decorator (fun)": [
+    "builtins.list.append (method)"
+  ],
+  "entrypoint.function_entrypoint_with_decorator@decorated (fun)": [
+    "entrypoint.MyEntrypoint (fun)[formal(f, position=0)=entrypoint.function_entrypoint_with_decorator (fun)]"
+  ],
+  "entrypoint.get_these (fun)": [
+    "entrypoint.immediate_examples (fun)",
+    "entrypoint.leak_globals_by_passing_in (fun)",
+    "entrypoint.leak_globals_by_transitive_call (fun)",
+    "entrypoint.nested_run (fun)"
+  ],
+  "entrypoint.immediate_examples (fun)": [ "builtins.list.append (method)" ],
+  "entrypoint.leak_globals_by_passing_in (fun)": [
+    "entrypoint.transitive_call_with_globals_passed_in (fun)"
+  ],
+  "entrypoint.leak_globals_by_transitive_call (fun)": [
+    "entrypoint.transitive_call_accessing_globals (fun)"
+  ],
+  "entrypoint.main (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "entrypoint.MyClass.some_entrypoint_function (method)",
+    "entrypoint.get_these (fun)",
+    "entrypoint.this_one_shouldnt_be_found (fun)"
+  ],
+  "entrypoint.nested_run (fun)": [
+    "entrypoint.nested_run.do_the_thing (fun)"
+  ],
+  "entrypoint.nested_run.do_the_thing (fun)": [
+    "builtins.list.append (method)"
+  ],
+  "entrypoint.this_one_shouldnt_be_found (fun)": [
+    "builtins.list.append (method)"
+  ],
+  "entrypoint.transitive_call_accessing_globals (fun)": [
+    "builtins.list.append (method)"
+  ],
+  "entrypoint.transitive_call_with_globals_passed_in (fun)": [
+    "builtins.list.append (method)"
+  ]
+}

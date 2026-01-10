@@ -115,6 +115,8 @@ module ReadOnly : sig
 
   val all_classes : t -> scheduler:Scheduler.t -> string list
 
+  val all_global_variables : t -> scheduler:Scheduler.t -> Ast.Reference.t list
+
   val get_define_names_for_qualifier
     :  t ->
     exclude_test_modules:bool ->
