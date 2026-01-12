@@ -52,9 +52,10 @@ class InitializeTest(unittest.TestCase):
         isfile.side_effect = exists
         # One for shutil.which("watchman"), another for shutil.which(BINARY_NAME).
         which.side_effect = ["watchman", "binary"]
-        with patch.object(
-            initialize, "find_typeshed", return_value=Path("/tmp")
-        ), patch.object(initialize, "find_global_root", return_value=None):
+        with (
+            patch.object(initialize, "find_typeshed", return_value=Path("/tmp")),
+            patch.object(initialize, "find_global_root", return_value=None),
+        ):
             initialize.run()
             subprocess_run.assert_has_calls(
                 [
@@ -74,14 +75,17 @@ class InitializeTest(unittest.TestCase):
 
         isfile.side_effect = exists
         file = mock_open()
-        with patch("builtins.open", file), patch.object(
-            initialize, "_get_local_configuration", return_value={}
-        ), patch.object(initialize, "find_global_root", return_value=Path("/")):
+        with (
+            patch("builtins.open", file),
+            patch.object(initialize, "_get_local_configuration", return_value={}),
+            patch.object(initialize, "find_global_root", return_value=Path("/")),
+        ):
             initialize.run()
             file().write.assert_has_calls([call("{}"), call("\n")])
 
-        with patch.object(sys, "argv", ["/tmp/pyre/bin/pyre"]), patch.object(
-            initialize, "find_typeshed", return_value=Path("/tmp")
+        with (
+            patch.object(sys, "argv", ["/tmp/pyre/bin/pyre"]),
+            patch.object(initialize, "find_typeshed", return_value=Path("/tmp")),
         ):
             which.reset_mock()
             which.side_effect = [True, None, "/tmp/pyre/bin/pyre.bin"]
@@ -111,9 +115,10 @@ class InitializeTest(unittest.TestCase):
                 )
 
     def test_get_local_configuration(self) -> None:
-        with patch.object(
-            initialize.log, "get_yes_no_input"
-        ) as yes_no_input, patch.object(initialize.log, "get_input") as string_input:
+        with (
+            patch.object(initialize.log, "get_yes_no_input") as yes_no_input,
+            patch.object(initialize.log, "get_input") as string_input,
+        ):
             yes_no_input.side_effect = [True]
             string_input.side_effect = ["fbcode//target/...", ""]
 
@@ -122,9 +127,10 @@ class InitializeTest(unittest.TestCase):
                 {"targets": ["fbcode//target/..."]},
             )
 
-        with patch.object(
-            initialize.log, "get_yes_no_input"
-        ) as yes_no_input, patch.object(initialize.log, "get_input") as string_input:
+        with (
+            patch.object(initialize.log, "get_yes_no_input") as yes_no_input,
+            patch.object(initialize.log, "get_input") as string_input,
+        ):
             yes_no_input.side_effect = [True]
             string_input.side_effect = ["", ""]
             self.assertEqual(
@@ -132,9 +138,10 @@ class InitializeTest(unittest.TestCase):
                 {"targets": ["fbcode//project/..."]},
             )
 
-        with patch.object(
-            initialize.log, "get_yes_no_input"
-        ) as yes_no_input, patch.object(initialize.log, "get_input") as string_input:
+        with (
+            patch.object(initialize.log, "get_yes_no_input") as yes_no_input,
+            patch.object(initialize.log, "get_input") as string_input,
+        ):
             yes_no_input.side_effect = [False]
             string_input.side_effect = ["project/a, project/b", ""]
             self.assertEqual(
@@ -142,9 +149,10 @@ class InitializeTest(unittest.TestCase):
                 {"source_directories": ["project/a", "project/b"]},
             )
 
-        with patch.object(
-            initialize.log, "get_yes_no_input"
-        ) as yes_no_input, patch.object(initialize.log, "get_input") as string_input:
+        with (
+            patch.object(initialize.log, "get_yes_no_input") as yes_no_input,
+            patch.object(initialize.log, "get_input") as string_input,
+        ):
             yes_no_input.side_effect = [True]
             string_input.side_effect = ["fbcode//target/...", "pyre"]
             self.assertEqual(

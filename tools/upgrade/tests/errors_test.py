@@ -336,7 +336,7 @@ class ErrorsTest(unittest.TestCase):
         )
         # Skip generated files.
         with self.assertRaises(SkippingGeneratedFileException):
-            _suppress_errors("# @" "generated", {})
+            _suppress_errors("# @generated", {})
 
         # Skip files with unparseable line break blocks.
         with self.assertRaises(LineBreakParsingException):
@@ -357,7 +357,7 @@ class ErrorsTest(unittest.TestCase):
         # Do not check for generated files with --unsafe.
         try:
             _suppress_errors(
-                "# @" "generated",
+                "# @generated",
                 {},
                 custom_comment=None,
                 max_line_length=None,

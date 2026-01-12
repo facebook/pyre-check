@@ -60,11 +60,11 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
             nested_b = tempfile.mkdtemp("b", dir=root)
             nested_a_configuration = os.path.join(nested_a, ".pyre_configuration.local")
             nested_b_configuration = os.path.join(nested_b, ".pyre_configuration.local")
-            with open(configuration_path, "w+") as configuration_file, open(
-                nested_a_configuration, "w+"
-            ) as nested_configuration_a, open(
-                nested_b_configuration, "w+"
-            ) as nested_configuration_b:
+            with (
+                open(configuration_path, "w+") as configuration_file,
+                open(nested_a_configuration, "w+") as nested_configuration_a,
+                open(nested_b_configuration, "w+") as nested_configuration_b,
+            ):
                 json.dump({"targets": ["//x/..."]}, configuration_file)
                 json.dump({"targets": ["//a/..."]}, nested_configuration_a)
                 json.dump({"targets": ["//b/..."]}, nested_configuration_b)
@@ -122,13 +122,17 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
             # Consolidate with existing topmost configuration
             subdirectory_a = tempfile.mkdtemp("a", dir=root)
             subdirectory_b = tempfile.mkdtemp("b", dir=root)
-            with open(
-                os.path.join(root, ".pyre_configuration.local"), "w+"
-            ) as configuration, open(
-                os.path.join(subdirectory_a, ".pyre_configuration.local"), "w+"
-            ) as nested_a, open(
-                os.path.join(subdirectory_b, ".pyre_configuration.local"), "w+"
-            ) as nested_b:
+            with (
+                open(
+                    os.path.join(root, ".pyre_configuration.local"), "w+"
+                ) as configuration,
+                open(
+                    os.path.join(subdirectory_a, ".pyre_configuration.local"), "w+"
+                ) as nested_a,
+                open(
+                    os.path.join(subdirectory_b, ".pyre_configuration.local"), "w+"
+                ) as nested_b,
+            ):
                 json.dump({"targets": ["//x/..."]}, configuration)
                 configuration.seek(0)
                 ConsolidateNestedConfigurations.from_arguments(
@@ -153,9 +157,10 @@ class ConsolidateNestedConfigurationsTest(unittest.TestCase):
             # Consolidate with no existing topmost configuration
             subdirectory_a = tempfile.mkdtemp("a", dir=root)
             subdirectory_b = tempfile.mkdtemp("b", dir=root)
-            with open(
-                os.path.join(subdirectory_a, ".pyre_configuration.local"), "w+"
-            ), open(os.path.join(subdirectory_b, ".pyre_configuration.local"), "w+"):
+            with (
+                open(os.path.join(subdirectory_a, ".pyre_configuration.local"), "w+"),
+                open(os.path.join(subdirectory_b, ".pyre_configuration.local"), "w+"),
+            ):
                 ConsolidateNestedConfigurations.from_arguments(
                     arguments, repository
                 ).run()

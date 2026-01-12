@@ -131,13 +131,13 @@ def execute_query(
         )
     LOG.info(f"Pyre binary is located at `{start_command.get_pyre_binary_location()}`")
 
-    with create_no_daemon_arguments_and_cleanup(
-        configuration, query_arguments
-    ) as arguments, backend_arguments.temporary_argument_file(
-        arguments
-    ) as argument_file_path, backend_arguments.backend_log_file(
-        prefix="pyre_query"
-    ) as log_file:
+    with (
+        create_no_daemon_arguments_and_cleanup(
+            configuration, query_arguments
+        ) as arguments,
+        backend_arguments.temporary_argument_file(arguments) as argument_file_path,
+        backend_arguments.backend_log_file(prefix="pyre_query") as log_file,
+    ):
         query_command = [
             str(start_command.get_pyre_binary_location()),
             "no-daemon-query",

@@ -262,8 +262,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
                 self.server_state.client_register_event.clear()
 
         await self.client_status_message_handler.log_and_show_status_message_to_client(
-            f"Starting a new Pyre server at `{project_identifier}` in "
-            "the background.",
+            f"Starting a new Pyre server at `{project_identifier}` in the background.",
             short_message=f"Starting {flavor.simple_name()}...",
             level=lsp.MessageType.WARNING,
             fallback_to_notification=True,

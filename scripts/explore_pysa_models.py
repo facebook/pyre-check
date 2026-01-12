@@ -550,7 +550,7 @@ def feature_to_string(feature: Union[str, Dict[str, str]]) -> str:
 def leaf_name_to_string(leaf: Dict[str, str]) -> str:
     name = leaf["name"]
     if "port" in leaf:
-        name += f':{leaf["port"]}'
+        name += f":{leaf['port']}"
     return name
 
 
@@ -613,7 +613,7 @@ def print_json_location(
 def print_call_info(local_taint: Dict[str, Any], indent: str) -> None:
     if "call" in local_taint:
         call = local_taint["call"]
-        print(f'{indent}CalleePort: {green(call["port"])}')
+        print(f"{indent}CalleePort: {green(call['port'])}")
         for resolve_to in call["resolves_to"]:
             print(f"{indent}Callee: {blue(resolve_to)}")
         print_json_location(call["position"], prefix="Location: ", indent=indent)
@@ -631,14 +631,14 @@ def print_call_info(local_taint: Dict[str, Any], indent: str) -> None:
 
 def print_local_taint(local_taint: Dict[str, Any], indent: str) -> None:
     if "receiver_interval" in local_taint:
-        print(f'{indent}ReceiverInterval: {local_taint["receiver_interval"]}')
+        print(f"{indent}ReceiverInterval: {local_taint['receiver_interval']}")
     if "caller_interval" in local_taint:
-        print(f'{indent}CallerInterval: {local_taint["caller_interval"]}')
+        print(f"{indent}CallerInterval: {local_taint['caller_interval']}")
     if "is_self_call" in local_taint:
-        print(f'{indent}IsSelfCall: {local_taint["is_self_call"]}')
+        print(f"{indent}IsSelfCall: {local_taint['is_self_call']}")
     if "tito_positions" in local_taint:
         positions = ", ".join(
-            f'{position["line"]}:{position["start"]}:{position["end"]}'
+            f"{position['line']}:{position['start']}:{position['end']}"
             for position in local_taint["tito_positions"]
         )
         print(f"{indent}TitoPositions: {positions}")
@@ -655,14 +655,14 @@ def print_frame(frame: Dict[str, Any], indent: str) -> None:
         # Special case for taint-in-taint-out
         for return_path, collapse_depth in frame["return_paths"].items():
             print(
-                f'{indent}{green(frame["kind"])}: '
+                f"{indent}{green(frame['kind'])}: "
                 f"ReturnPath {green(return_path)} "
                 f"CollapseDepth {blue(collapse_depth)} "
-                f'Distance {blue(frame.get("length", 0))}'
+                f"Distance {blue(frame.get('length', 0))}"
             )
     else:
         print(
-            f'{indent}{green(frame["kind"])}: Distance {blue(frame.get("length", 0))}'
+            f"{indent}{green(frame['kind'])}: Distance {blue(frame.get('length', 0))}"
         )
 
     if "features" in frame:
@@ -679,7 +679,7 @@ def print_frame(frame: Dict[str, Any], indent: str) -> None:
 def print_taint_conditions(conditions: List[Dict[str, Any]], is_tito: bool) -> None:
     for condition in conditions:
         label = "CallerPort" if not is_tito else "ParameterPath"
-        print(f'  {label}: {green(condition["port"])}')
+        print(f"  {label}: {green(condition['port'])}")
         for local_taint in condition["taint"]:
             print_call_info(local_taint, indent=" " * 4)
             print_local_taint(local_taint, indent=" " * 4)
@@ -786,7 +786,7 @@ def get_frames_from_extra_traces(
         elif extra_trace["trace_kind"] == "sink":
             condition_kind = ConditionKind.SINK
         else:
-            raise AssertionError(f'unexpected trace_kind: {extra_trace["trace_kind"]}')
+            raise AssertionError(f"unexpected trace_kind: {extra_trace['trace_kind']}")
 
         if "call" in extra_trace:
             call = extra_trace["call"]
@@ -967,13 +967,15 @@ def print_model_size_stats(callable: str) -> None:
     for taint_kind, count in sorted(
         trace_frames_per_kind.items(), key=lambda p: p[1], reverse=True
     )[:20]:
-        print(f"{taint_kind}: {count} trace frames ({count/trace_frames*100.0:.2f}%)")
+        print(
+            f"{taint_kind}: {count} trace frames ({count / trace_frames * 100.0:.2f}%)"
+        )
     print()
     print("Most common callees:")
     for callee, count in sorted(
         trace_frames_per_callee.items(), key=lambda p: p[1], reverse=True
     )[:20]:
-        print(f"{callee}: {count} trace frames ({count/trace_frames*100.0:.2f}%)")
+        print(f"{callee}: {count} trace frames ({count / trace_frames * 100.0:.2f}%)")
 
 
 def get_issues(
@@ -1034,13 +1036,13 @@ def print_issues(callable: str, **kwargs: Union[str, bool]) -> None:
         print(f"Issues for {green(callable)}")
         for issue in issues:
             print("Issue:")
-            print(f'  Code: {issue["code"]}')
+            print(f"  Code: {issue['code']}")
             # pyre-ignore: issue contains a location
             print_json_location(issue, "Location: ", indent=" " * 2)
-            print(f'  Message: {blue(issue["message"])}')
-            print(f'  Handle: {green(issue["master_handle"])}')
+            print(f"  Message: {blue(issue['message'])}")
+            print(f"  Handle: {green(issue['master_handle'])}")
             for trace in issue["traces"]:
-                print(f'  {trace["name"].capitalize()}:')
+                print(f"  {trace['name'].capitalize()}:")
                 print_issue_trace(trace)
     else:
         raise AssertionError(f"Unexpected format `{options.format}`")

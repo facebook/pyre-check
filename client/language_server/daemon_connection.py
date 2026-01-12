@@ -103,6 +103,6 @@ async def attempt_send_async_raw_request(
     ) as error:
         return DaemonConnectionFailure(
             error_message="Could not establish connection with an existing Pyre server "
-            f"at {socket_path}: {error}. Type: {type(error)}. Stacktrace: {traceback.format_exc( limit = None, chain = True)}",
+            f"at {socket_path}: {error}. Type: {type(error)}. Stacktrace: {traceback.format_exc(limit=None, chain=True)}",
             error_source=error,
         )

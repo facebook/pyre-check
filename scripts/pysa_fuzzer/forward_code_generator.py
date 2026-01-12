@@ -188,7 +188,7 @@ class CodeGenerator:
         unpack_vars = ", ".join(self.generate_new_variable() for _ in range(3))
         unpack_operation = f"{unpack_vars} = {curr_var}"
         new_operation_var = self.generate_new_variable()
-        new_operation = f"{new_operation_var} = {self.variables[self.current_var-4]} + {self.variables[self.current_var-3]} + {self.variables[self.current_var-2]}"
+        new_operation = f"{new_operation_var} = {self.variables[self.current_var - 4]} + {self.variables[self.current_var - 3]} + {self.variables[self.current_var - 2]}"
         return f"{tuple_creation}\n{unpack_operation}\n{new_operation}"
 
     def generate_randomized_data_structures(self) -> str:

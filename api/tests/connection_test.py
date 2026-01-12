@@ -175,9 +175,10 @@ class ConnectionApiTest(unittest.TestCase):
         )
 
     def test_context_manager(self) -> None:
-        with patch.object(PyreConnection, "start_server") as start_server, patch.object(
-            PyreConnection, "stop_server"
-        ) as stop_server:
+        with (
+            patch.object(PyreConnection, "start_server") as start_server,
+            patch.object(PyreConnection, "stop_server") as stop_server,
+        ):
             with PyreConnection():
                 pass
             start_server.assert_called_once_with()

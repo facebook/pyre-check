@@ -51,9 +51,10 @@ def _connect_bytes(
     try:
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client_socket:
             client_socket.connect(str(socket_path))
-            with client_socket.makefile(
-                mode="rb"
-            ) as input_channel, client_socket.makefile(mode="wb") as output_channel:
+            with (
+                client_socket.makefile(mode="rb") as input_channel,
+                client_socket.makefile(mode="wb") as output_channel,
+            ):
                 yield (input_channel, output_channel)
     except OSError as error:
         raise ConnectionFailure() from error

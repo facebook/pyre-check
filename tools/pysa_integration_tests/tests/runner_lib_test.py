@@ -8,7 +8,6 @@ import textwrap
 from typing import List
 
 import testslide
-
 from tools.pyre.tools.pysa_integration_tests import runner_lib as test_runner_lib
 from tools.pyre.tools.pysa_integration_tests.runner_lib import (
     FunctionTestAnnotations,

@@ -650,7 +650,7 @@ class AnnotateModuleInPlace:
         Merge inferred annotations from stubs with source code to get
         annotated code.
         """
-        if "@" "generated" in code:
+        if "@generated" in code:
             LOG.warning(f"Skipping generated file {code_path}")
             return
         context = CodemodContext()

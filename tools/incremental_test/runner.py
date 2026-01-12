@@ -179,7 +179,7 @@ class PyreRunner:
 
     def run_profile(self, output_kind: str) -> object:  # noqa T20027161
         pyre_profile_command = (
-            f"{self._pyre_invocation} " f"profile --profile-output={output_kind}"
+            f"{self._pyre_invocation} profile --profile-output={output_kind}"
         ).rstrip()
         output = self._environment.checked_run(
             working_directory=self._working_directory, command=pyre_profile_command

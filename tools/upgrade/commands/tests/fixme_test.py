@@ -23,11 +23,14 @@ class FixmeTest(unittest.TestCase):
         arguments.error_source = ErrorSource.STDIN
         mock_errors = MagicMock()
         arguments.fixme_threshold = None
-        with patch.object(
-            errors.Errors, "from_stdin", return_value=mock_errors
-        ) as errors_from_stdin, patch.object(
-            ErrorSuppressingCommand, "_apply_suppressions"
-        ) as apply_suppressions:
+        with (
+            patch.object(
+                errors.Errors, "from_stdin", return_value=mock_errors
+            ) as errors_from_stdin,
+            patch.object(
+                ErrorSuppressingCommand, "_apply_suppressions"
+            ) as apply_suppressions,
+        ):
             Fixme.from_arguments(arguments, repository).run()
             errors_from_stdin.assert_called_once()
             apply_suppressions.assert_called_once_with(mock_errors)
@@ -35,11 +38,14 @@ class FixmeTest(unittest.TestCase):
         arguments.error_source = ErrorSource.GENERATE
         arguments.lint = False
 
-        with patch.object(
-            Fixme, "_generate_errors", return_value=mock_errors
-        ) as generate_errors, patch.object(
-            ErrorSuppressingCommand, "_apply_suppressions"
-        ) as apply_suppressions:
+        with (
+            patch.object(
+                Fixme, "_generate_errors", return_value=mock_errors
+            ) as generate_errors,
+            patch.object(
+                ErrorSuppressingCommand, "_apply_suppressions"
+            ) as apply_suppressions,
+        ):
             Fixme.from_arguments(arguments, repository).run()
             generate_errors.assert_called_once()
             apply_suppressions.assert_called_once_with(mock_errors)

@@ -670,7 +670,7 @@ def _suppress_errors(
     truncate: bool = False,
     unsafe: bool = False,
 ) -> str:
-    if not unsafe and "@" "generated" in input:
+    if not unsafe and "@generated" in input:
         raise SkippingGeneratedFileException()
 
     lines: List[str] = input.split("\n")

@@ -225,7 +225,7 @@ def run_pysa(
     if run_from_source:
         command = [
             "python",
-            "-m" "pyre-check.client.pyre",
+            "-mpyre-check.client.pyre",
         ]
     else:
         command = ["pyre"]
@@ -269,7 +269,7 @@ def run_pysa(
         command.append(f"--maximum-trace-length={maximum_trace_length}")
 
     if maximum_tito_depth is not None:
-        command.append(f"--maximum-tito-depth={maximum_tito_depth }")
+        command.append(f"--maximum-tito-depth={maximum_tito_depth}")
 
     if shard_taint_output:
         command.append("--output-format=sharded-json")
