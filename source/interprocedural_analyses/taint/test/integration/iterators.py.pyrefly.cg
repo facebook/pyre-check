@@ -1,0 +1,28 @@
+@generated
+Call dependencies
+{
+  "iterators.CustomGetItem.__getitem__ (method)": [
+    "pysa._test_source (fun)"
+  ],
+  "iterators.CustomIter.__iter__ (method)": [
+    "builtins.iter (fun)", "builtins.list.__iter__ (method)",
+    "pysa._test_source (fun)"
+  ],
+  "iterators.test_custom_getitem (fun)": [
+    "builtins.iter (fun)", "builtins.next (fun)",
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "pysa._test_sink (fun)", "typing.Iterator.__next__ (method)"
+  ],
+  "iterators.test_custom_iter (fun)": [
+    "builtins.iter (fun)", "builtins.next (fun)",
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "iterators.CustomIter.__iter__ (method)", "pysa._test_sink (fun)",
+    "typing.Iterator.__next__ (method)"
+  ],
+  "iterators.test_next_iter (fun)": [
+    "builtins.dict.__getitem__ (method)", "builtins.dict.__iter__ (method)",
+    "builtins.iter (fun)", "builtins.list.__iter__ (method)",
+    "builtins.next (fun)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "typing.Iterator.__next__ (method)"
+  ]
+}

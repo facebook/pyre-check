@@ -877,7 +877,7 @@ let preprocess_special_calls
       in
       let callee = attribute_access ~base:value ~method_name ~origin:(Some origin) in
       Some { Call.callee; arguments = []; origin = Some origin }
-  | Name (Name.Identifier "abs"), [{ Call.Argument.value; _ }] ->
+  | Name (Name.Identifier "abs"), [{ Call.Argument.value; name = None }] ->
       let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.AbsCall) in
       Some
         {
