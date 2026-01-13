@@ -4966,7 +4966,7 @@ let build_whole_program_call_graph_for_pyrefly
           | PyrePysaApi.TypeModifier.Type :: rest -> List.for_all ~f:allow_modifier rest
           | _ -> false
         in
-        let map_attribute_access
+        let add_attribute_accesses
             ~location:attribute_access_location
             ~attribute_access:
               ({ Ast.Expression.Name.Attribute.base; attribute; _ } as attribute_access)
@@ -5158,6 +5158,32 @@ let build_whole_program_call_graph_for_pyrefly
               in
               Some call_graph
         in
+        let add_try_handler_targets ~try_:{ Try.handlers; _ } call_graph =
+          let add_try_handler_targets call_graph { Try.Handler.kind; _ } =
+            match kind with
+            | Some { Node.location; _ } ->
+                DefineCallGraph.add_callees
+                  ~debug:false
+                  ~caller:callable
+                  ~on_existing_callees:DefineCallGraph.OnExistingCallees.Fail
+                  ~expression_for_logging:None
+                  ~expression_identifier:
+                    (ExpressionIdentifier.ArtificialCall
+                       (Origin.create ~location Origin.TryHandlerIsInstance))
+                  ~callees:
+                    (ExpressionCallees.Call
+                       (CallCallees.create
+                          ~call_targets:
+                            [
+                              CallTarget.create
+                                (Target.create_function (Reference.create "builtins.isinstance"));
+                            ]
+                          ()))
+                  call_graph
+            | _ -> call_graph
+          in
+          List.fold ~f:add_try_handler_targets ~init:call_graph handlers
+        in
         let module Visitor = Ast.Visit.Make (struct
           type t = DefineCallGraph.t
 
@@ -5170,14 +5196,17 @@ let build_whole_program_call_graph_for_pyrefly
             | Expression.Name (Ast.Expression.Name.Attribute attribute_access) ->
                 (* For each attribute access, check the base and determine whether the attribute has
                    a user-provided model. *)
-                map_attribute_access ~location:expression_location ~attribute_access call_graph
+                add_attribute_accesses ~location:expression_location ~attribute_access call_graph
             | Expression.Call ({ Call.arguments; _ } as call) ->
                 add_shim_target ~debug ~expression_location ~call ~arguments call_graph
                 |> Option.value ~default:call_graph
             | _ -> call_graph
 
 
-          let statement call_graph _ = call_graph
+          let statement call_graph { Node.value = statement; location = _ } =
+            match statement with
+            | Statement.Try try_ -> add_try_handler_targets ~try_ call_graph
+            | _ -> call_graph
         end)
         in
         Visitor.visit call_graph (Source.create [Node.create ~location (Statement.Define define)])

@@ -121,7 +121,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "BaseException.__str__", "port": "leaf:return" }
+                  {
+                    "name": "builtins.BaseException.__str__",
+                    "port": "leaf:return"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -147,7 +150,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "BaseException.__init__", "port": "leaf:self" }
+                  {
+                    "name": "builtins.BaseException.__init__",
+                    "port": "leaf:self"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -163,7 +169,31 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "BaseException.__str__", "port": "leaf:return" }
+                  {
+                    "name": "builtins.BaseException.__new__",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 14, "start": 9, "end": 18 },
+              { "line": 15, "start": 15, "end": 17 }
+            ],
+            "origin": { "line": 14, "start": 9, "end": 29 }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "builtins.BaseException.__str__",
+                    "port": "leaf:return"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -249,7 +279,10 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "BaseException.__str__", "port": "leaf:return" }
+                  {
+                    "name": "builtins.BaseException.__str__",
+                    "port": "leaf:return"
+                  }
                 ],
                 "kind": "Test"
               }
@@ -492,9 +525,116 @@
 {
   "kind": "model",
   "data": {
-    "callable": "BaseException.__init__",
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.BaseException.__init__",
     "filename": "builtins.pyi",
-    "callable_line": 60,
+    "callable_line": 6315,
     "sources": [
       {
         "port": "formal(self, position=0)",
@@ -507,9 +647,9 @@
 {
   "kind": "model",
   "data": {
-    "callable": "BaseException.__repr__",
+    "callable": "builtins.BaseException.__new__",
     "filename": "builtins.pyi",
-    "callable_line": 62,
+    "callable_line": 6316,
     "sources": [
       {
         "port": "result",
@@ -522,9 +662,54 @@
 {
   "kind": "model",
   "data": {
-    "callable": "BaseException.__str__",
+    "callable": "builtins.BaseException.__repr__",
     "filename": "builtins.pyi",
-    "callable_line": 61,
+    "callable_line": 6329,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.BaseException.__setstate__",
+    "filename": "builtins.pyi",
+    "callable_line": 6317,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.BaseException.__str__",
+    "filename": "builtins.pyi",
+    "callable_line": 6326,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.BaseException.with_traceback",
+    "filename": "builtins.pyi",
+    "callable_line": 6318,
     "sources": [
       {
         "port": "result",

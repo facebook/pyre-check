@@ -74,6 +74,7 @@ def test_return_twice_finally():
     try:
         return "hello"
     finally:
+        # pyrefly: ignore[unreachable]
         return _test_source()
 
 
@@ -83,4 +84,5 @@ def test_return_overrides_finally():
         # since the return in `finally` overrides it.
         return _test_source()
     finally:
+        # pyrefly: ignore[unreachable]
         return "hello"
