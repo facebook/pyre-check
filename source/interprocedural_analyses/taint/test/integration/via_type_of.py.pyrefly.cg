@@ -1,0 +1,100 @@
+@generated
+Call dependencies
+{
+  "via_type_of.Test1_C.__init__ (method)": [
+    "via_type_of.Test1_C.x (object)", "via_type_of.Test1_C.y (object)",
+    "via_type_of.Test1_C.z (object)"
+  ],
+  "via_type_of.Test3_C.$class_toplevel (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)"
+  ],
+  "via_type_of.meta (fun)": [ "via_type_of.return_via_parameter_type (fun)" ],
+  "via_type_of.test1_alarm1 (fun)": [
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "via_type_of.Test1_C.__init__ (method)",
+    "via_type_of.Test1_C.x (object)"
+  ],
+  "via_type_of.test1_alarm2 (fun)": [
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "via_type_of.Test1_C.__init__ (method)",
+    "via_type_of.Test1_C.y (object)"
+  ],
+  "via_type_of.test1_alarm3 (fun)": [
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "via_type_of.Test1_C.__init__ (method)",
+    "via_type_of.Test1_C.z (object)"
+  ],
+  "via_type_of.test1_alarm4 (fun)": [
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "via_type_of.Test1_C.__init__ (method)",
+    "via_type_of.Test1_C.x (object)", "via_type_of.Test1_C.y (object)",
+    "via_type_of.Test1_C.z (object)"
+  ],
+  "via_type_of.test2_alarm1 (fun)": [
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "via_type_of.Test2_C.__init__ (method)",
+    "via_type_of.Test2_C.x (object)"
+  ],
+  "via_type_of.test2_alarm2 (fun)": [
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "via_type_of.Test2_C.__init__ (method)",
+    "via_type_of.Test2_C.y (object)"
+  ],
+  "via_type_of.test2_alarm3 (fun)": [
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "via_type_of.Test2_C.__init__ (method)",
+    "via_type_of.Test2_C.z (object)"
+  ],
+  "via_type_of.test2_alarm4 (fun)": [
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "via_type_of.Test2_C.__init__ (method)",
+    "via_type_of.Test2_C.x (object)", "via_type_of.Test2_C.y (object)",
+    "via_type_of.Test2_C.z (object)"
+  ],
+  "via_type_of.test2_alarm5_via_constructor (fun)": [
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "via_type_of.Test2_C.__init__ (method)"
+  ],
+  "via_type_of.test3_alarm1 (fun)": [
+    "pysa._test_sink (fun)", "via_type_of.Test3_C.x (object)"
+  ],
+  "via_type_of.test3_alarm2 (fun)": [
+    "pysa._test_sink (fun)", "via_type_of.Test3_C.y (object)"
+  ],
+  "via_type_of.test3_alarm3 (fun)": [
+    "pysa._test_sink (fun)", "via_type_of.Test3_C.z (object)"
+  ],
+  "via_type_of.test3_alarm4 (fun)": [
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "pysa._test_sink (fun)", "via_type_of.Test3_C.x (object)",
+    "via_type_of.Test3_C.y (object)", "via_type_of.Test3_C.z (object)"
+  ],
+  "via_type_of.test4_alarm1 (fun)": [
+    "pysa._test_source (fun)", "via_type_of.Test4_C.x (object)"
+  ],
+  "via_type_of.test4_alarm2 (fun)": [
+    "pysa._test_source (fun)", "via_type_of.Test4_C.y (object)"
+  ],
+  "via_type_of.test4_alarm3 (fun)": [
+    "pysa._test_source (fun)", "via_type_of.Test4_C.z (object)"
+  ],
+  "via_type_of.test_backwards_tito (fun)": [ "via_type_of.tito (fun)" ],
+  "via_type_of.test_lists (fun)": [
+    "via_type_of.return_via_parameter_type (fun)"
+  ],
+  "via_type_of.test_numerals (fun)": [
+    "via_type_of.return_via_parameter_type (fun)"
+  ],
+  "via_type_of.test_sink (fun)": [ "via_type_of.sink_via_type_of (fun)" ],
+  "via_type_of.test_strings (fun)": [
+    "via_type_of.return_via_parameter_type (fun)"
+  ],
+  "via_type_of.test_tito (fun)": [
+    "pysa._test_source (fun)", "via_type_of.tito (fun)"
+  ],
+  "via_type_of.test_via_type_of_does_not_propagate (fun)": [
+    "via_type_of.meta (fun)"
+  ]
+}

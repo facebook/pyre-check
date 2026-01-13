@@ -519,12 +519,22 @@ module ViaFeature = struct
 
 
   let via_type_of_breadcrumb_for_object ?tag ~pyre_in_context ~object_target () =
+    let object_target = Reference.create object_target in
     let feature =
-      object_target
-      |> Reference.create
-      |> PyrePysaApi.InContext.resolve_reference pyre_in_context
-      |> Type.weaken_literals
-      |> Type.show
+      match pyre_in_context with
+      | PyrePysaApi.InContext.Pyre1 _ ->
+          object_target
+          |> PyrePysaApi.InContext.resolve_reference pyre_in_context
+          |> Type.weaken_literals
+          |> Type.show
+      | PyrePysaApi.InContext.Pyrefly pyrefly_in_context ->
+          let pyre_api = Interprocedural.PyreflyApi.InContext.pyre_api pyrefly_in_context in
+          Interprocedural.PyreflyApi.ReadOnly.get_class_attribute_inferred_type
+            pyre_api
+            ~class_name:(Reference.prefix object_target |> Option.value_exn |> Reference.show)
+            ~attribute:(Reference.last object_target)
+          |> PyrePysaApi.PysaType.weaken_literals
+          |> PyrePysaApi.PysaType.show_fully_qualified
     in
     Breadcrumb.ViaType { value = feature; tag } |> BreadcrumbInterned.intern
 

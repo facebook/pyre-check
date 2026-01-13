@@ -1,0 +1,1119 @@
+@generated
+Higher order call graphs
+{
+  "callable": "via_type_of.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "49:1-49:10|identifier|dataclass": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "dataclasses.dataclass",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "94:1-94:10|identifier|dataclass": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "dataclasses.dataclass",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "128:1-128:10|identifier|dataclass": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "dataclasses.dataclass",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.Test3_C.$class_toplevel",
+  "returned_callables": [],
+  "calls": {
+    "97:19-97:30": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "via_type_of.Test3_Foo"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.meta",
+  "returned_callables": [],
+  "calls": {
+    "167:11-167:47": {
+      "call": {
+        "calls": [
+          {
+            "target": "via_type_of.return_via_parameter_type",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test1_alarm1",
+  "returned_callables": [],
+  "calls": {
+    "22:8-22:33": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "via_type_of.Test1_C.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "via_type_of.Test1_C"
+          }
+        ]
+      }
+    },
+    "22:18-22:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "23:4-23:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "23:15-23:18": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test1_C.x}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test1_alarm2",
+  "returned_callables": [],
+  "calls": {
+    "28:8-28:33": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "via_type_of.Test1_C.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "via_type_of.Test1_C"
+          }
+        ]
+      }
+    },
+    "28:18-28:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "29:4-29:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "29:15-29:18": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test1_C.y}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test1_alarm3",
+  "returned_callables": [],
+  "calls": {
+    "34:8-34:33": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "via_type_of.Test1_C.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "via_type_of.Test1_C"
+          }
+        ]
+      }
+    },
+    "34:18-34:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "35:4-35:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "35:15-35:18": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test1_C.z}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test1_alarm4",
+  "returned_callables": [],
+  "calls": {
+    "40:8-40:33": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "via_type_of.Test1_C.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "via_type_of.Test1_C"
+          }
+        ]
+      }
+    },
+    "40:18-40:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "41:10-41:13": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test1_C.x}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "42:7-42:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "_random.Random.random",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
+          }
+        ]
+      }
+    },
+    "42:7-42:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.float"
+          }
+        ]
+      }
+    },
+    "43:14-43:17": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test1_C.y}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "44:9-44:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "_random.Random.random",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
+          }
+        ]
+      }
+    },
+    "44:9-44:30|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.float.__gt__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.float"
+          }
+        ]
+      }
+    },
+    "45:14-45:17": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test1_C.z}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "46:4-46:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test2_alarm1",
+  "returned_callables": [],
+  "calls": {
+    "58:8-58:33": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "via_type_of.Test2_C.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "via_type_of.Test2_C"
+          }
+        ]
+      }
+    },
+    "58:18-58:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "59:4-59:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "59:15-59:18": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test2_C.x}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test2_alarm2",
+  "returned_callables": [],
+  "calls": {
+    "64:8-64:33": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "via_type_of.Test2_C.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "via_type_of.Test2_C"
+          }
+        ]
+      }
+    },
+    "64:18-64:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "65:4-65:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "65:15-65:18": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test2_C.y}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test2_alarm3",
+  "returned_callables": [],
+  "calls": {
+    "70:8-70:33": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "via_type_of.Test2_C.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "via_type_of.Test2_C"
+          }
+        ]
+      }
+    },
+    "70:18-70:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "71:4-71:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "71:15-71:18": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test2_C.z}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test2_alarm4",
+  "returned_callables": [],
+  "calls": {
+    "76:8-76:33": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "via_type_of.Test2_C.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "via_type_of.Test2_C"
+          }
+        ]
+      }
+    },
+    "76:18-76:32": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "77:10-77:13": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test2_C.x}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "78:7-78:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "_random.Random.random",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
+          }
+        ]
+      }
+    },
+    "78:7-78:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.float"
+          }
+        ]
+      }
+    },
+    "79:14-79:17": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test2_C.y}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "80:9-80:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "_random.Random.random",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
+          }
+        ]
+      }
+    },
+    "80:9-80:30|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.float.__gt__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.float"
+          }
+        ]
+      }
+    },
+    "81:14-81:17": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test2_C.z}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "82:4-82:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test2_alarm5_via_constructor",
+  "returned_callables": [],
+  "calls": {
+    "86:17-86:31": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "87:4-87:44": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "87:15-87:43": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "via_type_of.Test2_C.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "via_type_of.Test2_C"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test3_alarm1",
+  "returned_callables": [],
+  "calls": {
+    "103:4-103:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "103:15-103:18": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test3_C.x}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test3_alarm2",
+  "returned_callables": [],
+  "calls": {
+    "108:4-108:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "108:15-108:18": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test3_C.y}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test3_alarm3",
+  "returned_callables": [],
+  "calls": {
+    "113:4-113:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "113:15-113:18": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test3_C.z}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test3_alarm4",
+  "returned_callables": [],
+  "calls": {
+    "120:10-120:13": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test3_C.x}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "121:7-121:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "_random.Random.random",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
+          }
+        ]
+      }
+    },
+    "121:7-121:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.float"
+          }
+        ]
+      }
+    },
+    "122:14-122:17": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test3_C.y}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "123:9-123:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "_random.Random.random",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
+          }
+        ]
+      }
+    },
+    "123:9-123:30|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.float.__gt__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.float"
+          }
+        ]
+      }
+    },
+    "124:14-124:17": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test3_C.z}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "125:4-125:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test4_alarm1",
+  "returned_callables": [],
+  "calls": {
+    "137:4-137:7": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test4_C.x}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "137:10-137:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test4_alarm2",
+  "returned_callables": [],
+  "calls": {
+    "142:4-142:7": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test4_C.y}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "142:10-142:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test4_alarm3",
+  "returned_callables": [],
+  "calls": {
+    "147:4-147:7": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test4_C.z}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "147:10-147:24": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test_backwards_tito",
+  "returned_callables": [],
+  "calls": {
+    "192:11-192:42": {
+      "call": {
+        "calls": [
+          { "target": "via_type_of.tito", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test_lists",
+  "returned_callables": [],
+  "calls": {
+    "163:11-163:48": {
+      "call": {
+        "calls": [
+          {
+            "target": "via_type_of.return_via_parameter_type",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test_numerals",
+  "returned_callables": [],
+  "calls": {
+    "159:11-159:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "via_type_of.return_via_parameter_type",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test_sink",
+  "returned_callables": [],
+  "calls": {
+    "188:11-188:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "via_type_of.sink_via_type_of",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test_strings",
+  "returned_callables": [],
+  "calls": {
+    "155:11-155:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "via_type_of.return_via_parameter_type",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test_tito",
+  "returned_callables": [],
+  "calls": {
+    "179:8-179:36": {
+      "call": {
+        "calls": [
+          { "target": "via_type_of.tito", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "179:13-179:27": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.test_via_type_of_does_not_propagate",
+  "returned_callables": [],
+  "calls": {
+    "171:11-171:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "via_type_of.meta",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.Test1_C.__init__",
+  "returned_callables": [],
+  "calls": {
+    "15:8-15:14": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test1_C.x}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "16:8-16:14": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test1_C.y}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "17:8-17:14": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test1_C.z}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+@generated
+Overrides
+builtins.object.__init__ (override) -> [builtins.object.__init__ (method) via_type_of.Test1_C.__init__ (override) via_type_of.Test2_C.__init__ (override) via_type_of.Test3_C.__init__ (override) via_type_of.Test4_C.__init__ (override)]
+via_type_of.Test1_C.__init__ (override) -> [via_type_of.Test1_C.__init__ (method)]
+via_type_of.Test2_C.__init__ (override) -> [via_type_of.Test2_C.__init__ (method)]
+via_type_of.Test3_C.__init__ (override) -> [via_type_of.Test3_C.__init__ (method)]
+via_type_of.Test4_C.__init__ (override) -> [via_type_of.Test4_C.__init__ (method)]
