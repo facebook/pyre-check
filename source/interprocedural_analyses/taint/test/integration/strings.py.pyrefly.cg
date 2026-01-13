@@ -1,0 +1,43 @@
+@generated
+Call dependencies
+{
+  "strings.bad_1 (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "strings.concatenate_lhs (fun)"
+  ],
+  "strings.bad_2 (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "strings.concatenate_rhs (fun)"
+  ],
+  "strings.concatenate_lhs (fun)": [ "builtins.str.__add__ (method)" ],
+  "strings.concatenate_rhs (fun)": [ "builtins.str.__add__ (method)" ],
+  "strings.either (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "strings.concatenate_lhs (fun)", "strings.concatenate_rhs (fun)"
+  ],
+  "strings.format_sink (fun)": [
+    "builtins.str.format (method)", "pysa._test_sink (fun)"
+  ],
+  "strings.format_source (fun)": [
+    "builtins.str.format (method)", "pysa._test_source (fun)"
+  ],
+  "strings.format_tito (fun)": [ "builtins.str.format (method)" ],
+  "strings.iadd_lhs_infer_sink (fun)": [
+    "builtins.str.__add__ (method)", "pysa._test_sink (fun)"
+  ],
+  "strings.iadd_rhs_infer_sink (fun)": [
+    "builtins.str.__add__ (method)", "pysa._test_sink (fun)"
+  ],
+  "strings.maybe_lhs (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "strings.concatenate_lhs (fun)"
+  ],
+  "strings.maybe_rhs (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "strings.concatenate_rhs (fun)"
+  ],
+  "strings.through_iadd (fun)": [
+    "builtins.str.__add__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ]
+}
