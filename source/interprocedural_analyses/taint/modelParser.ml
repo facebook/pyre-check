@@ -4534,6 +4534,52 @@ let rec parse_statement
       | Error error ->
           [Error (model_verification_error ~path ~location (UnsupportedVersionConstant error))]
       | Ok test_version -> perform_comparison test_version)
+  | {
+   Node.value =
+     If { If.test = { Node.value = Name (Name.Identifier "USING_PYREFLY"); _ }; If.body; If.orelse };
+   _;
+  } ->
+      let statements =
+        if PyrePysaApi.ReadOnly.is_pyrefly pyre_api then
+          body
+        else
+          orelse
+      in
+      statements
+      |> List.map
+           ~f:
+             (parse_statement
+                ~pyre_api
+                ~path
+                ~taint_configuration
+                ~source_sink_filter
+                ~definitions
+                ~stubs
+                ~python_version)
+      |> List.concat
+  | {
+   Node.value =
+     If { If.test = { Node.value = Name (Name.Identifier "USING_PYRE1"); _ }; If.body; If.orelse };
+   _;
+  } ->
+      let statements =
+        if PyrePysaApi.ReadOnly.is_pyre1 pyre_api then
+          body
+        else
+          orelse
+      in
+      statements
+      |> List.map
+           ~f:
+             (parse_statement
+                ~pyre_api
+                ~path
+                ~taint_configuration
+                ~source_sink_filter
+                ~definitions
+                ~stubs
+                ~python_version)
+      |> List.concat
   | { Node.value = If { If.test; _ }; location } ->
       [Error (model_verification_error ~path ~location (UnsupportedIfCondition test))]
   | { Node.location; _ } ->

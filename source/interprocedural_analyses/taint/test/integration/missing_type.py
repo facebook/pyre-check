@@ -23,7 +23,7 @@ class UnknownSourceAttribute:
     def source(self) -> None:
         pass
 
-    unknown = source  # revealed type is `unknown`
+    unknown = source  # revealed type is `unknown` (with pyre1)
 
 
 def test_unknown_source_attribute(x: UnknownSourceAttribute) -> None:
@@ -36,7 +36,7 @@ class UnknownSinkDef:
     def sink(self, x: str) -> None:
         pass
 
-    unknown = sink  # revealed type is `unknown`
+    unknown = sink  # revealed type is `unknown` (with pyre1)
 
 
 def test_unknown_sink_def(x: UnknownSinkDef) -> None:

@@ -1,0 +1,186 @@
+@generated
+Higher order call graphs
+{
+  "callable": "missing_type.UnknownSinkAttribute.$class_toplevel",
+  "returned_callables": [],
+  "calls": {
+    "51:14-51:18|identifier|sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "missing_type.UnknownSinkAttribute.sink",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "missing_type.UnknownSinkDef.$class_toplevel",
+  "returned_callables": [],
+  "calls": {
+    "39:14-39:18|identifier|sink": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "missing_type.UnknownSinkDef.sink",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "missing_type.UnknownSourceAttribute.$class_toplevel",
+  "returned_callables": [],
+  "calls": {
+    "26:14-26:20|identifier|source": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "missing_type.UnknownSourceAttribute.source",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "missing_type.UnknownSourceDef.$class_toplevel",
+  "returned_callables": [],
+  "calls": {
+    "13:14-13:20|identifier|source": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "missing_type.UnknownSourceDef.source",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "missing_type.test_unknown_sink_attribute",
+  "returned_callables": [],
+  "calls": {
+    "56:4-56:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "missing_type.UnknownSinkAttribute.sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "missing_type.UnknownSinkAttribute"
+          }
+        ]
+      }
+    },
+    "56:14-56:28": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "missing_type.test_unknown_sink_def",
+  "returned_callables": [],
+  "calls": {
+    "44:4-44:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "missing_type.UnknownSinkDef.sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "missing_type.UnknownSinkDef"
+          }
+        ]
+      }
+    },
+    "44:14-44:28": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "missing_type.test_unknown_source_attribute",
+  "returned_callables": [],
+  "calls": {
+    "31:8-31:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "missing_type.UnknownSourceAttribute.source",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "missing_type.UnknownSourceAttribute"
+          }
+        ]
+      }
+    },
+    "32:4-32:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "missing_type.test_unknown_source_def",
+  "returned_callables": [],
+  "calls": {
+    "18:8-18:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "missing_type.UnknownSourceDef.source",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "missing_type.UnknownSourceDef"
+          }
+        ]
+      }
+    },
+    "19:4-19:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
