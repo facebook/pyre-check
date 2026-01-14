@@ -67,6 +67,11 @@ let is_private_name name =
   String.is_prefix ~prefix:"__" name && not (String.is_suffix ~suffix:"__" name)
 
 
+let mangle_private_name ~class_name identifier =
+  let class_name = String.lstrip ~drop:(fun character -> Char.equal character '_') class_name in
+  "_" ^ class_name ^ identifier
+
+
 let keywords =
   Set.of_list
     [

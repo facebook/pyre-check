@@ -2768,12 +2768,29 @@ module ReadWrite = struct
                 priority = 0;
               }
           in
+          let open Result.Monad_infix in
+          let {
+            Configuration.Analysis.python_version =
+              { Configuration.PythonVersion.major; minor; micro };
+            system_platform;
+            _;
+          }
+            =
+            configuration
+          in
+          let sys_platform = Option.value system_platform ~default:"linux" in
           let parse_result =
             Analysis.Parsing.parse_result_of_load_result
               ~controls
               ~post_process:false
               pyre1_module_path
               load_result
+            >>| Analysis.Preprocessing.replace_version_specific_code
+                  ~major_version:major
+                  ~minor_version:minor
+                  ~micro_version:micro
+            >>| Analysis.Preprocessing.replace_platform_specific_code ~sys_platform
+            >>| Analysis.Preprocessing.mangle_private_attributes
           in
           match parse_result with
           | Ok ({ Source.module_path; _ } as source) ->
@@ -3290,6 +3307,7 @@ module ReadWrite = struct
             qualified_name :: callables, classes
         | Class
             {
+              name = class_name;
               local_class_id;
               name_location;
               is_synthesized;
@@ -3329,6 +3347,12 @@ module ReadWrite = struct
                           declaration_kind;
                         }
                       ->
+                     let name =
+                       if Identifier.is_private_name name then
+                         Identifier.mangle_private_name ~class_name name
+                       else
+                         name
+                     in
                      ( name,
                        {
                          ClassField.type_ = JsonType.to_pysa_type type_;

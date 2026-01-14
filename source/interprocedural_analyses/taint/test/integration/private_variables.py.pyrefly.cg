@@ -1,0 +1,106 @@
+@generated
+Call dependencies
+{
+  "private_variables.Other.private_into_sink (method)": [
+    "pysa._test_sink (fun)"
+  ],
+  "private_variables.PrivateAttributeSinkModels.__init__ (method)": [
+    "private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_mangled (object)",
+    "private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_query (object)",
+    "private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_unmangled (object)"
+  ],
+  "private_variables.PrivateAttributeSinkModels.set_model_mangled (method)": [
+    "private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_mangled (object)"
+  ],
+  "private_variables.PrivateAttributeSinkModels.set_model_query (method)": [
+    "private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_query (object)"
+  ],
+  "private_variables.PrivateAttributeSinkModels.set_model_unmangled (method)": [
+    "private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_unmangled (object)"
+  ],
+  "private_variables.PrivateAttributeSourceModels.__init__ (method)": [
+    "private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_mangled (object)",
+    "private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_query (object)",
+    "private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_unmangled (object)"
+  ],
+  "private_variables.PrivateAttributeSourceModels.get_model_mangled (method)": [
+    "private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_mangled (object)"
+  ],
+  "private_variables.PrivateAttributeSourceModels.get_model_query (method)": [
+    "private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_query (object)"
+  ],
+  "private_variables.PrivateAttributeSourceModels.get_model_unmangled (method)": [
+    "private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_unmangled (object)"
+  ],
+  "private_variables.Simple.expand_subexpression (method)": [
+    "builtins.list.__getitem__ (method)", "pysa._test_sink (fun)"
+  ],
+  "private_variables.Simple.getattr_invalid (method)": [
+    "builtins.getattr (fun)"
+  ],
+  "private_variables.Simple.getattr_private (method)": [
+    "builtins.getattr (fun)"
+  ],
+  "private_variables.Simple.getattr_public (method)": [
+    "builtins.getattr (fun)"
+  ],
+  "private_variables.Simple.private_into_sink (method)": [
+    "pysa._test_sink (fun)"
+  ],
+  "private_variables.Simple.public_into_sink (method)": [
+    "pysa._test_sink (fun)"
+  ],
+  "private_variables.test_access_from_other_class (fun)": [
+    "builtins.object.__new__ (method)",
+    "private_variables.Other.private_into_sink (method)",
+    "private_variables.Simple.__init__ (method)", "pysa._test_source (fun)"
+  ],
+  "private_variables.test_bypass_private (fun)": [
+    "builtins.object.__new__ (method)",
+    "private_variables.Simple.__init__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "private_variables.test_expand_subexpression (fun)": [
+    "builtins.object.__new__ (method)",
+    "private_variables.Simple.__init__ (method)",
+    "private_variables.Simple.expand_subexpression (method)",
+    "pysa._test_source (fun)"
+  ],
+  "private_variables.test_getattr (fun)": [
+    "builtins.object.__new__ (method)",
+    "private_variables.Simple.__init__ (method)",
+    "private_variables.Simple.getattr_invalid (method)",
+    "private_variables.Simple.getattr_private (method)",
+    "private_variables.Simple.getattr_public (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "private_variables.test_private_attribute_sink_models (fun)": [
+    "builtins.object.__new__ (method)",
+    "private_variables.PrivateAttributeSinkModels.__init__ (method)",
+    "private_variables.PrivateAttributeSinkModels.set_model_mangled (method)",
+    "private_variables.PrivateAttributeSinkModels.set_model_query (method)",
+    "private_variables.PrivateAttributeSinkModels.set_model_unmangled (method)",
+    "pysa._test_source (fun)"
+  ],
+  "private_variables.test_private_attribute_source_models (fun)": [
+    "builtins.object.__new__ (method)",
+    "private_variables.PrivateAttributeSourceModels.__init__ (method)",
+    "private_variables.PrivateAttributeSourceModels.get_model_mangled (method)",
+    "private_variables.PrivateAttributeSourceModels.get_model_query (method)",
+    "private_variables.PrivateAttributeSourceModels.get_model_unmangled (method)",
+    "pysa._test_sink (fun)"
+  ],
+  "private_variables.test_private_public_different (fun)": [
+    "builtins.object.__new__ (method)",
+    "private_variables.Simple.__init__ (method)",
+    "private_variables.Simple.private_into_sink (method)",
+    "private_variables.Simple.public_into_sink (method)",
+    "pysa._test_source (fun)"
+  ],
+  "private_variables.test_simple (fun)": [
+    "builtins.object.__new__ (method)",
+    "private_variables.Simple.__init__ (method)",
+    "private_variables.Simple.private_into_sink (method)",
+    "pysa._test_source (fun)"
+  ]
+}

@@ -4111,7 +4111,7 @@ let mangle_private_variable name =
   match List.rev (Reference.as_list name) with
   | attribute_name :: class_name :: rest
     when Identifier.is_private_name attribute_name && not (String.equal class_name "__class__") ->
-      Format.sprintf "_%s%s" class_name attribute_name :: class_name :: rest
+      Identifier.mangle_private_name ~class_name attribute_name :: class_name :: rest
       |> List.rev
       |> Reference.create_from_list
   | _ -> name

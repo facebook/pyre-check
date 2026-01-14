@@ -4066,11 +4066,9 @@ let mangle_private_attributes source =
 
     type t = class_data list
 
-    let mangle_identifier class_name identifier = "_" ^ class_name ^ identifier
-
     let mangle_reference class_name reference =
       let mangled_identifier =
-        mangle_identifier class_name (Reference.last reference) |> Reference.create
+        Identifier.mangle_private_name ~class_name (Reference.last reference) |> Reference.create
       in
       match Reference.prefix reference with
       | Some prefix -> Reference.combine prefix mangled_identifier
@@ -4136,7 +4134,9 @@ let mangle_private_attributes source =
                   NestingContext.Class { name; parent } )
                 when should_mangle name ->
                   let mangled_parent =
-                    NestingContext.create_class ~parent (mangle_identifier parent_prefix name)
+                    NestingContext.create_class
+                      ~parent
+                      (Identifier.mangle_private_name ~class_name:parent_prefix name)
                   in
                   let mangled_legacy_parent =
                     Option.map legacy_parent ~f:(mangle_reference parent_prefix)
@@ -4171,11 +4171,17 @@ let mangle_private_attributes source =
         match state, value with
         | { mangling_prefix; _ } :: _, Name (Name.Identifier identifier)
           when should_mangle identifier ->
-            Name (Name.Identifier (mangle_identifier mangling_prefix identifier))
+            Name
+              (Name.Identifier
+                 (Identifier.mangle_private_name ~class_name:mangling_prefix identifier))
         | { mangling_prefix; _ } :: _, Name (Name.Attribute ({ attribute; _ } as name))
           when should_mangle attribute ->
             Name
-              (Name.Attribute { name with attribute = mangle_identifier mangling_prefix attribute })
+              (Name.Attribute
+                 {
+                   name with
+                   attribute = Identifier.mangle_private_name ~class_name:mangling_prefix attribute;
+                 })
         | _ -> value
       in
       { expression with Node.value = transformed_expression }

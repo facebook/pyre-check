@@ -48,4 +48,6 @@ val split_star : t -> string * t
 
 val is_private_name : t -> bool
 
+val mangle_private_name : class_name:string -> t -> t
+
 val is_valid_identifier : t -> bool

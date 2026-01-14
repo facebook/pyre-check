@@ -1,0 +1,6 @@
+@generated
+Overrides
+builtins.object.__init__ (override) -> [builtins.object.__init__ (method) private_variables.PrivateAttributeSinkModels.__init__ (override) private_variables.PrivateAttributeSourceModels.__init__ (override) private_variables.Simple.__init__ (override)]
+private_variables.PrivateAttributeSinkModels.__init__ (override) -> [private_variables.PrivateAttributeSinkModels.__init__ (method)]
+private_variables.PrivateAttributeSourceModels.__init__ (override) -> [private_variables.PrivateAttributeSourceModels.__init__ (method)]
+private_variables.Simple.__init__ (override) -> [private_variables.Simple.__init__ (method)]

@@ -3,8 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from pysa import _test_sink, _test_source
 from typing import List
+
+from pysa import _test_sink, _test_source
 
 
 class Simple:
@@ -68,11 +69,12 @@ def test_getattr() -> None:
 
 def test_bypass_private() -> None:
     # pyrefly: ignore[missing-attribute]
-    _test_sink(Simple(private=_test_source())._Simple__value)  # Error. 
+    _test_sink(Simple(private=_test_source())._Simple__value)  # Error.
     # pyrefly: ignore[missing-attribute]
     _test_sink(Simple(public=_test_source())._Simple__value)  # No error.
-    # pyre-ignore
-    _test_sink(Simple(private=_test_source()).__value)  # No error.
+    # pyrefly: ignore[no-access]
+    _test_sink(Simple(private=_test_source()).__value)  # No error. # pyre-ignore
+    # pyrefly: ignore[no-access]
     _test_sink(Simple(public=_test_source()).__value)  # No error.
 
 
@@ -80,8 +82,8 @@ class Other:
     @staticmethod
     def private_into_sink(s: Simple) -> None:
         # Should produce a sink on _Other__value, not _Simple__value.
-        # pyre-ignore
-        _test_sink(s.__value)
+        # pyrefly: ignore[no-access]
+        _test_sink(s.__value)  # pyre-ignore
 
 
 def test_access_from_other_class() -> None:
