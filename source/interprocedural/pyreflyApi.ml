@@ -1565,6 +1565,19 @@ module ModuleCallGraphs = struct
       >>| fun unresolved -> { targets; unresolved }
   end
 
+  module JsonReturnShimCallees = struct
+    type t = { targets: JsonCallTarget.t list }
+
+    let from_json json =
+      let open Core.Result.Monad_infix in
+      let parse_call_target_list targets =
+        targets |> List.map ~f:JsonCallTarget.from_json |> Result.all
+      in
+      JsonUtil.get_optional_list_member json "targets"
+      >>= parse_call_target_list
+      >>| fun targets -> { targets }
+  end
+
   module JsonExpressionCallees = struct
     type t =
       | Call of JsonCallCallees.t
@@ -1573,6 +1586,7 @@ module ModuleCallGraphs = struct
       | Define of JsonDefineCallees.t
       | FormatStringArtificial of JsonFormatStringArtificialCallees.t
       | FormatStringStringify of JsonFormatStringStringifyCallees.t
+      | Return of JsonReturnShimCallees.t
 
     let from_json json =
       let open Core.Result.Monad_infix in
@@ -1593,6 +1607,9 @@ module ModuleCallGraphs = struct
       | `Assoc [("FormatStringStringify", format_string_callees)] ->
           JsonFormatStringStringifyCallees.from_json format_string_callees
           >>| fun format_string_callees -> FormatStringStringify format_string_callees
+      | `Assoc [("Return", return_callees)] ->
+          JsonReturnShimCallees.from_json return_callees
+          >>| fun return_shim_callees -> Return return_shim_callees
       | _ ->
           Error (FormatError.UnexpectedJsonType { json; message = "expected expression callees" })
   end
@@ -4537,6 +4554,13 @@ module ReadOnly = struct
           targets |> List.map ~f:instantiate_call_target |> List.concat;
       }
     in
+    let instantiate_return_shim_callees { JsonReturnShimCallees.targets } =
+      {
+        CallGraph.ReturnShimCallees.call_targets =
+          targets |> List.map ~f:instantiate_call_target |> List.concat;
+        arguments = [];
+      }
+    in
     let instantiate_expression_callees = function
       | JsonExpressionCallees.Call callees ->
           ExpressionCallees.Call (instantiate_call_callees callees)
@@ -4552,6 +4576,8 @@ module ReadOnly = struct
       | JsonExpressionCallees.FormatStringStringify callees ->
           ExpressionCallees.FormatStringStringify
             (instantiate_format_string_stringify_callees callees)
+      | JsonExpressionCallees.Return callees ->
+          ExpressionCallees.Return (instantiate_return_shim_callees callees)
     in
     let instantiate_call_edge expression_identifier callees call_graph =
       let callees = instantiate_expression_callees callees in

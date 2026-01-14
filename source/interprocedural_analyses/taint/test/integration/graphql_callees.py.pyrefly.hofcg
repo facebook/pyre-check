@@ -31,6 +31,18 @@ Higher order call graphs
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
+    },
+    "36:4-36:21": {
+      "return": {
+        "call_targets": [
+          {
+            "target": "graphql_callees.GraphQLEntrypoint.callee",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     }
   }
 }
@@ -68,6 +80,18 @@ Higher order call graphs
   "callable": "graphql_callees.return_graphql_entrypoint_2",
   "returned_callables": [],
   "calls": {
+    "42:4-42:44": {
+      "return": {
+        "call_targets": [
+          {
+            "target": "graphql_callees.GraphQLEntrypoint.callee",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "42:11-42:44": {
       "call": {
         "new_calls": [
@@ -124,6 +148,24 @@ Higher order call graphs
             }
           ]
         }
+      }
+    }
+  }
+}
+{
+  "callable": "graphql_callees.return_graphql_entrypoint_3",
+  "returned_callables": [],
+  "calls": {
+    "48:4-48:21": {
+      "return": {
+        "call_targets": [
+          {
+            "target": "graphql_callees.GraphQLEntrypoint.callee",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     }
   }
