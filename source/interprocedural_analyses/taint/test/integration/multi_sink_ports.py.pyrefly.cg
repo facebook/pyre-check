@@ -1,0 +1,28 @@
+@generated
+Call dependencies
+{
+  "multi_sink_ports.Query.send (method)": [
+    "multi_sink_ports.splitwrapper (fun)"
+  ],
+  "multi_sink_ports.issue (fun)": [
+    "multi_sink_ports.source (fun)", "multi_sink_ports.wrapper (fun)"
+  ],
+  "multi_sink_ports.issue2 (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "multi_sink_ports.Query.params (method)",
+    "multi_sink_ports.source (fun)", "multi_sink_ports.wrapper2 (fun)"
+  ],
+  "multi_sink_ports.log_call (fun)": [ "multi_sink_ports.sinkA (fun)" ],
+  "multi_sink_ports.split (fun)": [
+    "multi_sink_ports.sinkB (fun)", "multi_sink_ports.sinkC (fun)",
+    "multi_sink_ports.sinkD (fun)"
+  ],
+  "multi_sink_ports.splitwrapper (fun)": [ "multi_sink_ports.split (fun)" ],
+  "multi_sink_ports.wrapper (fun)": [
+    "multi_sink_ports.sinkA (fun)", "multi_sink_ports.split (fun)"
+  ],
+  "multi_sink_ports.wrapper2 (fun)": [
+    "builtins.isinstance (fun)", "multi_sink_ports.Query.send (method)",
+    "multi_sink_ports.log_call (fun)"
+  ]
+}

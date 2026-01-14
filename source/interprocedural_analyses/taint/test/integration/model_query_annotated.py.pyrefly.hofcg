@@ -1,0 +1,315 @@
+@generated
+Higher order call graphs
+{
+  "callable": "model_query_annotated.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "12:12-12:16|identifier|Enum": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "enum.Enum.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_annotated.test1_alarm1",
+  "returned_callables": [],
+  "calls": {
+    "26:4-26:7": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_annotated.Test1_C.a}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "27:4-27:7": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_annotated.Test1_C.b}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "28:4-28:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "28:15-28:18": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_annotated.Test1_C.a}",
+            "index": 1,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_annotated.test1_alarm2",
+  "returned_callables": [],
+  "calls": {
+    "32:4-32:7": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_annotated.Test1_C.a}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "33:4-33:7": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_annotated.Test1_C.b}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "34:4-34:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "34:15-34:18": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_annotated.Test1_C.b}",
+            "index": 1,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_annotated.test1_alarm3",
+  "returned_callables": [],
+  "calls": {
+    "38:4-38:7": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_annotated.Test1_C.x}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "39:4-39:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "39:15-39:18": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_annotated.Test1_C.x}",
+            "index": 1,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_annotated.test1_alarm4",
+  "returned_callables": [],
+  "calls": {
+    "43:4-43:7": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_annotated.Test1_C.y}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "44:4-44:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "44:15-44:18": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_annotated.Test1_C.y}",
+            "index": 1,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_annotated.test2_alarm1",
+  "returned_callables": [],
+  "calls": {
+    "54:4-54:7": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_annotated.Test2_C.a}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "55:4-55:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "55:15-55:18": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_annotated.Test2_C.a}",
+            "index": 1,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_annotated.test2_alarm2",
+  "returned_callables": [],
+  "calls": {
+    "59:4-59:7": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_annotated.Test2_C.x}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "60:4-60:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "60:15-60:18": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{model_query_annotated.Test2_C.x}",
+            "index": 1,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_annotated.test2_noalarm1",
+  "returned_callables": [],
+  "calls": {
+    "65:4-65:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_annotated.test3_noalarm1",
+  "returned_callables": [],
+  "calls": {
+    "69:4-69:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_annotated.test3_noalarm2",
+  "returned_callables": [],
+  "calls": {
+    "73:4-73:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}

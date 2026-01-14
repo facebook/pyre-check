@@ -1,0 +1,4 @@
+@generated
+Overrides
+builtins.object.__init__ (override) -> [builtins.object.__init__ (method) decorator.StringWrapper.__init__ (override)]
+decorator.StringWrapper.__init__ (override) -> [decorator.StringWrapper.__init__ (method)]

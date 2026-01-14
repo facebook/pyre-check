@@ -1,0 +1,1578 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "properties.function_with_nested_properties.my_property@setter",
+    "callable_line": 233,
+    "code": 5002,
+    "line": 234,
+    "start": 19,
+    "end": 33,
+    "filename": "properties.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 234, "start": 19, "end": 33 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 234, "start": 19, "end": 33 },
+            "call_site": "234:8-234:34"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "properties.function_with_nested_properties.my_property@setter:5002:0:Call|pysa._test_sink|0|formal(arg):752951e7c9da8d1621f0c1baa3b8b871"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.sets_tainted_value",
+    "filename": "properties.py",
+    "callable_line": 94,
+    "sinks": [
+      {
+        "port": "formal(t, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 95, "start": 4, "end": 5 },
+              "resolves_to": [
+                "properties.TaintedGetterAndSetter.my_property"
+              ],
+              "port": "formal(self, position=0)",
+              "call_site": "95:4-95:17"
+            },
+            "receiver_interval": [ { "lower": 30, "upper": 35 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.string_source",
+    "filename": "properties.py",
+    "callable_line": 316,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 317, "start": 11, "end": 25 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.test_getattr_on_property",
+    "filename": "properties.py",
+    "callable_line": 212,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 213, "start": 23, "end": 24 },
+              "resolves_to": [
+                "properties.TaintedGetterAndSetter.my_property"
+              ],
+              "port": "formal(self, position=0)",
+              "call_site": "213:15-213:44"
+            },
+            "receiver_interval": [ { "lower": 30, "upper": 35 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "properties.test_getattr_on_property",
+    "callable_line": 212,
+    "code": 5002,
+    "line": 213,
+    "start": 15,
+    "end": 44,
+    "filename": "properties.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "properties.TaintedGetterAndSetter.my_property",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 213, "start": 15, "end": 44 },
+            "receiver_interval": [ { "lower": 30, "upper": 35 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 213, "start": 15, "end": 44 },
+            "call_site": "213:4-213:45"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "properties.test_getattr_on_property:5002:0:Call|pysa._test_sink|0|formal(arg):39339daeac21ebd58b6e8ec7d1964ab3"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.test_type_variable_properties_are_resolved",
+    "filename": "properties.py",
+    "callable_line": 140,
+    "tito": [
+      {
+        "port": "formal(x, position=0)[tainted]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 141, "start": 11, "end": 12 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.test_union_property_attribute_sink",
+    "filename": "properties.py",
+    "callable_line": 203,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 208, "start": 31, "end": 32 } ],
+            "origin": { "line": 209, "start": 15, "end": 30 },
+            "call_site": "209:4-209:31"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.test_union_property_attribute_source",
+    "filename": "properties.py",
+    "callable_line": 194,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "my_property" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 199, "start": 31, "end": 45 } ],
+            "origin": { "line": 199, "start": 31, "end": 45 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_sink",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 4,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "pysa._test_source",
+    "filename": "pysa/__init__.pyi",
+    "callable_line": 5,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.object.__class__",
+    "filename": "builtins.pyi",
+    "callable_line": 134,
+    "global_sanitizer": {
+      "sources": "All",
+      "sinks": "All",
+      "tito": { "sources": "All", "sinks": "All" }
+    },
+    "modes": [ "SkipObscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.Class.my_property",
+    "filename": "properties.py",
+    "callable_line": 16,
+    "tito": [
+      {
+        "port": "formal(self, position=0)[tainted]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.Class.uses_other",
+    "filename": "properties.py",
+    "callable_line": 27,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 29, "start": 19, "end": 36 },
+              "resolves_to": [ "properties.OtherDerived.my_property" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 6, "upper": 11 } ],
+            "receiver_interval": [ { "lower": 6, "upper": 11 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(other, position=1)[tainted]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 29, "start": 19, "end": 24 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 6, "upper": 11 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.Class.uses_property",
+    "filename": "properties.py",
+    "callable_line": 19,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[tainted]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 20, "start": 23, "end": 37 },
+            "caller_interval": [ { "lower": 6, "upper": 11 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 21, "start": 15, "end": 19 } ],
+            "origin": { "line": 20, "start": 23, "end": 37 },
+            "caller_interval": [ { "lower": 6, "upper": 11 } ],
+            "is_self_call": false
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 21, "start": 15, "end": 31 },
+              "resolves_to": [ "properties.OtherDerived.my_property" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 9, "upper": 10 } ],
+            "receiver_interval": [ { "lower": 6, "upper": 11 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.Class.uses_property_but_no_tito_taint",
+    "filename": "properties.py",
+    "callable_line": 23,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[untainted]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 24, "start": 25, "end": 39 },
+            "caller_interval": [ { "lower": 6, "upper": 11 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 25, "start": 15, "end": 31 },
+              "resolves_to": [ "properties.OtherDerived.my_property" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 9, "upper": 10 } ],
+            "receiver_interval": [ { "lower": 6, "upper": 11 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self, position=0)[tainted]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 25, "start": 15, "end": 19 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 6, "upper": 11 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.ClassProperty.my_class_property",
+    "filename": "properties.py",
+    "callable_line": 123,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.Derived.uses_property",
+    "filename": "properties.py",
+    "callable_line": 35,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[tainted]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 36, "start": 23, "end": 37 },
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 37, "start": 15, "end": 19 } ],
+            "origin": { "line": 36, "start": 23, "end": 37 },
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.Derived.uses_property_but_no_tito_taint",
+    "filename": "properties.py",
+    "callable_line": 39,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[untainted]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 40, "start": 25, "end": 39 },
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self, position=0)[tainted]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 41, "start": 15, "end": 19 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 7, "upper": 8 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.DerivedTaintedSetter.my_property@setter",
+    "filename": "properties.py",
+    "callable_line": 80,
+    "sinks": [
+      {
+        "port": "formal(value, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 81, "start": 19, "end": 24 },
+            "caller_interval": [ { "lower": 31, "upper": 34 } ],
+            "is_self_call": false,
+            "call_site": "81:8-81:25"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.OtherDerived.my_property",
+    "filename": "properties.py",
+    "callable_line": 46,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 47, "start": 15, "end": 29 },
+            "caller_interval": [ { "lower": 9, "upper": 10 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.OtherDerived.uses_property_but_no_tito_taint",
+    "filename": "properties.py",
+    "callable_line": 49,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[untainted]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 50, "start": 25, "end": 39 },
+            "caller_interval": [ { "lower": 9, "upper": 10 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 51, "start": 15, "end": 31 },
+              "resolves_to": [ "properties.OtherDerived.my_property" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 9, "upper": 10 } ],
+            "receiver_interval": [ { "lower": 9, "upper": 10 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.PropertyCallable.__init__",
+    "filename": "properties.py",
+    "callable_line": 175,
+    "tito": [
+      {
+        "port": "formal(z, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[z]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.PropertyCallable.attribute",
+    "filename": "properties.py",
+    "callable_line": 179,
+    "sources": [
+      {
+        "port": "result[x]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 181, "start": 38, "end": 52 } ],
+            "origin": { "line": 181, "start": 38, "end": 52 },
+            "caller_interval": [ { "lower": 18, "upper": 19 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[z]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 180, "start": 19, "end": 25 },
+            "caller_interval": [ { "lower": 18, "upper": 19 } ],
+            "is_self_call": false,
+            "call_site": "180:8-180:26"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.PropertyCallableReturn.__call__",
+    "filename": "properties.py",
+    "callable_line": 168,
+    "sinks": [
+      {
+        "port": "formal(y, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 170, "start": 19, "end": 20 },
+            "caller_interval": [ { "lower": 20, "upper": 21 } ],
+            "is_self_call": false,
+            "call_site": "170:8-170:21"
+          }
+        ]
+      },
+      {
+        "port": "formal(self, position=0)[x]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 169, "start": 19, "end": 25 },
+            "caller_interval": [ { "lower": 20, "upper": 21 } ],
+            "is_self_call": false,
+            "call_site": "169:8-169:26"
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self, position=0)[x]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.PropertyCallableReturn.__init__",
+    "filename": "properties.py",
+    "callable_line": 165,
+    "tito": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[x]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.PropertySetterInConstructor.x",
+    "filename": "properties.py",
+    "callable_line": 150,
+    "tito": [
+      {
+        "port": "formal(self, position=0)[underlying]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.PropertySetterInConstructor.x@setter",
+    "filename": "properties.py",
+    "callable_line": 154,
+    "tito": [
+      {
+        "port": "formal(x_value, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[underlying]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.PropertySetterTitoModel.__init__",
+    "filename": "properties.py",
+    "callable_line": 260,
+    "tito": [
+      {
+        "port": "formal(foo, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[foo]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.PropertySetterTitoModel.my_property",
+    "filename": "properties.py",
+    "callable_line": 264,
+    "tito": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.PropertySetterTitoModel.my_property@setter",
+    "filename": "properties.py",
+    "callable_line": 268,
+    "tito": [
+      {
+        "port": "formal(value, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.PropertySetterTitoModel.test_obscure_property",
+    "filename": "properties.py",
+    "callable_line": 283,
+    "sinks": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 285, "start": 19, "end": 23 },
+            "caller_interval": [ { "lower": 24, "upper": 25 } ],
+            "is_self_call": false,
+            "call_site": "285:8-285:24"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.PropertySetterTitoModel.test_tito_property",
+    "filename": "properties.py",
+    "callable_line": 271,
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 273, "start": 19, "end": 23 } ],
+            "origin": { "line": 273, "start": 19, "end": 35 },
+            "caller_interval": [ { "lower": 24, "upper": 25 } ],
+            "is_self_call": false,
+            "call_site": "273:8-273:36"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.RegularAttribute.__init__",
+    "filename": "properties.py",
+    "callable_line": 190,
+    "tito": [
+      {
+        "port": "formal(my_property, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[my_property]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.SetterMutatesValue.p",
+    "filename": "properties.py",
+    "callable_line": 103,
+    "tito": [
+      {
+        "port": "formal(self, position=0)[_p]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.SetterMutatesValue.p@setter",
+    "filename": "properties.py",
+    "callable_line": 107,
+    "tito": [
+      {
+        "port": "formal(value, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[_p]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.TaintedGetterAndSetter.my_property",
+    "filename": "properties.py",
+    "callable_line": 57,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 60, "start": 19, "end": 23 },
+            "caller_interval": [ { "lower": 30, "upper": 35 } ],
+            "is_self_call": false,
+            "call_site": "60:8-60:24"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.TaintedGetterAndSetter.my_property@setter",
+    "filename": "properties.py",
+    "callable_line": 64,
+    "sources": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "properties.TaintedGetterAndSetter.my_property@setter",
+                    "port": "leaf:self"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 64, "start": 20, "end": 24 },
+            "caller_interval": [ { "lower": 30, "upper": 35 } ],
+            "is_self_call": false,
+            "call_site": "64:4-65:12"
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(value, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.TaintedGetterAndSetter.uses_property",
+    "filename": "properties.py",
+    "callable_line": 67,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "properties.TaintedGetterAndSetter.my_property",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 68, "start": 15, "end": 31 },
+            "caller_interval": [ { "lower": 30, "upper": 35 } ],
+            "receiver_interval": [ { "lower": 30, "upper": 35 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 68, "start": 15, "end": 19 },
+              "resolves_to": [
+                "properties.TaintedGetterAndSetter.my_property"
+              ],
+              "port": "formal(self, position=0)",
+              "call_site": "68:15-68:31"
+            },
+            "caller_interval": [ { "lower": 30, "upper": 35 } ],
+            "receiver_interval": [ { "lower": 30, "upper": 35 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.TaintedGetterAndSetter.writes_to_property",
+    "filename": "properties.py",
+    "callable_line": 70,
+    "sinks": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 71, "start": 8, "end": 12 },
+              "resolves_to": [
+                "properties.TaintedGetterAndSetter.my_property"
+              ],
+              "port": "formal(self, position=0)",
+              "call_site": "71:8-71:24"
+            },
+            "caller_interval": [ { "lower": 30, "upper": 35 } ],
+            "receiver_interval": [ { "lower": 30, "upper": 35 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{properties.Class.my_property}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 9, "upper": 10 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self, position=0)[tainted]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{properties.OtherDerived.my_property}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 9, "upper": 10 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}

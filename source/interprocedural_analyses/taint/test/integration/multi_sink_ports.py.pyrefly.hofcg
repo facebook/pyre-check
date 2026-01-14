@@ -1,0 +1,310 @@
+@generated
+Higher order call graphs
+{
+  "callable": "multi_sink_ports.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "54:12-54:21|identifier|QueryBase": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multi_sink_ports.QueryBase"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multi_sink_ports.issue",
+  "returned_callables": [],
+  "calls": {
+    "41:8-41:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "multi_sink_ports.source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "42:4-42:14": {
+      "call": {
+        "calls": [
+          {
+            "target": "multi_sink_ports.wrapper",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multi_sink_ports.issue2",
+  "returned_callables": [],
+  "calls": {
+    "81:12-81:20": {
+      "call": {
+        "calls": [
+          {
+            "target": "multi_sink_ports.source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "82:12-82:19": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multi_sink_ports.Query"
+          }
+        ]
+      }
+    },
+    "82:12-82:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "multi_sink_ports.Query.params",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multi_sink_ports.Query"
+          }
+        ]
+      }
+    },
+    "83:4-83:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "multi_sink_ports.wrapper2",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multi_sink_ports.log_call",
+  "returned_callables": [],
+  "calls": {
+    "66:4-66:17": {
+      "call": {
+        "calls": [
+          {
+            "target": "multi_sink_ports.sinkA",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "67:4-67:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "multi_sink_ports.sinkA",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multi_sink_ports.split",
+  "returned_callables": [],
+  "calls": {
+    "29:4-29:12": {
+      "call": {
+        "calls": [
+          {
+            "target": "multi_sink_ports.sinkB",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "30:4-30:12": {
+      "call": {
+        "calls": [
+          {
+            "target": "multi_sink_ports.sinkC",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "31:4-31:12": {
+      "call": {
+        "calls": [
+          {
+            "target": "multi_sink_ports.sinkD",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multi_sink_ports.splitwrapper",
+  "returned_callables": [],
+  "calls": {
+    "46:11-46:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "multi_sink_ports.split",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multi_sink_ports.wrapper",
+  "returned_callables": [],
+  "calls": {
+    "36:8-36:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "multi_sink_ports.split",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "37:4-37:12": {
+      "call": {
+        "calls": [
+          {
+            "target": "multi_sink_ports.sinkA",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multi_sink_ports.wrapper2",
+  "returned_callables": [],
+  "calls": {
+    "74:19-74:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "multi_sink_ports.Query.send",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "multi_sink_ports.Query"
+          }
+        ]
+      }
+    },
+    "75:11-75:20|artificial-call|try-handler-isinstance": {
+      "call": {
+        "calls": [
+          { "target": "builtins.isinstance", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "75:11-75:20|identifier|Exception": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.BaseException.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.BaseException.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "builtins.Exception"
+            }
+          ]
+        }
+      }
+    },
+    "77:4-77:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "multi_sink_ports.log_call",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "multi_sink_ports.Query.send",
+  "returned_callables": [],
+  "calls": {
+    "58:15-58:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "multi_sink_ports.splitwrapper",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,4 @@
+@generated
+Overrides
+multi_sink_ports.Query.send (override) -> [multi_sink_ports.Query.send (method)]
+multi_sink_ports.QueryBase.send (override) -> [multi_sink_ports.Query.send (override) multi_sink_ports.QueryBase.send (method)]

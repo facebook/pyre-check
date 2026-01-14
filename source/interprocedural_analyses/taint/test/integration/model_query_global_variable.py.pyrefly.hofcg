@@ -1,0 +1,271 @@
+@generated
+Higher order call graphs
+{
+  "callable": "model_query_global_variable.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "34:0-34:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "34:11-34:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "41:43-41:56": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_global_variable.returns_any",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "43:22-43:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_global_variable.returns_any",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "45:69-45:79|artificial-call|binary": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.int.__add__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "builtins.int"
+          }
+        ]
+      }
+    },
+    "45:73-45:79": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.int.__new__",
+            "index": 0,
+            "return_type": [ "float", "integer" ],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    },
+    "52:58-52:61|identifier|fun": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_global_variable.fun",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "54:26-54:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_global_variable.fun",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    },
+    "55:33-55:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_global_variable.fun",
+            "index": 1,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    },
+    "57:30-57:33|identifier|fun": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_global_variable.fun",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_global_variable.f",
+  "returned_callables": [],
+  "calls": {
+    "14:4-14:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "14:15-14:22|identifier|environ": {
+      "identifier": {
+        "globals": [ { "target": "Obj{os.environ}", "index": 0 } ]
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_global_variable.fun",
+  "returned_callables": [],
+  "calls": {
+    "49:11-49:21|artificial-call|binary": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.int.__add__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "builtins.int"
+          }
+        ]
+      }
+    },
+    "49:15-49:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.int.__new__",
+            "index": 0,
+            "return_type": [ "float", "integer" ],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_global_variable.g",
+  "returned_callables": [],
+  "calls": {
+    "27:4-27:7|identifier|foo": {
+      "identifier": {
+        "globals": [
+          { "target": "Obj{model_query_global_variable.foo}", "index": 0 }
+        ]
+      }
+    },
+    "27:4-27:17": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.list.append",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.list"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_global_variable.h",
+  "returned_callables": [],
+  "calls": {
+    "31:4-31:19": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "31:15-31:18|identifier|Baz": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_global_variable.Baz"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_global_variable.returns_any",
+  "returned_callables": [],
+  "calls": {
+    "38:21-38:26": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "model_query_global_variable.Baz"
+          }
+        ]
+      }
+    }
+  }
+}
