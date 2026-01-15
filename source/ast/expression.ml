@@ -928,6 +928,8 @@ and Subscript : sig
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
+
+  val lower_to_call : location:Location.t -> t -> Call.t
 end = struct
   type t = {
     base: Expression.t;
@@ -943,6 +945,21 @@ end = struct
     match Expression.location_insensitive_compare left_base right_base with
     | 0 -> Expression.location_insensitive_compare left_index right_index
     | nonzero -> nonzero
+
+
+  let lower_to_call ~location { base; index; origin = base_origin } =
+    let origin = Some (Origin.create ?base:base_origin ~location Origin.SubscriptGetItem) in
+    {
+      Call.callee =
+        {
+          Node.value =
+            Expression.Name
+              (Name.Attribute { Name.Attribute.base; attribute = "__getitem__"; origin });
+          location = Node.location base;
+        };
+      arguments = [{ Call.Argument.value = index; name = None }];
+      origin;
+    }
 end
 
 and Substring : sig
@@ -1292,6 +1309,8 @@ and Origin : sig
 
   val is_dunder_method : t -> bool
 
+  val is_from_match : t -> bool
+
   val pp_kind_json : Format.formatter -> kind -> unit
 
   val kind_from_json : string -> (kind, string) Result.t
@@ -1441,6 +1460,42 @@ end = struct
       | _ -> false
     in
     is_dunder_method_kind kind
+
+
+  let is_from_match { kind; _ } =
+    let rec is_from_match_kind = function
+      | MatchTypingSequence
+      | MatchTypingMapping
+      | MatchAsComparisonEquals
+      | MatchAsWithCondition
+      | MatchClassArgs _
+      | MatchClassGetAttr _
+      | MatchClassArgsSubscript _
+      | MatchClassKeywordAttribute _
+      | MatchClassIsInstance
+      | MatchClassJoinConditions
+      | MatchMappingKeySubscript
+      | MatchMappingRestDict _
+      | MatchMappingRestComparisonEquals _
+      | MatchMappingIsInstance
+      | MatchMappingJoinConditions
+      | MatchOrJoinConditions
+      | MatchSingletonComparisonIs
+      | MatchSequenceRestList _
+      | MatchSequenceRestSubscript _
+      | MatchSequenceRestSlice _
+      | MatchSequenceRestComparisonEquals _
+      | MatchSequencePrefix _
+      | MatchSequenceSuffix _
+      | MatchSequenceIsInstance
+      | MatchSequenceJoinConditions
+      | MatchValueComparisonEquals
+      | MatchConditionWithGuard ->
+          true
+      | Nested { head; tail } -> is_from_match_kind head || is_from_match_kind tail
+      | _ -> false
+    in
+    is_from_match_kind kind
 
 
   let rec pp_kind_json formatter = function

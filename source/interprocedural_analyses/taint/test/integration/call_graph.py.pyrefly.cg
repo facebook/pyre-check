@@ -1,0 +1,42 @@
+@generated
+Call dependencies
+{
+  "call_graph.CallableKindConfusion.foo@decorated (method)": [
+    "call_graph.no_op_decorator (fun)[formal(f, position=0)=call_graph.CallableKindConfusion.foo (method)]",
+    "call_graph.no_op_decorator_factory (fun)",
+    "call_graph.no_op_decorator_factory.inner (fun)[formal(original, position=0)=call_graph.CallableKindConfusion.foo (method)]"
+  ],
+  "call_graph.IsSource.method (method)": [ "pysa._test_source (fun)" ],
+  "call_graph.NotSource.method (method)": [
+    "builtins.object.__new__ (method)",
+    "call_graph.IsSource.__init__ (method)"
+  ],
+  "call_graph.is_dict (fun)": [ "builtins.isinstance (fun)" ],
+  "call_graph.no_op_decorator_factory.inner (fun)": [
+    "builtins.setattr (fun)"
+  ],
+  "call_graph.no_op_decorator_factory.inner (fun)[formal(original, position=0)=call_graph.CallableKindConfusion.foo (method)]": [
+    "builtins.setattr (fun)"
+  ],
+  "call_graph.test_chained_assign (fun)": [
+    "builtins.object.__new__ (method)",
+    "call_graph.NotSource.__init__ (method)",
+    "call_graph.NotSource.method (method)", "pysa._test_sink (fun)"
+  ],
+  "call_graph.test_chained_assign_subscript (fun)": [
+    "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "call_graph.is_dict (fun)"
+  ],
+  "call_graph.test_default_parameters (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "call_graph.test_localized_target (fun)": [
+    "builtins.int.__lt__ (method)"
+  ],
+  "call_graph.test_match_type_of (fun)": [
+    "builtins.type.__init__ (method)", "builtins.type.__new__ (method)",
+    "call_graph.namespace.A.__call__ (method)",
+    "call_graph.namespace.B.__call__ (method)",
+    "call_graph.namespace.C.__call__ (method)", "pysa._test_sink (fun)"
+  ]
+}

@@ -115,6 +115,7 @@ module Unresolved : sig
     | UnknownCallableProtocol
     | UnknownCallableClass
     | LambdaArgument
+    | SkippedMatchCondition
     | NoRecordInCallGraph
     (* reasons from pyrefly *)
     | UnexpectedPyreflyTarget

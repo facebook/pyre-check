@@ -680,7 +680,7 @@ let create ~normalize_asserts define =
         let from_case predecessor case =
           let test = MatchTranslate.to_condition ~subject ~case in
           let case_node =
-            let test = Expression.normalize test in
+            let test = if normalize_asserts then Expression.normalize test else test in
             Node.empty
               graph
               (Node.Block

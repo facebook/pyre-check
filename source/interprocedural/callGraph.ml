@@ -326,6 +326,7 @@ module Unresolved = struct
     | UnknownCallableProtocol
     | UnknownCallableClass
     | LambdaArgument
+    | SkippedMatchCondition
     | NoRecordInCallGraph
     (* reasons from pyrefly *)
     | UnexpectedPyreflyTarget
@@ -370,6 +371,7 @@ module Unresolved = struct
     | "UnknownCallableProtocol" -> Some UnknownCallableProtocol
     | "UnknownCallableClass" -> Some UnknownCallableClass
     | "LambdaArgument" -> Some LambdaArgument
+    | "SkippedMatchCondition" -> Some SkippedMatchCondition
     | "NoRecordInCallGraph" -> Some NoRecordInCallGraph
     | "UnexpectedPyreflyTarget" -> Some UnexpectedPyreflyTarget
     | "EmptyPyreflyTarget" -> Some EmptyPyreflyTarget

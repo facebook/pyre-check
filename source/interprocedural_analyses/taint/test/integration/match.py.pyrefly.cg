@@ -1,0 +1,21 @@
+@generated
+Call dependencies
+{
+  "match.test_match_class_pattern (fun)": [
+    "builtins.object.__new__ (method)", "match.MyClass.__init__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "match.test_match_equality (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "match.test_match_list_pattern (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "match.test_match_list_pattern_with_condition (fun)": [
+    "match.condition (fun)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "match.test_match_mapping_pattern (fun)": [
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ]
+}

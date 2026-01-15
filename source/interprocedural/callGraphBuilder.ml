@@ -1006,21 +1006,11 @@ let rec preprocess_expression
   let map_slice ~mapper ~location slice =
     Slice.lower_to_call ~location slice |> Mapper.default_map_call_node ~mapper ~location
   in
-  let map_subscript ~mapper ~location { Subscript.base; index; origin = subscript_origin } =
-    let origin = Some (Origin.create ?base:subscript_origin ~location Origin.SubscriptGetItem) in
+  let map_subscript ~mapper ~location { Subscript.base; index; origin } =
     Expression.Call
-      {
-        Call.callee =
-          {
-            Node.value =
-              Expression.Name
-                (Name.Attribute
-                   { base = Mapper.map ~mapper base; attribute = "__getitem__"; origin });
-            location = Node.location base;
-          };
-        arguments = [{ Call.Argument.value = Mapper.map ~mapper index; name = None }];
-        origin;
-      }
+      (Subscript.lower_to_call
+         ~location
+         { Subscript.base = Mapper.map ~mapper base; index = Mapper.map ~mapper index; origin })
     |> Node.create ~location
   in
   let map_comprehension_generators generators =
@@ -5184,6 +5174,113 @@ let build_whole_program_call_graph_for_pyrefly
           in
           List.fold ~f:add_try_handler_targets ~init:call_graph handlers
         in
+        let add_match_targets ~match_:{ Match.subject; cases; _ } call_graph =
+          (* The control flow graph building logic translates the `match` statement into a series of
+             if/then/else. Each condition introduced might have artificial calls, which needs to
+             have a call graph edge. For now, we just mark those as unresolved (hence obscure).
+             TODO(T251614103): Properly resolve artificial calls in match conditions. *)
+          let add_unresolved_callee ~location ~call call_graph =
+            DefineCallGraph.set_call_callees
+              ~error_if_new:false
+              ~location
+              ~call
+              ~callees:
+                (CallCallees.create
+                   ~unresolved:(Unresolved.True Unresolved.SkippedMatchCondition)
+                   ())
+              call_graph
+          in
+          let add_case_targets call_graph case =
+            let test = Analysis.Cfg.MatchTranslate.to_condition ~subject ~case in
+            let fold_binary_operator
+                ~folder
+                ~state:call_graph
+                ~location
+                ({ BinaryOperator.left; _ } as binary_operator)
+              =
+              let ({ Call.origin; _ } as call) =
+                BinaryOperator.lower_to_call
+                  ~location
+                  ~callee_location:left.Node.location
+                  binary_operator
+              in
+              let call_graph =
+                match origin with
+                | Some origin when Origin.is_from_match origin ->
+                    add_unresolved_callee ~location ~call call_graph
+                | _ -> call_graph
+              in
+              Folder.default_fold_binary_operator ~folder ~state:call_graph binary_operator
+            in
+            let fold_comparison_operator
+                ~folder
+                ~state:call_graph
+                ~location
+                ({ ComparisonOperator.left; _ } as comparison_operator)
+              =
+              let call_graph =
+                match
+                  ComparisonOperator.lower_to_expression
+                    ~location
+                    ~callee_location:left.location
+                    comparison_operator
+                with
+                | Some
+                    { Node.value = Expression.Call ({ Call.origin = Some origin; _ } as call); _ }
+                  when Origin.is_from_match origin ->
+                    add_unresolved_callee ~location ~call call_graph
+                | _ -> call_graph
+              in
+              Folder.default_fold_comparison_operator ~folder ~state:call_graph comparison_operator
+            in
+            let fold_subscript
+                ~folder
+                ~state:call_graph
+                ~location
+                ({ Subscript.origin; _ } as subscript)
+              =
+              let call_graph =
+                match origin with
+                | Some origin when Origin.is_from_match origin ->
+                    let call = Subscript.lower_to_call ~location subscript in
+                    add_unresolved_callee ~location ~call call_graph
+                | _ -> call_graph
+              in
+              Folder.default_fold_subscript ~folder ~state:call_graph subscript
+            in
+            let fold_call ~folder ~state:call_graph ~location ({ Call.origin; _ } as call) =
+              let call_graph =
+                match origin with
+                | Some origin when Origin.is_from_match origin ->
+                    add_unresolved_callee ~location ~call call_graph
+                | _ -> call_graph
+              in
+              Folder.default_fold_call ~folder ~state:call_graph call
+            in
+            let fold_slice ~folder ~state:call_graph ~location ({ Slice.origin; _ } as slice) =
+              let call_graph =
+                match origin with
+                | Some origin when Origin.is_from_match origin ->
+                    let call = Slice.lower_to_call ~location slice in
+                    add_unresolved_callee ~location ~call call_graph
+                | _ -> call_graph
+              in
+              Folder.default_fold_slice ~folder ~state:call_graph slice
+            in
+            Folder.fold
+              ~folder:
+                (Folder.create
+                   ~fold_binary_operator
+                   ~fold_comparison_operator
+                   ~fold_subscript
+                   ~fold_slice
+                   ~fold_call
+                   ())
+              ~state:call_graph
+              test
+          in
+          List.fold ~f:add_case_targets ~init:call_graph cases
+        in
         let module Visitor = Ast.Visit.Make (struct
           type t = DefineCallGraph.t
 
@@ -5206,6 +5303,7 @@ let build_whole_program_call_graph_for_pyrefly
           let statement call_graph { Node.value = statement; location = _ } =
             match statement with
             | Statement.Try try_ -> add_try_handler_targets ~try_ call_graph
+            | Statement.Match match_ -> add_match_targets ~match_ call_graph
             | _ -> call_graph
         end)
         in

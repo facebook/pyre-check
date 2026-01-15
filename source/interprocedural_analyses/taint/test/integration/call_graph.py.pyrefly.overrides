@@ -1,0 +1,9 @@
+@generated
+Overrides
+builtins.object.__init__ (override) -> [builtins.object.__init__ (method) call_graph.IsSource.__init__ (override) call_graph.LogRecord.__init__ (override) call_graph.NotSource.__init__ (override) call_graph.namespace.A.__init__ (override) call_graph.namespace.B.__init__ (override) call_graph.namespace.C.__init__ (override)]
+call_graph.IsSource.__init__ (override) -> [call_graph.IsSource.__init__ (method)]
+call_graph.LogRecord.__init__ (override) -> [call_graph.LogRecord.__init__ (method)]
+call_graph.NotSource.__init__ (override) -> [call_graph.NotSource.__init__ (method)]
+call_graph.namespace.A.__init__ (override) -> [call_graph.namespace.A.__init__ (method)]
+call_graph.namespace.B.__init__ (override) -> [call_graph.namespace.B.__init__ (method)]
+call_graph.namespace.C.__init__ (override) -> [call_graph.namespace.C.__init__ (method)]

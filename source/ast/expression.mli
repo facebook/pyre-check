@@ -326,6 +326,8 @@ and Subscript : sig
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
+
+  val lower_to_call : location:Location.t -> t -> Call.t
 end
 
 and Substring : sig
@@ -538,6 +540,8 @@ and Origin : sig
   val create : ?base:t -> location:Location.t -> kind -> t
 
   val is_dunder_method : t -> bool
+
+  val is_from_match : t -> bool
 
   val pp_kind_json : Format.formatter -> kind -> unit
 
@@ -784,6 +788,16 @@ module Folder : sig
     ?fold_location:(state:'a -> Location.t -> 'a) ->
     unit ->
     'a t
+
+  val default_fold_binary_operator : folder:'a t -> state:'a -> BinaryOperator.t -> 'a
+
+  val default_fold_comparison_operator : folder:'a t -> state:'a -> ComparisonOperator.t -> 'a
+
+  val default_fold_subscript : folder:'a t -> state:'a -> Subscript.t -> 'a
+
+  val default_fold_slice : folder:'a t -> state:'a -> Slice.t -> 'a
+
+  val default_fold_call : folder:'a t -> state:'a -> Call.t -> 'a
 
   val default_fold_format_string : folder:'a t -> state:'a -> Substring.t list -> 'a
 end
