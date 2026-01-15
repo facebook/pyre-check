@@ -1,0 +1,17 @@
+@generated
+Overrides
+_typeshed._type_checker_internals.NamedTupleFallback.__init__ (override) -> [_typeshed._type_checker_internals.NamedTupleFallback.__init__ (method) named_tuples.MyNamedTuple.__init__ (override) named_tuples.NamedTupleWithTaintedAttribute.__init__ (override) named_tuples.OldSchoolNamedTuple.__init__ (override)]
+builtins.tuple.__iter__ (override) -> [builtins.tuple.__iter__ (method) named_tuples.MyNamedTuple.__iter__ (override) named_tuples.NamedTupleWithTaintedAttribute.__iter__ (override) named_tuples.OldSchoolNamedTuple.__iter__ (override)]
+builtins.tuple.__new__ (override) -> [builtins.tuple.__new__ (method) named_tuples.MyNamedTuple.__new__ (override) named_tuples.NamedTupleWithTaintedAttribute.__new__ (override) named_tuples.OldSchoolNamedTuple.__new__ (override)]
+named_tuples.InheritedNamedTuple.__init__ (override) -> [named_tuples.InheritedNamedTuple.__init__ (method)]
+named_tuples.InheritedNamedTuple.__iter__ (override) -> [named_tuples.InheritedNamedTuple.__iter__ (method)]
+named_tuples.InheritedNamedTuple.__new__ (override) -> [named_tuples.InheritedNamedTuple.__new__ (method)]
+named_tuples.MyNamedTuple.__init__ (override) -> [named_tuples.InheritedNamedTuple.__init__ (override) named_tuples.MyNamedTuple.__init__ (method)]
+named_tuples.MyNamedTuple.__iter__ (override) -> [named_tuples.InheritedNamedTuple.__iter__ (override) named_tuples.MyNamedTuple.__iter__ (method)]
+named_tuples.MyNamedTuple.__new__ (override) -> [named_tuples.InheritedNamedTuple.__new__ (override) named_tuples.MyNamedTuple.__new__ (method)]
+named_tuples.NamedTupleWithTaintedAttribute.__init__ (override) -> [named_tuples.NamedTupleWithTaintedAttribute.__init__ (method)]
+named_tuples.NamedTupleWithTaintedAttribute.__iter__ (override) -> [named_tuples.NamedTupleWithTaintedAttribute.__iter__ (method)]
+named_tuples.NamedTupleWithTaintedAttribute.__new__ (override) -> [named_tuples.NamedTupleWithTaintedAttribute.__new__ (method)]
+named_tuples.OldSchoolNamedTuple.__init__ (override) -> [named_tuples.OldSchoolNamedTuple.__init__ (method)]
+named_tuples.OldSchoolNamedTuple.__iter__ (override) -> [named_tuples.OldSchoolNamedTuple.__iter__ (method)]
+named_tuples.OldSchoolNamedTuple.__new__ (override) -> [named_tuples.OldSchoolNamedTuple.__new__ (method)]

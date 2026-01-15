@@ -1905,10 +1905,10 @@ module CallableMetadata = struct
     is_classmethod: bool;
     is_property_getter: bool;
     is_property_setter: bool;
-    is_toplevel: bool;
-    is_class_toplevel: bool;
-    is_stub: bool;
-    is_def_statement: bool;
+    is_toplevel: bool; (* Is this the body of a module? *)
+    is_class_toplevel: bool; (* Is this the body of a class? *)
+    is_stub: bool; (* Is this a stub definition, i.e `def foo(): ...` *)
+    is_def_statement: bool; (* Is this associated with a `def ..` statement? *)
     parent_is_class: bool;
     captures: string list;
   }
@@ -3176,7 +3176,15 @@ module ReadWrite = struct
         =
         let sofar = qualified_definition :: sofar in
         match definition with
-        | Definition.Class { local_class_id; name_location; _ } ->
+        | Definition.Class
+            {
+              local_class_id;
+              name_location;
+              (* Don't add a toplevel define for synthesized classes, such as `MyTuple =
+                 namedtuple('MyTuple', ['x', 'y'])` *)
+              is_synthesized = false;
+              _;
+            } ->
             {
               QualifiedDefinition.definition =
                 Definition.Function

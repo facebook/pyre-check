@@ -1,0 +1,50 @@
+@generated
+Call dependencies
+{
+  "named_tuples.aliased_indicies_backward (fun)": [
+    "builtins.tuple.__getitem__ (method)", "pysa._test_sink (fun)"
+  ],
+  "named_tuples.aliased_indicies_backward_unknown_attribute (fun)": [
+    "builtins.tuple.__getitem__ (method)", "pysa._test_sink (fun)"
+  ],
+  "named_tuples.aliased_indicies_forward (fun)": [
+    "builtins.tuple.__getitem__ (method)",
+    "named_tuples.tainted_tuple (fun)", "pysa._test_sink (fun)"
+  ],
+  "named_tuples.aliased_indicies_forward_unknown_attribute (fun)": [
+    "builtins.tuple.__getitem__ (method)", "named_tuples.tainted_tuple (fun)"
+  ],
+  "named_tuples.inherited_tuple (fun)": [
+    "named_tuples.InheritedNamedTuple.__init__ (method)",
+    "named_tuples.InheritedNamedTuple.__new__ (method)",
+    "pysa._test_source (fun)"
+  ],
+  "named_tuples.issue_with_bad (fun)": [
+    "named_tuples.tainted_tuple (fun)", "pysa._test_sink (fun)"
+  ],
+  "named_tuples.issue_with_inherited_named_tuple (fun)": [
+    "named_tuples.inherited_tuple (fun)", "pysa._test_sink (fun)"
+  ],
+  "named_tuples.issue_with_named_tuple_with_tainted_attribute (fun)": [
+    "named_tuples.NamedTupleWithTaintedAttribute.__init__ (method)",
+    "named_tuples.NamedTupleWithTaintedAttribute.__new__ (method)",
+    "pysa._test_source (fun)"
+  ],
+  "named_tuples.issue_with_old_school_named_tuples (fun)": [
+    "named_tuples.tainted_old_tuple (fun)", "pysa._test_sink (fun)"
+  ],
+  "named_tuples.no_issue_with_benign (fun)": [
+    "named_tuples.tainted_tuple (fun)", "pysa._test_sink (fun)"
+  ],
+  "named_tuples.no_issue_with_benign_in_inherited_named_tuple (fun)": [
+    "named_tuples.inherited_tuple (fun)", "pysa._test_sink (fun)"
+  ],
+  "named_tuples.no_issue_with_old_school_named_tuples (fun)": [
+    "named_tuples.tainted_old_tuple (fun)", "pysa._test_sink (fun)"
+  ],
+  "named_tuples.tainted_old_tuple (fun)": [ "pysa._test_source (fun)" ],
+  "named_tuples.tainted_tuple (fun)": [
+    "named_tuples.MyNamedTuple.__init__ (override)",
+    "named_tuples.MyNamedTuple.__new__ (method)", "pysa._test_source (fun)"
+  ]
+}

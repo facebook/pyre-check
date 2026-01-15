@@ -57,10 +57,10 @@ module CallableMetadata : sig
     is_classmethod: bool;
     is_property_getter: bool;
     is_property_setter: bool;
-    is_toplevel: bool;
-    is_class_toplevel: bool;
+    is_toplevel: bool; (* Is this the body of a module? *)
+    is_class_toplevel: bool; (* Is this the body of a class? *)
     is_stub: bool; (* Is this a stub definition, e.g `def foo(): ...` *)
-    is_def_statement: bool; (* Is it defined with a `def ..():` statement? *)
+    is_def_statement: bool; (* Is this associated with a `def ..` statement? *)
     parent_is_class: bool;
     captures: string list;
   }
