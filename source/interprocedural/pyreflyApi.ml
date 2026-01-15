@@ -1566,16 +1566,29 @@ module ModuleCallGraphs = struct
   end
 
   module JsonReturnShimCallees = struct
-    type t = { targets: JsonCallTarget.t list }
+    type t = {
+      targets: JsonCallTarget.t list;
+      arguments: CallGraph.ReturnShimCallees.argument_mapping list;
+    }
+
+    let parse_argument_mapping = function
+      | `String "ReturnExpression" -> Ok CallGraph.ReturnShimCallees.ReturnExpression
+      | `String "ReturnExpressionElement" -> Ok CallGraph.ReturnShimCallees.ReturnExpressionElement
+      | argument_mapping ->
+          Error
+            (FormatError.UnexpectedJsonType
+               { json = argument_mapping; message = "Unknown argument mapping" })
+
 
     let from_json json =
       let open Core.Result.Monad_infix in
-      let parse_call_target_list targets =
-        targets |> List.map ~f:JsonCallTarget.from_json |> Result.all
-      in
+      let parse_list ~parse_element list = list |> List.map ~f:parse_element |> Result.all in
       JsonUtil.get_optional_list_member json "targets"
-      >>= parse_call_target_list
-      >>| fun targets -> { targets }
+      >>= parse_list ~parse_element:JsonCallTarget.from_json
+      >>= fun targets ->
+      JsonUtil.get_optional_list_member json "arguments"
+      >>= parse_list ~parse_element:parse_argument_mapping
+      >>| fun arguments -> { targets; arguments }
   end
 
   module JsonExpressionCallees = struct
@@ -4562,11 +4575,11 @@ module ReadOnly = struct
           targets |> List.map ~f:instantiate_call_target |> List.concat;
       }
     in
-    let instantiate_return_shim_callees { JsonReturnShimCallees.targets } =
+    let instantiate_return_shim_callees { JsonReturnShimCallees.targets; arguments } =
       {
         CallGraph.ReturnShimCallees.call_targets =
           targets |> List.map ~f:instantiate_call_target |> List.concat;
-        arguments = [];
+        arguments;
       }
     in
     let instantiate_expression_callees = function
