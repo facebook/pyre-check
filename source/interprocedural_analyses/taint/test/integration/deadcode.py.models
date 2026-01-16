@@ -4,7 +4,7 @@
   "data": {
     "callable": "deadcode.dead_code_by_type_refinement",
     "filename": "deadcode.py",
-    "callable_line": 97,
+    "callable_line": 100,
     "sinks": [
       {
         "port": "formal(d, position=0)",
@@ -19,8 +19,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 102, "start": 23, "end": 24 },
-            "call_site": "102:12-102:25"
+            "origin": { "line": 105, "start": 23, "end": 24 },
+            "call_site": "105:12-105:25"
           }
         ]
       }
@@ -31,9 +31,9 @@
   "kind": "issue",
   "data": {
     "callable": "deadcode.early_return_no_issue_for_else",
-    "callable_line": 37,
+    "callable_line": 39,
     "code": 5002,
-    "line": 43,
+    "line": 46,
     "start": 15,
     "end": 29,
     "filename": "deadcode.py",
@@ -52,7 +52,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 43, "start": 15, "end": 29 }
+            "origin": { "line": 46, "start": 15, "end": 29 }
           }
         ]
       },
@@ -69,8 +69,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 43, "start": 15, "end": 29 },
-            "call_site": "43:4-43:30"
+            "origin": { "line": 46, "start": 15, "end": 29 },
+            "call_site": "46:4-46:30"
           }
         ]
       }

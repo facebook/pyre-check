@@ -3,11 +3,13 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from pysa import _test_sink, _test_source
-from typing import Optional
 from dataclasses import dataclass
+from typing import Optional
+
+from pysa import _test_sink, _test_source
 
 # TODO(T182207981): Find issues in unreachable places
+
 
 def early_return_no_sink(x):
     return
@@ -40,13 +42,14 @@ def early_return_no_issue_for_else(x):
     else:
         # pyrefly: ignore[unreachable]
         return
-    _test_sink(_test_source()) # TODO(T182089507): Handle for loop deadcode false positive
+    # TODO(T182089507): Handle for loop deadcode false positive
+    _test_sink(_test_source())
 
 
 def early_return_no_issue_while():
     while True:
         return
-    _test_sink(_test_source())
+    _test_sink(_test_source())  # TODO(T225700656): False positive with pyrefly
 
 
 def early_break_no_issue_for():
@@ -72,7 +75,7 @@ def early_raise_no_issue():
     _test_sink(_test_source())
 
 
-class EarlyReturns():
+class EarlyReturns:
     def __init__(self, y):
         return
         self.x = _test_source()

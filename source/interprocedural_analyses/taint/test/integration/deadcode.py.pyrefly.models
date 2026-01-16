@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "deadcode.early_return_no_issue_for_else",
-    "callable_line": 37,
+    "callable_line": 39,
     "code": 5002,
-    "line": 43,
+    "line": 46,
     "start": 15,
     "end": 29,
     "filename": "deadcode.py",
@@ -24,7 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 43, "start": 15, "end": 29 }
+            "origin": { "line": 46, "start": 15, "end": 29 }
           }
         ]
       },
@@ -41,8 +41,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 43, "start": 15, "end": 29 },
-            "call_site": "43:4-43:30"
+            "origin": { "line": 46, "start": 15, "end": 29 },
+            "call_site": "46:4-46:30"
           }
         ]
       }
@@ -63,9 +63,9 @@
   "kind": "issue",
   "data": {
     "callable": "deadcode.early_return_no_issue_while",
-    "callable_line": 46,
+    "callable_line": 49,
     "code": 5002,
-    "line": 49,
+    "line": 52,
     "start": 15,
     "end": 29,
     "filename": "deadcode.py",
@@ -84,7 +84,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 49, "start": 15, "end": 29 }
+            "origin": { "line": 52, "start": 15, "end": 29 }
           }
         ]
       },
@@ -101,8 +101,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 49, "start": 15, "end": 29 },
-            "call_site": "49:4-49:30"
+            "origin": { "line": 52, "start": 15, "end": 29 },
+            "call_site": "52:4-52:30"
           }
         ]
       }

@@ -81,11 +81,22 @@ CALLABLE_MAPPING = {
     "builtins.getattr": CallableMapping(name="getattr", line=476),
     "builtins.list.append": CallableMapping(name="list.append", line=422),
     "builtins.dict.__setitem__": CallableMapping(name="dict.__setitem__", line=399),
+    "builtins.dict.get": CallableMapping(name="dict.get", line=401),
+    "builtins.str.__add__": CallableMapping(name="str.__add__", line=353),
     "typing.Mapping.__getitem__": CallableMapping(
         name="typing.Mapping.__getitem__", line=131
     ),
     "typing.Mapping.get": CallableMapping(name="typing.Mapping.get", line=135),
     "typing.Mapping.update": CallableMapping(name="typing.Mapping.update", line=155),
+}
+
+
+STRIP_STDLIB_CALLABLES = {
+    "ast._Attributes.__init__",
+    "_ssl._Cipher.__init__",
+    "ssl._Cipher.__init__",
+    "_ssl._CertInfo.__init__",
+    "functools._CacheParameters.__init__",
 }
 
 
@@ -110,7 +121,7 @@ def normalize_pyrefly_model(model: dict[str, Any]) -> object:
 
     callable_name = model["data"]["callable"]
     # Remove default models for the standard library.
-    if callable_name == "ast._Attributes.__init__":
+    if callable_name in STRIP_STDLIB_CALLABLES:
         return None
 
     # pyre and pyrefly use different typeshed. Update standard library callable
