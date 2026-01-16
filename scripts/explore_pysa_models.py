@@ -37,7 +37,6 @@ from typing import (
     Optional,
     Set,
     Tuple,
-    TypedDict,
     Union,
 )
 

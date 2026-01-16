@@ -16,7 +16,7 @@ from typing import Collection, Dict, List, Optional
 
 from .. import backend_arguments, error, json_rpc
 from ..language_server import connections, protocol as lsp
-from . import error_code_to_link_mapper, server_state
+from . import error_code_to_link_mapper, server_state  # noqa: F401
 
 PYRE_DOCUMENTATION_LINK = "https://pyre-check.org/docs/errors/#"
 LOG: logging.Logger = logging.getLogger(__name__)
