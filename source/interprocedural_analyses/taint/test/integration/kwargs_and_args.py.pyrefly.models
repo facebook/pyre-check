@@ -40,12 +40,7 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "default" },
-                  { "always-type": "integer" },
-                  { "always-type": "bool" },
-                  { "always-type": "scalar" }
-                ],
+                "features": [ { "always-via": "default" } ],
                 "return_paths": { "": 0 },
                 "kind": "LocalReturn"
               }

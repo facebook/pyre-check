@@ -1122,10 +1122,12 @@ let output_path_for_tito ~input_root ~kind ~features =
 
 
 let type_breadcrumbs_from_annotations ~pyre_api annotations =
-  List.fold annotations ~init:Features.BreadcrumbSet.empty ~f:(fun sofar annotation ->
-      PyrePysaApi.ReadOnly.Type.scalar_properties pyre_api annotation
-      |> Features.type_breadcrumbs
-      |> Features.BreadcrumbSet.union sofar)
+  annotations
+  |> List.map ~f:(fun annotation ->
+         PyrePysaApi.ReadOnly.Type.scalar_properties pyre_api annotation
+         |> Features.type_breadcrumbs)
+  |> List.reduce ~f:Features.BreadcrumbSet.inter
+  |> Option.value ~default:Features.BreadcrumbSet.empty
 
 
 let introduce_sink_taint
@@ -1235,8 +1237,9 @@ let introduce_taint_in_taint_out
   let open Core.Result in
   (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
   let type_breadcrumbs =
-    List.append root_annotations result_annotations
-    |> type_breadcrumbs_from_annotations ~pyre_api
+    Features.BreadcrumbSet.union
+      (type_breadcrumbs_from_annotations ~pyre_api root_annotations)
+      (type_breadcrumbs_from_annotations ~pyre_api result_annotations)
     |> Features.BreadcrumbMayAlwaysSet.of_set
   in
   let breadcrumbs =
