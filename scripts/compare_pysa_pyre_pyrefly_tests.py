@@ -141,7 +141,11 @@ def normalize_pyrefly_models(path: Path) -> str:
     return "\n".join(lines)
 
 
-def compare_models(test_file: Path, temporary_directory: Path) -> None:
+def compare_models(
+    test_file: Path,
+    temporary_directory: Path,
+    compare_passing: bool,
+) -> None:
     """
     Compare .py.models and .py.pyrefly.models files for a given test file.
     """
@@ -152,6 +156,17 @@ def compare_models(test_file: Path, temporary_directory: Path) -> None:
         raise AssertionError(f"Missing pyre models for test {test_file.name}")
     if not pyrefly_models_path.exists():
         raise AssertionError(f"Missing pyrefly models for test {test_file.name}")
+
+    passing_file_path = test_file.with_suffix(".py.pyrefly.passing")
+    marked_as_passing = (
+        passing_file_path.exists() and json.loads(passing_file_path.read_text()) == True
+    )
+    if marked_as_passing:
+        if not compare_passing:
+            print(f"Test {test_file.name} is marked as passing (skipping comparison)")
+            return
+        else:
+            print(f"Test {test_file.name} is marked as passing")
 
     pyre_normalized_models_path = temporary_directory / (
         test_file.name + ".pyre.models"
@@ -203,6 +218,11 @@ def main() -> int:
         action="store_true",
         help="Pause after each comparison",
     )
+    parser.add_argument(
+        "--compare-passing",
+        action="store_true",
+        help="Compare tests marked as passing (.pyrefly.passing file exists)",
+    )
 
     parsed = parser.parse_args()
 
@@ -231,7 +251,7 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory() as temporary_directory:
         for test_file in test_files:
-            compare_models(test_file, Path(temporary_directory))
+            compare_models(test_file, Path(temporary_directory), parsed.compare_passing)
             if parsed.interactive:
                 print("[Press enter to continue] ", end="")
                 input()
