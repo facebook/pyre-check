@@ -21,7 +21,7 @@
   "data": {
     "callable": "sanitize_parametric.a_sink_y",
     "filename": "sanitize_parametric.py",
-    "callable_line": 19,
+    "callable_line": 18,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -38,7 +38,7 @@
   "data": {
     "callable": "sanitize_parametric.a_source_x",
     "filename": "sanitize_parametric.py",
-    "callable_line": 7,
+    "callable_line": 9,
     "sources": [
       {
         "port": "result",
@@ -55,7 +55,7 @@
   "data": {
     "callable": "sanitize_parametric.a_source_y",
     "filename": "sanitize_parametric.py",
-    "callable_line": 11,
+    "callable_line": 12,
     "sources": [
       {
         "port": "result",
@@ -68,15 +68,102 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "sanitize_parametric.partial_issue_sanitize",
+    "callable_line": 45,
+    "code": 1000,
+    "line": 49,
+    "start": 24,
+    "end": 25,
+    "filename": "sanitize_parametric.py",
+    "message": "[TestA[Y]] to [TestA[X]]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_parametric.a_source_y",
+                    "port": "leaf:return"
+                  }
+                ],
+                "length": 1,
+                "kind": "TestA[Y]"
+              }
+            ],
+            "call": {
+              "position": { "line": 48, "start": 8, "end": 31 },
+              "resolves_to": [ "sanitize_parametric.partial_issue_sources" ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_parametric.a_sink_x",
+                    "port": "leaf:x"
+                  }
+                ],
+                "length": 1,
+                "kind": "TestA[X]"
+              }
+            ],
+            "call": {
+              "position": { "line": 49, "start": 24, "end": 25 },
+              "resolves_to": [ "sanitize_parametric.partial_issue_sinks" ],
+              "port": "formal(x, position=0)",
+              "call_site": "49:4-49:26"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize_parametric.partial_issue_sinks",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "sanitize_parametric.partial_issue_sanitize:1000:0:Call|sanitize_parametric.partial_issue_sinks|0|formal(x):c93b57613cfd1f9419c3fdbc0666235b"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "sanitize_parametric.partial_issue_sinks",
     "filename": "sanitize_parametric.py",
-    "callable_line": 39,
+    "callable_line": 37,
     "sinks": [
       {
         "port": "formal(x, position=0)",
         "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_parametric.a_sink_x",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "TestA[X]"
+              }
+            ],
+            "origin": { "line": 39, "start": 17, "end": 18 },
+            "call_site": "39:8-39:19"
+          },
           {
             "kinds": [
               {
@@ -90,9 +177,9 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 43, "start": 35, "end": 36 } ],
-            "origin": { "line": 44, "start": 17, "end": 18 },
-            "call_site": "44:8-44:19"
+            "tito_positions": [ { "line": 41, "start": 35, "end": 36 } ],
+            "origin": { "line": 42, "start": 17, "end": 18 },
+            "call_site": "42:8-42:19"
           }
         ]
       }
@@ -104,11 +191,27 @@
   "data": {
     "callable": "sanitize_parametric.partial_issue_sources",
     "filename": "sanitize_parametric.py",
-    "callable_line": 31,
+    "callable_line": 29,
     "sources": [
       {
         "port": "result",
         "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "sanitize_parametric.a_source_x",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "NotSink[TestA]@TestA[X]"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 32, "start": 36, "end": 37 } ],
+            "origin": { "line": 31, "start": 12, "end": 24 }
+          },
           {
             "kinds": [
               {
@@ -121,7 +224,7 @@
                 "kind": "TestA[Y]"
               }
             ],
-            "origin": { "line": 36, "start": 15, "end": 27 }
+            "origin": { "line": 34, "start": 15, "end": 27 }
           }
         ]
       }
@@ -133,7 +236,7 @@
   "data": {
     "callable": "sanitize_parametric.sanitize_a_sink_tito",
     "filename": "sanitize_parametric.py",
-    "callable_line": 27,
+    "callable_line": 25,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -158,7 +261,7 @@
   "data": {
     "callable": "sanitize_parametric.sanitize_a_source_tito",
     "filename": "sanitize_parametric.py",
-    "callable_line": 23,
+    "callable_line": 21,
     "tito": [
       {
         "port": "formal(x, position=0)",

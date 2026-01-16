@@ -3,8 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from pysa import _test_sink, _test_source
+import random
 import typing
+
+from pysa import _test_sink, _test_source
 
 
 def int_source() -> int:
@@ -32,8 +34,8 @@ def bool_parameter(x, y: bool):
 
 
 class TpmRequest:
-    id_float: float = ... # pyrefly: ignore[bad-assignment]
-    ids_list: typing.List[int] = ... # pyrefly: ignore[bad-assignment]
+    id_float: float = ...  # pyrefly: ignore[bad-assignment]
+    ids_list: typing.List[int] = ...  # pyrefly: ignore[bad-assignment]
 
     def __init__(
         self,
@@ -48,11 +50,11 @@ def tpm_request() -> TpmRequest: ...
 
 
 def scalar_attribute_backward(request: TpmRequest):
-    if 1 > 1:
+    if random.random() > 0.5:
         _test_sink(request.id_float)
-    elif 1 > 1:
+    elif random.random() > 0.5:
         _test_sink(request.ids_list)
-    elif 1 > 1:
+    elif random.random() > 0.5:
         # Read from a scalar variable
         _test_sink(" ".join(str(i) for i in request.ids_list))
     else:
@@ -63,11 +65,11 @@ def scalar_attribute_backward(request: TpmRequest):
 
 def scalar_attribute_forward():
     request = tpm_request()
-    if 1 > 1:
+    if random.random() > 0.5:
         return request.id_float  # No scalar
-    elif 1 > 1:
+    elif random.random() > 0.5:
         return request.ids_list  # No scalar
-    elif 1 > 1:
+    elif random.random() > 0.5:
         # Read from a scalar variable
         return " ".join(str(i) for i in request.ids_list)
     else:

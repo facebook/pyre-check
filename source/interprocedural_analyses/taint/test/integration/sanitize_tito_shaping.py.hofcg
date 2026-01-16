@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "sanitize_tito_shaping.issue_multiple_titos_different_input_output_paths",
   "returned_callables": [],
   "calls": {
-    "164:4-164:67": {
+    "176:4-176:67": {
       "call": {
         "calls": [
           {
@@ -15,7 +15,7 @@ Higher order call graphs
         ]
       }
     },
-    "164:11-164:66": {
+    "176:11-176:66": {
       "call": {
         "calls": [
           {
@@ -26,7 +26,7 @@ Higher order call graphs
         ]
       }
     },
-    "164:55-164:65": {
+    "176:55-176:65": {
       "call": {
         "calls": [
           {
@@ -37,7 +37,7 @@ Higher order call graphs
         ]
       }
     },
-    "165:4-165:67": {
+    "177:4-177:67": {
       "call": {
         "calls": [
           {
@@ -48,7 +48,7 @@ Higher order call graphs
         ]
       }
     },
-    "165:11-165:66": {
+    "177:11-177:66": {
       "call": {
         "calls": [
           {
@@ -59,7 +59,7 @@ Higher order call graphs
         ]
       }
     },
-    "165:55-165:65": {
+    "177:55-177:65": {
       "call": {
         "calls": [
           {
@@ -76,7 +76,7 @@ Higher order call graphs
   "callable": "sanitize_tito_shaping.issue_multiple_titos_different_input_paths",
   "returned_callables": [],
   "calls": {
-    "139:4-139:60": {
+    "151:4-151:60": {
       "call": {
         "calls": [
           {
@@ -87,7 +87,7 @@ Higher order call graphs
         ]
       }
     },
-    "139:11-139:59": {
+    "151:11-151:59": {
       "call": {
         "calls": [
           {
@@ -98,7 +98,7 @@ Higher order call graphs
         ]
       }
     },
-    "139:48-139:58": {
+    "151:48-151:58": {
       "call": {
         "calls": [
           {
@@ -109,7 +109,7 @@ Higher order call graphs
         ]
       }
     },
-    "140:4-140:60": {
+    "152:4-152:60": {
       "call": {
         "calls": [
           {
@@ -120,7 +120,7 @@ Higher order call graphs
         ]
       }
     },
-    "140:11-140:59": {
+    "152:11-152:59": {
       "call": {
         "calls": [
           {
@@ -131,7 +131,7 @@ Higher order call graphs
         ]
       }
     },
-    "140:48-140:58": {
+    "152:48-152:58": {
       "call": {
         "calls": [
           {
@@ -148,7 +148,7 @@ Higher order call graphs
   "callable": "sanitize_tito_shaping.issue_multiple_titos_different_output_paths",
   "returned_callables": [],
   "calls": {
-    "114:4-114:61": {
+    "126:4-126:61": {
       "call": {
         "calls": [
           {
@@ -159,7 +159,7 @@ Higher order call graphs
         ]
       }
     },
-    "114:11-114:60": {
+    "126:11-126:60": {
       "call": {
         "calls": [
           {
@@ -170,7 +170,7 @@ Higher order call graphs
         ]
       }
     },
-    "114:49-114:59": {
+    "126:49-126:59": {
       "call": {
         "calls": [
           {
@@ -181,7 +181,7 @@ Higher order call graphs
         ]
       }
     },
-    "115:4-115:61": {
+    "127:4-127:61": {
       "call": {
         "calls": [
           {
@@ -192,7 +192,7 @@ Higher order call graphs
         ]
       }
     },
-    "115:11-115:60": {
+    "127:11-127:60": {
       "call": {
         "calls": [
           {
@@ -203,7 +203,7 @@ Higher order call graphs
         ]
       }
     },
-    "115:49-115:59": {
+    "127:49-127:59": {
       "call": {
         "calls": [
           {
@@ -220,7 +220,7 @@ Higher order call graphs
   "callable": "sanitize_tito_shaping.issue_multiple_titos_same_path",
   "returned_callables": [],
   "calls": {
-    "89:4-89:48": {
+    "101:4-101:48": {
       "call": {
         "calls": [
           {
@@ -231,7 +231,7 @@ Higher order call graphs
         ]
       }
     },
-    "89:11-89:47": {
+    "101:11-101:47": {
       "call": {
         "calls": [
           {
@@ -242,7 +242,7 @@ Higher order call graphs
         ]
       }
     },
-    "89:36-89:46": {
+    "101:36-101:46": {
       "call": {
         "calls": [
           {
@@ -253,7 +253,7 @@ Higher order call graphs
         ]
       }
     },
-    "90:4-90:48": {
+    "102:4-102:48": {
       "call": {
         "calls": [
           {
@@ -264,7 +264,7 @@ Higher order call graphs
         ]
       }
     },
-    "90:11-90:47": {
+    "102:11-102:47": {
       "call": {
         "calls": [
           {
@@ -275,7 +275,7 @@ Higher order call graphs
         ]
       }
     },
-    "90:36-90:46": {
+    "102:36-102:46": {
       "call": {
         "calls": [
           {
@@ -292,7 +292,7 @@ Higher order call graphs
   "callable": "sanitize_tito_shaping.issue_multiple_titos_same_path_with_transform",
   "returned_callables": [],
   "calls": {
-    "197:4-197:63": {
+    "209:4-209:63": {
       "call": {
         "calls": [
           {
@@ -303,7 +303,7 @@ Higher order call graphs
         ]
       }
     },
-    "197:11-197:62": {
+    "209:11-209:62": {
       "call": {
         "calls": [
           {
@@ -314,7 +314,7 @@ Higher order call graphs
         ]
       }
     },
-    "197:51-197:61": {
+    "209:51-209:61": {
       "call": {
         "calls": [
           {
@@ -325,7 +325,7 @@ Higher order call graphs
         ]
       }
     },
-    "198:4-198:63": {
+    "210:4-210:63": {
       "call": {
         "calls": [
           {
@@ -336,7 +336,7 @@ Higher order call graphs
         ]
       }
     },
-    "198:11-198:62": {
+    "210:11-210:62": {
       "call": {
         "calls": [
           {
@@ -347,7 +347,7 @@ Higher order call graphs
         ]
       }
     },
-    "198:51-198:61": {
+    "210:51-210:61": {
       "call": {
         "calls": [
           {
@@ -364,7 +364,7 @@ Higher order call graphs
   "callable": "sanitize_tito_shaping.loop_multiple_titos_different_input_output_paths",
   "returned_callables": [],
   "calls": {
-    "157:13-157:24": {
+    "169:13-169:24": {
       "call": {
         "new_calls": [
           {
@@ -384,7 +384,7 @@ Higher order call graphs
         ]
       }
     },
-    "157:13-157:24|artificial-call|for-iter": {
+    "169:13-169:24|artificial-call|for-iter": {
       "call": {
         "calls": [
           {
@@ -397,7 +397,7 @@ Higher order call graphs
         ]
       }
     },
-    "157:13-157:24|artificial-call|for-next": {
+    "169:13-169:24|artificial-call|for-next": {
       "call": {
         "calls": [
           {
@@ -410,7 +410,7 @@ Higher order call graphs
         ]
       }
     },
-    "158:12-158:58": {
+    "170:12-170:58": {
       "call": {
         "calls": [
           {
@@ -427,7 +427,7 @@ Higher order call graphs
   "callable": "sanitize_tito_shaping.loop_multiple_titos_different_input_paths",
   "returned_callables": [],
   "calls": {
-    "132:13-132:24": {
+    "144:13-144:24": {
       "call": {
         "new_calls": [
           {
@@ -447,7 +447,7 @@ Higher order call graphs
         ]
       }
     },
-    "132:13-132:24|artificial-call|for-iter": {
+    "144:13-144:24|artificial-call|for-iter": {
       "call": {
         "calls": [
           {
@@ -460,7 +460,7 @@ Higher order call graphs
         ]
       }
     },
-    "132:13-132:24|artificial-call|for-next": {
+    "144:13-144:24|artificial-call|for-next": {
       "call": {
         "calls": [
           {
@@ -473,7 +473,7 @@ Higher order call graphs
         ]
       }
     },
-    "133:12-133:51": {
+    "145:12-145:51": {
       "call": {
         "calls": [
           {
@@ -490,7 +490,7 @@ Higher order call graphs
   "callable": "sanitize_tito_shaping.loop_multiple_titos_different_output_paths",
   "returned_callables": [],
   "calls": {
-    "107:13-107:24": {
+    "119:13-119:24": {
       "call": {
         "new_calls": [
           {
@@ -510,7 +510,7 @@ Higher order call graphs
         ]
       }
     },
-    "107:13-107:24|artificial-call|for-iter": {
+    "119:13-119:24|artificial-call|for-iter": {
       "call": {
         "calls": [
           {
@@ -523,7 +523,7 @@ Higher order call graphs
         ]
       }
     },
-    "107:13-107:24|artificial-call|for-next": {
+    "119:13-119:24|artificial-call|for-next": {
       "call": {
         "calls": [
           {
@@ -536,7 +536,7 @@ Higher order call graphs
         ]
       }
     },
-    "108:12-108:52": {
+    "120:12-120:52": {
       "call": {
         "calls": [
           {
@@ -553,7 +553,7 @@ Higher order call graphs
   "callable": "sanitize_tito_shaping.loop_multiple_titos_same_path",
   "returned_callables": [],
   "calls": {
-    "82:13-82:24": {
+    "94:13-94:24": {
       "call": {
         "new_calls": [
           {
@@ -573,7 +573,7 @@ Higher order call graphs
         ]
       }
     },
-    "82:13-82:24|artificial-call|for-iter": {
+    "94:13-94:24|artificial-call|for-iter": {
       "call": {
         "calls": [
           {
@@ -586,7 +586,7 @@ Higher order call graphs
         ]
       }
     },
-    "82:13-82:24|artificial-call|for-next": {
+    "94:13-94:24|artificial-call|for-next": {
       "call": {
         "calls": [
           {
@@ -599,7 +599,7 @@ Higher order call graphs
         ]
       }
     },
-    "83:12-83:39": {
+    "95:12-95:39": {
       "call": {
         "calls": [
           {
@@ -616,64 +616,86 @@ Higher order call graphs
   "callable": "sanitize_tito_shaping.multiple_titos_different_input_output_paths",
   "returned_callables": [],
   "calls": {
-    "144:7-144:12|artificial-call|comparison": {
+    "156:7-156:22": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "144:7-144:12|artificial-call|normalize-not-comparison>comparison": {
+    "156:7-156:28|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "145:21-145:27|artificial-call|subscript-get-item": {
+    "156:7-156:28|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "157:21-157:27|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "146:9-146:14|artificial-call|comparison": {
+    "158:9-158:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "146:9-146:14|artificial-call|normalize-not-comparison>comparison": {
+    "158:9-158:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "147:21-147:59": {
+    "158:9-158:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "159:21-159:59": {
       "call": {
         "calls": [
           {
@@ -684,7 +706,7 @@ Higher order call graphs
         ]
       }
     },
-    "147:33-147:58": {
+    "159:33-159:58": {
       "call": {
         "calls": [
           {
@@ -695,38 +717,49 @@ Higher order call graphs
         ]
       }
     },
-    "147:51-147:57|artificial-call|subscript-get-item": {
+    "159:51-159:57|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "148:9-148:14|artificial-call|comparison": {
+    "160:9-160:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 2,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "148:9-148:14|artificial-call|normalize-not-comparison>comparison": {
+    "160:9-160:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 2,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "149:21-149:46": {
+    "160:9-160:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "161:21-161:46": {
       "call": {
         "calls": [
           {
@@ -737,38 +770,49 @@ Higher order call graphs
         ]
       }
     },
-    "149:39-149:45|artificial-call|subscript-get-item": {
+    "161:39-161:45|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "150:9-150:14|artificial-call|comparison": {
+    "162:9-162:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 3,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "150:9-150:14|artificial-call|normalize-not-comparison>comparison": {
+    "162:9-162:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 3,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "151:21-151:54": {
+    "162:9-162:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "163:21-163:54": {
       "call": {
         "calls": [
           {
@@ -779,12 +823,12 @@ Higher order call graphs
         ]
       }
     },
-    "151:47-151:53|artificial-call|subscript-get-item": {
+    "163:47-163:53|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "153:21-153:76": {
+    "165:21-165:76": {
       "call": {
         "calls": [
           {
@@ -795,7 +839,7 @@ Higher order call graphs
         ]
       }
     },
-    "153:33-153:75": {
+    "165:33-165:75": {
       "call": {
         "calls": [
           {
@@ -806,7 +850,7 @@ Higher order call graphs
         ]
       }
     },
-    "153:51-153:74": {
+    "165:51-165:74": {
       "call": {
         "calls": [
           {
@@ -817,7 +861,7 @@ Higher order call graphs
         ]
       }
     },
-    "153:67-153:73|artificial-call|subscript-get-item": {
+    "165:67-165:73|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
@@ -828,64 +872,86 @@ Higher order call graphs
   "callable": "sanitize_tito_shaping.multiple_titos_different_input_paths",
   "returned_callables": [],
   "calls": {
-    "119:7-119:12|artificial-call|comparison": {
+    "131:7-131:22": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "119:7-119:12|artificial-call|normalize-not-comparison>comparison": {
+    "131:7-131:28|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "120:15-120:21|artificial-call|subscript-get-item": {
+    "131:7-131:28|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "132:15-132:21|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "121:9-121:14|artificial-call|comparison": {
+    "133:9-133:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "121:9-121:14|artificial-call|normalize-not-comparison>comparison": {
+    "133:9-133:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "122:15-122:53": {
+    "133:9-133:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "134:15-134:53": {
       "call": {
         "calls": [
           {
@@ -896,7 +962,7 @@ Higher order call graphs
         ]
       }
     },
-    "122:27-122:52": {
+    "134:27-134:52": {
       "call": {
         "calls": [
           {
@@ -907,38 +973,49 @@ Higher order call graphs
         ]
       }
     },
-    "122:45-122:51|artificial-call|subscript-get-item": {
+    "134:45-134:51|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "123:9-123:14|artificial-call|comparison": {
+    "135:9-135:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 2,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "123:9-123:14|artificial-call|normalize-not-comparison>comparison": {
+    "135:9-135:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 2,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "124:15-124:40": {
+    "135:9-135:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "136:15-136:40": {
       "call": {
         "calls": [
           {
@@ -949,38 +1026,49 @@ Higher order call graphs
         ]
       }
     },
-    "124:33-124:39|artificial-call|subscript-get-item": {
+    "136:33-136:39|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "125:9-125:14|artificial-call|comparison": {
+    "137:9-137:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 3,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "125:9-125:14|artificial-call|normalize-not-comparison>comparison": {
+    "137:9-137:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 3,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "126:15-126:48": {
+    "137:9-137:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "138:15-138:48": {
       "call": {
         "calls": [
           {
@@ -991,12 +1079,12 @@ Higher order call graphs
         ]
       }
     },
-    "126:41-126:47|artificial-call|subscript-get-item": {
+    "138:41-138:47|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "128:15-128:70": {
+    "140:15-140:70": {
       "call": {
         "calls": [
           {
@@ -1007,7 +1095,7 @@ Higher order call graphs
         ]
       }
     },
-    "128:27-128:69": {
+    "140:27-140:69": {
       "call": {
         "calls": [
           {
@@ -1018,7 +1106,7 @@ Higher order call graphs
         ]
       }
     },
-    "128:45-128:68": {
+    "140:45-140:68": {
       "call": {
         "calls": [
           {
@@ -1029,7 +1117,7 @@ Higher order call graphs
         ]
       }
     },
-    "128:61-128:67|artificial-call|subscript-get-item": {
+    "140:61-140:67|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
@@ -1040,59 +1128,81 @@ Higher order call graphs
   "callable": "sanitize_tito_shaping.multiple_titos_different_output_paths",
   "returned_callables": [],
   "calls": {
-    "94:7-94:12|artificial-call|comparison": {
+    "106:7-106:22": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
+            "index": 0,
+            "return_type": [ "float" ]
+          }
+        ]
+      }
+    },
+    "106:7-106:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "94:7-94:12|artificial-call|normalize-not-comparison>comparison": {
+    "106:7-106:28|artificial-call|normalize-not-comparison>comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__le__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "96:9-96:14|artificial-call|comparison": {
+    "108:9-108:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "96:9-96:14|artificial-call|normalize-not-comparison>comparison": {
+    "108:9-108:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "97:21-97:54": {
+    "108:9-108:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "109:21-109:54": {
       "call": {
         "calls": [
           {
@@ -1103,7 +1213,7 @@ Higher order call graphs
         ]
       }
     },
-    "97:33-97:53": {
+    "109:33-109:53": {
       "call": {
         "calls": [
           {
@@ -1114,33 +1224,44 @@ Higher order call graphs
         ]
       }
     },
-    "98:9-98:14|artificial-call|comparison": {
+    "110:9-110:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 2,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "98:9-98:14|artificial-call|normalize-not-comparison>comparison": {
+    "110:9-110:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 2,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "99:21-99:41": {
+    "110:9-110:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "111:21-111:41": {
       "call": {
         "calls": [
           {
@@ -1151,33 +1272,44 @@ Higher order call graphs
         ]
       }
     },
-    "100:9-100:14|artificial-call|comparison": {
+    "112:9-112:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 3,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "100:9-100:14|artificial-call|normalize-not-comparison>comparison": {
+    "112:9-112:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 3,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "101:21-101:49": {
+    "112:9-112:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "113:21-113:49": {
       "call": {
         "calls": [
           {
@@ -1188,7 +1320,7 @@ Higher order call graphs
         ]
       }
     },
-    "103:21-103:58": {
+    "115:21-115:58": {
       "call": {
         "calls": [
           {
@@ -1199,7 +1331,7 @@ Higher order call graphs
         ]
       }
     },
-    "103:39-103:57": {
+    "115:39-115:57": {
       "call": {
         "calls": [
           {
@@ -1216,59 +1348,81 @@ Higher order call graphs
   "callable": "sanitize_tito_shaping.multiple_titos_same_path",
   "returned_callables": [],
   "calls": {
-    "63:7-63:12|artificial-call|comparison": {
+    "76:7-76:22": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
+            "index": 0,
+            "return_type": [ "float" ]
+          }
+        ]
+      }
+    },
+    "76:7-76:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "63:7-63:12|artificial-call|normalize-not-comparison>comparison": {
+    "76:7-76:28|artificial-call|normalize-not-comparison>comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__le__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "65:9-65:14|artificial-call|comparison": {
+    "78:9-78:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "65:9-65:14|artificial-call|normalize-not-comparison>comparison": {
+    "78:9-78:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "66:15-66:48": {
+    "78:9-78:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "79:15-79:48": {
       "call": {
         "calls": [
           {
@@ -1279,7 +1433,7 @@ Higher order call graphs
         ]
       }
     },
-    "66:27-66:47": {
+    "79:27-79:47": {
       "call": {
         "calls": [
           {
@@ -1290,33 +1444,44 @@ Higher order call graphs
         ]
       }
     },
-    "67:9-67:14|artificial-call|comparison": {
+    "80:9-80:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 2,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "67:9-67:14|artificial-call|normalize-not-comparison>comparison": {
+    "80:9-80:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 2,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "68:15-68:35": {
+    "80:9-80:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "81:15-81:35": {
       "call": {
         "calls": [
           {
@@ -1327,33 +1492,44 @@ Higher order call graphs
         ]
       }
     },
-    "69:9-69:14|artificial-call|comparison": {
+    "82:9-82:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 3,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "69:9-69:14|artificial-call|normalize-not-comparison>comparison": {
+    "82:9-82:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 3,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "70:15-70:43": {
+    "82:9-82:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "83:15-83:43": {
       "call": {
         "calls": [
           {
@@ -1364,33 +1540,44 @@ Higher order call graphs
         ]
       }
     },
-    "71:9-71:14|artificial-call|comparison": {
+    "84:9-84:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 4,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "71:9-71:14|artificial-call|normalize-not-comparison>comparison": {
+    "84:9-84:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 4,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "72:15-72:46": {
+    "84:9-84:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 4,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "85:15-85:46": {
       "call": {
         "calls": [
           {
@@ -1401,7 +1588,7 @@ Higher order call graphs
         ]
       }
     },
-    "72:27-72:45": {
+    "85:27-85:45": {
       "call": {
         "calls": [
           {
@@ -1412,33 +1599,44 @@ Higher order call graphs
         ]
       }
     },
-    "73:9-73:14|artificial-call|comparison": {
+    "86:9-86:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 5,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "73:9-73:14|artificial-call|normalize-not-comparison>comparison": {
+    "86:9-86:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 5,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "74:15-74:62": {
+    "86:9-86:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 5,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "87:15-87:62": {
       "call": {
         "calls": [
           {
@@ -1449,7 +1647,7 @@ Higher order call graphs
         ]
       }
     },
-    "74:41-74:61": {
+    "87:41-87:61": {
       "call": {
         "calls": [
           {
@@ -1460,7 +1658,7 @@ Higher order call graphs
         ]
       }
     },
-    "76:15-76:52": {
+    "89:15-89:52": {
       "call": {
         "calls": [
           {
@@ -1471,7 +1669,7 @@ Higher order call graphs
         ]
       }
     },
-    "76:33-76:51": {
+    "89:33-89:51": {
       "call": {
         "calls": [
           {
@@ -1488,33 +1686,44 @@ Higher order call graphs
   "callable": "sanitize_tito_shaping.multiple_titos_same_path_different_collapse_depth",
   "returned_callables": [],
   "calls": {
-    "169:7-169:12|artificial-call|comparison": {
+    "181:7-181:22": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "169:7-169:12|artificial-call|normalize-not-comparison>comparison": {
+    "181:7-181:28|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "170:15-170:36": {
+    "181:7-181:28|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "182:15-182:36": {
       "call": {
         "calls": [
           {
@@ -1525,33 +1734,44 @@ Higher order call graphs
         ]
       }
     },
-    "171:9-171:14|artificial-call|comparison": {
+    "183:9-183:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "171:9-171:14|artificial-call|normalize-not-comparison>comparison": {
+    "183:9-183:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "172:15-172:54": {
+    "183:9-183:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "184:15-184:54": {
       "call": {
         "calls": [
           {
@@ -1562,7 +1782,7 @@ Higher order call graphs
         ]
       }
     },
-    "172:33-172:53": {
+    "184:33-184:53": {
       "call": {
         "calls": [
           {
@@ -1573,7 +1793,7 @@ Higher order call graphs
         ]
       }
     },
-    "174:15-174:63": {
+    "186:15-186:63": {
       "call": {
         "calls": [
           {
@@ -1584,7 +1804,7 @@ Higher order call graphs
         ]
       }
     },
-    "174:34-174:62": {
+    "186:34-186:62": {
       "call": {
         "calls": [
           {
@@ -1601,59 +1821,81 @@ Higher order call graphs
   "callable": "sanitize_tito_shaping.multiple_titos_same_path_with_transform",
   "returned_callables": [],
   "calls": {
-    "180:7-180:12|artificial-call|comparison": {
+    "192:7-192:22": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
+            "index": 0,
+            "return_type": [ "float" ]
+          }
+        ]
+      }
+    },
+    "192:7-192:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "180:7-180:12|artificial-call|normalize-not-comparison>comparison": {
+    "192:7-192:28|artificial-call|normalize-not-comparison>comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__le__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "182:9-182:14|artificial-call|comparison": {
+    "194:9-194:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "182:9-182:14|artificial-call|normalize-not-comparison>comparison": {
+    "194:9-194:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "183:15-183:35": {
+    "194:9-194:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "195:15-195:35": {
       "call": {
         "calls": [
           {
@@ -1664,33 +1906,44 @@ Higher order call graphs
         ]
       }
     },
-    "184:9-184:14|artificial-call|comparison": {
+    "196:9-196:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 2,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "184:9-184:14|artificial-call|normalize-not-comparison>comparison": {
+    "196:9-196:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 2,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "185:15-185:29": {
+    "196:9-196:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "197:15-197:29": {
       "call": {
         "calls": [
           {
@@ -1701,33 +1954,44 @@ Higher order call graphs
         ]
       }
     },
-    "186:9-186:14|artificial-call|comparison": {
+    "198:9-198:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
+            "index": 3,
+            "return_type": [ "float" ]
+          }
+        ]
+      }
+    },
+    "198:9-198:30|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__gt__",
             "index": 3,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "186:9-186:14|artificial-call|normalize-not-comparison>comparison": {
+    "198:9-198:30|artificial-call|normalize-not-comparison>comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__le__",
             "index": 3,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "187:15-187:48": {
+    "199:15-199:48": {
       "call": {
         "calls": [
           {
@@ -1738,7 +2002,7 @@ Higher order call graphs
         ]
       }
     },
-    "187:27-187:47": {
+    "199:27-199:47": {
       "call": {
         "calls": [
           {
@@ -1749,33 +2013,44 @@ Higher order call graphs
         ]
       }
     },
-    "188:9-188:14|artificial-call|comparison": {
+    "200:9-200:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 4,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "188:9-188:14|artificial-call|normalize-not-comparison>comparison": {
+    "200:9-200:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 4,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "189:15-189:48": {
+    "200:9-200:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 4,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "201:15-201:48": {
       "call": {
         "calls": [
           {
@@ -1786,7 +2061,7 @@ Higher order call graphs
         ]
       }
     },
-    "189:33-189:47": {
+    "201:33-201:47": {
       "call": {
         "calls": [
           {
@@ -1797,33 +2072,44 @@ Higher order call graphs
         ]
       }
     },
-    "190:9-190:14|artificial-call|comparison": {
+    "202:9-202:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 5,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "190:9-190:14|artificial-call|normalize-not-comparison>comparison": {
+    "202:9-202:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 5,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "191:15-191:29": {
+    "202:9-202:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 5,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "203:15-203:29": {
       "call": {
         "calls": [
           {
@@ -1834,7 +2120,7 @@ Higher order call graphs
         ]
       }
     },
-    "193:15-193:56": {
+    "205:15-205:56": {
       "call": {
         "calls": [
           {
@@ -1845,7 +2131,7 @@ Higher order call graphs
         ]
       }
     },
-    "193:41-193:55": {
+    "205:41-205:55": {
       "call": {
         "calls": [
           {
@@ -1862,7 +2148,7 @@ Higher order call graphs
   "callable": "sanitize_tito_shaping.sanitize_sink_a_depth_two",
   "returned_callables": [],
   "calls": {
-    "35:11-35:29": {
+    "42:11-42:29": {
       "call": {
         "calls": [
           {
@@ -1879,7 +2165,7 @@ Higher order call graphs
   "callable": "sanitize_tito_shaping.sanitize_source_a_depth_two",
   "returned_callables": [],
   "calls": {
-    "32:11-32:31": {
+    "38:11-38:31": {
       "call": {
         "calls": [
           {
@@ -1896,7 +2182,7 @@ Higher order call graphs
   "callable": "sanitize_tito_shaping.tito_collapse_one",
   "returned_callables": [],
   "calls": {
-    "56:8-56:41": {
+    "69:8-69:41": {
       "call": {
         "calls": [
           {
@@ -1907,17 +2193,17 @@ Higher order call graphs
         ]
       }
     },
-    "57:11-57:17|artificial-call|subscript-get-item": {
+    "70:11-70:17|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "57:11-57:22|artificial-call|subscript-get-item": {
+    "70:11-70:22|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "57:11-57:27|artificial-call|subscript-get-item": {
+    "70:11-70:27|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }

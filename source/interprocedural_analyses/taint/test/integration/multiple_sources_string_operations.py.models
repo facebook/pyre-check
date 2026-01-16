@@ -3,75 +3,7 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations.format_string_issue",
-    "callable_line": 59,
-    "code": 4324,
-    "line": 62,
-    "start": 14,
-    "end": 29,
-    "filename": "multiple_sources_string_operations.py",
-    "message": "User controlled data flows into potential SQL strings",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "multiple_sources_string_operations.user_controlled_input",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "UserControlled"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 62, "start": 14, "end": 29 } ],
-            "origin": { "line": 61, "start": 22, "end": 45 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "extra_traces": [
-                  {
-                    "message": "Triggering source StringMayBeSQL",
-                    "origin": { "line": 60, "start": 17, "end": 25 },
-                    "leaf_kind": "StringMayBeSQL",
-                    "trace_kind": "source"
-                  }
-                ],
-                "leaves": [
-                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
-                ],
-                "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
-              }
-            ],
-            "origin": { "line": 62, "start": 4, "end": 31 }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "tito" } ],
-    "sink_handle": {
-      "kind": "StringFormat",
-      "callee": "Obj{<format-string>}",
-      "index": 0,
-      "parameter_index": 2
-    },
-    "master_handle": "multiple_sources_string_operations.format_string_issue:4324:0:StringFormat|Obj{<format-string>}|0|2:7683ec288f45b99f24d03a7be1d91aa5"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "multiple_sources_string_operations.format_string_issue",
-    "callable_line": 59,
+    "callable_line": 61,
     "code": 4324,
     "line": 64,
     "start": 14,
@@ -96,7 +28,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 64, "start": 14, "end": 29 } ],
-            "origin": { "line": 61, "start": 22, "end": 45 }
+            "origin": { "line": 63, "start": 22, "end": 45 }
           }
         ]
       },
@@ -109,7 +41,7 @@
                 "extra_traces": [
                   {
                     "message": "Triggering source StringMayBeSQL",
-                    "origin": { "line": 60, "start": 17, "end": 25 },
+                    "origin": { "line": 62, "start": 17, "end": 25 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
                   }
@@ -120,7 +52,75 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": { "line": 64, "start": 4, "end": 34 }
+            "origin": { "line": 64, "start": 4, "end": 31 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "tito" } ],
+    "sink_handle": {
+      "kind": "StringFormat",
+      "callee": "Obj{<format-string>}",
+      "index": 0,
+      "parameter_index": 2
+    },
+    "master_handle": "multiple_sources_string_operations.format_string_issue:4324:0:StringFormat|Obj{<format-string>}|0|2:7683ec288f45b99f24d03a7be1d91aa5"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources_string_operations.format_string_issue",
+    "callable_line": 61,
+    "code": 4324,
+    "line": 66,
+    "start": 14,
+    "end": 29,
+    "filename": "multiple_sources_string_operations.py",
+    "message": "User controlled data flows into potential SQL strings",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources_string_operations.user_controlled_input",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 66, "start": 14, "end": 29 } ],
+            "origin": { "line": 63, "start": 22, "end": 45 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source StringMayBeSQL",
+                    "origin": { "line": 62, "start": 17, "end": 25 },
+                    "leaf_kind": "StringMayBeSQL",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  { "name": "Obj{<format-string>}", "port": "leaf:**" }
+                ],
+                "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
+              }
+            ],
+            "origin": { "line": 66, "start": 4, "end": 34 }
           }
         ]
       }
@@ -139,9 +139,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations.format_string_issue_string_literal",
-    "callable_line": 48,
+    "callable_line": 50,
     "code": 4324,
-    "line": 50,
+    "line": 52,
     "start": 13,
     "end": 28,
     "filename": "multiple_sources_string_operations.py",
@@ -163,8 +163,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 50, "start": 13, "end": 28 } ],
-            "origin": { "line": 49, "start": 22, "end": 45 }
+            "tito_positions": [ { "line": 52, "start": 13, "end": 28 } ],
+            "origin": { "line": 51, "start": 22, "end": 45 }
           }
         ]
       },
@@ -177,7 +177,7 @@
                 "extra_traces": [
                   {
                     "message": "Triggering source StringMayBeSQL",
-                    "origin": { "line": 50, "start": 4, "end": 30 },
+                    "origin": { "line": 52, "start": 4, "end": 30 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
                   }
@@ -188,7 +188,7 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": { "line": 50, "start": 4, "end": 30 }
+            "origin": { "line": 52, "start": 4, "end": 30 }
           }
         ]
       }
@@ -207,9 +207,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations.format_string_issue_with_multiple_triggered_user_controlled",
-    "callable_line": 100,
+    "callable_line": 102,
     "code": 4324,
-    "line": 102,
+    "line": 104,
     "start": 53,
     "end": 68,
     "filename": "multiple_sources_string_operations.py",
@@ -230,7 +230,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": { "line": 101, "start": 22, "end": 45 }
+            "origin": { "line": 103, "start": 22, "end": 45 }
           }
         ]
       },
@@ -251,12 +251,12 @@
               }
             ],
             "call": {
-              "position": { "line": 102, "start": 53, "end": 68 },
+              "position": { "line": 104, "start": 53, "end": 68 },
               "resolves_to": [
                 "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled"
               ],
               "port": "formal(arg1, position=0)",
-              "call_site": "102:4-102:72"
+              "call_site": "104:4-104:72"
             }
           }
         ]
@@ -278,9 +278,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations.format_string_issue_with_multiple_triggered_user_controlled",
-    "callable_line": 100,
+    "callable_line": 102,
     "code": 4324,
-    "line": 103,
+    "line": 105,
     "start": 56,
     "end": 71,
     "filename": "multiple_sources_string_operations.py",
@@ -301,7 +301,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": { "line": 101, "start": 22, "end": 45 }
+            "origin": { "line": 103, "start": 22, "end": 45 }
           }
         ]
       },
@@ -322,12 +322,12 @@
               }
             ],
             "call": {
-              "position": { "line": 103, "start": 56, "end": 71 },
+              "position": { "line": 105, "start": 56, "end": 71 },
               "resolves_to": [
                 "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled"
               ],
               "port": "formal(arg2, position=1)",
-              "call_site": "103:4-103:72"
+              "call_site": "105:4-105:72"
             }
           }
         ]
@@ -349,9 +349,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations.format_string_issue_with_triggered_sql",
-    "callable_line": 91,
+    "callable_line": 93,
     "code": 4324,
-    "line": 93,
+    "line": 95,
     "start": 32,
     "end": 37,
     "filename": "multiple_sources_string_operations.py",
@@ -369,7 +369,7 @@
                 "kind": "StringMayBeSQL"
               }
             ],
-            "origin": { "line": 92, "start": 17, "end": 25 }
+            "origin": { "line": 94, "start": 17, "end": 25 }
           }
         ]
       },
@@ -390,12 +390,12 @@
               }
             ],
             "call": {
-              "position": { "line": 93, "start": 32, "end": 37 },
+              "position": { "line": 95, "start": 32, "end": 37 },
               "resolves_to": [
                 "multiple_sources_string_operations.format_string_triggered_sql"
               ],
               "port": "formal(arg, position=0)",
-              "call_site": "93:4-93:38"
+              "call_site": "95:4-95:38"
             }
           }
         ]
@@ -417,9 +417,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations.format_string_issue_with_triggered_user_controlled",
-    "callable_line": 81,
+    "callable_line": 83,
     "code": 4324,
-    "line": 83,
+    "line": 85,
     "start": 44,
     "end": 59,
     "filename": "multiple_sources_string_operations.py",
@@ -440,7 +440,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": { "line": 82, "start": 22, "end": 45 }
+            "origin": { "line": 84, "start": 22, "end": 45 }
           }
         ]
       },
@@ -461,12 +461,12 @@
               }
             ],
             "call": {
-              "position": { "line": 83, "start": 44, "end": 59 },
+              "position": { "line": 85, "start": 44, "end": 59 },
               "resolves_to": [
                 "multiple_sources_string_operations.format_string_triggered_user_controlled"
               ],
               "port": "formal(arg, position=0)",
-              "call_site": "83:4-83:60"
+              "call_site": "85:4-85:60"
             }
           }
         ]
@@ -488,9 +488,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations.format_string_multiple_issues_string_literal",
-    "callable_line": 53,
+    "callable_line": 55,
     "code": 4324,
-    "line": 55,
+    "line": 57,
     "start": 13,
     "end": 28,
     "filename": "multiple_sources_string_operations.py",
@@ -512,8 +512,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 55, "start": 13, "end": 28 } ],
-            "origin": { "line": 54, "start": 22, "end": 45 }
+            "tito_positions": [ { "line": 57, "start": 13, "end": 28 } ],
+            "origin": { "line": 56, "start": 22, "end": 45 }
           }
         ]
       },
@@ -526,7 +526,7 @@
                 "extra_traces": [
                   {
                     "message": "Triggering source StringMayBeSQL",
-                    "origin": { "line": 55, "start": 4, "end": 30 },
+                    "origin": { "line": 57, "start": 4, "end": 30 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
                   }
@@ -537,7 +537,7 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": { "line": 55, "start": 4, "end": 30 }
+            "origin": { "line": 57, "start": 4, "end": 30 }
           }
         ]
       }
@@ -556,9 +556,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations.format_string_multiple_issues_string_literal",
-    "callable_line": 53,
+    "callable_line": 55,
     "code": 4324,
-    "line": 56,
+    "line": 58,
     "start": 13,
     "end": 28,
     "filename": "multiple_sources_string_operations.py",
@@ -580,8 +580,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 56, "start": 13, "end": 28 } ],
-            "origin": { "line": 54, "start": 22, "end": 45 }
+            "tito_positions": [ { "line": 58, "start": 13, "end": 28 } ],
+            "origin": { "line": 56, "start": 22, "end": 45 }
           }
         ]
       },
@@ -594,7 +594,7 @@
                 "extra_traces": [
                   {
                     "message": "Triggering source StringMayBeSQL",
-                    "origin": { "line": 56, "start": 4, "end": 30 },
+                    "origin": { "line": 58, "start": 4, "end": 30 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
                   }
@@ -605,7 +605,7 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": { "line": 56, "start": 4, "end": 30 }
+            "origin": { "line": 58, "start": 4, "end": 30 }
           }
         ]
       }
@@ -625,7 +625,7 @@
   "data": {
     "callable": "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled",
     "filename": "multiple_sources_string_operations.py",
-    "callable_line": 96,
+    "callable_line": 98,
     "sinks": [
       {
         "port": "formal(arg2, position=1)",
@@ -636,7 +636,7 @@
                 "extra_traces": [
                   {
                     "message": "Triggering source StringMayBeSQL",
-                    "origin": { "line": 97, "start": 4, "end": 27 },
+                    "origin": { "line": 99, "start": 4, "end": 27 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
                   }
@@ -650,8 +650,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 97, "start": 21, "end": 25 } ],
-            "origin": { "line": 97, "start": 4, "end": 27 }
+            "tito_positions": [ { "line": 99, "start": 21, "end": 25 } ],
+            "origin": { "line": 99, "start": 4, "end": 27 }
           }
         ]
       },
@@ -664,7 +664,7 @@
                 "extra_traces": [
                   {
                     "message": "Triggering source StringMayBeSQL",
-                    "origin": { "line": 97, "start": 4, "end": 27 },
+                    "origin": { "line": 99, "start": 4, "end": 27 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
                   }
@@ -678,8 +678,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 97, "start": 7, "end": 11 } ],
-            "origin": { "line": 97, "start": 4, "end": 27 }
+            "tito_positions": [ { "line": 99, "start": 7, "end": 11 } ],
+            "origin": { "line": 99, "start": 4, "end": 27 }
           }
         ]
       }
@@ -691,7 +691,7 @@
   "data": {
     "callable": "multiple_sources_string_operations.format_string_triggered_sql",
     "filename": "multiple_sources_string_operations.py",
-    "callable_line": 86,
+    "callable_line": 88,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -702,7 +702,7 @@
                 "extra_traces": [
                   {
                     "message": "Triggering source UserControlled",
-                    "origin": { "line": 87, "start": 22, "end": 45 },
+                    "origin": { "line": 89, "start": 22, "end": 45 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"
                   }
@@ -716,8 +716,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 88, "start": 24, "end": 27 } ],
-            "origin": { "line": 88, "start": 4, "end": 29 }
+            "tito_positions": [ { "line": 90, "start": 24, "end": 27 } ],
+            "origin": { "line": 90, "start": 4, "end": 29 }
           }
         ]
       }
@@ -729,7 +729,7 @@
   "data": {
     "callable": "multiple_sources_string_operations.format_string_triggered_user_controlled",
     "filename": "multiple_sources_string_operations.py",
-    "callable_line": 76,
+    "callable_line": 78,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -740,7 +740,7 @@
                 "extra_traces": [
                   {
                     "message": "Triggering source StringMayBeSQL",
-                    "origin": { "line": 77, "start": 17, "end": 25 },
+                    "origin": { "line": 79, "start": 17, "end": 25 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
                   }
@@ -754,8 +754,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 78, "start": 14, "end": 17 } ],
-            "origin": { "line": 78, "start": 4, "end": 19 }
+            "tito_positions": [ { "line": 80, "start": 14, "end": 17 } ],
+            "origin": { "line": 80, "start": 4, "end": 19 }
           }
         ]
       }
@@ -767,7 +767,7 @@
   "data": {
     "callable": "multiple_sources_string_operations.nested_stradd_and_fstring",
     "filename": "multiple_sources_string_operations.py",
-    "callable_line": 106,
+    "callable_line": 108,
     "sources": [
       {
         "port": "result",
@@ -791,11 +791,11 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [
-              { "line": 109, "start": 19, "end": 29 },
-              { "line": 109, "start": 22, "end": 23 },
-              { "line": 109, "start": 22, "end": 27 }
+              { "line": 111, "start": 19, "end": 29 },
+              { "line": 111, "start": 22, "end": 23 },
+              { "line": 111, "start": 22, "end": 27 }
             ],
-            "origin": { "line": 107, "start": 13, "end": 36 }
+            "origin": { "line": 109, "start": 13, "end": 36 }
           }
         ]
       }
@@ -807,7 +807,7 @@
   "data": {
     "callable": "multiple_sources_string_operations.stradd_tito_triggered_user_controlled",
     "filename": "multiple_sources_string_operations.py",
-    "callable_line": 121,
+    "callable_line": 123,
     "sinks": [
       {
         "port": "formal(arg, position=0)[f]",
@@ -818,7 +818,7 @@
                 "extra_traces": [
                   {
                     "message": "Triggering source UserControlled",
-                    "origin": { "line": 122, "start": 13, "end": 36 },
+                    "origin": { "line": 124, "start": 13, "end": 36 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"
                   }
@@ -829,10 +829,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 123, "start": 8, "end": 19 },
-              { "line": 123, "start": 13, "end": 18 }
+              { "line": 125, "start": 8, "end": 19 },
+              { "line": 125, "start": 13, "end": 18 }
             ],
-            "origin": { "line": 123, "start": 4, "end": 19 }
+            "origin": { "line": 125, "start": 4, "end": 19 }
           }
         ]
       }
@@ -844,7 +844,7 @@
   "data": {
     "callable": "multiple_sources_string_operations.stradd_triggered_user_controlled",
     "filename": "multiple_sources_string_operations.py",
-    "callable_line": 112,
+    "callable_line": 114,
     "sinks": [
       {
         "port": "formal(arg, position=0)[f]",
@@ -855,7 +855,7 @@
                 "extra_traces": [
                   {
                     "message": "Triggering source UserControlled",
-                    "origin": { "line": 113, "start": 13, "end": 36 },
+                    "origin": { "line": 115, "start": 13, "end": 36 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"
                   }
@@ -865,8 +865,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 114, "start": 8, "end": 13 } ],
-            "origin": { "line": 114, "start": 4, "end": 13 }
+            "tito_positions": [ { "line": 116, "start": 8, "end": 13 } ],
+            "origin": { "line": 116, "start": 4, "end": 13 }
           }
         ]
       }
@@ -877,9 +877,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations.string_operations",
-    "callable_line": 27,
+    "callable_line": 29,
     "code": 4324,
-    "line": 34,
+    "line": 36,
     "start": 12,
     "end": 27,
     "filename": "multiple_sources_string_operations.py",
@@ -901,8 +901,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 34, "start": 12, "end": 27 } ],
-            "origin": { "line": 29, "start": 27, "end": 50 }
+            "tito_positions": [ { "line": 36, "start": 12, "end": 27 } ],
+            "origin": { "line": 31, "start": 27, "end": 50 }
           }
         ]
       },
@@ -915,7 +915,7 @@
                 "extra_traces": [
                   {
                     "message": "Triggering source StringMayBeSQL",
-                    "origin": { "line": 28, "start": 17, "end": 25 },
+                    "origin": { "line": 30, "start": 17, "end": 25 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
                   }
@@ -924,7 +924,7 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": { "line": 34, "start": 4, "end": 27 }
+            "origin": { "line": 36, "start": 4, "end": 27 }
           }
         ]
       }
@@ -943,9 +943,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations.string_operations",
-    "callable_line": 27,
+    "callable_line": 29,
     "code": 4324,
-    "line": 35,
+    "line": 37,
     "start": 22,
     "end": 27,
     "filename": "multiple_sources_string_operations.py",
@@ -964,8 +964,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 35, "start": 22, "end": 27 } ],
-            "origin": { "line": 28, "start": 17, "end": 25 }
+            "tito_positions": [ { "line": 37, "start": 22, "end": 27 } ],
+            "origin": { "line": 30, "start": 17, "end": 25 }
           }
         ]
       },
@@ -978,7 +978,7 @@
                 "extra_traces": [
                   {
                     "message": "Triggering source UserControlled",
-                    "origin": { "line": 29, "start": 27, "end": 50 },
+                    "origin": { "line": 31, "start": 27, "end": 50 },
                     "leaf_kind": "UserControlled",
                     "trace_kind": "source"
                   }
@@ -987,7 +987,7 @@
                 "kind": "Triggered[UserControlled]@PartialSink[StringMayBeSQLSink]"
               }
             ],
-            "origin": { "line": 35, "start": 4, "end": 27 }
+            "origin": { "line": 37, "start": 4, "end": 27 }
           }
         ]
       }
@@ -1006,9 +1006,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations.string_operations",
-    "callable_line": 27,
+    "callable_line": 29,
     "code": 4324,
-    "line": 37,
+    "line": 39,
     "start": 12,
     "end": 27,
     "filename": "multiple_sources_string_operations.py",
@@ -1030,8 +1030,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 37, "start": 12, "end": 27 } ],
-            "origin": { "line": 29, "start": 27, "end": 50 }
+            "tito_positions": [ { "line": 39, "start": 12, "end": 27 } ],
+            "origin": { "line": 31, "start": 27, "end": 50 }
           }
         ]
       },
@@ -1044,7 +1044,7 @@
                 "extra_traces": [
                   {
                     "message": "Triggering source StringMayBeSQL",
-                    "origin": { "line": 28, "start": 17, "end": 25 },
+                    "origin": { "line": 30, "start": 17, "end": 25 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
                   }
@@ -1053,7 +1053,7 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": { "line": 37, "start": 4, "end": 27 }
+            "origin": { "line": 39, "start": 4, "end": 27 }
           }
         ]
       }
@@ -1072,9 +1072,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations.string_operations",
-    "callable_line": 27,
+    "callable_line": 29,
     "code": 4324,
-    "line": 31,
+    "line": 33,
     "start": 17,
     "end": 32,
     "filename": "multiple_sources_string_operations.py",
@@ -1096,8 +1096,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 31, "start": 17, "end": 32 } ],
-            "origin": { "line": 29, "start": 27, "end": 50 }
+            "tito_positions": [ { "line": 33, "start": 17, "end": 32 } ],
+            "origin": { "line": 31, "start": 27, "end": 50 }
           }
         ]
       },
@@ -1110,7 +1110,7 @@
                 "extra_traces": [
                   {
                     "message": "Triggering source StringMayBeSQL",
-                    "origin": { "line": 28, "start": 17, "end": 25 },
+                    "origin": { "line": 30, "start": 17, "end": 25 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
                   }
@@ -1119,7 +1119,7 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": { "line": 31, "start": 4, "end": 33 }
+            "origin": { "line": 33, "start": 4, "end": 33 }
           }
         ]
       }
@@ -1138,9 +1138,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations.string_operations",
-    "callable_line": 27,
+    "callable_line": 29,
     "code": 4324,
-    "line": 32,
+    "line": 34,
     "start": 22,
     "end": 37,
     "filename": "multiple_sources_string_operations.py",
@@ -1162,8 +1162,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 32, "start": 22, "end": 37 } ],
-            "origin": { "line": 29, "start": 27, "end": 50 }
+            "tito_positions": [ { "line": 34, "start": 22, "end": 37 } ],
+            "origin": { "line": 31, "start": 27, "end": 50 }
           }
         ]
       },
@@ -1176,7 +1176,7 @@
                 "extra_traces": [
                   {
                     "message": "Triggering source StringMayBeSQL",
-                    "origin": { "line": 28, "start": 17, "end": 25 },
+                    "origin": { "line": 30, "start": 17, "end": 25 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
                   }
@@ -1185,7 +1185,7 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": { "line": 32, "start": 4, "end": 38 }
+            "origin": { "line": 34, "start": 4, "end": 38 }
           }
         ]
       }
@@ -1204,9 +1204,9 @@
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations.string_operations",
-    "callable_line": 27,
+    "callable_line": 29,
     "code": 4324,
-    "line": 39,
+    "line": 41,
     "start": 24,
     "end": 39,
     "filename": "multiple_sources_string_operations.py",
@@ -1228,8 +1228,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 39, "start": 24, "end": 39 } ],
-            "origin": { "line": 29, "start": 27, "end": 50 }
+            "tito_positions": [ { "line": 41, "start": 24, "end": 39 } ],
+            "origin": { "line": 31, "start": 27, "end": 50 }
           }
         ]
       },
@@ -1242,7 +1242,7 @@
                 "extra_traces": [
                   {
                     "message": "Triggering source StringMayBeSQL",
-                    "origin": { "line": 39, "start": 4, "end": 16 },
+                    "origin": { "line": 41, "start": 4, "end": 16 },
                     "leaf_kind": "StringMayBeSQL",
                     "trace_kind": "source"
                   }
@@ -1251,7 +1251,7 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": { "line": 39, "start": 4, "end": 40 }
+            "origin": { "line": 41, "start": 4, "end": 40 }
           }
         ]
       }
@@ -1271,7 +1271,7 @@
   "data": {
     "callable": "multiple_sources_string_operations.tito",
     "filename": "multiple_sources_string_operations.py",
-    "callable_line": 117,
+    "callable_line": 119,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1290,7 +1290,7 @@
   "data": {
     "callable": "multiple_sources_string_operations.user_controlled_input",
     "filename": "multiple_sources_string_operations.py",
-    "callable_line": 12,
+    "callable_line": 14,
     "sources": [
       {
         "port": "result",
@@ -1306,7 +1306,7 @@
   "data": {
     "callable": "multiple_sources_string_operations.DatabaseSchemaEditor.string_operations",
     "filename": "multiple_sources_string_operations.py",
-    "callable_line": 22,
+    "callable_line": 24,
     "sinks": [
       {
         "port": "formal(self, position=0)[attribute_query]",
@@ -1317,7 +1317,7 @@
                 "extra_traces": [
                   {
                     "message": "Triggering source UserControlled",
-                    "origin": { "line": 23, "start": 31, "end": 54 },
+                    "origin": { "line": 25, "start": 31, "end": 54 },
                     "caller_interval": [ { "lower": 2, "upper": 3 } ],
                     "is_self_call": false,
                     "leaf_kind": "UserControlled",
@@ -1331,8 +1331,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 24, "start": 8, "end": 28 } ],
-            "origin": { "line": 24, "start": 8, "end": 52 }
+            "tito_positions": [ { "line": 26, "start": 8, "end": 28 } ],
+            "origin": { "line": 26, "start": 8, "end": 52 }
           }
         ]
       }

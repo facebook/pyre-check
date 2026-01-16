@@ -23,8 +23,8 @@ Call dependencies
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "call_graph.test_localized_target (fun)": [
-    "call_graph.test_localized_target.f (fun)", "int.__ge__ (method)",
-    "int.__lt__ (method)"
+    "call_graph.test_localized_target.f (fun)", "float.__gt__ (method)",
+    "float.__le__ (method)", "random.random (fun)"
   ],
   "call_graph.test_match_type_of (fun)": [
     "call_graph.namespace.A.__call__ (method)",

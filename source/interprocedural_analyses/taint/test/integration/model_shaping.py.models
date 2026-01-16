@@ -91,9 +91,9 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito_positions": [ { "line": 41, "start": 24, "end": 27 } ],
-            "origin": { "line": 42, "start": 47, "end": 53 },
-            "call_site": "42:34-42:54"
+            "tito_positions": [ { "line": 42, "start": 24, "end": 27 } ],
+            "origin": { "line": 43, "start": 47, "end": 53 },
+            "call_site": "43:34-43:54"
           },
           {
             "kinds": [
@@ -115,12 +115,12 @@
             "local_features": [
               { "always-via": "object" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 42, "start": 42, "end": 45 } ],
+            "tito_positions": [ { "line": 43, "start": 42, "end": 45 } ],
             "call": {
-              "position": { "line": 42, "start": 34, "end": 54 },
+              "position": { "line": 43, "start": 34, "end": 54 },
               "resolves_to": [ "model_shaping._asdict_inner" ],
               "port": "formal(obj, position=0)",
-              "call_site": "42:20-42:69"
+              "call_site": "43:20-43:69"
             }
           },
           {
@@ -146,10 +146,10 @@
               { "always-via": "model-sink-shaping" }
             ],
             "call": {
-              "position": { "line": 49, "start": 56, "end": 57 },
+              "position": { "line": 50, "start": 56, "end": 57 },
               "resolves_to": [ "model_shaping._asdict_inner" ],
               "port": "formal(obj, position=0)",
-              "call_site": "49:42-49:72"
+              "call_site": "50:42-50:72"
             }
           },
           {
@@ -177,10 +177,10 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "call": {
-              "position": { "line": 54, "start": 34, "end": 35 },
+              "position": { "line": 55, "start": 34, "end": 35 },
               "resolves_to": [ "model_shaping._asdict_inner" ],
               "port": "formal(obj, position=0)",
-              "call_site": "54:20-54:50"
+              "call_site": "55:20-55:50"
             }
           },
           {
@@ -206,10 +206,10 @@
               { "always-via": "model-sink-shaping" }
             ],
             "call": {
-              "position": { "line": 64, "start": 34, "end": 35 },
+              "position": { "line": 65, "start": 34, "end": 35 },
               "resolves_to": [ "model_shaping._asdict_inner" ],
               "port": "formal(obj, position=0)",
-              "call_site": "64:20-64:50"
+              "call_site": "65:20-65:50"
             }
           }
         ]
@@ -227,9 +227,9 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito_positions": [
-              { "line": 49, "start": 25, "end": 87 },
-              { "line": 49, "start": 41, "end": 86 },
-              { "line": 49, "start": 59, "end": 71 }
+              { "line": 50, "start": 25, "end": 87 },
+              { "line": 50, "start": 41, "end": 86 },
+              { "line": 50, "start": 59, "end": 71 }
             ],
             "tito": {}
           }
@@ -248,9 +248,9 @@
               { "via": "model-tito-shaping" }
             ],
             "tito_positions": [
-              { "line": 49, "start": 25, "end": 87 },
-              { "line": 49, "start": 41, "end": 86 },
-              { "line": 49, "start": 56, "end": 57 }
+              { "line": 50, "start": 25, "end": 87 },
+              { "line": 50, "start": 41, "end": 86 },
+              { "line": 50, "start": 56, "end": 57 }
             ],
             "tito": {}
           }
@@ -349,7 +349,7 @@
   "data": {
     "callable": "model_shaping.asdict_test",
     "filename": "model_shaping.py",
-    "callable_line": 74,
+    "callable_line": 75,
     "sinks": [
       {
         "port": "formal(obj, position=0)",
@@ -372,10 +372,10 @@
               }
             ],
             "call": {
-              "position": { "line": 75, "start": 18, "end": 21 },
+              "position": { "line": 76, "start": 18, "end": 21 },
               "resolves_to": [ "model_shaping.asdict" ],
               "port": "formal(obj, position=0)",
-              "call_site": "75:11-75:22"
+              "call_site": "76:11-76:22"
             }
           }
         ]
@@ -400,7 +400,7 @@
               { "via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 75, "start": 18, "end": 21 } ],
+            "tito_positions": [ { "line": 76, "start": 18, "end": 21 } ],
             "tito": {}
           }
         ]
@@ -413,7 +413,7 @@
   "data": {
     "callable": "model_shaping.obscure_test",
     "filename": "model_shaping.py",
-    "callable_line": 78,
+    "callable_line": 79,
     "sources": [
       {
         "port": "result",
@@ -429,8 +429,8 @@
               }
             ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 79, "start": 21, "end": 35 } ],
-            "origin": { "line": 79, "start": 21, "end": 35 }
+            "tito_positions": [ { "line": 80, "start": 21, "end": 35 } ],
+            "origin": { "line": 80, "start": 21, "end": 35 }
           }
         ]
       }
@@ -453,8 +453,8 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito_positions": [
-              { "line": 79, "start": 11, "end": 15 },
-              { "line": 79, "start": 16, "end": 19 }
+              { "line": 80, "start": 11, "end": 15 },
+              { "line": 80, "start": 16, "end": 19 }
             ],
             "tito": {}
           }
@@ -468,28 +468,11 @@
   "data": {
     "callable": "model_shaping.shape_multi_sink",
     "filename": "model_shaping.py",
-    "callable_line": 82,
+    "callable_line": 83,
     "sinks": [
       {
         "port": "formal(obj, position=0)",
         "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "pysa._rce", "port": "leaf:argument" }
-                ],
-                "kind": "RemoteCodeExecution"
-              }
-            ],
-            "local_features": [
-              { "always-via": "model-shaping" },
-              { "always-via": "broadening" },
-              { "always-via": "model-sink-shaping" }
-            ],
-            "origin": { "line": 83, "start": 9, "end": 16 },
-            "call_site": "83:4-83:17"
-          },
           {
             "kinds": [
               {
@@ -516,8 +499,25 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": { "line": 85, "start": 9, "end": 12 },
-            "call_site": "85:4-85:13"
+            "local_features": [
+              { "always-via": "model-shaping" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-shaping" }
+            ],
+            "origin": { "line": 85, "start": 9, "end": 16 },
+            "call_site": "85:4-85:17"
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._rce", "port": "leaf:argument" }
+                ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": { "line": 86, "start": 9, "end": 12 },
+            "call_site": "86:4-86:13"
           }
         ]
       },
@@ -533,8 +533,8 @@
                 "kind": "SQL"
               }
             ],
-            "origin": { "line": 86, "start": 9, "end": 16 },
-            "call_site": "86:4-86:17"
+            "origin": { "line": 87, "start": 9, "end": 16 },
+            "call_site": "87:4-87:17"
           }
         ]
       }
@@ -546,7 +546,7 @@
   "data": {
     "callable": "model_shaping.shape_multi_source",
     "filename": "model_shaping.py",
-    "callable_line": 89,
+    "callable_line": 90,
     "sources": [
       {
         "port": "result[a]",
@@ -560,7 +560,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": { "line": 92, "start": 17, "end": 35 }
+            "origin": { "line": 93, "start": 17, "end": 35 }
           },
           {
             "kinds": [
@@ -576,7 +576,7 @@
               { "always-via": "model-shaping" },
               { "always-via": "broadening" }
             ],
-            "origin": { "line": 93, "start": 23, "end": 41 }
+            "origin": { "line": 94, "start": 23, "end": 41 }
           },
           {
             "kinds": [
@@ -592,7 +592,7 @@
               { "always-via": "model-shaping" },
               { "always-via": "broadening" }
             ],
-            "origin": { "line": 94, "start": 29, "end": 47 }
+            "origin": { "line": 95, "start": 29, "end": 47 }
           }
         ]
       },
@@ -608,7 +608,7 @@
                 "kind": "Cookies"
               }
             ],
-            "origin": { "line": 98, "start": 23, "end": 33 }
+            "origin": { "line": 99, "start": 23, "end": 33 }
           }
         ]
       }
@@ -619,9 +619,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_shaping.test_tito_shaping",
-    "callable_line": 110,
+    "callable_line": 111,
     "code": 5002,
-    "line": 112,
+    "line": 113,
     "start": 15,
     "end": 25,
     "filename": "model_shaping.py",
@@ -650,8 +650,8 @@
               { "always-via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 111, "start": 23, "end": 57 } ],
-            "origin": { "line": 111, "start": 31, "end": 45 }
+            "tito_positions": [ { "line": 112, "start": 23, "end": 57 } ],
+            "origin": { "line": 112, "start": 31, "end": 45 }
           }
         ]
       },
@@ -668,8 +668,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 112, "start": 15, "end": 25 },
-            "call_site": "112:4-112:26"
+            "origin": { "line": 113, "start": 15, "end": 25 },
+            "call_site": "113:4-113:26"
           }
         ]
       }
@@ -699,9 +699,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_shaping.test_tito_shaping",
-    "callable_line": 110,
+    "callable_line": 111,
     "code": 5002,
-    "line": 113,
+    "line": 114,
     "start": 15,
     "end": 25,
     "filename": "model_shaping.py",
@@ -730,8 +730,8 @@
               { "always-via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 111, "start": 23, "end": 57 } ],
-            "origin": { "line": 111, "start": 31, "end": 45 }
+            "tito_positions": [ { "line": 112, "start": 23, "end": 57 } ],
+            "origin": { "line": 112, "start": 31, "end": 45 }
           }
         ]
       },
@@ -748,8 +748,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 113, "start": 15, "end": 25 },
-            "call_site": "113:4-113:26"
+            "origin": { "line": 114, "start": 15, "end": 25 },
+            "call_site": "114:4-114:26"
           }
         ]
       }
@@ -779,9 +779,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_shaping.test_tito_shaping",
-    "callable_line": 110,
+    "callable_line": 111,
     "code": 5002,
-    "line": 114,
+    "line": 115,
     "start": 15,
     "end": 31,
     "filename": "model_shaping.py",
@@ -810,8 +810,8 @@
               { "always-via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 111, "start": 23, "end": 57 } ],
-            "origin": { "line": 111, "start": 31, "end": 45 }
+            "tito_positions": [ { "line": 112, "start": 23, "end": 57 } ],
+            "origin": { "line": 112, "start": 31, "end": 45 }
           }
         ]
       },
@@ -828,8 +828,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 114, "start": 15, "end": 31 },
-            "call_site": "114:4-114:32"
+            "origin": { "line": 115, "start": 15, "end": 31 },
+            "call_site": "115:4-115:32"
           }
         ]
       }
@@ -859,87 +859,7 @@
   "kind": "issue",
   "data": {
     "callable": "model_shaping.test_tito_shaping",
-    "callable_line": 110,
-    "code": 5002,
-    "line": 117,
-    "start": 15,
-    "end": 35,
-    "filename": "model_shaping.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "foo" },
-              { "via": "obscure:model" },
-              { "via": "model-shaping" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "model-tito-shaping" }
-            ],
-            "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
-            "origin": { "line": 116, "start": 42, "end": 56 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 117, "start": 15, "end": 35 },
-            "call_site": "117:4-117:36"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "foo" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "obscure:model" },
-      { "via": "model-shaping" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "model-tito-shaping" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "pysa._test_sink",
-      "index": 3,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|pysa._test_sink|3|formal(arg):840e28a2859f87f9e6d667d33d42cca8"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_shaping.test_tito_shaping",
-    "callable_line": 110,
+    "callable_line": 111,
     "code": 5002,
     "line": 118,
     "start": 15,
@@ -970,8 +890,8 @@
               { "always-via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
-            "origin": { "line": 116, "start": 42, "end": 56 }
+            "tito_positions": [ { "line": 117, "start": 23, "end": 83 } ],
+            "origin": { "line": 117, "start": 42, "end": 56 }
           }
         ]
       },
@@ -1009,6 +929,86 @@
     "sink_handle": {
       "kind": "Call",
       "callee": "pysa._test_sink",
+      "index": 3,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|pysa._test_sink|3|formal(arg):840e28a2859f87f9e6d667d33d42cca8"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_shaping.test_tito_shaping",
+    "callable_line": 111,
+    "code": 5002,
+    "line": 120,
+    "start": 8,
+    "end": 28,
+    "filename": "model_shaping.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "model-tito-shaping" }
+            ],
+            "tito_positions": [ { "line": 117, "start": 23, "end": 83 } ],
+            "origin": { "line": 117, "start": 42, "end": 56 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 120, "start": 8, "end": 28 },
+            "call_site": "119:4-121:5"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "foo" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "model-shaping" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "model-tito-shaping" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
       "index": 4,
       "parameter": "formal(arg)"
     },
@@ -1019,9 +1019,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_shaping.test_tito_shaping",
-    "callable_line": 110,
+    "callable_line": 111,
     "code": 5002,
-    "line": 119,
+    "line": 122,
     "start": 15,
     "end": 25,
     "filename": "model_shaping.py",
@@ -1050,8 +1050,8 @@
               { "always-via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
-            "origin": { "line": 116, "start": 42, "end": 56 }
+            "tito_positions": [ { "line": 117, "start": 23, "end": 83 } ],
+            "origin": { "line": 117, "start": 42, "end": 56 }
           }
         ]
       },
@@ -1068,8 +1068,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 119, "start": 15, "end": 25 },
-            "call_site": "119:4-119:26"
+            "origin": { "line": 122, "start": 15, "end": 25 },
+            "call_site": "122:4-122:26"
           }
         ]
       }
@@ -1099,9 +1099,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_shaping.test_tito_shaping",
-    "callable_line": 110,
+    "callable_line": 111,
     "code": 5002,
-    "line": 120,
+    "line": 123,
     "start": 15,
     "end": 31,
     "filename": "model_shaping.py",
@@ -1130,8 +1130,8 @@
               { "always-via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
-            "origin": { "line": 116, "start": 42, "end": 56 }
+            "tito_positions": [ { "line": 117, "start": 23, "end": 83 } ],
+            "origin": { "line": 117, "start": 42, "end": 56 }
           }
         ]
       },
@@ -1148,8 +1148,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 120, "start": 15, "end": 31 },
-            "call_site": "120:4-120:32"
+            "origin": { "line": 123, "start": 15, "end": 31 },
+            "call_site": "123:4-123:32"
           }
         ]
       }
@@ -1180,7 +1180,7 @@
   "data": {
     "callable": "model_shaping.tito_shaping",
     "filename": "model_shaping.py",
-    "callable_line": 102,
+    "callable_line": 103,
     "tito": [
       {
         "port": "formal(parameters, position=0)",
@@ -1203,9 +1203,9 @@
               { "via": "model-tito-shaping" }
             ],
             "tito_positions": [
-              { "line": 104, "start": 15, "end": 25 },
               { "line": 105, "start": 15, "end": 25 },
-              { "line": 106, "start": 25, "end": 35 }
+              { "line": 106, "start": 15, "end": 25 },
+              { "line": 107, "start": 25, "end": 35 }
             ],
             "tito": {}
           }

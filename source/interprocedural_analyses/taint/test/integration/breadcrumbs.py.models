@@ -4,7 +4,7 @@
   "data": {
     "callable": "breadcrumbs.bool_parameter",
     "filename": "breadcrumbs.py",
-    "callable_line": 30,
+    "callable_line": 32,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -24,8 +24,8 @@
               { "always-type": "bool" },
               { "always-type": "scalar" }
             ],
-            "origin": { "line": 31, "start": 15, "end": 16 },
-            "call_site": "31:4-31:17"
+            "origin": { "line": 33, "start": 15, "end": 16 },
+            "call_site": "33:4-33:17"
           }
         ]
       }
@@ -37,7 +37,7 @@
   "data": {
     "callable": "breadcrumbs.bool_source",
     "filename": "breadcrumbs.py",
-    "callable_line": 18,
+    "callable_line": 20,
     "sources": [
       {
         "port": "result",
@@ -57,7 +57,7 @@
               { "always-type": "bool" },
               { "always-type": "scalar" }
             ],
-            "origin": { "line": 19, "start": 11, "end": 25 }
+            "origin": { "line": 21, "start": 11, "end": 25 }
           }
         ]
       }
@@ -69,7 +69,7 @@
   "data": {
     "callable": "breadcrumbs.float_parameter",
     "filename": "breadcrumbs.py",
-    "callable_line": 26,
+    "callable_line": 28,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -85,8 +85,8 @@
               }
             ],
             "local_features": [ { "always-type": "scalar" } ],
-            "origin": { "line": 27, "start": 15, "end": 16 },
-            "call_site": "27:4-27:17"
+            "origin": { "line": 29, "start": 15, "end": 16 },
+            "call_site": "29:4-29:17"
           }
         ]
       }
@@ -98,7 +98,7 @@
   "data": {
     "callable": "breadcrumbs.float_source",
     "filename": "breadcrumbs.py",
-    "callable_line": 14,
+    "callable_line": 16,
     "sources": [
       {
         "port": "result",
@@ -114,7 +114,7 @@
               }
             ],
             "local_features": [ { "always-type": "scalar" } ],
-            "origin": { "line": 15, "start": 11, "end": 25 }
+            "origin": { "line": 17, "start": 11, "end": 25 }
           }
         ]
       }
@@ -126,7 +126,7 @@
   "data": {
     "callable": "breadcrumbs.int_parameter",
     "filename": "breadcrumbs.py",
-    "callable_line": 22,
+    "callable_line": 24,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -144,8 +144,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 23, "start": 15, "end": 16 },
-            "call_site": "23:4-23:17"
+            "origin": { "line": 25, "start": 15, "end": 16 },
+            "call_site": "25:4-25:17"
           }
         ]
       }
@@ -157,7 +157,7 @@
   "data": {
     "callable": "breadcrumbs.int_source",
     "filename": "breadcrumbs.py",
-    "callable_line": 10,
+    "callable_line": 12,
     "sources": [
       {
         "port": "result",
@@ -175,7 +175,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 11, "start": 11, "end": 25 }
+            "origin": { "line": 13, "start": 11, "end": 25 }
           }
         ]
       }
@@ -187,7 +187,7 @@
   "data": {
     "callable": "breadcrumbs.scalar_attribute_backward",
     "filename": "breadcrumbs.py",
-    "callable_line": 50,
+    "callable_line": 52,
     "sinks": [
       {
         "port": "formal(request, position=0)[id_float]",
@@ -202,8 +202,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 52, "start": 19, "end": 35 },
-            "call_site": "52:8-52:36"
+            "origin": { "line": 54, "start": 19, "end": 35 },
+            "call_site": "54:8-54:36"
           }
         ]
       },
@@ -220,8 +220,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 54, "start": 19, "end": 35 },
-            "call_site": "54:8-54:36"
+            "origin": { "line": 56, "start": 19, "end": 35 },
+            "call_site": "56:8-56:36"
           },
           {
             "kinds": [
@@ -243,11 +243,11 @@
               { "always-via": "model-sink-shaping" }
             ],
             "tito_positions": [
-              { "line": 57, "start": 27, "end": 61 },
-              { "line": 57, "start": 32, "end": 33 }
+              { "line": 59, "start": 27, "end": 61 },
+              { "line": 59, "start": 32, "end": 33 }
             ],
-            "origin": { "line": 57, "start": 19, "end": 61 },
-            "call_site": "57:8-57:62"
+            "origin": { "line": 59, "start": 19, "end": 61 },
+            "call_site": "59:8-59:62"
           }
         ]
       }
@@ -271,7 +271,7 @@
   "data": {
     "callable": "breadcrumbs.scalar_attribute_forward",
     "filename": "breadcrumbs.py",
-    "callable_line": 64,
+    "callable_line": 66,
     "sources": [
       {
         "port": "result",
@@ -300,10 +300,10 @@
               { "via": "broadening" }
             ],
             "tito_positions": [
-              { "line": 72, "start": 23, "end": 57 },
-              { "line": 72, "start": 28, "end": 29 }
+              { "line": 74, "start": 23, "end": 57 },
+              { "line": 74, "start": 28, "end": 29 }
             ],
-            "origin": { "line": 65, "start": 14, "end": 27 }
+            "origin": { "line": 67, "start": 14, "end": 27 }
           }
         ]
       }
@@ -315,7 +315,7 @@
   "data": {
     "callable": "breadcrumbs.tpm_request",
     "filename": "breadcrumbs.py",
-    "callable_line": 47,
+    "callable_line": 49,
     "sources": [
       {
         "port": "result",
@@ -380,7 +380,7 @@
   "data": {
     "callable": "breadcrumbs.TpmRequest.__init__",
     "filename": "breadcrumbs.py",
-    "callable_line": 38,
+    "callable_line": 40,
     "tito": [
       {
         "port": "formal(ids_list, position=2)",

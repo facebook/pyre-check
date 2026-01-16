@@ -61,7 +61,7 @@ Call dependencies
     "typing.Iterator.__next__ (method)"
   ],
   "sanitize_tito_shaping.multiple_titos_different_input_output_paths (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
     "sanitize_tito_shaping.add_feature (fun)",
     "sanitize_tito_shaping.sanitize_sink_a_depth_two (fun)",
     "sanitize_tito_shaping.sanitize_sink_b (fun)",
@@ -69,7 +69,7 @@ Call dependencies
     "sanitize_tito_shaping.sanitize_source_b (fun)"
   ],
   "sanitize_tito_shaping.multiple_titos_different_input_paths (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
     "sanitize_tito_shaping.add_feature (fun)",
     "sanitize_tito_shaping.sanitize_sink_a_depth_two (fun)",
     "sanitize_tito_shaping.sanitize_sink_b (fun)",
@@ -77,7 +77,7 @@ Call dependencies
     "sanitize_tito_shaping.sanitize_source_b (fun)"
   ],
   "sanitize_tito_shaping.multiple_titos_different_output_paths (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
     "sanitize_tito_shaping.add_feature (fun)",
     "sanitize_tito_shaping.sanitize_sink_a_depth_two (fun)",
     "sanitize_tito_shaping.sanitize_sink_b (fun)",
@@ -85,7 +85,7 @@ Call dependencies
     "sanitize_tito_shaping.sanitize_source_b (fun)"
   ],
   "sanitize_tito_shaping.multiple_titos_same_path (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
     "sanitize_tito_shaping.add_feature (fun)",
     "sanitize_tito_shaping.sanitize_sink_a_depth_two (fun)",
     "sanitize_tito_shaping.sanitize_sink_b (fun)",
@@ -93,14 +93,14 @@ Call dependencies
     "sanitize_tito_shaping.sanitize_source_b (fun)"
   ],
   "sanitize_tito_shaping.multiple_titos_same_path_different_collapse_depth (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
     "sanitize_tito_shaping.sanitize_sink_a_depth_two (fun)",
     "sanitize_tito_shaping.sanitize_source_a (fun)",
     "sanitize_tito_shaping.tito_collapse_one (fun)",
     "sanitize_tito_shaping.tito_collapse_zero (fun)"
   ],
   "sanitize_tito_shaping.multiple_titos_same_path_with_transform (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
     "sanitize_tito_shaping.sanitize_sink_a_depth_two (fun)",
     "sanitize_tito_shaping.sanitize_source_a (fun)",
     "sanitize_tito_shaping.transform_x (fun)",

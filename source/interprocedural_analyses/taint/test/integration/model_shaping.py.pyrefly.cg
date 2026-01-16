@@ -20,7 +20,10 @@ Call dependencies
   "model_shaping.shape_multi_sink (fun)": [
     "pysa._rce (fun)", "pysa._sql (fun)"
   ],
-  "model_shaping.shape_multi_source (fun)": [ "pysa._cookies (fun)" ],
+  "model_shaping.shape_multi_source (fun)": [
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "pysa._cookies (fun)", "pysa._user_controlled (fun)"
+  ],
   "model_shaping.test_tito_shaping (fun)": [
     "builtins.dict.__getitem__ (method)", "model_shaping.tito_shaping (fun)",
     "pysa._test_sink (fun)", "pysa._test_source (fun)"

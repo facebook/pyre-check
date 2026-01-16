@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "implicit_sinks.inline_issue_dot_format",
-    "callable_line": 25,
+    "callable_line": 27,
     "code": 1337,
-    "line": 27,
+    "line": 29,
     "start": 4,
     "end": 10,
     "filename": "implicit_sinks.py",
@@ -26,8 +26,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 27, "start": 18, "end": 19 } ],
-            "origin": { "line": 26, "start": 8, "end": 22 }
+            "tito_positions": [ { "line": 29, "start": 18, "end": 19 } ],
+            "origin": { "line": 28, "start": 8, "end": 22 }
           }
         ]
       },
@@ -43,7 +43,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 27, "start": 4, "end": 10 }
+            "origin": { "line": 29, "start": 4, "end": 10 }
           }
         ]
       }
@@ -59,9 +59,9 @@
   "kind": "issue",
   "data": {
     "callable": "implicit_sinks.inline_issue_format_string",
-    "callable_line": 15,
+    "callable_line": 17,
     "code": 1337,
-    "line": 17,
+    "line": 19,
     "start": 4,
     "end": 12,
     "filename": "implicit_sinks.py",
@@ -82,8 +82,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 17, "start": 8, "end": 9 } ],
-            "origin": { "line": 16, "start": 8, "end": 22 }
+            "tito_positions": [ { "line": 19, "start": 8, "end": 9 } ],
+            "origin": { "line": 18, "start": 8, "end": 22 }
           }
         ]
       },
@@ -99,7 +99,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 17, "start": 4, "end": 12 }
+            "origin": { "line": 19, "start": 4, "end": 12 }
           }
         ]
       }
@@ -115,9 +115,9 @@
   "kind": "issue",
   "data": {
     "callable": "implicit_sinks.inline_issue_format_string_proper_tito",
-    "callable_line": 64,
+    "callable_line": 66,
     "code": 1337,
-    "line": 66,
+    "line": 68,
     "start": 4,
     "end": 18,
     "filename": "implicit_sinks.py",
@@ -138,8 +138,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 66, "start": 8, "end": 9 } ],
-            "origin": { "line": 65, "start": 14, "end": 28 }
+            "tito_positions": [ { "line": 68, "start": 8, "end": 9 } ],
+            "origin": { "line": 67, "start": 14, "end": 28 }
           },
           {
             "kinds": [
@@ -153,8 +153,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 66, "start": 14, "end": 15 } ],
-            "origin": { "line": 65, "start": 34, "end": 48 }
+            "tito_positions": [ { "line": 68, "start": 14, "end": 15 } ],
+            "origin": { "line": 67, "start": 34, "end": 48 }
           }
         ]
       },
@@ -170,7 +170,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 66, "start": 4, "end": 18 }
+            "origin": { "line": 68, "start": 4, "end": 18 }
           }
         ]
       }
@@ -186,9 +186,9 @@
   "kind": "issue",
   "data": {
     "callable": "implicit_sinks.inline_issue_lhs_add_literal",
-    "callable_line": 59,
+    "callable_line": 61,
     "code": 1337,
-    "line": 61,
+    "line": 63,
     "start": 18,
     "end": 25,
     "filename": "implicit_sinks.py",
@@ -209,8 +209,8 @@
             "local_features": [
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 61, "start": 14, "end": 15 } ],
-            "origin": { "line": 60, "start": 8, "end": 22 }
+            "tito_positions": [ { "line": 63, "start": 14, "end": 15 } ],
+            "origin": { "line": 62, "start": 8, "end": 22 }
           }
         ]
       },
@@ -226,7 +226,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 61, "start": 18, "end": 25 }
+            "origin": { "line": 63, "start": 18, "end": 25 }
           }
         ]
       }
@@ -242,9 +242,9 @@
   "kind": "issue",
   "data": {
     "callable": "implicit_sinks.inline_issue_percent_format",
-    "callable_line": 34,
+    "callable_line": 36,
     "code": 1337,
-    "line": 36,
+    "line": 38,
     "start": 4,
     "end": 10,
     "filename": "implicit_sinks.py",
@@ -268,8 +268,8 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito_positions": [ { "line": 36, "start": 13, "end": 17 } ],
-            "origin": { "line": 35, "start": 8, "end": 22 }
+            "tito_positions": [ { "line": 38, "start": 13, "end": 17 } ],
+            "origin": { "line": 37, "start": 8, "end": 22 }
           }
         ]
       },
@@ -285,7 +285,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 36, "start": 4, "end": 10 }
+            "origin": { "line": 38, "start": 4, "end": 10 }
           }
         ]
       }
@@ -304,9 +304,9 @@
   "kind": "issue",
   "data": {
     "callable": "implicit_sinks.inline_issue_rhs_add_literal",
-    "callable_line": 43,
+    "callable_line": 45,
     "code": 1337,
-    "line": 45,
+    "line": 47,
     "start": 4,
     "end": 14,
     "filename": "implicit_sinks.py",
@@ -327,8 +327,8 @@
             "local_features": [
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 45, "start": 17, "end": 18 } ],
-            "origin": { "line": 44, "start": 8, "end": 22 }
+            "tito_positions": [ { "line": 47, "start": 17, "end": 18 } ],
+            "origin": { "line": 46, "start": 8, "end": 22 }
           }
         ]
       },
@@ -344,7 +344,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 45, "start": 4, "end": 14 }
+            "origin": { "line": 47, "start": 4, "end": 14 }
           }
         ]
       }
@@ -361,7 +361,7 @@
   "data": {
     "callable": "implicit_sinks.propagate_sink_dot_format",
     "filename": "implicit_sinks.py",
-    "callable_line": 21,
+    "callable_line": 23,
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -378,8 +378,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 22, "start": 18, "end": 19 } ],
-            "origin": { "line": 22, "start": 4, "end": 10 }
+            "tito_positions": [ { "line": 24, "start": 18, "end": 19 } ],
+            "origin": { "line": 24, "start": 4, "end": 10 }
           }
         ]
       }
@@ -391,7 +391,7 @@
   "data": {
     "callable": "implicit_sinks.propagate_sink_format_string",
     "filename": "implicit_sinks.py",
-    "callable_line": 11,
+    "callable_line": 13,
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -408,8 +408,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 12, "start": 8, "end": 9 } ],
-            "origin": { "line": 12, "start": 4, "end": 12 }
+            "tito_positions": [ { "line": 14, "start": 8, "end": 9 } ],
+            "origin": { "line": 14, "start": 4, "end": 12 }
           }
         ]
       }
@@ -421,7 +421,7 @@
   "data": {
     "callable": "implicit_sinks.propagate_sink_lhs_add_literal",
     "filename": "implicit_sinks.py",
-    "callable_line": 55,
+    "callable_line": 57,
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -438,8 +438,8 @@
             "local_features": [
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 56, "start": 14, "end": 15 } ],
-            "origin": { "line": 56, "start": 18, "end": 25 }
+            "tito_positions": [ { "line": 58, "start": 14, "end": 15 } ],
+            "origin": { "line": 58, "start": 18, "end": 25 }
           }
         ]
       }
@@ -451,7 +451,7 @@
   "data": {
     "callable": "implicit_sinks.propagate_sink_percent_format",
     "filename": "implicit_sinks.py",
-    "callable_line": 30,
+    "callable_line": 32,
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -468,8 +468,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 31, "start": 13, "end": 17 } ],
-            "origin": { "line": 31, "start": 4, "end": 10 }
+            "tito_positions": [ { "line": 33, "start": 13, "end": 17 } ],
+            "origin": { "line": 33, "start": 4, "end": 10 }
           }
         ]
       }
@@ -481,7 +481,7 @@
   "data": {
     "callable": "implicit_sinks.propagate_sink_rhs_add_literal",
     "filename": "implicit_sinks.py",
-    "callable_line": 39,
+    "callable_line": 41,
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -498,8 +498,8 @@
             "local_features": [
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 40, "start": 17, "end": 18 } ],
-            "origin": { "line": 40, "start": 4, "end": 14 }
+            "tito_positions": [ { "line": 42, "start": 17, "end": 18 } ],
+            "origin": { "line": 42, "start": 4, "end": 14 }
           }
         ]
       }
@@ -510,9 +510,9 @@
   "kind": "issue",
   "data": {
     "callable": "implicit_sinks.string_literal_arguments_issue",
-    "callable_line": 102,
+    "callable_line": 104,
     "code": 1337,
-    "line": 103,
+    "line": 105,
     "start": 34,
     "end": 48,
     "filename": "implicit_sinks.py",
@@ -530,7 +530,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 103, "start": 34, "end": 48 }
+            "origin": { "line": 105, "start": 34, "end": 48 }
           }
         ]
       },
@@ -551,12 +551,12 @@
               }
             ],
             "call": {
-              "position": { "line": 103, "start": 34, "end": 48 },
+              "position": { "line": 105, "start": 34, "end": 48 },
               "resolves_to": [
                 "implicit_sinks.string_literal_arguments_sink"
               ],
               "port": "formal(template, position=0)",
-              "call_site": "103:4-103:49"
+              "call_site": "105:4-105:49"
             }
           }
         ]
@@ -579,7 +579,7 @@
   "data": {
     "callable": "implicit_sinks.string_literal_arguments_sink",
     "filename": "implicit_sinks.py",
-    "callable_line": 92,
+    "callable_line": 94,
     "sinks": [
       {
         "port": "formal(template, position=0)",
@@ -596,8 +596,8 @@
             "local_features": [
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 95, "start": 8, "end": 16 } ],
-            "origin": { "line": 95, "start": 8, "end": 39 }
+            "tito_positions": [ { "line": 97, "start": 8, "end": 16 } ],
+            "origin": { "line": 97, "start": 8, "end": 39 }
           }
         ]
       }
@@ -608,9 +608,9 @@
   "kind": "issue",
   "data": {
     "callable": "implicit_sinks.string_literal_arguments_sink",
-    "callable_line": 92,
+    "callable_line": 94,
     "code": 1337,
-    "line": 95,
+    "line": 97,
     "start": 8,
     "end": 39,
     "filename": "implicit_sinks.py",
@@ -634,10 +634,10 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [
-              { "line": 95, "start": 37, "end": 38 },
-              { "line": 99, "start": 8, "end": 9 }
+              { "line": 97, "start": 37, "end": 38 },
+              { "line": 101, "start": 8, "end": 9 }
             ],
-            "origin": { "line": 93, "start": 8, "end": 22 }
+            "origin": { "line": 95, "start": 8, "end": 22 }
           }
         ]
       },
@@ -653,7 +653,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 95, "start": 8, "end": 39 }
+            "origin": { "line": 97, "start": 8, "end": 39 }
           },
           {
             "kinds": [
@@ -664,7 +664,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 99, "start": 12, "end": 23 }
+            "origin": { "line": 101, "start": 12, "end": 23 }
           }
         ]
       }

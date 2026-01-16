@@ -8,6 +8,8 @@
 # that are introduced onto expressions based on their runtime values (such as
 # SQL strings). Under the hood, the analysis leverages the multi-source rules.
 
+import random
+
 
 def user_controlled_input():
     return "evil"
@@ -65,7 +67,7 @@ def format_string_issue():
 
 
 def format_string_no_issue_when_single_sink_parameter():
-    if 1 == 1:
+    if random.random() > 0.5:
         x: str = "SELECT"
     else:
         x = user_controlled_input()

@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "sanitize_parametric.partial_issue_sanitize",
   "returned_callables": [],
   "calls": {
-    "50:8-50:31": {
+    "48:8-48:31": {
       "call": {
         "calls": [
           {
@@ -15,7 +15,7 @@ Higher order call graphs
         ]
       }
     },
-    "51:4-51:26": {
+    "49:4-49:26": {
       "call": {
         "calls": [
           {
@@ -32,11 +32,44 @@ Higher order call graphs
   "callable": "sanitize_parametric.partial_issue_sinks",
   "returned_callables": [],
   "calls": {
-    "40:7-40:12|artificial-call|comparison": {
-      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    "38:7-38:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "_random.Random.random",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
+          }
+        ]
+      }
     },
-    "41:8-41:19": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } },
-    "43:12-43:37": {
+    "38:7-38:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.float"
+          }
+        ]
+      }
+    },
+    "39:8-39:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_parametric.a_sink_x",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "41:12-41:37": {
       "call": {
         "calls": [
           {
@@ -47,7 +80,7 @@ Higher order call graphs
         ]
       }
     },
-    "44:8-44:19": {
+    "42:8-42:19": {
       "call": {
         "calls": [
           {
@@ -64,16 +97,55 @@ Higher order call graphs
   "callable": "sanitize_parametric.partial_issue_sources",
   "returned_callables": [],
   "calls": {
-    "32:7-32:12|artificial-call|comparison": {
-      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    "30:7-30:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "_random.Random.random",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
+          }
+        ]
+      }
     },
-    "33:12-33:24": {
-      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    "30:7-30:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.float"
+          }
+        ]
+      }
     },
-    "34:15-34:38": {
-      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    "31:12-31:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_parametric.a_source_x",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
     },
-    "36:15-36:27": {
+    "32:15-32:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_parametric.sanitize_a_sink_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "34:15-34:27": {
       "call": {
         "calls": [
           {

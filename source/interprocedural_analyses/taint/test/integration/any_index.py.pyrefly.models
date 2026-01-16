@@ -4,7 +4,7 @@
   "data": {
     "callable": "any_index.post_0",
     "filename": "any_index.py",
-    "callable_line": 10,
+    "callable_line": 12,
     "sources": [
       {
         "port": "result",
@@ -22,7 +22,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "origin": { "line": 13, "start": 15, "end": 29 }
+            "origin": { "line": 15, "start": 15, "end": 29 }
           }
         ]
       }
@@ -34,7 +34,7 @@
   "data": {
     "callable": "any_index.post_1",
     "filename": "any_index.py",
-    "callable_line": 17,
+    "callable_line": 19,
     "sources": [
       {
         "port": "result",
@@ -52,7 +52,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "origin": { "line": 19, "start": 15, "end": 29 }
+            "origin": { "line": 21, "start": 15, "end": 29 }
           },
           {
             "kinds": [
@@ -67,7 +67,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "origin": { "line": 20, "start": 15, "end": 29 }
+            "origin": { "line": 22, "start": 15, "end": 29 }
           }
         ]
       }
@@ -79,7 +79,7 @@
   "data": {
     "callable": "any_index.post_2",
     "filename": "any_index.py",
-    "callable_line": 24,
+    "callable_line": 26,
     "sources": [
       {
         "port": "result",
@@ -98,6 +98,21 @@
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
             "origin": { "line": 29, "start": 19, "end": 33 }
+          },
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "<numeric>" }
+            ],
+            "origin": { "line": 31, "start": 19, "end": 33 }
           }
         ]
       }
@@ -109,7 +124,7 @@
   "data": {
     "callable": "any_index.post_3",
     "filename": "any_index.py",
-    "callable_line": 33,
+    "callable_line": 35,
     "sources": [
       {
         "port": "result",
@@ -128,6 +143,21 @@
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
             "origin": { "line": 38, "start": 19, "end": 33 }
+          },
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "<numeric>" }
+            ],
+            "origin": { "line": 40, "start": 19, "end": 33 }
           }
         ]
       }
@@ -139,7 +169,7 @@
   "data": {
     "callable": "any_index.pre_0",
     "filename": "any_index.py",
-    "callable_line": 42,
+    "callable_line": 44,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -157,8 +187,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "origin": { "line": 45, "start": 15, "end": 23 },
-            "call_site": "45:4-45:24"
+            "origin": { "line": 47, "start": 15, "end": 23 },
+            "call_site": "47:4-47:24"
           },
           {
             "kinds": [
@@ -173,8 +203,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "origin": { "line": 46, "start": 15, "end": 23 },
-            "call_site": "46:4-46:24"
+            "origin": { "line": 48, "start": 15, "end": 23 },
+            "call_site": "48:4-48:24"
           }
         ]
       }
@@ -186,7 +216,7 @@
   "data": {
     "callable": "any_index.pre_1",
     "filename": "any_index.py",
-    "callable_line": 49,
+    "callable_line": 51,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -204,8 +234,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "origin": { "line": 52, "start": 15, "end": 23 },
-            "call_site": "52:4-52:24"
+            "origin": { "line": 54, "start": 15, "end": 23 },
+            "call_site": "54:4-54:24"
           },
           {
             "kinds": [
@@ -220,8 +250,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "origin": { "line": 53, "start": 15, "end": 23 },
-            "call_site": "53:4-53:24"
+            "origin": { "line": 55, "start": 15, "end": 23 },
+            "call_site": "55:4-55:24"
           }
         ]
       }
@@ -233,38 +263,7 @@
   "data": {
     "callable": "any_index.pre_2",
     "filename": "any_index.py",
-    "callable_line": 56,
-    "sinks": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" }, { "first-index": "<numeric>" }
-            ],
-            "origin": { "line": 62, "start": 19, "end": 27 },
-            "call_site": "62:8-62:28"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "any_index.pre_3",
-    "filename": "any_index.py",
-    "callable_line": 65,
+    "callable_line": 58,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -282,8 +281,71 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
+            "origin": { "line": 62, "start": 19, "end": 27 },
+            "call_site": "62:8-62:28"
+          },
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "<numeric>" }
+            ],
+            "origin": { "line": 64, "start": 19, "end": 27 },
+            "call_site": "64:8-64:28"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "any_index.pre_3",
+    "filename": "any_index.py",
+    "callable_line": 67,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "<numeric>" }
+            ],
             "origin": { "line": 71, "start": 19, "end": 27 },
             "call_site": "71:8-71:28"
+          },
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "<unknown>" }
+            ],
+            "origin": { "line": 73, "start": 19, "end": 27 },
+            "call_site": "73:8-73:28"
           }
         ]
       }

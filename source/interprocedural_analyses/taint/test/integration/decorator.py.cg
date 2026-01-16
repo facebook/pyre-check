@@ -40,11 +40,12 @@ Call dependencies
     "decorator.decorated (fun)"
   ],
   "decorator.add_return_source.inner (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "pysa._test_source (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "pysa._test_source (fun)", "random.random (fun)"
   ],
   "decorator.add_return_source.inner (fun)[local($parameter$callable)=decorator.return_source_via_decorator (fun)]": [
-    "decorator.return_source_via_decorator (fun)", "int.__gt__ (method)",
-    "int.__le__ (method)", "pysa._test_source (fun)"
+    "decorator.return_source_via_decorator (fun)", "float.__gt__ (method)",
+    "float.__le__ (method)", "pysa._test_source (fun)", "random.random (fun)"
   ],
   "decorator.conditional_decorator_factory.add_sink.inner (fun)": [
     "pysa._test_sink (fun)"

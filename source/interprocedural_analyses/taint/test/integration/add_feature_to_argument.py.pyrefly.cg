@@ -17,7 +17,10 @@ Call dependencies
     "add_feature_to_argument.add_feature_to_first (fun)"
   ],
   "add_feature_to_argument.propagate_multiple_add_feature (fun)": [
-    "add_feature_to_argument.add_feature_to_second (fun)"
+    "_random.Random.random (method)",
+    "add_feature_to_argument.add_feature_to_first (fun)",
+    "add_feature_to_argument.add_feature_to_second (fun)",
+    "builtins.float.__gt__ (method)"
   ],
   "add_feature_to_argument.source_add_feature_to_argument_accumulates_features (fun)": [
     "add_feature_to_argument.add_feature_to_argument_accumulates_features (fun)",

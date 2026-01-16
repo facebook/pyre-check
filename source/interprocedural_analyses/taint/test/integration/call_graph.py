@@ -3,11 +3,14 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import random
+from typing import Callable, Mapping, TypeVar, Union
+
 from pysa import _test_sink, _test_source
-from typing import Mapping, TypeVar, Callable, Union
 from typing_extensions import TypeGuard
 
 # Demonstrate a (currently fixed) false positive due to type resolution.
+
 
 class IsSource:
     def __init__(self) -> None:
@@ -48,8 +51,12 @@ def is_dict(obj: object) -> TypeGuard[dict[object, object]]:
 
 
 def test_chained_assign_subscript(record: LogRecord):
-    if is_dict(record.args) and "headers" in record.args and is_dict(record.args["headers"]):
-        headers = record.args["headers"] = {**record.args["headers"]} # pyre-ignore
+    if (
+        is_dict(record.args)
+        and "headers" in record.args
+        and is_dict(record.args["headers"])
+    ):
+        headers = record.args["headers"] = {**record.args["headers"]}  # pyre-ignore
         # Treated as:
         # ```
         # headers = {**record.args["headers"]}
@@ -60,9 +67,10 @@ def test_chained_assign_subscript(record: LogRecord):
 
 
 def test_localized_target():
-    if 1 < 2:
+    if random.random() > 0.5:
         f = lambda: None
     else:
+
         def f() -> None:
             return
 
@@ -72,7 +80,7 @@ def test_localized_target():
 T = TypeVar("T")
 
 
-def no_op_decorator_factory(x: int) -> Callable[[T], T]: # pyre-ignore
+def no_op_decorator_factory(x: int) -> Callable[[T], T]:  # pyre-ignore
     def inner(original: T) -> T:
         setattr(original, "foo", "bar")
         return original
@@ -97,16 +105,25 @@ class CallableKindConfusion:
 
 class namespace:
     class A:
-        def __init__(self, x): pass
-        def __call__(self): pass
+        def __init__(self, x):
+            pass
+
+        def __call__(self):
+            pass
 
     class B:
-        def __init__(self, x): pass
-        def __call__(self): pass
+        def __init__(self, x):
+            pass
+
+        def __call__(self):
+            pass
 
     class C:
-        def __init__(self, x): pass
-        def __call__(self): pass
+        def __init__(self, x):
+            pass
+
+        def __call__(self):
+            pass
 
 
 def test_match_type_of(x: Union[namespace.A, namespace.B, namespace.C]):

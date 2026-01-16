@@ -31,7 +31,8 @@ Call dependencies
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "call_graph.test_localized_target (fun)": [
-    "builtins.int.__lt__ (method)"
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "call_graph.test_localized_target.f (fun)"
   ],
   "call_graph.test_match_type_of (fun)": [
     "builtins.type.__init__ (method)", "builtins.type.__new__ (method)",

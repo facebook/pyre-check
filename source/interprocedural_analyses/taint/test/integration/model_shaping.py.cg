@@ -22,8 +22,8 @@ Call dependencies
     "pysa._rce (fun)", "pysa._sql (fun)"
   ],
   "model_shaping.shape_multi_source (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "pysa._cookies (fun)",
-    "pysa._user_controlled (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "pysa._cookies (fun)",
+    "pysa._user_controlled (fun)", "random.random (fun)"
   ],
   "model_shaping.test_tito_shaping (fun)": [
     "dict.__getitem__ (method)", "model_shaping.tito_shaping (fun)",

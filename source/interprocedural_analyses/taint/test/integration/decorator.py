@@ -7,6 +7,7 @@
 
 from pysa import _test_sink, _test_source
 from typing import Awaitable, Callable, TypeVar, ParamSpec, Concatenate
+import random
 
 P = ParamSpec("P")
 
@@ -331,11 +332,13 @@ def issue_via_no_op_decorator_factory() -> None:
 # pyre-ignore
 def conditional_no_op_decorator_factory(flag: bool) -> Callable[[T], T]:
     if flag:
+
         def inner_true(f: T) -> T:
             return f
 
         return inner_true
     else:
+
         def inner_false(f: T) -> T:
             return f
 
@@ -351,8 +354,11 @@ def issue_via_conditional_no_op_decorator_factory():
     sink_via_conditional_no_op_decorator_factory(_test_source())
 
 
-def conditional_decorator_factory(flag: bool) -> Callable[[Callable[[str], None]], Callable[[str], None]]:
+def conditional_decorator_factory(
+    flag: bool,
+) -> Callable[[Callable[[str], None]], Callable[[str], None]]:
     if flag:
+
         def add_sink(f: Callable[[str], None]) -> Callable[[str], None]:
             def inner(x: str) -> None:
                 _test_sink(x)
@@ -362,6 +368,7 @@ def conditional_decorator_factory(flag: bool) -> Callable[[Callable[[str], None]
 
         return add_sink
     else:
+
         def identity(f: Callable[[str], None]) -> Callable[[str], None]:
             return f
 
@@ -395,7 +402,7 @@ def issue_str_wrapper():
 
 def add_return_source(callable: Callable[[], str]) -> Callable[[], str]:
     def inner() -> str:
-        if 1 > 2:
+        if random.random() > 0.5:
             return callable()
         else:
             return _test_source()

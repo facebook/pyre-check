@@ -4,7 +4,7 @@
   "data": {
     "callable": "add_feature_to_argument.add_feature_to_argument_accumulates_features",
     "filename": "add_feature_to_argument.py",
-    "callable_line": 76,
+    "callable_line": 77,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -27,9 +27,9 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 77, "start": 26, "end": 27 } ],
-            "origin": { "line": 78, "start": 25, "end": 26 },
-            "call_site": "78:4-78:30"
+            "tito_positions": [ { "line": 78, "start": 26, "end": 27 } ],
+            "origin": { "line": 79, "start": 25, "end": 26 },
+            "call_site": "79:4-79:30"
           }
         ]
       }
@@ -41,7 +41,7 @@
   "data": {
     "callable": "add_feature_to_argument.add_feature_to_first",
     "filename": "add_feature_to_argument.py",
-    "callable_line": 9,
+    "callable_line": 11,
     "sinks": [
       {
         "port": "formal(first, position=0)",
@@ -65,7 +65,7 @@
   "data": {
     "callable": "add_feature_to_argument.add_feature_to_second",
     "filename": "add_feature_to_argument.py",
-    "callable_line": 13,
+    "callable_line": 15,
     "sinks": [
       {
         "port": "formal(second, position=1)",
@@ -89,7 +89,7 @@
   "data": {
     "callable": "add_feature_to_argument.add_via_value_of",
     "filename": "add_feature_to_argument.py",
-    "callable_line": 27,
+    "callable_line": 29,
     "sinks": [
       {
         "port": "formal(first, position=0)",
@@ -115,7 +115,7 @@
   "data": {
     "callable": "add_feature_to_argument.adds_and_taints",
     "filename": "add_feature_to_argument.py",
-    "callable_line": 17,
+    "callable_line": 19,
     "sources": [
       {
         "port": "result",
@@ -131,7 +131,7 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "origin": { "line": 18, "start": 8, "end": 22 }
+            "origin": { "line": 20, "start": 8, "end": 22 }
           }
         ]
       }
@@ -143,7 +143,7 @@
   "data": {
     "callable": "add_feature_to_argument.dict_test_add_via_value_of_second",
     "filename": "add_feature_to_argument.py",
-    "callable_line": 37,
+    "callable_line": 39,
     "sources": [
       {
         "port": "result",
@@ -164,7 +164,7 @@
               { "via": "model-shaping" },
               { "via": "broadening" }
             ],
-            "origin": { "line": 38, "start": 8, "end": 22 }
+            "origin": { "line": 40, "start": 8, "end": 22 }
           }
         ]
       }
@@ -176,7 +176,7 @@
   "data": {
     "callable": "add_feature_to_argument.propagate_add_feature",
     "filename": "add_feature_to_argument.py",
-    "callable_line": 23,
+    "callable_line": 25,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -194,8 +194,8 @@
                 "kind": "AddFeatureToArgument"
               }
             ],
-            "origin": { "line": 24, "start": 32, "end": 41 },
-            "call_site": "24:11-24:45"
+            "origin": { "line": 26, "start": 32, "end": 41 },
+            "call_site": "26:11-26:45"
           }
         ]
       }
@@ -207,7 +207,7 @@
   "data": {
     "callable": "add_feature_to_argument.propagate_multiple_add_feature",
     "filename": "add_feature_to_argument.py",
-    "callable_line": 59,
+    "callable_line": 61,
     "sinks": [
       {
         "port": "formal(parameter, position=0)[bar]",
@@ -225,8 +225,8 @@
                 "kind": "AddFeatureToArgument"
               }
             ],
-            "origin": { "line": 63, "start": 33, "end": 46 },
-            "call_site": "63:8-63:47"
+            "origin": { "line": 65, "start": 33, "end": 46 },
+            "call_site": "65:8-65:47"
           }
         ]
       },
@@ -246,8 +246,8 @@
                 "kind": "AddFeatureToArgument"
               }
             ],
-            "origin": { "line": 61, "start": 29, "end": 42 },
-            "call_site": "61:8-61:46"
+            "origin": { "line": 63, "start": 29, "end": 42 },
+            "call_site": "63:8-63:46"
           }
         ]
       }
@@ -259,7 +259,7 @@
   "data": {
     "callable": "add_feature_to_argument.source_add_feature_to_argument_accumulates_features",
     "filename": "add_feature_to_argument.py",
-    "callable_line": 81,
+    "callable_line": 82,
     "sources": [
       {
         "port": "result",
@@ -280,7 +280,7 @@
               { "always-via": "string_concat_lhs" },
               { "always-via": "tito" }
             ],
-            "origin": { "line": 82, "start": 8, "end": 22 }
+            "origin": { "line": 83, "start": 8, "end": 22 }
           }
         ]
       }
@@ -291,9 +291,9 @@
   "kind": "issue",
   "data": {
     "callable": "add_feature_to_argument.test_add_feature_in_comprehension",
-    "callable_line": 48,
+    "callable_line": 50,
     "code": 5002,
-    "line": 51,
+    "line": 53,
     "start": 15,
     "end": 19,
     "filename": "add_feature_to_argument.py",
@@ -317,7 +317,7 @@
               { "first-index": "<numeric>" },
               { "always-via": "string_concat_lhs" }
             ],
-            "origin": { "line": 49, "start": 15, "end": 29 }
+            "origin": { "line": 51, "start": 15, "end": 29 }
           }
         ]
       },
@@ -334,8 +334,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 51, "start": 15, "end": 19 },
-            "call_site": "51:4-51:20"
+            "origin": { "line": 53, "start": 15, "end": 19 },
+            "call_site": "53:4-53:20"
           }
         ]
       }
@@ -361,7 +361,7 @@
   "data": {
     "callable": "add_feature_to_argument.test_add_feature_to_sink",
     "filename": "add_feature_to_argument.py",
-    "callable_line": 43,
+    "callable_line": 45,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -379,8 +379,8 @@
                 "kind": "AddFeatureToArgument"
               }
             ],
-            "origin": { "line": 44, "start": 25, "end": 34 },
-            "call_site": "44:4-44:39"
+            "origin": { "line": 46, "start": 25, "end": 34 },
+            "call_site": "46:4-46:39"
           },
           {
             "kinds": [
@@ -393,8 +393,8 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "origin": { "line": 45, "start": 15, "end": 24 },
-            "call_site": "45:4-45:25"
+            "origin": { "line": 47, "start": 15, "end": 24 },
+            "call_site": "47:4-47:25"
           }
         ]
       }
@@ -406,7 +406,7 @@
   "data": {
     "callable": "add_feature_to_argument.test_add_feature_to_sink_in_comprehension",
     "filename": "add_feature_to_argument.py",
-    "callable_line": 54,
+    "callable_line": 56,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -424,8 +424,8 @@
                 "kind": "AddFeatureToArgument"
               }
             ],
-            "origin": { "line": 55, "start": 54, "end": 63 },
-            "call_site": "55:33-55:67"
+            "origin": { "line": 57, "start": 54, "end": 63 },
+            "call_site": "57:33-57:67"
           },
           {
             "kinds": [
@@ -438,8 +438,8 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "origin": { "line": 56, "start": 15, "end": 24 },
-            "call_site": "56:4-56:25"
+            "origin": { "line": 58, "start": 15, "end": 24 },
+            "call_site": "58:4-58:25"
           }
         ]
       }
@@ -451,7 +451,7 @@
   "data": {
     "callable": "add_feature_to_argument.test_add_multiple_feature",
     "filename": "add_feature_to_argument.py",
-    "callable_line": 66,
+    "callable_line": 68,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -469,8 +469,8 @@
             "local_features": [
               { "via": "string_concat_rhs" }, { "via": "string_concat_lhs" }
             ],
-            "origin": { "line": 68, "start": 15, "end": 24 },
-            "call_site": "68:4-68:25"
+            "origin": { "line": 70, "start": 15, "end": 24 },
+            "call_site": "70:4-70:25"
           }
         ]
       },
@@ -486,12 +486,12 @@
               }
             ],
             "call": {
-              "position": { "line": 67, "start": 35, "end": 44 },
+              "position": { "line": 69, "start": 35, "end": 44 },
               "resolves_to": [
                 "add_feature_to_argument.propagate_multiple_add_feature"
               ],
               "port": "formal(parameter, position=0)[bar]",
-              "call_site": "67:4-67:45"
+              "call_site": "69:4-69:45"
             }
           }
         ]
@@ -508,12 +508,12 @@
               }
             ],
             "call": {
-              "position": { "line": 67, "start": 35, "end": 44 },
+              "position": { "line": 69, "start": 35, "end": 44 },
               "resolves_to": [
                 "add_feature_to_argument.propagate_multiple_add_feature"
               ],
               "port": "formal(parameter, position=0)[foo]",
-              "call_site": "67:4-67:45"
+              "call_site": "69:4-69:45"
             }
           }
         ]
@@ -526,7 +526,7 @@
   "data": {
     "callable": "add_feature_to_argument.test_add_via_value_of_second",
     "filename": "add_feature_to_argument.py",
-    "callable_line": 31,
+    "callable_line": 33,
     "sources": [
       {
         "port": "result",
@@ -542,7 +542,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "second" } ],
-            "origin": { "line": 32, "start": 8, "end": 22 }
+            "origin": { "line": 34, "start": 8, "end": 22 }
           }
         ]
       }
@@ -554,7 +554,7 @@
   "data": {
     "callable": "add_feature_to_argument.tito_with_feature",
     "filename": "add_feature_to_argument.py",
-    "callable_line": 71,
+    "callable_line": 73,
     "tito": [
       {
         "port": "formal(x, position=0)",

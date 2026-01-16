@@ -3,21 +3,19 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-
-def a_source_x():
-    ...
+import random
 
 
-def a_source_y():
-    ...
+def a_source_x(): ...
 
 
-def a_sink_x(x):
-    ...
+def a_source_y(): ...
 
 
-def a_sink_y(x):
-    ...
+def a_sink_x(x): ...
+
+
+def a_sink_y(x): ...
 
 
 def sanitize_a_source_tito(x):
@@ -29,7 +27,7 @@ def sanitize_a_sink_tito(x):
 
 
 def partial_issue_sources():
-    if 1 > 2:
+    if random.random() > 0.5:
         x = a_source_x()
         return sanitize_a_sink_tito(x)
     else:
@@ -37,7 +35,7 @@ def partial_issue_sources():
 
 
 def partial_issue_sinks(x):
-    if 1 > 2:
+    if random.random() > 0.5:
         a_sink_x(x)
     else:
         y = sanitize_a_source_tito(x)

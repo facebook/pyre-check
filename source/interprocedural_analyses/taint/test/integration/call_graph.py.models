@@ -4,7 +4,7 @@
   "data": {
     "callable": "call_graph.is_dict",
     "filename": "call_graph.py",
-    "callable_line": 46,
+    "callable_line": 49,
     "tito": [
       {
         "port": "formal(obj, position=0)",
@@ -24,7 +24,7 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 47, "start": 22, "end": 25 } ],
+            "tito_positions": [ { "line": 50, "start": 22, "end": 25 } ],
             "tito": {}
           }
         ]
@@ -37,7 +37,7 @@
   "data": {
     "callable": "call_graph.no_op_decorator",
     "filename": "call_graph.py",
-    "callable_line": 83,
+    "callable_line": 91,
     "tito": [
       {
         "port": "formal(f, position=0)",
@@ -56,7 +56,7 @@
   "data": {
     "callable": "call_graph.no_op_decorator_factory.inner",
     "filename": "call_graph.py",
-    "callable_line": 76,
+    "callable_line": 84,
     "tito": [
       {
         "port": "formal(original, position=0)",
@@ -75,7 +75,7 @@
   "data": {
     "callable": "call_graph.test_default_parameters",
     "filename": "call_graph.py",
-    "callable_line": 36,
+    "callable_line": 39,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -90,8 +90,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 37, "start": 15, "end": 16 },
-            "call_site": "37:4-37:17"
+            "origin": { "line": 40, "start": 15, "end": 16 },
+            "call_site": "40:4-40:17"
           }
         ]
       }
@@ -102,9 +102,9 @@
   "kind": "issue",
   "data": {
     "callable": "call_graph.test_default_parameters",
-    "callable_line": 36,
+    "callable_line": 39,
     "code": 5002,
-    "line": 37,
+    "line": 40,
     "start": 15,
     "end": 16,
     "filename": "call_graph.py",
@@ -126,8 +126,8 @@
             "local_features": [
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 36, "start": 37, "end": 51 } ],
-            "origin": { "line": 36, "start": 37, "end": 51 }
+            "tito_positions": [ { "line": 39, "start": 37, "end": 51 } ],
+            "origin": { "line": 39, "start": 37, "end": 51 }
           }
         ]
       },
@@ -144,8 +144,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 37, "start": 15, "end": 16 },
-            "call_site": "37:4-37:17"
+            "origin": { "line": 40, "start": 15, "end": 16 },
+            "call_site": "40:4-40:17"
           }
         ]
       }
@@ -170,7 +170,7 @@
   "data": {
     "callable": "call_graph.test_match_type_of",
     "filename": "call_graph.py",
-    "callable_line": 112,
+    "callable_line": 129,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -185,8 +185,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 126, "start": 23, "end": 24 },
-            "call_site": "126:12-126:25"
+            "origin": { "line": 143, "start": 23, "end": 24 },
+            "call_site": "143:12-143:25"
           },
           {
             "kinds": [
@@ -198,8 +198,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 128, "start": 23, "end": 24 },
-            "call_site": "128:12-128:25"
+            "origin": { "line": 145, "start": 23, "end": 24 },
+            "call_site": "145:12-145:25"
           },
           {
             "kinds": [
@@ -211,8 +211,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 130, "start": 23, "end": 24 },
-            "call_site": "130:12-130:25"
+            "origin": { "line": 147, "start": 23, "end": 24 },
+            "call_site": "147:12-147:25"
           }
         ]
       }
@@ -467,7 +467,7 @@
   "data": {
     "callable": "call_graph.IsSource.method",
     "filename": "call_graph.py",
-    "callable_line": 16,
+    "callable_line": 19,
     "sources": [
       {
         "port": "result",
@@ -482,7 +482,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 17, "start": 15, "end": 29 },
+            "origin": { "line": 20, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
           }

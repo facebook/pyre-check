@@ -10,12 +10,14 @@ Call dependencies
     "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
   ],
   "any_index.post_2 (fun)": [
-    "builtins.dict.__getitem__ (method)",
-    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
+    "_random.Random.random (method)", "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "builtins.float.__gt__ (method)",
+    "pysa._test_source (fun)"
   ],
   "any_index.post_3 (fun)": [
-    "builtins.dict.__getitem__ (method)",
-    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
+    "_random.Random.random (method)", "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "builtins.float.__gt__ (method)",
+    "pysa._test_source (fun)"
   ],
   "any_index.pre_0 (fun)": [
     "builtins.dict.__getitem__ (method)",
@@ -26,11 +28,13 @@ Call dependencies
     "builtins.dict.__setitem__ (method)", "pysa._test_sink (fun)"
   ],
   "any_index.pre_2 (fun)": [
-    "builtins.dict.__getitem__ (method)",
-    "builtins.dict.__setitem__ (method)", "pysa._test_sink (fun)"
+    "_random.Random.random (method)", "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "builtins.float.__gt__ (method)",
+    "pysa._test_sink (fun)"
   ],
   "any_index.pre_3 (fun)": [
-    "builtins.dict.__getitem__ (method)",
-    "builtins.dict.__setitem__ (method)", "pysa._test_sink (fun)"
+    "_random.Random.random (method)", "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "builtins.float.__gt__ (method)",
+    "pysa._test_sink (fun)"
   ]
 }

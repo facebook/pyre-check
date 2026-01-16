@@ -11,11 +11,13 @@ Call dependencies
   ],
   "any_index.post_2 (fun)": [
     "dict.__getitem__ (method)", "dict.__setitem__ (method)",
-    "int.__gt__ (method)", "int.__le__ (method)", "pysa._test_source (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "pysa._test_source (fun)", "random.random (fun)"
   ],
   "any_index.post_3 (fun)": [
     "dict.__getitem__ (method)", "dict.__setitem__ (method)",
-    "int.__gt__ (method)", "int.__le__ (method)", "pysa._test_source (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "pysa._test_source (fun)", "random.random (fun)"
   ],
   "any_index.pre_0 (fun)": [
     "dict.__getitem__ (method)", "dict.__setitem__ (method)",
@@ -27,10 +29,12 @@ Call dependencies
   ],
   "any_index.pre_2 (fun)": [
     "dict.__getitem__ (method)", "dict.__setitem__ (method)",
-    "int.__gt__ (method)", "int.__le__ (method)", "pysa._test_sink (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "pysa._test_sink (fun)", "random.random (fun)"
   ],
   "any_index.pre_3 (fun)": [
     "dict.__getitem__ (method)", "dict.__setitem__ (method)",
-    "int.__gt__ (method)", "int.__le__ (method)", "pysa._test_sink (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "pysa._test_sink (fun)", "random.random (fun)"
   ]
 }

@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import random
+
 from pysa import _test_sink, _test_source
 
 
@@ -57,7 +59,7 @@ def test_add_feature_to_sink_in_comprehension(parameter):
 
 
 def propagate_multiple_add_feature(parameter):
-    if 1 > 2:
+    if random.random() > 0.5:
         add_feature_to_first(parameter.foo, 0)
     else:
         add_feature_to_second(0, parameter.bar)
@@ -68,8 +70,7 @@ def test_add_multiple_feature(parameter):
     _test_sink(parameter)
 
 
-def tito_with_feature(x):
-    ...
+def tito_with_feature(x): ...
 
 
 # AddFeatureToArgument accumulates breadcrumbs from calls along the path.

@@ -35,7 +35,10 @@ Call dependencies
   "decorator.StringWrapper.__add__@decorated (method)": [
     "decorator.no_op_decorator (fun)[formal(f, position=0)=decorator.StringWrapper.__add__ (method)]"
   ],
-  "decorator.add_return_source.inner (fun)": [ "pysa._test_source (fun)" ],
+  "decorator.add_return_source.inner (fun)": [
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "pysa._test_source (fun)"
+  ],
   "decorator.conditional_decorator_factory.add_sink.inner (fun)": [
     "pysa._test_sink (fun)"
   ],

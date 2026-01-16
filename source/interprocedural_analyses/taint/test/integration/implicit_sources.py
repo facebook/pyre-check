@@ -5,6 +5,8 @@
 
 # flake8: noqa
 
+import random
+
 
 def foo():
     return "123.456.789.123"
@@ -53,14 +55,16 @@ def string_source_top_level_local_overwrite():
 
 
 def string_literal_arguments_source(template: str, x):
-    if 1 == 1:
+    if random.random() > 0.5:
         return template.format("SELECT1", 1)
-    elif 1 == 1:
+    elif random.random() > 0.5:
         return template % "SELECT2"
     else:
         return x + "SELECT3"
 
+
 START, BODY, END = "<html>", "lorem ipsum", "</html>"
+
 
 def toplevel_simultaneous_assignment():
     return START + BODY + END

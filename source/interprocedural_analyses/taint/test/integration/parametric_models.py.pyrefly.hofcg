@@ -4,20 +4,47 @@ Higher order call graphs
   "callable": "parametric_models.f_and_g_to_test",
   "returned_callables": [],
   "calls": {
-    "25:7-25:12|artificial-call|comparison": {
-      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    "23:7-23:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "_random.Random.random",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
+          }
+        ]
+      }
+    },
+    "23:7-23:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.float"
+          }
+        ]
+      }
+    },
+    "24:12-24:15": {
+      "call": {
+        "calls": [
+          { "target": "parametric_models.f", "index": 0, "return_type": [] }
+        ]
+      }
     },
     "26:12-26:15": {
-      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
-    },
-    "28:12-28:15": {
       "call": {
         "calls": [
           { "target": "parametric_models.g", "index": 0, "return_type": [] }
         ]
       }
     },
-    "30:4-30:11": {
+    "28:4-28:11": {
       "call": {
         "calls": [
           {
@@ -34,11 +61,44 @@ Higher order call graphs
   "callable": "parametric_models.inferred_sink",
   "returned_callables": [],
   "calls": {
-    "42:7-42:12|artificial-call|comparison": {
-      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    "38:7-38:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "_random.Random.random",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
+          }
+        ]
+      }
     },
-    "43:8-43:25": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } },
-    "45:8-45:25": {
+    "38:7-38:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.float.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "builtins.float"
+          }
+        ]
+      }
+    },
+    "39:8-39:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "parametric_models.sink_subkind_a",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "41:8-41:25": {
       "call": {
         "calls": [
           {
@@ -55,14 +115,14 @@ Higher order call graphs
   "callable": "parametric_models.test_to_subkind_sink",
   "returned_callables": [],
   "calls": {
-    "49:8-49:22": {
+    "45:8-45:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "50:4-50:20": {
+    "46:4-46:20": {
       "call": {
         "calls": [
           {

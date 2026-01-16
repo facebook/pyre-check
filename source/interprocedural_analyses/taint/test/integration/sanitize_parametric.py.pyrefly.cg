@@ -6,10 +6,15 @@ Call dependencies
     "sanitize_parametric.partial_issue_sources (fun)"
   ],
   "sanitize_parametric.partial_issue_sinks (fun)": [
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "sanitize_parametric.a_sink_x (fun)",
     "sanitize_parametric.a_sink_y (fun)",
     "sanitize_parametric.sanitize_a_source_tito (fun)"
   ],
   "sanitize_parametric.partial_issue_sources (fun)": [
-    "sanitize_parametric.a_source_y (fun)"
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "sanitize_parametric.a_source_x (fun)",
+    "sanitize_parametric.a_source_y (fun)",
+    "sanitize_parametric.sanitize_a_sink_tito (fun)"
   ]
 }

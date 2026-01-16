@@ -3,8 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from pysa import _test_source, _test_sink, _rce, _sql, _user_controlled, _cookies
+import random
 from typing import Any, cast, Dict, List
+
+from pysa import _cookies, _rce, _sql, _test_sink, _test_source, _user_controlled
 
 
 class RecordSchema:
@@ -19,12 +21,10 @@ class MutableRecord:
     __dict__: Dict[str, Any] = {}
 
 
-def _is_dataclass_instance(obj) -> bool:
-    ...
+def _is_dataclass_instance(obj) -> bool: ...
 
 
-def fields(obj):
-    ...
+def fields(obj): ...
 
 
 def asdict(obj: RecordSchema, *, dict_factory: Any = dict) -> Dict[str, Any]:
@@ -35,10 +35,11 @@ def asdict(obj: RecordSchema, *, dict_factory: Any = dict) -> Dict[str, Any]:
 
 
 def _asdict_inner(obj: Any, dict_factory: Any) -> Any:
-    meta = getattr(obj, RecordSchema._META_PROP, {}) # pyrefly: ignore[no-matching-overload]
+    # pyrefly: ignore[no-matching-overload]
+    meta = getattr(obj, RecordSchema._META_PROP, {})
     if _is_dataclass_instance(obj):
         result = []
-        for f in fields(obj): # pyrefly: ignore[not-iterable]
+        for f in fields(obj):  # pyrefly: ignore[not-iterable]
             value = _asdict_inner(getattr(obj, f.name), dict_factory)
             field_meta = meta.get(f.name)
             if value is not None or (field_meta and field_meta.include_none):
@@ -87,7 +88,7 @@ def shape_multi_sink(obj):
 
 
 def shape_multi_source():
-    if 1 > 2:
+    if random.random() > 0.5:
         return {
             "a": _user_controlled(),
             "a": {"b": _user_controlled()},
@@ -115,6 +116,8 @@ def test_tito_shaping() -> None:
 
     obj = tito_shaping({"foo": {"source": _test_source(), "benign": ""}, "bar": {}})
     _test_sink(obj["foo"]["source"])  # True Positive
-    _test_sink(obj["foo"]["benign"])  # TODO(T163123131): False Positive in model shaping
+    _test_sink(
+        obj["foo"]["benign"]
+    )  # TODO(T163123131): False Positive in model shaping
     _test_sink(obj["bar"])  # TODO(T163123131): False Positive in model shaping
     _test_sink(obj["to_string"])  # True Positive

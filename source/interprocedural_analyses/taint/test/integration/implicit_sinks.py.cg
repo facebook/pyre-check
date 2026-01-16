@@ -43,7 +43,8 @@ Call dependencies
     "pysa._test_source (fun)"
   ],
   "implicit_sinks.string_literal_arguments_sink (fun)": [
-    "int.__eq__ (method)", "int.__ne__ (method)", "pysa._test_source (fun)",
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "pysa._test_source (fun)", "random.random (fun)", "str.__mod__ (method)",
     "str.format (method)"
   ]
 }

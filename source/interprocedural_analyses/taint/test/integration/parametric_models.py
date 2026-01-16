@@ -7,22 +7,20 @@
 
 
 from pysa import _test_source
+import random
 
 
-def f():
-    ...
+def f(): ...
 
 
-def g():
-    ...
+def g(): ...
 
 
-def sink(x):
-    ...
+def sink(x): ...
 
 
 def f_and_g_to_test():
-    if 1 > 2:
+    if random.random() > 0.5:
         a = f()
     else:
         a = g()
@@ -30,16 +28,14 @@ def f_and_g_to_test():
     sink(a)
 
 
-def sink_subkind_a(x):
-    ...
+def sink_subkind_a(x): ...
 
 
-def sink_subkind_b(x):
-    ...
+def sink_subkind_b(x): ...
 
 
 def inferred_sink(x):
-    if 1 > 2:
+    if random.random() > 0.5:
         sink_subkind_a(x)
     else:
         sink_subkind_b(x)

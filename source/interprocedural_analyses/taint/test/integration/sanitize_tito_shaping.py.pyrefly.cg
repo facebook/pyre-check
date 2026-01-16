@@ -61,29 +61,49 @@ Call dependencies
     "typing.Iterator.__next__ (method)"
   ],
   "sanitize_tito_shaping.multiple_titos_different_input_output_paths (fun)": [
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
     "sanitize_tito_shaping.add_feature (fun)",
+    "sanitize_tito_shaping.sanitize_sink_a_depth_two (fun)",
     "sanitize_tito_shaping.sanitize_sink_b (fun)",
-    "sanitize_tito_shaping.sanitize_source_a (fun)"
+    "sanitize_tito_shaping.sanitize_source_a (fun)",
+    "sanitize_tito_shaping.sanitize_source_b (fun)"
   ],
   "sanitize_tito_shaping.multiple_titos_different_input_paths (fun)": [
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
     "sanitize_tito_shaping.add_feature (fun)",
+    "sanitize_tito_shaping.sanitize_sink_a_depth_two (fun)",
     "sanitize_tito_shaping.sanitize_sink_b (fun)",
-    "sanitize_tito_shaping.sanitize_source_a (fun)"
+    "sanitize_tito_shaping.sanitize_source_a (fun)",
+    "sanitize_tito_shaping.sanitize_source_b (fun)"
   ],
   "sanitize_tito_shaping.multiple_titos_different_output_paths (fun)": [
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "sanitize_tito_shaping.add_feature (fun)",
+    "sanitize_tito_shaping.sanitize_sink_a_depth_two (fun)",
     "sanitize_tito_shaping.sanitize_sink_b (fun)",
-    "sanitize_tito_shaping.sanitize_source_a (fun)"
+    "sanitize_tito_shaping.sanitize_source_a (fun)",
+    "sanitize_tito_shaping.sanitize_source_b (fun)"
   ],
   "sanitize_tito_shaping.multiple_titos_same_path (fun)": [
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "sanitize_tito_shaping.add_feature (fun)",
+    "sanitize_tito_shaping.sanitize_sink_a_depth_two (fun)",
     "sanitize_tito_shaping.sanitize_sink_b (fun)",
-    "sanitize_tito_shaping.sanitize_source_a (fun)"
+    "sanitize_tito_shaping.sanitize_source_a (fun)",
+    "sanitize_tito_shaping.sanitize_source_b (fun)"
   ],
   "sanitize_tito_shaping.multiple_titos_same_path_different_collapse_depth (fun)": [
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
     "sanitize_tito_shaping.sanitize_sink_a_depth_two (fun)",
+    "sanitize_tito_shaping.sanitize_source_a (fun)",
+    "sanitize_tito_shaping.tito_collapse_one (fun)",
     "sanitize_tito_shaping.tito_collapse_zero (fun)"
   ],
   "sanitize_tito_shaping.multiple_titos_same_path_with_transform (fun)": [
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
     "sanitize_tito_shaping.sanitize_sink_a_depth_two (fun)",
+    "sanitize_tito_shaping.sanitize_source_a (fun)",
+    "sanitize_tito_shaping.transform_x (fun)",
     "sanitize_tito_shaping.transform_y (fun)"
   ],
   "sanitize_tito_shaping.sanitize_sink_a_depth_two (fun)": [

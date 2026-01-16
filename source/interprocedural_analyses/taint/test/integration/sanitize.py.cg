@@ -37,15 +37,15 @@ Call dependencies
     "pysa._test_source (fun)"
   ],
   "sanitize.GenerationOnSelf.sanitize_all_parameters_test_a_source (method)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "sanitize.a_source (fun)",
-    "sanitize.b_source (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
+    "sanitize.a_source (fun)", "sanitize.b_source (fun)"
   ],
   "sanitize.GenerationOnSelf.sanitize_parameter (method)": [
     "pysa._test_source (fun)"
   ],
   "sanitize.GenerationOnSelf.sanitize_parameter_test_a_source (method)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "sanitize.a_source (fun)",
-    "sanitize.b_source (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
+    "sanitize.a_source (fun)", "sanitize.b_source (fun)"
   ],
   "sanitize.GenerationOnSelf.sanitize_return (method)": [
     "pysa._test_source (fun)"
@@ -54,8 +54,8 @@ Call dependencies
     "pysa._test_source (fun)"
   ],
   "sanitize.GenerationOnSelf.sanitize_test_a_source (method)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "sanitize.a_source (fun)",
-    "sanitize.b_source (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
+    "sanitize.a_source (fun)", "sanitize.b_source (fun)"
   ],
   "sanitize.TitoSelf.sanitize_self (method)": [
     "sanitize.sanitize_return_no_user_controlled (fun)"
@@ -108,11 +108,13 @@ Call dependencies
     "sanitize.no_issue_fixpoint_sanitize_sources (fun)"
   ],
   "sanitize.no_issue_fixpoint_sanitize_sinks (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "sanitize.a_sink (fun)",
-    "sanitize.b_sink (fun)", "sanitize.sanitize_a_source_tito (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
+    "sanitize.a_sink (fun)", "sanitize.b_sink (fun)",
+    "sanitize.sanitize_a_source_tito (fun)"
   ],
   "sanitize.no_issue_fixpoint_sanitize_sources (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "pysa._test_source (fun)",
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "pysa._test_source (fun)", "random.random (fun)",
     "sanitize.a_source (fun)", "sanitize.sanitize_a_sink_tito (fun)",
     "sanitize.sanitize_b_sink_tito (fun)"
   ],
@@ -200,12 +202,12 @@ Call dependencies
     "sanitize.partial_issue_sources (fun)"
   ],
   "sanitize.partial_issue_sinks (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "sanitize.a_sink (fun)",
-    "sanitize.sanitize_a_source_tito (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
+    "sanitize.a_sink (fun)", "sanitize.sanitize_a_source_tito (fun)"
   ],
   "sanitize.partial_issue_sources (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "sanitize.a_source (fun)",
-    "sanitize.sanitize_a_sink_tito (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
+    "sanitize.a_source (fun)", "sanitize.sanitize_a_sink_tito (fun)"
   ],
   "sanitize.propagation_of_b_sink (fun)": [
     "sanitize.b_sink (fun)", "sanitize.sanitize_a_sink_tito (fun)"
@@ -284,19 +286,19 @@ Call dependencies
     "sanitize.sanitize_all_parameters_no_cookies_sql_tito (fun)"
   ],
   "sanitize.sanitize_a_and_b_sinks (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "sanitize.a_sink (fun)",
-    "sanitize.b_sink (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
+    "sanitize.a_sink (fun)", "sanitize.b_sink (fun)"
   ],
   "sanitize.sanitize_a_and_b_source (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "sanitize.a_source (fun)",
-    "sanitize.b_source (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
+    "sanitize.a_source (fun)", "sanitize.b_source (fun)"
   ],
   "sanitize.sanitize_a_sink (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "sanitize.a_sink (fun)",
-    "sanitize.b_sink (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
+    "sanitize.a_sink (fun)", "sanitize.b_sink (fun)"
   ],
   "sanitize.sanitize_a_sink_attribute (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
     "sanitize.C_sanitized_a_sink.attribute (object)",
     "sanitize.a_sink (fun)", "sanitize.b_sink (fun)"
   ],
@@ -307,7 +309,7 @@ Call dependencies
     "sanitize.a_source (fun)"
   ],
   "sanitize.sanitize_a_sink_instance (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
     "sanitize.C_sanitized_a_sink.instance (object)", "sanitize.a_sink (fun)",
     "sanitize.b_sink (fun)"
   ],
@@ -315,12 +317,12 @@ Call dependencies
     "sanitize.a_sink (fun)"
   ],
   "sanitize.sanitize_ab_sinks_attribute (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
     "sanitize.C_sanitized_ab_sinks.attribute (object)",
     "sanitize.a_sink (fun)", "sanitize.b_sink (fun)"
   ],
   "sanitize.sanitize_ab_sinks_instance (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
     "sanitize.C_sanitized_ab_sinks.instance (object)",
     "sanitize.a_sink (fun)", "sanitize.b_sink (fun)"
   ],
@@ -331,37 +333,39 @@ Call dependencies
     "pysa._test_sink (fun)", "sanitize.source_with_tito (fun)"
   ],
   "sanitize.sanitize_all_parameters_no_rce (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "pysa._rce (fun)",
-    "pysa._sql (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "pysa._rce (fun)",
+    "pysa._sql (fun)", "random.random (fun)"
   ],
   "sanitize.sanitize_all_parameters_no_sql (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "pysa._rce (fun)",
-    "pysa._sql (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "pysa._rce (fun)",
+    "pysa._sql (fun)", "random.random (fun)"
   ],
   "sanitize.sanitize_all_parameters_no_user_controlled (fun)": [
     "pysa._test_sink (fun)"
   ],
   "sanitize.sanitize_all_sinks_attribute (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "pysa._test_sink (fun)",
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "pysa._test_sink (fun)", "random.random (fun)",
     "sanitize.C_sanitized_all_sinks.attribute (object)",
     "sanitize.a_sink (fun)", "sanitize.b_sink (fun)"
   ],
   "sanitize.sanitize_all_sinks_instance (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "pysa._test_sink (fun)",
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "pysa._test_sink (fun)", "random.random (fun)",
     "sanitize.C_sanitized_all_sinks.instance (object)",
     "sanitize.a_sink (fun)", "sanitize.b_sink (fun)"
   ],
   "sanitize.sanitize_b_sink (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "sanitize.a_sink (fun)",
-    "sanitize.b_sink (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
+    "sanitize.a_sink (fun)", "sanitize.b_sink (fun)"
   ],
   "sanitize.sanitize_b_sink_attribute (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
     "sanitize.C_sanitized_b_sink.attribute (object)",
     "sanitize.a_sink (fun)", "sanitize.b_sink (fun)"
   ],
   "sanitize.sanitize_b_sink_instance (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
     "sanitize.C_sanitized_b_sink.instance (object)", "sanitize.a_sink (fun)",
     "sanitize.b_sink (fun)"
   ],
@@ -372,41 +376,41 @@ Call dependencies
     "pysa._test_sink (fun)", "sanitize.source_with_tito (fun)"
   ],
   "sanitize.sanitize_parameter_no_rce (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "pysa._rce (fun)",
-    "pysa._sql (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "pysa._rce (fun)",
+    "pysa._sql (fun)", "random.random (fun)"
   ],
   "sanitize.sanitize_parameter_no_sql (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "pysa._rce (fun)",
-    "pysa._sql (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "pysa._rce (fun)",
+    "pysa._sql (fun)", "random.random (fun)"
   ],
   "sanitize.sanitize_parameter_no_sql_tito (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)"
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)"
   ],
   "sanitize.sanitize_parameter_no_user_controlled (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "pysa._rce (fun)",
-    "pysa._sql (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "pysa._rce (fun)",
+    "pysa._sql (fun)", "random.random (fun)"
   ],
   "sanitize.sanitize_parameter_no_user_controlled_tito (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)"
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)"
   ],
   "sanitize.sanitize_return (fun)": [
     "pysa._test_sink (fun)", "sanitize.source_with_tito (fun)"
   ],
   "sanitize.sanitize_return_no_cookies (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "pysa._cookies (fun)",
-    "pysa._user_controlled (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "pysa._cookies (fun)",
+    "pysa._user_controlled (fun)", "random.random (fun)"
   ],
   "sanitize.sanitize_return_no_rce (fun)": [ "pysa._user_controlled (fun)" ],
   "sanitize.sanitize_return_no_user_controlled (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "pysa._cookies (fun)",
-    "pysa._user_controlled (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "pysa._cookies (fun)",
+    "pysa._user_controlled (fun)", "random.random (fun)"
   ],
   "sanitize.sanitize_return_no_user_controlled_cookies (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "pysa._cookies (fun)",
-    "pysa._user_controlled (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "pysa._cookies (fun)",
+    "pysa._user_controlled (fun)", "random.random (fun)"
   ],
   "sanitize.sanitize_single_argument_tito (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)"
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)"
   ],
   "sanitize.sanitize_sinks (fun)": [
     "pysa._test_sink (fun)", "sanitize.source_with_tito (fun)"
@@ -421,13 +425,13 @@ Call dependencies
     "pysa._test_source (fun)", "sanitize.sanitize_a_sink_instance (fun)"
   ],
   "sanitize.sanitize_test_a_source (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "sanitize.a_source (fun)",
-    "sanitize.b_source (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
+    "sanitize.a_source (fun)", "sanitize.b_source (fun)"
   ],
   "sanitize.sanitize_test_a_source_attribute (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)",
-    "sanitize.C_sanitized_a_source.__init__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "random.random (fun)", "sanitize.C_sanitized_a_source.__init__ (method)",
     "sanitize.C_sanitized_a_source.attribute (object)",
     "sanitize.a_source (fun)", "sanitize.b_source (fun)"
   ],
@@ -442,9 +446,9 @@ Call dependencies
     "sanitize.C_sanitized_a_source.attribute (object)"
   ],
   "sanitize.sanitize_test_a_source_instance (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)",
-    "sanitize.C_sanitized_a_source.__init__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "random.random (fun)", "sanitize.C_sanitized_a_source.__init__ (method)",
     "sanitize.C_sanitized_a_source.instance (object)",
     "sanitize.a_source (fun)", "sanitize.b_source (fun)"
   ],
@@ -455,15 +459,17 @@ Call dependencies
     "pysa._test_source (fun)", "sanitize.sanitize_ab_sinks_instance (fun)"
   ],
   "sanitize.sanitize_test_ab_sources_attribute (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)",
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "random.random (fun)",
     "sanitize.C_sanitized_ab_sources.__init__ (method)",
     "sanitize.C_sanitized_ab_sources.attribute (object)",
     "sanitize.a_source (fun)", "sanitize.b_source (fun)"
   ],
   "sanitize.sanitize_test_ab_sources_instance (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)",
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "random.random (fun)",
     "sanitize.C_sanitized_ab_sources.__init__ (method)",
     "sanitize.C_sanitized_ab_sources.instance (object)",
     "sanitize.a_source (fun)", "sanitize.b_source (fun)"
@@ -481,15 +487,17 @@ Call dependencies
     "sanitize.sanitize_all_sinks_instance (fun)"
   ],
   "sanitize.sanitize_test_all_sources_attribute (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "random.random (fun)",
     "sanitize.C_sanitized_all_sources.__init__ (method)",
     "sanitize.C_sanitized_all_sources.attribute (object)",
     "sanitize.a_source (fun)", "sanitize.b_source (fun)"
   ],
   "sanitize.sanitize_test_all_sources_instance (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "random.random (fun)",
     "sanitize.C_sanitized_all_sources.__init__ (method)",
     "sanitize.C_sanitized_all_sources.instance (object)",
     "sanitize.a_source (fun)", "sanitize.b_source (fun)"
@@ -501,20 +509,20 @@ Call dependencies
     "pysa._test_source (fun)", "sanitize.sanitize_b_sink_instance (fun)"
   ],
   "sanitize.sanitize_test_b_source (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "sanitize.a_source (fun)",
-    "sanitize.b_source (fun)"
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
+    "sanitize.a_source (fun)", "sanitize.b_source (fun)"
   ],
   "sanitize.sanitize_test_b_source_attribute (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)",
-    "sanitize.C_sanitized_b_source.__init__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "random.random (fun)", "sanitize.C_sanitized_b_source.__init__ (method)",
     "sanitize.C_sanitized_b_source.attribute (object)",
     "sanitize.a_source (fun)", "sanitize.b_source (fun)"
   ],
   "sanitize.sanitize_test_b_source_instance (fun)": [
-    "int.__gt__ (method)", "int.__le__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)",
-    "sanitize.C_sanitized_b_source.__init__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)",
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "random.random (fun)", "sanitize.C_sanitized_b_source.__init__ (method)",
     "sanitize.C_sanitized_b_source.instance (object)",
     "sanitize.a_source (fun)", "sanitize.b_source (fun)"
   ],

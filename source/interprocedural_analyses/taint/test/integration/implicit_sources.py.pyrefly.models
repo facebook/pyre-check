@@ -4,7 +4,7 @@
   "data": {
     "callable": "implicit_sources.bar_dot_format",
     "filename": "implicit_sources.py",
-    "callable_line": 23,
+    "callable_line": 25,
     "sources": [
       {
         "port": "result",
@@ -18,7 +18,7 @@
                 "kind": "IPAddress"
               }
             ],
-            "origin": { "line": 25, "start": 11, "end": 31 }
+            "origin": { "line": 27, "start": 11, "end": 31 }
           }
         ]
       }
@@ -30,7 +30,7 @@
   "data": {
     "callable": "implicit_sources.bar_format_strings",
     "filename": "implicit_sources.py",
-    "callable_line": 13,
+    "callable_line": 15,
     "sources": [
       {
         "port": "result",
@@ -44,7 +44,7 @@
                 "kind": "IPAddress"
               }
             ],
-            "origin": { "line": 15, "start": 11, "end": 47 }
+            "origin": { "line": 17, "start": 11, "end": 47 }
           }
         ]
       }
@@ -56,7 +56,7 @@
   "data": {
     "callable": "implicit_sources.bar_percent_format",
     "filename": "implicit_sources.py",
-    "callable_line": 18,
+    "callable_line": 20,
     "sources": [
       {
         "port": "result",
@@ -70,7 +70,7 @@
                 "kind": "IPAddress"
               }
             ],
-            "origin": { "line": 20, "start": 11, "end": 31 }
+            "origin": { "line": 22, "start": 11, "end": 31 }
           }
         ]
       }
@@ -82,7 +82,7 @@
   "data": {
     "callable": "implicit_sources.foo",
     "filename": "implicit_sources.py",
-    "callable_line": 9,
+    "callable_line": 11,
     "sources": [
       {
         "port": "result",
@@ -96,7 +96,7 @@
                 "kind": "IPAddress"
               }
             ],
-            "origin": { "line": 10, "start": 11, "end": 28 }
+            "origin": { "line": 12, "start": 11, "end": 28 }
           }
         ]
       }
@@ -108,7 +108,7 @@
   "data": {
     "callable": "implicit_sources.multiple_patterns",
     "filename": "implicit_sources.py",
-    "callable_line": 32,
+    "callable_line": 34,
     "sources": [
       {
         "port": "result",
@@ -128,7 +128,7 @@
                 "kind": "IPAddress"
               }
             ],
-            "origin": { "line": 33, "start": 11, "end": 30 }
+            "origin": { "line": 35, "start": 11, "end": 30 }
           }
         ]
       }
@@ -140,7 +140,7 @@
   "data": {
     "callable": "implicit_sources.string_literal_arguments_source",
     "filename": "implicit_sources.py",
-    "callable_line": 55,
+    "callable_line": 57,
     "tito": [
       {
         "port": "formal(x, position=1)",
@@ -156,7 +156,7 @@
             "local_features": [
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 61, "start": 15, "end": 16 } ],
+            "tito_positions": [ { "line": 63, "start": 15, "end": 16 } ],
             "tito": {}
           }
         ]
@@ -165,16 +165,20 @@
         "port": "formal(template, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "local_features": [
-              { "via": "format-string" },
-              { "via": "model-shaping" },
-              { "via": "tito" },
-              { "via": "broadening" },
-              { "via": "model-tito-shaping" },
-              { "via": "obscure:unknown-callee" }
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
             ],
-            "tito_positions": [ { "line": 57, "start": 15, "end": 23 } ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 59, "start": 15, "end": 23 },
+              { "line": 61, "start": 15, "end": 23 }
+            ],
             "tito": {}
           }
         ]
@@ -187,7 +191,7 @@
   "data": {
     "callable": "implicit_sources.string_source_not_top_level",
     "filename": "implicit_sources.py",
-    "callable_line": 44,
+    "callable_line": 46,
     "sources": [
       {
         "port": "result[key]",
@@ -201,7 +205,7 @@
                 "kind": "GoogleAPIKey"
               }
             ],
-            "origin": { "line": 45, "start": 21, "end": 62 }
+            "origin": { "line": 47, "start": 21, "end": 62 }
           }
         ]
       }

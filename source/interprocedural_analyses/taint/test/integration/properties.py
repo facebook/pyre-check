@@ -3,8 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from pysa import _test_sink, _test_source
+import random
 from typing import Optional, TypeVar, Union
+
+from pysa import _test_sink, _test_source
 
 
 class Class:
@@ -119,7 +121,7 @@ def setters_are_simulated() -> None:
 
 class ClassProperty:
     # pyre-ignore[10]: __classproperty__ is a made-up name to allow testing
-    @__classproperty__ # pyrefly: ignore[unknown-name]
+    @__classproperty__  # pyrefly: ignore[unknown-name]
     def my_class_property(cls) -> str:
         return ""
 
@@ -193,7 +195,7 @@ class RegularAttribute:
 
 def test_union_property_attribute_source():
     obj: Union[TaintedGetterAndSetter, RegularAttribute]
-    if 1 > 2:
+    if random.random() > 0.5:
         obj = TaintedGetterAndSetter()
     else:
         obj = RegularAttribute(_test_source())
@@ -202,7 +204,7 @@ def test_union_property_attribute_source():
 
 def test_union_property_attribute_sink(x):
     obj: Union[TaintedGetterAndSetter, RegularAttribute]
-    if 1 > 2:
+    if random.random() > 0.5:
         obj = TaintedGetterAndSetter()
     else:
         obj = RegularAttribute(x)
@@ -273,12 +275,10 @@ class PropertySetterTitoModel:
         _test_sink(self.my_property)
 
     @property
-    def obscure_property(self):
-        ...
+    def obscure_property(self): ...
 
     @obscure_property.setter
-    def obscure_property(self, value):
-        ...
+    def obscure_property(self, value): ...
 
     def test_obscure_property(self):
         self.obscure_property = _test_source()
@@ -286,13 +286,11 @@ class PropertySetterTitoModel:
 
 
 class Base:
-    def foo(self) -> None:
-        ...
+    def foo(self) -> None: ...
 
 
 class A(Base):
-    def foo(self) -> None:
-        ...
+    def foo(self) -> None: ...
 
 
 class TestTypeInferenceInSetter:
@@ -315,6 +313,7 @@ def test_property_augmented_assign(p: PropertySetterTitoModel):
 
 def string_source() -> str:
     return _test_source()
+
 
 def test_object_class() -> None:
     x = string_source()

@@ -5,7 +5,8 @@ Call dependencies
   "implicit_sources.bar_format_strings (fun)": [ "object.__repr__ (method)" ],
   "implicit_sources.bar_percent_format (fun)": [ "str.__mod__ (method)" ],
   "implicit_sources.string_literal_arguments_source (fun)": [
-    "int.__eq__ (method)", "int.__ne__ (method)", "str.format (method)"
+    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
+    "str.__mod__ (method)", "str.format (method)"
   ],
   "implicit_sources.toplevel_simultaneous_assignment (fun)": [
     "str.__add__ (method)"

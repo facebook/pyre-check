@@ -4,7 +4,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.a_sink",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 13,
+    "callable_line": 15,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -21,7 +21,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.a_source",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 7,
+    "callable_line": 9,
     "sources": [
       {
         "port": "result",
@@ -38,7 +38,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.add_feature",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 46,
+    "callable_line": 57,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -63,7 +63,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.b_sink",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 16,
+    "callable_line": 18,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -80,7 +80,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.b_source",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 10,
+    "callable_line": 12,
     "sources": [
       {
         "port": "result",
@@ -96,9 +96,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize_tito_shaping.issue_multiple_titos_different_input_output_paths",
-    "callable_line": 163,
+    "callable_line": 175,
     "code": 1000,
-    "line": 164,
+    "line": 176,
     "start": 11,
     "end": 66,
     "filename": "sanitize_tito_shaping.py",
@@ -124,8 +124,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 164, "start": 55, "end": 65 } ],
-            "origin": { "line": 164, "start": 55, "end": 65 }
+            "tito_positions": [ { "line": 176, "start": 55, "end": 65 } ],
+            "origin": { "line": 176, "start": 55, "end": 65 }
           }
         ]
       },
@@ -144,8 +144,8 @@
                 "kind": "TestA"
               }
             ],
-            "origin": { "line": 164, "start": 11, "end": 66 },
-            "call_site": "164:4-164:67"
+            "origin": { "line": 176, "start": 11, "end": 66 },
+            "call_site": "176:4-176:67"
           }
         ]
       }
@@ -168,9 +168,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize_tito_shaping.issue_multiple_titos_different_input_output_paths",
-    "callable_line": 163,
+    "callable_line": 175,
     "code": 1000,
-    "line": 165,
+    "line": 177,
     "start": 11,
     "end": 66,
     "filename": "sanitize_tito_shaping.py",
@@ -206,8 +206,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 165, "start": 55, "end": 65 } ],
-            "origin": { "line": 165, "start": 55, "end": 65 }
+            "tito_positions": [ { "line": 177, "start": 55, "end": 65 } ],
+            "origin": { "line": 177, "start": 55, "end": 65 }
           }
         ]
       },
@@ -226,8 +226,8 @@
                 "kind": "TestB"
               }
             ],
-            "origin": { "line": 165, "start": 11, "end": 66 },
-            "call_site": "165:4-165:67"
+            "origin": { "line": 177, "start": 11, "end": 66 },
+            "call_site": "177:4-177:67"
           }
         ]
       }
@@ -251,9 +251,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize_tito_shaping.issue_multiple_titos_different_input_paths",
-    "callable_line": 138,
+    "callable_line": 150,
     "code": 1000,
-    "line": 139,
+    "line": 151,
     "start": 11,
     "end": 59,
     "filename": "sanitize_tito_shaping.py",
@@ -275,8 +275,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 139, "start": 48, "end": 58 } ],
-            "origin": { "line": 139, "start": 48, "end": 58 }
+            "tito_positions": [ { "line": 151, "start": 48, "end": 58 } ],
+            "origin": { "line": 151, "start": 48, "end": 58 }
           }
         ]
       },
@@ -295,8 +295,8 @@
                 "kind": "TestA"
               }
             ],
-            "origin": { "line": 139, "start": 11, "end": 59 },
-            "call_site": "139:4-139:60"
+            "origin": { "line": 151, "start": 11, "end": 59 },
+            "call_site": "151:4-151:60"
           }
         ]
       }
@@ -315,9 +315,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize_tito_shaping.issue_multiple_titos_different_input_paths",
-    "callable_line": 138,
+    "callable_line": 150,
     "code": 1000,
-    "line": 140,
+    "line": 152,
     "start": 11,
     "end": 59,
     "filename": "sanitize_tito_shaping.py",
@@ -350,8 +350,8 @@
             "local_features": [
               { "via": "feature" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 140, "start": 48, "end": 58 } ],
-            "origin": { "line": 140, "start": 48, "end": 58 }
+            "tito_positions": [ { "line": 152, "start": 48, "end": 58 } ],
+            "origin": { "line": 152, "start": 48, "end": 58 }
           }
         ]
       },
@@ -370,8 +370,8 @@
                 "kind": "TestB"
               }
             ],
-            "origin": { "line": 140, "start": 11, "end": 59 },
-            "call_site": "140:4-140:60"
+            "origin": { "line": 152, "start": 11, "end": 59 },
+            "call_site": "152:4-152:60"
           }
         ]
       }
@@ -390,9 +390,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize_tito_shaping.issue_multiple_titos_different_output_paths",
-    "callable_line": 113,
+    "callable_line": 125,
     "code": 1000,
-    "line": 114,
+    "line": 126,
     "start": 11,
     "end": 60,
     "filename": "sanitize_tito_shaping.py",
@@ -419,8 +419,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 114, "start": 49, "end": 59 } ],
-            "origin": { "line": 114, "start": 49, "end": 59 }
+            "tito_positions": [ { "line": 126, "start": 49, "end": 59 } ],
+            "origin": { "line": 126, "start": 49, "end": 59 }
           }
         ]
       },
@@ -439,8 +439,8 @@
                 "kind": "TestA"
               }
             ],
-            "origin": { "line": 114, "start": 11, "end": 60 },
-            "call_site": "114:4-114:61"
+            "origin": { "line": 126, "start": 11, "end": 60 },
+            "call_site": "126:4-126:61"
           }
         ]
       }
@@ -464,9 +464,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize_tito_shaping.issue_multiple_titos_different_output_paths",
-    "callable_line": 113,
+    "callable_line": 125,
     "code": 1000,
-    "line": 115,
+    "line": 127,
     "start": 11,
     "end": 60,
     "filename": "sanitize_tito_shaping.py",
@@ -502,8 +502,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 115, "start": 49, "end": 59 } ],
-            "origin": { "line": 115, "start": 49, "end": 59 }
+            "tito_positions": [ { "line": 127, "start": 49, "end": 59 } ],
+            "origin": { "line": 127, "start": 49, "end": 59 }
           }
         ]
       },
@@ -522,8 +522,8 @@
                 "kind": "TestB"
               }
             ],
-            "origin": { "line": 115, "start": 11, "end": 60 },
-            "call_site": "115:4-115:61"
+            "origin": { "line": 127, "start": 11, "end": 60 },
+            "call_site": "127:4-127:61"
           }
         ]
       }
@@ -547,9 +547,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize_tito_shaping.issue_multiple_titos_same_path",
-    "callable_line": 88,
+    "callable_line": 100,
     "code": 1000,
-    "line": 89,
+    "line": 101,
     "start": 11,
     "end": 47,
     "filename": "sanitize_tito_shaping.py",
@@ -582,8 +582,8 @@
             "local_features": [
               { "via": "feature" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 89, "start": 36, "end": 46 } ],
-            "origin": { "line": 89, "start": 36, "end": 46 }
+            "tito_positions": [ { "line": 101, "start": 36, "end": 46 } ],
+            "origin": { "line": 101, "start": 36, "end": 46 }
           }
         ]
       },
@@ -602,8 +602,8 @@
                 "kind": "TestA"
               }
             ],
-            "origin": { "line": 89, "start": 11, "end": 47 },
-            "call_site": "89:4-89:48"
+            "origin": { "line": 101, "start": 11, "end": 47 },
+            "call_site": "101:4-101:48"
           }
         ]
       }
@@ -622,9 +622,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize_tito_shaping.issue_multiple_titos_same_path",
-    "callable_line": 88,
+    "callable_line": 100,
     "code": 1000,
-    "line": 90,
+    "line": 102,
     "start": 11,
     "end": 47,
     "filename": "sanitize_tito_shaping.py",
@@ -657,8 +657,8 @@
             "local_features": [
               { "via": "feature" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 90, "start": 36, "end": 46 } ],
-            "origin": { "line": 90, "start": 36, "end": 46 }
+            "tito_positions": [ { "line": 102, "start": 36, "end": 46 } ],
+            "origin": { "line": 102, "start": 36, "end": 46 }
           }
         ]
       },
@@ -677,8 +677,8 @@
                 "kind": "TestB"
               }
             ],
-            "origin": { "line": 90, "start": 11, "end": 47 },
-            "call_site": "90:4-90:48"
+            "origin": { "line": 102, "start": 11, "end": 47 },
+            "call_site": "102:4-102:48"
           }
         ]
       }
@@ -697,9 +697,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize_tito_shaping.issue_multiple_titos_same_path_with_transform",
-    "callable_line": 196,
+    "callable_line": 208,
     "code": 1000,
-    "line": 197,
+    "line": 209,
     "start": 11,
     "end": 62,
     "filename": "sanitize_tito_shaping.py",
@@ -721,8 +721,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 197, "start": 51, "end": 61 } ],
-            "origin": { "line": 197, "start": 51, "end": 61 }
+            "tito_positions": [ { "line": 209, "start": 51, "end": 61 } ],
+            "origin": { "line": 209, "start": 51, "end": 61 }
           }
         ]
       },
@@ -741,8 +741,8 @@
                 "kind": "TestA"
               }
             ],
-            "origin": { "line": 197, "start": 11, "end": 62 },
-            "call_site": "197:4-197:63"
+            "origin": { "line": 209, "start": 11, "end": 62 },
+            "call_site": "209:4-209:63"
           }
         ]
       }
@@ -761,9 +761,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize_tito_shaping.issue_multiple_titos_same_path_with_transform",
-    "callable_line": 196,
+    "callable_line": 208,
     "code": 1000,
-    "line": 198,
+    "line": 210,
     "start": 11,
     "end": 62,
     "filename": "sanitize_tito_shaping.py",
@@ -785,8 +785,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 198, "start": 51, "end": 61 } ],
-            "origin": { "line": 198, "start": 51, "end": 61 }
+            "tito_positions": [ { "line": 210, "start": 51, "end": 61 } ],
+            "origin": { "line": 210, "start": 51, "end": 61 }
           }
         ]
       },
@@ -805,8 +805,8 @@
                 "kind": "TestB"
               }
             ],
-            "origin": { "line": 198, "start": 11, "end": 62 },
-            "call_site": "198:4-198:63"
+            "origin": { "line": 210, "start": 11, "end": 62 },
+            "call_site": "210:4-210:63"
           }
         ]
       }
@@ -825,9 +825,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize_tito_shaping.issue_multiple_titos_same_path_with_transform",
-    "callable_line": 196,
+    "callable_line": 208,
     "code": 1001,
-    "line": 197,
+    "line": 209,
     "start": 11,
     "end": 62,
     "filename": "sanitize_tito_shaping.py",
@@ -843,12 +843,12 @@
                   {
                     "message": "TransformX",
                     "call": {
-                      "position": { "line": 197, "start": 51, "end": 61 },
+                      "position": { "line": 209, "start": 51, "end": 61 },
                       "resolves_to": [
                         "sanitize_tito_shaping.multiple_titos_same_path_with_transform"
                       ],
                       "port": "formal(x, position=0)",
-                      "call_site": "197:11-197:62"
+                      "call_site": "209:11-209:62"
                     },
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -867,8 +867,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 197, "start": 51, "end": 61 } ],
-            "origin": { "line": 197, "start": 51, "end": 61 }
+            "tito_positions": [ { "line": 209, "start": 51, "end": 61 } ],
+            "origin": { "line": 209, "start": 51, "end": 61 }
           }
         ]
       },
@@ -887,8 +887,8 @@
                 "kind": "TestA"
               }
             ],
-            "origin": { "line": 197, "start": 11, "end": 62 },
-            "call_site": "197:4-197:63"
+            "origin": { "line": 209, "start": 11, "end": 62 },
+            "call_site": "209:4-209:63"
           }
         ]
       }
@@ -909,9 +909,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize_tito_shaping.issue_multiple_titos_same_path_with_transform",
-    "callable_line": 196,
+    "callable_line": 208,
     "code": 1001,
-    "line": 198,
+    "line": 210,
     "start": 11,
     "end": 62,
     "filename": "sanitize_tito_shaping.py",
@@ -927,12 +927,12 @@
                   {
                     "message": "TransformX",
                     "call": {
-                      "position": { "line": 198, "start": 51, "end": 61 },
+                      "position": { "line": 210, "start": 51, "end": 61 },
                       "resolves_to": [
                         "sanitize_tito_shaping.multiple_titos_same_path_with_transform"
                       ],
                       "port": "formal(x, position=0)",
-                      "call_site": "198:11-198:62"
+                      "call_site": "210:11-210:62"
                     },
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -951,8 +951,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 198, "start": 51, "end": 61 } ],
-            "origin": { "line": 198, "start": 51, "end": 61 }
+            "tito_positions": [ { "line": 210, "start": 51, "end": 61 } ],
+            "origin": { "line": 210, "start": 51, "end": 61 }
           }
         ]
       },
@@ -971,8 +971,8 @@
                 "kind": "TestB"
               }
             ],
-            "origin": { "line": 198, "start": 11, "end": 62 },
-            "call_site": "198:4-198:63"
+            "origin": { "line": 210, "start": 11, "end": 62 },
+            "call_site": "210:4-210:63"
           }
         ]
       }
@@ -993,9 +993,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize_tito_shaping.issue_multiple_titos_same_path_with_transform",
-    "callable_line": 196,
+    "callable_line": 208,
     "code": 1002,
-    "line": 197,
+    "line": 209,
     "start": 11,
     "end": 62,
     "filename": "sanitize_tito_shaping.py",
@@ -1011,12 +1011,12 @@
                   {
                     "message": "TransformY",
                     "call": {
-                      "position": { "line": 197, "start": 51, "end": 61 },
+                      "position": { "line": 209, "start": 51, "end": 61 },
                       "resolves_to": [
                         "sanitize_tito_shaping.multiple_titos_same_path_with_transform"
                       ],
                       "port": "formal(x, position=0)",
-                      "call_site": "197:11-197:62"
+                      "call_site": "209:11-209:62"
                     },
                     "leaf_kind": "TransformY:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -1035,8 +1035,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 197, "start": 51, "end": 61 } ],
-            "origin": { "line": 197, "start": 51, "end": 61 }
+            "tito_positions": [ { "line": 209, "start": 51, "end": 61 } ],
+            "origin": { "line": 209, "start": 51, "end": 61 }
           }
         ]
       },
@@ -1055,8 +1055,8 @@
                 "kind": "TestA"
               }
             ],
-            "origin": { "line": 197, "start": 11, "end": 62 },
-            "call_site": "197:4-197:63"
+            "origin": { "line": 209, "start": 11, "end": 62 },
+            "call_site": "209:4-209:63"
           }
         ]
       }
@@ -1077,9 +1077,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize_tito_shaping.issue_multiple_titos_same_path_with_transform",
-    "callable_line": 196,
+    "callable_line": 208,
     "code": 1002,
-    "line": 198,
+    "line": 210,
     "start": 11,
     "end": 62,
     "filename": "sanitize_tito_shaping.py",
@@ -1095,12 +1095,12 @@
                   {
                     "message": "TransformY",
                     "call": {
-                      "position": { "line": 198, "start": 51, "end": 61 },
+                      "position": { "line": 210, "start": 51, "end": 61 },
                       "resolves_to": [
                         "sanitize_tito_shaping.multiple_titos_same_path_with_transform"
                       ],
                       "port": "formal(x, position=0)",
-                      "call_site": "198:11-198:62"
+                      "call_site": "210:11-210:62"
                     },
                     "leaf_kind": "TransformY:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -1122,12 +1122,12 @@
                   {
                     "message": "TransformY",
                     "call": {
-                      "position": { "line": 198, "start": 51, "end": 61 },
+                      "position": { "line": 210, "start": 51, "end": 61 },
                       "resolves_to": [
                         "sanitize_tito_shaping.multiple_titos_same_path_with_transform"
                       ],
                       "port": "formal(x, position=0)",
-                      "call_site": "198:11-198:62"
+                      "call_site": "210:11-210:62"
                     },
                     "leaf_kind": "TransformY:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -1146,8 +1146,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 198, "start": 51, "end": 61 } ],
-            "origin": { "line": 198, "start": 51, "end": 61 }
+            "tito_positions": [ { "line": 210, "start": 51, "end": 61 } ],
+            "origin": { "line": 210, "start": 51, "end": 61 }
           }
         ]
       },
@@ -1166,8 +1166,8 @@
                 "kind": "TestB"
               }
             ],
-            "origin": { "line": 198, "start": 11, "end": 62 },
-            "call_site": "198:4-198:63"
+            "origin": { "line": 210, "start": 11, "end": 62 },
+            "call_site": "210:4-210:63"
           }
         ]
       }
@@ -1191,7 +1191,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.loop_multiple_titos_different_input_output_paths",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 156,
+    "callable_line": 168,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1206,7 +1206,7 @@
               { "via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 158, "start": 56, "end": 57 } ],
+            "tito_positions": [ { "line": 170, "start": 56, "end": 57 } ],
             "tito": {}
           }
         ]
@@ -1225,7 +1225,7 @@
             "local_features": [
               { "via": "feature" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 158, "start": 56, "end": 57 } ],
+            "tito_positions": [ { "line": 170, "start": 56, "end": 57 } ],
             "tito": {}
           }
         ]
@@ -1242,7 +1242,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 158, "start": 56, "end": 57 } ],
+            "tito_positions": [ { "line": 170, "start": 56, "end": 57 } ],
             "tito": {}
           }
         ]
@@ -1259,7 +1259,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 158, "start": 56, "end": 57 } ],
+            "tito_positions": [ { "line": 170, "start": 56, "end": 57 } ],
             "tito": {}
           }
         ]
@@ -1278,7 +1278,7 @@
             "local_features": [
               { "via": "feature" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 158, "start": 56, "end": 57 } ],
+            "tito_positions": [ { "line": 170, "start": 56, "end": 57 } ],
             "tito": {}
           }
         ]
@@ -1291,7 +1291,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.loop_multiple_titos_different_input_paths",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 131,
+    "callable_line": 143,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1304,7 +1304,7 @@
               { "via": "broadening" },
               { "via": "model-tito-shaping" }
             ],
-            "tito_positions": [ { "line": 133, "start": 49, "end": 50 } ],
+            "tito_positions": [ { "line": 145, "start": 49, "end": 50 } ],
             "tito": {}
           }
         ]
@@ -1380,7 +1380,7 @@
               { "via": "model-tito-shaping" },
               { "always-via": "model-tito-broadening" }
             ],
-            "tito_positions": [ { "line": 133, "start": 49, "end": 50 } ],
+            "tito_positions": [ { "line": 145, "start": 49, "end": 50 } ],
             "tito": {}
           }
         ]
@@ -1441,7 +1441,7 @@
               { "via": "model-tito-shaping" },
               { "via": "model-tito-broadening" }
             ],
-            "tito_positions": [ { "line": 133, "start": 49, "end": 50 } ],
+            "tito_positions": [ { "line": 145, "start": 49, "end": 50 } ],
             "tito": {}
           }
         ]
@@ -1492,7 +1492,7 @@
               { "via": "model-tito-shaping" },
               { "via": "model-tito-broadening" }
             ],
-            "tito_positions": [ { "line": 133, "start": 49, "end": 50 } ],
+            "tito_positions": [ { "line": 145, "start": 49, "end": 50 } ],
             "tito": {}
           }
         ]
@@ -1543,7 +1543,7 @@
               { "via": "model-tito-shaping" },
               { "via": "model-tito-broadening" }
             ],
-            "tito_positions": [ { "line": 133, "start": 49, "end": 50 } ],
+            "tito_positions": [ { "line": 145, "start": 49, "end": 50 } ],
             "tito": {}
           }
         ]
@@ -1584,7 +1584,7 @@
               { "via": "model-tito-shaping" },
               { "via": "model-tito-broadening" }
             ],
-            "tito_positions": [ { "line": 133, "start": 49, "end": 50 } ],
+            "tito_positions": [ { "line": 145, "start": 49, "end": 50 } ],
             "tito": {}
           }
         ]
@@ -1597,7 +1597,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.loop_multiple_titos_different_output_paths",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 106,
+    "callable_line": 118,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1757,7 +1757,7 @@
               }
             ],
             "local_features": [ { "via": "feature" }, { "via": "tito" } ],
-            "tito_positions": [ { "line": 108, "start": 50, "end": 51 } ],
+            "tito_positions": [ { "line": 120, "start": 50, "end": 51 } ],
             "tito": {}
           }
         ]
@@ -1770,7 +1770,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.loop_multiple_titos_same_path",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 81,
+    "callable_line": 93,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1855,7 +1855,7 @@
               }
             ],
             "local_features": [ { "via": "feature" }, { "via": "tito" } ],
-            "tito_positions": [ { "line": 83, "start": 37, "end": 38 } ],
+            "tito_positions": [ { "line": 95, "start": 37, "end": 38 } ],
             "tito": {}
           }
         ]
@@ -1868,7 +1868,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.multiple_titos_different_input_output_paths",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 143,
+    "callable_line": 155,
     "tito": [
       {
         "port": "formal(x, position=0)[a]",
@@ -1902,8 +1902,8 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [
-              { "line": 147, "start": 33, "end": 58 },
-              { "line": 147, "start": 51, "end": 57 }
+              { "line": 159, "start": 33, "end": 58 },
+              { "line": 159, "start": 51, "end": 57 }
             ],
             "tito": {}
           }
@@ -1925,7 +1925,7 @@
               { "first-index": "c" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 149, "start": 39, "end": 45 } ],
+            "tito_positions": [ { "line": 161, "start": 39, "end": 45 } ],
             "tito": {}
           }
         ]
@@ -1946,7 +1946,7 @@
               { "first-index": "d" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 151, "start": 47, "end": 53 } ],
+            "tito_positions": [ { "line": 163, "start": 47, "end": 53 } ],
             "tito": {}
           }
         ]
@@ -1969,9 +1969,9 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [
-              { "line": 153, "start": 33, "end": 75 },
-              { "line": 153, "start": 51, "end": 74 },
-              { "line": 153, "start": 67, "end": 73 }
+              { "line": 165, "start": 33, "end": 75 },
+              { "line": 165, "start": 51, "end": 74 },
+              { "line": 165, "start": 67, "end": 73 }
             ],
             "tito": {}
           }
@@ -1985,7 +1985,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.multiple_titos_different_input_paths",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 118,
+    "callable_line": 130,
     "tito": [
       {
         "port": "formal(x, position=0)[a]",
@@ -2017,8 +2017,8 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [
-              { "line": 122, "start": 27, "end": 52 },
-              { "line": 122, "start": 45, "end": 51 }
+              { "line": 134, "start": 27, "end": 52 },
+              { "line": 134, "start": 45, "end": 51 }
             ],
             "tito": {}
           }
@@ -2040,7 +2040,7 @@
               { "first-index": "c" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 124, "start": 33, "end": 39 } ],
+            "tito_positions": [ { "line": 136, "start": 33, "end": 39 } ],
             "tito": {}
           }
         ]
@@ -2061,7 +2061,7 @@
               { "first-index": "d" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 126, "start": 41, "end": 47 } ],
+            "tito_positions": [ { "line": 138, "start": 41, "end": 47 } ],
             "tito": {}
           }
         ]
@@ -2084,9 +2084,9 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [
-              { "line": 128, "start": 27, "end": 69 },
-              { "line": 128, "start": 45, "end": 68 },
-              { "line": 128, "start": 61, "end": 67 }
+              { "line": 140, "start": 27, "end": 69 },
+              { "line": 140, "start": 45, "end": 68 },
+              { "line": 140, "start": 61, "end": 67 }
             ],
             "tito": {}
           }
@@ -2100,7 +2100,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.multiple_titos_different_output_paths",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 93,
+    "callable_line": 105,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2131,12 +2131,12 @@
             ],
             "local_features": [ { "via": "feature" }, { "via": "tito" } ],
             "tito_positions": [
-              { "line": 97, "start": 33, "end": 53 },
-              { "line": 97, "start": 51, "end": 52 },
-              { "line": 99, "start": 39, "end": 40 },
-              { "line": 101, "start": 47, "end": 48 },
-              { "line": 103, "start": 39, "end": 57 },
-              { "line": 103, "start": 55, "end": 56 }
+              { "line": 109, "start": 33, "end": 53 },
+              { "line": 109, "start": 51, "end": 52 },
+              { "line": 111, "start": 39, "end": 40 },
+              { "line": 113, "start": 47, "end": 48 },
+              { "line": 115, "start": 39, "end": 57 },
+              { "line": 115, "start": 55, "end": 56 }
             ],
             "tito": {}
           }
@@ -2150,7 +2150,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.multiple_titos_same_path",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 62,
+    "callable_line": 75,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2191,16 +2191,16 @@
             ],
             "local_features": [ { "via": "feature" }, { "via": "tito" } ],
             "tito_positions": [
-              { "line": 66, "start": 27, "end": 47 },
-              { "line": 66, "start": 45, "end": 46 },
-              { "line": 68, "start": 33, "end": 34 },
-              { "line": 70, "start": 41, "end": 42 },
-              { "line": 72, "start": 27, "end": 45 },
-              { "line": 72, "start": 43, "end": 44 },
-              { "line": 74, "start": 41, "end": 61 },
-              { "line": 74, "start": 59, "end": 60 },
-              { "line": 76, "start": 33, "end": 51 },
-              { "line": 76, "start": 49, "end": 50 }
+              { "line": 79, "start": 27, "end": 47 },
+              { "line": 79, "start": 45, "end": 46 },
+              { "line": 81, "start": 33, "end": 34 },
+              { "line": 83, "start": 41, "end": 42 },
+              { "line": 85, "start": 27, "end": 45 },
+              { "line": 85, "start": 43, "end": 44 },
+              { "line": 87, "start": 41, "end": 61 },
+              { "line": 87, "start": 59, "end": 60 },
+              { "line": 89, "start": 33, "end": 51 },
+              { "line": 89, "start": 49, "end": 50 }
             ],
             "tito": {}
           }
@@ -2214,7 +2214,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.multiple_titos_same_path_different_collapse_depth",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 168,
+    "callable_line": 180,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2241,11 +2241,11 @@
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [
-              { "line": 170, "start": 34, "end": 35 },
-              { "line": 172, "start": 33, "end": 53 },
-              { "line": 172, "start": 51, "end": 52 },
-              { "line": 174, "start": 34, "end": 62 },
-              { "line": 174, "start": 60, "end": 61 }
+              { "line": 182, "start": 34, "end": 35 },
+              { "line": 184, "start": 33, "end": 53 },
+              { "line": 184, "start": 51, "end": 52 },
+              { "line": 186, "start": 34, "end": 62 },
+              { "line": 186, "start": 60, "end": 61 }
             ],
             "tito": {}
           }
@@ -2259,7 +2259,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.multiple_titos_same_path_with_transform",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 179,
+    "callable_line": 191,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2276,8 +2276,8 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "origin": { "line": 185, "start": 27, "end": 28 },
-            "call_site": "185:15-185:29"
+            "origin": { "line": 197, "start": 27, "end": 28 },
+            "call_site": "197:15-197:29"
           },
           {
             "kinds": [
@@ -2292,9 +2292,9 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 187, "start": 45, "end": 46 } ],
-            "origin": { "line": 187, "start": 27, "end": 47 },
-            "call_site": "187:15-187:48"
+            "tito_positions": [ { "line": 199, "start": 45, "end": 46 } ],
+            "origin": { "line": 199, "start": 27, "end": 47 },
+            "call_site": "199:15-199:48"
           },
           {
             "kinds": [
@@ -2308,8 +2308,8 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "origin": { "line": 189, "start": 45, "end": 46 },
-            "call_site": "189:33-189:47"
+            "origin": { "line": 201, "start": 45, "end": 46 },
+            "call_site": "201:33-201:47"
           },
           {
             "kinds": [
@@ -2323,8 +2323,8 @@
                 "kind": "TransformY:ExtraTraceSink"
               }
             ],
-            "origin": { "line": 191, "start": 27, "end": 28 },
-            "call_site": "191:15-191:29"
+            "origin": { "line": 203, "start": 27, "end": 28 },
+            "call_site": "203:15-203:29"
           },
           {
             "kinds": [
@@ -2338,8 +2338,8 @@
                 "kind": "TransformY:ExtraTraceSink"
               }
             ],
-            "origin": { "line": 193, "start": 53, "end": 54 },
-            "call_site": "193:41-193:55"
+            "origin": { "line": 205, "start": 53, "end": 54 },
+            "call_site": "205:41-205:55"
           }
         ]
       }
@@ -2384,15 +2384,15 @@
             ],
             "local_features": [ { "via": "tito" } ],
             "tito_positions": [
-              { "line": 183, "start": 33, "end": 34 },
-              { "line": 185, "start": 27, "end": 28 },
-              { "line": 187, "start": 27, "end": 47 },
-              { "line": 187, "start": 45, "end": 46 },
-              { "line": 189, "start": 33, "end": 47 },
-              { "line": 189, "start": 45, "end": 46 },
-              { "line": 191, "start": 27, "end": 28 },
-              { "line": 193, "start": 41, "end": 55 },
-              { "line": 193, "start": 53, "end": 54 }
+              { "line": 195, "start": 33, "end": 34 },
+              { "line": 197, "start": 27, "end": 28 },
+              { "line": 199, "start": 27, "end": 47 },
+              { "line": 199, "start": 45, "end": 46 },
+              { "line": 201, "start": 33, "end": 47 },
+              { "line": 201, "start": 45, "end": 46 },
+              { "line": 203, "start": 27, "end": 28 },
+              { "line": 205, "start": 41, "end": 55 },
+              { "line": 205, "start": 53, "end": 54 }
             ],
             "tito": {}
           }
@@ -2406,7 +2406,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.sanitize_sink_a",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 25,
+    "callable_line": 29,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2433,7 +2433,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.sanitize_sink_a_depth_two",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 34,
+    "callable_line": 41,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2447,7 +2447,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 35, "start": 27, "end": 28 } ],
+            "tito_positions": [ { "line": 42, "start": 27, "end": 28 } ],
             "tito": {}
           }
         ]
@@ -2460,7 +2460,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.sanitize_sink_b",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 28,
+    "callable_line": 33,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2487,7 +2487,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.sanitize_source_a",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 19,
+    "callable_line": 21,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2514,7 +2514,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.sanitize_source_a_depth_two",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 31,
+    "callable_line": 37,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2528,7 +2528,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 32, "start": 29, "end": 30 } ],
+            "tito_positions": [ { "line": 38, "start": 29, "end": 30 } ],
             "tito": {}
           }
         ]
@@ -2541,7 +2541,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.sanitize_source_b",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 22,
+    "callable_line": 25,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2568,7 +2568,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.tito_collapse_one",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 55,
+    "callable_line": 68,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2586,7 +2586,7 @@
               { "first-index": "c" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 56, "start": 39, "end": 40 } ],
+            "tito_positions": [ { "line": 69, "start": 39, "end": 40 } ],
             "tito": {}
           }
         ]
@@ -2599,7 +2599,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.tito_collapse_one_append_a_b_c",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 52,
+    "callable_line": 64,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2620,7 +2620,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.transform_x",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 37,
+    "callable_line": 45,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2655,7 +2655,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.transform_y",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 40,
+    "callable_line": 49,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2690,7 +2690,7 @@
   "data": {
     "callable": "sanitize_tito_shaping.transform_z",
     "filename": "sanitize_tito_shaping.py",
-    "callable_line": 43,
+    "callable_line": 53,
     "sinks": [
       {
         "port": "formal(x, position=0)",

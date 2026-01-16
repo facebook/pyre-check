@@ -7,6 +7,8 @@
 
 from pysa import _test_source
 
+import random
+
 
 def propagate_sink_format_string(a):
     f"<{a}>"
@@ -91,9 +93,9 @@ def conditional_literal_sink():
 
 def string_literal_arguments_sink(template: str):
     x = _test_source()
-    if 1 == 1:
+    if random.random() > 0.5:
         template.format("https://1", x)
-    elif 1 == 1:
+    elif random.random() > 0.5:
         template % ("https://2", x)  # TODO(T146946806): Should see an issue
     else:
         x + "https://3"

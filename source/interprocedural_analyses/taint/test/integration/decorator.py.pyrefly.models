@@ -4,7 +4,7 @@
   "data": {
     "callable": "decorator.add_return_source.inner",
     "filename": "decorator.py",
-    "callable_line": 397,
+    "callable_line": 404,
     "sources": [
       {
         "port": "result",
@@ -19,7 +19,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 401, "start": 19, "end": 33 }
+            "origin": { "line": 408, "start": 19, "end": 33 }
           }
         ]
       }
@@ -31,7 +31,7 @@
   "data": {
     "callable": "decorator.conditional_decorator_factory.add_sink.inner",
     "filename": "decorator.py",
-    "callable_line": 357,
+    "callable_line": 363,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -46,8 +46,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 358, "start": 27, "end": 28 },
-            "call_site": "358:16-358:29"
+            "origin": { "line": 364, "start": 27, "end": 28 },
+            "call_site": "364:16-364:29"
           }
         ]
       }
@@ -59,7 +59,7 @@
   "data": {
     "callable": "decorator.conditional_decorator_factory.identity",
     "filename": "decorator.py",
-    "callable_line": 365,
+    "callable_line": 372,
     "tito": [
       {
         "port": "formal(f, position=0)",
@@ -78,7 +78,7 @@
   "data": {
     "callable": "decorator.conditional_no_op_decorator_factory.inner_false",
     "filename": "decorator.py",
-    "callable_line": 339,
+    "callable_line": 342,
     "tito": [
       {
         "port": "formal(f, position=0)",
@@ -97,7 +97,7 @@
   "data": {
     "callable": "decorator.conditional_no_op_decorator_factory.inner_true",
     "filename": "decorator.py",
-    "callable_line": 334,
+    "callable_line": 336,
     "tito": [
       {
         "port": "formal(f, position=0)",
@@ -116,7 +116,7 @@
   "data": {
     "callable": "decorator.decorated",
     "filename": "decorator.py",
-    "callable_line": 289,
+    "callable_line": 290,
     "sinks": [
       {
         "port": "formal(into_sink, position=1)",
@@ -131,8 +131,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 290, "start": 15, "end": 24 },
-            "call_site": "290:4-290:25"
+            "origin": { "line": 291, "start": 15, "end": 24 },
+            "call_site": "291:4-291:25"
           }
         ]
       }
@@ -144,7 +144,7 @@
   "data": {
     "callable": "decorator.fails_to_apply",
     "filename": "decorator.py",
-    "callable_line": 97,
+    "callable_line": 98,
     "tito": [
       {
         "port": "formal(f, position=0)",
@@ -163,7 +163,7 @@
   "data": {
     "callable": "decorator.foo_args_kwargs_with_sink",
     "filename": "decorator.py",
-    "callable_line": 78,
+    "callable_line": 79,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -181,8 +181,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 79, "start": 15, "end": 16 },
-            "call_site": "79:4-79:17"
+            "origin": { "line": 80, "start": 15, "end": 16 },
+            "call_site": "80:4-80:17"
           }
         ]
       }
@@ -194,7 +194,7 @@
   "data": {
     "callable": "decorator.foo_with_sink",
     "filename": "decorator.py",
-    "callable_line": 35,
+    "callable_line": 36,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -212,8 +212,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 36, "start": 15, "end": 16 },
-            "call_site": "36:4-36:17"
+            "origin": { "line": 37, "start": 15, "end": 16 },
+            "call_site": "37:4-37:17"
           }
         ]
       }
@@ -224,9 +224,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.issue_via_conditional_decorator_factory",
-    "callable_line": 376,
+    "callable_line": 383,
     "code": 5002,
-    "line": 377,
+    "line": 384,
     "start": 43,
     "end": 57,
     "filename": "decorator.py",
@@ -245,7 +245,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 377, "start": 43, "end": 57 }
+            "origin": { "line": 384, "start": 43, "end": 57 }
           }
         ]
       },
@@ -264,12 +264,12 @@
               }
             ],
             "call": {
-              "position": { "line": 377, "start": 43, "end": 57 },
+              "position": { "line": 384, "start": 43, "end": 57 },
               "resolves_to": [
                 "decorator.conditional_decorator_factory.add_sink.inner"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "377:4-377:58"
+              "call_site": "384:4-384:58"
             }
           }
         ]
@@ -291,9 +291,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.issue_via_conditional_no_op_decorator_factory",
-    "callable_line": 350,
+    "callable_line": 353,
     "code": 5002,
-    "line": 351,
+    "line": 354,
     "start": 49,
     "end": 63,
     "filename": "decorator.py",
@@ -312,7 +312,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 351, "start": 49, "end": 63 }
+            "origin": { "line": 354, "start": 49, "end": 63 }
           }
         ]
       },
@@ -331,12 +331,12 @@
               }
             ],
             "call": {
-              "position": { "line": 351, "start": 49, "end": 63 },
+              "position": { "line": 354, "start": 49, "end": 63 },
               "resolves_to": [
                 "decorator.sink_via_conditional_no_op_decorator_factory"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "351:4-351:64"
+              "call_site": "354:4-354:64"
             }
           }
         ]
@@ -358,9 +358,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.issue_via_no_op_decorator_factory",
-    "callable_line": 327,
+    "callable_line": 328,
     "code": 5002,
-    "line": 328,
+    "line": 329,
     "start": 37,
     "end": 51,
     "filename": "decorator.py",
@@ -379,7 +379,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 328, "start": 37, "end": 51 }
+            "origin": { "line": 329, "start": 37, "end": 51 }
           }
         ]
       },
@@ -398,10 +398,10 @@
               }
             ],
             "call": {
-              "position": { "line": 328, "start": 37, "end": 51 },
+              "position": { "line": 329, "start": 37, "end": 51 },
               "resolves_to": [ "decorator.sink_via_no_op_decorator_factory" ],
               "port": "formal(x, position=0)",
-              "call_site": "328:4-328:52"
+              "call_site": "329:4-329:52"
             }
           }
         ]
@@ -423,9 +423,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.main",
-    "callable_line": 198,
+    "callable_line": 199,
     "code": 5002,
-    "line": 199,
+    "line": 200,
     "start": 8,
     "end": 22,
     "filename": "decorator.py",
@@ -444,7 +444,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 199, "start": 8, "end": 22 }
+            "origin": { "line": 200, "start": 8, "end": 22 }
           }
         ]
       },
@@ -467,10 +467,10 @@
               }
             ],
             "call": {
-              "position": { "line": 199, "start": 8, "end": 22 },
+              "position": { "line": 200, "start": 8, "end": 22 },
               "resolves_to": [ "decorator.with_logging.inner" ],
               "port": "formal(x, position=0)",
-              "call_site": "199:4-199:23"
+              "call_site": "200:4-200:23"
             }
           }
         ]
@@ -495,9 +495,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.main",
-    "callable_line": 198,
+    "callable_line": 199,
     "code": 5002,
-    "line": 203,
+    "line": 204,
     "start": 22,
     "end": 36,
     "filename": "decorator.py",
@@ -516,7 +516,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 203, "start": 22, "end": 36 }
+            "origin": { "line": 204, "start": 22, "end": 36 }
           }
         ]
       },
@@ -535,10 +535,10 @@
               }
             ],
             "call": {
-              "position": { "line": 203, "start": 22, "end": 36 },
+              "position": { "line": 204, "start": 22, "end": 36 },
               "resolves_to": [ "decorator.with_logging_args_kwargs.inner" ],
               "port": "formal(**kwargs)",
-              "call_site": "203:4-203:37"
+              "call_site": "204:4-204:37"
             }
           }
         ]
@@ -560,9 +560,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.main",
-    "callable_line": 198,
+    "callable_line": 199,
     "code": 5002,
-    "line": 201,
+    "line": 202,
     "start": 20,
     "end": 34,
     "filename": "decorator.py",
@@ -581,7 +581,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 201, "start": 20, "end": 34 }
+            "origin": { "line": 202, "start": 20, "end": 34 }
           }
         ]
       },
@@ -600,10 +600,10 @@
               }
             ],
             "call": {
-              "position": { "line": 201, "start": 20, "end": 34 },
+              "position": { "line": 202, "start": 20, "end": 34 },
               "resolves_to": [ "decorator.with_logging_async.inner" ],
               "port": "formal(y, position=0)",
-              "call_site": "201:10-201:35"
+              "call_site": "202:10-202:35"
             }
           }
         ]
@@ -625,9 +625,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.main",
-    "callable_line": 198,
+    "callable_line": 199,
     "code": 5002,
-    "line": 214,
+    "line": 215,
     "start": 28,
     "end": 42,
     "filename": "decorator.py",
@@ -646,7 +646,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 214, "start": 28, "end": 42 }
+            "origin": { "line": 215, "start": 28, "end": 42 }
           }
         ]
       },
@@ -669,12 +669,12 @@
               }
             ],
             "call": {
-              "position": { "line": 214, "start": 28, "end": 42 },
+              "position": { "line": 215, "start": 28, "end": 42 },
               "resolves_to": [
                 "decorator.with_logging_first_parameter.inner"
               ],
               "port": "formal(first_parameter, position=0)",
-              "call_site": "214:4-214:52"
+              "call_site": "215:4-215:52"
             }
           }
         ]
@@ -699,9 +699,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.main",
-    "callable_line": 198,
+    "callable_line": 199,
     "code": 5002,
-    "line": 212,
+    "line": 213,
     "start": 32,
     "end": 46,
     "filename": "decorator.py",
@@ -720,7 +720,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 212, "start": 32, "end": 46 }
+            "origin": { "line": 213, "start": 32, "end": 46 }
           }
         ]
       },
@@ -739,12 +739,12 @@
               }
             ],
             "call": {
-              "position": { "line": 212, "start": 32, "end": 46 },
+              "position": { "line": 213, "start": 32, "end": 46 },
               "resolves_to": [
                 "decorator.with_named_logger._inner_decorator.inner"
               ],
               "port": "formal(*args, position=0)",
-              "call_site": "212:4-212:47"
+              "call_site": "213:4-213:47"
             }
           }
         ]
@@ -767,7 +767,7 @@
   "data": {
     "callable": "decorator.no_op_decorator",
     "filename": "decorator.py",
-    "callable_line": 300,
+    "callable_line": 301,
     "tito": [
       {
         "port": "formal(f, position=0)",
@@ -786,7 +786,7 @@
   "data": {
     "callable": "decorator.no_op_decorator_factory.inner",
     "filename": "decorator.py",
-    "callable_line": 315,
+    "callable_line": 316,
     "tito": [
       {
         "port": "formal(f, position=0)",
@@ -805,7 +805,7 @@
   "data": {
     "callable": "decorator.second_parameter_source_inlineable_decorator",
     "filename": "decorator.py",
-    "callable_line": 256,
+    "callable_line": 257,
     "sinks": [
       {
         "port": "formal(arg2, position=1)",
@@ -820,8 +820,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 257, "start": 15, "end": 19 },
-            "call_site": "257:4-257:20"
+            "origin": { "line": 258, "start": 15, "end": 19 },
+            "call_site": "258:4-258:20"
           }
         ]
       }
@@ -838,9 +838,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.second_parameter_source_inlineable_decorator",
-    "callable_line": 256,
+    "callable_line": 257,
     "code": 5002,
-    "line": 257,
+    "line": 258,
     "start": 15,
     "end": 19,
     "filename": "decorator.py",
@@ -861,8 +861,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 256, "start": 60, "end": 69 },
-            "call_site": "256:0-257:20"
+            "origin": { "line": 257, "start": 60, "end": 69 },
+            "call_site": "257:0-258:20"
           }
         ]
       },
@@ -879,8 +879,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 257, "start": 15, "end": 19 },
-            "call_site": "257:4-257:20"
+            "origin": { "line": 258, "start": 15, "end": 19 },
+            "call_site": "258:4-258:20"
           }
         ]
       }
@@ -900,7 +900,7 @@
   "data": {
     "callable": "decorator.second_parameter_source_inlineable_decorator_with_inner",
     "filename": "decorator.py",
-    "callable_line": 261,
+    "callable_line": 262,
     "parameter_sources": [
       {
         "port": "formal(arg2, position=1)",
@@ -914,7 +914,7 @@
   "data": {
     "callable": "decorator.second_parameter_source_with_non_inlineable_decorator",
     "filename": "decorator.py",
-    "callable_line": 244,
+    "callable_line": 245,
     "sinks": [
       {
         "port": "formal(arg2, position=1)",
@@ -929,8 +929,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 245, "start": 15, "end": 19 },
-            "call_site": "245:4-245:20"
+            "origin": { "line": 246, "start": 15, "end": 19 },
+            "call_site": "246:4-246:20"
           }
         ]
       }
@@ -947,9 +947,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.second_parameter_source_with_non_inlineable_decorator",
-    "callable_line": 244,
+    "callable_line": 245,
     "code": 5002,
-    "line": 245,
+    "line": 246,
     "start": 15,
     "end": 19,
     "filename": "decorator.py",
@@ -970,8 +970,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 244, "start": 69, "end": 78 },
-            "call_site": "244:0-245:20"
+            "origin": { "line": 245, "start": 69, "end": 78 },
+            "call_site": "245:0-246:20"
           }
         ]
       },
@@ -988,8 +988,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 245, "start": 15, "end": 19 },
-            "call_site": "245:4-245:20"
+            "origin": { "line": 246, "start": 15, "end": 19 },
+            "call_site": "246:4-246:20"
           }
         ]
       }
@@ -1009,7 +1009,7 @@
   "data": {
     "callable": "decorator.sink_via_conditional_no_op_decorator_factory",
     "filename": "decorator.py",
-    "callable_line": 346,
+    "callable_line": 349,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1024,8 +1024,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 347, "start": 15, "end": 16 },
-            "call_site": "347:4-347:17"
+            "origin": { "line": 350, "start": 15, "end": 16 },
+            "call_site": "350:4-350:17"
           }
         ]
       }
@@ -1037,7 +1037,7 @@
   "data": {
     "callable": "decorator.sink_via_no_op_decorator",
     "filename": "decorator.py",
-    "callable_line": 305,
+    "callable_line": 306,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1052,8 +1052,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 306, "start": 15, "end": 16 },
-            "call_site": "306:4-306:17"
+            "origin": { "line": 307, "start": 15, "end": 16 },
+            "call_site": "307:4-307:17"
           }
         ]
       }
@@ -1065,7 +1065,7 @@
   "data": {
     "callable": "decorator.sink_via_no_op_decorator_factory",
     "filename": "decorator.py",
-    "callable_line": 323,
+    "callable_line": 324,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1080,8 +1080,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 324, "start": 15, "end": 16 },
-            "call_site": "324:4-324:17"
+            "origin": { "line": 325, "start": 15, "end": 16 },
+            "call_site": "325:4-325:17"
           }
         ]
       }
@@ -1093,7 +1093,7 @@
   "data": {
     "callable": "decorator.sink_via_trivial_decorator",
     "filename": "decorator.py",
-    "callable_line": 271,
+    "callable_line": 272,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1108,8 +1108,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 272, "start": 15, "end": 16 },
-            "call_site": "272:4-272:17"
+            "origin": { "line": 273, "start": 15, "end": 16 },
+            "call_site": "273:4-273:17"
           }
         ]
       }
@@ -1121,7 +1121,7 @@
   "data": {
     "callable": "decorator.test_parameter_default_value",
     "filename": "decorator.py",
-    "callable_line": 411,
+    "callable_line": 418,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1136,8 +1136,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 412, "start": 15, "end": 16 },
-            "call_site": "412:4-412:17"
+            "origin": { "line": 419, "start": 15, "end": 16 },
+            "call_site": "419:4-419:17"
           }
         ]
       }
@@ -1148,9 +1148,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.test_parameter_default_value",
-    "callable_line": 411,
+    "callable_line": 418,
     "code": 5002,
-    "line": 412,
+    "line": 419,
     "start": 15,
     "end": 16,
     "filename": "decorator.py",
@@ -1171,7 +1171,7 @@
               }
             ],
             "call": {
-              "position": { "line": 411, "start": 42, "end": 71 },
+              "position": { "line": 418, "start": 42, "end": 71 },
               "resolves_to": [ "decorator.add_return_source.inner" ],
               "port": "result"
             }
@@ -1191,8 +1191,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 412, "start": 15, "end": 16 },
-            "call_site": "412:4-412:17"
+            "origin": { "line": 419, "start": 15, "end": 16 },
+            "call_site": "419:4-419:17"
           }
         ]
       }
@@ -1214,7 +1214,7 @@
   "data": {
     "callable": "decorator.with_logging.inner",
     "filename": "decorator.py",
-    "callable_line": 15,
+    "callable_line": 16,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1232,8 +1232,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 16, "start": 19, "end": 20 },
-            "call_site": "16:8-16:21"
+            "origin": { "line": 17, "start": 19, "end": 20 },
+            "call_site": "17:8-17:21"
           }
         ]
       }
@@ -1245,7 +1245,7 @@
   "data": {
     "callable": "decorator.with_logging_args_kwargs.inner",
     "filename": "decorator.py",
-    "callable_line": 58,
+    "callable_line": 59,
     "sinks": [
       {
         "port": "formal(**kwargs)",
@@ -1260,8 +1260,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 59, "start": 19, "end": 25 },
-            "call_site": "59:8-59:26"
+            "origin": { "line": 60, "start": 19, "end": 25 },
+            "call_site": "60:8-60:26"
           }
         ]
       }
@@ -1273,7 +1273,7 @@
   "data": {
     "callable": "decorator.with_logging_async.inner",
     "filename": "decorator.py",
-    "callable_line": 43,
+    "callable_line": 44,
     "sinks": [
       {
         "port": "formal(y, position=0)",
@@ -1288,8 +1288,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 47, "start": 23, "end": 24 },
-            "call_site": "47:12-47:25"
+            "origin": { "line": 48, "start": 23, "end": 24 },
+            "call_site": "48:12-48:25"
           }
         ]
       }
@@ -1301,7 +1301,7 @@
   "data": {
     "callable": "decorator.with_logging_first_parameter.inner",
     "filename": "decorator.py",
-    "callable_line": 130,
+    "callable_line": 131,
     "sinks": [
       {
         "port": "formal(first_parameter, position=0)",
@@ -1319,8 +1319,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 132, "start": 23, "end": 38 },
-            "call_site": "132:12-132:39"
+            "origin": { "line": 133, "start": 23, "end": 38 },
+            "call_site": "133:12-133:39"
           }
         ]
       }
@@ -1332,7 +1332,7 @@
   "data": {
     "callable": "decorator.with_logging_helper_functions.after",
     "filename": "decorator.py",
-    "callable_line": 159,
+    "callable_line": 160,
     "sinks": [
       {
         "port": "formal(*args, position=0)",
@@ -1347,8 +1347,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 161, "start": 19, "end": 23 },
-            "call_site": "161:8-161:24"
+            "origin": { "line": 162, "start": 19, "end": 23 },
+            "call_site": "162:8-162:24"
           }
         ]
       }
@@ -1360,7 +1360,7 @@
   "data": {
     "callable": "decorator.with_logging_sink.inner",
     "filename": "decorator.py",
-    "callable_line": 83,
+    "callable_line": 84,
     "sinks": [
       {
         "port": "formal(y, position=0)",
@@ -1375,8 +1375,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 84, "start": 19, "end": 20 },
-            "call_site": "84:8-84:21"
+            "origin": { "line": 85, "start": 19, "end": 20 },
+            "call_site": "85:8-85:21"
           }
         ]
       }
@@ -1388,7 +1388,7 @@
   "data": {
     "callable": "decorator.with_named_logger._inner_decorator.inner",
     "filename": "decorator.py",
-    "callable_line": 112,
+    "callable_line": 113,
     "sinks": [
       {
         "port": "formal(*args, position=0)",
@@ -1403,8 +1403,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 114, "start": 23, "end": 27 },
-            "call_site": "114:12-114:28"
+            "origin": { "line": 115, "start": 23, "end": 27 },
+            "call_site": "115:12-115:28"
           }
         ]
       }
@@ -1573,7 +1573,7 @@
   "data": {
     "callable": "decorator.Foo.foo",
     "filename": "decorator.py",
-    "callable_line": 180,
+    "callable_line": 181,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -1587,10 +1587,10 @@
               }
             ],
             "call": {
-              "position": { "line": 181, "start": 25, "end": 26 },
+              "position": { "line": 182, "start": 25, "end": 26 },
               "resolves_to": [ "decorator.Foo.sink_method" ],
               "port": "formal(x, position=1)",
-              "call_site": "181:8-181:27"
+              "call_site": "182:8-182:27"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
@@ -1606,7 +1606,7 @@
   "data": {
     "callable": "decorator.Foo.sink_method",
     "filename": "decorator.py",
-    "callable_line": 175,
+    "callable_line": 176,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -1621,10 +1621,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 177, "start": 19, "end": 20 },
+            "origin": { "line": 178, "start": 19, "end": 20 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "177:8-177:21"
+            "call_site": "178:8-178:21"
           }
         ]
       }
@@ -1636,7 +1636,7 @@
   "data": {
     "callable": "decorator.Foo.some_class_method",
     "filename": "decorator.py",
-    "callable_line": 194,
+    "callable_line": 195,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -1650,10 +1650,10 @@
               }
             ],
             "call": {
-              "position": { "line": 195, "start": 26, "end": 27 },
+              "position": { "line": 196, "start": 26, "end": 27 },
               "resolves_to": [ "decorator.Foo.sink_method" ],
               "port": "formal(x, position=1)",
-              "call_site": "195:8-195:28"
+              "call_site": "196:8-196:28"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
@@ -1669,7 +1669,7 @@
   "data": {
     "callable": "decorator.StringWrapper.__add__",
     "filename": "decorator.py",
-    "callable_line": 385,
+    "callable_line": 392,
     "sinks": [
       {
         "port": "formal(other, position=1)",
@@ -1684,10 +1684,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 387, "start": 19, "end": 24 },
+            "origin": { "line": 394, "start": 19, "end": 24 },
             "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false,
-            "call_site": "387:8-387:25"
+            "call_site": "394:8-394:25"
           }
         ]
       },
@@ -1704,10 +1704,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 386, "start": 19, "end": 23 },
+            "origin": { "line": 393, "start": 19, "end": 23 },
             "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false,
-            "call_site": "386:8-386:24"
+            "call_site": "393:8-393:24"
           }
         ]
       }
@@ -1726,8 +1726,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 388, "start": 29, "end": 53 },
-              { "line": 388, "start": 42, "end": 53 }
+              { "line": 395, "start": 29, "end": 53 },
+              { "line": 395, "start": 42, "end": 53 }
             ],
             "tito": {
               "caller_interval": [ { "lower": 4, "upper": 5 } ],
@@ -1749,8 +1749,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 388, "start": 29, "end": 39 },
-              { "line": 388, "start": 29, "end": 53 }
+              { "line": 395, "start": 29, "end": 39 },
+              { "line": 395, "start": 29, "end": 53 }
             ],
             "tito": {
               "caller_interval": [ { "lower": 4, "upper": 5 } ],
@@ -1767,7 +1767,7 @@
   "data": {
     "callable": "decorator.StringWrapper.__init__",
     "filename": "decorator.py",
-    "callable_line": 381,
+    "callable_line": 388,
     "tito": [
       {
         "port": "formal(value, position=1)",

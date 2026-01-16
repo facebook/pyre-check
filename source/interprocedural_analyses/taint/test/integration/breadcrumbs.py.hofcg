@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "breadcrumbs.bool_parameter",
   "returned_callables": [],
   "calls": {
-    "31:4-31:17": {
+    "33:4-33:17": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -17,7 +17,7 @@ Higher order call graphs
   "callable": "breadcrumbs.bool_source",
   "returned_callables": [],
   "calls": {
-    "19:11-19:25": {
+    "21:11-21:25": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -30,7 +30,7 @@ Higher order call graphs
   "callable": "breadcrumbs.float_parameter",
   "returned_callables": [],
   "calls": {
-    "27:4-27:17": {
+    "29:4-29:17": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -43,7 +43,7 @@ Higher order call graphs
   "callable": "breadcrumbs.float_source",
   "returned_callables": [],
   "calls": {
-    "15:11-15:25": {
+    "17:11-17:25": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -56,7 +56,7 @@ Higher order call graphs
   "callable": "breadcrumbs.int_parameter",
   "returned_callables": [],
   "calls": {
-    "23:4-23:17": {
+    "25:4-25:17": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -69,7 +69,7 @@ Higher order call graphs
   "callable": "breadcrumbs.int_source",
   "returned_callables": [],
   "calls": {
-    "11:11-11:25": {
+    "13:11-13:25": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -82,61 +82,39 @@ Higher order call graphs
   "callable": "breadcrumbs.scalar_attribute_backward",
   "returned_callables": [],
   "calls": {
-    "51:7-51:12|artificial-call|comparison": {
+    "53:7-53:22": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
+            "index": 0,
+            "return_type": [ "float" ]
+          }
+        ]
+      }
+    },
+    "53:7-53:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "51:7-51:12|artificial-call|normalize-not-comparison>comparison": {
+    "53:7-53:28|artificial-call|normalize-not-comparison>comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__le__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
-          }
-        ]
-      }
-    },
-    "52:8-52:36": {
-      "call": {
-        "calls": [
-          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "53:9-53:14|artificial-call|comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "int.__gt__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
-          }
-        ]
-      }
-    },
-    "53:9-53:14|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "int.__le__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
@@ -144,44 +122,99 @@ Higher order call graphs
     "54:8-54:36": {
       "call": {
         "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "55:9-55:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "random.random",
+            "index": 1,
+            "return_type": [ "float" ]
+          }
+        ]
+      }
+    },
+    "55:9-55:30|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__gt__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "55:9-55:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "56:8-56:36": {
+      "call": {
+        "calls": [
           { "target": "pysa._test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "55:9-55:14|artificial-call|comparison": {
+    "57:9-57:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 2,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "55:9-55:14|artificial-call|normalize-not-comparison>comparison": {
+    "57:9-57:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 2,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "57:8-57:62": {
+    "57:9-57:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "59:8-59:62": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 2, "return_type": [] }
         ]
       }
     },
-    "57:19-57:61": {
+    "59:19-59:61": {
       "call": {
         "calls": [
           {
@@ -194,7 +227,7 @@ Higher order call graphs
         ]
       }
     },
-    "57:28-57:34|artificial-call|str-call-to-dunder-method": {
+    "59:28-59:34|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -207,7 +240,7 @@ Higher order call graphs
         ]
       }
     },
-    "57:44-57:60|artificial-call|generator-iter": {
+    "59:44-59:60|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -220,7 +253,7 @@ Higher order call graphs
         ]
       }
     },
-    "57:44-57:60|artificial-call|generator-next": {
+    "59:44-59:60|artificial-call|generator-next": {
       "call": {
         "calls": [
           {
@@ -239,7 +272,7 @@ Higher order call graphs
   "callable": "breadcrumbs.scalar_attribute_forward",
   "returned_callables": [],
   "calls": {
-    "65:14-65:27": {
+    "67:14-67:27": {
       "call": {
         "calls": [
           {
@@ -250,85 +283,118 @@ Higher order call graphs
         ]
       }
     },
-    "66:7-66:12|artificial-call|comparison": {
+    "68:7-68:22": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
+            "index": 0,
+            "return_type": [ "float" ]
+          }
+        ]
+      }
+    },
+    "68:7-68:28|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "66:7-66:12|artificial-call|normalize-not-comparison>comparison": {
+    "68:7-68:28|artificial-call|normalize-not-comparison>comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__le__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "68:9-68:14|artificial-call|comparison": {
+    "70:9-70:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
+            "index": 1,
+            "return_type": [ "float" ]
+          }
+        ]
+      }
+    },
+    "70:9-70:30|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__gt__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "68:9-68:14|artificial-call|normalize-not-comparison>comparison": {
+    "70:9-70:30|artificial-call|normalize-not-comparison>comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__le__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "70:9-70:14|artificial-call|comparison": {
+    "72:9-72:24": {
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "random.random",
             "index": 2,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "return_type": [ "float" ]
           }
         ]
       }
     },
-    "70:9-70:14|artificial-call|normalize-not-comparison>comparison": {
+    "72:9-72:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "int.__le__",
+            "target": "float.__gt__",
             "index": 2,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "float"
           }
         ]
       }
     },
-    "72:15-72:57": {
+    "72:9-72:30|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "float.__le__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "float"
+          }
+        ]
+      }
+    },
+    "74:15-74:57": {
       "call": {
         "calls": [
           {
@@ -341,7 +407,7 @@ Higher order call graphs
         ]
       }
     },
-    "72:24-72:30|artificial-call|str-call-to-dunder-method": {
+    "74:24-74:30|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -354,7 +420,7 @@ Higher order call graphs
         ]
       }
     },
-    "72:40-72:56|artificial-call|generator-iter": {
+    "74:40-74:56|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -367,7 +433,7 @@ Higher order call graphs
         ]
       }
     },
-    "72:40-72:56|artificial-call|generator-next": {
+    "74:40-74:56|artificial-call|generator-next": {
       "call": {
         "calls": [
           {

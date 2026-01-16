@@ -7,6 +7,7 @@
 from pysa import _cookies, _rce, _sql, _test_sink, _test_source, _user_controlled
 from typing import Sequence, TypeVar
 
+import random
 
 T = TypeVar("T")
 
@@ -84,7 +85,7 @@ def return_taint_sanitize(arg: T) -> T:
 
 def test1():
     tainted = object()
-    tainted.id = _test_source() # pyrefly: ignore[missing-attribute]
+    tainted.id = _test_source()  # pyrefly: ignore[missing-attribute]
     test2(tainted)
     test3(tainted)
 
@@ -118,16 +119,14 @@ def sanitize_tito(x):
     return source_with_tito(x)
 
 
-def a_source():
-    ...
+def a_source(): ...
 
 
-def b_source():
-    ...
+def b_source(): ...
 
 
 def sanitize_test_a_source():
-    if 1 > 2:
+    if random.random() > 0.5:
         x = a_source()
     else:
         x = b_source()
@@ -135,7 +134,7 @@ def sanitize_test_a_source():
 
 
 def sanitize_test_b_source():
-    if 1 > 2:
+    if random.random() > 0.5:
         x = a_source()
     else:
         x = b_source()
@@ -143,37 +142,35 @@ def sanitize_test_b_source():
 
 
 def sanitize_a_and_b_source():
-    if 1 > 2:
+    if random.random() > 0.5:
         x = a_source()
     else:
         x = b_source()
     return x
 
 
-def a_sink(x):
-    ...
+def a_sink(x): ...
 
 
-def b_sink(x):
-    ...
+def b_sink(x): ...
 
 
 def sanitize_a_sink(x):
-    if 1 > 2:
+    if random.random() > 0.5:
         a_sink(x)
     else:
         b_sink(x)
 
 
 def sanitize_b_sink(x):
-    if 1 > 2:
+    if random.random() > 0.5:
         a_sink(x)
     else:
         b_sink(x)
 
 
 def sanitize_a_and_b_sinks(x):
-    if 1 > 2:
+    if random.random() > 0.5:
         a_sink(x)
     else:
         b_sink(x)
@@ -299,7 +296,7 @@ def sanitize_b_sink_tito(x):
 
 
 def no_issue_fixpoint_sanitize_sources():
-    if 1 > 2:
+    if random.random() > 0.5:
         x = a_source()
         return sanitize_a_sink_tito(x)
     else:
@@ -309,7 +306,7 @@ def no_issue_fixpoint_sanitize_sources():
 
 
 def no_issue_fixpoint_sanitize_sinks(x):
-    if 1 > 2:
+    if random.random() > 0.5:
         a_sink(x)
     else:
         y = sanitize_a_source_tito(x)
@@ -325,7 +322,7 @@ def no_issue_fixpoint_sanitize():
 
 
 def partial_issue_sources():
-    if 1 > 2:
+    if random.random() > 0.5:
         x = a_source()
         return sanitize_a_sink_tito(x)
     else:
@@ -333,7 +330,7 @@ def partial_issue_sources():
 
 
 def partial_issue_sinks(x):
-    if 1 > 2:
+    if random.random() > 0.5:
         a_sink(x)
     else:
         y = sanitize_a_source_tito(x)
@@ -348,7 +345,7 @@ def partial_issue_sanitize():
 
 
 def sanitize_test_a_source_attribute():
-    if 1 > 2:
+    if random.random() > 0.5:
         x = a_source()
     else:
         x = b_source()
@@ -377,7 +374,7 @@ def sanitize_test_a_source_attribute_in_tito(x):
 
 
 def sanitize_test_b_source_attribute():
-    if 1 > 2:
+    if random.random() > 0.5:
         x = a_source()
     else:
         x = b_source()
@@ -386,7 +383,7 @@ def sanitize_test_b_source_attribute():
 
 
 def sanitize_test_ab_sources_attribute():
-    if 1 > 2:
+    if random.random() > 0.5:
         x = a_source()
     else:
         x = b_source()
@@ -395,9 +392,9 @@ def sanitize_test_ab_sources_attribute():
 
 
 def sanitize_test_all_sources_attribute():
-    if 1 > 2:
+    if random.random() > 0.5:
         x = a_source()
-    elif 2 > 3:
+    elif random.random() > 0.5:
         x = b_source()
     else:
         x = _test_source()
@@ -406,7 +403,7 @@ def sanitize_test_all_sources_attribute():
 
 
 def sanitize_test_a_source_instance():
-    if 1 > 2:
+    if random.random() > 0.5:
         x = a_source()
     else:
         x = b_source()
@@ -415,7 +412,7 @@ def sanitize_test_a_source_instance():
 
 
 def sanitize_test_b_source_instance():
-    if 1 > 2:
+    if random.random() > 0.5:
         x = a_source()
     else:
         x = b_source()
@@ -424,7 +421,7 @@ def sanitize_test_b_source_instance():
 
 
 def sanitize_test_ab_sources_instance():
-    if 1 > 2:
+    if random.random() > 0.5:
         x = a_source()
     else:
         x = b_source()
@@ -433,9 +430,9 @@ def sanitize_test_ab_sources_instance():
 
 
 def sanitize_test_all_sources_instance():
-    if 1 > 2:
+    if random.random() > 0.5:
         x = a_source()
-    elif 2 > 3:
+    elif random.random() > 0.5:
         x = b_source()
     else:
         x = _test_source()
@@ -444,7 +441,7 @@ def sanitize_test_all_sources_instance():
 
 
 def sanitize_a_sink_attribute(c: C_sanitized_a_sink):
-    if 1 > 2:
+    if random.random() > 0.5:
         a_sink(c.attribute)
     else:
         b_sink(c.attribute)
@@ -467,53 +464,53 @@ def issue_sanitize_a_sink_attribute_in_source_trace():
 
 
 def sanitize_b_sink_attribute(c: C_sanitized_b_sink):
-    if 1 > 2:
+    if random.random() > 0.5:
         a_sink(c.attribute)
     else:
         b_sink(c.attribute)
 
 
 def sanitize_ab_sinks_attribute(c: C_sanitized_ab_sinks):
-    if 1 > 2:
+    if random.random() > 0.5:
         a_sink(c.attribute)
     else:
         b_sink(c.attribute)
 
 
 def sanitize_all_sinks_attribute(c: C_sanitized_all_sinks):
-    if 1 > 2:
+    if random.random() > 0.5:
         a_sink(c.attribute)
-    elif 2 > 3:
+    elif random.random() > 0.5:
         b_sink(c.attribute)
     else:
         _test_sink(c.attribute)
 
 
 def sanitize_a_sink_instance(c: C_sanitized_a_sink):
-    if 1 > 2:
+    if random.random() > 0.5:
         a_sink(c.instance)
     else:
         b_sink(c.instance)
 
 
 def sanitize_b_sink_instance(c: C_sanitized_b_sink):
-    if 1 > 2:
+    if random.random() > 0.5:
         a_sink(c.instance)
     else:
         b_sink(c.instance)
 
 
 def sanitize_ab_sinks_instance(c: C_sanitized_ab_sinks):
-    if 1 > 2:
+    if random.random() > 0.5:
         a_sink(c.instance)
     else:
         b_sink(c.instance)
 
 
 def sanitize_all_sinks_instance(c: C_sanitized_all_sinks):
-    if 1 > 2:
+    if random.random() > 0.5:
         a_sink(c.instance)
-    elif 2 > 3:
+    elif random.random() > 0.5:
         b_sink(c.instance)
     else:
         _test_sink(c.instance)
@@ -568,11 +565,11 @@ def sanitize_parameter_all_tito(x, y):
 
 
 def sanitize_parameter_no_user_controlled(x, y):
-    if 1 > 2:
+    if random.random() > 0.5:
         return x
-    elif 2 > 3:
+    elif random.random() > 0.5:
         return y
-    elif 3 > 4:
+    elif random.random() > 0.5:
         _sql(x)
     else:
         _rce(y)
@@ -593,25 +590,25 @@ def issue_propagation_of_sanitize_parameter_no_user_controlled():
 
 
 def sanitize_parameter_no_sql(x):
-    if 1 > 2:
+    if random.random() > 0.5:
         _sql(x)
-    elif 2 > 3:
+    elif random.random() > 0.5:
         _rce(x)
     else:
         return x
 
 
 def sanitize_parameter_no_rce(x):
-    if 1 > 2:
+    if random.random() > 0.5:
         _sql(x)
-    elif 2 > 3:
+    elif random.random() > 0.5:
         _rce(x)
     else:
         return x
 
 
 def sanitize_parameter_no_user_controlled_tito(x, y):
-    if 1 > 2:
+    if random.random() > 0.5:
         return x
     else:
         return y
@@ -649,7 +646,7 @@ def issue_propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trac
 
 
 def sanitize_parameter_no_sql_tito(x, y):
-    if 1 > 2:
+    if random.random() > 0.5:
         return x
     else:
         return y
@@ -694,9 +691,9 @@ def sanitize_return(x):
 
 
 def sanitize_return_no_user_controlled(x):
-    if 1 > 2:
+    if random.random() > 0.5:
         return _user_controlled()
-    elif 2 > 3:
+    elif random.random() > 0.5:
         return _cookies()
     else:
         return x
@@ -727,7 +724,7 @@ def issue_propagation_of_sanitize_return_no_sql_in_source_trace():
 
 
 def sanitize_return_no_cookies():
-    if 1 > 2:
+    if random.random() > 0.5:
         x = _user_controlled()
     else:
         x = _cookies()
@@ -735,7 +732,7 @@ def sanitize_return_no_cookies():
 
 
 def sanitize_return_no_user_controlled_cookies():
-    if 1 > 2:
+    if random.random() > 0.5:
         x = _user_controlled()
     else:
         x = _cookies()
@@ -796,18 +793,18 @@ def issue_propagation_of_sanitize_all_parameters_no_user_controlled():
 
 
 def sanitize_all_parameters_no_sql(x):
-    if 1 > 2:
+    if random.random() > 0.5:
         _sql(x)
-    elif 2 > 3:
+    elif random.random() > 0.5:
         _rce(x)
     else:
         return x
 
 
 def sanitize_all_parameters_no_rce(x):
-    if 1 > 2:
+    if random.random() > 0.5:
         _sql(x)
-    elif 2 > 3:
+    elif random.random() > 0.5:
         _rce(x)
     else:
         return x
@@ -923,7 +920,7 @@ def sink_taint_sanitize_b_sanitize_a_santize_test(arg):
 
 
 def sanitize_single_argument_tito(x, y):
-    if 1 > 1:
+    if random.random() > 0.5:
         return x
     else:
         return y
@@ -934,7 +931,7 @@ class GenerationOnSelf:
         self.foo = _test_source()
 
     def sanitize_test_a_source(self):
-        if 1 > 2:
+        if random.random() > 0.5:
             self.foo = a_source()
         else:
             self.foo = b_source()
@@ -943,7 +940,7 @@ class GenerationOnSelf:
         self.foo = _test_source()
 
     def sanitize_parameter_test_a_source(self):
-        if 1 > 2:
+        if random.random() > 0.5:
             self.foo = a_source()
         else:
             self.foo = b_source()
@@ -952,7 +949,7 @@ class GenerationOnSelf:
         self.foo = _test_source()
 
     def sanitize_all_parameters_test_a_source(self):
-        if 1 > 2:
+        if random.random() > 0.5:
             self.foo = a_source()
         else:
             self.foo = b_source()

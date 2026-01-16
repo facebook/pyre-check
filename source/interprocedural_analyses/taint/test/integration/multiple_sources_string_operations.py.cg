@@ -27,9 +27,9 @@ Call dependencies
     "multiple_sources_string_operations.user_controlled_input (fun)"
   ],
   "multiple_sources_string_operations.format_string_no_issue_when_single_sink_parameter (fun)": [
-    "int.__eq__ (method)", "int.__ne__ (method)",
+    "float.__gt__ (method)", "float.__le__ (method)",
     "multiple_sources_string_operations.user_controlled_input (fun)",
-    "str.__str__ (method)"
+    "random.random (fun)"
   ],
   "multiple_sources_string_operations.format_string_triggered_sql (fun)": [
     "multiple_sources_string_operations.user_controlled_input (fun)"

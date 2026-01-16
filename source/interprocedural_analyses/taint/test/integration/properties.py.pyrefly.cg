@@ -116,12 +116,17 @@ Call dependencies
     "properties.Class.my_property (method)"
   ],
   "properties.test_union_property_attribute_sink (fun)": [
-    "builtins.object.__new__ (method)",
-    "properties.RegularAttribute.__init__ (method)", "pysa._test_sink (fun)"
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "properties.RegularAttribute.__init__ (method)",
+    "properties.TaintedGetterAndSetter.my_property (method)",
+    "pysa._test_sink (fun)"
   ],
   "properties.test_union_property_attribute_source (fun)": [
-    "builtins.object.__new__ (method)",
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
     "properties.RegularAttribute.__init__ (method)",
+    "properties.TaintedGetterAndSetter.my_property (method)",
     "pysa._test_source (fun)"
   ]
 }

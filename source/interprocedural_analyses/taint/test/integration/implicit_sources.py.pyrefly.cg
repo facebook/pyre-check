@@ -9,7 +9,8 @@ Call dependencies
     "builtins.str.__mod__ (method)"
   ],
   "implicit_sources.string_literal_arguments_source (fun)": [
-    "builtins.int.__eq__ (method)", "builtins.str.format (method)"
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "builtins.str.__mod__ (method)", "builtins.str.format (method)"
   ],
   "implicit_sources.toplevel_simultaneous_assignment (fun)": [
     "builtins.str.__add__ (method)"

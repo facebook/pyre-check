@@ -29,7 +29,9 @@ Call dependencies
     "multiple_sources_string_operations.user_controlled_input (fun)"
   ],
   "multiple_sources_string_operations.format_string_no_issue_when_single_sink_parameter (fun)": [
-    "builtins.int.__eq__ (method)", "builtins.str.__format__ (method)"
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "builtins.str.__format__ (method)",
+    "multiple_sources_string_operations.user_controlled_input (fun)"
   ],
   "multiple_sources_string_operations.format_string_triggered_sql (fun)": [
     "builtins.str.__format__ (method)",
