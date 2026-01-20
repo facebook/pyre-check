@@ -51,11 +51,13 @@ class AnalysisOutputIndex(NamedTuple):
     models: Dict[str, FilePosition] = {}
     issues: Dict[str, List[FilePosition]] = {}
     call_graphs: Dict[str, FilePosition] = {}
+    higher_order_call_graphs: Dict[str, FilePosition] = {}
 
     def update(self, index: "AnalysisOutputIndex") -> None:
         self.models.update(index.models)
         self.issues.update(index.issues)
         self.call_graphs.update(index.call_graphs)
+        self.higher_order_call_graphs.update(index.higher_order_call_graphs)
 
 
 class AnalysisOutputDirectory(NamedTuple):
@@ -108,6 +110,9 @@ def index_json_output_file(arguments: Tuple[int, Path]) -> AnalysisOutputIndex:
             elif kind == "call_graph":
                 callable = message["data"]["callable"]
                 index.call_graphs[callable] = file_position
+            elif kind == "higher_order_call_graph":
+                callable = message["data"]["callable"]
+                index.higher_order_call_graphs[callable] = file_position
             else:
                 raise AssertionError(f"Unexpected kind `{kind}` in `{file_path}`")
 
@@ -131,6 +136,7 @@ def index(path: str = ".") -> None:
             and (
                 filepath.name.startswith("taint-output")
                 or filepath.name.startswith("call-graph")
+                or filepath.name.startswith("higher-order-call-graph")
             )
         ):
             json_output_files.append(filepath)
@@ -1068,6 +1074,29 @@ def print_call_graph(callable: str, **kwargs: Union[str, bool]) -> None:
     print_json(call_graph)
 
 
+def get_higher_order_call_graph(
+    callable: str, **kwargs: Union[str, bool]
+) -> Dict[str, Any]:
+    """Get the higher order call graph for the given callable."""
+    directory = _assert_loaded()
+
+    if callable not in directory.index_.higher_order_call_graphs:
+        raise AssertionError(f"no higher order call graph for callable `{callable}`.")
+
+    message = json.loads(_read(directory.index_.higher_order_call_graphs[callable]))
+    assert message["kind"] == "higher_order_call_graph"
+
+    return message["data"]
+
+
+def print_higher_order_call_graph(callable: str, **kwargs: Union[str, bool]) -> None:
+    """Pretty print the higher order call graph for the given callable."""
+    call_graph = get_higher_order_call_graph(callable, **kwargs)
+
+    # TODO(T138283233): Support format=text
+    print_json(call_graph)
+
+
 def taint_kind_match(a: str, b: str) -> bool:
     return len(a) == len(b) and a.replace("@", ":") == b.replace("@", ":")
 
@@ -1246,6 +1275,7 @@ def print_help() -> None:
         (print_issues, "print_issues('foo.bar')"),
         (get_call_graph, "get_call_graph('foo.bar')"),
         (print_call_graph, "print_call_graph('foo.bar')"),
+        (print_higher_order_call_graph, "print_higher_order_call_graph('foo.bar')"),
         (print_model_size_stats, "print_model_size_stats('foo.bar')"),
         (
             print_shortest_trace,
