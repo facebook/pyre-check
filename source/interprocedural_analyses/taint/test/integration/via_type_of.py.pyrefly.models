@@ -414,6 +414,364 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test2_alarm1",
+    "callable_line": 56,
+    "code": 5002,
+    "line": 59,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "x" },
+              { "always-via-type": "unknown" },
+              { "always-via-type": "dict[str, int]" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 58, "start": 16, "end": 32 } ],
+            "origin": { "line": 58, "start": 18, "end": 32 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 59, "start": 15, "end": 18 },
+            "call_site": "59:4-59:19"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "x" },
+      { "always-via-type": "unknown" },
+      { "always-via-type": "dict[str, int]" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_type_of.test2_alarm1:5002:0:Call|pysa._test_sink|0|formal(arg):9f3a3f11ec92496dd69fef679068534c"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test2_alarm2",
+    "callable_line": 62,
+    "code": 5002,
+    "line": 65,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "y" },
+              { "always-via-type": "unknown" },
+              { "always-via-type": "list[str]" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 64, "start": 16, "end": 32 } ],
+            "origin": { "line": 64, "start": 18, "end": 32 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 65, "start": 15, "end": 18 },
+            "call_site": "65:4-65:19"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "y" },
+      { "always-via-type": "unknown" },
+      { "always-via-type": "list[str]" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_type_of.test2_alarm2:5002:0:Call|pysa._test_sink|0|formal(arg):412d499e557182df1b90e643c67d955f"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test2_alarm3",
+    "callable_line": 68,
+    "code": 5002,
+    "line": 71,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "z" },
+              { "always-via-TheZ-type": "float" },
+              { "always-via-TheZ-type": "unknown" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 70, "start": 16, "end": 32 } ],
+            "origin": { "line": 70, "start": 18, "end": 32 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 71, "start": 15, "end": 18 },
+            "call_site": "71:4-71:19"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "z" },
+      { "always-via-TheZ-type": "float" },
+      { "always-via-TheZ-type": "unknown" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_type_of.test2_alarm3:5002:0:Call|pysa._test_sink|0|formal(arg):8dbf9443c80246c77714067703674f36"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test2_alarm4",
+    "callable_line": 74,
+    "code": 5002,
+    "line": 82,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "x" },
+              { "first-field": "z" },
+              { "first-field": "y" },
+              { "via-type": "unknown" },
+              { "via-TheZ-type": "float" },
+              { "via-type": "dict[str, int]" },
+              { "via-type": "list[str]" },
+              { "via-TheZ-type": "unknown" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 76, "start": 16, "end": 32 } ],
+            "origin": { "line": 76, "start": 18, "end": 32 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 82, "start": 15, "end": 18 },
+            "call_site": "82:4-82:19"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "x" },
+      { "first-field": "z" },
+      { "first-field": "y" },
+      { "via-type": "unknown" },
+      { "via-TheZ-type": "float" },
+      { "via-type": "dict[str, int]" },
+      { "via-type": "list[str]" },
+      { "via-TheZ-type": "unknown" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_type_of.test2_alarm4:5002:0:Call|pysa._test_sink|0|formal(arg):125b89cb2ba61d1890f02ece5bed6479"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test2_alarm5_via_constructor",
+    "callable_line": 85,
+    "code": 5002,
+    "line": 87,
+    "start": 15,
+    "end": 43,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-TheZ-type": "str" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
+            ],
+            "tito_positions": [ { "line": 87, "start": 37, "end": 42 } ],
+            "origin": { "line": 86, "start": 17, "end": 31 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 87, "start": 15, "end": 43 },
+            "call_site": "87:4-87:44"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-TheZ-type": "str" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_type_of.test2_alarm5_via_constructor:5002:0:Call|pysa._test_sink|0|formal(arg):0af6b4a1a71d20c1a22778b70943cc65"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "via_type_of.test3_alarm1",
@@ -1433,6 +1791,226 @@
             ],
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_type_of.Test2_C.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(z, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter": "formal(z)",
+                    "tag": "TheZ"
+                  }
+                ],
+                "return_paths": { "[z]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(y, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaTypeOf", "parameter": "formal(y)" }
+                ],
+                "return_paths": { "[y]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaTypeOf", "parameter": "formal(x)" }
+                ],
+                "return_paths": { "[x]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_type_of.Test3_C.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(z, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[z]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(y, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[y]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[x]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_type_of.Test4_C.__init__",
+    "filename": "*",
+    "sinks": [
+      {
+        "port": "formal(z, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter": "formal(z)",
+                    "tag": "TheZ"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(y, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaTypeOf", "parameter": "formal(y)" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaTypeOf", "parameter": "formal(x)" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(z, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[z]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(y, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[y]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[x]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": {}
           }

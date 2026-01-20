@@ -4947,7 +4947,10 @@ module ReadOnly = struct
 
     let dataclass_ordered_attributes api class_summary =
       get_ordered_fields_with_predicate api class_summary ~predicate:(function
-          | Some ClassFieldDeclarationKind.DeclaredByAnnotation -> true
+          | Some ClassFieldDeclarationKind.DeclaredByAnnotation
+          | Some ClassFieldDeclarationKind.AssignedInBody ->
+              (* Fields may be initialized via assignments. *)
+              true
           | _ -> false)
 
 
