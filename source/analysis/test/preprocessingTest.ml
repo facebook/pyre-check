@@ -689,7 +689,6 @@ let test_qualify_source =
       ($local_qualifier$a[0][0], $local_qualifier$b) = 4, 5
     |};
       (* Qualify walrus assignments. *)
-      (* TODO(T53600647): Qualify `a`. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
            {|
@@ -698,7 +697,7 @@ let test_qualify_source =
     |}
            {|
       from module import constant
-      (a := module.constant)
+      ($local_qualifier$a := module.constant)
     |};
       (* Qualify classes. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -1461,6 +1460,24 @@ let test_qualify_source =
           $local_qualifier?foo$nonlocal_constant = 4
           for ($local_qualifier$global_constant, $local_qualifier?foo$nonlocal_constant) in []:
             pass
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_qualify
+           {|
+      def foo():
+        if x := [1]:
+          y = [2]
+          def nested():
+            x.append(3)
+            y.append(4)
+   |}
+           {|
+      def qualifier.foo():
+        if $local_qualifier?foo$x := [1]:
+          $local_qualifier?foo$y = [2]
+          def $local_qualifier?foo$nested():
+            $local_qualifier?foo$x.append(3)
+            $local_qualifier?foo$y.append(4)
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify

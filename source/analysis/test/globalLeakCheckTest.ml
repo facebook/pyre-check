@@ -2019,10 +2019,7 @@ let test_global_statements context =
         elif my_global_t := 3:
           my_local = 3
     |}
-    [
-      "Leak to a primitive global [3102]: Data write to global variable `test.my_global_t` of type \
-       `int`.";
-    ]
+    []
     context;
   assert_global_leak_errors
     {|
@@ -2075,10 +2072,7 @@ let test_global_statements context =
         while my_global := 3:
           print("hi")
     |}
-    [
-      "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
-       `int`.";
-    ]
+    []
     context;
   assert_global_leak_errors
     {|
@@ -2125,10 +2119,7 @@ let test_global_statements context =
         for i in (my_global := [1]):
           print("hi")
     |}
-    [
-      "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
-       type `typing.List[int]`.";
-    ]
+    []
     context;
   assert_global_leak_errors
     {|

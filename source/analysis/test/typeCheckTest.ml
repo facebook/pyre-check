@@ -1063,7 +1063,7 @@ let test_forward_expression =
       @@ assert_forward
            "(x := True)"
            (Type.Literal (Boolean true))
-           ~postcondition:["x", Type.Literal (Boolean true)];
+           ~postcondition:["$local_$x", Type.Literal (Boolean true)];
       (* Broadcasts *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_forward
