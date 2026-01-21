@@ -6481,11 +6481,10 @@ let test_call_graph_of_define =
                ( "6:4-6:5|identifier|$local_test?outer$x",
                  ExpressionCallees.from_identifier
                    (IdentifierCallees.create
-                      ~nonlocal_targets:
+                      ~captured_variables:
                         [
-                          CallTarget.create_regular
-                            ~return_type:None
-                            (Target.Regular.Object "test.outer.x");
+                          TaintAccessPath.CapturedVariable.FromFunction
+                            { name = "x"; defining_function = Reference.create "test.outer" };
                         ]
                       ()) );
              ]
@@ -6506,11 +6505,10 @@ let test_call_graph_of_define =
                ( "5:8-5:9|identifier|$local_test?outer$x",
                  ExpressionCallees.from_identifier
                    (IdentifierCallees.create
-                      ~nonlocal_targets:
+                      ~captured_variables:
                         [
-                          CallTarget.create_regular
-                            ~return_type:None
-                            (Target.Regular.Object "test.outer.x");
+                          TaintAccessPath.CapturedVariable.FromFunction
+                            { name = "x"; defining_function = Reference.create "test.outer" };
                         ]
                       ()) );
              ]

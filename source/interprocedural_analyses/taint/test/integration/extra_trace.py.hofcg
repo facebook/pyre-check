@@ -210,10 +210,10 @@ Higher order call graphs
   "calls": {
     "175:15-175:16|identifier|$local_extra_trace?issue_via_transfom_captured_variable$x": {
       "identifier": {
-        "nonlocals": [
+        "captured_variables": [
           {
-            "target": "Obj{extra_trace.issue_via_transfom_captured_variable.x}",
-            "index": 0
+            "name": "x",
+            "defining_function": "extra_trace.issue_via_transfom_captured_variable"
           }
         ]
       }

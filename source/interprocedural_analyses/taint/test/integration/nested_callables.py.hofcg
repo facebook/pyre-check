@@ -128,10 +128,10 @@ Higher order call graphs
     },
     "77:19-77:20|identifier|$local_nested_callables?access_variables_in_outer_scope_issue$x": {
       "identifier": {
-        "nonlocals": [
+        "captured_variables": [
           {
-            "target": "Obj{nested_callables.access_variables_in_outer_scope_issue.x}",
-            "index": 0
+            "name": "x",
+            "defining_function": "nested_callables.access_variables_in_outer_scope_issue"
           }
         ]
       }
@@ -179,10 +179,10 @@ Higher order call graphs
   "calls": {
     "86:15-86:16|identifier|$local_nested_callables?access_variables_in_outer_scope_source$x": {
       "identifier": {
-        "nonlocals": [
+        "captured_variables": [
           {
-            "target": "Obj{nested_callables.access_variables_in_outer_scope_source.x}",
-            "index": 0
+            "name": "x",
+            "defining_function": "nested_callables.access_variables_in_outer_scope_source"
           }
         ]
       }

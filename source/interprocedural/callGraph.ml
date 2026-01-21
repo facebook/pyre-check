@@ -15,6 +15,7 @@ open Ast
 open Statement
 open Expression
 open Pyre
+module AccessPath = Analysis.TaintAccessPath
 
 module JsonHelper = struct
   let add_optional name value to_json bindings =
@@ -1193,24 +1194,29 @@ end
 module IdentifierCallees = struct
   type t = {
     global_targets: CallTarget.t list;
-    nonlocal_targets: CallTarget.t list;
+    captured_variables: AccessPath.CapturedVariable.t list;
     (* Function-typed runtime values that the identifier may evaluate into. *)
     if_called: CallCallees.t;
   }
   [@@deriving equal, show { with_path = false }]
 
-  let create ?(global_targets = []) ?(nonlocal_targets = []) ?(if_called = CallCallees.empty) () =
-    { global_targets; nonlocal_targets; if_called }
+  let create ?(global_targets = []) ?(captured_variables = []) ?(if_called = CallCallees.empty) () =
+    { global_targets; captured_variables; if_called }
 
 
-  let empty = { global_targets = []; nonlocal_targets = []; if_called = CallCallees.empty }
+  let empty = { global_targets = []; captured_variables = []; if_called = CallCallees.empty }
 
   let is_empty identifier_callees = equal identifier_callees empty
 
-  let dedup_and_sort { global_targets; nonlocal_targets; if_called } =
+  let dedup_and_sort { global_targets; captured_variables; if_called } =
     {
       global_targets = CallTarget.dedup_and_sort global_targets;
-      nonlocal_targets = CallTarget.dedup_and_sort nonlocal_targets;
+      captured_variables =
+        captured_variables
+        |> List.sort ~compare:AccessPath.CapturedVariable.compare
+        |> List.remove_consecutive_duplicates
+             ~which_to_keep:`First
+             ~equal:AccessPath.CapturedVariable.equal;
       if_called = CallCallees.dedup_and_sort if_called;
     }
 
@@ -1218,36 +1224,42 @@ module IdentifierCallees = struct
   let join
       {
         global_targets = left_global_targets;
-        nonlocal_targets = left_nonlocal_targets;
+        captured_variables = left_nonlocal_targets;
         if_called = left_if_called;
       }
       {
         global_targets = right_global_targets;
-        nonlocal_targets = right_nonlocal_targets;
+        captured_variables = right_nonlocal_targets;
         if_called = right_if_called;
       }
     =
     {
       global_targets = List.rev_append left_global_targets right_global_targets;
-      nonlocal_targets = List.rev_append left_nonlocal_targets right_nonlocal_targets;
+      captured_variables = List.rev_append left_nonlocal_targets right_nonlocal_targets;
       if_called = CallCallees.join left_if_called right_if_called;
     }
 
 
-  let all_targets ~use_case { global_targets; nonlocal_targets; if_called } =
+  let all_targets ~use_case { global_targets; captured_variables = _; if_called } =
     match use_case with
     | AllTargetsUseCase.CallGraphDependency -> CallCallees.all_targets ~use_case if_called
     | AllTargetsUseCase.TaintAnalysisDependency -> []
     | AllTargetsUseCase.Everything ->
         CallCallees.all_targets ~use_case if_called
-        |> List.rev_append (List.map ~f:CallTarget.target nonlocal_targets)
         |> List.rev_append (List.map ~f:CallTarget.target global_targets)
 
 
-  let to_json { global_targets; nonlocal_targets; if_called } =
+  let to_json { global_targets; captured_variables; if_called } =
+    let captured_variable_to_json = function
+      | AccessPath.CapturedVariable.FromFunction { name; defining_function } ->
+          `Assoc
+            ["name", `String name; "defining_function", `String (Reference.show defining_function)]
+      | AccessPath.CapturedVariable.Pyre1Parameter { name } ->
+          `Assoc ["name", `String name; "parameter", `Bool true]
+    in
     []
     |> JsonHelper.add_list "globals" global_targets CallTarget.to_json
-    |> JsonHelper.add_list "nonlocals" nonlocal_targets CallTarget.to_json
+    |> JsonHelper.add_list "captured_variables" captured_variables captured_variable_to_json
     |> JsonHelper.add_flag_if
          "if_called"
          (CallCallees.to_json if_called)
@@ -1265,10 +1277,10 @@ module IdentifierCallees = struct
     { identifier_callees with if_called = CallCallees.drop_decorated_targets if_called }
 
 
-  let regenerate_call_indices ~indexer { global_targets; nonlocal_targets; if_called } =
+  let regenerate_call_indices ~indexer { global_targets; captured_variables; if_called } =
     {
       global_targets = List.map ~f:(CallTarget.regenerate_index ~indexer) global_targets;
-      nonlocal_targets = List.map ~f:(CallTarget.regenerate_index ~indexer) nonlocal_targets;
+      captured_variables;
       (* Those are not used in the taint analysis, therefore they don't need indices. *)
       if_called;
     }

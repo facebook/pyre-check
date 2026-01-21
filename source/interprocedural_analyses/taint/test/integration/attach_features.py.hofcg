@@ -60,10 +60,10 @@ Higher order call graphs
   "calls": {
     "80:8-80:9|identifier|$local_attach_features?attach_to_returned_with_captures$x": {
       "identifier": {
-        "nonlocals": [
+        "captured_variables": [
           {
-            "target": "Obj{attach_features.attach_to_returned_with_captures.x}",
-            "index": 0
+            "name": "x",
+            "defining_function": "attach_features.attach_to_returned_with_captures"
           }
         ]
       }

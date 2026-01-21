@@ -1736,7 +1736,7 @@ module IdentifierReference = struct
         reference: Reference.t;
         export_name: PyrePysaLogic.ModuleExport.Name.t option;
       }
-    | Nonlocal of Reference.t
+    | Nonlocal of Identifier.t
 end
 
 let as_identifier_reference ~define_name ~pyre_in_context expression =
@@ -1751,7 +1751,7 @@ let as_identifier_reference ~define_name ~pyre_in_context expression =
         define_name
         >>= fun define_name ->
         if CallResolution.is_nonlocal ~pyre_in_context ~define:define_name reference then
-          Some (IdentifierReference.Nonlocal (Reference.delocalize reference))
+          Some (IdentifierReference.Nonlocal identifier)
         else
           None
   | Name name -> (
@@ -1877,10 +1877,15 @@ let resolve_callable_targets_from_global_identifiers ~define_name ~pyre_in_conte
 
 
 let resolve_identifier ~define_name ~pyre_in_context ~identifier =
+  let pyre_api =
+    match PyrePysaApi.InContext.pyre_api pyre_in_context with
+    | PyrePysaApi.ReadOnly.Pyre1 pyre_api -> pyre_api
+    | _ -> failwith "unreachable"
+  in
   let expression =
     Expression.Name (Name.Identifier identifier) |> Node.create_with_default_location
   in
-  let global_targets, nonlocal_targets =
+  let global_targets, captured_variables =
     expression
     |> as_identifier_reference ~define_name ~pyre_in_context
     |> Option.filter ~f:(Fn.non is_builtin_reference)
@@ -1899,24 +1904,23 @@ let resolve_identifier ~define_name ~pyre_in_context ~identifier =
           | Nonlocal nonlocal ->
               ( [],
                 [
-                  CallTargetBuilder.create_with_default_index
-                    ~implicit_dunder_call:false
-                    ~return_type:None
-                    (Target.create_object nonlocal);
+                  Analysis.PyrePysaEnvironment.ReadOnly.get_captured_variable_from_nonlocal_target
+                    pyre_api
+                    nonlocal;
                 ] ))
     |> Option.value ~default:([], [])
   in
   let callable_targets =
     resolve_callable_targets_from_global_identifiers ~define_name ~pyre_in_context expression
   in
-  match global_targets, nonlocal_targets, callable_targets with
+  match global_targets, captured_variables, callable_targets with
   | [], [], [] -> None
   | _ ->
       (* Exist at least a non-empty list. *)
       Some
         {
           IdentifierCallees.global_targets;
-          nonlocal_targets;
+          captured_variables;
           if_called = CallCallees.create ~call_targets:callable_targets ();
         }
 

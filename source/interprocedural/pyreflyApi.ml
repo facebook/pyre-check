@@ -4557,7 +4557,7 @@ module ReadOnly = struct
       (* TODO(T225700656): Support non local targets. *)
       let if_called = instantiate_call_callees if_called in
       let global_targets = List.filter_map ~f:instantiate_global_target global_targets in
-      { IdentifierCallees.global_targets; nonlocal_targets = []; if_called }
+      { IdentifierCallees.global_targets; captured_variables = []; if_called }
     in
     let instantiate_attribute_access_callees
         { JsonAttributeAccessCallees.if_called; property_setters; property_getters; global_targets }

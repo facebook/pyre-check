@@ -48,10 +48,10 @@ Higher order call graphs
     },
     "168:19-168:35|identifier|$local_closure_models?captured_variable_model_both_generation_parameter_source$complicated_name": {
       "identifier": {
-        "nonlocals": [
+        "captured_variables": [
           {
-            "target": "Obj{closure_models.captured_variable_model_both_generation_parameter_source.complicated_name}",
-            "index": 0
+            "name": "complicated_name",
+            "defining_function": "closure_models.captured_variable_model_both_generation_parameter_source"
           }
         ]
       }
@@ -99,10 +99,10 @@ Higher order call graphs
   "calls": {
     "156:8-156:24|identifier|$local_closure_models?captured_variable_model_generation_source$complicated_name": {
       "identifier": {
-        "nonlocals": [
+        "captured_variables": [
           {
-            "target": "Obj{closure_models.captured_variable_model_generation_source.complicated_name}",
-            "index": 0
+            "name": "complicated_name",
+            "defining_function": "closure_models.captured_variable_model_generation_source"
           }
         ]
       }
@@ -116,10 +116,10 @@ Higher order call graphs
     },
     "157:19-157:35|identifier|$local_closure_models?captured_variable_model_generation_source$complicated_name": {
       "identifier": {
-        "nonlocals": [
+        "captured_variables": [
           {
-            "target": "Obj{closure_models.captured_variable_model_generation_source.complicated_name}",
-            "index": 1
+            "name": "complicated_name",
+            "defining_function": "closure_models.captured_variable_model_generation_source"
           }
         ]
       }
@@ -181,10 +181,10 @@ Higher order call graphs
     },
     "145:19-145:35|identifier|$local_closure_models?captured_variable_model_parameter_source$complicated_name": {
       "identifier": {
-        "nonlocals": [
+        "captured_variables": [
           {
-            "target": "Obj{closure_models.captured_variable_model_parameter_source.complicated_name}",
-            "index": 0
+            "name": "complicated_name",
+            "defining_function": "closure_models.captured_variable_model_parameter_source"
           }
         ]
       }
@@ -232,10 +232,10 @@ Higher order call graphs
   "calls": {
     "179:8-179:24|identifier|$local_closure_models?captured_variable_model_sink$complicated_name": {
       "identifier": {
-        "nonlocals": [
+        "captured_variables": [
           {
-            "target": "Obj{closure_models.captured_variable_model_sink.complicated_name}",
-            "index": 0
+            "name": "complicated_name",
+            "defining_function": "closure_models.captured_variable_model_sink"
           }
         ]
       }
@@ -290,10 +290,10 @@ Higher order call graphs
   "calls": {
     "133:8-133:24|identifier|$local_closure_models?captured_variable_model_tito$complicated_name": {
       "identifier": {
-        "nonlocals": [
+        "captured_variables": [
           {
-            "target": "Obj{closure_models.captured_variable_model_tito.complicated_name}",
-            "index": 0
+            "name": "complicated_name",
+            "defining_function": "closure_models.captured_variable_model_tito"
           }
         ]
       }
@@ -639,8 +639,8 @@ Higher order call graphs
     },
     "54:19-54:25|identifier|$local_closure_models?test$source": {
       "identifier": {
-        "nonlocals": [
-          { "target": "Obj{closure_models.test.source}", "index": 0 }
+        "captured_variables": [
+          { "name": "source", "defining_function": "closure_models.test" }
         ]
       }
     }
@@ -652,8 +652,8 @@ Higher order call graphs
   "calls": {
     "46:15-46:20|identifier|$local_closure_models?test$value": {
       "identifier": {
-        "nonlocals": [
-          { "target": "Obj{closure_models.test.value}", "index": 0 }
+        "captured_variables": [
+          { "name": "value", "defining_function": "closure_models.test" }
         ]
       }
     }
@@ -676,8 +676,8 @@ Higher order call graphs
     },
     "51:19-51:25|identifier|$local_closure_models?test$source": {
       "identifier": {
-        "nonlocals": [
-          { "target": "Obj{closure_models.test.source}", "index": 0 }
+        "captured_variables": [
+          { "name": "source", "defining_function": "closure_models.test" }
         ]
       }
     }
@@ -931,10 +931,10 @@ Higher order call graphs
     },
     "95:19-95:25|identifier|$local_closure_models?test_tito_transform$source": {
       "identifier": {
-        "nonlocals": [
+        "captured_variables": [
           {
-            "target": "Obj{closure_models.test_tito_transform.source}",
-            "index": 0
+            "name": "source",
+            "defining_function": "closure_models.test_tito_transform"
           }
         ]
       }
@@ -958,10 +958,10 @@ Higher order call graphs
     },
     "92:19-92:25|identifier|$local_closure_models?test_tito_transform$source": {
       "identifier": {
-        "nonlocals": [
+        "captured_variables": [
           {
-            "target": "Obj{closure_models.test_tito_transform.source}",
-            "index": 0
+            "name": "source",
+            "defining_function": "closure_models.test_tito_transform"
           }
         ]
       }

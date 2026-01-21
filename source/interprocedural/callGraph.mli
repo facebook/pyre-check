@@ -325,14 +325,14 @@ end
 module IdentifierCallees : sig
   type t = {
     global_targets: CallTarget.t list;
-    nonlocal_targets: CallTarget.t list;
+    captured_variables: Analysis.TaintAccessPath.CapturedVariable.t list;
     if_called: CallCallees.t;
   }
   [@@deriving equal, show]
 
   val create
     :  ?global_targets:CallTarget.t list ->
-    ?nonlocal_targets:CallTarget.t list ->
+    ?captured_variables:Analysis.TaintAccessPath.CapturedVariable.t list ->
     ?if_called:CallCallees.t ->
     unit ->
     t
