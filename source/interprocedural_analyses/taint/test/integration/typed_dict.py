@@ -3,8 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import Any, TypedDict
+
 from pysa import _test_sink, _test_source
-from typing import TypedDict, Any
 
 
 class SimpleTypedDict(TypedDict):
@@ -34,12 +35,14 @@ def test_typed_dict_constructor():
     _test_sink(d["bar"])  # This is an issue.
     _test_sink(d["foo"])  # This is an issue (false positive).
 
-    d = SimpleTypedDict({_test_source(): 0}) # pyrefly: ignore[no-matching-overload]
+    d = SimpleTypedDict({_test_source(): 0})  # pyrefly: ignore[no-matching-overload]
     _test_sink(d.keys())  # This is an issue.
     _test_sink(d["foo"])  # This is NOT an issue.
     _test_sink(d["bar"])  # This is NOT an issue.
 
-    d = SimpleTypedDict([("foo", 0), ("bar", _test_source())]) # pyrefly: ignore[no-matching-overload]
+    d = SimpleTypedDict(  # pyrefly: ignore[no-matching-overload]
+        [("foo", 0), ("bar", _test_source())]
+    )
     _test_sink(d["bar"])  # This is an issue.
     _test_sink(d["foo"])  # This is an issue (false positive).
 
