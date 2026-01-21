@@ -19,7 +19,16 @@ Higher order call graphs
       }
     },
     "62:15-62:27|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     },
     "64:25-64:39": {
       "call": {
@@ -36,10 +45,28 @@ Higher order call graphs
       }
     },
     "66:15-66:26|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     },
     "66:15-66:39|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     },
     "68:27-68:41": {
       "call": {
@@ -56,10 +83,28 @@ Higher order call graphs
       }
     },
     "69:15-69:28|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     },
     "69:15-69:36|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 4,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     }
   }
 }
@@ -67,7 +112,26 @@ Higher order call graphs
   "callable": "typed_dict.test_typed_dict_constructor",
   "returned_callables": [],
   "calls": {
-    "24:8-24:50": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } },
+    "24:8-24:50": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "typed_dict.SimpleTypedDict.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "24:35-24:49": {
       "call": {
         "calls": [
@@ -83,7 +147,16 @@ Higher order call graphs
       }
     },
     "25:15-25:23|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     },
     "26:4-26:24": {
       "call": {
@@ -93,9 +166,37 @@ Higher order call graphs
       }
     },
     "26:15-26:23|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     },
-    "28:8-28:57": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } },
+    "28:8-28:57": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "typed_dict.SimpleTypedDict.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "28:41-28:55": {
       "call": {
         "calls": [
@@ -111,7 +212,16 @@ Higher order call graphs
       }
     },
     "29:15-29:23|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     },
     "29:15-29:28|artificial-call|subscript-get-item": {
       "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
@@ -124,7 +234,16 @@ Higher order call graphs
       }
     },
     "30:15-30:23|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     },
     "30:15-30:28|artificial-call|subscript-get-item": {
       "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
@@ -137,7 +256,16 @@ Higher order call graphs
       }
     },
     "31:15-31:23|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 4,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     },
     "31:15-31:28|artificial-call|subscript-get-item": {
       "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
@@ -150,12 +278,40 @@ Higher order call graphs
       }
     },
     "32:15-32:23|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 5,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     },
     "32:15-32:28|artificial-call|subscript-get-item": {
       "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
-    "34:8-34:58": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } },
+    "34:8-34:58": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 2,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "typed_dict.SimpleTypedDict.__init__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "34:42-34:56": {
       "call": {
         "calls": [
@@ -171,7 +327,16 @@ Higher order call graphs
       }
     },
     "35:15-35:23|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 6,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     },
     "36:4-36:24": {
       "call": {
@@ -181,9 +346,37 @@ Higher order call graphs
       }
     },
     "36:15-36:23|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 7,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     },
-    "38:8-38:44": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } },
+    "38:8-38:44": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 3,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "typed_dict.SimpleTypedDict.__init__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "38:25-38:39": {
       "call": {
         "calls": [
@@ -218,7 +411,16 @@ Higher order call graphs
       }
     },
     "40:15-40:23|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 8,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     },
     "41:4-41:24": {
       "call": {
@@ -228,9 +430,37 @@ Higher order call graphs
       }
     },
     "41:15-41:23|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 9,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     },
-    "43:8-45:5": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } },
+    "43:8-45:5": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 4,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "typed_dict.SimpleTypedDict.__init__",
+            "index": 4,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "44:29-44:43": {
       "call": {
         "calls": [
@@ -246,7 +476,16 @@ Higher order call graphs
       }
     },
     "46:15-46:23|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 10,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     },
     "47:4-47:24": {
       "call": {
@@ -256,7 +495,16 @@ Higher order call graphs
       }
     },
     "47:15-47:23|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 11,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     }
   }
 }
@@ -282,7 +530,16 @@ Higher order call graphs
       }
     },
     "19:15-19:23|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     },
     "20:4-20:24": {
       "call": {
@@ -292,7 +549,16 @@ Higher order call graphs
       }
     },
     "20:15-20:23|artificial-call|subscript-get-item": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Mapping.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
     }
   }
 }
