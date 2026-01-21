@@ -38,6 +38,7 @@ module TypeModifier : sig
     | Coroutine (* Coroutine[.., T] *)
     | Awaitable (* Awaitable[T] *)
     | TypeVariableBound (* TypeVar(.., bound=T) *)
+    | TypeVariableConstraint (* TypeVar("T", ..., ...) *)
     | ReadOnly (* ReadOnly[T] *)
     | Type (* type[T] *)
   [@@deriving equal, compare, show]

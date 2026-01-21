@@ -89,6 +89,66 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "typevar.issue",
+    "callable_line": 16,
+    "code": 5002,
+    "line": 17,
+    "start": 15,
+    "end": 26,
+    "filename": "typevar.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{typevar.Foo.tainted}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 17, "start": 15, "end": 26 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 17, "start": 15, "end": 26 },
+            "call_site": "17:4-17:27"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typevar.issue:5002:0:Call|pysa._test_sink|0|formal(arg):1e91c6a0b5ca4952144a790e17b4cf73"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "ast._Attributes.__init__",

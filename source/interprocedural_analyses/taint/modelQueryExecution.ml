@@ -701,6 +701,7 @@ let matches_annotation_constraint
         | PyrePysaApi.TypeModifier.ReadOnly ->
             true
         | PyrePysaApi.TypeModifier.TypeVariableBound
+        | PyrePysaApi.TypeModifier.TypeVariableConstraint
         | PyrePysaApi.TypeModifier.Type ->
             false
       in

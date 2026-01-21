@@ -86,6 +86,7 @@ module TypeModifier = struct
     | Coroutine (* Coroutine[.., T] *)
     | Awaitable (* Awaitable[T] *)
     | TypeVariableBound (* TypeVar(.., bound=T) *)
+    | TypeVariableConstraint (* TypeVar("T", ..., ...) *)
     | ReadOnly (* ReadOnly[T] *)
     | Type (* type[T] *)
   [@@deriving equal, compare, show]
@@ -95,6 +96,7 @@ module TypeModifier = struct
     | "Coroutine" -> Some Coroutine
     | "Awaitable" -> Some Awaitable
     | "TypeVariableBound" -> Some TypeVariableBound
+    | "TypeVariableConstraint" -> Some TypeVariableConstraint
     | "ReadOnly" -> Some ReadOnly
     | "Type" -> Some Type
     | _ -> None

@@ -17,6 +17,18 @@ Higher order call graphs
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
+    },
+    "17:15-17:26": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{typevar.Foo.tainted}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
     }
   }
 }

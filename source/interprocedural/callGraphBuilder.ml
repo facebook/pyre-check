@@ -4952,7 +4952,8 @@ let build_whole_program_call_graph_for_pyrefly
           | PyrePysaApi.TypeModifier.Coroutine
           | PyrePysaApi.TypeModifier.Awaitable
           | PyrePysaApi.TypeModifier.ReadOnly
-          | PyrePysaApi.TypeModifier.TypeVariableBound ->
+          | PyrePysaApi.TypeModifier.TypeVariableBound
+          | PyrePysaApi.TypeModifier.TypeVariableConstraint ->
               true
           | PyrePysaApi.TypeModifier.Type -> false
         in
@@ -4993,7 +4994,7 @@ let build_whole_program_call_graph_for_pyrefly
             >>| List.map ~f:Reference.create
             >>| List.map ~f:Target.create_object
             >>| List.filter ~f:(fun target -> Target.Set.mem target attribute_targets)
-            >>| List.map ~f:(fun target -> CallGraph.CallTarget.create target)
+            >>| List.map ~f:CallGraph.CallTarget.create
             |> Option.value ~default:[]
           in
           if not (List.is_empty targets) then
