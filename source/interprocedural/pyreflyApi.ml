@@ -1514,6 +1514,7 @@ module ModuleCallGraphs = struct
     type t = {
       if_called: JsonCallCallees.t;
       global_targets: JsonGlobalVariable.t list;
+      captured_variables: CapturedVariable.t list;
     }
 
     let from_json json =
@@ -1524,7 +1525,11 @@ module ModuleCallGraphs = struct
       JsonUtil.get_optional_list_member json "global_targets"
       >>| List.map ~f:JsonGlobalVariable.from_json
       >>= Result.all
-      >>| fun global_targets -> { if_called; global_targets }
+      >>= fun global_targets ->
+      JsonUtil.get_optional_list_member json "captured_variables"
+      >>| List.map ~f:CapturedVariable.from_json
+      >>= Result.all
+      >>| fun captured_variables -> { if_called; global_targets; captured_variables }
   end
 
   module JsonDefineCallees = struct
@@ -4518,6 +4523,17 @@ module ReadOnly = struct
       else
         None
     in
+    let instantiate_captured_variable { CapturedVariable.name; outer_function } =
+      AccessPath.CapturedVariable.FromFunction
+        {
+          name;
+          defining_function =
+            CallableIdToQualifiedNameSharedMemory.get
+              callable_id_to_qualified_name_shared_memory
+              outer_function
+            |> FullyQualifiedName.to_reference;
+        }
+    in
     let instantiate_higher_order_parameter
         { JsonHigherOrderParameter.index; call_targets; unresolved }
       =
@@ -4553,11 +4569,13 @@ module ReadOnly = struct
         recognized_call = CallGraph.CallCallees.RecognizedCall.False;
       }
     in
-    let instantiate_identifier_callees { JsonIdentifierCallees.if_called; global_targets } =
-      (* TODO(T225700656): Support non local targets. *)
+    let instantiate_identifier_callees
+        { JsonIdentifierCallees.if_called; global_targets; captured_variables }
+      =
       let if_called = instantiate_call_callees if_called in
       let global_targets = List.filter_map ~f:instantiate_global_target global_targets in
-      { IdentifierCallees.global_targets; captured_variables = []; if_called }
+      let captured_variables = List.map ~f:instantiate_captured_variable captured_variables in
+      { IdentifierCallees.global_targets; captured_variables; if_called }
     in
     let instantiate_attribute_access_callees
         { JsonAttributeAccessCallees.if_called; property_setters; property_getters; global_targets }

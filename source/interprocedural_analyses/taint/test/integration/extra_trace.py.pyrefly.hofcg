@@ -234,6 +234,22 @@ Higher order call graphs
   }
 }
 {
+  "callable": "extra_trace.issue_via_transfom_captured_variable.nested_function",
+  "returned_callables": [],
+  "calls": {
+    "175:15-175:16|identifier|x": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "x",
+            "defining_function": "extra_trace.issue_via_transfom_captured_variable"
+          }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "extra_trace.loop_tito_backward",
   "returned_callables": [],
   "calls": {

@@ -45,6 +45,16 @@ Higher order call graphs
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
+    },
+    "168:19-168:35|identifier|complicated_name": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "complicated_name",
+            "defining_function": "closure_models.captured_variable_model_both_generation_parameter_source"
+          }
+        ]
+      }
     }
   }
 }
@@ -87,10 +97,30 @@ Higher order call graphs
   "callable": "closure_models.captured_variable_model_generation_source.model_all_captured_as_generation_sources",
   "returned_callables": [],
   "calls": {
+    "156:8-156:24|identifier|complicated_name": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "complicated_name",
+            "defining_function": "closure_models.captured_variable_model_generation_source"
+          }
+        ]
+      }
+    },
     "157:8-157:36": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "157:19-157:35|identifier|complicated_name": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "complicated_name",
+            "defining_function": "closure_models.captured_variable_model_generation_source"
+          }
         ]
       }
     }
@@ -148,6 +178,16 @@ Higher order call graphs
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
+    },
+    "145:19-145:35|identifier|complicated_name": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "complicated_name",
+            "defining_function": "closure_models.captured_variable_model_parameter_source"
+          }
+        ]
+      }
     }
   }
 }
@@ -180,6 +220,22 @@ Higher order call graphs
             "target": "closure_models.captured_variable_model_sink.model_all_captured_as_sinks",
             "index": 0,
             "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.captured_variable_model_sink.model_all_captured_as_sinks",
+  "returned_callables": [],
+  "calls": {
+    "179:8-179:24|identifier|complicated_name": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "complicated_name",
+            "defining_function": "closure_models.captured_variable_model_sink"
           }
         ]
       }
@@ -222,6 +278,22 @@ Higher order call graphs
             "target": "closure_models.captured_variable_model_tito.model_all_captured_as_tito",
             "index": 0,
             "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.captured_variable_model_tito.model_all_captured_as_tito",
+  "returned_callables": [],
+  "calls": {
+    "133:8-133:24|identifier|complicated_name": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "complicated_name",
+            "defining_function": "closure_models.captured_variable_model_tito"
           }
         ]
       }
@@ -620,6 +692,26 @@ Higher order call graphs
           }
         ]
       }
+    },
+    "54:19-54:25|identifier|source": {
+      "identifier": {
+        "captured_variables": [
+          { "name": "source", "defining_function": "closure_models.test" }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.test.return_model_taint",
+  "returned_callables": [],
+  "calls": {
+    "46:15-46:20|identifier|value": {
+      "identifier": {
+        "captured_variables": [
+          { "name": "value", "defining_function": "closure_models.test" }
+        ]
+      }
     }
   }
 }
@@ -635,6 +727,13 @@ Higher order call graphs
             "index": 0,
             "return_type": []
           }
+        ]
+      }
+    },
+    "51:19-51:25|identifier|source": {
+      "identifier": {
+        "captured_variables": [
+          { "name": "source", "defining_function": "closure_models.test" }
         ]
       }
     }
@@ -678,6 +777,16 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "125:19-125:28|identifier|some_data": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "some_data",
+            "defining_function": "closure_models.test_dsl_decorator_source"
+          }
         ]
       }
     }
@@ -744,6 +853,16 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "119:19-119:28|identifier|some_data": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "some_data",
+            "defining_function": "closure_models.test_dsl_source"
+          }
         ]
       }
     }
@@ -896,6 +1015,16 @@ Higher order call graphs
           }
         ]
       }
+    },
+    "95:19-95:25|identifier|source": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "source",
+            "defining_function": "closure_models.test_tito_transform"
+          }
+        ]
+      }
     }
   }
 }
@@ -910,6 +1039,16 @@ Higher order call graphs
             "target": "closure_models.use_source",
             "index": 0,
             "return_type": []
+          }
+        ]
+      }
+    },
+    "92:19-92:25|identifier|source": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "source",
+            "defining_function": "closure_models.test_tito_transform"
           }
         ]
       }

@@ -683,6 +683,16 @@ Higher order call graphs
           }
         ]
       }
+    },
+    "49:18-49:21|identifier|add": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "add",
+            "defining_function": "decorator_location.ignore_this_decorator_factory"
+          }
+        ]
+      }
     }
   }
 }

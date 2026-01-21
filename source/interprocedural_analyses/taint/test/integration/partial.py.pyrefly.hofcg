@@ -17,6 +17,26 @@ Higher order call graphs
         ]
       }
     },
+    "138:33-138:41|identifier|instance": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "instance",
+            "defining_function": "partial.NestedDefineDecorator.__get__"
+          }
+        ]
+      }
+    },
+    "139:19-139:23|identifier|self": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "self",
+            "defining_function": "partial.NestedDefineDecorator.__get__"
+          }
+        ]
+      }
+    },
     "139:19-139:49": {
       "call": {
         "calls": [

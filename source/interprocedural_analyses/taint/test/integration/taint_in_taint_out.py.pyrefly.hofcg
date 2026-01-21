@@ -90,6 +90,16 @@ Higher order call graphs
         }
       }
     },
+    "195:23-195:27|identifier|self": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "self",
+            "defining_function": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload"
+          }
+        ]
+      }
+    },
     "195:23-195:56": {
       "call": {
         "calls": [
@@ -99,6 +109,16 @@ Higher order call graphs
             "implicit_receiver": true,
             "return_type": [],
             "receiver_class": "taint_in_taint_out.ComplexEvaluator"
+          }
+        ]
+      }
+    },
+    "196:19-196:23|identifier|self": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "self",
+            "defining_function": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload"
           }
         ]
       }

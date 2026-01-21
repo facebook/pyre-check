@@ -1685,6 +1685,16 @@ Higher order call graphs
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
+    },
+    "266:19-266:23|identifier|arg2": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "arg2",
+            "defining_function": "decorator.second_parameter_source_inlineable_decorator_with_inner"
+          }
+        ]
+      }
     }
   }
 }
@@ -2784,6 +2794,16 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "builtins.print", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "114:33-114:44|identifier|logger_name": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "logger_name",
+            "defining_function": "decorator.with_named_logger"
+          }
         ]
       }
     },

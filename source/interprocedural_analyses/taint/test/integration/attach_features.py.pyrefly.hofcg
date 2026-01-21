@@ -58,6 +58,16 @@ Higher order call graphs
   "callable": "attach_features.attach_to_returned_with_captures.nested",
   "returned_callables": [],
   "calls": {
+    "80:8-80:9|identifier|x": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "x",
+            "defining_function": "attach_features.attach_to_returned_with_captures"
+          }
+        ]
+      }
+    },
     "80:12-80:26": {
       "call": {
         "calls": [

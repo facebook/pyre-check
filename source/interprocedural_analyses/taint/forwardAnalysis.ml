@@ -3024,7 +3024,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         |> check_flow_to_global ~location ~source_tree;
         (* Check flows to nonlocals. *)
         let state =
-          let nonlocal_target_identifier =
+          let captured_variable =
             match Node.value target with
             | Expression.Name (Name.Identifier identifier) ->
                 FunctionContext.call_graph_of_define
@@ -3032,23 +3032,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                      ~location:(Node.location target)
                      ~identifier
                 >>| (fun { captured_variables; _ } -> captured_variables)
-                >>| Fn.non List.is_empty
-                >>| (fun has_nonlocal_targets -> Option.some_if has_nonlocal_targets identifier)
-                |> Option.value ~default:None
+                >>= List.hd
             (* TODO(T168869049): Handle class attribute writes *)
             | _ -> None
           in
-          match nonlocal_target_identifier with
+          match captured_variable with
           | None -> state
-          | Some identifier ->
+          | Some captured_variable ->
               (* Propagate taint for nonlocal assignment. *)
               store_taint
                 ~weak
-                ~root:
-                  (AccessPath.Root.CapturedVariable
-                     (PyrePysaApi.ReadOnly.get_captured_variable_from_nonlocal_target
-                        FunctionContext.pyre_api
-                        identifier))
+                ~root:(AccessPath.Root.CapturedVariable captured_variable)
                 ~path:fields
                 (ForwardState.Tree.add_local_breadcrumb (Features.captured_variable ()) taint)
                 state
