@@ -23,12 +23,12 @@ module CallableSignature = struct
     parameters: Expression.Parameter.t list AstResult.t;
     return_annotation: Expression.t option AstResult.t;
     decorators: Expression.t list AstResult.t;
-    captures: string list;
+    captures: Analysis.TaintAccessPath.CapturedVariable.t list;
     method_kind: Target.MethodKind.t option;
     is_stub_like: bool;
   }
 
-  let from_define_for_pyre1 ~target ~qualifier define =
+  let from_define_for_pyre1 ~pyre1_api ~target ~qualifier define =
     let method_kind =
       match Target.get_regular target with
       | Target.Regular.Method { method_name = "__new__"; _ } -> Some Target.MethodKind.Static
@@ -51,7 +51,8 @@ module CallableSignature = struct
       parameters = AstResult.Some define.Node.value.signature.parameters;
       return_annotation = AstResult.Some define.Node.value.signature.return_annotation;
       decorators = AstResult.Some define.Node.value.signature.decorators;
-      captures = List.map ~f:(fun { name; _ } -> name) define.Node.value.captures;
+      captures =
+        Analysis.PyrePysaEnvironment.ReadOnly.get_captures_from_define pyre1_api define.Node.value;
       method_kind;
       is_stub_like = Define.is_stub define.Node.value;
     }
@@ -66,9 +67,9 @@ module CallableSignature = struct
           is_staticmethod;
           is_stub;
           parent_is_class;
-          captures;
           _;
         }
+      ~captures
       define
     =
     let define_signature =
@@ -117,14 +118,19 @@ let get_signature_and_definition ~pyre_api callable =
   | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->
       let metadata = PyreflyApi.ReadOnly.get_callable_metadata pyrefly_api define_name in
       let define = PyreflyApi.ReadOnly.get_define_opt pyrefly_api define_name in
-      let signature = CallableSignature.from_define_for_pyrefly ~define_name ~metadata define in
+      let captures = PyreflyApi.ReadOnly.get_callable_captures pyrefly_api define_name in
+      let signature =
+        CallableSignature.from_define_for_pyrefly ~define_name ~metadata ~captures define
+      in
       Some (signature, define)
   | PyrePysaApi.ReadOnly.Pyre1 pyre1_api ->
       Target.get_definitions ~pyre1_api ~warn_multiple_definitions:false define_name
       >>= fun { Target.qualifier; callables; _ } ->
       Target.Map.find_opt callable callables
       >>| fun define ->
-      let signature = CallableSignature.from_define_for_pyre1 ~target:callable ~qualifier define in
+      let signature =
+        CallableSignature.from_define_for_pyre1 ~pyre1_api ~target:callable ~qualifier define
+      in
       signature, AstResult.Some define
 
 

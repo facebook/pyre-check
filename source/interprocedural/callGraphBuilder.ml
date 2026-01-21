@@ -4157,8 +4157,10 @@ module HigherOrderCallGraph = struct
               | Some captures ->
                   let parameters_roots, parameters_targets =
                     captures
-                    |> List.filter_map ~f:(fun name ->
-                           let captured = State.create_root_from_identifier name in
+                    |> List.filter_map ~f:(fun captured_variable ->
+                           let captured =
+                             TaintAccessPath.Root.captured_variable_to_variable captured_variable
+                           in
                            log "Inner function captures `%a`" TaintAccessPath.Root.pp captured;
                            let parameter_targets =
                              state

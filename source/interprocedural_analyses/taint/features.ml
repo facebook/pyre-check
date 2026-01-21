@@ -242,7 +242,8 @@ module LeafPort = struct
       | AccessPath.Root.LocalResult -> "return"
       | AccessPath.Root.PositionalParameter { name; _ }
       | AccessPath.Root.NamedParameter { name }
-      | AccessPath.Root.CapturedVariable { name; _ } ->
+      | AccessPath.Root.CapturedVariable (AccessPath.CapturedVariable.FromFunction { name; _ })
+      | AccessPath.Root.CapturedVariable (AccessPath.CapturedVariable.Pyre1Parameter { name }) ->
           name
       | AccessPath.Root.StarParameter _ -> "*"
       | AccessPath.Root.StarStarParameter _ -> "**"

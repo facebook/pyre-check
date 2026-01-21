@@ -17,6 +17,7 @@ module ClassNamesFromType = Pyre1Api.ClassNamesFromType
 module PysaType = Pyre1Api.PysaType
 module PyreClassSummary = Pyre1Api.PyreClassSummary
 module AstResult = Pyre1Api.AstResult
+module TaintAccessPath = Analysis.TaintAccessPath
 
 module PysaClassSummary = struct
   type t =
@@ -245,6 +246,11 @@ module ReadOnly = struct
   let class_exists = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.class_exists pyre_api
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.class_exists"
+
+
+  let get_captured_variable_from_nonlocal_target = function
+    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.get_captured_variable_from_nonlocal_target pyre_api
+    | Pyrefly _ -> failwith "unimplemented: ReadOnly.get_captured_variable_from_nonlocal_target"
 
 
   let get_callable_captures = function

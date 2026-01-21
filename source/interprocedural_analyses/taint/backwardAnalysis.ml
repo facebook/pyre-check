@@ -2954,7 +2954,7 @@ end
 let get_normalized_parameters
     ~pyre_api
     ~define_name
-    { Statement.Define.signature = { parameters; _ }; captures; _ }
+    ({ Statement.Define.signature = { parameters; _ }; _ } as define)
   =
   let normalized_parameters =
     parameters
@@ -2964,10 +2964,22 @@ let get_normalized_parameters
            root, qualified_name, annotations)
   in
   let captures =
-    List.map captures ~f:(fun capture ->
-        AccessPath.Root.CapturedVariable { name = capture.name }, capture.name, [])
+    match pyre_api with
+    | PyrePysaApi.ReadOnly.Pyre1 pyre1_api ->
+        Analysis.PyrePysaEnvironment.ReadOnly.get_captures_from_define pyre1_api define
+    | PyrePysaApi.ReadOnly.Pyrefly _ ->
+        PyrePysaApi.ReadOnly.get_callable_captures pyre_api define_name
   in
-  List.append normalized_parameters captures
+  let normalized_captures =
+    List.map captures ~f:(fun capture ->
+        let qualified_name =
+          match AccessPath.Root.captured_variable_to_variable capture with
+          | AccessPath.Root.Variable qualified_name -> qualified_name
+          | _ -> failwith "unreachable"
+        in
+        AccessPath.Root.CapturedVariable capture, qualified_name, [])
+  in
+  List.append normalized_parameters normalized_captures
 
 
 (* Split the inferred entry state into externally visible taint_in_taint_out parts and

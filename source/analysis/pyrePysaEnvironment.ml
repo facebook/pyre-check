@@ -595,10 +595,28 @@ module ReadOnly = struct
     global_resolution api |> GlobalResolution.get_define_body_in_project
 
 
+  let get_captured_variable_from_nonlocal_target _ qualified_name =
+    match Preprocessing.get_unqualified_local_identifier qualified_name with
+    | Some (qualifier, name) ->
+        TaintAccessPath.CapturedVariable.FromFunction { defining_function = qualifier; name }
+    | None -> (
+        match Preprocessing.get_unqualified_parameter qualified_name with
+        | Some name -> TaintAccessPath.CapturedVariable.Pyre1Parameter { name }
+        | None ->
+            Format.asprintf "Unexpected qualified name for captured variable: %s" qualified_name
+            |> failwith)
+
+
+  let get_captures_from_define api { Ast.Statement.Define.captures; _ } =
+    List.map
+      ~f:(fun capture ->
+        get_captured_variable_from_nonlocal_target api capture.Ast.Statement.Define.Capture.name)
+      captures
+
+
   let get_callable_captures api define_name =
     match get_define_body api define_name with
-    | Some { Ast.Node.value = { Ast.Statement.Define.captures; _ }; _ } ->
-        List.map ~f:(fun capture -> capture.Ast.Statement.Define.Capture.name) captures
+    | Some define -> get_captures_from_define api (Ast.Node.value define)
     | _ -> []
 
 

@@ -286,7 +286,7 @@
     "callable_line": 128,
     "tito": [
       {
-        "port": "captured_variable($parameter$f)",
+        "port": "captured_variable(f, parameter)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],

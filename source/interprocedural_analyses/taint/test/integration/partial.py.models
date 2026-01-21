@@ -7,7 +7,7 @@
     "callable_line": 137,
     "tito": [
       {
-        "port": "captured_variable($parameter$self)[_func]",
+        "port": "captured_variable(self, parameter)[_func]",
         "taint": [
           {
             "kinds": [
@@ -31,7 +31,7 @@
         ]
       },
       {
-        "port": "captured_variable($parameter$instance)",
+        "port": "captured_variable(instance, parameter)",
         "taint": [
           {
             "kinds": [

@@ -339,77 +339,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "extra_trace.issue_via_transfom_captured_variable",
-    "callable_line": 170,
-    "code": 6000,
-    "line": 177,
-    "start": 15,
-    "end": 32,
-    "filename": "extra_trace.py",
-    "message": "[TestSource] may reach [TestSink]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "extra_traces": [
-                  {
-                    "message": "TransformX",
-                    "origin": { "line": 177, "start": 15, "end": 32 },
-                    "leaf_kind": "TransformX:ExtraTraceSink",
-                    "trace_kind": "sink"
-                  }
-                ],
-                "local_features": [
-                  { "always-via": "transform-tito-depth:1" }
-                ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "TransformX@TestSource"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 177, "start": 15, "end": 32 } ],
-            "origin": { "line": 171, "start": 8, "end": 22 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "kind": "TestSink"
-              }
-            ],
-            "origin": { "line": 177, "start": 15, "end": 32 },
-            "call_site": "177:4-177:33"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "pysa._test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "extra_trace.issue_via_transfom_captured_variable:6000:0:Call|pysa._test_sink|0|formal(arg):2b40e5d62fff593ba13ccb716291eab1"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "extra_trace.issue_via_transfom_captured_variable.nested_function",
@@ -417,7 +346,7 @@
     "callable_line": 174,
     "sinks": [
       {
-        "port": "captured_variable(x)",
+        "port": "captured_variable(x, extra_trace.issue_via_transfom_captured_variable)",
         "taint": [
           {
             "kinds": [ { "kind": "TransformX@ExtraTraceSink" } ],
@@ -428,7 +357,7 @@
     ],
     "tito": [
       {
-        "port": "captured_variable(x)",
+        "port": "captured_variable(x, extra_trace.issue_via_transfom_captured_variable)",
         "taint": [
           {
             "kinds": [

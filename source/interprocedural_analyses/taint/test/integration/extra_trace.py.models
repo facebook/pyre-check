@@ -421,7 +421,7 @@
     "callable_line": 174,
     "sinks": [
       {
-        "port": "captured_variable($local_extra_trace?issue_via_transfom_captured_variable$x)",
+        "port": "captured_variable(x, extra_trace.issue_via_transfom_captured_variable)",
         "taint": [
           {
             "kinds": [ { "kind": "TransformX@ExtraTraceSink" } ],
@@ -432,7 +432,7 @@
     ],
     "tito": [
       {
-        "port": "captured_variable($local_extra_trace?issue_via_transfom_captured_variable$x)",
+        "port": "captured_variable(x, extra_trace.issue_via_transfom_captured_variable)",
         "taint": [
           {
             "kinds": [

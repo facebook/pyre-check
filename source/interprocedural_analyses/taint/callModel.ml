@@ -77,17 +77,21 @@ let match_captures ~model ~captures_taint ~location =
     |> AccessPath.Root.Set.of_list
   in
   let make_taint_with_argument_match capture_root =
-    let name =
+    let capture_as_variable =
       match capture_root with
-      | AccessPath.Root.CapturedVariable { name; _ } -> name
+      | AccessPath.Root.CapturedVariable captured_variable ->
+          AccessPath.Root.captured_variable_to_variable captured_variable
       | _ -> failwith "unreachable"
     in
     let expression =
-      (* captured variables are not present at call site, so location of call expression instead of
-         location of assignment that introduces taint is used *)
-      Node.create ~location (Expression.Name (Name.Identifier name))
+      match capture_as_variable with
+      | AccessPath.Root.Variable name ->
+          (* captured variables are not present at call site, so location of call expression instead
+             of location of assignment that introduces taint is used *)
+          Node.create ~location (Expression.Name (Name.Identifier name))
+      | _ -> failwith "unreachable"
     in
-    let taint = ForwardState.read ~root:(AccessPath.Root.Variable name) ~path:[] captures_taint in
+    let taint = ForwardState.read ~root:capture_as_variable ~path:[] captures_taint in
     let argument_match =
       {
         ArgumentMatches.argument = expression;

@@ -1008,7 +1008,7 @@ module Modelable = struct
         (* The semantic (undecorated) signature(s) of the function. *)
         undecorated_signatures: PyrePysaApi.ModelQueries.FunctionSignature.t list Lazy.t;
         decorators: CallableDecorator.t list Lazy.t;
-        captures: string list Lazy.t;
+        captures: Analysis.TaintAccessPath.CapturedVariable.t list Lazy.t;
       }
     | Attribute of {
         target_name: Reference.t;

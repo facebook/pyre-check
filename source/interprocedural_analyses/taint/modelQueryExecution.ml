@@ -1840,7 +1840,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       | ModelQuery.Model.CapturedVariables { taint = productions; generation_if_source } ->
           List.cartesian_product productions captures
           |> List.filter_map ~f:(fun (production, capture) ->
-                 let root = AccessPath.Root.CapturedVariable { name = capture } in
+                 let root = AccessPath.Root.CapturedVariable capture in
                  production_to_taint ~root ~production
                  >>| fun annotation ->
                  ModelParseResult.ModelAnnotation.ParameterAnnotation

@@ -345,6 +345,7 @@ let compute
   =
   let callables_to_definitions_map =
     CallableToDecoratorsMap.SharedMemory.register_decorator_defines
+      ~pyre_api
       callables_to_decorators_map
       callables_to_definitions_map
   in

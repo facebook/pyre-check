@@ -8,6 +8,18 @@
 open Ast
 open Expression
 
+module CapturedVariable : sig
+  type t =
+    | FromFunction of {
+        name: string;
+        defining_function: Reference.t;
+      }
+    (* When using pyre1, if the captured variable is a parameter of a function, there is no way to
+       know the defining function. *)
+    | Pyre1Parameter of { name: string }
+  [@@deriving compare, equal, hash, sexp, show]
+end
+
 (** Roots representing parameters, locals, and special return value in models. *)
 module Root : sig
   type t =
@@ -21,7 +33,7 @@ module Root : sig
     | StarParameter of { position: int }
     | StarStarParameter of { excluded: Identifier.t list }
     | Variable of Identifier.t
-    | CapturedVariable of { name: Identifier.t }
+    | CapturedVariable of CapturedVariable.t
   [@@deriving compare, equal, hash, sexp, show]
 
   val is_parameter : t -> bool
@@ -40,9 +52,7 @@ module Root : sig
 
   val show_for_via_breadcrumb : t -> string
 
-  val variable_to_captured_variable : t -> t
-
-  val captured_variable_to_variable : t -> t
+  val captured_variable_to_variable : CapturedVariable.t -> t
 
   val is_captured_variable : t -> bool
 

@@ -806,11 +806,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let apply_captured_variable_side_effects state =
       let propagate_captured_variables state root =
         match root with
-        | AccessPath.Root.CapturedVariable { name = variable } ->
-            (* TODO(T225700656): Handle captured variable propagation *)
-            let nonlocal_reference = Reference.delocalize (Reference.create variable) in
+        | AccessPath.Root.CapturedVariable captured_variable ->
+            (* TODO(T225700656): Improve handling of captured variable propagation. *)
             let is_prefix =
-              Reference.is_prefix ~prefix:FunctionContext.define_name nonlocal_reference
+              match captured_variable with
+              | AccessPath.CapturedVariable.FromFunction { defining_function; _ } ->
+                  Reference.is_prefix ~prefix:FunctionContext.define_name defining_function
+              | AccessPath.CapturedVariable.Pyre1Parameter _ -> false
             in
             (* Treat any function call, even those that wrap a closure write, as a closure write *)
             let state =
@@ -818,7 +820,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                  taint *)
               store_taint
                 ~weak:true
-                ~root:(AccessPath.Root.captured_variable_to_variable root)
+                ~root:(AccessPath.Root.captured_variable_to_variable captured_variable)
                 ~path:[]
                 (ForwardState.read ~root ~path:[] forward.generations)
                 state
@@ -3036,14 +3038,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             (* TODO(T168869049): Handle class attribute writes *)
             | _ -> None
           in
-
           match nonlocal_target_identifier with
           | None -> state
           | Some identifier ->
               (* Propagate taint for nonlocal assignment. *)
               store_taint
                 ~weak
-                ~root:(AccessPath.Root.CapturedVariable { name = identifier })
+                ~root:
+                  (AccessPath.Root.CapturedVariable
+                     (PyrePysaApi.ReadOnly.get_captured_variable_from_nonlocal_target
+                        FunctionContext.pyre_api
+                        identifier))
                 ~path:fields
                 (ForwardState.Tree.add_local_breadcrumb (Features.captured_variable ()) taint)
                 state
@@ -3354,18 +3359,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let add_captured_variables_paramater_sources state =
       let store_captured_variable_taint state root =
-        if AccessPath.Root.is_captured_variable root then
-          (* The origin for captured variables taint is at the inner function boundry due to there
-             being no explicit parameter to mark as location *)
-          (* TODO(T184561320): Pull in location of `nonlocal` statement if present *)
-          let taint = apply_call ~location:define_location ~root in
-          store_taint
-            ~root:(AccessPath.Root.captured_variable_to_variable root)
-            ~path:[]
-            taint
-            state
-        else
-          state
+        match root with
+        | AccessPath.Root.CapturedVariable captured_variable ->
+            (* The origin for captured variables taint is at the inner function boundry due to there
+               being no explicit parameter to mark as location *)
+            (* TODO(T184561320): Pull in location of `nonlocal` statement if present *)
+            let taint = apply_call ~location:define_location ~root in
+            store_taint
+              ~root:(AccessPath.Root.captured_variable_to_variable captured_variable)
+              ~path:[]
+              taint
+              state
+        | _ -> state
       in
       List.fold ~init:state ~f:store_captured_variable_taint (ForwardState.roots parameter_sources)
     in

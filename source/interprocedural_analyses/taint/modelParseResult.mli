@@ -501,7 +501,7 @@ module Modelable : sig
 
   val parameters_of_signatures : t -> PyrePysaApi.ModelQueries.FunctionParameter.t list
 
-  val captures : t -> string list
+  val captures : t -> Analysis.TaintAccessPath.CapturedVariable.t list
 
   val decorator_expressions_after_inlining : t -> Ast.Expression.t list
 

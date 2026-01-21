@@ -62,7 +62,6 @@ module CallableMetadata : sig
     is_stub: bool; (* Is this a stub definition, e.g `def foo(): ...` *)
     is_def_statement: bool; (* Is this associated with a `def ..` statement? *)
     parent_is_class: bool;
-    captures: string list;
   }
   [@@deriving show]
 end
@@ -149,7 +148,10 @@ module ReadOnly : sig
     method_name:string ->
     Ast.Reference.t option
 
-  val get_callable_captures : t -> Ast.Reference.t -> string list
+  val get_callable_captures
+    :  t ->
+    Ast.Reference.t ->
+    Analysis.TaintAccessPath.CapturedVariable.t list
 
   val get_callable_decorator_callees
     :  t ->
@@ -425,6 +427,15 @@ module ClassFieldDeclarationKind : sig
 end
 
 (* Exposed for testing purposes *)
+module CapturedVariable : sig
+  type t = {
+    name: string;
+    outer_function: GlobalCallableId.t;
+  }
+  [@@deriving equal, show]
+end
+
+(* Exposed for testing purposes *)
 module ModuleDefinitionsFile : sig
   module ParentScope : sig
     type t =
@@ -476,10 +487,6 @@ module ModuleDefinitionsFile : sig
       return_annotation: JsonType.t;
     }
     [@@deriving equal, show]
-  end
-
-  module CapturedVariable : sig
-    type t = { name: string } [@@deriving equal, show]
   end
 
   module FunctionDefinition : sig

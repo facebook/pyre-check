@@ -17,12 +17,17 @@ module CallableSignature : sig
     parameters: Expression.Parameter.t list AstResult.t;
     return_annotation: Expression.t option AstResult.t;
     decorators: Expression.t list AstResult.t;
-    captures: string list;
+    captures: Analysis.TaintAccessPath.CapturedVariable.t list;
     method_kind: Target.MethodKind.t option;
     is_stub_like: bool;
   }
 
-  val from_define_for_pyre1 : target:Target.t -> qualifier:Reference.t -> Define.t Node.t -> t
+  val from_define_for_pyre1
+    :  pyre1_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
+    target:Target.t ->
+    qualifier:Reference.t ->
+    Define.t Node.t ->
+    t
 end
 
 (* Exposed for testing purposes only. *)
@@ -74,7 +79,7 @@ module ReadOnly : sig
 
   val is_stub_like : t -> Target.t -> bool option
 
-  val get_captures : t -> Target.t -> string list option
+  val get_captures : t -> Target.t -> Analysis.TaintAccessPath.CapturedVariable.t list option
 
   val callable_from_reference : t -> Reference.t -> Target.t option
 

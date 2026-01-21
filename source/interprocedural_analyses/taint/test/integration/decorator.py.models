@@ -26,7 +26,7 @@
     ],
     "tito": [
       {
-        "port": "captured_variable($parameter$callable)",
+        "port": "captured_variable(callable, parameter)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -1597,7 +1597,7 @@
               "resolves_to": [
                 "decorator.second_parameter_source_inlineable_decorator_with_inner.inner"
               ],
-              "port": "captured_variable($parameter$arg2)"
+              "port": "captured_variable(arg2, parameter)"
             }
           }
         ]
@@ -1665,7 +1665,7 @@
               "resolves_to": [
                 "decorator.second_parameter_source_inlineable_decorator_with_inner.inner"
               ],
-              "port": "captured_variable($parameter$arg2)"
+              "port": "captured_variable(arg2, parameter)"
             }
           }
         ]
@@ -1678,9 +1678,9 @@
       "kind": "Call",
       "callee": "decorator.second_parameter_source_inlineable_decorator_with_inner.inner",
       "index": 0,
-      "parameter": "captured_variable($parameter$arg2)"
+      "parameter": "captured_variable(arg2, parameter)"
     },
-    "master_handle": "decorator.second_parameter_source_inlineable_decorator_with_inner:5002:0:Call|decorator.second_parameter_source_inlineable_decorator_with_inner.inner|0|captured_variable($parameter$arg2):f21c6b6fea5a7632c7f49cccd1c669ea"
+    "master_handle": "decorator.second_parameter_source_inlineable_decorator_with_inner:5002:0:Call|decorator.second_parameter_source_inlineable_decorator_with_inner.inner|0|captured_variable(arg2, parameter):349a248f1542479d132efea38134b160"
   }
 }
 {
@@ -1691,7 +1691,7 @@
     "callable_line": 265,
     "sinks": [
       {
-        "port": "captured_variable($parameter$arg2)",
+        "port": "captured_variable(arg2, parameter)",
         "taint": [
           {
             "kinds": [

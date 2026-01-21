@@ -52,13 +52,13 @@
     "callable_line": 167,
     "sources": [
       {
-        "port": "captured_variable($local_closure_models?captured_variable_model_both_generation_parameter_source$complicated_name)",
+        "port": "captured_variable(complicated_name, closure_models.captured_variable_model_both_generation_parameter_source)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "sinks": [
       {
-        "port": "captured_variable($local_closure_models?captured_variable_model_both_generation_parameter_source$complicated_name)",
+        "port": "captured_variable(complicated_name, closure_models.captured_variable_model_both_generation_parameter_source)",
         "taint": [
           {
             "kinds": [
@@ -79,7 +79,7 @@
     ],
     "parameter_sources": [
       {
-        "port": "captured_variable($local_closure_models?captured_variable_model_both_generation_parameter_source$complicated_name)",
+        "port": "captured_variable(complicated_name, closure_models.captured_variable_model_both_generation_parameter_source)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -106,7 +106,7 @@
                 "leaves": [
                   {
                     "name": "closure_models.captured_variable_model_both_generation_parameter_source.model_all_captured_as_generation_and_parameter_sources",
-                    "port": "leaf:$local_closure_models?captured_variable_model_both_generation_parameter_source$complicated_name"
+                    "port": "leaf:complicated_name"
                   }
                 ],
                 "kind": "Test"
@@ -198,13 +198,13 @@
     "callable_line": 155,
     "sources": [
       {
-        "port": "captured_variable($local_closure_models?captured_variable_model_generation_source$complicated_name)",
+        "port": "captured_variable(complicated_name, closure_models.captured_variable_model_generation_source)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "sinks": [
       {
-        "port": "captured_variable($local_closure_models?captured_variable_model_generation_source$complicated_name)",
+        "port": "captured_variable(complicated_name, closure_models.captured_variable_model_generation_source)",
         "taint": [
           {
             "kinds": [
@@ -233,7 +233,7 @@
     "callable_line": 144,
     "sinks": [
       {
-        "port": "captured_variable($local_closure_models?captured_variable_model_parameter_source$complicated_name)",
+        "port": "captured_variable(complicated_name, closure_models.captured_variable_model_parameter_source)",
         "taint": [
           {
             "kinds": [
@@ -254,7 +254,7 @@
     ],
     "parameter_sources": [
       {
-        "port": "captured_variable($local_closure_models?captured_variable_model_parameter_source$complicated_name)",
+        "port": "captured_variable(complicated_name, closure_models.captured_variable_model_parameter_source)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -281,7 +281,7 @@
                 "leaves": [
                   {
                     "name": "closure_models.captured_variable_model_parameter_source.model_all_captured_as_parameter_sources",
-                    "port": "leaf:$local_closure_models?captured_variable_model_parameter_source$complicated_name"
+                    "port": "leaf:complicated_name"
                   }
                 ],
                 "kind": "Test"
@@ -358,7 +358,7 @@
                 "leaves": [
                   {
                     "name": "closure_models.captured_variable_model_sink.model_all_captured_as_sinks",
-                    "port": "leaf:$local_closure_models?captured_variable_model_sink$complicated_name"
+                    "port": "leaf:complicated_name"
                   }
                 ],
                 "kind": "Test"
@@ -374,9 +374,9 @@
       "kind": "Call",
       "callee": "closure_models.captured_variable_model_sink.model_all_captured_as_sinks",
       "index": 0,
-      "parameter": "captured_variable($local_closure_models?captured_variable_model_sink$complicated_name)"
+      "parameter": "captured_variable(complicated_name, closure_models.captured_variable_model_sink)"
     },
-    "master_handle": "closure_models.captured_variable_model_sink:5002:0:Call|closure_models.captured_variable_model_sink.model_all_captured_as_sinks|0|captured_variable($local_closure_models?captured_variable_model_sink$complicated_name):0a55479d32e7dd6737f7733fd35dc458"
+    "master_handle": "closure_models.captured_variable_model_sink:5002:0:Call|closure_models.captured_variable_model_sink.model_all_captured_as_sinks|0|captured_variable(complicated_name, closure_models.captured_variable_model_sink):bf7a5f96c753a6cc2adfdd589561276c"
   }
 }
 {
@@ -387,7 +387,7 @@
     "callable_line": 178,
     "sinks": [
       {
-        "port": "captured_variable($local_closure_models?captured_variable_model_sink$complicated_name)",
+        "port": "captured_variable(complicated_name, closure_models.captured_variable_model_sink)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -465,7 +465,7 @@
     "callable_line": 132,
     "tito": [
       {
-        "port": "captured_variable($local_closure_models?captured_variable_model_tito$complicated_name)",
+        "port": "captured_variable(complicated_name, closure_models.captured_variable_model_tito)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -1045,7 +1045,7 @@
     "callable_line": 53,
     "tito": [
       {
-        "port": "captured_variable($local_closure_models?test$source)",
+        "port": "captured_variable(source, closure_models.test)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -1071,7 +1071,7 @@
     ],
     "tito": [
       {
-        "port": "captured_variable($local_closure_models?test$value)",
+        "port": "captured_variable(value, closure_models.test)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1091,7 +1091,7 @@
     "callable_line": 50,
     "tito": [
       {
-        "port": "captured_variable($local_closure_models?test$source)",
+        "port": "captured_variable(source, closure_models.test)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -1137,7 +1137,7 @@
     "callable_line": 124,
     "sinks": [
       {
-        "port": "captured_variable($parameter$some_data)",
+        "port": "captured_variable(some_data, parameter)",
         "taint": [
           {
             "kinds": [
@@ -1158,7 +1158,7 @@
     ],
     "parameter_sources": [
       {
-        "port": "captured_variable($parameter$some_data)",
+        "port": "captured_variable(some_data, parameter)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -1186,7 +1186,7 @@
                 "leaves": [
                   {
                     "name": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable",
-                    "port": "leaf:$parameter$some_data"
+                    "port": "leaf:some_data"
                   }
                 ],
                 "kind": "Test"
@@ -1233,7 +1233,7 @@
     "callable_line": 118,
     "sinks": [
       {
-        "port": "captured_variable($parameter$some_data)",
+        "port": "captured_variable(some_data, parameter)",
         "taint": [
           {
             "kinds": [
@@ -1254,7 +1254,7 @@
     ],
     "parameter_sources": [
       {
-        "port": "captured_variable($parameter$some_data)",
+        "port": "captured_variable(some_data, parameter)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -1282,7 +1282,7 @@
                 "leaves": [
                   {
                     "name": "closure_models.test_dsl_source.local_function_capturing_local_variable",
-                    "port": "leaf:$parameter$some_data"
+                    "port": "leaf:some_data"
                   }
                 ],
                 "kind": "Test"
@@ -1511,7 +1511,7 @@
     "callable_line": 94,
     "sinks": [
       {
-        "port": "captured_variable($local_closure_models?test_tito_transform$source)",
+        "port": "captured_variable(source, closure_models.test_tito_transform)",
         "taint": [
           {
             "kinds": [
@@ -1524,7 +1524,7 @@
     ],
     "tito": [
       {
-        "port": "captured_variable($local_closure_models?test_tito_transform$source)",
+        "port": "captured_variable(source, closure_models.test_tito_transform)",
         "taint": [
           {
             "kinds": [
@@ -1549,7 +1549,7 @@
     "callable_line": 91,
     "sinks": [
       {
-        "port": "captured_variable($local_closure_models?test_tito_transform$source)",
+        "port": "captured_variable(source, closure_models.test_tito_transform)",
         "taint": [
           {
             "kinds": [
@@ -1562,7 +1562,7 @@
     ],
     "tito": [
       {
-        "port": "captured_variable($local_closure_models?test_tito_transform$source)",
+        "port": "captured_variable(source, closure_models.test_tito_transform)",
         "taint": [
           {
             "kinds": [

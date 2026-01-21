@@ -413,6 +413,34 @@ let get_qualified_local_identifier ~qualifier name =
   Format.asprintf "$local_%s$%s" qualifier name
 
 
+let get_unqualified_local_identifier name =
+  match String.is_prefix name ~prefix:"$local_", String.rindex name '$' with
+  | true, Some index when index > 0 ->
+      let qualifier =
+        String.sub name ~pos:7 ~len:(index - 7)
+        |> String.substr_replace_all ~pattern:"?" ~with_:"."
+        |> Reference.create
+      in
+      let name = String.drop_prefix name (index + 1) in
+      Some (qualifier, name)
+  | _ -> None
+
+
+let get_qualified_parameter name =
+  let parameter_prefix = "$parameter$" in
+  if String.is_prefix name ~prefix:parameter_prefix then
+    name
+  else
+    parameter_prefix ^ name
+
+
+let get_unqualified_parameter name =
+  if String.is_prefix name ~prefix:"$parameter$" then
+    Some (String.drop_prefix name 11)
+  else
+    None
+
+
 module Qualify = struct
   type alias = { name: Reference.t }
 
@@ -781,16 +809,7 @@ module Qualify = struct
 
 
   and qualify_argument { Call.Argument.name; value } ~qualify_strings ~scope =
-    let name =
-      let rename identifier =
-        let parameter_prefix = "$parameter$" in
-        if String.is_prefix identifier ~prefix:parameter_prefix then
-          identifier
-        else
-          parameter_prefix ^ identifier
-      in
-      name >>| Node.map ~f:rename
-    in
+    let name = name >>| Node.map ~f:get_qualified_parameter in
     { Call.Argument.name; value = qualify_expression ~qualify_strings ~scope value }
 
 

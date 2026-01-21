@@ -277,7 +277,7 @@
     "callable_line": 78,
     "sources": [
       {
-        "port": "captured_variable($local_attach_features?attach_to_returned_with_captures$x)",
+        "port": "captured_variable(x, attach_features.attach_to_returned_with_captures)",
         "taint": [
           {
             "kinds": [

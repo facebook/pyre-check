@@ -24,7 +24,7 @@
     "callable_line": 392,
     "tito": [
       {
-        "port": "captured_variable($parameter$y)",
+        "port": "captured_variable(y, parameter)",
         "taint": [
           {
             "kinds": [
@@ -36,7 +36,7 @@
         ]
       },
       {
-        "port": "captured_variable($parameter$x)",
+        "port": "captured_variable(x, parameter)",
         "taint": [
           {
             "kinds": [
@@ -48,7 +48,7 @@
         ]
       },
       {
-        "port": "captured_variable($local_closure?async_nonlocal_closure_tito_ignore_decorator$z)",
+        "port": "captured_variable(z, closure.async_nonlocal_closure_tito_ignore_decorator)",
         "taint": [
           {
             "kinds": [
@@ -70,7 +70,7 @@
     "callable_line": 382,
     "tito": [
       {
-        "port": "captured_variable($parameter$y)",
+        "port": "captured_variable(y, parameter)",
         "taint": [
           {
             "kinds": [
@@ -82,7 +82,7 @@
         ]
       },
       {
-        "port": "captured_variable($parameter$x)",
+        "port": "captured_variable(x, parameter)",
         "taint": [
           {
             "kinds": [
@@ -94,7 +94,7 @@
         ]
       },
       {
-        "port": "captured_variable($local_closure?async_nonlocal_closure_tito_with_decorator$z)",
+        "port": "captured_variable(z, closure.async_nonlocal_closure_tito_with_decorator)",
         "taint": [
           {
             "kinds": [
@@ -136,7 +136,7 @@
     "callable_line": 107,
     "sinks": [
       {
-        "port": "captured_variable($local_closure?closure$obj)[x]",
+        "port": "captured_variable(obj, closure.closure)[x]",
         "taint": [
           {
             "kinds": [
@@ -165,7 +165,7 @@
     "callable_line": 363,
     "tito": [
       {
-        "port": "captured_variable($parameter$function)",
+        "port": "captured_variable(function, parameter)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -210,7 +210,7 @@
     "callable_line": 369,
     "tito": [
       {
-        "port": "captured_variable($parameter$function)",
+        "port": "captured_variable(function, parameter)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -441,7 +441,7 @@
     "callable_line": 292,
     "sources": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_conditional_write$obj)",
+        "port": "captured_variable(obj, closure.nonlocal_closure_conditional_write)",
         "taint": [
           {
             "kinds": [
@@ -511,7 +511,7 @@
               "resolves_to": [
                 "closure.nonlocal_closure_define_before_variable_initialization.read"
               ],
-              "port": "captured_variable($local_closure?nonlocal_closure_define_before_variable_initialization$x)"
+              "port": "captured_variable(x, closure.nonlocal_closure_define_before_variable_initialization)"
             }
           }
         ]
@@ -526,9 +526,9 @@
       "kind": "Call",
       "callee": "closure.nonlocal_closure_define_before_variable_initialization.read",
       "index": 0,
-      "parameter": "captured_variable($local_closure?nonlocal_closure_define_before_variable_initialization$x)"
+      "parameter": "captured_variable(x, closure.nonlocal_closure_define_before_variable_initialization)"
     },
-    "master_handle": "closure.nonlocal_closure_define_before_variable_initialization:5002:0:Call|closure.nonlocal_closure_define_before_variable_initialization.read|0|captured_variable($local_closure?nonlocal_closure_define_before_variable_init:f514025180546483a5262124a8ef87dc"
+    "master_handle": "closure.nonlocal_closure_define_before_variable_initialization:5002:0:Call|closure.nonlocal_closure_define_before_variable_initialization.read|0|captured_variable(x, closure.nonlocal_closure_define_before_variable_initiali:94e25c3543da27f35b7aa5017edd4c76"
   }
 }
 {
@@ -539,7 +539,7 @@
     "callable_line": 89,
     "sinks": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_define_before_variable_initialization$x)",
+        "port": "captured_variable(x, closure.nonlocal_closure_define_before_variable_initialization)",
         "taint": [
           {
             "kinds": [
@@ -610,7 +610,7 @@
             "call": {
               "position": { "line": 197, "start": 4, "end": 10 },
               "resolves_to": [ "closure.nonlocal_closure_flow.sink" ],
-              "port": "captured_variable($local_closure?nonlocal_closure_flow$obj)"
+              "port": "captured_variable(obj, closure.nonlocal_closure_flow)"
             }
           }
         ]
@@ -625,9 +625,9 @@
       "kind": "Call",
       "callee": "closure.nonlocal_closure_flow.sink",
       "index": 0,
-      "parameter": "captured_variable($local_closure?nonlocal_closure_flow$obj)"
+      "parameter": "captured_variable(obj, closure.nonlocal_closure_flow)"
     },
-    "master_handle": "closure.nonlocal_closure_flow:5002:0:Call|closure.nonlocal_closure_flow.sink|0|captured_variable($local_closure?nonlocal_closure_flow$obj):28496caf7a15fcabcc05d7ee3cbcbed3"
+    "master_handle": "closure.nonlocal_closure_flow:5002:0:Call|closure.nonlocal_closure_flow.sink|0|captured_variable(obj, closure.nonlocal_closure_flow):957a5b3b4bcff8cdc6706fa4a3bd986e"
   }
 }
 {
@@ -638,7 +638,7 @@
     "callable_line": 193,
     "sinks": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_flow$obj)",
+        "port": "captured_variable(obj, closure.nonlocal_closure_flow)",
         "taint": [
           {
             "kinds": [
@@ -667,7 +667,7 @@
     "callable_line": 189,
     "sources": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_flow$obj)",
+        "port": "captured_variable(obj, closure.nonlocal_closure_flow)",
         "taint": [
           {
             "kinds": [
@@ -695,7 +695,7 @@
     "callable_line": 217,
     "sources": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_inner_flow$obj)",
+        "port": "captured_variable(obj, closure.nonlocal_closure_inner_flow)",
         "taint": [
           {
             "kinds": [
@@ -826,7 +826,7 @@
               "resolves_to": [
                 "closure.nonlocal_closure_multiple_reads.conditional_read"
               ],
-              "port": "captured_variable($local_closure?nonlocal_closure_multiple_reads$x)"
+              "port": "captured_variable(x, closure.nonlocal_closure_multiple_reads)"
             }
           }
         ]
@@ -841,9 +841,9 @@
       "kind": "Call",
       "callee": "closure.nonlocal_closure_multiple_reads.conditional_read",
       "index": 0,
-      "parameter": "captured_variable($local_closure?nonlocal_closure_multiple_reads$x)"
+      "parameter": "captured_variable(x, closure.nonlocal_closure_multiple_reads)"
     },
-    "master_handle": "closure.nonlocal_closure_multiple_reads:5002:0:Call|closure.nonlocal_closure_multiple_reads.conditional_read|0|captured_variable($local_closure?nonlocal_closure_multiple_reads$x):30b97989d39e6a177ea73d80e8e2878b"
+    "master_handle": "closure.nonlocal_closure_multiple_reads:5002:0:Call|closure.nonlocal_closure_multiple_reads.conditional_read|0|captured_variable(x, closure.nonlocal_closure_multiple_reads):0b6f25df4459b2d31d2d2947478abad0"
   }
 }
 {
@@ -854,7 +854,7 @@
     "callable_line": 71,
     "sinks": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_multiple_reads$x)",
+        "port": "captured_variable(x, closure.nonlocal_closure_multiple_reads)",
         "taint": [
           {
             "kinds": [
@@ -952,7 +952,7 @@
     "callable_line": 167,
     "sources": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_multiple_writes$x)",
+        "port": "captured_variable(x, closure.nonlocal_closure_multiple_writes)",
         "taint": [
           {
             "kinds": [
@@ -1043,7 +1043,7 @@
     "callable_line": 255,
     "sources": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_nested_flow$outer)",
+        "port": "captured_variable(outer, closure.nonlocal_closure_nested_flow)",
         "taint": [
           {
             "kinds": [
@@ -1134,7 +1134,7 @@
     "callable_line": 257,
     "sources": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_nested_flow?source1$inner)",
+        "port": "captured_variable(inner, closure.nonlocal_closure_nested_flow.source1)",
         "taint": [
           {
             "kinds": [
@@ -1154,7 +1154,7 @@
     ],
     "sinks": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_nested_flow?source1$inner)",
+        "port": "captured_variable(inner, closure.nonlocal_closure_nested_flow.source1)",
         "taint": [
           {
             "kinds": [
@@ -1246,7 +1246,7 @@
     "callable_line": 258,
     "sources": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_nested_flow?source1$inner)",
+        "port": "captured_variable(inner, closure.nonlocal_closure_nested_flow.source1)",
         "taint": [
           {
             "kinds": [
@@ -1274,7 +1274,7 @@
     "callable_line": 207,
     "sinks": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_no_flow$obj)",
+        "port": "captured_variable(obj, closure.nonlocal_closure_no_flow)",
         "taint": [
           {
             "kinds": [
@@ -1303,7 +1303,7 @@
     "callable_line": 203,
     "sources": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_no_flow$obj)",
+        "port": "captured_variable(obj, closure.nonlocal_closure_no_flow)",
         "taint": [
           {
             "kinds": [
@@ -1331,7 +1331,7 @@
     "callable_line": 232,
     "sinks": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_obscure$obj)",
+        "port": "captured_variable(obj, closure.nonlocal_closure_obscure)",
         "taint": [
           {
             "kinds": [
@@ -1360,7 +1360,7 @@
     "callable_line": 228,
     "sources": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_obscure$obj)",
+        "port": "captured_variable(obj, closure.nonlocal_closure_obscure)",
         "taint": [
           {
             "kinds": [
@@ -1498,7 +1498,7 @@
               "resolves_to": [
                 "closure.nonlocal_closure_read_reduction.inner"
               ],
-              "port": "captured_variable($local_closure?nonlocal_closure_read_reduction$x)"
+              "port": "captured_variable(x, closure.nonlocal_closure_read_reduction)"
             }
           }
         ]
@@ -1513,9 +1513,9 @@
       "kind": "Call",
       "callee": "closure.nonlocal_closure_read_reduction.inner",
       "index": 0,
-      "parameter": "captured_variable($local_closure?nonlocal_closure_read_reduction$x)"
+      "parameter": "captured_variable(x, closure.nonlocal_closure_read_reduction)"
     },
-    "master_handle": "closure.nonlocal_closure_read_reduction:5002:0:Call|closure.nonlocal_closure_read_reduction.inner|0|captured_variable($local_closure?nonlocal_closure_read_reduction$x):6d838ba571c9b2b860f255ac30a07852"
+    "master_handle": "closure.nonlocal_closure_read_reduction:5002:0:Call|closure.nonlocal_closure_read_reduction.inner|0|captured_variable(x, closure.nonlocal_closure_read_reduction):60bc0a4158986ad8b4661204f42b8b7d"
   }
 }
 {
@@ -1526,7 +1526,7 @@
     "callable_line": 13,
     "sinks": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_read_reduction$x)",
+        "port": "captured_variable(x, closure.nonlocal_closure_read_reduction)",
         "taint": [
           {
             "kinds": [
@@ -1689,7 +1689,7 @@
             "call": {
               "position": { "line": 161, "start": 4, "end": 14 },
               "resolves_to": [ "closure.nonlocal_closure_reduction.sink" ],
-              "port": "captured_variable($local_closure?nonlocal_closure_reduction$obj1)"
+              "port": "captured_variable(obj1, closure.nonlocal_closure_reduction)"
             }
           }
         ]
@@ -1704,9 +1704,9 @@
       "kind": "Call",
       "callee": "closure.nonlocal_closure_reduction.sink",
       "index": 0,
-      "parameter": "captured_variable($local_closure?nonlocal_closure_reduction$obj1)"
+      "parameter": "captured_variable(obj1, closure.nonlocal_closure_reduction)"
     },
-    "master_handle": "closure.nonlocal_closure_reduction:5002:0:Call|closure.nonlocal_closure_reduction.sink|0|captured_variable($local_closure?nonlocal_closure_reduction$obj1):9bb0fef7fa52f817b626ac50ac356379"
+    "master_handle": "closure.nonlocal_closure_reduction:5002:0:Call|closure.nonlocal_closure_reduction.sink|0|captured_variable(obj1, closure.nonlocal_closure_reduction):e649cec25b71e58052134d24c0b68516"
   }
 }
 {
@@ -1762,7 +1762,7 @@
             "call": {
               "position": { "line": 161, "start": 4, "end": 14 },
               "resolves_to": [ "closure.nonlocal_closure_reduction.sink" ],
-              "port": "captured_variable($local_closure?nonlocal_closure_reduction$obj3)"
+              "port": "captured_variable(obj3, closure.nonlocal_closure_reduction)"
             }
           }
         ]
@@ -1778,9 +1778,9 @@
       "kind": "Call",
       "callee": "closure.nonlocal_closure_reduction.sink",
       "index": 0,
-      "parameter": "captured_variable($local_closure?nonlocal_closure_reduction$obj3)"
+      "parameter": "captured_variable(obj3, closure.nonlocal_closure_reduction)"
     },
-    "master_handle": "closure.nonlocal_closure_reduction:5002:0:Call|closure.nonlocal_closure_reduction.sink|0|captured_variable($local_closure?nonlocal_closure_reduction$obj3):1b63fb3d67cc89fcdf52eb8a46fbf1e4"
+    "master_handle": "closure.nonlocal_closure_reduction:5002:0:Call|closure.nonlocal_closure_reduction.sink|0|captured_variable(obj3, closure.nonlocal_closure_reduction):ba65e34930423f6b93a92d10310493c9"
   }
 }
 {
@@ -1791,7 +1791,7 @@
     "callable_line": 156,
     "sinks": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_reduction$obj3)",
+        "port": "captured_variable(obj3, closure.nonlocal_closure_reduction)",
         "taint": [
           {
             "kinds": [
@@ -1810,7 +1810,7 @@
         ]
       },
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_reduction$obj1)",
+        "port": "captured_variable(obj1, closure.nonlocal_closure_reduction)",
         "taint": [
           {
             "kinds": [
@@ -1857,7 +1857,7 @@
     "callable_line": 143,
     "sources": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_reduction$obj1)",
+        "port": "captured_variable(obj1, closure.nonlocal_closure_reduction)",
         "taint": [
           {
             "kinds": [
@@ -1902,7 +1902,7 @@
     "callable_line": 149,
     "tito": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_reduction$obj1)",
+        "port": "captured_variable(obj1, closure.nonlocal_closure_reduction)",
         "taint": [
           {
             "kinds": [
@@ -2002,7 +2002,7 @@
     "callable_line": 314,
     "tito": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_tito$x)",
+        "port": "captured_variable(x, closure.nonlocal_closure_tito)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2085,7 +2085,7 @@
     "callable_line": 275,
     "sources": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_wrapper_flow$obj)",
+        "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_flow)",
         "taint": [
           {
             "kinds": [
@@ -2113,7 +2113,7 @@
     "callable_line": 279,
     "sources": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_wrapper_flow$obj)",
+        "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_flow)",
         "taint": [
           {
             "kinds": [
@@ -2271,7 +2271,7 @@
     "callable_line": 130,
     "sources": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_write_reduction$x)",
+        "port": "captured_variable(x, closure.nonlocal_closure_write_reduction)",
         "taint": [
           {
             "kinds": [
@@ -2332,7 +2332,7 @@
             "call": {
               "position": { "line": 55, "start": 4, "end": 11 },
               "resolves_to": [ "closure.parameter_order_swap.inner" ],
-              "port": "captured_variable($parameter$z)"
+              "port": "captured_variable(z, parameter)"
             }
           }
         ]
@@ -2354,7 +2354,7 @@
             "call": {
               "position": { "line": 55, "start": 4, "end": 11 },
               "resolves_to": [ "closure.parameter_order_swap.inner" ],
-              "port": "captured_variable($parameter$y)"
+              "port": "captured_variable(y, parameter)"
             }
           }
         ]
@@ -2376,7 +2376,7 @@
             "call": {
               "position": { "line": 55, "start": 4, "end": 11 },
               "resolves_to": [ "closure.parameter_order_swap.inner" ],
-              "port": "captured_variable($parameter$x)"
+              "port": "captured_variable(x, parameter)"
             }
           }
         ]
@@ -2392,7 +2392,7 @@
     "callable_line": 51,
     "sinks": [
       {
-        "port": "captured_variable($parameter$z)",
+        "port": "captured_variable(z, parameter)",
         "taint": [
           {
             "kinds": [
@@ -2411,7 +2411,7 @@
         ]
       },
       {
-        "port": "captured_variable($parameter$y)",
+        "port": "captured_variable(y, parameter)",
         "taint": [
           {
             "kinds": [
@@ -2430,7 +2430,7 @@
         ]
       },
       {
-        "port": "captured_variable($parameter$x)",
+        "port": "captured_variable(x, parameter)",
         "taint": [
           {
             "kinds": [
@@ -2477,7 +2477,7 @@
               "resolves_to": [
                 "closure.parameter_order_swap_different_variable_names.inner"
               ],
-              "port": "captured_variable($local_closure?parameter_order_swap_different_variable_names$c)"
+              "port": "captured_variable(c, closure.parameter_order_swap_different_variable_names)"
             }
           }
         ]
@@ -2501,7 +2501,7 @@
               "resolves_to": [
                 "closure.parameter_order_swap_different_variable_names.inner"
               ],
-              "port": "captured_variable($local_closure?parameter_order_swap_different_variable_names$b)"
+              "port": "captured_variable(b, closure.parameter_order_swap_different_variable_names)"
             }
           }
         ]
@@ -2525,7 +2525,7 @@
               "resolves_to": [
                 "closure.parameter_order_swap_different_variable_names.inner"
               ],
-              "port": "captured_variable($local_closure?parameter_order_swap_different_variable_names$a)"
+              "port": "captured_variable(a, closure.parameter_order_swap_different_variable_names)"
             }
           }
         ]
@@ -2541,7 +2541,7 @@
     "callable_line": 61,
     "sinks": [
       {
-        "port": "captured_variable($local_closure?parameter_order_swap_different_variable_names$c)",
+        "port": "captured_variable(c, closure.parameter_order_swap_different_variable_names)",
         "taint": [
           {
             "kinds": [
@@ -2560,7 +2560,7 @@
         ]
       },
       {
-        "port": "captured_variable($local_closure?parameter_order_swap_different_variable_names$b)",
+        "port": "captured_variable(b, closure.parameter_order_swap_different_variable_names)",
         "taint": [
           {
             "kinds": [
@@ -2579,7 +2579,7 @@
         ]
       },
       {
-        "port": "captured_variable($local_closure?parameter_order_swap_different_variable_names$a)",
+        "port": "captured_variable(a, closure.parameter_order_swap_different_variable_names)",
         "taint": [
           {
             "kinds": [
@@ -2643,7 +2643,7 @@
     "callable_line": 348,
     "tito": [
       {
-        "port": "captured_variable($parameter$z)",
+        "port": "captured_variable(z, parameter)",
         "taint": [
           {
             "kinds": [
@@ -2655,7 +2655,7 @@
         ]
       },
       {
-        "port": "captured_variable($parameter$y)",
+        "port": "captured_variable(y, parameter)",
         "taint": [
           {
             "kinds": [
@@ -2667,7 +2667,7 @@
         ]
       },
       {
-        "port": "captured_variable($parameter$x)",
+        "port": "captured_variable(x, parameter)",
         "taint": [
           {
             "kinds": [
@@ -3030,7 +3030,7 @@
               "resolves_to": [
                 "closure.wrapper_for_taint_propagation.inner"
               ],
-              "port": "captured_variable($parameter$x)"
+              "port": "captured_variable(x, parameter)"
             }
           }
         ]
@@ -3046,7 +3046,7 @@
     "callable_line": 26,
     "sinks": [
       {
-        "port": "captured_variable($parameter$x)",
+        "port": "captured_variable(x, parameter)",
         "taint": [
           {
             "kinds": [
@@ -3125,7 +3125,7 @@
     "callable_line": 39,
     "sinks": [
       {
-        "port": "captured_variable($parameter$x)",
+        "port": "captured_variable(x, parameter)",
         "taint": [
           {
             "kinds": [
@@ -3204,7 +3204,7 @@
     "callable_line": 326,
     "tito": [
       {
-        "port": "captured_variable($parameter$x)",
+        "port": "captured_variable(x, parameter)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -3224,7 +3224,7 @@
     "callable_line": 337,
     "tito": [
       {
-        "port": "captured_variable($parameter$x)",
+        "port": "captured_variable(x, parameter)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -3326,7 +3326,7 @@
     "callable_line": 279,
     "sources": [
       {
-        "port": "captured_variable($local_closure?nonlocal_closure_wrapper_flow$obj)",
+        "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_flow)",
         "taint": [
           {
             "kinds": [

@@ -20,6 +20,12 @@ val expand_strings_in_annotation_expression
 
 val get_qualified_local_identifier : qualifier:Reference.t -> Identifier.t -> Identifier.t
 
+val get_unqualified_local_identifier : Identifier.t -> (Reference.t * string) option
+
+val get_qualified_parameter : Identifier.t -> Identifier.t
+
+val get_unqualified_parameter : Identifier.t -> string option
+
 val replace_union_shorthand_in_annotation_expression : Expression.t -> Expression.t
 
 (* Resolve imports and fully qualify names. *)

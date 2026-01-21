@@ -94,7 +94,7 @@
               "resolves_to": [
                 "nested_callables.access_parameter_in_inner_scope_sink.inner"
               ],
-              "port": "captured_variable($parameter$x)"
+              "port": "captured_variable(x, parameter)"
             }
           }
         ]
@@ -110,7 +110,7 @@
     "callable_line": 96,
     "sinks": [
       {
-        "port": "captured_variable($parameter$x)",
+        "port": "captured_variable(x, parameter)",
         "taint": [
           {
             "kinds": [
@@ -168,7 +168,7 @@
     "callable_line": 107,
     "tito": [
       {
-        "port": "captured_variable($parameter$x)",
+        "port": "captured_variable(x, parameter)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -231,7 +231,7 @@
               "resolves_to": [
                 "nested_callables.access_variables_in_outer_scope_issue.inner"
               ],
-              "port": "captured_variable($local_nested_callables?access_variables_in_outer_scope_issue$x)"
+              "port": "captured_variable(x, nested_callables.access_variables_in_outer_scope_issue)"
             }
           }
         ]
@@ -246,9 +246,9 @@
       "kind": "Call",
       "callee": "nested_callables.access_variables_in_outer_scope_issue.inner",
       "index": 0,
-      "parameter": "captured_variable($local_nested_callables?access_variables_in_outer_scope_issue$x)"
+      "parameter": "captured_variable(x, nested_callables.access_variables_in_outer_scope_issue)"
     },
-    "master_handle": "nested_callables.access_variables_in_outer_scope_issue:5002:0:Call|nested_callables.access_variables_in_outer_scope_issue.inner|0|captured_variable($local_nested_callables?access_variables_in_outer_scope_issue$x):e2e94a880ca710b3617c4f6867d2a052"
+    "master_handle": "nested_callables.access_variables_in_outer_scope_issue:5002:0:Call|nested_callables.access_variables_in_outer_scope_issue.inner|0|captured_variable(x, nested_callables.access_variables_in_outer_scope_issue):52f86f3fd90a71b1e892885921c7e87a"
   }
 }
 {
@@ -259,7 +259,7 @@
     "callable_line": 76,
     "sinks": [
       {
-        "port": "captured_variable($local_nested_callables?access_variables_in_outer_scope_issue$x)",
+        "port": "captured_variable(x, nested_callables.access_variables_in_outer_scope_issue)",
         "taint": [
           {
             "kinds": [
@@ -319,7 +319,7 @@
     "callable_line": 85,
     "tito": [
       {
-        "port": "captured_variable($local_nested_callables?access_variables_in_outer_scope_source$x)",
+        "port": "captured_variable(x, nested_callables.access_variables_in_outer_scope_source)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],

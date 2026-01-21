@@ -756,6 +756,23 @@ module ClassFieldDeclarationKind = struct
              { json = `String s; message = "expected declaration kind" })
 end
 
+module CapturedVariable = struct
+  type t = {
+    name: string;
+    outer_function: GlobalCallableId.t;
+  }
+  [@@deriving equal, show]
+
+  let from_json json =
+    let open Core.Result.Monad_infix in
+    JsonUtil.get_string_member json "name"
+    >>= fun name ->
+    JsonUtil.get_object_member json "outer_function"
+    >>= fun outer_function ->
+    GlobalCallableId.from_json (`Assoc outer_function)
+    >>| fun outer_function -> { name; outer_function }
+end
+
 (* Information from pyrefly about all definitions in a given module, stored as a
    `<root>/definitions/<module>:<id>.json` file. This matches the
    `pyrefly::report::pysa::PysaModuleDefinitions` rust type. *)
@@ -873,14 +890,6 @@ module ModuleDefinitionsFile = struct
       >>| (fun bindings -> `Assoc bindings)
       >>= JsonType.from_json
       >>| fun return_annotation -> { parameters; return_annotation }
-  end
-
-  module CapturedVariable = struct
-    type t = { name: string } [@@deriving equal, show]
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      JsonUtil.get_string_member json "name" >>| fun name -> { name }
   end
 
   let parse_decorator_callees bindings =
@@ -1923,7 +1932,6 @@ module CallableMetadata = struct
     is_stub: bool; (* Is this a stub definition, e.g `def foo(): ...` *)
     is_def_statement: bool; (* Is this associated with a `def ..` statement? *)
     parent_is_class: bool;
-    captures: string list;
   }
   [@@deriving show]
 end
@@ -1948,6 +1956,7 @@ module CallableMetadataSharedMemory = struct
       defining_class: GlobalClassId.t option;
       (* The list of callees for each decorator *)
       decorator_callees: GlobalCallableId.t list Location.SerializableMap.t;
+      captured_variables: CapturedVariable.t list;
     }
   end
 
@@ -3327,16 +3336,13 @@ module ReadWrite = struct
                     is_stub;
                     is_def_statement;
                     parent_is_class = Option.is_some defining_class;
-                    captures =
-                      List.map
-                        ~f:(fun { ModuleDefinitionsFile.CapturedVariable.name } -> name)
-                        captured_variables;
                   };
                 name;
                 local_function_id;
                 overridden_base_method;
                 defining_class;
                 decorator_callees;
+                captured_variables;
               };
             CallableIdToQualifiedNameSharedMemory.add
               callable_id_to_qualified_name_shared_memory
@@ -4151,12 +4157,27 @@ module ReadOnly = struct
     >>| FullyQualifiedName.to_reference
 
 
-  let get_callable_captures { callable_metadata_shared_memory; _ } define_name =
+  let get_callable_captures
+      { callable_metadata_shared_memory; callable_id_to_qualified_name_shared_memory; _ }
+      define_name
+    =
     CallableMetadataSharedMemory.get
       callable_metadata_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
     |> assert_shared_memory_key_exists "missing callable metadata"
-    |> fun { CallableMetadataSharedMemory.Value.metadata = { captures; _ }; _ } -> captures
+    |> fun { CallableMetadataSharedMemory.Value.captured_variables; _ } ->
+    List.map
+      ~f:(fun { CapturedVariable.name; outer_function } ->
+        AccessPath.CapturedVariable.FromFunction
+          {
+            name;
+            defining_function =
+              CallableIdToQualifiedNameSharedMemory.get
+                callable_id_to_qualified_name_shared_memory
+                outer_function
+              |> FullyQualifiedName.to_reference;
+          })
+      captured_variables
 
 
   let get_callable_return_annotations

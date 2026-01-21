@@ -388,7 +388,7 @@ module SharedMemory = struct
     }
 
 
-  let register_decorator_defines decorators callables_to_definitions_map =
+  let register_decorator_defines decorators ~pyre_api callables_to_definitions_map =
     let artificial_decorator_defines = Reference.create "artificial_decorator_defines" in
     let read_only_decorators = read_only decorators in
     decorators
@@ -401,12 +401,28 @@ module SharedMemory = struct
              |> Node.create_with_default_location
            in
            let decorated_callable = Target.set_kind Target.Decorated callable in
-           ( decorated_callable,
-             CallablesSharedMemory.CallableSignature.from_define_for_pyre1
-               ~target:callable
-               ~qualifier:artificial_decorator_defines
-               define,
-             define ))
+           let signature =
+             match pyre_api with
+             | PyrePysaApi.ReadOnly.Pyre1 pyre1_api ->
+                 CallablesSharedMemory.CallableSignature.from_define_for_pyre1
+                   ~pyre1_api
+                   ~target:callable
+                   ~qualifier:artificial_decorator_defines
+                   define
+             | PyrePysaApi.ReadOnly.Pyrefly _ ->
+                 {
+                   CallablesSharedMemory.CallableSignature.qualifier = artificial_decorator_defines;
+                   define_name = Target.define_name_exn callable;
+                   location = AstResult.Some Location.any;
+                   parameters = AstResult.Some [];
+                   return_annotation = AstResult.Some None;
+                   decorators = AstResult.Some [];
+                   captures = [];
+                   method_kind = None;
+                   is_stub_like = false;
+                 }
+           in
+           decorated_callable, signature, define)
     |> CallablesSharedMemory.ReadWrite.add_alist_sequential callables_to_definitions_map
 
 

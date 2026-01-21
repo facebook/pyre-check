@@ -18,6 +18,7 @@ module ClassNamesFromType = Analysis.PyrePysaEnvironment.ClassNamesFromType
 module PysaType = Analysis.PyrePysaEnvironment.PysaType
 module PyreClassSummary = Analysis.ClassSummary
 module AstResult = Analysis.PyrePysaEnvironment.AstResult
+module TaintAccessPath = Analysis.TaintAccessPath
 
 (* Abstraction for information about a class, provided from Pyre1 or Pyrefly and used by Pysa. See
    `ReadOnly.ClassSummary` for more functions. *)
@@ -178,7 +179,12 @@ module ReadOnly : sig
     method_name:string ->
     Ast.Reference.t option
 
-  val get_callable_captures : t -> Ast.Reference.t -> string list
+  val get_captured_variable_from_nonlocal_target
+    :  t ->
+    Ast.Identifier.t ->
+    TaintAccessPath.CapturedVariable.t
+
+  val get_callable_captures : t -> Ast.Reference.t -> TaintAccessPath.CapturedVariable.t list
 
   val get_callable_return_annotations
     :  t ->
@@ -189,8 +195,8 @@ module ReadOnly : sig
   val get_callable_parameter_annotations
     :  t ->
     define_name:Ast.Reference.t ->
-    Analysis.TaintAccessPath.NormalizedParameter.t list ->
-    (Analysis.TaintAccessPath.NormalizedParameter.t * PysaType.t list) list
+    TaintAccessPath.NormalizedParameter.t list ->
+    (TaintAccessPath.NormalizedParameter.t * PysaType.t list) list
 
   val annotation_parser : t -> Analysis.AnnotatedCallable.annotation_parser
 
