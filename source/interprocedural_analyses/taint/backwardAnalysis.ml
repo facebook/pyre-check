@@ -2990,7 +2990,8 @@ let get_normalized_parameters
     ~qualifier
     ~call_graph_of_define
     ~define_name
-    ({ Statement.Define.signature = { parameters; _ }; _ } as define)
+    ~captures
+    { Statement.Define.signature = { parameters; _ }; _ }
   =
   let normalized_parameters =
     parameters
@@ -3005,13 +3006,6 @@ let get_normalized_parameters
       ~module_qualifier:qualifier
       ~define_name
       ~call_graph:call_graph_of_define
-  in
-  let captures =
-    match pyre_api with
-    | PyrePysaApi.ReadOnly.Pyre1 pyre1_api ->
-        Analysis.PyrePysaEnvironment.ReadOnly.get_captures_from_define pyre1_api define
-    | PyrePysaApi.ReadOnly.Pyrefly _ ->
-        PyrePysaApi.ReadOnly.get_callable_captures pyre_api define_name
   in
   let captures =
     List.map
@@ -3327,9 +3321,16 @@ let run
   let module Fixpoint = PyrePysaLogic.Fixpoint.Make (State) in
   let initial = State.{ taint = initial_taint } in
   let () = State.log "Backward analysis of callable: `%a`" Target.pp_pretty callable in
+  let captures =
+    match pyre_api with
+    | PyrePysaApi.ReadOnly.Pyre1 pyre1_api ->
+        Analysis.PyrePysaEnvironment.ReadOnly.get_captures_from_define pyre1_api define.value
+    | PyrePysaApi.ReadOnly.Pyrefly _ ->
+        PyrePysaApi.ReadOnly.get_callable_captures pyre_api define_name
+  in
   let entry_state =
     (* TODO(T156333229): hide side effect work behind feature flag *)
-    match define.value.signature.parameters, define.value.captures with
+    match define.value.signature.parameters, captures with
     | [], [] ->
         (* Without parameters or captures, the inferred model will always be empty. *)
         let () =
@@ -3354,7 +3355,13 @@ let run
     not (Model.ModeSet.contains Model.Mode.SkipModelBroadening existing_model.Model.modes)
   in
   let normalized_parameters =
-    get_normalized_parameters ~pyre_api ~qualifier ~call_graph_of_define ~define_name define.value
+    get_normalized_parameters
+      ~pyre_api
+      ~qualifier
+      ~call_graph_of_define
+      ~define_name
+      ~captures
+      define.value
   in
   let extract_model State.{ taint; _ } =
     TaintProfiler.track_duration ~profiler ~name:"Backward analysis - extract model" ~f:(fun () ->

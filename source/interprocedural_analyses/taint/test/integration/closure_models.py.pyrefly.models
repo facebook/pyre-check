@@ -108,6 +108,27 @@
         ]
       }
     ],
+    "sinks": [
+      {
+        "port": "captured_variable(complicated_name, closure_models.captured_variable_model_both_generation_parameter_source)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "origin": { "line": 168, "start": 19, "end": 35 },
+            "call_site": "168:8-168:36"
+          }
+        ]
+      }
+    ],
     "parameter_sources": [
       {
         "port": "captured_variable(complicated_name, closure_models.captured_variable_model_both_generation_parameter_source)",
@@ -247,6 +268,27 @@
         "port": "captured_variable(complicated_name, closure_models.captured_variable_model_generation_source)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
+    ],
+    "sinks": [
+      {
+        "port": "captured_variable(complicated_name, closure_models.captured_variable_model_generation_source)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "origin": { "line": 157, "start": 19, "end": 35 },
+            "call_site": "157:8-157:36"
+          }
+        ]
+      }
     ]
   }
 }
@@ -340,6 +382,27 @@
               }
             ],
             "origin": { "line": 144, "start": 4, "end": 4 }
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "captured_variable(complicated_name, closure_models.captured_variable_model_parameter_source)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "origin": { "line": 145, "start": 19, "end": 35 },
+            "call_site": "145:8-145:36"
           }
         ]
       }
@@ -819,6 +882,34 @@
             ],
             "tito_positions": [ { "line": 64, "start": 14, "end": 32 } ],
             "origin": { "line": 64, "start": 14, "end": 32 }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature1-value": "breadcrumb1" },
+              { "always-via": "higher-order-parameter" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" },
+              { "always-via": "captured-variable" }
+            ],
+            "tito_positions": [
+              { "line": 57, "start": 14, "end": 26 },
+              { "line": 64, "start": 14, "end": 32 }
+            ],
+            "call": {
+              "position": { "line": 57, "start": 14, "end": 26 },
+              "resolves_to": [ "closure_models.test.return_taint" ],
+              "port": "result"
+            }
           }
         ]
       },
@@ -849,11 +940,13 @@
       }
     ],
     "features": [
+      { "via": "special_source" },
       { "always-via-feature1-value": "breadcrumb1" },
       { "always-via": "higher-order-parameter" },
       { "always-via-feature2-value": "breadcrumb2" },
       { "always-via": "obscure:model" },
-      { "always-via": "tito" }
+      { "always-via": "tito" },
+      { "via": "captured-variable" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1130,6 +1223,18 @@
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
+    ],
+    "tito": [
+      {
+        "port": "captured_variable(value, closure_models.test)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "tito": {}
+          }
+        ]
+      }
     ]
   }
 }
@@ -1202,6 +1307,27 @@
               }
             ],
             "origin": { "line": 124, "start": 4, "end": 4 }
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "captured_variable(some_data, closure_models.test_dsl_decorator_source)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "origin": { "line": 125, "start": 19, "end": 28 },
+            "call_site": "125:8-125:29"
           }
         ]
       }
@@ -1298,6 +1424,27 @@
               }
             ],
             "origin": { "line": 118, "start": 4, "end": 4 }
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "captured_variable(some_data, closure_models.test_dsl_source)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "origin": { "line": 119, "start": 19, "end": 28 },
+            "call_site": "119:8-119:29"
           }
         ]
       }

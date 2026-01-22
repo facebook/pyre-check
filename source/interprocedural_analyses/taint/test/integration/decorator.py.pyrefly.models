@@ -901,10 +901,137 @@
     "callable": "decorator.second_parameter_source_inlineable_decorator_with_inner",
     "filename": "decorator.py",
     "callable_line": 262,
+    "sinks": [
+      {
+        "port": "formal(arg2, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-via": "captured-variable" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 268, "start": 4, "end": 11 },
+              "resolves_to": [
+                "decorator.second_parameter_source_inlineable_decorator_with_inner.inner"
+              ],
+              "port": "captured_variable(arg2, decorator.second_parameter_source_inlineable_decorator_with_inner)"
+            }
+          }
+        ]
+      }
+    ],
     "parameter_sources": [
       {
         "port": "formal(arg2, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator.second_parameter_source_inlineable_decorator_with_inner",
+    "callable_line": 262,
+    "code": 5002,
+    "line": 268,
+    "start": 4,
+    "end": 11,
+    "filename": "decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "decorator.second_parameter_source_inlineable_decorator_with_inner",
+                    "port": "leaf:arg2"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 263, "start": 15, "end": 24 },
+            "call_site": "262:0-268:11"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-via": "captured-variable" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 268, "start": 4, "end": 11 },
+              "resolves_to": [
+                "decorator.second_parameter_source_inlineable_decorator_with_inner.inner"
+              ],
+              "port": "captured_variable(arg2, decorator.second_parameter_source_inlineable_decorator_with_inner)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_sink" }, { "always-via": "captured-variable" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator.second_parameter_source_inlineable_decorator_with_inner.inner",
+      "index": 0,
+      "parameter": "captured_variable(arg2, decorator.second_parameter_source_inlineable_decorator_with_inner)"
+    },
+    "master_handle": "decorator.second_parameter_source_inlineable_decorator_with_inner:5002:0:Call|decorator.second_parameter_source_inlineable_decorator_with_inner.inner|0|captured_variable(arg2, decorator.second_parameter_source_inlineable_d:c509b04e195d9a45c466cf271832ccbd"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decorator.second_parameter_source_inlineable_decorator_with_inner.inner",
+    "filename": "decorator.py",
+    "callable_line": 265,
+    "sinks": [
+      {
+        "port": "captured_variable(arg2, decorator.second_parameter_source_inlineable_decorator_with_inner)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "origin": { "line": 266, "start": 19, "end": 23 },
+            "call_site": "266:8-266:24"
+          }
+        ]
       }
     ]
   }

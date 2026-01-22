@@ -69,6 +69,269 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "nested_callables.access_parameter_in_inner_scope_sink",
+    "filename": "nested_callables.py",
+    "callable_line": 95,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-via": "captured-variable" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 99, "start": 4, "end": 11 },
+              "resolves_to": [
+                "nested_callables.access_parameter_in_inner_scope_sink.inner"
+              ],
+              "port": "captured_variable(x, nested_callables.access_parameter_in_inner_scope_sink)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "nested_callables.access_parameter_in_inner_scope_sink.inner",
+    "filename": "nested_callables.py",
+    "callable_line": 96,
+    "sinks": [
+      {
+        "port": "captured_variable(x, nested_callables.access_parameter_in_inner_scope_sink)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "origin": { "line": 97, "start": 19, "end": 20 },
+            "call_site": "97:8-97:21"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "nested_callables.access_parameter_in_inner_scope_tito",
+    "filename": "nested_callables.py",
+    "callable_line": 106,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" }, { "always-via": "captured-variable" }
+            ],
+            "tito_positions": [ { "line": 110, "start": 11, "end": 18 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "nested_callables.access_parameter_in_inner_scope_tito.inner",
+    "filename": "nested_callables.py",
+    "callable_line": 107,
+    "tito": [
+      {
+        "port": "captured_variable(x, nested_callables.access_parameter_in_inner_scope_tito)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "nested_callables.access_variables_in_outer_scope_issue",
+    "callable_line": 73,
+    "code": 5002,
+    "line": 79,
+    "start": 4,
+    "end": 11,
+    "filename": "nested_callables.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 74, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-via": "captured-variable" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 79, "start": 4, "end": 11 },
+              "resolves_to": [
+                "nested_callables.access_variables_in_outer_scope_issue.inner"
+              ],
+              "port": "captured_variable(x, nested_callables.access_variables_in_outer_scope_issue)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "captured-variable" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "nested_callables.access_variables_in_outer_scope_issue.inner",
+      "index": 0,
+      "parameter": "captured_variable(x, nested_callables.access_variables_in_outer_scope_issue)"
+    },
+    "master_handle": "nested_callables.access_variables_in_outer_scope_issue:5002:0:Call|nested_callables.access_variables_in_outer_scope_issue.inner|0|captured_variable(x, nested_callables.access_variables_in_outer_scope_issue):52f86f3fd90a71b1e892885921c7e87a"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "nested_callables.access_variables_in_outer_scope_issue.inner",
+    "filename": "nested_callables.py",
+    "callable_line": 76,
+    "sinks": [
+      {
+        "port": "captured_variable(x, nested_callables.access_variables_in_outer_scope_issue)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "origin": { "line": 77, "start": 19, "end": 20 },
+            "call_site": "77:8-77:21"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "nested_callables.access_variables_in_outer_scope_source",
+    "filename": "nested_callables.py",
+    "callable_line": 82,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" }, { "always-via": "captured-variable" }
+            ],
+            "tito_positions": [ { "line": 88, "start": 11, "end": 18 } ],
+            "origin": { "line": 83, "start": 8, "end": 22 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "nested_callables.access_variables_in_outer_scope_source.inner",
+    "filename": "nested_callables.py",
+    "callable_line": 85,
+    "tito": [
+      {
+        "port": "captured_variable(x, nested_callables.access_variables_in_outer_scope_source)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "nested_callables.call_outer",
@@ -542,6 +805,219 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "nested_callables.test_access_parameter_in_inner_scope_sink",
+    "callable_line": 102,
+    "code": 5002,
+    "line": 103,
+    "start": 41,
+    "end": 55,
+    "filename": "nested_callables.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 103, "start": 41, "end": 55 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-via": "captured-variable" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 103, "start": 41, "end": 55 },
+              "resolves_to": [
+                "nested_callables.access_parameter_in_inner_scope_sink"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "103:4-103:56"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "captured-variable" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "nested_callables.access_parameter_in_inner_scope_sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "nested_callables.test_access_parameter_in_inner_scope_sink:5002:0:Call|nested_callables.access_parameter_in_inner_scope_sink|0|formal(x):6f37b9035aeced73df178723beb57fca"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "nested_callables.test_access_parameter_in_inner_scope_tito",
+    "callable_line": 113,
+    "code": 5002,
+    "line": 114,
+    "start": 15,
+    "end": 67,
+    "filename": "nested_callables.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" }, { "always-via": "captured-variable" }
+            ],
+            "tito_positions": [ { "line": 114, "start": 52, "end": 66 } ],
+            "origin": { "line": 114, "start": 52, "end": 66 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 114, "start": 15, "end": 67 },
+            "call_site": "114:4-114:68"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" },
+      { "always-via": "captured-variable" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "nested_callables.test_access_parameter_in_inner_scope_tito:5002:0:Call|pysa._test_sink|0|formal(arg):edb6901c21bece59383b6572271792a6"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "nested_callables.test_access_variables_in_outer_scope_source",
+    "callable_line": 91,
+    "code": 5002,
+    "line": 92,
+    "start": 15,
+    "end": 55,
+    "filename": "nested_callables.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "tito" },
+                  { "always-via": "captured-variable" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 92, "start": 15, "end": 55 },
+              "resolves_to": [
+                "nested_callables.access_variables_in_outer_scope_source"
+              ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 92, "start": 15, "end": 55 },
+            "call_site": "92:4-92:56"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" },
+      { "always-via": "captured-variable" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "nested_callables.test_access_variables_in_outer_scope_source:5002:0:Call|pysa._test_sink|0|formal(arg):86ce0cba5f269fa8d653e06d6966e99c"
   }
 }
 {

@@ -373,7 +373,9 @@
                 "kind": "TransformX@TestSource"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-via": "tito" }, { "via": "captured-variable" }
+            ],
             "tito_positions": [ { "line": 177, "start": 15, "end": 32 } ],
             "origin": { "line": 171, "start": 8, "end": 22 }
           }
@@ -398,7 +400,9 @@
       }
     ],
     "features": [
-      { "always-via": "transform-tito-depth:1" }, { "always-via": "tito" }
+      { "always-via": "transform-tito-depth:1" },
+      { "always-via": "tito" },
+      { "via": "captured-variable" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -432,8 +436,10 @@
         "taint": [
           {
             "kinds": [
+              { "return_paths": { "": 4 }, "kind": "LocalReturn" },
               { "return_paths": { "": 0 }, "kind": "TransformX@LocalReturn" }
             ],
+            "local_features": [ { "via": "captured-variable" } ],
             "tito": {}
           }
         ]
