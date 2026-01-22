@@ -3,8 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import Awaitable, Callable, Generic, List, ParamSpec, TypeVar
+
 from pysa import _test_sink, _test_source
-from typing import Awaitable, Callable, Generic, ParamSpec, TypeVar, List
+
 
 def nonlocal_closure_read_reduction():
     x = _test_source()
@@ -13,6 +15,7 @@ def nonlocal_closure_read_reduction():
     def inner(z):
         _test_sink(x)
         _test_sink(z)
+
     inner(z)
 
 
@@ -26,6 +29,7 @@ def wrapper_for_taint_propagation(x, z):
     def inner(z):
         _test_sink(x)
         _test_sink(z)
+
     inner(z)
 
 
@@ -52,6 +56,7 @@ def parameter_order_swap(x, y, z):
         _test_sink(y)
         _test_sink(x)
         _test_sink(z)
+
     inner()
 
 
@@ -62,6 +67,7 @@ def parameter_order_swap_different_variable_names(x, y, z):
         _test_sink(b)
         _test_sink(a)
         _test_sink(c)
+
     inner()
 
 
@@ -73,12 +79,14 @@ def nonlocal_closure_multiple_reads(c):
             _test_sink(x)
         else:
             _test_sink(0)
+
     conditional_read(c)
 
     def overread():
         y = x
         y = 0
         _test_sink(y)
+
     overread()
 
     x = 0
@@ -86,7 +94,7 @@ def nonlocal_closure_multiple_reads(c):
 
 
 def nonlocal_closure_define_before_variable_initialization():
-    def read(): # TODO(T170813777): Missing sink for define before variable initialization
+    def read():  # TODO(T170813777): Missing sink for define before variable initialization
         _test_sink(x)
 
     x = _test_source()
@@ -151,6 +159,7 @@ def nonlocal_closure_reduction():
 
     obj2 = source()
     obj2, obj3 = tito(obj2)
+
     # TODO(T170813777): Wrong model for define before variable initialization
     # So in this case, moved the sink after obj3 declaration
     def sink(obj2):
@@ -170,6 +179,7 @@ def nonlocal_closure_multiple_writes():
             x = _test_source()
         else:
             x = 0
+
     # Note: The truthiness of the conditional isn't actually used
     conditional_write(True)
     _test_sink(x)
@@ -178,6 +188,7 @@ def nonlocal_closure_multiple_writes():
         nonlocal x
         x = _test_source()
         x = 0
+
     x = 1
     overwrite()
     _test_sink(x)
@@ -249,17 +260,20 @@ def nonlocal_obscure_no_flow():
     source()
 
 
-def nonlocal_closure_nested_flow():
+def nonlocal_closure_nested_source_flow():
     outer = ""
 
     def source1():
         inner = ""
+
         def source2():
             def source3():
                 nonlocal inner
                 inner = _test_source()
+
             source3()
             _test_sink(inner)
+
         source2()
         _test_sink(inner)
         nonlocal outer
@@ -267,6 +281,24 @@ def nonlocal_closure_nested_flow():
 
     source1()
     _test_sink(outer)
+
+
+def closure_nested_sink_flow():
+    outer = ""
+
+    def sink1():
+        def sink2():
+            def sink3():
+                _test_sink(outer)
+
+            sink3()
+            _test_sink(outer)
+
+        sink2()
+        _test_sink(outer)
+
+    outer = _test_source()
+    sink1()
 
 
 def nonlocal_closure_wrapper_flow():
@@ -280,7 +312,7 @@ def nonlocal_closure_wrapper_flow():
         source()
 
     wrapper()
-    _test_sink(obj) # TODO(T169118550): FN
+    _test_sink(obj)  # TODO(T169118550): FN
 
 
 def _test_source2(): ...
@@ -347,27 +379,31 @@ def tito_hof(f):
 def parameter_order_swap_tito(x, y, z):
     def inner():
         return y, z, x
+
     _test_sink(inner()[1])
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
-class GenericClass(Generic[T]):
-    ...
+
+class GenericClass(Generic[T]): ...
 
 
 V = List[GenericClass[str]]
-P = ParamSpec('P')
+P = ParamSpec("P")
+
 
 def decorator(function: Callable[P, Awaitable[V]]) -> Callable[P, Awaitable[V]]:
     async def wrapper(*args: P.args, **kwargs: P.kwargs) -> V:
         return await function(*args, **kwargs)
+
     return wrapper
 
 
 def ignored_decorator(function: Callable[P, Awaitable[V]]) -> Callable[P, Awaitable[V]]:
     async def wrapper(*args: P.args, **kwargs: P.kwargs) -> V:
         return await function(*args, **kwargs)
+
     return wrapper
 
 
@@ -375,8 +411,11 @@ async def async_tito(function: Callable[[], Awaitable[T]]) -> T:
     return await function()
 
 
-async def async_nonlocal_closure_tito_with_decorator(x: GenericClass[str], y: GenericClass[str]):
+async def async_nonlocal_closure_tito_with_decorator(
+    x: GenericClass[str], y: GenericClass[str]
+):
     z = _test_source()
+
     # TODO(T171117938): Decorator support for tito closure
     @decorator
     async def inner() -> List[GenericClass[str]]:
@@ -386,8 +425,11 @@ async def async_nonlocal_closure_tito_with_decorator(x: GenericClass[str], y: Ge
     _test_sink(result)
 
 
-async def async_nonlocal_closure_tito_ignore_decorator(x: GenericClass[str], y: GenericClass[str]):
+async def async_nonlocal_closure_tito_ignore_decorator(
+    x: GenericClass[str], y: GenericClass[str]
+):
     z = _test_source()
+
     @ignored_decorator
     async def inner() -> List[GenericClass[str]]:
         return [x, y, z]

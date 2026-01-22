@@ -21,6 +21,20 @@ Call dependencies
   "closure.closure.sink (fun)": [ "pysa._test_sink (fun)" ],
   "closure.closure.source (fun)": [ "pysa._test_source (fun)" ],
   "closure.closure_flow (fun)": [ "closure.closure (fun)" ],
+  "closure.closure_nested_sink_flow (fun)": [
+    "closure.closure_nested_sink_flow.sink1 (fun)", "pysa._test_source (fun)"
+  ],
+  "closure.closure_nested_sink_flow.sink1 (fun)": [
+    "closure.closure_nested_sink_flow.sink1.sink2 (fun)",
+    "pysa._test_sink (fun)"
+  ],
+  "closure.closure_nested_sink_flow.sink1.sink2 (fun)": [
+    "closure.closure_nested_sink_flow.sink1.sink2.sink3 (fun)",
+    "pysa._test_sink (fun)"
+  ],
+  "closure.closure_nested_sink_flow.sink1.sink2.sink3 (fun)": [
+    "pysa._test_sink (fun)"
+  ],
   "closure.closure_no_flow (fun)": [ "closure.closure (fun)" ],
   "closure.nonlocal_closure_conditional_write (fun)": [
     "closure.nonlocal_closure_conditional_write.clear (fun)",
@@ -71,19 +85,19 @@ Call dependencies
   "closure.nonlocal_closure_multiple_writes.overwrite (fun)": [
     "pysa._test_source (fun)"
   ],
-  "closure.nonlocal_closure_nested_flow (fun)": [
-    "closure.nonlocal_closure_nested_flow.source1 (fun)",
+  "closure.nonlocal_closure_nested_source_flow (fun)": [
+    "closure.nonlocal_closure_nested_source_flow.source1 (fun)",
     "pysa._test_sink (fun)"
   ],
-  "closure.nonlocal_closure_nested_flow.source1 (fun)": [
-    "closure.nonlocal_closure_nested_flow.source1.source2 (fun)",
+  "closure.nonlocal_closure_nested_source_flow.source1 (fun)": [
+    "closure.nonlocal_closure_nested_source_flow.source1.source2 (fun)",
     "pysa._test_sink (fun)"
   ],
-  "closure.nonlocal_closure_nested_flow.source1.source2 (fun)": [
-    "closure.nonlocal_closure_nested_flow.source1.source2.source3 (fun)",
+  "closure.nonlocal_closure_nested_source_flow.source1.source2 (fun)": [
+    "closure.nonlocal_closure_nested_source_flow.source1.source2.source3 (fun)",
     "pysa._test_sink (fun)"
   ],
-  "closure.nonlocal_closure_nested_flow.source1.source2.source3 (fun)": [
+  "closure.nonlocal_closure_nested_source_flow.source1.source2.source3 (fun)": [
     "pysa._test_source (fun)"
   ],
   "closure.nonlocal_closure_no_flow (fun)": [

@@ -4,7 +4,7 @@
   "data": {
     "callable": "closure._test_source2",
     "filename": "closure.py",
-    "callable_line": 286,
+    "callable_line": 318,
     "sources": [
       {
         "port": "result",
@@ -21,7 +21,7 @@
   "data": {
     "callable": "closure.async_nonlocal_closure_tito_ignore_decorator.inner",
     "filename": "closure.py",
-    "callable_line": 392,
+    "callable_line": 434,
     "tito": [
       {
         "port": "captured_variable(y, parameter)",
@@ -67,7 +67,7 @@
   "data": {
     "callable": "closure.async_nonlocal_closure_tito_with_decorator.inner",
     "filename": "closure.py",
-    "callable_line": 382,
+    "callable_line": 421,
     "tito": [
       {
         "port": "captured_variable(y, parameter)",
@@ -113,7 +113,7 @@
   "data": {
     "callable": "closure.async_tito",
     "filename": "closure.py",
-    "callable_line": 374,
+    "callable_line": 410,
     "tito": [
       {
         "port": "formal(function, position=0)",
@@ -133,7 +133,7 @@
   "data": {
     "callable": "closure.closure.sink",
     "filename": "closure.py",
-    "callable_line": 107,
+    "callable_line": 115,
     "sinks": [
       {
         "port": "captured_variable(obj, closure.closure)[x]",
@@ -149,8 +149,204 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 108, "start": 19, "end": 24 },
-            "call_site": "108:8-108:25"
+            "origin": { "line": 116, "start": 19, "end": 24 },
+            "call_site": "116:8-116:25"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure.closure_nested_sink_flow",
+    "callable_line": 286,
+    "code": 5002,
+    "line": 301,
+    "start": 4,
+    "end": 11,
+    "filename": "closure.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 300, "start": 12, "end": 26 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-via": "captured-variable" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 301, "start": 4, "end": 11 },
+              "resolves_to": [ "closure.closure_nested_sink_flow.sink1" ],
+              "port": "captured_variable(outer, closure.closure_nested_sink_flow)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "captured-variable" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure.closure_nested_sink_flow.sink1",
+      "index": 0,
+      "parameter": "captured_variable(outer, closure.closure_nested_sink_flow)"
+    },
+    "master_handle": "closure.closure_nested_sink_flow:5002:0:Call|closure.closure_nested_sink_flow.sink1|0|captured_variable(outer, closure.closure_nested_sink_flow):1d5c7f9ca87845259c0c608ee4132e2d"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.closure_nested_sink_flow.sink1",
+    "filename": "closure.py",
+    "callable_line": 289,
+    "sinks": [
+      {
+        "port": "captured_variable(outer, closure.closure_nested_sink_flow)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "origin": { "line": 298, "start": 19, "end": 24 },
+            "call_site": "298:8-298:25"
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-via": "captured-variable" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "call": {
+              "position": { "line": 297, "start": 8, "end": 15 },
+              "resolves_to": [
+                "closure.closure_nested_sink_flow.sink1.sink2"
+              ],
+              "port": "captured_variable(outer, closure.closure_nested_sink_flow)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.closure_nested_sink_flow.sink1.sink2",
+    "filename": "closure.py",
+    "callable_line": 290,
+    "sinks": [
+      {
+        "port": "captured_variable(outer, closure.closure_nested_sink_flow)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "origin": { "line": 295, "start": 23, "end": 28 },
+            "call_site": "295:12-295:29"
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-via": "captured-variable" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "call": {
+              "position": { "line": 294, "start": 12, "end": 19 },
+              "resolves_to": [
+                "closure.closure_nested_sink_flow.sink1.sink2.sink3"
+              ],
+              "port": "captured_variable(outer, closure.closure_nested_sink_flow)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.closure_nested_sink_flow.sink1.sink2.sink3",
+    "filename": "closure.py",
+    "callable_line": 291,
+    "sinks": [
+      {
+        "port": "captured_variable(outer, closure.closure_nested_sink_flow)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "origin": { "line": 292, "start": 27, "end": 32 },
+            "call_site": "292:16-292:33"
           }
         ]
       }
@@ -162,7 +358,7 @@
   "data": {
     "callable": "closure.decorator.wrapper",
     "filename": "closure.py",
-    "callable_line": 363,
+    "callable_line": 397,
     "tito": [
       {
         "port": "captured_variable(function, parameter)",
@@ -183,7 +379,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 364, "start": 37, "end": 45 } ],
+            "tito_positions": [ { "line": 398, "start": 37, "end": 45 } ],
             "tito": {}
           }
         ]
@@ -194,7 +390,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 364, "start": 30, "end": 35 } ],
+            "tito_positions": [ { "line": 398, "start": 30, "end": 35 } ],
             "tito": {}
           }
         ]
@@ -207,7 +403,7 @@
   "data": {
     "callable": "closure.ignored_decorator.wrapper",
     "filename": "closure.py",
-    "callable_line": 369,
+    "callable_line": 404,
     "tito": [
       {
         "port": "captured_variable(function, parameter)",
@@ -228,7 +424,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 370, "start": 37, "end": 45 } ],
+            "tito_positions": [ { "line": 405, "start": 37, "end": 45 } ],
             "tito": {}
           }
         ]
@@ -239,7 +435,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 370, "start": 30, "end": 35 } ],
+            "tito_positions": [ { "line": 405, "start": 30, "end": 35 } ],
             "tito": {}
           }
         ]
@@ -251,9 +447,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_conditional_write",
-    "callable_line": 289,
+    "callable_line": 321,
     "code": 5002,
-    "line": 302,
+    "line": 334,
     "start": 15,
     "end": 18,
     "filename": "closure.py",
@@ -272,7 +468,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 290, "start": 10, "end": 24 }
+            "origin": { "line": 322, "start": 10, "end": 24 }
           }
         ]
       },
@@ -289,8 +485,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 302, "start": 15, "end": 18 },
-            "call_site": "302:4-302:19"
+            "origin": { "line": 334, "start": 15, "end": 18 },
+            "call_site": "334:4-334:19"
           }
         ]
       }
@@ -311,9 +507,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_conditional_write",
-    "callable_line": 289,
+    "callable_line": 321,
     "code": 5002,
-    "line": 308,
+    "line": 340,
     "start": 15,
     "end": 18,
     "filename": "closure.py",
@@ -335,7 +531,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 305, "start": 10, "end": 24 }
+            "origin": { "line": 337, "start": 10, "end": 24 }
           }
         ]
       },
@@ -352,8 +548,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 308, "start": 15, "end": 18 },
-            "call_site": "308:4-308:19"
+            "origin": { "line": 340, "start": 15, "end": 18 },
+            "call_site": "340:4-340:19"
           }
         ]
       }
@@ -377,9 +573,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_conditional_write",
-    "callable_line": 289,
+    "callable_line": 321,
     "code": 5003,
-    "line": 302,
+    "line": 334,
     "start": 15,
     "end": 18,
     "filename": "closure.py",
@@ -400,7 +596,7 @@
               }
             ],
             "call": {
-              "position": { "line": 301, "start": 4, "end": 27 },
+              "position": { "line": 333, "start": 4, "end": 27 },
               "resolves_to": [
                 "closure.nonlocal_closure_conditional_write.conditional_write"
               ],
@@ -422,8 +618,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 302, "start": 15, "end": 18 },
-            "call_site": "302:4-302:19"
+            "origin": { "line": 334, "start": 15, "end": 18 },
+            "call_site": "334:4-334:19"
           }
         ]
       }
@@ -445,7 +641,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_conditional_write.conditional_write",
     "filename": "closure.py",
-    "callable_line": 292,
+    "callable_line": 324,
     "sources": [
       {
         "port": "captured_variable(obj, closure.nonlocal_closure_conditional_write)",
@@ -460,7 +656,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 295, "start": 18, "end": 33 }
+            "origin": { "line": 327, "start": 18, "end": 33 }
           }
         ]
       }
@@ -471,9 +667,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_define_before_variable_initialization",
-    "callable_line": 88,
+    "callable_line": 96,
     "code": 5002,
-    "line": 93,
+    "line": 101,
     "start": 4,
     "end": 10,
     "filename": "closure.py",
@@ -492,7 +688,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 92, "start": 8, "end": 22 }
+            "origin": { "line": 100, "start": 8, "end": 22 }
           }
         ]
       },
@@ -514,7 +710,7 @@
               }
             ],
             "call": {
-              "position": { "line": 93, "start": 4, "end": 10 },
+              "position": { "line": 101, "start": 4, "end": 10 },
               "resolves_to": [
                 "closure.nonlocal_closure_define_before_variable_initialization.read"
               ],
@@ -543,7 +739,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_define_before_variable_initialization.read",
     "filename": "closure.py",
-    "callable_line": 89,
+    "callable_line": 97,
     "sinks": [
       {
         "port": "captured_variable(x, closure.nonlocal_closure_define_before_variable_initialization)",
@@ -559,8 +755,8 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 90, "start": 19, "end": 20 },
-            "call_site": "90:8-90:21"
+            "origin": { "line": 98, "start": 19, "end": 20 },
+            "call_site": "98:8-98:21"
           }
         ]
       }
@@ -571,9 +767,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_flow",
-    "callable_line": 186,
+    "callable_line": 197,
     "code": 5002,
-    "line": 197,
+    "line": 208,
     "start": 4,
     "end": 10,
     "filename": "closure.py",
@@ -597,7 +793,7 @@
               }
             ],
             "call": {
-              "position": { "line": 196, "start": 4, "end": 12 },
+              "position": { "line": 207, "start": 4, "end": 12 },
               "resolves_to": [ "closure.nonlocal_closure_flow.source" ],
               "port": "captured_variable(obj, closure.nonlocal_closure_flow)"
             }
@@ -622,7 +818,7 @@
               }
             ],
             "call": {
-              "position": { "line": 197, "start": 4, "end": 10 },
+              "position": { "line": 208, "start": 4, "end": 10 },
               "resolves_to": [ "closure.nonlocal_closure_flow.sink" ],
               "port": "captured_variable(obj, closure.nonlocal_closure_flow)"
             }
@@ -649,7 +845,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_flow.sink",
     "filename": "closure.py",
-    "callable_line": 193,
+    "callable_line": 204,
     "sinks": [
       {
         "port": "captured_variable(obj, closure.nonlocal_closure_flow)",
@@ -665,8 +861,8 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 194, "start": 19, "end": 22 },
-            "call_site": "194:8-194:23"
+            "origin": { "line": 205, "start": 19, "end": 22 },
+            "call_site": "205:8-205:23"
           }
         ]
       }
@@ -678,7 +874,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_flow.source",
     "filename": "closure.py",
-    "callable_line": 189,
+    "callable_line": 200,
     "sources": [
       {
         "port": "captured_variable(obj, closure.nonlocal_closure_flow)",
@@ -694,7 +890,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 191, "start": 14, "end": 28 }
+            "origin": { "line": 202, "start": 14, "end": 28 }
           }
         ]
       }
@@ -706,7 +902,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_inner_flow.flow",
     "filename": "closure.py",
-    "callable_line": 217,
+    "callable_line": 228,
     "sources": [
       {
         "port": "captured_variable(obj, closure.nonlocal_closure_inner_flow)",
@@ -722,7 +918,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 219, "start": 14, "end": 28 }
+            "origin": { "line": 230, "start": 14, "end": 28 }
           }
         ]
       }
@@ -733,9 +929,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_inner_flow.flow",
-    "callable_line": 217,
+    "callable_line": 228,
     "code": 5002,
-    "line": 220,
+    "line": 231,
     "start": 19,
     "end": 22,
     "filename": "closure.py",
@@ -754,7 +950,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 219, "start": 14, "end": 28 }
+            "origin": { "line": 230, "start": 14, "end": 28 }
           }
         ]
       },
@@ -771,8 +967,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 220, "start": 19, "end": 22 },
-            "call_site": "220:8-220:23"
+            "origin": { "line": 231, "start": 19, "end": 22 },
+            "call_site": "231:8-231:23"
           }
         ]
       }
@@ -793,9 +989,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_multiple_reads",
-    "callable_line": 68,
+    "callable_line": 74,
     "code": 5002,
-    "line": 76,
+    "line": 83,
     "start": 4,
     "end": 23,
     "filename": "closure.py",
@@ -814,7 +1010,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 69, "start": 8, "end": 22 }
+            "origin": { "line": 75, "start": 8, "end": 22 }
           }
         ]
       },
@@ -836,7 +1032,7 @@
               }
             ],
             "call": {
-              "position": { "line": 76, "start": 4, "end": 23 },
+              "position": { "line": 83, "start": 4, "end": 23 },
               "resolves_to": [
                 "closure.nonlocal_closure_multiple_reads.conditional_read"
               ],
@@ -865,7 +1061,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_multiple_reads.conditional_read",
     "filename": "closure.py",
-    "callable_line": 71,
+    "callable_line": 77,
     "sinks": [
       {
         "port": "captured_variable(x, closure.nonlocal_closure_multiple_reads)",
@@ -881,8 +1077,8 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 73, "start": 23, "end": 24 },
-            "call_site": "73:12-73:25"
+            "origin": { "line": 79, "start": 23, "end": 24 },
+            "call_site": "79:12-79:25"
           }
         ]
       }
@@ -893,9 +1089,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_multiple_writes",
-    "callable_line": 164,
+    "callable_line": 173,
     "code": 5002,
-    "line": 175,
+    "line": 185,
     "start": 15,
     "end": 16,
     "filename": "closure.py",
@@ -922,7 +1118,7 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": { "line": 174, "start": 4, "end": 27 },
+              "position": { "line": 184, "start": 4, "end": 27 },
               "resolves_to": [
                 "closure.nonlocal_closure_multiple_writes.conditional_write"
               ],
@@ -944,8 +1140,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 175, "start": 15, "end": 16 },
-            "call_site": "175:4-175:17"
+            "origin": { "line": 185, "start": 15, "end": 16 },
+            "call_site": "185:4-185:17"
           }
         ]
       }
@@ -971,7 +1167,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_multiple_writes.conditional_write",
     "filename": "closure.py",
-    "callable_line": 167,
+    "callable_line": 176,
     "sources": [
       {
         "port": "captured_variable(x, closure.nonlocal_closure_multiple_writes)",
@@ -987,7 +1183,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 170, "start": 16, "end": 30 }
+            "origin": { "line": 179, "start": 16, "end": 30 }
           }
         ]
       }
@@ -997,10 +1193,10 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "closure.nonlocal_closure_nested_flow",
-    "callable_line": 252,
+    "callable": "closure.nonlocal_closure_nested_source_flow",
+    "callable_line": 263,
     "code": 5002,
-    "line": 269,
+    "line": 283,
     "start": 15,
     "end": 20,
     "filename": "closure.py",
@@ -1024,11 +1220,11 @@
               }
             ],
             "call": {
-              "position": { "line": 268, "start": 4, "end": 13 },
+              "position": { "line": 282, "start": 4, "end": 13 },
               "resolves_to": [
-                "closure.nonlocal_closure_nested_flow.source1"
+                "closure.nonlocal_closure_nested_source_flow.source1"
               ],
-              "port": "captured_variable(outer, closure.nonlocal_closure_nested_flow)"
+              "port": "captured_variable(outer, closure.nonlocal_closure_nested_source_flow)"
             }
           }
         ]
@@ -1046,8 +1242,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 269, "start": 15, "end": 20 },
-            "call_site": "269:4-269:21"
+            "origin": { "line": 283, "start": 15, "end": 20 },
+            "call_site": "283:4-283:21"
           }
         ]
       }
@@ -1063,18 +1259,18 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "closure.nonlocal_closure_nested_flow:5002:0:Call|pysa._test_sink|0|formal(arg):a6b09ce46aa51dd28fdd54c51cde3e3a"
+    "master_handle": "closure.nonlocal_closure_nested_source_flow:5002:0:Call|pysa._test_sink|0|formal(arg):d8f70dc8668fb1a5ecb1d02d5a132422"
   }
 }
 {
   "kind": "model",
   "data": {
-    "callable": "closure.nonlocal_closure_nested_flow.source1",
+    "callable": "closure.nonlocal_closure_nested_source_flow.source1",
     "filename": "closure.py",
-    "callable_line": 255,
+    "callable_line": 266,
     "sources": [
       {
-        "port": "captured_variable(outer, closure.nonlocal_closure_nested_flow)",
+        "port": "captured_variable(outer, closure.nonlocal_closure_nested_source_flow)",
         "taint": [
           {
             "kinds": [
@@ -1089,11 +1285,11 @@
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
             "call": {
-              "position": { "line": 263, "start": 8, "end": 17 },
+              "position": { "line": 277, "start": 8, "end": 17 },
               "resolves_to": [
-                "closure.nonlocal_closure_nested_flow.source1.source2"
+                "closure.nonlocal_closure_nested_source_flow.source1.source2"
               ],
-              "port": "captured_variable(inner, closure.nonlocal_closure_nested_flow.source1)"
+              "port": "captured_variable(inner, closure.nonlocal_closure_nested_source_flow.source1)"
             }
           }
         ]
@@ -1104,10 +1300,10 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "closure.nonlocal_closure_nested_flow.source1",
-    "callable_line": 255,
+    "callable": "closure.nonlocal_closure_nested_source_flow.source1",
+    "callable_line": 266,
     "code": 5002,
-    "line": 264,
+    "line": 278,
     "start": 19,
     "end": 24,
     "filename": "closure.py",
@@ -1131,11 +1327,11 @@
               }
             ],
             "call": {
-              "position": { "line": 263, "start": 8, "end": 17 },
+              "position": { "line": 277, "start": 8, "end": 17 },
               "resolves_to": [
-                "closure.nonlocal_closure_nested_flow.source1.source2"
+                "closure.nonlocal_closure_nested_source_flow.source1.source2"
               ],
-              "port": "captured_variable(inner, closure.nonlocal_closure_nested_flow.source1)"
+              "port": "captured_variable(inner, closure.nonlocal_closure_nested_source_flow.source1)"
             }
           }
         ]
@@ -1153,8 +1349,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 264, "start": 19, "end": 24 },
-            "call_site": "264:8-264:25"
+            "origin": { "line": 278, "start": 19, "end": 24 },
+            "call_site": "278:8-278:25"
           }
         ]
       }
@@ -1170,18 +1366,18 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "closure.nonlocal_closure_nested_flow.source1:5002:0:Call|pysa._test_sink|0|formal(arg):92ce1fdf59016df46321d9bf20cea771"
+    "master_handle": "closure.nonlocal_closure_nested_source_flow.source1:5002:0:Call|pysa._test_sink|0|formal(arg):c95db1fb2d2b0be9e17f29b173b8ad4e"
   }
 }
 {
   "kind": "model",
   "data": {
-    "callable": "closure.nonlocal_closure_nested_flow.source1.source2",
+    "callable": "closure.nonlocal_closure_nested_source_flow.source1.source2",
     "filename": "closure.py",
-    "callable_line": 257,
+    "callable_line": 269,
     "sources": [
       {
-        "port": "captured_variable(inner, closure.nonlocal_closure_nested_flow.source1)",
+        "port": "captured_variable(inner, closure.nonlocal_closure_nested_source_flow.source1)",
         "taint": [
           {
             "kinds": [
@@ -1195,11 +1391,11 @@
               }
             ],
             "call": {
-              "position": { "line": 261, "start": 12, "end": 21 },
+              "position": { "line": 274, "start": 12, "end": 21 },
               "resolves_to": [
-                "closure.nonlocal_closure_nested_flow.source1.source2.source3"
+                "closure.nonlocal_closure_nested_source_flow.source1.source2.source3"
               ],
-              "port": "captured_variable(inner, closure.nonlocal_closure_nested_flow.source1)"
+              "port": "captured_variable(inner, closure.nonlocal_closure_nested_source_flow.source1)"
             }
           }
         ]
@@ -1207,7 +1403,7 @@
     ],
     "sinks": [
       {
-        "port": "captured_variable(inner, closure.nonlocal_closure_nested_flow.source1)",
+        "port": "captured_variable(inner, closure.nonlocal_closure_nested_source_flow.source1)",
         "taint": [
           {
             "kinds": [
@@ -1220,8 +1416,8 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 262, "start": 23, "end": 28 },
-            "call_site": "262:12-262:29"
+            "origin": { "line": 275, "start": 23, "end": 28 },
+            "call_site": "275:12-275:29"
           }
         ]
       }
@@ -1231,10 +1427,10 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "closure.nonlocal_closure_nested_flow.source1.source2",
-    "callable_line": 257,
+    "callable": "closure.nonlocal_closure_nested_source_flow.source1.source2",
+    "callable_line": 269,
     "code": 5002,
-    "line": 262,
+    "line": 275,
     "start": 23,
     "end": 28,
     "filename": "closure.py",
@@ -1258,11 +1454,11 @@
               }
             ],
             "call": {
-              "position": { "line": 261, "start": 12, "end": 21 },
+              "position": { "line": 274, "start": 12, "end": 21 },
               "resolves_to": [
-                "closure.nonlocal_closure_nested_flow.source1.source2.source3"
+                "closure.nonlocal_closure_nested_source_flow.source1.source2.source3"
               ],
-              "port": "captured_variable(inner, closure.nonlocal_closure_nested_flow.source1)"
+              "port": "captured_variable(inner, closure.nonlocal_closure_nested_source_flow.source1)"
             }
           }
         ]
@@ -1280,8 +1476,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 262, "start": 23, "end": 28 },
-            "call_site": "262:12-262:29"
+            "origin": { "line": 275, "start": 23, "end": 28 },
+            "call_site": "275:12-275:29"
           }
         ]
       }
@@ -1297,18 +1493,18 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "closure.nonlocal_closure_nested_flow.source1.source2:5002:0:Call|pysa._test_sink|0|formal(arg):0cf36481511a95ec4a5953a292adda49"
+    "master_handle": "closure.nonlocal_closure_nested_source_flow.source1.source2:5002:0:Call|pysa._test_sink|0|formal(arg):95304b37df1214eae88e56065cbef905"
   }
 }
 {
   "kind": "model",
   "data": {
-    "callable": "closure.nonlocal_closure_nested_flow.source1.source2.source3",
+    "callable": "closure.nonlocal_closure_nested_source_flow.source1.source2.source3",
     "filename": "closure.py",
-    "callable_line": 258,
+    "callable_line": 270,
     "sources": [
       {
-        "port": "captured_variable(inner, closure.nonlocal_closure_nested_flow.source1)",
+        "port": "captured_variable(inner, closure.nonlocal_closure_nested_source_flow.source1)",
         "taint": [
           {
             "kinds": [
@@ -1321,7 +1517,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 260, "start": 24, "end": 38 }
+            "origin": { "line": 272, "start": 24, "end": 38 }
           }
         ]
       }
@@ -1333,7 +1529,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_no_flow.sink",
     "filename": "closure.py",
-    "callable_line": 207,
+    "callable_line": 218,
     "sinks": [
       {
         "port": "captured_variable(obj, closure.nonlocal_closure_no_flow)",
@@ -1349,8 +1545,8 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 208, "start": 19, "end": 22 },
-            "call_site": "208:8-208:23"
+            "origin": { "line": 219, "start": 19, "end": 22 },
+            "call_site": "219:8-219:23"
           }
         ]
       }
@@ -1362,7 +1558,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_no_flow.source",
     "filename": "closure.py",
-    "callable_line": 203,
+    "callable_line": 214,
     "sources": [
       {
         "port": "captured_variable(obj, closure.nonlocal_closure_no_flow)",
@@ -1378,7 +1574,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 205, "start": 14, "end": 28 }
+            "origin": { "line": 216, "start": 14, "end": 28 }
           }
         ]
       }
@@ -1390,7 +1586,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_obscure.sink",
     "filename": "closure.py",
-    "callable_line": 232,
+    "callable_line": 243,
     "sinks": [
       {
         "port": "captured_variable(obj, closure.nonlocal_closure_obscure)",
@@ -1406,8 +1602,8 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 233, "start": 19, "end": 22 },
-            "call_site": "233:8-233:23"
+            "origin": { "line": 244, "start": 19, "end": 22 },
+            "call_site": "244:8-244:23"
           }
         ]
       }
@@ -1419,7 +1615,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_obscure.source",
     "filename": "closure.py",
-    "callable_line": 228,
+    "callable_line": 239,
     "sources": [
       {
         "port": "captured_variable(obj, closure.nonlocal_closure_obscure)",
@@ -1435,7 +1631,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 230, "start": 14, "end": 28 }
+            "origin": { "line": 241, "start": 14, "end": 28 }
           }
         ]
       }
@@ -1446,9 +1642,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_read_reduction",
-    "callable_line": 9,
+    "callable_line": 11,
     "code": 5002,
-    "line": 16,
+    "line": 19,
     "start": 10,
     "end": 11,
     "filename": "closure.py",
@@ -1467,7 +1663,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 11, "start": 8, "end": 22 }
+            "origin": { "line": 13, "start": 8, "end": 22 }
           }
         ]
       },
@@ -1486,12 +1682,12 @@
               }
             ],
             "call": {
-              "position": { "line": 16, "start": 10, "end": 11 },
+              "position": { "line": 19, "start": 10, "end": 11 },
               "resolves_to": [
                 "closure.nonlocal_closure_read_reduction.inner"
               ],
               "port": "formal(z, position=0)",
-              "call_site": "16:4-16:12"
+              "call_site": "19:4-19:12"
             }
           }
         ]
@@ -1513,9 +1709,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_read_reduction",
-    "callable_line": 9,
+    "callable_line": 11,
     "code": 5002,
-    "line": 16,
+    "line": 19,
     "start": 4,
     "end": 12,
     "filename": "closure.py",
@@ -1534,7 +1730,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 10, "start": 8, "end": 22 }
+            "origin": { "line": 12, "start": 8, "end": 22 }
           }
         ]
       },
@@ -1556,7 +1752,7 @@
               }
             ],
             "call": {
-              "position": { "line": 16, "start": 4, "end": 12 },
+              "position": { "line": 19, "start": 4, "end": 12 },
               "resolves_to": [
                 "closure.nonlocal_closure_read_reduction.inner"
               ],
@@ -1585,7 +1781,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_read_reduction.inner",
     "filename": "closure.py",
-    "callable_line": 13,
+    "callable_line": 15,
     "sinks": [
       {
         "port": "captured_variable(x, closure.nonlocal_closure_read_reduction)",
@@ -1601,8 +1797,8 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 14, "start": 19, "end": 20 },
-            "call_site": "14:8-14:21"
+            "origin": { "line": 16, "start": 19, "end": 20 },
+            "call_site": "16:8-16:21"
           }
         ]
       },
@@ -1619,8 +1815,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 15, "start": 19, "end": 20 },
-            "call_site": "15:8-15:21"
+            "origin": { "line": 17, "start": 19, "end": 20 },
+            "call_site": "17:8-17:21"
           }
         ]
       }
@@ -1631,9 +1827,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_reduction",
-    "callable_line": 140,
+    "callable_line": 148,
     "code": 5002,
-    "line": 161,
+    "line": 170,
     "start": 9,
     "end": 13,
     "filename": "closure.py",
@@ -1654,9 +1850,9 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 153, "start": 22, "end": 26 } ],
+            "tito_positions": [ { "line": 161, "start": 22, "end": 26 } ],
             "call": {
-              "position": { "line": 152, "start": 11, "end": 19 },
+              "position": { "line": 160, "start": 11, "end": 19 },
               "resolves_to": [ "closure.nonlocal_closure_reduction.source" ],
               "port": "result"
             }
@@ -1678,10 +1874,10 @@
               }
             ],
             "call": {
-              "position": { "line": 161, "start": 9, "end": 13 },
+              "position": { "line": 170, "start": 9, "end": 13 },
               "resolves_to": [ "closure.nonlocal_closure_reduction.sink" ],
               "port": "formal(obj2, position=0)",
-              "call_site": "161:4-161:14"
+              "call_site": "170:4-170:14"
             }
           }
         ]
@@ -1705,9 +1901,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_reduction",
-    "callable_line": 140,
+    "callable_line": 148,
     "code": 5002,
-    "line": 161,
+    "line": 170,
     "start": 4,
     "end": 14,
     "filename": "closure.py",
@@ -1731,7 +1927,7 @@
               }
             ],
             "call": {
-              "position": { "line": 152, "start": 11, "end": 19 },
+              "position": { "line": 160, "start": 11, "end": 19 },
               "resolves_to": [ "closure.nonlocal_closure_reduction.source" ],
               "port": "captured_variable(obj1, closure.nonlocal_closure_reduction)"
             }
@@ -1756,7 +1952,7 @@
               }
             ],
             "call": {
-              "position": { "line": 161, "start": 4, "end": 14 },
+              "position": { "line": 170, "start": 4, "end": 14 },
               "resolves_to": [ "closure.nonlocal_closure_reduction.sink" ],
               "port": "captured_variable(obj1, closure.nonlocal_closure_reduction)"
             }
@@ -1782,9 +1978,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_reduction",
-    "callable_line": 140,
+    "callable_line": 148,
     "code": 5002,
-    "line": 161,
+    "line": 170,
     "start": 4,
     "end": 14,
     "filename": "closure.py",
@@ -1810,9 +2006,9 @@
             "local_features": [
               { "always-via": "tito" }, { "always-via": "captured-variable" }
             ],
-            "tito_positions": [ { "line": 153, "start": 17, "end": 27 } ],
+            "tito_positions": [ { "line": 161, "start": 17, "end": 27 } ],
             "call": {
-              "position": { "line": 152, "start": 11, "end": 19 },
+              "position": { "line": 160, "start": 11, "end": 19 },
               "resolves_to": [ "closure.nonlocal_closure_reduction.source" ],
               "port": "captured_variable(obj1, closure.nonlocal_closure_reduction)"
             }
@@ -1837,7 +2033,7 @@
               }
             ],
             "call": {
-              "position": { "line": 161, "start": 4, "end": 14 },
+              "position": { "line": 170, "start": 4, "end": 14 },
               "resolves_to": [ "closure.nonlocal_closure_reduction.sink" ],
               "port": "captured_variable(obj3, closure.nonlocal_closure_reduction)"
             }
@@ -1865,7 +2061,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_reduction.sink",
     "filename": "closure.py",
-    "callable_line": 156,
+    "callable_line": 165,
     "sinks": [
       {
         "port": "captured_variable(obj3, closure.nonlocal_closure_reduction)",
@@ -1881,8 +2077,8 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 159, "start": 19, "end": 23 },
-            "call_site": "159:8-159:24"
+            "origin": { "line": 168, "start": 19, "end": 23 },
+            "call_site": "168:8-168:24"
           }
         ]
       },
@@ -1900,8 +2096,8 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 157, "start": 19, "end": 23 },
-            "call_site": "157:8-157:24"
+            "origin": { "line": 166, "start": 19, "end": 23 },
+            "call_site": "166:8-166:24"
           }
         ]
       },
@@ -1918,8 +2114,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 158, "start": 19, "end": 23 },
-            "call_site": "158:8-158:24"
+            "origin": { "line": 167, "start": 19, "end": 23 },
+            "call_site": "167:8-167:24"
           }
         ]
       }
@@ -1931,7 +2127,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_reduction.source",
     "filename": "closure.py",
-    "callable_line": 143,
+    "callable_line": 151,
     "sources": [
       {
         "port": "captured_variable(obj1, closure.nonlocal_closure_reduction)",
@@ -1947,7 +2143,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 145, "start": 15, "end": 29 }
+            "origin": { "line": 153, "start": 15, "end": 29 }
           }
         ]
       },
@@ -1964,7 +2160,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 146, "start": 15, "end": 29 }
+            "origin": { "line": 154, "start": 15, "end": 29 }
           }
         ]
       }
@@ -1976,7 +2172,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_reduction.tito",
     "filename": "closure.py",
-    "callable_line": 149,
+    "callable_line": 157,
     "tito": [
       {
         "port": "captured_variable(obj1, closure.nonlocal_closure_reduction)",
@@ -2008,9 +2204,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_tito",
-    "callable_line": 311,
+    "callable_line": 343,
     "code": 5002,
-    "line": 318,
+    "line": 350,
     "start": 15,
     "end": 21,
     "filename": "closure.py",
@@ -2032,8 +2228,8 @@
             "local_features": [
               { "always-via": "tito" }, { "always-via": "captured-variable" }
             ],
-            "tito_positions": [ { "line": 317, "start": 13, "end": 20 } ],
-            "origin": { "line": 312, "start": 8, "end": 22 }
+            "tito_positions": [ { "line": 349, "start": 13, "end": 20 } ],
+            "origin": { "line": 344, "start": 8, "end": 22 }
           }
         ]
       },
@@ -2050,8 +2246,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 318, "start": 15, "end": 21 },
-            "call_site": "318:4-318:22"
+            "origin": { "line": 350, "start": 15, "end": 21 },
+            "call_site": "350:4-350:22"
           }
         ]
       }
@@ -2076,7 +2272,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_tito.inner",
     "filename": "closure.py",
-    "callable_line": 314,
+    "callable_line": 346,
     "tito": [
       {
         "port": "captured_variable(x, closure.nonlocal_closure_tito)",
@@ -2095,9 +2291,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_wrapper_flow",
-    "callable_line": 272,
+    "callable_line": 304,
     "code": 5002,
-    "line": 283,
+    "line": 315,
     "start": 15,
     "end": 18,
     "filename": "closure.py",
@@ -2121,7 +2317,7 @@
               }
             ],
             "call": {
-              "position": { "line": 282, "start": 4, "end": 13 },
+              "position": { "line": 314, "start": 4, "end": 13 },
               "resolves_to": [
                 "closure.nonlocal_closure_wrapper_flow.wrapper"
               ],
@@ -2143,7 +2339,7 @@
               }
             ],
             "call": {
-              "position": { "line": 282, "start": 4, "end": 13 },
+              "position": { "line": 314, "start": 4, "end": 13 },
               "resolves_to": [
                 "closure.nonlocal_closure_wrapper_flow.wrapper[local($local_closure?nonlocal_closure_wrapper_flow$source)=closure.nonlocal_closure_wrapper_flow.source]"
               ],
@@ -2165,8 +2361,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 283, "start": 15, "end": 18 },
-            "call_site": "283:4-283:19"
+            "origin": { "line": 315, "start": 15, "end": 18 },
+            "call_site": "315:4-315:19"
           }
         ]
       }
@@ -2190,7 +2386,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_wrapper_flow.source",
     "filename": "closure.py",
-    "callable_line": 275,
+    "callable_line": 307,
     "sources": [
       {
         "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_flow)",
@@ -2206,7 +2402,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 277, "start": 14, "end": 28 }
+            "origin": { "line": 309, "start": 14, "end": 28 }
           }
         ]
       }
@@ -2218,7 +2414,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_wrapper_flow.wrapper",
     "filename": "closure.py",
-    "callable_line": 279,
+    "callable_line": 311,
     "sources": [
       {
         "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_flow)",
@@ -2235,7 +2431,7 @@
               }
             ],
             "call": {
-              "position": { "line": 280, "start": 8, "end": 16 },
+              "position": { "line": 312, "start": 8, "end": 16 },
               "resolves_to": [
                 "closure.nonlocal_closure_wrapper_flow.source"
               ],
@@ -2251,9 +2447,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_write_reduction",
-    "callable_line": 126,
+    "callable_line": 134,
     "code": 5002,
-    "line": 136,
+    "line": 144,
     "start": 15,
     "end": 16,
     "filename": "closure.py",
@@ -2277,7 +2473,7 @@
               }
             ],
             "call": {
-              "position": { "line": 135, "start": 8, "end": 16 },
+              "position": { "line": 143, "start": 8, "end": 16 },
               "resolves_to": [
                 "closure.nonlocal_closure_write_reduction.source"
               ],
@@ -2299,8 +2495,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 136, "start": 15, "end": 16 },
-            "call_site": "136:4-136:17"
+            "origin": { "line": 144, "start": 15, "end": 16 },
+            "call_site": "144:4-144:17"
           }
         ]
       }
@@ -2323,9 +2519,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_write_reduction",
-    "callable_line": 126,
+    "callable_line": 134,
     "code": 5002,
-    "line": 137,
+    "line": 145,
     "start": 15,
     "end": 16,
     "filename": "closure.py",
@@ -2346,7 +2542,7 @@
               }
             ],
             "call": {
-              "position": { "line": 135, "start": 8, "end": 16 },
+              "position": { "line": 143, "start": 8, "end": 16 },
               "resolves_to": [
                 "closure.nonlocal_closure_write_reduction.source"
               ],
@@ -2368,8 +2564,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 137, "start": 15, "end": 16 },
-            "call_site": "137:4-137:17"
+            "origin": { "line": 145, "start": 15, "end": 16 },
+            "call_site": "145:4-145:17"
           }
         ]
       }
@@ -2391,7 +2587,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_write_reduction.source",
     "filename": "closure.py",
-    "callable_line": 130,
+    "callable_line": 138,
     "sources": [
       {
         "port": "captured_variable(x, closure.nonlocal_closure_write_reduction)",
@@ -2407,7 +2603,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 132, "start": 12, "end": 26 }
+            "origin": { "line": 140, "start": 12, "end": 26 }
           }
         ]
       },
@@ -2424,7 +2620,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 133, "start": 15, "end": 29 }
+            "origin": { "line": 141, "start": 15, "end": 29 }
           }
         ]
       }
@@ -2436,7 +2632,7 @@
   "data": {
     "callable": "closure.parameter_order_swap",
     "filename": "closure.py",
-    "callable_line": 50,
+    "callable_line": 54,
     "sinks": [
       {
         "port": "formal(z, position=2)",
@@ -2453,7 +2649,7 @@
               }
             ],
             "call": {
-              "position": { "line": 55, "start": 4, "end": 11 },
+              "position": { "line": 60, "start": 4, "end": 11 },
               "resolves_to": [ "closure.parameter_order_swap.inner" ],
               "port": "captured_variable(z, parameter)"
             }
@@ -2475,7 +2671,7 @@
               }
             ],
             "call": {
-              "position": { "line": 55, "start": 4, "end": 11 },
+              "position": { "line": 60, "start": 4, "end": 11 },
               "resolves_to": [ "closure.parameter_order_swap.inner" ],
               "port": "captured_variable(y, parameter)"
             }
@@ -2497,7 +2693,7 @@
               }
             ],
             "call": {
-              "position": { "line": 55, "start": 4, "end": 11 },
+              "position": { "line": 60, "start": 4, "end": 11 },
               "resolves_to": [ "closure.parameter_order_swap.inner" ],
               "port": "captured_variable(x, parameter)"
             }
@@ -2512,7 +2708,7 @@
   "data": {
     "callable": "closure.parameter_order_swap.inner",
     "filename": "closure.py",
-    "callable_line": 51,
+    "callable_line": 55,
     "sinks": [
       {
         "port": "captured_variable(z, parameter)",
@@ -2528,8 +2724,8 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 54, "start": 19, "end": 20 },
-            "call_site": "54:8-54:21"
+            "origin": { "line": 58, "start": 19, "end": 20 },
+            "call_site": "58:8-58:21"
           }
         ]
       },
@@ -2547,8 +2743,8 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 52, "start": 19, "end": 20 },
-            "call_site": "52:8-52:21"
+            "origin": { "line": 56, "start": 19, "end": 20 },
+            "call_site": "56:8-56:21"
           }
         ]
       },
@@ -2566,8 +2762,8 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 53, "start": 19, "end": 20 },
-            "call_site": "53:8-53:21"
+            "origin": { "line": 57, "start": 19, "end": 20 },
+            "call_site": "57:8-57:21"
           }
         ]
       }
@@ -2579,7 +2775,7 @@
   "data": {
     "callable": "closure.parameter_order_swap_different_variable_names",
     "filename": "closure.py",
-    "callable_line": 58,
+    "callable_line": 63,
     "sinks": [
       {
         "port": "formal(z, position=2)",
@@ -2596,7 +2792,7 @@
               }
             ],
             "call": {
-              "position": { "line": 65, "start": 4, "end": 11 },
+              "position": { "line": 71, "start": 4, "end": 11 },
               "resolves_to": [
                 "closure.parameter_order_swap_different_variable_names.inner"
               ],
@@ -2620,7 +2816,7 @@
               }
             ],
             "call": {
-              "position": { "line": 65, "start": 4, "end": 11 },
+              "position": { "line": 71, "start": 4, "end": 11 },
               "resolves_to": [
                 "closure.parameter_order_swap_different_variable_names.inner"
               ],
@@ -2644,7 +2840,7 @@
               }
             ],
             "call": {
-              "position": { "line": 65, "start": 4, "end": 11 },
+              "position": { "line": 71, "start": 4, "end": 11 },
               "resolves_to": [
                 "closure.parameter_order_swap_different_variable_names.inner"
               ],
@@ -2661,7 +2857,7 @@
   "data": {
     "callable": "closure.parameter_order_swap_different_variable_names.inner",
     "filename": "closure.py",
-    "callable_line": 61,
+    "callable_line": 66,
     "sinks": [
       {
         "port": "captured_variable(c, closure.parameter_order_swap_different_variable_names)",
@@ -2677,8 +2873,8 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 64, "start": 19, "end": 20 },
-            "call_site": "64:8-64:21"
+            "origin": { "line": 69, "start": 19, "end": 20 },
+            "call_site": "69:8-69:21"
           }
         ]
       },
@@ -2696,8 +2892,8 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 62, "start": 19, "end": 20 },
-            "call_site": "62:8-62:21"
+            "origin": { "line": 67, "start": 19, "end": 20 },
+            "call_site": "67:8-67:21"
           }
         ]
       },
@@ -2715,8 +2911,8 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 63, "start": 19, "end": 20 },
-            "call_site": "63:8-63:21"
+            "origin": { "line": 68, "start": 19, "end": 20 },
+            "call_site": "68:8-68:21"
           }
         ]
       }
@@ -2728,7 +2924,7 @@
   "data": {
     "callable": "closure.parameter_order_swap_tito",
     "filename": "closure.py",
-    "callable_line": 347,
+    "callable_line": 379,
     "sinks": [
       {
         "port": "formal(z, position=2)",
@@ -2749,9 +2945,9 @@
               { "always-via": "tito" },
               { "always-via": "captured-variable" }
             ],
-            "tito_positions": [ { "line": 350, "start": 15, "end": 22 } ],
-            "origin": { "line": 350, "start": 15, "end": 25 },
-            "call_site": "350:4-350:26"
+            "tito_positions": [ { "line": 383, "start": 15, "end": 22 } ],
+            "origin": { "line": 383, "start": 15, "end": 25 },
+            "call_site": "383:4-383:26"
           }
         ]
       }
@@ -2763,7 +2959,7 @@
   "data": {
     "callable": "closure.parameter_order_swap_tito.inner",
     "filename": "closure.py",
-    "callable_line": 348,
+    "callable_line": 380,
     "tito": [
       {
         "port": "captured_variable(z, parameter)",
@@ -2808,9 +3004,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.taint_propagation",
-    "callable_line": 19,
+    "callable_line": 22,
     "code": 5002,
-    "line": 22,
+    "line": 25,
     "start": 34,
     "end": 35,
     "filename": "closure.py",
@@ -2829,7 +3025,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 20, "start": 8, "end": 22 }
+            "origin": { "line": 23, "start": 8, "end": 22 }
           }
         ]
       },
@@ -2851,10 +3047,10 @@
               }
             ],
             "call": {
-              "position": { "line": 22, "start": 34, "end": 35 },
+              "position": { "line": 25, "start": 34, "end": 35 },
               "resolves_to": [ "closure.wrapper_for_taint_propagation" ],
               "port": "formal(x, position=0)",
-              "call_site": "22:4-22:39"
+              "call_site": "25:4-25:39"
             }
           }
         ]
@@ -2878,9 +3074,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.taint_propagation",
-    "callable_line": 19,
+    "callable_line": 22,
     "code": 5002,
-    "line": 22,
+    "line": 25,
     "start": 37,
     "end": 38,
     "filename": "closure.py",
@@ -2899,7 +3095,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 21, "start": 8, "end": 22 }
+            "origin": { "line": 24, "start": 8, "end": 22 }
           }
         ]
       },
@@ -2918,10 +3114,10 @@
               }
             ],
             "call": {
-              "position": { "line": 22, "start": 37, "end": 38 },
+              "position": { "line": 25, "start": 37, "end": 38 },
               "resolves_to": [ "closure.wrapper_for_taint_propagation" ],
               "port": "formal(z, position=1)",
-              "call_site": "22:4-22:39"
+              "call_site": "25:4-25:39"
             }
           }
         ]
@@ -2943,9 +3139,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.taint_propagation_hof",
-    "callable_line": 32,
+    "callable_line": 36,
     "code": 5002,
-    "line": 35,
+    "line": 39,
     "start": 41,
     "end": 42,
     "filename": "closure.py",
@@ -2964,7 +3160,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 34, "start": 8, "end": 22 }
+            "origin": { "line": 38, "start": 8, "end": 22 }
           }
         ]
       },
@@ -2983,10 +3179,10 @@
               }
             ],
             "call": {
-              "position": { "line": 35, "start": 41, "end": 42 },
+              "position": { "line": 39, "start": 41, "end": 42 },
               "resolves_to": [ "closure.wrapper_for_taint_propagation_hof" ],
               "port": "formal(z, position=1)",
-              "call_site": "35:4-35:43"
+              "call_site": "39:4-39:43"
             }
           }
         ]
@@ -3009,7 +3205,7 @@
   "data": {
     "callable": "closure.tito_hof",
     "filename": "closure.py",
-    "callable_line": 343,
+    "callable_line": 375,
     "sinks": [
       {
         "port": "formal(f, position=0)",
@@ -3025,8 +3221,8 @@
               }
             ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "origin": { "line": 344, "start": 15, "end": 18 },
-            "call_site": "344:4-344:19"
+            "origin": { "line": 376, "start": 15, "end": 18 },
+            "call_site": "376:4-376:19"
           }
         ]
       }
@@ -3037,9 +3233,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.tito_propagation",
-    "callable_line": 321,
+    "callable_line": 353,
     "code": 5002,
-    "line": 322,
+    "line": 354,
     "start": 33,
     "end": 47,
     "filename": "closure.py",
@@ -3058,7 +3254,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 322, "start": 33, "end": 47 }
+            "origin": { "line": 354, "start": 33, "end": 47 }
           }
         ]
       },
@@ -3081,10 +3277,10 @@
               }
             ],
             "call": {
-              "position": { "line": 322, "start": 33, "end": 47 },
+              "position": { "line": 354, "start": 33, "end": 47 },
               "resolves_to": [ "closure.wrapper_for_tito_propagation" ],
               "port": "formal(x, position=0)",
-              "call_site": "322:4-322:48"
+              "call_site": "354:4-354:48"
             }
           }
         ]
@@ -3110,7 +3306,7 @@
   "data": {
     "callable": "closure.wrapper_for_taint_propagation",
     "filename": "closure.py",
-    "callable_line": 25,
+    "callable_line": 28,
     "sinks": [
       {
         "port": "formal(z, position=1)",
@@ -3124,12 +3320,12 @@
               }
             ],
             "call": {
-              "position": { "line": 29, "start": 10, "end": 11 },
+              "position": { "line": 33, "start": 10, "end": 11 },
               "resolves_to": [
                 "closure.wrapper_for_taint_propagation.inner"
               ],
               "port": "formal(z, position=0)",
-              "call_site": "29:4-29:12"
+              "call_site": "33:4-33:12"
             }
           }
         ]
@@ -3149,7 +3345,7 @@
               }
             ],
             "call": {
-              "position": { "line": 29, "start": 4, "end": 12 },
+              "position": { "line": 33, "start": 4, "end": 12 },
               "resolves_to": [
                 "closure.wrapper_for_taint_propagation.inner"
               ],
@@ -3166,7 +3362,7 @@
   "data": {
     "callable": "closure.wrapper_for_taint_propagation.inner",
     "filename": "closure.py",
-    "callable_line": 26,
+    "callable_line": 29,
     "sinks": [
       {
         "port": "captured_variable(x, parameter)",
@@ -3182,8 +3378,8 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 27, "start": 19, "end": 20 },
-            "call_site": "27:8-27:21"
+            "origin": { "line": 30, "start": 19, "end": 20 },
+            "call_site": "30:8-30:21"
           }
         ]
       },
@@ -3200,8 +3396,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 28, "start": 19, "end": 20 },
-            "call_site": "28:8-28:21"
+            "origin": { "line": 31, "start": 19, "end": 20 },
+            "call_site": "31:8-31:21"
           }
         ]
       }
@@ -3213,7 +3409,7 @@
   "data": {
     "callable": "closure.wrapper_for_taint_propagation_hof",
     "filename": "closure.py",
-    "callable_line": 38,
+    "callable_line": 42,
     "sinks": [
       {
         "port": "formal(z, position=1)",
@@ -3227,12 +3423,12 @@
               }
             ],
             "call": {
-              "position": { "line": 43, "start": 33, "end": 34 },
+              "position": { "line": 47, "start": 33, "end": 34 },
               "resolves_to": [
                 "closure.higher_order_function[formal(f, position=0)=closure.wrapper_for_taint_propagation_hof.inner]"
               ],
               "port": "formal(z, position=1)",
-              "call_site": "43:4-43:35"
+              "call_site": "47:4-47:35"
             }
           }
         ]
@@ -3245,7 +3441,7 @@
   "data": {
     "callable": "closure.wrapper_for_taint_propagation_hof.inner",
     "filename": "closure.py",
-    "callable_line": 39,
+    "callable_line": 43,
     "sinks": [
       {
         "port": "captured_variable(x, parameter)",
@@ -3261,8 +3457,8 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 40, "start": 19, "end": 20 },
-            "call_site": "40:8-40:21"
+            "origin": { "line": 44, "start": 19, "end": 20 },
+            "call_site": "44:8-44:21"
           }
         ]
       },
@@ -3279,8 +3475,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 41, "start": 19, "end": 20 },
-            "call_site": "41:8-41:21"
+            "origin": { "line": 45, "start": 19, "end": 20 },
+            "call_site": "45:8-45:21"
           }
         ]
       }
@@ -3292,7 +3488,7 @@
   "data": {
     "callable": "closure.wrapper_for_tito_propagation",
     "filename": "closure.py",
-    "callable_line": 325,
+    "callable_line": 357,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -3310,9 +3506,9 @@
             "local_features": [
               { "always-via": "tito" }, { "always-via": "captured-variable" }
             ],
-            "tito_positions": [ { "line": 329, "start": 15, "end": 22 } ],
-            "origin": { "line": 329, "start": 15, "end": 22 },
-            "call_site": "329:4-329:23"
+            "tito_positions": [ { "line": 361, "start": 15, "end": 22 } ],
+            "origin": { "line": 361, "start": 15, "end": 22 },
+            "call_site": "361:4-361:23"
           }
         ]
       }
@@ -3324,7 +3520,7 @@
   "data": {
     "callable": "closure.wrapper_for_tito_propagation.inner",
     "filename": "closure.py",
-    "callable_line": 326,
+    "callable_line": 358,
     "tito": [
       {
         "port": "captured_variable(x, parameter)",
@@ -3344,7 +3540,7 @@
   "data": {
     "callable": "closure.wrapper_for_tito_propagation_hof.inner",
     "filename": "closure.py",
-    "callable_line": 337,
+    "callable_line": 369,
     "tito": [
       {
         "port": "captured_variable(x, parameter)",
@@ -3414,7 +3610,7 @@
   "data": {
     "callable": "closure.higher_order_function[formal(f, position=0)=closure.wrapper_for_taint_propagation_hof.inner]",
     "filename": "closure.py",
-    "callable_line": 46,
+    "callable_line": 50,
     "sinks": [
       {
         "port": "formal(z, position=1)",
@@ -3428,12 +3624,12 @@
               }
             ],
             "call": {
-              "position": { "line": 47, "start": 6, "end": 7 },
+              "position": { "line": 51, "start": 6, "end": 7 },
               "resolves_to": [
                 "closure.wrapper_for_taint_propagation_hof.inner"
               ],
               "port": "formal(z, position=0)",
-              "call_site": "47:4-47:8"
+              "call_site": "51:4-51:8"
             }
           }
         ]
@@ -3446,7 +3642,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_wrapper_flow.wrapper[local($local_closure?nonlocal_closure_wrapper_flow$source)=closure.nonlocal_closure_wrapper_flow.source]",
     "filename": "closure.py",
-    "callable_line": 279,
+    "callable_line": 311,
     "sources": [
       {
         "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_flow)",
@@ -3463,7 +3659,7 @@
               }
             ],
             "call": {
-              "position": { "line": 280, "start": 8, "end": 16 },
+              "position": { "line": 312, "start": 8, "end": 16 },
               "resolves_to": [
                 "closure.nonlocal_closure_wrapper_flow.source"
               ],
