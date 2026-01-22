@@ -14,7 +14,6 @@
       {
         "name": "forward",
         "roots": [
-          { "kinds": [ { "kind": "Test" } ], "declaration": null },
           {
             "kinds": [
               {
@@ -27,7 +26,28 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 167, "start": 4, "end": 4 }
+            "origin": { "line": 170, "start": 4, "end": 60 }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.captured_variable_model_both_generation_parameter_source.model_all_captured_as_generation_and_parameter_sources",
+                    "port": "leaf:complicated_name"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 170, "start": 4, "end": 60 },
+              "resolves_to": [
+                "closure_models.captured_variable_model_both_generation_parameter_source.model_all_captured_as_generation_and_parameter_sources"
+              ],
+              "port": "captured_variable(complicated_name, closure_models.captured_variable_model_both_generation_parameter_source)"
+            }
           }
         ]
       },
@@ -170,7 +190,22 @@
     "traces": [
       {
         "name": "forward",
-        "roots": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.captured_variable_model_generation_source.model_all_captured_as_generation_sources",
+                    "port": "leaf:complicated_name"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 159, "start": 4, "end": 46 }
+          }
+        ]
       },
       {
         "name": "backward",
@@ -239,10 +274,17 @@
                     "port": "leaf:complicated_name"
                   }
                 ],
+                "length": 1,
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 144, "start": 4, "end": 4 }
+            "call": {
+              "position": { "line": 147, "start": 4, "end": 45 },
+              "resolves_to": [
+                "closure_models.captured_variable_model_parameter_source.model_all_captured_as_parameter_sources"
+              ],
+              "port": "captured_variable(complicated_name, closure_models.captured_variable_model_parameter_source)"
+            }
           }
         ]
       },

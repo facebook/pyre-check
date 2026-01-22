@@ -813,6 +813,21 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         match root with
         | AccessPath.Root.CapturedVariable captured_variable ->
             (* Treat any function call, even those that wrap a closure write, as a closure write *)
+            let taint =
+              ForwardState.read ~root ~path:[] forward.generations
+              |> ForwardState.Tree.apply_call
+                   ~pyre_in_context
+                   ~type_of_expression_shared_memory:
+                     FunctionContext.type_of_expression_shared_memory
+                   ~call_site
+                   ~location:call_location
+                   ~callee:target
+                   ~arguments
+                   ~port:root
+                   ~is_class_method
+                   ~is_static_method
+                   ~call_info_intervals
+            in
             let state =
               (* TODO(T169657906): Programatically decide between weak and strong storing of
                  taint *)
@@ -823,7 +838,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                      pyre_in_context
                      captured_variable)
                 ~path:[]
-                (ForwardState.read ~root ~path:[] forward.generations)
+                taint
                 state
             in
             (* TODO(T225700656): Improve handling of captured variable propagation. *)
@@ -836,12 +851,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             (* Propagate captured variable taint up until the function where the nonlocal variable
                is initialized. This is only necessary for Pyre1. *)
             if not is_prefix then
-              store_taint
-                ~weak:true
-                ~root
-                ~path:[]
-                (ForwardState.read ~root ~path:[] forward.generations)
-                state
+              store_taint ~weak:true ~root ~path:[] taint state
             else
               state
         | _ -> state
