@@ -18,8 +18,8 @@ from typing import List, Sequence, Tuple
 
 from setuptools import find_packages, setup
 
-if sys.version_info < (3, 8):
-    sys.exit("Error: {PACKAGE_NAME} only runs on Python 3.8 and above.")
+if sys.version_info < (3, 9):
+    sys.exit("Error: {PACKAGE_NAME} only runs on Python 3.9 and above.")
 
 
 def get_all_files(root: Path, extension_glob: str) -> List[Tuple[str, List[str]]]:
@@ -103,11 +103,12 @@ def run(
             "Operating System :: POSIX :: Linux",
             "Programming Language :: Python",
             "Programming Language :: Python :: 3",
-            "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: 3.10",
             "Programming Language :: Python :: 3.11",
             "Programming Language :: Python :: 3.12",
+            "Programming Language :: Python :: 3.13",
+            "Programming Language :: Python :: 3.14",
             "Topic :: Software Development",
             "Typing :: Typed",
         ],
@@ -119,7 +120,7 @@ def run(
         + get_all_files(root=Path.cwd() / "stubs/lxml", extension_glob="*.pyi")
         + get_all_files(root=Path.cwd() / "pysa_filters", extension_glob="*.json")
         + find_taint_stubs(),
-        python_requires=">=3.8",
+        python_requires=">=3.9",
         install_requires=runtime_dependencies,
         entry_points=dict(  # noqa we need to do this to make this .format-able
             console_scripts=[

@@ -19,7 +19,7 @@ Pyre ships with **Pysa**, a security focused static analysis tool we've built on
 Pysa is also available on the [GitHub Marketplace as a Github Action](https://github.com/marketplace/actions/pysa-action)
 
 ## Requirements
-To get started, you need [Python 3.8 or later](https://www.python.org/getit/) and [watchman](https://facebook.github.io/watchman/) working on your system. On *MacOS* you can get everything with [homebrew](https://brew.sh/):
+To get started, you need [Python 3.9 or later](https://www.python.org/getit/) and [watchman](https://facebook.github.io/watchman/) working on your system. On *MacOS* you can get everything with [homebrew](https://brew.sh/):
 ```bash
 $ brew install python3 watchman
 ```

@@ -18,7 +18,7 @@ import YouTube from 'react-youtube';
 Welcome to the wonderful world of static typing! This guide will get you from zero to a simple project that is type checked with Pyre.
 
 ## Requirements
-To get started, you need [Python 3.8 or later](https://www.python.org/getit/) and [watchman](https://facebook.github.io/watchman/) working on your system. On *MacOS* you can get everything with [homebrew](https://brew.sh/):
+To get started, you need [Python 3.9 or later](https://www.python.org/getit/) and [watchman](https://facebook.github.io/watchman/) working on your system. On *MacOS* you can get everything with [homebrew](https://brew.sh/):
 ```bash
 $ brew install python3 watchman
 ```

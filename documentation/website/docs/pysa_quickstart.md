@@ -30,9 +30,9 @@ If you run into any issues along the way, please refer to the [common issues](#c
 <TabItem value="mac">
 
 <!-- TODO(T88801567) Remove all steps related to setuptools and wheel packages once we resolve T88801567 -->
-Pysa runs on Pyre, so we require the [same dependencies as Pyre](getting_started.md#requirements). You will need Python 3.8 or later, and `setuptools` and `wheel` Python packages.
+Pysa runs on Pyre, so we require the [same dependencies as Pyre](getting_started.md#requirements). You will need Python 3.9 or later, and `setuptools` and `wheel` Python packages.
 ```shell
-$ python3.8 -m pip install --upgrade setuptools
+$ python3 -m pip install --upgrade setuptools
 $ pip3 install wheel
 ```
 
@@ -43,12 +43,12 @@ $ pip3 install wheel
 Since the Python version included in Ubuntu 18.04.5 is Python 3.6.9, we will need to update Python to a newer version.
 ```shell
 $ sudo apt-get update
-$ sudo apt install python3.8 python3.8-venv python3.8-dev python3-pip -y
+$ sudo apt install python3.9 python3.9-venv python3.9-dev python3-pip -y
 ```
 
 Next we need to install `setuptools` and `wheel` python packages:
 ```shell
-$ python3.8 -m pip install --upgrade setuptools
+$ python3.9 -m pip install --upgrade setuptools
 $ pip3 install wheel
 ```
 
@@ -59,7 +59,7 @@ $ pip3 install wheel
 
 1. Set up the virtual environment:
 ```shell
-$ python3.8 -m venv ~/.venvs/pysa
+$ python3 -m venv ~/.venvs/pysa
 $ source ~/.venvs/pysa/bin/activate
 ```
 
@@ -134,20 +134,20 @@ fatal error: Python.h: No such file or directory
 compilation terminated.
 error: command 'x86_64-linux-gnu-gcc' failed with exit status
 ```
-**Solution**: You are missing `setuptools` python package or `python3.8-dev`
+**Solution**: You are missing `setuptools` python package or `python3.9-dev`
 ```shell
-$ sudo apt install python3.8-dev -y
+$ sudo apt install python3.9-dev -y
 $ source ~/.venvs/pysa/bin/activate
-$ (pysa) python3.8 -m pip install --upgrade setuptools
+$ (pysa) python3 -m pip install --upgrade setuptools
 ```
 ---
-**Problem**: Attempting to create a virtual environment with `python3.8 -m venv ~/.venvs/pysa` results in `The virtual environment was not created successfully because ensurepip is not available.`
+**Problem**: Attempting to create a virtual environment with `python3 -m venv ~/.venvs/pysa` results in `The virtual environment was not created successfully because ensurepip is not available.`
 
-**Solution**: You are either missing `python3.8-venv` or `python3.8-dev` package. Make sure you delete the directory created by the failed virtual environment command earlier.
+**Solution**: You are either missing `python3.9-venv` or `python3.9-dev` package. Make sure you delete the directory created by the failed virtual environment command earlier.
 ```shell
-$ sudo apt install python3.8-venv python3.8-dev -y
+$ sudo apt install python3.9-venv python3.9-dev -y
 $ rm -rf ~/.venvs/pysa
-$ python3.8 -m venv ~/.venvs/pysa
+$ python3 -m venv ~/.venvs/pysa
 ```
 ----
 **Problem**: Running `pip install fb-sapp` or `pip install pyre-check` fails to install, because of a series of `error: invalid command 'bdist_wheel'` errors
@@ -155,7 +155,7 @@ $ python3.8 -m venv ~/.venvs/pysa
 **Solution**: You are missing either `wheel` or `setuptools` package
 ```shell
 $ (pysa) pip3 install wheel
-$ (pysa) python3.8 -m pip install --upgrade setuptools
+$ (pysa) python3 -m pip install --upgrade setuptools
 ```
 ----
 **Problem**: `pyre init-pysa` shows `ƛ Source directory path/to/dir does not exist. Be sure the source path is relative to the import_root`.
@@ -230,7 +230,7 @@ If you do use the `module.path.function_name` mentioned in your project and the 
 ----
 **Problem**: Running any `sapp` command results in `SyntaxError: future feature annotations is not defined`
 
-**Solution**: SAPP requires Python 3.8. Ensure you are running a Python version later than Python 3.8
+**Solution**: SAPP requires Python 3.9. Ensure you are running a Python version later than Python 3.9
 ```shell
 $ python3 --version
 ```
