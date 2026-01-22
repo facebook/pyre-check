@@ -1259,6 +1259,80 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "string_conversion.propagate_taint",
+    "callable_line": 62,
+    "code": 5001,
+    "line": 63,
+    "start": 9,
+    "end": 39,
+    "filename": "string_conversion.py",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{django.http.Request.GET}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "tainted" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 63, "start": 12, "end": 37 },
+              { "line": 63, "start": 14, "end": 36 }
+            ],
+            "origin": { "line": 63, "start": 14, "end": 25 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": { "line": 63, "start": 9, "end": 39 },
+            "call_site": "63:4-63:40"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "tainted" },
+      { "always-via": "format-string" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "builtins.eval",
+      "index": 0,
+      "parameter": "formal(source)"
+    },
+    "master_handle": "string_conversion.propagate_taint:5001:0:Call|builtins.eval|0|formal(source):f047cbc7731d0999ead3009c0ca6f6d2"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "string_conversion.repr_is_tainted",
     "callable_line": 29,
     "code": 5001,

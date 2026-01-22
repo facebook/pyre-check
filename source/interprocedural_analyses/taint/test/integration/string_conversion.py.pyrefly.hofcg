@@ -1135,6 +1135,18 @@ Higher order call graphs
         }
       ]
     },
+    "63:14-63:25": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{django.http.Request.GET}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
     "63:14-63:36|artificial-call|subscript-get-item": {
       "call": {
         "calls": [

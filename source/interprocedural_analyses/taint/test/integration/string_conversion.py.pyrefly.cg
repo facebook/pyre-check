@@ -104,7 +104,7 @@ Call dependencies
   ],
   "string_conversion.propagate_taint (fun)": [
     "builtins.dict.__getitem__ (method)", "builtins.eval (fun)",
-    "builtins.object.__new__ (method)",
+    "builtins.object.__new__ (method)", "django.http.Request.GET (object)",
     "string_conversion.A.__init__ (method)",
     "string_conversion.A.__str__ (method)"
   ],

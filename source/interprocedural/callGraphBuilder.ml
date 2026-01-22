@@ -5313,14 +5313,17 @@ let build_whole_program_call_graph_for_pyrefly
           in
           List.fold ~f:add_case_targets ~init:call_graph cases
         in
-        let module Visitor = Ast.Visit.Make (struct
+        let module NodeVisitor = Ast.Visit.MakeNodeVisitor (struct
           type t = DefineCallGraph.t
 
           let debug =
             Ast.Statement.Define.dump define || Ast.Statement.Define.dump_call_graph define
 
 
-          let expression call_graph { Node.value = expression; location = expression_location } =
+          let visit_expression
+              call_graph
+              { Node.value = expression; location = expression_location }
+            =
             match expression with
             | Expression.Name (Ast.Expression.Name.Attribute attribute_access) ->
                 (* For each attribute access, check the base and determine whether the attribute has
@@ -5332,14 +5335,31 @@ let build_whole_program_call_graph_for_pyrefly
             | _ -> call_graph
 
 
-          let statement call_graph { Node.value = statement; location = _ } =
+          let visit_statement call_graph { Node.value = statement; location = _ } =
             match statement with
             | Statement.Try try_ -> add_try_handler_targets ~try_ call_graph
             | Statement.Match match_ -> add_match_targets ~match_ call_graph
             | _ -> call_graph
+
+
+          let node state = function
+            | Ast.Visit.Expression expression -> visit_expression state expression
+            | Ast.Visit.Statement statement -> visit_statement state statement
+            | _ -> state
+
+
+          let visit_statement_children _ _ = true
+
+          let visit_expression_children _ _ = true
+
+          let visit_format_string_children _ _ = true
+
+          let visit_expression_based_on_parent ~parent_expression:_ _ = true
         end)
         in
-        Visitor.visit call_graph (Source.create [Node.create ~location (Statement.Define define)])
+        NodeVisitor.visit
+          call_graph
+          (Source.create [Node.create ~location (Statement.Define define)])
     | _ -> call_graph
   in
   let transform_call_graph _ callable call_graph =
