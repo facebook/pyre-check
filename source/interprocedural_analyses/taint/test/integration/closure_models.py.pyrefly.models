@@ -1,5 +1,66 @@
 @generated
 {
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.captured_variable_model_both_generation_parameter_source",
+    "callable_line": 163,
+    "code": 5002,
+    "line": 171,
+    "start": 15,
+    "end": 31,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          { "kinds": [ { "kind": "Test" } ], "declaration": null },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.captured_variable_model_both_generation_parameter_source.model_all_captured_as_generation_and_parameter_sources",
+                    "port": "leaf:complicated_name"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 167, "start": 4, "end": 4 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 171, "start": 15, "end": 31 },
+            "call_site": "171:4-171:32"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "closure_models.captured_variable_model_both_generation_parameter_source:5002:0:Call|pysa._test_sink|0|formal(arg):29f33cdcb23131c6bca697f99d3ad083"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "closure_models.captured_variable_model_both_generation_parameter_source.model_all_captured_as_generation_and_parameter_sources",
@@ -8,7 +69,23 @@
     "sources": [
       {
         "port": "captured_variable(complicated_name, closure_models.captured_variable_model_both_generation_parameter_source)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "Test" } ], "declaration": null },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.captured_variable_model_both_generation_parameter_source.model_all_captured_as_generation_and_parameter_sources",
+                    "port": "leaf:complicated_name"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 167, "start": 4, "end": 4 }
+          }
+        ]
       }
     ],
     "parameter_sources": [
@@ -17,6 +94,111 @@
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.captured_variable_model_both_generation_parameter_source.model_all_captured_as_generation_and_parameter_sources",
+    "callable_line": 167,
+    "code": 5002,
+    "line": 168,
+    "start": 19,
+    "end": 35,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.captured_variable_model_both_generation_parameter_source.model_all_captured_as_generation_and_parameter_sources",
+                    "port": "leaf:complicated_name"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 167, "start": 4, "end": 4 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 168, "start": 19, "end": 35 },
+            "call_site": "168:8-168:36"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "closure_models.captured_variable_model_both_generation_parameter_source.model_all_captured_as_generation_and_parameter_sources:5002:0:Call|pysa._test_sink|0|formal(arg):ada902f4941099fc88a9337f19162e9d"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.captured_variable_model_generation_source",
+    "callable_line": 151,
+    "code": 5002,
+    "line": 160,
+    "start": 15,
+    "end": 31,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 160, "start": 15, "end": 31 },
+            "call_site": "160:4-160:32"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "closure_models.captured_variable_model_generation_source:5002:0:Call|pysa._test_sink|0|formal(arg):5814f70ec3bb56bdaf0f56bd52e43948"
   }
 }
 {
@@ -34,17 +216,217 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.captured_variable_model_parameter_source",
+    "callable_line": 138,
+    "code": 5002,
+    "line": 148,
+    "start": 15,
+    "end": 31,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.captured_variable_model_parameter_source.model_all_captured_as_parameter_sources",
+                    "port": "leaf:complicated_name"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 144, "start": 4, "end": 4 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 148, "start": 15, "end": 31 },
+            "call_site": "148:4-148:32"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "closure_models.captured_variable_model_parameter_source:5002:0:Call|pysa._test_sink|1|formal(arg):8163f79558d87fc2da37711097e934ed"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "closure_models.captured_variable_model_parameter_source.model_all_captured_as_parameter_sources",
     "filename": "closure_models.py",
     "callable_line": 144,
+    "sources": [
+      {
+        "port": "captured_variable(complicated_name, closure_models.captured_variable_model_parameter_source)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.captured_variable_model_parameter_source.model_all_captured_as_parameter_sources",
+                    "port": "leaf:complicated_name"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 144, "start": 4, "end": 4 }
+          }
+        ]
+      }
+    ],
     "parameter_sources": [
       {
         "port": "captured_variable(complicated_name, closure_models.captured_variable_model_parameter_source)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.captured_variable_model_parameter_source.model_all_captured_as_parameter_sources",
+    "callable_line": 144,
+    "code": 5002,
+    "line": 145,
+    "start": 19,
+    "end": 35,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.captured_variable_model_parameter_source.model_all_captured_as_parameter_sources",
+                    "port": "leaf:complicated_name"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 144, "start": 4, "end": 4 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 145, "start": 19, "end": 35 },
+            "call_site": "145:8-145:36"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "closure_models.captured_variable_model_parameter_source.model_all_captured_as_parameter_sources:5002:0:Call|pysa._test_sink|0|formal(arg):83350db0c5df9e582457499ed294daab"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.captured_variable_model_sink",
+    "callable_line": 174,
+    "code": 5002,
+    "line": 181,
+    "start": 4,
+    "end": 33,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 175, "start": 23, "end": 37 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.captured_variable_model_sink.model_all_captured_as_sinks",
+                    "port": "leaf:complicated_name"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 181, "start": 4, "end": 33 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure_models.captured_variable_model_sink.model_all_captured_as_sinks",
+      "index": 0,
+      "parameter": "captured_variable(complicated_name, closure_models.captured_variable_model_sink)"
+    },
+    "master_handle": "closure_models.captured_variable_model_sink:5002:0:Call|closure_models.captured_variable_model_sink.model_all_captured_as_sinks|0|captured_variable(complicated_name, closure_models.captured_variable_model_sink):bf7a5f96c753a6cc2adfdd589561276c"
   }
 }
 {
@@ -59,6 +441,70 @@
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.captured_variable_model_tito",
+    "callable_line": 128,
+    "code": 5002,
+    "line": 135,
+    "start": 15,
+    "end": 43,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 135, "start": 15, "end": 43 } ],
+            "origin": { "line": 129, "start": 23, "end": 37 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 135, "start": 15, "end": 43 },
+            "call_site": "135:4-135:44"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "closure_models.captured_variable_model_tito:5002:0:Call|pysa._test_sink|0|formal(arg):2a4e2421fb6456d92de21407dd179e25"
   }
 }
 {
@@ -454,6 +900,164 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.test",
+    "callable_line": 39,
+    "code": 5002,
+    "line": 79,
+    "start": 4,
+    "end": 9,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature1-value": "breadcrumb1" },
+              { "always-via": "higher-order-parameter" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 76, "start": 14, "end": 37 } ],
+            "origin": { "line": 48, "start": 13, "end": 27 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.Reclassification.reclassify",
+                    "port": "leaf:self"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature2-value": "breadcrumb2" }
+            ],
+            "origin": { "line": 79, "start": 4, "end": 9 },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "call_site": "79:4-79:43"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via-feature1-value": "breadcrumb1" },
+      { "always-via": "higher-order-parameter" },
+      { "always-via-feature2-value": "breadcrumb2" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure_models.Reclassification.reclassify",
+      "index": 3,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "closure_models.test:5002:0:Call|closure_models.Reclassification.reclassify|3|formal(self):02ec2d87642bc9b886fb25ca643d42f9"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.test",
+    "callable_line": 39,
+    "code": 5002,
+    "line": 85,
+    "start": 4,
+    "end": 9,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature1-value": "breadcrumb1" },
+              { "always-via": "higher-order-parameter" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 82, "start": 14, "end": 37 } ],
+            "origin": { "line": 48, "start": 13, "end": 27 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.Reclassification.reclassify",
+                    "port": "leaf:self"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature2-value": "breadcrumb2" }
+            ],
+            "origin": { "line": 85, "start": 4, "end": 9 },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "call_site": "85:4-85:43"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via-feature1-value": "breadcrumb1" },
+      { "always-via": "higher-order-parameter" },
+      { "always-via-feature2-value": "breadcrumb2" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure_models.Reclassification.reclassify",
+      "index": 4,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "closure_models.test:5002:0:Call|closure_models.Reclassification.reclassify|4|formal(self):9e385e5ace0f8fb33cf488693dbae210"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "closure_models.test.return_model_query_tito",
@@ -539,6 +1143,27 @@
     "callable": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable",
     "filename": "closure_models.py",
     "callable_line": 124,
+    "sources": [
+      {
+        "port": "captured_variable(some_data, closure_models.test_dsl_decorator_source)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable",
+                    "port": "leaf:some_data"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 124, "start": 4, "end": 4 }
+          }
+        ]
+      }
+    ],
     "parameter_sources": [
       {
         "port": "captured_variable(some_data, closure_models.test_dsl_decorator_source)",
@@ -549,11 +1174,92 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable",
+    "callable_line": 124,
+    "code": 5002,
+    "line": 125,
+    "start": 19,
+    "end": 28,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable",
+                    "port": "leaf:some_data"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 124, "start": 4, "end": 4 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 125, "start": 19, "end": 28 },
+            "call_site": "125:8-125:29"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable:5002:0:Call|pysa._test_sink|0|formal(arg):09bef4b1a934065aa5b0094039c0c3b7"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "closure_models.test_dsl_source.local_function_capturing_local_variable",
     "filename": "closure_models.py",
     "callable_line": 118,
+    "sources": [
+      {
+        "port": "captured_variable(some_data, closure_models.test_dsl_source)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.test_dsl_source.local_function_capturing_local_variable",
+                    "port": "leaf:some_data"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 118, "start": 4, "end": 4 }
+          }
+        ]
+      }
+    ],
     "parameter_sources": [
       {
         "port": "captured_variable(some_data, closure_models.test_dsl_source)",
@@ -561,6 +1267,248 @@
       }
     ],
     "model_generators": [ "mark_captured_locals_as_tainted" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.test_dsl_source.local_function_capturing_local_variable",
+    "callable_line": 118,
+    "code": 5002,
+    "line": 119,
+    "start": 19,
+    "end": 28,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.test_dsl_source.local_function_capturing_local_variable",
+                    "port": "leaf:some_data"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 118, "start": 4, "end": 4 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 119, "start": 19, "end": 28 },
+            "call_site": "119:8-119:29"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "closure_models.test_dsl_source.local_function_capturing_local_variable:5002:0:Call|pysa._test_sink|0|formal(arg):5e21bdf2df64497dbc751c5084454e84"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.test_tito_transform",
+    "callable_line": 88,
+    "code": 5003,
+    "line": 101,
+    "start": 4,
+    "end": 9,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "ReclassificationFakeTITO",
+                    "origin": { "line": 98, "start": 14, "end": 37 },
+                    "leaf_kind": "ReclassificationFakeTITO:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:1" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "ReclassificationFakeTITO@Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature1-value": "breadcrumb1" },
+              { "always-via": "higher-order-parameter" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 98, "start": 14, "end": 37 } ],
+            "origin": { "line": 89, "start": 13, "end": 27 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.Reclassification.reclassify",
+                    "port": "leaf:self"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature2-value": "breadcrumb2" }
+            ],
+            "origin": { "line": 101, "start": 4, "end": 9 },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "call_site": "101:4-101:43"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" },
+      { "always-via": "special_source" },
+      { "always-via-feature1-value": "breadcrumb1" },
+      { "always-via": "higher-order-parameter" },
+      { "always-via-feature2-value": "breadcrumb2" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure_models.Reclassification.reclassify",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "closure_models.test_tito_transform:5003:0:Call|closure_models.Reclassification.reclassify|0|formal(self):0c879c67e21f72dde5558f1a463d51c1"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.test_tito_transform",
+    "callable_line": 88,
+    "code": 5003,
+    "line": 107,
+    "start": 4,
+    "end": 9,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "ReclassificationFakeTITO",
+                    "origin": { "line": 104, "start": 14, "end": 37 },
+                    "leaf_kind": "ReclassificationFakeTITO:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
+                "local_features": [
+                  { "always-via": "transform-tito-depth:1" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "ReclassificationFakeTITO@Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature1-value": "breadcrumb1" },
+              { "always-via": "higher-order-parameter" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 104, "start": 14, "end": 37 } ],
+            "origin": { "line": 89, "start": 13, "end": 27 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.Reclassification.reclassify",
+                    "port": "leaf:self"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature2-value": "breadcrumb2" }
+            ],
+            "origin": { "line": 107, "start": 4, "end": 9 },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "call_site": "107:4-107:43"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" },
+      { "always-via": "special_source" },
+      { "always-via-feature1-value": "breadcrumb1" },
+      { "always-via": "higher-order-parameter" },
+      { "always-via-feature2-value": "breadcrumb2" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure_models.Reclassification.reclassify",
+      "index": 1,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "closure_models.test_tito_transform:5003:0:Call|closure_models.Reclassification.reclassify|1|formal(self):308866c2d1a82bac54dfa745bbc59889"
   }
 }
 {

@@ -19,7 +19,10 @@ let test_of_expression _ =
         | None -> "None"
         | Some access_path -> AccessPath.show access_path)
       expected
-      (AccessPath.of_expression ~self_variable:(Some (AccessPath.Root.Variable "self")) expression)
+      (AccessPath.of_expression
+         ~self_variable:(Some (AccessPath.Root.Variable "self"))
+         ~root_of_identifier:(fun ~location:_ ~identifier -> AccessPath.Root.Variable identifier)
+         expression)
   in
   assert_of_expression !+"a" (Some { AccessPath.root = AccessPath.Root.Variable "a"; path = [] });
   assert_of_expression

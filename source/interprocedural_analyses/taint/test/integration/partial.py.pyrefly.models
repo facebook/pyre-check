@@ -7,6 +7,54 @@
     "callable_line": 137,
     "tito": [
       {
+        "port": "captured_variable(self, partial.NestedDefineDecorator.__get__)[_func]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "obscure:unknown-callee" },
+              { "always-via": "captured-variable" }
+            ],
+            "tito_positions": [ { "line": 139, "start": 19, "end": 23 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 6, "upper": 7 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      },
+      {
+        "port": "captured_variable(instance, partial.NestedDefineDecorator.__get__)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "obscure:unknown-callee" },
+              { "always-via": "captured-variable" }
+            ],
+            "tito_positions": [ { "line": 139, "start": 40, "end": 48 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 6, "upper": 7 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      },
+      {
         "port": "formal(**kwargs)[*]",
         "taint": [
           {

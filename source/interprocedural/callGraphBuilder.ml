@@ -3022,6 +3022,7 @@ module HigherOrderCallGraph = struct
              let root =
                match TaintAccessPath.Root.parameter_name root with
                | Some name ->
+                   (* TODO(T225700656): This does not work for pyrefly *)
                    name
                    |> TaintAccessPath.Root.prepend_parameter_prefix
                    |> create_root_from_identifier
@@ -3916,7 +3917,9 @@ module HigherOrderCallGraph = struct
               |> Option.value ~default:CallTarget.Set.bottom
             in
             let callables_from_variable =
-              State.get (State.create_root_from_identifier identifier) state
+              State.get
+                (PyrePysaApi.InContext.root_of_identifier pyre_in_context ~location ~identifier)
+                state
             in
             CallTarget.Set.join global_callables callables_from_variable, state
         | Name (Name.Attribute attribute_access) ->
@@ -4096,7 +4099,9 @@ module HigherOrderCallGraph = struct
         in
         match Node.value statement with
         | Statement.Assign { Assign.target; value = Some value; _ } -> (
-            match TaintAccessPath.of_expression ~self_variable target with
+            match
+              PyrePysaApi.InContext.access_path_of_expression pyre_in_context ~self_variable target
+            with
             | None -> state
             | Some { root; path } ->
                 let callees, state = analyze_expression ~pyre_in_context ~state ~expression:value in
@@ -4106,7 +4111,9 @@ module HigherOrderCallGraph = struct
                 let strong_update = TaintAccessPath.Path.is_empty path in
                 store_callees ~weak:(not strong_update) ~root ~callees state)
         | Assign { Assign.target; value = None; _ } -> (
-            match TaintAccessPath.of_expression ~self_variable target with
+            match
+              PyrePysaApi.InContext.access_path_of_expression pyre_in_context ~self_variable target
+            with
             | None -> state
             | Some { root; path } ->
                 let strong_update = TaintAccessPath.Path.is_empty path in
@@ -4163,7 +4170,9 @@ module HigherOrderCallGraph = struct
                     captures
                     |> List.filter_map ~f:(fun captured_variable ->
                            let captured =
-                             TaintAccessPath.Root.captured_variable_to_variable captured_variable
+                             PyrePysaApi.InContext.propagate_captured_variable
+                               pyre_in_context
+                               captured_variable
                            in
                            log "Inner function captures `%a`" TaintAccessPath.Root.pp captured;
                            let parameter_targets =

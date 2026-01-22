@@ -502,7 +502,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         |> SinkTreeWithHandle.join
       in
       let taint_from_state =
-        let access_path = AccessPath.of_expression ~self_variable argument in
+        let access_path =
+          PyrePysaApi.InContext.access_path_of_expression pyre_in_context ~self_variable argument
+        in
         get_taint access_path initial_state
       in
       let implicit_self_taint =
@@ -718,7 +720,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let sink_taint = SinkTreeWithHandle.join sink_trees in
       let taint = BackwardState.Tree.join sink_taint taint_in_taint_out in
       let state =
-        match AccessPath.of_expression ~self_variable argument with
+        match
+          PyrePysaApi.InContext.access_path_of_expression pyre_in_context ~self_variable argument
+        with
         | Some { AccessPath.root; path } ->
             let breadcrumbs_to_add =
               BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument sink_taint
@@ -741,6 +745,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let _, captures =
       CallModel.match_captures
+        ~pyre_in_context
         ~model:taint_model
         ~captures_taint:ForwardState.empty
         ~location:call_location
@@ -1918,7 +1923,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            Name
              (Name.Attribute
                {
-                 base = { Node.value = Name (Name.Identifier identifier); _ } as base;
+                 base =
+                   { Node.value = Name (Name.Identifier identifier); location = base_location } as
+                   base;
                  attribute = "update";
                  _;
                });
@@ -1930,6 +1937,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     }
       when CallGraph.CallCallees.is_mapping_method callees
            && Option.is_some (Dictionary.string_literal_keys entries) ->
+        let base_root =
+          PyrePysaApi.InContext.root_of_identifier
+            pyre_in_context
+            ~location:base_location
+            ~identifier
+        in
         let entries = Option.value_exn (Dictionary.string_literal_keys entries) in
         let dict_taint =
           let global_taint =
@@ -1944,11 +1957,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                  ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
             |> SinkTreeWithHandle.join
           in
-          let state_taint =
-            get_taint
-              (Some { AccessPath.root = AccessPath.Root.Variable identifier; path = [] })
-              state
-          in
+          let state_taint = get_taint (Some { AccessPath.root = base_root; path = [] }) state in
           BackwardState.Tree.join global_taint state_taint
         in
         let override_taint_from_update (taint, state) (key, value) =
@@ -1972,7 +1981,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let taint, state =
           List.fold entries ~init:(dict_taint, state) ~f:override_taint_from_update
         in
-        store_taint ~root:(AccessPath.Root.Variable identifier) ~path:[] taint state
+        store_taint ~root:base_root ~path:[] taint state
     | {
      callee =
        {
@@ -1980,7 +1989,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            Name
              (Name.Attribute
                {
-                 base = { Node.value = Name (Name.Identifier identifier); _ } as base;
+                 base =
+                   { Node.value = Name (Name.Identifier identifier); location = base_location } as
+                   base;
                  attribute = "update";
                  _;
                });
@@ -1996,6 +2007,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                    FunctionContext.type_of_expression_shared_memory
                    ~pyre_in_context
                    argument) ->
+        let base_root =
+          PyrePysaApi.InContext.root_of_identifier
+            pyre_in_context
+            ~location:base_location
+            ~identifier
+        in
         let dict_taint =
           let global_taint =
             GlobalModel.from_expression
@@ -2009,11 +2026,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                  ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
             |> SinkTreeWithHandle.join
           in
-          let state_taint =
-            get_taint
-              (Some { AccessPath.root = AccessPath.Root.Variable identifier; path = [] })
-              state
-          in
+          let state_taint = get_taint (Some { AccessPath.root = base_root; path = [] }) state in
           BackwardState.Tree.join global_taint state_taint
         in
         let state =
@@ -2026,7 +2039,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           analyze_expression ~pyre_in_context ~taint:dict_taint ~state ~expression:argument
         in
-        store_taint ~root:(AccessPath.Root.Variable identifier) ~path:[] dict_taint state
+        store_taint ~root:base_root ~path:[] dict_taint state
     | {
      callee =
        {
@@ -2034,7 +2047,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            Name
              (Name.Attribute
                {
-                 base = { Node.value = Name (Name.Identifier identifier); _ };
+                 base = { Node.value = Name (Name.Identifier identifier); location = base_location };
                  attribute = "pop";
                  _;
                });
@@ -2051,17 +2064,20 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      origin = _;
     }
       when CallGraph.CallCallees.is_mapping_method callees ->
-        let access_path =
-          Some { AccessPath.root = AccessPath.Root.Variable identifier; path = [] }
+        let base_root =
+          PyrePysaApi.InContext.root_of_identifier
+            pyre_in_context
+            ~location:base_location
+            ~identifier
         in
-        let old_taint = get_taint access_path state in
+        let old_taint = get_taint (Some { AccessPath.root = base_root; path = [] }) state in
         let new_taint =
           BackwardState.Tree.assign
             ~tree:old_taint
             [Abstract.TreeDomain.Label.Index value]
             ~subtree:(add_type_breadcrumbs taint)
         in
-        store_taint ~root:(AccessPath.Root.Variable identifier) ~path:[] new_taint state
+        store_taint ~root:base_root ~path:[] new_taint state
     | {
      callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ };
      arguments = [];
@@ -2336,7 +2352,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      origin = _;
     } ->
         begin
-          match AccessPath.of_expression ~self_variable expression with
+          match
+            PyrePysaApi.InContext.access_path_of_expression
+              pyre_in_context
+              ~self_variable
+              expression
+          with
           | None ->
               Log.dump
                 "%a: Revealed backward taint for `%s`: expression is too complex"
@@ -2545,6 +2566,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | ListComprehension comprehension ->
           analyze_comprehension ~pyre_in_context taint comprehension state
       | Name (Name.Identifier identifier) ->
+          let root =
+            PyrePysaApi.InContext.root_of_identifier pyre_in_context ~location ~identifier
+          in
           let taint =
             BackwardState.Tree.add_local_type_breadcrumbs
               ~pyre_in_context
@@ -2552,7 +2576,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~expression:{ Node.value; location }
               taint
           in
-          store_taint ~weak:true ~root:(AccessPath.Root.Variable identifier) ~path:[] taint state
+          store_taint ~weak:true ~root ~path:[] taint state
       | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
           analyze_expression ~pyre_in_context ~taint ~state ~expression:base
       | Name (Name.Attribute attribute_access) ->
@@ -2687,7 +2711,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | _ ->
         let taint =
           let local_taint =
-            let access_path = AccessPath.of_expression ~self_variable target in
+            let access_path =
+              PyrePysaApi.InContext.access_path_of_expression pyre_in_context ~self_variable target
+            in
             get_taint access_path state
           in
           let global_taint =
@@ -2707,11 +2733,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         taint, false
 
 
-  and clear_target_taint ~fields state target =
+  and clear_target_taint ~pyre_in_context ~fields state target =
     match Node.value target with
-    | Expression.Tuple items -> List.fold items ~f:(clear_target_taint ~fields) ~init:state
+    | Expression.Tuple items ->
+        List.fold items ~f:(clear_target_taint ~pyre_in_context ~fields) ~init:state
     | _ -> (
-        match AccessPath.of_expression ~self_variable target with
+        match
+          PyrePysaApi.InContext.access_path_of_expression pyre_in_context ~self_variable target
+        with
         | Some { root; path } ->
             {
               taint =
@@ -2745,7 +2774,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       if weak then (* Weak updates do not remove the taint. *)
         state
       else
-        clear_target_taint ~fields state target
+        clear_target_taint ~pyre_in_context ~fields state target
     in
     analyze_expression ~pyre_in_context ~taint ~state ~expression:value
 
@@ -2876,7 +2905,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Define define -> analyze_definition ~define state
     | Delete expressions ->
         let process_expression state expression =
-          match AccessPath.of_expression ~self_variable expression with
+          match
+            PyrePysaApi.InContext.access_path_of_expression
+              pyre_in_context
+              ~self_variable
+              expression
+          with
           | Some { AccessPath.root; path } ->
               { taint = BackwardState.assign ~root ~path BackwardState.Tree.bottom state.taint }
           | _ -> state
@@ -2953,6 +2987,8 @@ end
 
 let get_normalized_parameters
     ~pyre_api
+    ~qualifier
+    ~call_graph_of_define
     ~define_name
     ({ Statement.Define.signature = { parameters; _ }; _ } as define)
   =
@@ -2961,7 +2997,14 @@ let get_normalized_parameters
     |> AccessPath.normalize_parameters
     |> PyrePysaApi.ReadOnly.get_callable_parameter_annotations pyre_api ~define_name
     |> List.map ~f:(fun ({ AccessPath.NormalizedParameter.root; qualified_name; _ }, annotations) ->
-           root, qualified_name, annotations)
+           root, AccessPath.Root.Variable qualified_name, annotations)
+  in
+  let pyre_in_context =
+    PyrePysaApi.InContext.create_at_function_scope
+      pyre_api
+      ~module_qualifier:qualifier
+      ~define_name
+      ~call_graph:call_graph_of_define
   in
   let captures =
     match pyre_api with
@@ -2970,16 +3013,16 @@ let get_normalized_parameters
     | PyrePysaApi.ReadOnly.Pyrefly _ ->
         PyrePysaApi.ReadOnly.get_callable_captures pyre_api define_name
   in
-  let normalized_captures =
-    List.map captures ~f:(fun capture ->
-        let qualified_name =
-          match AccessPath.Root.captured_variable_to_variable capture with
-          | AccessPath.Root.Variable qualified_name -> qualified_name
-          | _ -> failwith "unreachable"
+  let captures =
+    List.map
+      ~f:(fun capture ->
+        let state_root =
+          PyrePysaApi.InContext.state_root_of_captured_variable pyre_in_context capture
         in
-        AccessPath.Root.CapturedVariable capture, qualified_name, [])
+        AccessPath.Root.CapturedVariable capture, state_root, [])
+      captures
   in
-  List.append normalized_parameters normalized_captures
+  List.append normalized_parameters captures
 
 
 (* Split the inferred entry state into externally visible taint_in_taint_out parts and
@@ -3031,23 +3074,23 @@ let extract_tito_and_sink_models
     in
     BackwardState.Tree.add_local_breadcrumbs type_breadcrumbs tree
   in
-  let split_and_simplify model (parameter, qualified_name, annotations) =
+  let split_and_simplify model (model_root, state_root, annotations) =
     let partition =
       SinkPartition.read_and_partition_sinks
-        ~root:(AccessPath.Root.Variable qualified_name)
+        ~root:state_root
         ~extract_sink:Sinks.discard_transforms
         entry_taint
     in
     let taint_in_taint_out =
       let breadcrumbs_to_attach, via_features_to_attach =
         BackwardState.extract_features_to_attach
-          ~root:parameter
+          ~root:model_root
           ~attach_to_kind:Sinks.Attach
           existing_backward.Model.Backward.taint_in_taint_out
       in
       let discard_trivial_tito partition =
         (* Remove trivial taint-in-taint-out Argument(x) -> Argument(x) *)
-        Map.Poly.change partition (Sinks.ParameterUpdate parameter) ~f:(function
+        Map.Poly.change partition (Sinks.ParameterUpdate model_root) ~f:(function
             | Some tito_taint ->
                 (* Drop sanitizers. Since tito between arguments is implemented as a weak update, we
                    will always assume Argument(x) -> Argument(x) is a valid flow. Adding sanitizers
@@ -3066,7 +3109,7 @@ let extract_tito_and_sink_models
                   Domains.local_return_frame
                     ~output_path:[]
                     ~collapse_depth:maximum_tito_collapse_depth
-                  |> BackwardTaint.singleton (CallInfo.tito ()) (Sinks.ParameterUpdate parameter)
+                  |> BackwardTaint.singleton (CallInfo.tito ()) (Sinks.ParameterUpdate model_root)
                   |> BackwardState.Tree.create_leaf
                   |> BackwardState.Tree.essential ~preserve_return_access_paths:true
                 in
@@ -3144,7 +3187,7 @@ let extract_tito_and_sink_models
     let sink_taint =
       let breadcrumbs_to_attach, via_features_to_attach =
         BackwardState.extract_features_to_attach
-          ~root:parameter
+          ~root:model_root
           ~attach_to_kind:Sinks.Attach
           existing_backward.Model.Backward.sink_taint
       in
@@ -3155,8 +3198,8 @@ let extract_tito_and_sink_models
     Model.Backward.
       {
         taint_in_taint_out =
-          BackwardState.assign ~root:parameter ~path:[] taint_in_taint_out model.taint_in_taint_out;
-        sink_taint = BackwardState.assign ~root:parameter ~path:[] sink_taint model.sink_taint;
+          BackwardState.assign ~root:model_root ~path:[] taint_in_taint_out model.taint_in_taint_out;
+        sink_taint = BackwardState.assign ~root:model_root ~path:[] sink_taint model.sink_taint;
       }
   in
   List.fold normalized_parameters ~f:split_and_simplify ~init:Model.Backward.empty
@@ -3310,7 +3353,9 @@ let run
   let apply_broadening =
     not (Model.ModeSet.contains Model.Mode.SkipModelBroadening existing_model.Model.modes)
   in
-  let normalized_parameters = get_normalized_parameters ~pyre_api ~define_name define.value in
+  let normalized_parameters =
+    get_normalized_parameters ~pyre_api ~qualifier ~call_graph_of_define ~define_name define.value
+  in
   let extract_model State.{ taint; _ } =
     TaintProfiler.track_duration ~profiler ~name:"Backward analysis - extract model" ~f:(fun () ->
         extract_tito_and_sink_models

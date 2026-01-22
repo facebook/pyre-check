@@ -318,6 +318,18 @@ module InContext : sig
   val module_qualifier : t -> Ast.Reference.t
 
   val define_name : t -> Ast.Reference.t
+
+  val root_of_identifier
+    :  t ->
+    location:Ast.Location.t ->
+    identifier:Ast.Identifier.t ->
+    Analysis.TaintAccessPath.Root.t
+
+  val propagate_captured_variable
+    :  t ->
+    defining_function:Ast.Reference.t ->
+    name:Ast.Identifier.t ->
+    Analysis.TaintAccessPath.Root.t
 end
 
 (* Exposed for testing purposes *)

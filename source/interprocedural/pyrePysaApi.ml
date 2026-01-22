@@ -572,6 +572,67 @@ module InContext = struct
   let define_name = function
     | Pyre1 pyre_context -> Pyre1Api.InContext.define_name pyre_context
     | Pyrefly pyrefly_context -> PyreflyApi.InContext.define_name pyrefly_context
+
+
+  let root_of_identifier api ~location ~identifier =
+    match api with
+    | Pyre1 _ -> TaintAccessPath.Root.Variable identifier
+    | Pyrefly pyrefly_context ->
+        PyreflyApi.InContext.root_of_identifier pyrefly_context ~location ~identifier
+
+
+  let access_path_of_expression api ~self_variable expression =
+    match api with
+    | Pyre1 _ ->
+        TaintAccessPath.of_expression
+          ~root_of_identifier:(fun ~location:_ ~identifier ->
+            TaintAccessPath.Root.Variable identifier)
+          ~self_variable
+          expression
+    | Pyrefly pyrefly_context ->
+        TaintAccessPath.of_expression
+          ~root_of_identifier:(PyreflyApi.InContext.root_of_identifier pyrefly_context)
+          ~self_variable
+          expression
+
+
+  (* Propagate a captured variable from a callee to a caller. Return the new root representing that
+     variable in the caller. *)
+  let propagate_captured_variable api = function
+    | TaintAccessPath.CapturedVariable.Pyre1Parameter { name } ->
+        TaintAccessPath.Root.Variable (Analysis.Preprocessing.get_qualified_parameter name)
+    | TaintAccessPath.CapturedVariable.FromFunction { name; defining_function } -> (
+        match api with
+        | Pyre1 _ ->
+            TaintAccessPath.Root.Variable
+              (Analysis.Preprocessing.get_qualified_local_identifier
+                 ~qualifier:defining_function
+                 name)
+        | Pyrefly pyrefly_context ->
+            PyreflyApi.InContext.propagate_captured_variable
+              pyrefly_context
+              ~defining_function
+              ~name)
+
+
+  (* Turn a captured variable root into a root for the state. Used to assign user provided sources
+     for captured variables at the beginning of the forward analysis. *)
+  let state_root_of_captured_variable api captured_variable =
+    match api with
+    | Pyre1 _ -> (
+        (* In pyre1, captured variable are represented with Root.Variable in the state, using a
+           qualified name *)
+        match captured_variable with
+        | TaintAccessPath.CapturedVariable.Pyre1Parameter { name } ->
+            TaintAccessPath.Root.Variable (Analysis.Preprocessing.get_qualified_parameter name)
+        | TaintAccessPath.CapturedVariable.FromFunction { name; defining_function } ->
+            TaintAccessPath.Root.Variable
+              (Analysis.Preprocessing.get_qualified_local_identifier
+                 ~qualifier:defining_function
+                 name))
+    | Pyrefly _ ->
+        (* In pyrefly, captured variable are represented with Root.CapturedVariable in the state. *)
+        TaintAccessPath.Root.CapturedVariable captured_variable
 end
 
 module ModelQueries = struct

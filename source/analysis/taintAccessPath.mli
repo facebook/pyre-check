@@ -52,8 +52,6 @@ module Root : sig
 
   val show_for_via_breadcrumb : t -> string
 
-  val captured_variable_to_variable : CapturedVariable.t -> t
-
   val is_captured_variable : t -> bool
 
   val sink_port_in_string_combine_functions : t
@@ -102,7 +100,11 @@ val create : Root.t -> Path.t -> t
 
 val extend : t -> path:Path.t -> t
 
-val of_expression : self_variable:Root.t option -> Expression.t -> t option
+val of_expression
+  :  root_of_identifier:(location:Location.t -> identifier:Identifier.t -> Root.t) ->
+  self_variable:Root.t option ->
+  Expression.t ->
+  t option
 
 val get_index : Expression.t -> Abstract.TreeDomain.Label.t
 

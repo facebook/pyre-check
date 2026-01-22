@@ -333,6 +333,32 @@ module InContext : sig
   val module_qualifier : t -> Ast.Reference.t
 
   val define_name : t -> Ast.Reference.t
+
+  val root_of_identifier
+    :  t ->
+    location:Ast.Location.t ->
+    identifier:Ast.Identifier.t ->
+    TaintAccessPath.Root.t
+
+  val access_path_of_expression
+    :  t ->
+    self_variable:TaintAccessPath.Root.t option ->
+    Ast.Expression.t ->
+    TaintAccessPath.t option
+
+  (* Propagate a captured variable from a callee to a caller. Return the new root representing that
+     variable in the caller. *)
+  val propagate_captured_variable
+    :  t ->
+    TaintAccessPath.CapturedVariable.t ->
+    TaintAccessPath.Root.t
+
+  (* Turn a captured variable root into a root for the state. Used to assign user provided sources
+     for captured variables at the beginning of the forward analysis. *)
+  val state_root_of_captured_variable
+    :  t ->
+    TaintAccessPath.CapturedVariable.t ->
+    TaintAccessPath.Root.t
 end
 
 module ModelQueries : sig

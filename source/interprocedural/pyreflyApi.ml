@@ -5342,9 +5342,19 @@ module InContext = struct
     | StatementScope { api; _ } -> api
 
 
+  let define_name = function
+    | FunctionScope { define_name; _ } -> define_name
+    | StatementScope { define_name; _ } -> define_name
+
+
   let call_graph = function
     | FunctionScope { call_graph; _ } -> call_graph
     | StatementScope { call_graph; _ } -> call_graph
+
+
+  let module_qualifier = function
+    | FunctionScope { module_qualifier; _ } -> ModuleQualifier.to_reference module_qualifier
+    | StatementScope { module_qualifier; _ } -> ModuleQualifier.to_reference module_qualifier
 
 
   let is_global _ ~reference:_ =
@@ -5376,14 +5386,26 @@ module InContext = struct
     failwith "unimplemented: PyreflyApi.InContext.fallback_attribute"
 
 
-  let module_qualifier = function
-    | FunctionScope { module_qualifier; _ } -> ModuleQualifier.to_reference module_qualifier
-    | StatementScope { module_qualifier; _ } -> ModuleQualifier.to_reference module_qualifier
+  let root_of_identifier pyrefly_in_context ~location ~identifier =
+    match
+      CallGraph.DefineCallGraph.resolve_identifier
+        ~location
+        ~identifier
+        (call_graph pyrefly_in_context)
+    with
+    | Some { CallGraph.IdentifierCallees.captured_variables = captured_variable :: _; _ } ->
+        AccessPath.Root.CapturedVariable captured_variable
+    | _ -> AccessPath.Root.Variable identifier
 
 
-  let define_name = function
-    | FunctionScope { define_name; _ } -> define_name
-    | StatementScope { define_name; _ } -> define_name
+  let propagate_captured_variable pyrefly_in_context ~defining_function ~name =
+    if Reference.equal defining_function (define_name pyrefly_in_context) then
+      (* We have reached the function that originated the variable. We should treat it as a regular
+         variable now. *)
+      AccessPath.Root.Variable name
+    else
+      AccessPath.Root.CapturedVariable
+        (AccessPath.CapturedVariable.FromFunction { name; defining_function })
 end
 
 (* Exposed for testing purposes *)

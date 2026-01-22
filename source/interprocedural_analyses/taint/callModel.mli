@@ -30,7 +30,8 @@ module ArgumentMatches : sig
 end
 
 val match_captures
-  :  model:Model.t ->
+  :  pyre_in_context:PyrePysaApi.InContext.t ->
+  model:Model.t ->
   captures_taint:ForwardState.t ->
   location:Location.t ->
   ForwardState.Tree.t list * ArgumentMatches.t list

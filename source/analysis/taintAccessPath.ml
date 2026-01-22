@@ -125,12 +125,6 @@ module Root = struct
 
     let show_for_via_breadcrumb = Format.asprintf "%a" pp_for_via_breadcrumb
 
-    let captured_variable_to_variable = function
-      | CapturedVariable.FromFunction { name; defining_function } ->
-          Variable (Preprocessing.get_qualified_local_identifier ~qualifier:defining_function name)
-      | Pyre1Parameter { name } -> Variable (Preprocessing.get_qualified_parameter name)
-
-
     let is_captured_variable = function
       | CapturedVariable _ -> true
       | _ -> false
@@ -436,11 +430,11 @@ let get_index expression =
   | None -> Abstract.TreeDomain.Label.AnyIndex
 
 
-let of_expression ~self_variable expression =
+let of_expression ~root_of_identifier ~self_variable expression =
   let open Option.Monad_infix in
   let rec of_expression path = function
-    | { Node.value = Expression.Name (Name.Identifier identifier); _ } ->
-        Some { root = Root.Variable identifier; path }
+    | { Node.value = Expression.Name (Name.Identifier identifier); location } ->
+        Some { root = root_of_identifier ~location ~identifier; path }
     | { Node.value = Name (Name.Attribute { base; attribute; _ }); _ } ->
         let path = Abstract.TreeDomain.Label.Index attribute :: path in
         of_expression path base
