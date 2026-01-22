@@ -5,7 +5,7 @@ Call dependencies
     "pysa._test_source (fun)"
   ],
   "decorator_location.call_return_foo (fun)": [
-    "decorator_location.identity.inner (fun)[local($parameter$f)=decorator_location.return_foo (fun)]",
+    "decorator_location.identity.inner (fun)[captured_variable(f, parameter)=decorator_location.return_foo (fun)]",
     "pysa._test_sink (fun)"
   ],
   "decorator_location.decorated_ignore_then_skip_decorator (fun)": [
@@ -36,7 +36,7 @@ Call dependencies
     "pysa._test_sink (fun)"
   ],
   "decorator_location.decorated_logging_logging2@decorated (fun)": [
-    "decorator_location.with_logging (fun)[formal(f, position=0)=decorator_location.with_logging2.inner (fun)[local($parameter$f)=decorator_location.decorated_logging_logging2 (fun)]]",
+    "decorator_location.with_logging (fun)[formal(f, position=0)=decorator_location.with_logging2.inner (fun)[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2 (fun)]]",
     "decorator_location.with_logging2 (fun)[formal(f, position=0)=decorator_location.decorated_logging_logging2 (fun)]"
   ],
   "decorator_location.decorated_skip_this_decorator (fun)": [
@@ -46,7 +46,7 @@ Call dependencies
   "decorator_location.handle_request@decorated (fun)": [
     "decorator_location.pass_local_variable_to_x (fun)[formal(f, position=0)=decorator_location.handle_request (fun)]"
   ],
-  "decorator_location.identity.inner (fun)[local($parameter$f)=decorator_location.return_foo (fun)]": [
+  "decorator_location.identity.inner (fun)[captured_variable(f, parameter)=decorator_location.return_foo (fun)]": [
     "decorator_location.return_foo (fun)"
   ],
   "decorator_location.ignore_this_decorator_factory.decorator.inner (fun)": [
@@ -59,16 +59,16 @@ Call dependencies
     "decorator_location.decorated_ignore_this_decorator_class (fun)",
     "decorator_location.decorated_ignore_this_decorator_factory (fun)",
     "decorator_location.decorated_skip_this_decorator (fun)",
-    "decorator_location.pass_local_variable_to_x.inner (fun)[local($parameter$f)=decorator_location.handle_request (fun)]",
-    "decorator_location.with_logging.inner (fun)[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper (fun), local($parameter$f)=decorator_location.decorated_logging_ignore_this_decorator (fun)]",
-    "decorator_location.with_logging.inner (fun)[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper (fun), local($parameter$f)=decorator_location.with_logging2.inner (fun)[local($parameter$f)=decorator_location.decorated_logging_logging2 (fun)]]",
-    "decorator_location.with_logging2.inner (fun)[local($parameter$f)=decorator_location.decorated_logging2_skip_this_decorator (fun)]",
+    "decorator_location.pass_local_variable_to_x.inner (fun)[captured_variable(f, parameter)=decorator_location.handle_request (fun)]",
+    "decorator_location.with_logging.inner (fun)[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper (fun), captured_variable(f, parameter)=decorator_location.decorated_logging_ignore_this_decorator (fun)]",
+    "decorator_location.with_logging.inner (fun)[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper (fun), captured_variable(f, parameter)=decorator_location.with_logging2.inner (fun)[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2 (fun)]]",
+    "decorator_location.with_logging2.inner (fun)[captured_variable(f, parameter)=decorator_location.decorated_logging2_skip_this_decorator (fun)]",
     "pysa._test_source (fun)"
   ],
   "decorator_location.pass_local_variable_to_x.inner (fun)": [
     "pysa._test_sink (fun)"
   ],
-  "decorator_location.pass_local_variable_to_x.inner (fun)[local($parameter$f)=decorator_location.handle_request (fun)]": [
+  "decorator_location.pass_local_variable_to_x.inner (fun)[captured_variable(f, parameter)=decorator_location.handle_request (fun)]": [
     "decorator_location.handle_request (fun)", "pysa._test_sink (fun)"
   ],
   "decorator_location.return_foo (fun)": [
@@ -84,25 +84,25 @@ Call dependencies
     "decorator_location.with_logging.some_helper (fun)",
     "pysa._test_sink (fun)"
   ],
-  "decorator_location.with_logging.inner (fun)[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper (fun), local($parameter$f)=decorator_location.decorated_logging_ignore_this_decorator (fun)]": [
+  "decorator_location.with_logging.inner (fun)[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper (fun), captured_variable(f, parameter)=decorator_location.decorated_logging_ignore_this_decorator (fun)]": [
     "decorator_location.decorated_logging_ignore_this_decorator (fun)",
     "decorator_location.with_logging.some_helper (fun)",
     "pysa._test_sink (fun)"
   ],
-  "decorator_location.with_logging.inner (fun)[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper (fun), local($parameter$f)=decorator_location.with_logging2.inner (fun)[local($parameter$f)=decorator_location.decorated_logging_logging2 (fun)]]": [
+  "decorator_location.with_logging.inner (fun)[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper (fun), captured_variable(f, parameter)=decorator_location.with_logging2.inner (fun)[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2 (fun)]]": [
     "decorator_location.with_logging.some_helper (fun)",
-    "decorator_location.with_logging2.inner (fun)[local($parameter$f)=decorator_location.decorated_logging_logging2 (fun)]",
+    "decorator_location.with_logging2.inner (fun)[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2 (fun)]",
     "pysa._test_sink (fun)"
   ],
   "decorator_location.with_logging.some_helper (fun)": [
     "print (fun)", "pysa._test_sink (fun)"
   ],
   "decorator_location.with_logging2.inner (fun)": [ "pysa._test_sink (fun)" ],
-  "decorator_location.with_logging2.inner (fun)[local($parameter$f)=decorator_location.decorated_logging2_skip_this_decorator (fun)]": [
+  "decorator_location.with_logging2.inner (fun)[captured_variable(f, parameter)=decorator_location.decorated_logging2_skip_this_decorator (fun)]": [
     "decorator_location.decorated_logging2_skip_this_decorator (fun)",
     "pysa._test_sink (fun)"
   ],
-  "decorator_location.with_logging2.inner (fun)[local($parameter$f)=decorator_location.decorated_logging_logging2 (fun)]": [
+  "decorator_location.with_logging2.inner (fun)[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2 (fun)]": [
     "decorator_location.decorated_logging_logging2 (fun)",
     "pysa._test_sink (fun)"
   ]

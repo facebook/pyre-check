@@ -2944,6 +2944,71 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "closure.taint_propagation_hof",
+    "callable_line": 36,
+    "code": 5002,
+    "line": 39,
+    "start": 41,
+    "end": 42,
+    "filename": "closure.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 38, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 39, "start": 41, "end": 42 },
+              "resolves_to": [ "closure.wrapper_for_taint_propagation_hof" ],
+              "port": "formal(z, position=1)",
+              "call_site": "39:4-39:43"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure.wrapper_for_taint_propagation_hof",
+      "index": 0,
+      "parameter": "formal(z)"
+    },
+    "master_handle": "closure.taint_propagation_hof:5002:0:Call|closure.wrapper_for_taint_propagation_hof|0|formal(z):eac53eed0b45978a97e003f1e9fb5a30"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "closure.tito_hof",
@@ -3141,6 +3206,38 @@
             ],
             "origin": { "line": 31, "start": 19, "end": 20 },
             "call_site": "31:8-31:21"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.wrapper_for_taint_propagation_hof",
+    "filename": "closure.py",
+    "callable_line": 42,
+    "sinks": [
+      {
+        "port": "formal(z, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 47, "start": 33, "end": 34 },
+              "resolves_to": [
+                "closure.higher_order_function[formal(f, position=0)=closure.wrapper_for_taint_propagation_hof.inner]"
+              ],
+              "port": "formal(z, position=1)",
+              "call_site": "47:4-47:35"
+            }
           }
         ]
       }
@@ -3426,66 +3523,29 @@
 {
   "kind": "model",
   "data": {
-    "callable": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper]",
+    "callable": "closure.higher_order_function[formal(f, position=0)=closure.wrapper_for_taint_propagation_hof.inner]",
     "filename": "closure.py",
-    "callable_line": 410,
-    "tito": [
-      {
-        "port": "formal(function, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "closure.async_tito[formal(function, position=0)=closure.ignored_decorator.wrapper]",
-    "filename": "closure.py",
-    "callable_line": 410,
-    "tito": [
-      {
-        "port": "formal(function, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "closure.tito_hof[formal(f, position=0)=closure.wrapper_for_tito_propagation_hof.inner]",
-    "filename": "closure.py",
-    "callable_line": 375,
+    "callable_line": 50,
     "sinks": [
       {
-        "port": "formal(f, position=0)",
+        "port": "formal(z, position=1)",
         "taint": [
           {
             "kinds": [
               {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "origin": { "line": 376, "start": 15, "end": 18 },
-            "call_site": "376:4-376:19"
+            "call": {
+              "position": { "line": 51, "start": 6, "end": 7 },
+              "resolves_to": [
+                "closure.wrapper_for_taint_propagation_hof.inner"
+              ],
+              "port": "formal(z, position=0)",
+              "call_site": "51:4-51:8"
+            }
           }
         ]
       }

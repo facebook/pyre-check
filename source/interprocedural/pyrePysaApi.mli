@@ -241,6 +241,13 @@ module ReadOnly : sig
 
   val generic_parameters_as_variables : t -> string -> Type.Variable.t list option
 
+  (* Turn a captured variable root into a root for the state. Used to assign user provided sources
+     for captured variables at the beginning of the forward analysis. *)
+  val state_root_of_captured_variable
+    :  t ->
+    TaintAccessPath.CapturedVariable.t ->
+    TaintAccessPath.Root.t
+
   val decorated_define : t -> Ast.Statement.Define.t Ast.Node.t -> Ast.Statement.Define.t Ast.Node.t
 
   (* TODO(T225700656): Move this in the ClassSummary module *)

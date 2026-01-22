@@ -346,6 +346,26 @@ module ReadOnly = struct
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.generic_parameters_as_variables"
 
 
+  (* Turn a captured variable root into a root for the state. Used to assign user provided sources
+     for captured variables at the beginning of the forward analysis. *)
+  let state_root_of_captured_variable api captured_variable =
+    match api with
+    | Pyre1 _ -> (
+        (* In pyre1, captured variable are represented with Root.Variable in the state, using a
+           qualified name *)
+        match captured_variable with
+        | TaintAccessPath.CapturedVariable.Pyre1Parameter { name } ->
+            TaintAccessPath.Root.Variable (Analysis.Preprocessing.get_qualified_parameter name)
+        | TaintAccessPath.CapturedVariable.FromFunction { name; defining_function } ->
+            TaintAccessPath.Root.Variable
+              (Analysis.Preprocessing.get_qualified_local_identifier
+                 ~qualifier:defining_function
+                 name))
+    | Pyrefly _ ->
+        (* In pyrefly, captured variable are represented with Root.CapturedVariable in the state. *)
+        TaintAccessPath.Root.CapturedVariable captured_variable
+
+
   let decorated_define = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.decorated_define pyre_api
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.decorated_define"
@@ -618,21 +638,7 @@ module InContext = struct
   (* Turn a captured variable root into a root for the state. Used to assign user provided sources
      for captured variables at the beginning of the forward analysis. *)
   let state_root_of_captured_variable api captured_variable =
-    match api with
-    | Pyre1 _ -> (
-        (* In pyre1, captured variable are represented with Root.Variable in the state, using a
-           qualified name *)
-        match captured_variable with
-        | TaintAccessPath.CapturedVariable.Pyre1Parameter { name } ->
-            TaintAccessPath.Root.Variable (Analysis.Preprocessing.get_qualified_parameter name)
-        | TaintAccessPath.CapturedVariable.FromFunction { name; defining_function } ->
-            TaintAccessPath.Root.Variable
-              (Analysis.Preprocessing.get_qualified_local_identifier
-                 ~qualifier:defining_function
-                 name))
-    | Pyrefly _ ->
-        (* In pyrefly, captured variable are represented with Root.CapturedVariable in the state. *)
-        TaintAccessPath.Root.CapturedVariable captured_variable
+    ReadOnly.state_root_of_captured_variable (pyre_api api) captured_variable
 end
 
 module ModelQueries = struct

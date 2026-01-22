@@ -1474,7 +1474,14 @@ Higher order call graphs
 }
 {
   "callable": "partial.NestedDefineConstructor.__init__@decorated",
-  "returned_callables": [],
+  "returned_callables": [
+    {
+      "target": "partial.NestedDefineConstructor.__init__",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
   "calls": {
     "149:5-149:26|artificial-call|for-decorated-target": {
       "call": {
@@ -1573,7 +1580,14 @@ Higher order call graphs
 }
 {
   "callable": "partial.PartialConstructor.__init__@decorated",
-  "returned_callables": [],
+  "returned_callables": [
+    {
+      "target": "partial.PartialConstructor.__init__",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
   "calls": {
     "121:5-121:21|artificial-call|for-decorated-target": {
       "call": {
@@ -1709,4 +1723,28 @@ Higher order call graphs
       }
     }
   }
+}
+{
+  "callable": "partial.NestedDefineDecorator.__init__[formal(func, position=1)=partial.NestedDefineConstructor.__init__]",
+  "returned_callables": [
+    {
+      "target": "partial.NestedDefineConstructor.__init__",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "partial.PartialDecorator.__init__[formal(func, position=1)=partial.PartialConstructor.__init__]",
+  "returned_callables": [
+    {
+      "target": "partial.PartialConstructor.__init__",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
+  "calls": {}
 }

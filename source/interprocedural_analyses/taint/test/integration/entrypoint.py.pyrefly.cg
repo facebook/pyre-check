@@ -13,6 +13,9 @@ Call dependencies
   "entrypoint.MyClass.some_entrypoint_function (method)": [
     "builtins.list.append (method)"
   ],
+  "entrypoint.entrypoint_into_lambda (fun)": [
+    "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator (fun)"
+  ],
   "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator (fun)": [
     "builtins.list.append (method)"
   ],

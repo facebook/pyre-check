@@ -84,6 +84,11 @@ Higher order call graphs
             "target": "closure.ignored_decorator.wrapper",
             "index": 0,
             "return_type": []
+          },
+          {
+            "target": "closure.ignored_decorator.wrapper[captured_variable(function, closure.ignored_decorator)=closure.async_nonlocal_closure_tito_ignore_decorator.inner]",
+            "index": 0,
+            "return_type": []
           }
         ]
       }
@@ -93,6 +98,11 @@ Higher order call graphs
         "calls": [
           {
             "target": "closure.async_tito[formal(function, position=0)=closure.ignored_decorator.wrapper]",
+            "index": 0,
+            "return_type": []
+          },
+          {
+            "target": "closure.async_tito[formal(function, position=0)=closure.ignored_decorator.wrapper[captured_variable(function, closure.ignored_decorator)=closure.async_nonlocal_closure_tito_ignore_decorator.inner]]",
             "index": 0,
             "return_type": []
           }
@@ -152,6 +162,11 @@ Higher order call graphs
       "target": "closure.ignored_decorator.wrapper",
       "index": 0,
       "return_type": []
+    },
+    {
+      "target": "closure.ignored_decorator.wrapper[captured_variable(function, closure.ignored_decorator)=closure.async_nonlocal_closure_tito_ignore_decorator.inner]",
+      "index": 0,
+      "return_type": []
     }
   ],
   "calls": {
@@ -199,6 +214,11 @@ Higher order call graphs
             "target": "closure.decorator.wrapper",
             "index": 0,
             "return_type": []
+          },
+          {
+            "target": "closure.decorator.wrapper[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
+            "index": 0,
+            "return_type": []
           }
         ]
       }
@@ -208,6 +228,11 @@ Higher order call graphs
         "calls": [
           {
             "target": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper]",
+            "index": 0,
+            "return_type": []
+          },
+          {
+            "target": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner]]",
             "index": 0,
             "return_type": []
           }
@@ -263,7 +288,12 @@ Higher order call graphs
 {
   "callable": "closure.async_nonlocal_closure_tito_with_decorator.inner@decorated",
   "returned_callables": [
-    { "target": "closure.decorator.wrapper", "index": 0, "return_type": [] }
+    { "target": "closure.decorator.wrapper", "index": 0, "return_type": [] },
+    {
+      "target": "closure.decorator.wrapper[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
+      "index": 0,
+      "return_type": []
+    }
   ],
   "calls": {
     "420:5-420:14|artificial-call|for-decorated-target": {
@@ -2742,7 +2772,15 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "411:17-411:27": {
-      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "closure.decorator.wrapper",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
     }
   }
 }
@@ -2751,14 +2789,61 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "411:17-411:27": {
-      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "closure.ignored_decorator.wrapper",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner]]",
+  "returned_callables": [],
+  "calls": {
+    "411:17-411:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure.decorator.wrapper[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure.async_tito[formal(function, position=0)=closure.ignored_decorator.wrapper[captured_variable(function, closure.ignored_decorator)=closure.async_nonlocal_closure_tito_ignore_decorator.inner]]",
+  "returned_callables": [],
+  "calls": {
+    "411:17-411:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure.ignored_decorator.wrapper[captured_variable(function, closure.ignored_decorator)=closure.async_nonlocal_closure_tito_ignore_decorator.inner]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
     }
   }
 }
 {
   "callable": "closure.decorator[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
   "returned_callables": [
-    { "target": "closure.decorator.wrapper", "index": 0, "return_type": [] }
+    { "target": "closure.decorator.wrapper", "index": 0, "return_type": [] },
+    {
+      "target": "closure.decorator.wrapper[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
+      "index": 0,
+      "return_type": []
+    }
   ],
   "calls": {
     "397:4-398:46": {
@@ -2788,10 +2873,25 @@ Higher order call graphs
   }
 }
 {
+  "callable": "closure.decorator.wrapper[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
+  "returned_callables": [],
+  "calls": { "398:21-398:46": { "call": {} } }
+}
+{
   "callable": "closure.higher_order_function[formal(f, position=0)=closure.wrapper_for_taint_propagation_hof.inner]",
   "returned_callables": [],
   "calls": {
-    "51:4-51:8": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
+    "51:4-51:8": {
+      "call": {
+        "calls": [
+          {
+            "target": "closure.wrapper_for_taint_propagation_hof.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
   }
 }
 {
@@ -2799,6 +2899,11 @@ Higher order call graphs
   "returned_callables": [
     {
       "target": "closure.ignored_decorator.wrapper",
+      "index": 0,
+      "return_type": []
+    },
+    {
+      "target": "closure.ignored_decorator.wrapper[captured_variable(function, closure.ignored_decorator)=closure.async_nonlocal_closure_tito_ignore_decorator.inner]",
       "index": 0,
       "return_type": []
     }
@@ -2831,6 +2936,11 @@ Higher order call graphs
   }
 }
 {
+  "callable": "closure.ignored_decorator.wrapper[captured_variable(function, closure.ignored_decorator)=closure.async_nonlocal_closure_tito_ignore_decorator.inner]",
+  "returned_callables": [],
+  "calls": { "405:21-405:46": { "call": {} } }
+}
+{
   "callable": "closure.tito_hof[formal(f, position=0)=closure.wrapper_for_tito_propagation_hof.inner]",
   "returned_callables": [],
   "calls": {
@@ -2842,7 +2952,15 @@ Higher order call graphs
       }
     },
     "376:15-376:18": {
-      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "closure.wrapper_for_tito_propagation_hof.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
     }
   }
 }

@@ -4,6 +4,7 @@ Call dependencies
   "decorator.Foo.bar (method)": [ "builtins.print (fun)" ],
   "decorator.Foo.bar@decorated (method)": [
     "decorator.with_logging_args_kwargs (fun)[formal(f, position=0)=decorator.Foo.bar (method)]",
+    "decorator.with_logging_args_kwargs_no_sink (fun)[formal(f, position=0)=decorator.with_logging_args_kwargs.inner (fun)[captured_variable(f, decorator.with_logging_args_kwargs)=decorator.Foo.bar (method)]]",
     "decorator.with_logging_args_kwargs_no_sink (fun)[formal(f, position=0)=decorator.with_logging_args_kwargs.inner (fun)]"
   ],
   "decorator.Foo.foo (method)": [ "decorator.Foo.sink_method (method)" ],
@@ -11,7 +12,8 @@ Call dependencies
     "decorator.with_logging_args_kwargs_no_sink (fun)[formal(f, position=0)=decorator.Foo.foo (method)]"
   ],
   "decorator.Foo.self_has_generic_type (method)": [
-    "decorator.with_logging_args_kwargs_no_sink.inner (fun)"
+    "decorator.with_logging_args_kwargs_no_sink.inner (fun)[captured_variable(f, decorator.with_logging_args_kwargs_no_sink)=decorator.with_logging_args_kwargs.inner (fun)[captured_variable(f, decorator.with_logging_args_kwargs)=decorator.Foo.bar (method)]]",
+    "decorator.with_logging_args_kwargs_no_sink.inner (fun)[captured_variable(f, decorator.with_logging_args_kwargs_no_sink)=decorator.with_logging_args_kwargs.inner (fun)]"
   ],
   "decorator.Foo.self_has_generic_type@decorated (method)": [
     "decorator.with_logging_args_kwargs_no_sink (fun)[formal(f, position=0)=decorator.Foo.self_has_generic_type (method)]"
@@ -39,7 +41,14 @@ Call dependencies
     "_random.Random.random (method)", "builtins.float.__gt__ (method)",
     "pysa._test_source (fun)"
   ],
+  "decorator.add_return_source.inner (fun)[captured_variable(callable, decorator.add_return_source)=decorator.return_source_via_decorator (fun)]": [
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "pysa._test_source (fun)"
+  ],
   "decorator.conditional_decorator_factory.add_sink.inner (fun)": [
+    "pysa._test_sink (fun)"
+  ],
+  "decorator.conditional_decorator_factory.add_sink.inner (fun)[captured_variable(f, decorator.conditional_decorator_factory.add_sink)=decorator.sink_via_conditional_decorator_factory (fun)]": [
     "pysa._test_sink (fun)"
   ],
   "decorator.decorated (fun)": [ "pysa._test_sink (fun)" ],
@@ -78,10 +87,14 @@ Call dependencies
   "decorator.foo_with_shady_decorators (fun)": [ "builtins.print (fun)" ],
   "decorator.foo_with_shady_decorators@decorated (fun)": [
     "decorator.fails_to_apply (fun)[formal(f, position=0)=decorator.foo_with_shady_decorators (fun)]",
+    "decorator.fails_to_apply (fun)[formal(f, position=0)=decorator.with_logging_sink.inner (fun)[captured_variable(callable, decorator.with_logging_sink)=decorator.foo_with_shady_decorators (fun)]]",
     "decorator.fails_to_apply (fun)[formal(f, position=0)=decorator.with_logging_sink.inner (fun)]",
+    "decorator.fails_to_apply (fun)[formal(f, position=0)=decorator.with_logging_source.inner (fun)[captured_variable(callable, decorator.with_logging_source)=decorator.with_logging_sink.inner (fun)[captured_variable(callable, decorator.with_logging_sink)=decorator.foo_with_shady_decorators (fun)]]]",
+    "decorator.fails_to_apply (fun)[formal(f, position=0)=decorator.with_logging_source.inner (fun)[captured_variable(callable, decorator.with_logging_source)=decorator.with_logging_sink.inner (fun)]]",
     "decorator.fails_to_apply (fun)[formal(f, position=0)=decorator.with_logging_source.inner (fun)]",
-    "decorator.with_logging_sink (fun)",
-    "decorator.with_logging_source (fun)"
+    "decorator.with_logging_sink (fun)[formal(callable, position=0)=decorator.foo_with_shady_decorators (fun)]",
+    "decorator.with_logging_source (fun)[formal(callable, position=0)=decorator.with_logging_sink.inner (fun)[captured_variable(callable, decorator.with_logging_sink)=decorator.foo_with_shady_decorators (fun)]]",
+    "decorator.with_logging_source (fun)[formal(callable, position=0)=decorator.with_logging_sink.inner (fun)]"
   ],
   "decorator.foo_with_sink (fun)": [
     "builtins.print (fun)", "pysa._test_sink (fun)"
@@ -91,10 +104,11 @@ Call dependencies
   ],
   "decorator.issue_str_wrapper (fun)": [
     "builtins.object.__new__ (method)",
+    "decorator.StringWrapper.__add__ (method)",
     "decorator.StringWrapper.__init__ (method)", "pysa._test_source (fun)"
   ],
   "decorator.issue_via_conditional_decorator_factory (fun)": [
-    "decorator.conditional_decorator_factory.add_sink.inner (fun)",
+    "decorator.conditional_decorator_factory.add_sink.inner (fun)[captured_variable(f, decorator.conditional_decorator_factory.add_sink)=decorator.sink_via_conditional_decorator_factory (fun)]",
     "decorator.sink_via_conditional_decorator_factory (fun)",
     "pysa._test_source (fun)"
   ],
@@ -102,25 +116,35 @@ Call dependencies
     "decorator.sink_via_conditional_no_op_decorator_factory (fun)",
     "pysa._test_source (fun)"
   ],
-  "decorator.issue_via_no_op_decorator (fun)": [ "pysa._test_source (fun)" ],
+  "decorator.issue_via_no_op_decorator (fun)": [
+    "decorator.sink_via_no_op_decorator (fun)", "pysa._test_source (fun)"
+  ],
   "decorator.issue_via_no_op_decorator_factory (fun)": [
     "decorator.sink_via_no_op_decorator_factory (fun)",
     "pysa._test_source (fun)"
   ],
   "decorator.issue_via_trivial_decorator (fun)": [
-    "decorator.trivial_decorator.inner (fun)", "pysa._test_source (fun)"
+    "decorator.trivial_decorator.inner (fun)[captured_variable(f, decorator.trivial_decorator)=decorator.sink_via_trivial_decorator (fun)]",
+    "pysa._test_source (fun)"
   ],
   "decorator.main (fun)": [
     "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
     "decorator.foo_using_decorator_factory (fun)",
-    "decorator.with_logging.inner (fun)",
-    "decorator.with_logging_args_kwargs.inner (fun)",
-    "decorator.with_logging_args_kwargs_no_sink.inner (fun)",
-    "decorator.with_logging_async.inner (fun)",
-    "decorator.with_logging_first_parameter.inner (fun)",
-    "decorator.with_logging_helper_functions.inner (fun)",
-    "decorator.with_logging_no_sink.inner (fun)",
-    "decorator.with_named_logger._inner_decorator.inner (fun)",
+    "decorator.with_logging.inner (fun)[captured_variable(f, decorator.with_logging)=decorator.foo (fun)]",
+    "decorator.with_logging_args_kwargs.inner (fun)[captured_variable(f, decorator.with_logging_args_kwargs)=decorator.foo_args_kwargs (fun)]",
+    "decorator.with_logging_args_kwargs_no_sink.inner (fun)[captured_variable(f, decorator.with_logging_args_kwargs_no_sink)=decorator.Foo.foo (method)]",
+    "decorator.with_logging_args_kwargs_no_sink.inner (fun)[captured_variable(f, decorator.with_logging_args_kwargs_no_sink)=decorator.Foo.self_has_generic_type (method)]",
+    "decorator.with_logging_args_kwargs_no_sink.inner (fun)[captured_variable(f, decorator.with_logging_args_kwargs_no_sink)=decorator.Foo.some_class_method (method)]",
+    "decorator.with_logging_args_kwargs_no_sink.inner (fun)[captured_variable(f, decorator.with_logging_args_kwargs_no_sink)=decorator.foo_args_kwargs_with_sink (fun)]",
+    "decorator.with_logging_args_kwargs_no_sink.inner (fun)[captured_variable(f, decorator.with_logging_args_kwargs_no_sink)=decorator.with_logging_args_kwargs.inner (fun)[captured_variable(f, decorator.with_logging_args_kwargs)=decorator.Foo.bar (method)]]",
+    "decorator.with_logging_args_kwargs_no_sink.inner (fun)[captured_variable(f, decorator.with_logging_args_kwargs_no_sink)=decorator.with_logging_args_kwargs.inner (fun)]",
+    "decorator.with_logging_async.inner (fun)[captured_variable(f, decorator.with_logging_async)=decorator.foo_async (fun)]",
+    "decorator.with_logging_first_parameter.inner (fun)[captured_variable(f, decorator.with_logging_first_parameter)=decorator.foo_log_first_parameter (fun)]",
+    "decorator.with_logging_helper_functions.inner (fun)[captured_variable(f, decorator.with_logging_helper_functions)=decorator.foo_with_helper_function (fun)]",
+    "decorator.with_logging_no_sink.inner (fun)[captured_variable(f, decorator.with_logging_no_sink)=decorator.foo_with_sink (fun)]",
+    "decorator.with_logging_source.inner (fun)[captured_variable(callable, decorator.with_logging_source)=decorator.with_logging_sink.inner (fun)[captured_variable(callable, decorator.with_logging_sink)=decorator.foo_with_shady_decorators (fun)]]",
+    "decorator.with_logging_source.inner (fun)[captured_variable(callable, decorator.with_logging_source)=decorator.with_logging_sink.inner (fun)]",
+    "decorator.with_named_logger._inner_decorator.inner (fun)[captured_variable(f, decorator.with_named_logger._inner_decorator)=decorator.foo_using_decorator_factory (fun)]",
     "pysa._test_source (fun)"
   ],
   "decorator.return_source_via_decorator@decorated (fun)": [
@@ -179,19 +203,32 @@ Call dependencies
     "decorator.trivial_decorator (fun)[formal(f, position=0)=decorator.sink_via_trivial_decorator (fun)]"
   ],
   "decorator.test_parameter_default_value (fun)": [
-    "decorator.add_return_source.inner (fun)", "pysa._test_sink (fun)"
+    "decorator.add_return_source.inner (fun)[captured_variable(callable, decorator.add_return_source)=decorator.return_source_via_decorator (fun)]",
+    "pysa._test_sink (fun)"
   ],
   "decorator.using_decorated (fun)": [
-    "decorator._strip_first_parameter_.inner (fun)"
+    "decorator._strip_first_parameter_.inner (fun)[captured_variable(f, decorator._strip_first_parameter_)=decorator.decorated (fun)]"
   ],
   "decorator.with_logging.inner (fun)": [ "pysa._test_sink (fun)" ],
+  "decorator.with_logging.inner (fun)[captured_variable(f, decorator.with_logging)=decorator.foo (fun)]": [
+    "pysa._test_sink (fun)"
+  ],
   "decorator.with_logging_args_kwargs.inner (fun)": [
+    "pysa._test_sink (fun)"
+  ],
+  "decorator.with_logging_args_kwargs.inner (fun)[captured_variable(f, decorator.with_logging_args_kwargs)=decorator.foo_args_kwargs (fun)]": [
     "pysa._test_sink (fun)"
   ],
   "decorator.with_logging_async.inner (fun)": [
     "builtins.isinstance (fun)", "pysa._test_sink (fun)"
   ],
+  "decorator.with_logging_async.inner (fun)[captured_variable(f, decorator.with_logging_async)=decorator.foo_async (fun)]": [
+    "builtins.isinstance (fun)", "pysa._test_sink (fun)"
+  ],
   "decorator.with_logging_first_parameter.inner (fun)": [
+    "builtins.int.__ne__ (method)", "pysa._test_sink (fun)"
+  ],
+  "decorator.with_logging_first_parameter.inner (fun)[captured_variable(f, decorator.with_logging_first_parameter)=decorator.foo_log_first_parameter (fun)]": [
     "builtins.int.__ne__ (method)", "pysa._test_sink (fun)"
   ],
   "decorator.with_logging_helper_functions.after (fun)": [
@@ -205,11 +242,25 @@ Call dependencies
     "decorator.with_logging_helper_functions.after (fun)",
     "decorator.with_logging_helper_functions.before (fun)"
   ],
+  "decorator.with_logging_helper_functions.inner (fun)[captured_variable(f, decorator.with_logging_helper_functions)=decorator.foo_with_helper_function (fun)]": [
+    "builtins.isinstance (fun)", "builtins.print (fun)",
+    "decorator.with_logging_helper_functions.after (fun)",
+    "decorator.with_logging_helper_functions.before (fun)"
+  ],
   "decorator.with_logging_sink.inner (fun)": [ "pysa._test_sink (fun)" ],
   "decorator.with_logging_source.inner (fun)": [
     "builtins.str.__add__ (method)", "pysa._test_source (fun)"
   ],
+  "decorator.with_logging_source.inner (fun)[captured_variable(callable, decorator.with_logging_source)=decorator.with_logging_sink.inner (fun)[captured_variable(callable, decorator.with_logging_sink)=decorator.foo_with_shady_decorators (fun)]]": [
+    "builtins.str.__add__ (method)", "pysa._test_source (fun)"
+  ],
+  "decorator.with_logging_source.inner (fun)[captured_variable(callable, decorator.with_logging_source)=decorator.with_logging_sink.inner (fun)]": [
+    "builtins.str.__add__ (method)", "pysa._test_source (fun)"
+  ],
   "decorator.with_named_logger._inner_decorator.inner (fun)": [
+    "builtins.print (fun)", "pysa._test_sink (fun)"
+  ],
+  "decorator.with_named_logger._inner_decorator.inner (fun)[captured_variable(f, decorator.with_named_logger._inner_decorator)=decorator.foo_using_decorator_factory (fun)]": [
     "builtins.print (fun)", "pysa._test_sink (fun)"
   ]
 }

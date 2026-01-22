@@ -7956,18 +7956,14 @@ let test_higher_order_call_graph_of_define =
                  (Target.Regular.Function { name = "test.bar"; kind = Normal });
              ]
            ~initial_state:
-             (let callables_to_definitions_map = CallablesSharedMemory.ReadWrite.empty () in
-              let initial_state =
-                CallGraphBuilder.HigherOrderCallGraph.State.initialize_from_roots
-                  ~callables_to_definitions_map:
-                    (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
-                  [
-                    ( create_positional_parameter 0 "g",
-                      Target.Regular.Function { name = "test.bar"; kind = Normal }
-                      |> Target.from_regular );
-                  ]
-              in
-              initial_state)
+             (CallGraphBuilder.HigherOrderCallGraph.State.of_list
+                [
+                  ( TaintAccessPath.Root.Variable "$parameter$g",
+                    Target.Regular.Function { name = "test.bar"; kind = Normal }
+                    |> Target.from_regular
+                    |> CallTarget.create
+                    |> CallTarget.Set.singleton );
+                ])
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_higher_order_call_graph_of_define
@@ -8525,7 +8521,9 @@ let test_higher_order_call_graph_of_define =
                                  (Target.Regular.Function { name = "test.foo.baz"; kind = Normal })
                                ~parameters:
                                  [
-                                   ( AccessPath.Root.Variable "$local_test?foo$bar",
+                                   ( AccessPath.Root.CapturedVariable
+                                       (AccessPath.CapturedVariable.FromFunction
+                                          { name = "bar"; defining_function = !&"test.foo" }),
                                      Target.Regular.Function
                                        { name = "test.foo.bar"; kind = Normal }
                                      |> Target.from_regular );

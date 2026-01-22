@@ -1249,7 +1249,13 @@ Higher order call graphs
 }
 {
   "callable": "taint_broadening.model_broadening_no_collapse_sink_width@decorated",
-  "returned_callables": [],
+  "returned_callables": [
+    {
+      "target": "taint_broadening.model_broadening_no_collapse_sink_width",
+      "index": 0,
+      "return_type": []
+    }
+  ],
   "calls": {
     "359:1-359:22|artificial-call|for-decorated-target": {
       "call": {
@@ -1885,7 +1891,13 @@ Higher order call graphs
 }
 {
   "callable": "taint_broadening.model_broadening_no_collapse_source_width@decorated",
-  "returned_callables": [],
+  "returned_callables": [
+    {
+      "target": "taint_broadening.model_broadening_no_collapse_source_width",
+      "index": 0,
+      "return_type": []
+    }
+  ],
   "calls": {
     "321:1-321:22|artificial-call|for-decorated-target": {
       "call": {
@@ -3294,7 +3306,13 @@ Higher order call graphs
 }
 {
   "callable": "taint_broadening.tito_no_broadening_input_and_output_paths@decorated",
-  "returned_callables": [],
+  "returned_callables": [
+    {
+      "target": "taint_broadening.tito_no_broadening_input_and_output_paths",
+      "index": 0,
+      "return_type": []
+    }
+  ],
   "calls": {
     "395:1-395:22|artificial-call|for-decorated-target": {
       "call": {
@@ -3321,4 +3339,37 @@ Higher order call graphs
       }
     }
   }
+}
+{
+  "callable": "taint_broadening.skip_model_broadening[formal(f, position=0)=taint_broadening.model_broadening_no_collapse_sink_width]",
+  "returned_callables": [
+    {
+      "target": "taint_broadening.model_broadening_no_collapse_sink_width",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "taint_broadening.skip_model_broadening[formal(f, position=0)=taint_broadening.model_broadening_no_collapse_source_width]",
+  "returned_callables": [
+    {
+      "target": "taint_broadening.model_broadening_no_collapse_source_width",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "taint_broadening.skip_model_broadening[formal(f, position=0)=taint_broadening.tito_no_broadening_input_and_output_paths]",
+  "returned_callables": [
+    {
+      "target": "taint_broadening.tito_no_broadening_input_and_output_paths",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
 }

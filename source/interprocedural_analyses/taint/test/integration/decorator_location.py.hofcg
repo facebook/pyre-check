@@ -8,7 +8,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator_location.identity.inner[local($parameter$f)=decorator_location.return_foo]",
+            "target": "decorator_location.identity.inner[captured_variable(f, parameter)=decorator_location.return_foo]",
             "index": 0,
             "return_type": []
           }
@@ -98,7 +98,7 @@ Higher order call graphs
   "callable": "decorator_location.decorated_logging2_skip_this_decorator@decorated",
   "returned_callables": [
     {
-      "target": "decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging2_skip_this_decorator]",
+      "target": "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging2_skip_this_decorator]",
       "index": 0,
       "return_type": []
     }
@@ -148,7 +148,7 @@ Higher order call graphs
   "callable": "decorator_location.decorated_logging_ignore_this_decorator@decorated",
   "returned_callables": [
     {
-      "target": "decorator_location.with_logging.inner[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper, local($parameter$f)=decorator_location.decorated_logging_ignore_this_decorator]",
+      "target": "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.decorated_logging_ignore_this_decorator]",
       "index": 0,
       "return_type": []
     }
@@ -198,7 +198,7 @@ Higher order call graphs
   "callable": "decorator_location.decorated_logging_logging2@decorated",
   "returned_callables": [
     {
-      "target": "decorator_location.with_logging.inner[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper, local($parameter$f)=decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging_logging2]]",
+      "target": "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]]",
       "index": 0,
       "return_type": []
     }
@@ -208,7 +208,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator_location.with_logging[formal(f, position=0)=decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging_logging2]]",
+            "target": "decorator_location.with_logging[formal(f, position=0)=decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]]",
             "index": 0,
             "return_type": []
           }
@@ -272,7 +272,7 @@ Higher order call graphs
   "callable": "decorator_location.handle_request@decorated",
   "returned_callables": [
     {
-      "target": "decorator_location.pass_local_variable_to_x.inner[local($parameter$f)=decorator_location.handle_request]",
+      "target": "decorator_location.pass_local_variable_to_x.inner[captured_variable(f, parameter)=decorator_location.handle_request]",
       "index": 0,
       "return_type": []
     }
@@ -421,7 +421,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator_location.with_logging.inner[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper, local($parameter$f)=decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging_logging2]]",
+            "target": "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]]",
             "index": 0,
             "return_type": []
           }
@@ -457,7 +457,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging2_skip_this_decorator]",
+            "target": "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging2_skip_this_decorator]",
             "index": 0,
             "return_type": []
           }
@@ -547,7 +547,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator_location.with_logging.inner[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper, local($parameter$f)=decorator_location.decorated_logging_ignore_this_decorator]",
+            "target": "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.decorated_logging_ignore_this_decorator]",
             "index": 0,
             "return_type": []
           }
@@ -565,7 +565,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator_location.pass_local_variable_to_x.inner[local($parameter$f)=decorator_location.handle_request]",
+            "target": "decorator_location.pass_local_variable_to_x.inner[captured_variable(f, parameter)=decorator_location.handle_request]",
             "index": 0,
             "return_type": []
           }
@@ -583,7 +583,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator_location.pass_local_variable_to_x.inner[local($parameter$f)=decorator_location.handle_request]",
+            "target": "decorator_location.pass_local_variable_to_x.inner[captured_variable(f, parameter)=decorator_location.handle_request]",
             "index": 1,
             "return_type": []
           }
@@ -683,7 +683,7 @@ Higher order call graphs
   "callable": "decorator_location.return_foo@decorated",
   "returned_callables": [
     {
-      "target": "decorator_location.identity.inner[local($parameter$f)=decorator_location.return_foo]",
+      "target": "decorator_location.identity.inner[captured_variable(f, parameter)=decorator_location.return_foo]",
       "index": 0,
       "return_type": []
     }
@@ -763,7 +763,7 @@ Higher order call graphs
   "callable": "decorator_location.with_logging",
   "returned_callables": [
     {
-      "target": "decorator_location.with_logging.inner[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper]",
+      "target": "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper]",
       "index": 0,
       "return_type": []
     }
@@ -902,7 +902,7 @@ Higher order call graphs
   "callable": "decorator_location.identity[formal(f, position=0)=decorator_location.return_foo]",
   "returned_callables": [
     {
-      "target": "decorator_location.identity.inner[local($parameter$f)=decorator_location.return_foo]",
+      "target": "decorator_location.identity.inner[captured_variable(f, parameter)=decorator_location.return_foo]",
       "index": 0,
       "return_type": []
     }
@@ -922,7 +922,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator_location.identity.inner[local($parameter$f)=decorator_location.return_foo]",
+  "callable": "decorator_location.identity.inner[captured_variable(f, parameter)=decorator_location.return_foo]",
   "returned_callables": [],
   "calls": {
     "129:15-129:33": {
@@ -942,7 +942,7 @@ Higher order call graphs
   "callable": "decorator_location.pass_local_variable_to_x[formal(f, position=0)=decorator_location.handle_request]",
   "returned_callables": [
     {
-      "target": "decorator_location.pass_local_variable_to_x.inner[local($parameter$f)=decorator_location.handle_request]",
+      "target": "decorator_location.pass_local_variable_to_x.inner[captured_variable(f, parameter)=decorator_location.handle_request]",
       "index": 0,
       "return_type": []
     }
@@ -962,7 +962,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator_location.pass_local_variable_to_x.inner[local($parameter$f)=decorator_location.handle_request]",
+  "callable": "decorator_location.pass_local_variable_to_x.inner[captured_variable(f, parameter)=decorator_location.handle_request]",
   "returned_callables": [],
   "calls": {
     "108:8-108:27": {
@@ -989,7 +989,7 @@ Higher order call graphs
   "callable": "decorator_location.with_logging[formal(f, position=0)=decorator_location.decorated_logging_ignore_this_decorator]",
   "returned_callables": [
     {
-      "target": "decorator_location.with_logging.inner[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper, local($parameter$f)=decorator_location.decorated_logging_ignore_this_decorator]",
+      "target": "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.decorated_logging_ignore_this_decorator]",
       "index": 0,
       "return_type": []
     }
@@ -1020,10 +1020,10 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator_location.with_logging[formal(f, position=0)=decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging_logging2]]",
+  "callable": "decorator_location.with_logging[formal(f, position=0)=decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]]",
   "returned_callables": [
     {
-      "target": "decorator_location.with_logging.inner[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper, local($parameter$f)=decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging_logging2]]",
+      "target": "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]]",
       "index": 0,
       "return_type": []
     }
@@ -1054,7 +1054,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator_location.with_logging.inner[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper, local($parameter$f)=decorator_location.decorated_logging_ignore_this_decorator]",
+  "callable": "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.decorated_logging_ignore_this_decorator]",
   "returned_callables": [],
   "calls": {
     "19:8-19:21": {
@@ -1089,7 +1089,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator_location.with_logging.inner[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper, local($parameter$f)=decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging_logging2]]",
+  "callable": "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]]",
   "returned_callables": [],
   "calls": {
     "19:8-19:21": {
@@ -1103,7 +1103,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging_logging2]",
+            "target": "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]",
             "index": 0,
             "return_type": []
           }
@@ -1127,7 +1127,7 @@ Higher order call graphs
   "callable": "decorator_location.with_logging2[formal(f, position=0)=decorator_location.decorated_logging2_skip_this_decorator]",
   "returned_callables": [
     {
-      "target": "decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging2_skip_this_decorator]",
+      "target": "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging2_skip_this_decorator]",
       "index": 0,
       "return_type": []
     }
@@ -1150,7 +1150,7 @@ Higher order call graphs
   "callable": "decorator_location.with_logging2[formal(f, position=0)=decorator_location.decorated_logging_logging2]",
   "returned_callables": [
     {
-      "target": "decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging_logging2]",
+      "target": "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]",
       "index": 0,
       "return_type": []
     }
@@ -1170,7 +1170,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging2_skip_this_decorator]",
+  "callable": "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging2_skip_this_decorator]",
   "returned_callables": [],
   "calls": {
     "28:8-28:21": {
@@ -1194,7 +1194,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging_logging2]",
+  "callable": "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]",
   "returned_callables": [],
   "calls": {
     "28:8-28:21": {

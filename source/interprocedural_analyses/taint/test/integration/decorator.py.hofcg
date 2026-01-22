@@ -305,7 +305,7 @@ Higher order call graphs
   "callable": "decorator.decorated@decorated",
   "returned_callables": [
     {
-      "target": "decorator._strip_first_parameter_.inner[local($parameter$f)=decorator.decorated]",
+      "target": "decorator._strip_first_parameter_.inner[captured_variable(f, parameter)=decorator.decorated]",
       "index": 0,
       "return_type": []
     }
@@ -379,7 +379,7 @@ Higher order call graphs
   "callable": "decorator.foo@decorated",
   "returned_callables": [
     {
-      "target": "decorator.with_logging.inner[local($parameter$f)=decorator.foo]",
+      "target": "decorator.with_logging.inner[captured_variable(f, parameter)=decorator.foo]",
       "index": 0,
       "return_type": []
     }
@@ -423,7 +423,7 @@ Higher order call graphs
   "callable": "decorator.foo_args_kwargs@decorated",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.foo_args_kwargs]",
+      "target": "decorator.with_logging_args_kwargs.inner[captured_variable(f, parameter)=decorator.foo_args_kwargs]",
       "index": 0,
       "return_type": []
     }
@@ -473,7 +473,7 @@ Higher order call graphs
   "callable": "decorator.foo_args_kwargs_with_sink@decorated",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.foo_args_kwargs_with_sink]",
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.foo_args_kwargs_with_sink]",
       "index": 0,
       "return_type": []
     }
@@ -521,7 +521,7 @@ Higher order call graphs
   "callable": "decorator.foo_async@decorated",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_async.inner[local($parameter$f)=decorator.foo_async]",
+      "target": "decorator.with_logging_async.inner[captured_variable(f, parameter)=decorator.foo_async]",
       "index": 0,
       "return_type": []
     }
@@ -569,7 +569,7 @@ Higher order call graphs
   "callable": "decorator.foo_log_first_parameter@decorated",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_first_parameter.inner[local($parameter$f)=decorator.foo_log_first_parameter]",
+      "target": "decorator.with_logging_first_parameter.inner[captured_variable(f, parameter)=decorator.foo_log_first_parameter]",
       "index": 0,
       "return_type": []
     }
@@ -622,7 +622,7 @@ Higher order call graphs
       "return_type": []
     },
     {
-      "target": "decorator.with_named_logger._inner_decorator.inner[local($parameter$f)=decorator.foo_using_decorator_factory]",
+      "target": "decorator.with_named_logger._inner_decorator.inner[captured_variable(f, parameter)=decorator.foo_using_decorator_factory]",
       "index": 0,
       "return_type": []
     }
@@ -681,7 +681,7 @@ Higher order call graphs
   "callable": "decorator.foo_with_helper_function@decorated",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_helper_functions.inner[local($parameter$f)=decorator.foo_with_helper_function]",
+      "target": "decorator.with_logging_helper_functions.inner[captured_variable(f, parameter)=decorator.foo_with_helper_function]",
       "index": 0,
       "return_type": []
     }
@@ -729,7 +729,7 @@ Higher order call graphs
   "callable": "decorator.foo_with_shady_decorators@decorated",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_source.inner[local($parameter$callable)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
+      "target": "decorator.with_logging_source.inner[captured_variable(callable, parameter)=decorator.with_logging_sink.inner[captured_variable(callable, parameter)=decorator.foo_with_shady_decorators]]",
       "index": 0,
       "return_type": []
     }
@@ -739,7 +739,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.fails_to_apply[formal(f, position=0)=decorator.with_logging_source.inner[local($parameter$callable)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]]",
+            "target": "decorator.fails_to_apply[formal(f, position=0)=decorator.with_logging_source.inner[captured_variable(callable, parameter)=decorator.with_logging_sink.inner[captured_variable(callable, parameter)=decorator.foo_with_shady_decorators]]]",
             "index": 0,
             "return_type": []
           }
@@ -750,7 +750,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_source[formal(callable, position=0)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
+            "target": "decorator.with_logging_source[formal(callable, position=0)=decorator.with_logging_sink.inner[captured_variable(callable, parameter)=decorator.foo_with_shady_decorators]]",
             "index": 0,
             "return_type": []
           }
@@ -761,7 +761,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.fails_to_apply[formal(f, position=0)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
+            "target": "decorator.fails_to_apply[formal(f, position=0)=decorator.with_logging_sink.inner[captured_variable(callable, parameter)=decorator.foo_with_shady_decorators]]",
             "index": 0,
             "return_type": []
           }
@@ -828,7 +828,7 @@ Higher order call graphs
   "callable": "decorator.foo_with_sink@decorated",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_no_sink.inner[local($parameter$f)=decorator.foo_with_sink]",
+      "target": "decorator.with_logging_no_sink.inner[captured_variable(f, parameter)=decorator.foo_with_sink]",
       "index": 0,
       "return_type": []
     }
@@ -939,7 +939,7 @@ Higher order call graphs
             "return_type": []
           },
           {
-            "target": "decorator.conditional_decorator_factory.add_sink.inner[local($parameter$f)=decorator.sink_via_conditional_decorator_factory]",
+            "target": "decorator.conditional_decorator_factory.add_sink.inner[captured_variable(f, parameter)=decorator.sink_via_conditional_decorator_factory]",
             "index": 0,
             "return_type": []
           }
@@ -1035,7 +1035,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.trivial_decorator.inner[local($parameter$f)=decorator.sink_via_trivial_decorator]",
+            "target": "decorator.trivial_decorator.inner[captured_variable(f, parameter)=decorator.sink_via_trivial_decorator]",
             "index": 0,
             "return_type": []
           }
@@ -1059,7 +1059,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging.inner[local($parameter$f)=decorator.foo]",
+            "target": "decorator.with_logging.inner[captured_variable(f, parameter)=decorator.foo]",
             "index": 0,
             "return_type": []
           }
@@ -1077,7 +1077,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_no_sink.inner[local($parameter$f)=decorator.foo_with_sink]",
+            "target": "decorator.with_logging_no_sink.inner[captured_variable(f, parameter)=decorator.foo_with_sink]",
             "index": 0,
             "return_type": []
           }
@@ -1095,7 +1095,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_async.inner[local($parameter$f)=decorator.foo_async]",
+            "target": "decorator.with_logging_async.inner[captured_variable(f, parameter)=decorator.foo_async]",
             "index": 0,
             "return_type": []
           }
@@ -1113,7 +1113,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.foo_args_kwargs]",
+            "target": "decorator.with_logging_args_kwargs.inner[captured_variable(f, parameter)=decorator.foo_args_kwargs]",
             "index": 0,
             "return_type": []
           }
@@ -1131,7 +1131,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.foo_args_kwargs_with_sink]",
+            "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.foo_args_kwargs_with_sink]",
             "index": 0,
             "return_type": []
           }
@@ -1149,7 +1149,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.foo_args_kwargs_with_sink]",
+            "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.foo_args_kwargs_with_sink]",
             "index": 1,
             "return_type": []
           }
@@ -1167,7 +1167,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_source.inner[local($parameter$callable)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
+            "target": "decorator.with_logging_source.inner[captured_variable(callable, parameter)=decorator.with_logging_sink.inner[captured_variable(callable, parameter)=decorator.foo_with_shady_decorators]]",
             "index": 0,
             "return_type": []
           }
@@ -1183,7 +1183,7 @@ Higher order call graphs
             "return_type": []
           },
           {
-            "target": "decorator.with_named_logger._inner_decorator.inner[local($parameter$f)=decorator.foo_using_decorator_factory]",
+            "target": "decorator.with_named_logger._inner_decorator.inner[captured_variable(f, parameter)=decorator.foo_using_decorator_factory]",
             "index": 0,
             "return_type": []
           }
@@ -1201,7 +1201,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_first_parameter.inner[local($parameter$f)=decorator.foo_log_first_parameter]",
+            "target": "decorator.with_logging_first_parameter.inner[captured_variable(f, parameter)=decorator.foo_log_first_parameter]",
             "index": 0,
             "return_type": []
           }
@@ -1219,7 +1219,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_helper_functions.inner[local($parameter$f)=decorator.foo_with_helper_function]",
+            "target": "decorator.with_logging_helper_functions.inner[captured_variable(f, parameter)=decorator.foo_with_helper_function]",
             "index": 0,
             "return_type": []
           }
@@ -1257,7 +1257,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.foo]",
+            "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.Foo.foo]",
             "index": 0,
             "return_type": []
           }
@@ -1295,7 +1295,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.foo]",
+            "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.Foo.foo]",
             "index": 1,
             "return_type": []
           }
@@ -1313,7 +1313,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.foo]",
+            "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.Foo.foo]",
             "index": 2,
             "return_type": []
           }
@@ -1371,7 +1371,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]",
+            "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.with_logging_args_kwargs.inner[captured_variable(f, parameter)=decorator.Foo.bar]]",
             "index": 0,
             "return_type": []
           }
@@ -1409,7 +1409,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.self_has_generic_type]",
+            "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.Foo.self_has_generic_type]",
             "index": 0,
             "return_type": []
           }
@@ -1447,7 +1447,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.some_class_method]",
+            "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.Foo.some_class_method]",
             "index": 0,
             "return_type": []
           }
@@ -1490,7 +1490,7 @@ Higher order call graphs
   "callable": "decorator.return_source_via_decorator@decorated",
   "returned_callables": [
     {
-      "target": "decorator.add_return_source.inner[local($parameter$callable)=decorator.return_source_via_decorator]",
+      "target": "decorator.add_return_source.inner[captured_variable(callable, parameter)=decorator.return_source_via_decorator]",
       "index": 0,
       "return_type": []
     }
@@ -1540,7 +1540,7 @@ Higher order call graphs
   "callable": "decorator.second_parameter_source_inlineable_decorator@decorated",
   "returned_callables": [
     {
-      "target": "decorator.trivial_decorator.inner[local($parameter$f)=decorator.second_parameter_source_inlineable_decorator]",
+      "target": "decorator.trivial_decorator.inner[captured_variable(f, parameter)=decorator.second_parameter_source_inlineable_decorator]",
       "index": 0,
       "return_type": []
     }
@@ -1605,7 +1605,7 @@ Higher order call graphs
   "callable": "decorator.second_parameter_source_inlineable_decorator_with_inner@decorated",
   "returned_callables": [
     {
-      "target": "decorator.trivial_decorator.inner[local($parameter$f)=decorator.second_parameter_source_inlineable_decorator_with_inner]",
+      "target": "decorator.trivial_decorator.inner[captured_variable(f, parameter)=decorator.second_parameter_source_inlineable_decorator_with_inner]",
       "index": 0,
       "return_type": []
     }
@@ -1721,7 +1721,7 @@ Higher order call graphs
       "return_type": []
     },
     {
-      "target": "decorator.conditional_decorator_factory.add_sink.inner[local($parameter$f)=decorator.sink_via_conditional_decorator_factory]",
+      "target": "decorator.conditional_decorator_factory.add_sink.inner[captured_variable(f, parameter)=decorator.sink_via_conditional_decorator_factory]",
       "index": 0,
       "return_type": []
     }
@@ -1964,7 +1964,7 @@ Higher order call graphs
   "callable": "decorator.sink_via_trivial_decorator@decorated",
   "returned_callables": [
     {
-      "target": "decorator.trivial_decorator.inner[local($parameter$f)=decorator.sink_via_trivial_decorator]",
+      "target": "decorator.trivial_decorator.inner[captured_variable(f, parameter)=decorator.sink_via_trivial_decorator]",
       "index": 0,
       "return_type": []
     }
@@ -2005,7 +2005,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.add_return_source.inner[local($parameter$callable)=decorator.return_source_via_decorator]",
+            "target": "decorator.add_return_source.inner[captured_variable(callable, parameter)=decorator.return_source_via_decorator]",
             "index": 0,
             "return_type": []
           }
@@ -2065,7 +2065,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator._strip_first_parameter_.inner[local($parameter$f)=decorator.decorated]",
+            "target": "decorator._strip_first_parameter_.inner[captured_variable(f, parameter)=decorator.decorated]",
             "index": 0,
             "return_type": []
           }
@@ -2654,7 +2654,7 @@ Higher order call graphs
   "callable": "decorator.Foo.bar@decorated",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]",
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.with_logging_args_kwargs.inner[captured_variable(f, parameter)=decorator.Foo.bar]]",
       "index": 0,
       "return_type": []
     }
@@ -2664,7 +2664,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_args_kwargs_no_sink[formal(f, position=0)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]",
+            "target": "decorator.with_logging_args_kwargs_no_sink[formal(f, position=0)=decorator.with_logging_args_kwargs.inner[captured_variable(f, parameter)=decorator.Foo.bar]]",
             "index": 0,
             "return_type": []
           }
@@ -2722,7 +2722,7 @@ Higher order call graphs
   "callable": "decorator.Foo.foo@decorated",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.foo]",
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.Foo.foo]",
       "index": 0,
       "return_type": []
     }
@@ -2764,7 +2764,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]",
+            "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.with_logging_args_kwargs.inner[captured_variable(f, parameter)=decorator.Foo.bar]]",
             "index": 0,
             "return_type": []
           }
@@ -2777,7 +2777,7 @@ Higher order call graphs
   "callable": "decorator.Foo.self_has_generic_type@decorated",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.self_has_generic_type]",
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.Foo.self_has_generic_type]",
       "index": 0,
       "return_type": []
     }
@@ -2872,7 +2872,7 @@ Higher order call graphs
   "callable": "decorator.Foo.some_class_method@decorated",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.some_class_method]",
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.Foo.some_class_method]",
       "index": 0,
       "return_type": []
     }
@@ -3003,7 +3003,7 @@ Higher order call graphs
   "callable": "decorator._strip_first_parameter_[formal(f, position=0)=decorator.decorated]",
   "returned_callables": [
     {
-      "target": "decorator._strip_first_parameter_.inner[local($parameter$f)=decorator.decorated]",
+      "target": "decorator._strip_first_parameter_.inner[captured_variable(f, parameter)=decorator.decorated]",
       "index": 0,
       "return_type": []
     }
@@ -3023,7 +3023,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator._strip_first_parameter_.inner[local($parameter$f)=decorator.decorated]",
+  "callable": "decorator._strip_first_parameter_.inner[captured_variable(f, parameter)=decorator.decorated]",
   "returned_callables": [],
   "calls": {
     "284:8-284:29": {
@@ -3039,7 +3039,7 @@ Higher order call graphs
   "callable": "decorator.add_return_source[formal(callable, position=0)=decorator.return_source_via_decorator]",
   "returned_callables": [
     {
-      "target": "decorator.add_return_source.inner[local($parameter$callable)=decorator.return_source_via_decorator]",
+      "target": "decorator.add_return_source.inner[captured_variable(callable, parameter)=decorator.return_source_via_decorator]",
       "index": 0,
       "return_type": []
     }
@@ -3059,7 +3059,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.add_return_source.inner[local($parameter$callable)=decorator.return_source_via_decorator]",
+  "callable": "decorator.add_return_source.inner[captured_variable(callable, parameter)=decorator.return_source_via_decorator]",
   "returned_callables": [],
   "calls": {
     "405:11-405:26": {
@@ -3123,7 +3123,7 @@ Higher order call graphs
   "callable": "decorator.conditional_decorator_factory.add_sink[formal(f, position=0)=decorator.sink_via_conditional_decorator_factory]",
   "returned_callables": [
     {
-      "target": "decorator.conditional_decorator_factory.add_sink.inner[local($parameter$f)=decorator.sink_via_conditional_decorator_factory]",
+      "target": "decorator.conditional_decorator_factory.add_sink.inner[captured_variable(f, parameter)=decorator.sink_via_conditional_decorator_factory]",
       "index": 0,
       "return_type": []
     }
@@ -3143,7 +3143,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.conditional_decorator_factory.add_sink.inner[local($parameter$f)=decorator.sink_via_conditional_decorator_factory]",
+  "callable": "decorator.conditional_decorator_factory.add_sink.inner[captured_variable(f, parameter)=decorator.sink_via_conditional_decorator_factory]",
   "returned_callables": [],
   "calls": {
     "364:16-364:29": {
@@ -3248,10 +3248,10 @@ Higher order call graphs
   "calls": {}
 }
 {
-  "callable": "decorator.fails_to_apply[formal(f, position=0)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
+  "callable": "decorator.fails_to_apply[formal(f, position=0)=decorator.with_logging_sink.inner[captured_variable(callable, parameter)=decorator.foo_with_shady_decorators]]",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]",
+      "target": "decorator.with_logging_sink.inner[captured_variable(callable, parameter)=decorator.foo_with_shady_decorators]",
       "index": 0,
       "return_type": []
     }
@@ -3259,10 +3259,10 @@ Higher order call graphs
   "calls": {}
 }
 {
-  "callable": "decorator.fails_to_apply[formal(f, position=0)=decorator.with_logging_source.inner[local($parameter$callable)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]]",
+  "callable": "decorator.fails_to_apply[formal(f, position=0)=decorator.with_logging_source.inner[captured_variable(callable, parameter)=decorator.with_logging_sink.inner[captured_variable(callable, parameter)=decorator.foo_with_shady_decorators]]]",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_source.inner[local($parameter$callable)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
+      "target": "decorator.with_logging_source.inner[captured_variable(callable, parameter)=decorator.with_logging_sink.inner[captured_variable(callable, parameter)=decorator.foo_with_shady_decorators]]",
       "index": 0,
       "return_type": []
     }
@@ -3307,7 +3307,7 @@ Higher order call graphs
   "callable": "decorator.trivial_decorator[formal(f, position=0)=decorator.second_parameter_source_inlineable_decorator]",
   "returned_callables": [
     {
-      "target": "decorator.trivial_decorator.inner[local($parameter$f)=decorator.second_parameter_source_inlineable_decorator]",
+      "target": "decorator.trivial_decorator.inner[captured_variable(f, parameter)=decorator.second_parameter_source_inlineable_decorator]",
       "index": 0,
       "return_type": []
     }
@@ -3330,7 +3330,7 @@ Higher order call graphs
   "callable": "decorator.trivial_decorator[formal(f, position=0)=decorator.second_parameter_source_inlineable_decorator_with_inner]",
   "returned_callables": [
     {
-      "target": "decorator.trivial_decorator.inner[local($parameter$f)=decorator.second_parameter_source_inlineable_decorator_with_inner]",
+      "target": "decorator.trivial_decorator.inner[captured_variable(f, parameter)=decorator.second_parameter_source_inlineable_decorator_with_inner]",
       "index": 0,
       "return_type": []
     }
@@ -3353,7 +3353,7 @@ Higher order call graphs
   "callable": "decorator.trivial_decorator[formal(f, position=0)=decorator.sink_via_trivial_decorator]",
   "returned_callables": [
     {
-      "target": "decorator.trivial_decorator.inner[local($parameter$f)=decorator.sink_via_trivial_decorator]",
+      "target": "decorator.trivial_decorator.inner[captured_variable(f, parameter)=decorator.sink_via_trivial_decorator]",
       "index": 0,
       "return_type": []
     }
@@ -3373,7 +3373,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.trivial_decorator.inner[local($parameter$f)=decorator.sink_via_trivial_decorator]",
+  "callable": "decorator.trivial_decorator.inner[captured_variable(f, parameter)=decorator.sink_via_trivial_decorator]",
   "returned_callables": [],
   "calls": {
     "251:8-251:26": {
@@ -3393,7 +3393,7 @@ Higher order call graphs
   "callable": "decorator.with_logging[formal(f, position=0)=decorator.foo]",
   "returned_callables": [
     {
-      "target": "decorator.with_logging.inner[local($parameter$f)=decorator.foo]",
+      "target": "decorator.with_logging.inner[captured_variable(f, parameter)=decorator.foo]",
       "index": 0,
       "return_type": []
     }
@@ -3413,7 +3413,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.with_logging.inner[local($parameter$f)=decorator.foo]",
+  "callable": "decorator.with_logging.inner[captured_variable(f, parameter)=decorator.foo]",
   "returned_callables": [],
   "calls": {
     "17:8-17:21": {
@@ -3436,7 +3436,7 @@ Higher order call graphs
   "callable": "decorator.with_logging_args_kwargs[formal(f, position=0)=decorator.foo_args_kwargs]",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.foo_args_kwargs]",
+      "target": "decorator.with_logging_args_kwargs.inner[captured_variable(f, parameter)=decorator.foo_args_kwargs]",
       "index": 0,
       "return_type": []
     }
@@ -3459,7 +3459,7 @@ Higher order call graphs
   "callable": "decorator.with_logging_args_kwargs[formal(f, position=0)=decorator.Foo.bar]",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]",
+      "target": "decorator.with_logging_args_kwargs.inner[captured_variable(f, parameter)=decorator.Foo.bar]",
       "index": 0,
       "return_type": []
     }
@@ -3479,7 +3479,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.foo_args_kwargs]",
+  "callable": "decorator.with_logging_args_kwargs.inner[captured_variable(f, parameter)=decorator.foo_args_kwargs]",
   "returned_callables": [],
   "calls": {
     "60:8-60:26": {
@@ -3503,7 +3503,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]",
+  "callable": "decorator.with_logging_args_kwargs.inner[captured_variable(f, parameter)=decorator.Foo.bar]",
   "returned_callables": [],
   "calls": {
     "60:8-60:26": {
@@ -3526,7 +3526,7 @@ Higher order call graphs
   "callable": "decorator.with_logging_args_kwargs_no_sink[formal(f, position=0)=decorator.foo_args_kwargs_with_sink]",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.foo_args_kwargs_with_sink]",
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.foo_args_kwargs_with_sink]",
       "index": 0,
       "return_type": []
     }
@@ -3549,7 +3549,7 @@ Higher order call graphs
   "callable": "decorator.with_logging_args_kwargs_no_sink[formal(f, position=0)=decorator.Foo.foo]",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.foo]",
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.Foo.foo]",
       "index": 0,
       "return_type": []
     }
@@ -3572,7 +3572,7 @@ Higher order call graphs
   "callable": "decorator.with_logging_args_kwargs_no_sink[formal(f, position=0)=decorator.Foo.self_has_generic_type]",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.self_has_generic_type]",
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.Foo.self_has_generic_type]",
       "index": 0,
       "return_type": []
     }
@@ -3595,7 +3595,7 @@ Higher order call graphs
   "callable": "decorator.with_logging_args_kwargs_no_sink[formal(f, position=0)=decorator.Foo.some_class_method]",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.some_class_method]",
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.Foo.some_class_method]",
       "index": 0,
       "return_type": []
     }
@@ -3615,10 +3615,10 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.with_logging_args_kwargs_no_sink[formal(f, position=0)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]",
+  "callable": "decorator.with_logging_args_kwargs_no_sink[formal(f, position=0)=decorator.with_logging_args_kwargs.inner[captured_variable(f, parameter)=decorator.Foo.bar]]",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]",
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.with_logging_args_kwargs.inner[captured_variable(f, parameter)=decorator.Foo.bar]]",
       "index": 0,
       "return_type": []
     }
@@ -3638,7 +3638,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.foo_args_kwargs_with_sink]",
+  "callable": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.foo_args_kwargs_with_sink]",
   "returned_callables": [],
   "calls": {
     "73:8-73:26": {
@@ -3655,7 +3655,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.foo]",
+  "callable": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.Foo.foo]",
   "returned_callables": [],
   "calls": {
     "73:8-73:26": {
@@ -3668,7 +3668,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.self_has_generic_type]",
+  "callable": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.Foo.self_has_generic_type]",
   "returned_callables": [],
   "calls": {
     "73:8-73:26": {
@@ -3685,7 +3685,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.some_class_method]",
+  "callable": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.Foo.some_class_method]",
   "returned_callables": [],
   "calls": {
     "73:8-73:26": {
@@ -3703,14 +3703,14 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]",
+  "callable": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.with_logging_args_kwargs.inner[captured_variable(f, parameter)=decorator.Foo.bar]]",
   "returned_callables": [],
   "calls": {
     "73:8-73:26": {
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]",
+            "target": "decorator.with_logging_args_kwargs.inner[captured_variable(f, parameter)=decorator.Foo.bar]",
             "index": 0,
             "return_type": []
           }
@@ -3723,7 +3723,7 @@ Higher order call graphs
   "callable": "decorator.with_logging_async[formal(f, position=0)=decorator.foo_async]",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_async.inner[local($parameter$f)=decorator.foo_async]",
+      "target": "decorator.with_logging_async.inner[captured_variable(f, parameter)=decorator.foo_async]",
       "index": 0,
       "return_type": []
     }
@@ -3743,7 +3743,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.with_logging_async.inner[local($parameter$f)=decorator.foo_async]",
+  "callable": "decorator.with_logging_async.inner[captured_variable(f, parameter)=decorator.foo_async]",
   "returned_callables": [],
   "calls": {
     "46:27-46:31": {
@@ -3766,7 +3766,7 @@ Higher order call graphs
   "callable": "decorator.with_logging_first_parameter[formal(f, position=0)=decorator.foo_log_first_parameter]",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_first_parameter.inner[local($parameter$f)=decorator.foo_log_first_parameter]",
+      "target": "decorator.with_logging_first_parameter.inner[captured_variable(f, parameter)=decorator.foo_log_first_parameter]",
       "index": 0,
       "return_type": []
     }
@@ -3786,7 +3786,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.with_logging_first_parameter.inner[local($parameter$f)=decorator.foo_log_first_parameter]",
+  "callable": "decorator.with_logging_first_parameter.inner[captured_variable(f, parameter)=decorator.foo_log_first_parameter]",
   "returned_callables": [],
   "calls": {
     "132:11-132:32|artificial-call|comparison": {
@@ -3839,7 +3839,7 @@ Higher order call graphs
   "callable": "decorator.with_logging_helper_functions[formal(f, position=0)=decorator.foo_with_helper_function]",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_helper_functions.inner[local($parameter$f)=decorator.foo_with_helper_function]",
+      "target": "decorator.with_logging_helper_functions.inner[captured_variable(f, parameter)=decorator.foo_with_helper_function]",
       "index": 0,
       "return_type": []
     }
@@ -3881,7 +3881,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.with_logging_helper_functions.inner[local($parameter$f)=decorator.foo_with_helper_function]",
+  "callable": "decorator.with_logging_helper_functions.inner[captured_variable(f, parameter)=decorator.foo_with_helper_function]",
   "returned_callables": [],
   "calls": {
     "151:12-151:35": {
@@ -3939,7 +3939,7 @@ Higher order call graphs
   "callable": "decorator.with_logging_no_sink[formal(f, position=0)=decorator.foo_with_sink]",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_no_sink.inner[local($parameter$f)=decorator.foo_with_sink]",
+      "target": "decorator.with_logging_no_sink.inner[captured_variable(f, parameter)=decorator.foo_with_sink]",
       "index": 0,
       "return_type": []
     }
@@ -3959,7 +3959,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.with_logging_no_sink.inner[local($parameter$f)=decorator.foo_with_sink]",
+  "callable": "decorator.with_logging_no_sink.inner[captured_variable(f, parameter)=decorator.foo_with_sink]",
   "returned_callables": [],
   "calls": {
     "30:8-30:12": {
@@ -3979,7 +3979,7 @@ Higher order call graphs
   "callable": "decorator.with_logging_sink[formal(callable, position=0)=decorator.foo_with_shady_decorators]",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]",
+      "target": "decorator.with_logging_sink.inner[captured_variable(callable, parameter)=decorator.foo_with_shady_decorators]",
       "index": 0,
       "return_type": []
     }
@@ -3999,7 +3999,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]",
+  "callable": "decorator.with_logging_sink.inner[captured_variable(callable, parameter)=decorator.foo_with_shady_decorators]",
   "returned_callables": [],
   "calls": {
     "85:8-85:21": {
@@ -4023,10 +4023,10 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.with_logging_source[formal(callable, position=0)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
+  "callable": "decorator.with_logging_source[formal(callable, position=0)=decorator.with_logging_sink.inner[captured_variable(callable, parameter)=decorator.foo_with_shady_decorators]]",
   "returned_callables": [
     {
-      "target": "decorator.with_logging_source.inner[local($parameter$callable)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
+      "target": "decorator.with_logging_source.inner[captured_variable(callable, parameter)=decorator.with_logging_sink.inner[captured_variable(callable, parameter)=decorator.foo_with_shady_decorators]]",
       "index": 0,
       "return_type": []
     }
@@ -4046,14 +4046,14 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.with_logging_source.inner[local($parameter$callable)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
+  "callable": "decorator.with_logging_source.inner[captured_variable(callable, parameter)=decorator.with_logging_sink.inner[captured_variable(callable, parameter)=decorator.foo_with_shady_decorators]]",
   "returned_callables": [],
   "calls": {
     "93:8-93:36": {
       "call": {
         "calls": [
           {
-            "target": "decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]",
+            "target": "decorator.with_logging_sink.inner[captured_variable(callable, parameter)=decorator.foo_with_shady_decorators]",
             "index": 0,
             "return_type": []
           }
@@ -4086,7 +4086,7 @@ Higher order call graphs
   "callable": "decorator.with_named_logger._inner_decorator[formal(f, position=0)=decorator.foo_using_decorator_factory]",
   "returned_callables": [
     {
-      "target": "decorator.with_named_logger._inner_decorator.inner[local($parameter$f)=decorator.foo_using_decorator_factory]",
+      "target": "decorator.with_named_logger._inner_decorator.inner[captured_variable(f, parameter)=decorator.foo_using_decorator_factory]",
       "index": 0,
       "return_type": []
     }
@@ -4106,7 +4106,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator.with_named_logger._inner_decorator.inner[local($parameter$f)=decorator.foo_using_decorator_factory]",
+  "callable": "decorator.with_named_logger._inner_decorator.inner[captured_variable(f, parameter)=decorator.foo_using_decorator_factory]",
   "returned_callables": [],
   "calls": {
     "114:12-114:45": {

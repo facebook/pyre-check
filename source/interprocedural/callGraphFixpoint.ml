@@ -151,6 +151,7 @@ module CallGraphAnalysis = struct
               ~define
               ~initial_state:
                 (CallGraphBuilder.HigherOrderCallGraph.State.initialize_from_callable
+                   ~pyre_api
                    ~callables_to_definitions_map
                    callable)
               ~get_callee_model

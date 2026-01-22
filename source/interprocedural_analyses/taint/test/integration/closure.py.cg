@@ -10,7 +10,7 @@ Call dependencies
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "closure.async_nonlocal_closure_tito_with_decorator (fun)": [
-    "closure.async_tito (fun)[formal(function, position=0)=closure.decorator.wrapper (fun)[local($parameter$function)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]]",
+    "closure.async_tito (fun)[formal(function, position=0)=closure.decorator.wrapper (fun)[captured_variable(function, parameter)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]]",
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "closure.async_nonlocal_closure_tito_with_decorator.inner@decorated (fun)": [
@@ -19,8 +19,8 @@ Call dependencies
   "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)]": [
     "closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)"
   ],
-  "closure.async_tito (fun)[formal(function, position=0)=closure.decorator.wrapper (fun)[local($parameter$function)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]]": [
-    "closure.decorator.wrapper (fun)[local($parameter$function)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]"
+  "closure.async_tito (fun)[formal(function, position=0)=closure.decorator.wrapper (fun)[captured_variable(function, parameter)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]]": [
+    "closure.decorator.wrapper (fun)[captured_variable(function, parameter)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]"
   ],
   "closure.closure (fun)": [
     "closure.Object.__init__ (method)", "object.__new__ (method)"
@@ -43,7 +43,7 @@ Call dependencies
     "pysa._test_sink (fun)"
   ],
   "closure.closure_no_flow (fun)": [ "closure.closure (fun)" ],
-  "closure.decorator.wrapper (fun)[local($parameter$function)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]": [
+  "closure.decorator.wrapper (fun)[captured_variable(function, parameter)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]": [
     "closure.async_nonlocal_closure_tito_with_decorator.inner (fun)"
   ],
   "closure.higher_order_function (fun)[formal(f, position=0)=closure.wrapper_for_taint_propagation_hof.inner (fun)]": [
@@ -149,7 +149,7 @@ Call dependencies
   ],
   "closure.nonlocal_closure_wrapper_flow (fun)": [
     "closure.nonlocal_closure_wrapper_flow.wrapper (fun)",
-    "closure.nonlocal_closure_wrapper_flow.wrapper (fun)[local($local_closure?nonlocal_closure_wrapper_flow$source)=closure.nonlocal_closure_wrapper_flow.source (fun)]",
+    "closure.nonlocal_closure_wrapper_flow.wrapper (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_flow)=closure.nonlocal_closure_wrapper_flow.source (fun)]",
     "pysa._test_sink (fun)"
   ],
   "closure.nonlocal_closure_wrapper_flow.source (fun)": [
@@ -158,7 +158,7 @@ Call dependencies
   "closure.nonlocal_closure_wrapper_flow.wrapper (fun)": [
     "closure.nonlocal_closure_wrapper_flow.source (fun)"
   ],
-  "closure.nonlocal_closure_wrapper_flow.wrapper (fun)[local($local_closure?nonlocal_closure_wrapper_flow$source)=closure.nonlocal_closure_wrapper_flow.source (fun)]": [
+  "closure.nonlocal_closure_wrapper_flow.wrapper (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_flow)=closure.nonlocal_closure_wrapper_flow.source (fun)]": [
     "closure.nonlocal_closure_wrapper_flow.source (fun)"
   ],
   "closure.nonlocal_closure_write_reduction (fun)": [

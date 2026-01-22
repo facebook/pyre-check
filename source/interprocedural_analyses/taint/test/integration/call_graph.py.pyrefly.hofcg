@@ -604,7 +604,14 @@ Higher order call graphs
 }
 {
   "callable": "call_graph.CallableKindConfusion.foo@decorated",
-  "returned_callables": [],
+  "returned_callables": [
+    {
+      "target": "call_graph.CallableKindConfusion.foo",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
   "calls": {
     "96:5-96:20|artificial-call|for-decorated-target": {
       "call": {
@@ -697,8 +704,27 @@ Higher order call graphs
   }
 }
 {
+  "callable": "call_graph.no_op_decorator[formal(f, position=0)=call_graph.CallableKindConfusion.foo]",
+  "returned_callables": [
+    {
+      "target": "call_graph.CallableKindConfusion.foo",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
   "callable": "call_graph.no_op_decorator_factory.inner[formal(original, position=0)=call_graph.CallableKindConfusion.foo]",
-  "returned_callables": [],
+  "returned_callables": [
+    {
+      "target": "call_graph.CallableKindConfusion.foo",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
   "calls": {
     "85:8-85:39": {
       "call": {

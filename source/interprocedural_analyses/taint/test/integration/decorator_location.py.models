@@ -759,7 +759,7 @@
             "call": {
               "position": { "line": 165, "start": 19, "end": 33 },
               "resolves_to": [
-                "decorator_location.pass_local_variable_to_x.inner[local($parameter$f)=decorator_location.handle_request]"
+                "decorator_location.pass_local_variable_to_x.inner[captured_variable(f, parameter)=decorator_location.handle_request]"
               ],
               "port": "formal(request, position=0)",
               "call_site": "165:4-165:42"
@@ -842,7 +842,7 @@
             "call": {
               "position": { "line": 147, "start": 31, "end": 45 },
               "resolves_to": [
-                "decorator_location.with_logging.inner[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper, local($parameter$f)=decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging_logging2]]"
+                "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]]"
               ],
               "port": "formal(x, position=0)",
               "call_site": "147:4-147:46"
@@ -866,7 +866,7 @@
             "call": {
               "position": { "line": 161, "start": 44, "end": 58 },
               "resolves_to": [
-                "decorator_location.with_logging.inner[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper, local($parameter$f)=decorator_location.decorated_logging_ignore_this_decorator]"
+                "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.decorated_logging_ignore_this_decorator]"
               ],
               "port": "formal(x, position=0)",
               "call_site": "161:4-161:59"
@@ -940,7 +940,7 @@
             "call": {
               "position": { "line": 151, "start": 43, "end": 57 },
               "resolves_to": [
-                "decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging2_skip_this_decorator]"
+                "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging2_skip_this_decorator]"
               ],
               "port": "formal(x, position=0)",
               "call_site": "151:4-151:58"
@@ -1245,7 +1245,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.pass_local_variable_to_x.inner[local($parameter$f)=decorator_location.handle_request]",
+    "callable": "decorator_location.pass_local_variable_to_x.inner[captured_variable(f, parameter)=decorator_location.handle_request]",
     "filename": "decorator_location.py",
     "callable_line": 107,
     "sinks": [
@@ -1273,7 +1273,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.with_logging.inner[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper, local($parameter$f)=decorator_location.decorated_logging_ignore_this_decorator]",
+    "callable": "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.decorated_logging_ignore_this_decorator]",
     "filename": "decorator_location.py",
     "callable_line": 18,
     "sinks": [
@@ -1352,7 +1352,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.with_logging.inner[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper, local($parameter$f)=decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging_logging2]]",
+    "callable": "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]]",
     "filename": "decorator_location.py",
     "callable_line": 18,
     "sinks": [
@@ -1393,7 +1393,7 @@
             "call": {
               "position": { "line": 20, "start": 10, "end": 11 },
               "resolves_to": [
-                "decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging_logging2]"
+                "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]"
               ],
               "port": "formal(x, position=0)",
               "call_site": "20:8-20:12"
@@ -1431,7 +1431,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging2_skip_this_decorator]",
+    "callable": "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging2_skip_this_decorator]",
     "filename": "decorator_location.py",
     "callable_line": 27,
     "sinks": [
@@ -1486,7 +1486,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging_logging2]",
+    "callable": "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]",
     "filename": "decorator_location.py",
     "callable_line": 27,
     "sinks": [

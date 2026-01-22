@@ -2341,7 +2341,7 @@
             "call": {
               "position": { "line": 314, "start": 4, "end": 13 },
               "resolves_to": [
-                "closure.nonlocal_closure_wrapper_flow.wrapper[local($local_closure?nonlocal_closure_wrapper_flow$source)=closure.nonlocal_closure_wrapper_flow.source]"
+                "closure.nonlocal_closure_wrapper_flow.wrapper[captured_variable(source, closure.nonlocal_closure_wrapper_flow)=closure.nonlocal_closure_wrapper_flow.source]"
               ],
               "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_flow)"
             }
@@ -3640,7 +3640,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "closure.nonlocal_closure_wrapper_flow.wrapper[local($local_closure?nonlocal_closure_wrapper_flow$source)=closure.nonlocal_closure_wrapper_flow.source]",
+    "callable": "closure.nonlocal_closure_wrapper_flow.wrapper[captured_variable(source, closure.nonlocal_closure_wrapper_flow)=closure.nonlocal_closure_wrapper_flow.source]",
     "filename": "closure.py",
     "callable_line": 311,
     "sources": [

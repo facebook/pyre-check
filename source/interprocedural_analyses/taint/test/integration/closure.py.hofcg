@@ -143,7 +143,7 @@ Higher order call graphs
       "define": {
         "define_targets": [
           {
-            "target": "closure.decorator.wrapper[local($parameter$function)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
+            "target": "closure.decorator.wrapper[captured_variable(function, parameter)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
             "index": 0,
             "return_type": []
           }
@@ -154,7 +154,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper[local($parameter$function)=closure.async_nonlocal_closure_tito_with_decorator.inner]]",
+            "target": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper[captured_variable(function, parameter)=closure.async_nonlocal_closure_tito_with_decorator.inner]]",
             "index": 0,
             "return_type": []
           }
@@ -190,7 +190,7 @@ Higher order call graphs
   "callable": "closure.async_nonlocal_closure_tito_with_decorator.inner@decorated",
   "returned_callables": [
     {
-      "target": "closure.decorator.wrapper[local($parameter$function)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
+      "target": "closure.decorator.wrapper[captured_variable(function, parameter)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
       "index": 0,
       "return_type": []
     }
@@ -1859,7 +1859,7 @@ Higher order call graphs
             "return_type": []
           },
           {
-            "target": "closure.nonlocal_closure_wrapper_flow.wrapper[local($local_closure?nonlocal_closure_wrapper_flow$source)=closure.nonlocal_closure_wrapper_flow.source]",
+            "target": "closure.nonlocal_closure_wrapper_flow.wrapper[captured_variable(source, closure.nonlocal_closure_wrapper_flow)=closure.nonlocal_closure_wrapper_flow.source]",
             "index": 0,
             "return_type": []
           }
@@ -2536,14 +2536,14 @@ Higher order call graphs
   }
 }
 {
-  "callable": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper[local($parameter$function)=closure.async_nonlocal_closure_tito_with_decorator.inner]]",
+  "callable": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper[captured_variable(function, parameter)=closure.async_nonlocal_closure_tito_with_decorator.inner]]",
   "returned_callables": [],
   "calls": {
     "411:17-411:27": {
       "call": {
         "calls": [
           {
-            "target": "closure.decorator.wrapper[local($parameter$function)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
+            "target": "closure.decorator.wrapper[captured_variable(function, parameter)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
             "index": 0,
             "return_type": []
           }
@@ -2556,7 +2556,7 @@ Higher order call graphs
   "callable": "closure.decorator[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
   "returned_callables": [
     {
-      "target": "closure.decorator.wrapper[local($parameter$function)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
+      "target": "closure.decorator.wrapper[captured_variable(function, parameter)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
       "index": 0,
       "return_type": []
     }
@@ -2576,7 +2576,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "closure.decorator.wrapper[local($parameter$function)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
+  "callable": "closure.decorator.wrapper[captured_variable(function, parameter)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
   "returned_callables": [],
   "calls": {
     "398:21-398:46": {
@@ -2610,7 +2610,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "closure.nonlocal_closure_wrapper_flow.wrapper[local($local_closure?nonlocal_closure_wrapper_flow$source)=closure.nonlocal_closure_wrapper_flow.source]",
+  "callable": "closure.nonlocal_closure_wrapper_flow.wrapper[captured_variable(source, closure.nonlocal_closure_wrapper_flow)=closure.nonlocal_closure_wrapper_flow.source]",
   "returned_callables": [],
   "calls": {
     "312:8-312:16": {

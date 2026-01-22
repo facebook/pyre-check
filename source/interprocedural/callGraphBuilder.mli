@@ -112,13 +112,17 @@ module HigherOrderCallGraph : sig
 
     val empty : t
 
+    val of_list : (Analysis.TaintAccessPath.Root.t * CallGraph.CallTarget.Set.t) list -> t
+
     val initialize_from_roots
-      :  callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
+      :  pyre_api:PyrePysaApi.ReadOnly.t ->
+      callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
       (Analysis.TaintAccessPath.Root.t * Target.t) list ->
       t
 
     val initialize_from_callable
-      :  callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
+      :  pyre_api:PyrePysaApi.ReadOnly.t ->
+      callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
       Target.t ->
       t
   end

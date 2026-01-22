@@ -620,7 +620,8 @@ let test_higher_order_call_graph_fixpoint =
                                { name = "test.decorator.inner"; kind = Normal })
                           ~parameters:
                             [
-                              ( AccessPath.Root.Variable "$parameter$f",
+                              ( AccessPath.Root.CapturedVariable
+                                  (AccessPath.CapturedVariable.Pyre1Parameter { name = "f" }),
                                 Target.Regular.Function { name = "test.bar"; kind = Normal }
                                 |> Target.from_regular );
                             ]);
@@ -669,7 +670,9 @@ let test_higher_order_call_graph_fixpoint =
                                            Target.Regular.Function
                                              { name = "test.baz"; kind = Normal }
                                            |> Target.from_regular );
-                                         ( AccessPath.Root.Variable "$parameter$f",
+                                         ( AccessPath.Root.CapturedVariable
+                                             (AccessPath.CapturedVariable.Pyre1Parameter
+                                                { name = "f" }),
                                            Target.Regular.Function
                                              { name = "test.foo"; kind = Normal }
                                            |> Target.from_regular );
@@ -850,7 +853,8 @@ let test_higher_order_call_graph_fixpoint =
                                { name = "test.decorator.inner"; kind = Normal })
                           ~parameters:
                             [
-                              ( AccessPath.Root.Variable "$parameter$f",
+                              ( AccessPath.Root.CapturedVariable
+                                  (AccessPath.CapturedVariable.Pyre1Parameter { name = "f" }),
                                 Target.Regular.Function { name = "test.foo1"; kind = Normal }
                                 |> Target.from_regular );
                             ]);
@@ -861,7 +865,8 @@ let test_higher_order_call_graph_fixpoint =
                                { name = "test.decorator.inner"; kind = Normal })
                           ~parameters:
                             [
-                              ( AccessPath.Root.Variable "$parameter$f",
+                              ( AccessPath.Root.CapturedVariable
+                                  (AccessPath.CapturedVariable.Pyre1Parameter { name = "f" }),
                                 Target.Regular.Function { name = "test.foo3"; kind = Normal }
                                 |> Target.from_regular );
                             ]);
@@ -955,7 +960,9 @@ let test_higher_order_call_graph_fixpoint =
                                           { name = "test.decorator.foo"; kind = Normal })
                                      ~parameters:
                                        [
-                                         ( AccessPath.Root.Variable "$parameter$f",
+                                         ( AccessPath.Root.CapturedVariable
+                                             (AccessPath.CapturedVariable.Pyre1Parameter
+                                                { name = "f" }),
                                            Target.Regular.Function
                                              { name = "test.baz"; kind = Normal }
                                            |> Target.from_regular );
@@ -1186,7 +1193,8 @@ let test_higher_order_call_graph_fixpoint =
                                { name = "test.log.inner.wrapper"; kind = Normal })
                           ~parameters:
                             [
-                              ( AccessPath.Root.Variable "$parameter$func",
+                              ( AccessPath.Root.CapturedVariable
+                                  (AccessPath.CapturedVariable.Pyre1Parameter { name = "func" }),
                                 Target.Regular.Function { name = "test.foo"; kind = Normal }
                                 |> Target.from_regular );
                             ]);
@@ -1391,7 +1399,9 @@ let test_higher_order_call_graph_fixpoint =
                                           { name = "test.decorator.inner"; kind = Normal })
                                      ~parameters:
                                        [
-                                         ( AccessPath.Root.Variable "$parameter$f",
+                                         ( AccessPath.Root.CapturedVariable
+                                             (AccessPath.CapturedVariable.Pyre1Parameter
+                                                { name = "f" }),
                                            Target.Regular.Function
                                              { name = "test.bar"; kind = Normal }
                                            |> Target.from_regular );
@@ -1720,7 +1730,8 @@ let test_higher_order_call_graph_fixpoint =
                                { name = "test.Base.__call__.inner"; kind = Normal })
                           ~parameters:
                             [
-                              ( AccessPath.Root.Variable "$parameter$func",
+                              ( AccessPath.Root.CapturedVariable
+                                  (AccessPath.CapturedVariable.Pyre1Parameter { name = "func" }),
                                 Target.Regular.Function
                                   { name = "test.contextmanager"; kind = Normal }
                                 |> Target.from_regular );
@@ -1786,7 +1797,8 @@ let test_higher_order_call_graph_fixpoint =
                                { name = "test.Base.__call__.inner"; kind = Normal })
                           ~parameters:
                             [
-                              ( AccessPath.Root.Variable "$parameter$func",
+                              ( AccessPath.Root.CapturedVariable
+                                  (AccessPath.CapturedVariable.Pyre1Parameter { name = "func" }),
                                 Target.Regular.Function
                                   { name = "test.contextmanager_subclass"; kind = Normal }
                                 |> Target.from_regular );
@@ -2081,7 +2093,9 @@ let test_higher_order_call_graph_fixpoint =
                                           { name = "test.decorator.inner"; kind = Normal })
                                      ~parameters:
                                        [
-                                         ( AccessPath.Root.Variable "$parameter$f",
+                                         ( AccessPath.Root.CapturedVariable
+                                             (AccessPath.CapturedVariable.Pyre1Parameter
+                                                { name = "f" }),
                                            Target.Regular.Function
                                              { name = "test.main.inner"; kind = Normal }
                                            |> Target.from_regular );
@@ -2100,7 +2114,9 @@ let test_higher_order_call_graph_fixpoint =
                                           { name = "test.decorator.inner"; kind = Normal })
                                      ~parameters:
                                        [
-                                         ( AccessPath.Root.Variable "$parameter$f",
+                                         ( AccessPath.Root.CapturedVariable
+                                             (AccessPath.CapturedVariable.Pyre1Parameter
+                                                { name = "f" }),
                                            Target.Regular.Function
                                              { name = "test.main.inner"; kind = Normal }
                                            |> Target.from_regular );
@@ -2154,7 +2170,9 @@ let test_higher_order_call_graph_fixpoint =
                                           })
                                      ~parameters:
                                        [
-                                         ( AccessPath.Root.Variable "$parameter$f",
+                                         ( AccessPath.Root.CapturedVariable
+                                             (AccessPath.CapturedVariable.Pyre1Parameter
+                                                { name = "f" }),
                                            Target.Regular.Function
                                              { name = "test.main.inner"; kind = Normal }
                                            |> Target.from_regular );
@@ -2179,7 +2197,9 @@ let test_higher_order_call_graph_fixpoint =
                                           })
                                      ~parameters:
                                        [
-                                         ( AccessPath.Root.Variable "$parameter$f",
+                                         ( AccessPath.Root.CapturedVariable
+                                             (AccessPath.CapturedVariable.Pyre1Parameter
+                                                { name = "f" }),
                                            Target.Regular.Function
                                              { name = "test.main.inner"; kind = Normal }
                                            |> Target.from_regular );
