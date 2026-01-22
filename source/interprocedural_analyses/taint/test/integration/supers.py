@@ -3,8 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from pysa import _test_sink, _test_source
 from typing import Any
+
+from pysa import _test_sink, _test_source
 
 
 class A:
@@ -131,7 +132,6 @@ def attribute_E_not_overwritten():
 
 
 def attribute_E_not_overwritten_RCE():
-    # TODO(T108231862): Support Diamond Inheritance.
     e = E()
     e.g3()
 

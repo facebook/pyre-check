@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "string_conversion.$toplevel",
   "returned_callables": [],
   "calls": {
-    "12:0-12:7|identifier|$local_string_conversion$request": {
+    "11:0-11:7|identifier|$local_string_conversion$request": {
       "identifier": {
         "globals": [
           { "target": "Obj{string_conversion.request}", "index": 0 }
@@ -17,7 +17,7 @@ Higher order call graphs
   "callable": "string_conversion.analyze_implicit_call",
   "returned_callables": [],
   "calls": {
-    "109:8-109:11": {
+    "108:8-108:11": {
       "call": {
         "new_calls": [
           {
@@ -37,14 +37,14 @@ Higher order call graphs
         ]
       }
     },
-    "110:10-110:17|identifier|$local_string_conversion$request": {
+    "109:10-109:17|identifier|$local_string_conversion$request": {
       "identifier": {
         "globals": [
           { "target": "Obj{string_conversion.request}", "index": 0 }
         ]
       }
     },
-    "110:10-110:21": {
+    "109:10-109:21": {
       "attribute_access": {
         "globals": [
           { "target": "Obj{django.http.Request.GET}", "index": 0 }
@@ -52,7 +52,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "110:10-110:32|artificial-call|subscript-get-item": {
+    "109:10-109:32|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -65,17 +65,17 @@ Higher order call graphs
         ]
       }
     },
-    "112:4-112:21": {
+    "111:4-111:21": {
       "call": {
         "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
       }
     },
-    "112:9-112:20|format-string-artificial": {
+    "111:9-111:20|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
     },
-    "112:12-112:18|artificial-call|str-call-to-dunder-method": {
+    "111:12-111:18|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -88,17 +88,17 @@ Higher order call graphs
         ]
       }
     },
-    "114:4-114:16": {
+    "113:4-113:16": {
       "call": {
         "calls": [ { "target": "eval", "index": 1, "return_type": [] } ]
       }
     },
-    "114:9-114:15|format-string-artificial": {
+    "113:9-113:15|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 1 }
       ]
     },
-    "114:12-114:13|format-string-stringify": {
+    "113:12-113:13|format-string-stringify": {
       "format_string_stringify": [
         {
           "target": "string_conversion.B.__str__",
@@ -115,7 +115,7 @@ Higher order call graphs
   "callable": "string_conversion.any_type",
   "returned_callables": [],
   "calls": {
-    "160:11-160:17|format-string-artificial": {
+    "159:11-159:17|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
@@ -126,12 +126,12 @@ Higher order call graphs
   "callable": "string_conversion.backward_unioned_callees",
   "returned_callables": [],
   "calls": {
-    "152:11-152:17|format-string-artificial": {
+    "151:11-151:17|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
     },
-    "152:14-152:15|format-string-stringify": {
+    "151:14-151:15|format-string-stringify": {
       "format_string_stringify": [
         {
           "target": "str.__str__",
@@ -155,7 +155,7 @@ Higher order call graphs
   "callable": "string_conversion.backward_unioned_callees_2",
   "returned_callables": [],
   "calls": {
-    "156:11-156:17|format-string-artificial": {
+    "155:11-155:17|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
@@ -166,12 +166,12 @@ Higher order call graphs
   "callable": "string_conversion.base_exception",
   "returned_callables": [],
   "calls": {
-    "174:11-174:23|format-string-artificial": {
+    "173:11-173:23|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
     },
-    "174:14-174:21": {
+    "173:14-173:21": {
       "call": {
         "new_calls": [
           {
@@ -191,7 +191,7 @@ Higher order call graphs
         ]
       }
     },
-    "174:14-174:21|format-string-stringify": {
+    "173:14-173:21|format-string-stringify": {
       "format_string_stringify": [
         { "target": "BaseException.__str__", "index": 0, "return_type": [] }
       ]
@@ -202,12 +202,12 @@ Higher order call graphs
   "callable": "string_conversion.compute_tito",
   "returned_callables": [],
   "calls": {
-    "133:11-133:36|format-string-artificial": {
+    "132:11-132:36|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
     },
-    "133:14-133:23": {
+    "132:14-132:23": {
       "call": {
         "calls": [
           {
@@ -218,7 +218,7 @@ Higher order call graphs
         ]
       }
     },
-    "133:25-133:34": {
+    "132:25-132:34": {
       "call": {
         "calls": [
           {
@@ -235,7 +235,7 @@ Higher order call graphs
   "callable": "string_conversion.explicit_str",
   "returned_callables": [],
   "calls": {
-    "51:8-51:22": {
+    "50:8-50:22": {
       "call": {
         "new_calls": [
           {
@@ -255,17 +255,17 @@ Higher order call graphs
         ]
       }
     },
-    "52:4-52:38": {
+    "51:4-51:38": {
       "call": {
         "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
       }
     },
-    "52:9-52:37|format-string-artificial": {
+    "51:9-51:37|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
     },
-    "52:18-52:29": {
+    "51:18-51:29": {
       "call": {
         "calls": [
           {
@@ -284,19 +284,19 @@ Higher order call graphs
   "callable": "string_conversion.forward_unioned_callees",
   "returned_callables": [],
   "calls": {
-    "142:23-142:37": {
+    "141:23-141:37": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "143:11-143:17|format-string-artificial": {
+    "142:11-142:17|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
     },
-    "143:14-143:15|format-string-stringify": {
+    "142:14-142:15|format-string-stringify": {
       "format_string_stringify": [
         {
           "target": "str.__str__",
@@ -320,14 +320,14 @@ Higher order call graphs
   "callable": "string_conversion.forward_unioned_callees_2",
   "returned_callables": [],
   "calls": {
-    "147:23-147:37": {
+    "146:23-146:37": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "148:11-148:17|format-string-artificial": {
+    "147:11-147:17|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
@@ -338,12 +338,12 @@ Higher order call graphs
   "callable": "string_conversion.function_call_target_1",
   "returned_callables": [],
   "calls": {
-    "178:4-178:19|format-string-artificial": {
+    "177:4-177:19|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
     },
-    "178:7-178:17|format-string-stringify": {
+    "177:7-177:17|format-string-stringify": {
       "format_string_stringify": [
         {
           "target": "object.__str__",
@@ -366,12 +366,12 @@ Higher order call graphs
   "callable": "string_conversion.function_call_target_2",
   "returned_callables": [],
   "calls": {
-    "182:4-182:20|format-string-artificial": {
+    "181:4-181:20|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
     },
-    "182:7-182:18": {
+    "181:7-181:18": {
       "attribute_access": {
         "properties": [
           {
@@ -383,7 +383,7 @@ Higher order call graphs
         ]
       }
     },
-    "182:7-182:18|format-string-stringify": {
+    "181:7-181:18|format-string-stringify": {
       "format_string_stringify": [
         {
           "target": "object.__str__",
@@ -411,7 +411,7 @@ Higher order call graphs
   "callable": "string_conversion.implicit_repr",
   "returned_callables": [],
   "calls": {
-    "46:8-46:23": {
+    "45:8-45:23": {
       "call": {
         "new_calls": [
           {
@@ -431,17 +431,17 @@ Higher order call graphs
         ]
       }
     },
-    "47:4-47:28": {
+    "46:4-46:28": {
       "call": {
         "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
       }
     },
-    "47:9-47:27|format-string-artificial": {
+    "46:9-46:27|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
     },
-    "47:18-47:19|format-string-stringify": {
+    "46:18-46:19|format-string-stringify": {
       "format_string_stringify": [
         {
           "target": "string_conversion.ReprIsTainted.__repr__",
@@ -458,7 +458,7 @@ Higher order call graphs
   "callable": "string_conversion.implicit_str",
   "returned_callables": [],
   "calls": {
-    "41:8-41:22": {
+    "40:8-40:22": {
       "call": {
         "new_calls": [
           {
@@ -478,17 +478,17 @@ Higher order call graphs
         ]
       }
     },
-    "42:4-42:28": {
+    "41:4-41:28": {
       "call": {
         "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
       }
     },
-    "42:9-42:27|format-string-artificial": {
+    "41:9-41:27|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
     },
-    "42:18-42:19|format-string-stringify": {
+    "41:18-41:19|format-string-stringify": {
       "format_string_stringify": [
         {
           "target": "string_conversion.StrIsTainted.__str__",
@@ -505,7 +505,7 @@ Higher order call graphs
   "callable": "string_conversion.join_source_and_attribute_source",
   "returned_callables": [],
   "calls": {
-    "91:7-91:12|artificial-call|comparison": {
+    "90:7-90:12|artificial-call|comparison": {
       "call": {
         "calls": [
           {
@@ -518,7 +518,7 @@ Higher order call graphs
         ]
       }
     },
-    "91:7-91:12|artificial-call|normalize-not-comparison>comparison": {
+    "90:7-90:12|artificial-call|normalize-not-comparison>comparison": {
       "call": {
         "calls": [
           {
@@ -531,14 +531,14 @@ Higher order call graphs
         ]
       }
     },
-    "92:17-92:24|identifier|$local_string_conversion$request": {
+    "91:17-91:24|identifier|$local_string_conversion$request": {
       "identifier": {
         "globals": [
           { "target": "Obj{string_conversion.request}", "index": 0 }
         ]
       }
     },
-    "92:17-92:28": {
+    "91:17-91:28": {
       "attribute_access": {
         "globals": [
           { "target": "Obj{django.http.Request.GET}", "index": 0 }
@@ -546,7 +546,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "92:17-92:39|artificial-call|subscript-get-item": {
+    "91:17-91:39|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -559,7 +559,7 @@ Higher order call graphs
         ]
       }
     },
-    "94:15-94:18": {
+    "93:15-93:18": {
       "call": {
         "new_calls": [
           {
@@ -579,17 +579,17 @@ Higher order call graphs
         ]
       }
     },
-    "95:4-95:16": {
+    "94:4-94:16": {
       "call": {
         "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
       }
     },
-    "95:9-95:15|format-string-artificial": {
+    "94:9-94:15|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
     },
-    "95:12-95:13|format-string-stringify": {
+    "94:12-94:13|format-string-stringify": {
       "format_string_stringify": [
         {
           "target": "str.__str__",
@@ -613,14 +613,14 @@ Higher order call graphs
   "callable": "string_conversion.joined_base",
   "returned_callables": [],
   "calls": {
-    "103:8-103:15|identifier|$local_string_conversion$request": {
+    "102:8-102:15|identifier|$local_string_conversion$request": {
       "identifier": {
         "globals": [
           { "target": "Obj{string_conversion.request}", "index": 0 }
         ]
       }
     },
-    "103:8-103:19": {
+    "102:8-102:19": {
       "attribute_access": {
         "globals": [
           { "target": "Obj{django.http.Request.GET}", "index": 0 }
@@ -628,7 +628,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "103:8-103:30|artificial-call|subscript-get-item": {
+    "102:8-102:30|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -641,17 +641,17 @@ Higher order call graphs
         ]
       }
     },
-    "105:4-105:19": {
+    "104:4-104:19": {
       "call": {
         "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
       }
     },
-    "105:9-105:18|format-string-artificial": {
+    "104:9-104:18|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
     },
-    "105:15-105:16|format-string-stringify": {
+    "104:15-104:16|format-string-stringify": {
       "format_string_stringify": [
         {
           "target": "str.__str__",
@@ -668,7 +668,7 @@ Higher order call graphs
   "callable": "string_conversion.multiple_callees_same_location",
   "returned_callables": [],
   "calls": {
-    "186:8-186:22": {
+    "185:8-185:22": {
       "call": {
         "new_calls": [
           {
@@ -688,7 +688,7 @@ Higher order call graphs
         ]
       }
     },
-    "188:11-188:17|artificial-call|str-call-to-dunder-method": {
+    "187:11-187:17|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -701,7 +701,7 @@ Higher order call graphs
         ]
       }
     },
-    "188:11-188:27|artificial-call|binary": {
+    "187:11-187:27|artificial-call|binary": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
@@ -712,17 +712,17 @@ Higher order call graphs
   "callable": "string_conversion.multiple_targets_for_single_expression",
   "returned_callables": [],
   "calls": {
-    "73:4-73:16": {
+    "72:4-72:16": {
       "call": {
         "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
       }
     },
-    "73:9-73:15|format-string-artificial": {
+    "72:9-72:15|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
     },
-    "73:12-73:13|format-string-stringify": {
+    "72:12-72:13|format-string-stringify": {
       "format_string_stringify": [
         {
           "target": "string_conversion.A.__str__",
@@ -746,17 +746,17 @@ Higher order call graphs
   "callable": "string_conversion.multiple_targets_for_single_expression_2",
   "returned_callables": [],
   "calls": {
-    "99:4-99:16": {
+    "98:4-98:16": {
       "call": {
         "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
       }
     },
-    "99:9-99:15|format-string-artificial": {
+    "98:9-98:15|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
     },
-    "99:12-99:13|format-string-stringify": {
+    "98:12-98:13|format-string-stringify": {
       "format_string_stringify": [
         {
           "target": "object.__str__",
@@ -787,12 +787,12 @@ Higher order call graphs
   "callable": "string_conversion.multiple_targets_for_single_expression_3",
   "returned_callables": [],
   "calls": {
-    "120:11-120:28|format-string-artificial": {
+    "119:11-119:28|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
     },
-    "120:14-120:15|format-string-stringify": {
+    "119:14-119:15|format-string-stringify": {
       "format_string_stringify": [
         {
           "target": "object.__repr__",
@@ -803,7 +803,7 @@ Higher order call graphs
         }
       ]
     },
-    "120:17-120:23|format-string-stringify": {
+    "119:17-119:23|format-string-stringify": {
       "format_string_stringify": [
         {
           "target": "string_conversion.B.__str__",
@@ -821,7 +821,7 @@ Higher order call graphs
         }
       ]
     },
-    "120:25-120:26|format-string-stringify": {
+    "119:25-119:26|format-string-stringify": {
       "format_string_stringify": [
         {
           "target": "object.__repr__",
@@ -838,17 +838,17 @@ Higher order call graphs
   "callable": "string_conversion.not_propagate_taint",
   "returned_callables": [],
   "calls": {
-    "68:4-68:31": {
+    "67:4-67:31": {
       "call": {
         "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
       }
     },
-    "68:9-68:30|format-string-artificial": {
+    "67:9-67:30|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
     },
-    "68:12-68:28": {
+    "67:12-67:28": {
       "call": {
         "new_calls": [
           {
@@ -868,7 +868,7 @@ Higher order call graphs
         ]
       }
     },
-    "68:12-68:28|format-string-stringify": {
+    "67:12-67:28|format-string-stringify": {
       "format_string_stringify": [
         {
           "target": "string_conversion.A.__str__",
@@ -885,12 +885,12 @@ Higher order call graphs
   "callable": "string_conversion.object_type",
   "returned_callables": [],
   "calls": {
-    "164:11-164:17|format-string-artificial": {
+    "163:11-163:17|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
     },
-    "164:14-164:15|format-string-stringify": {
+    "163:14-163:15|format-string-stringify": {
       "format_string_stringify": [
         {
           "target": "Overrides{object.__repr__}",
@@ -907,7 +907,7 @@ Higher order call graphs
   "callable": "string_conversion.optional_str",
   "returned_callables": [],
   "calls": {
-    "194:12-194:26": {
+    "193:12-193:26": {
       "call": {
         "new_calls": [
           {
@@ -927,12 +927,12 @@ Higher order call graphs
         ]
       }
     },
-    "195:4-195:16": {
+    "194:4-194:16": {
       "call": {
         "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
       }
     },
-    "195:9-195:15|artificial-call|str-call-to-dunder-method": {
+    "194:9-194:15|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -951,17 +951,17 @@ Higher order call graphs
   "callable": "string_conversion.propagate_taint",
   "returned_callables": [],
   "calls": {
-    "64:4-64:40": {
+    "63:4-63:40": {
       "call": {
         "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
       }
     },
-    "64:9-64:39|format-string-artificial": {
+    "63:9-63:39|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
     },
-    "64:12-64:37": {
+    "63:12-63:37": {
       "call": {
         "new_calls": [
           {
@@ -981,7 +981,7 @@ Higher order call graphs
         ]
       }
     },
-    "64:12-64:37|format-string-stringify": {
+    "63:12-63:37|format-string-stringify": {
       "format_string_stringify": [
         {
           "target": "string_conversion.A.__str__",
@@ -992,14 +992,14 @@ Higher order call graphs
         }
       ]
     },
-    "64:14-64:21|identifier|$local_string_conversion$request": {
+    "63:14-63:21|identifier|$local_string_conversion$request": {
       "identifier": {
         "globals": [
           { "target": "Obj{string_conversion.request}", "index": 0 }
         ]
       }
     },
-    "64:14-64:25": {
+    "63:14-63:25": {
       "attribute_access": {
         "globals": [
           { "target": "Obj{django.http.Request.GET}", "index": 0 }
@@ -1007,7 +1007,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "64:14-64:36|artificial-call|subscript-get-item": {
+    "63:14-63:36|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -1026,7 +1026,7 @@ Higher order call graphs
   "callable": "string_conversion.repr_is_tainted",
   "returned_callables": [],
   "calls": {
-    "31:8-31:23": {
+    "30:8-30:23": {
       "call": {
         "new_calls": [
           {
@@ -1046,12 +1046,12 @@ Higher order call graphs
         ]
       }
     },
-    "32:4-32:17": {
+    "31:4-31:17": {
       "call": {
         "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
       }
     },
-    "32:9-32:16|artificial-call|repr-call": {
+    "31:9-31:16|artificial-call|repr-call": {
       "call": {
         "calls": [
           {
@@ -1070,7 +1070,7 @@ Higher order call graphs
   "callable": "string_conversion.str_falls_back_to_repr",
   "returned_callables": [],
   "calls": {
-    "36:8-36:23": {
+    "35:8-35:23": {
       "call": {
         "new_calls": [
           {
@@ -1090,12 +1090,12 @@ Higher order call graphs
         ]
       }
     },
-    "37:4-37:16": {
+    "36:4-36:16": {
       "call": {
         "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
       }
     },
-    "37:9-37:15|artificial-call|str-call-to-dunder-method": {
+    "36:9-36:15|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1114,7 +1114,7 @@ Higher order call graphs
   "callable": "string_conversion.str_is_tainted",
   "returned_callables": [],
   "calls": {
-    "26:8-26:22": {
+    "25:8-25:22": {
       "call": {
         "new_calls": [
           {
@@ -1134,12 +1134,12 @@ Higher order call graphs
         ]
       }
     },
-    "27:4-27:16": {
+    "26:4-26:16": {
       "call": {
         "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
       }
     },
-    "27:9-27:15|artificial-call|str-call-to-dunder-method": {
+    "26:9-26:15|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -1158,7 +1158,7 @@ Higher order call graphs
   "callable": "string_conversion.C.__str__",
   "returned_callables": [],
   "calls": {
-    "87:15-87:21": {
+    "86:15-86:21": {
       "attribute_access": {
         "globals": [ { "target": "Obj{string_conversion.C.g}", "index": 0 } ],
         "is_attribute": true
@@ -1170,14 +1170,14 @@ Higher order call graphs
   "callable": "string_conversion.OverrideStr.__str__",
   "returned_callables": [],
   "calls": {
-    "169:12-169:26": {
+    "168:12-168:26": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "170:15-170:21|format-string-artificial": {
+    "169:15-169:21|format-string-artificial": {
       "format_string_artificial": [
         { "target": "Obj{<format-string>}", "index": 0 }
       ]
@@ -1188,14 +1188,14 @@ Higher order call graphs
   "callable": "string_conversion.ReprIsTainted.__repr__",
   "returned_callables": [],
   "calls": {
-    "22:15-22:22|identifier|$local_string_conversion$request": {
+    "21:15-21:22|identifier|$local_string_conversion$request": {
       "identifier": {
         "globals": [
           { "target": "Obj{string_conversion.request}", "index": 0 }
         ]
       }
     },
-    "22:15-22:26": {
+    "21:15-21:26": {
       "attribute_access": {
         "globals": [
           { "target": "Obj{django.http.Request.GET}", "index": 0 }
@@ -1203,7 +1203,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "22:15-22:37|artificial-call|subscript-get-item": {
+    "21:15-21:37|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -1222,14 +1222,14 @@ Higher order call graphs
   "callable": "string_conversion.StrIsTainted.__str__",
   "returned_callables": [],
   "calls": {
-    "17:15-17:22|identifier|$local_string_conversion$request": {
+    "16:15-16:22|identifier|$local_string_conversion$request": {
       "identifier": {
         "globals": [
           { "target": "Obj{string_conversion.request}", "index": 0 }
         ]
       }
     },
-    "17:15-17:26": {
+    "16:15-16:26": {
       "attribute_access": {
         "globals": [
           { "target": "Obj{django.http.Request.GET}", "index": 0 }
@@ -1237,7 +1237,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "17:15-17:37|artificial-call|subscript-get-item": {
+    "16:15-16:37|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {

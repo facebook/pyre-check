@@ -246,9 +246,9 @@
   "kind": "issue",
   "data": {
     "callable": "supers.B_overwrite_partial",
-    "callable_line": 96,
+    "callable_line": 97,
     "code": 5002,
-    "line": 98,
+    "line": 99,
     "start": 4,
     "end": 5,
     "filename": "supers.py",
@@ -269,10 +269,10 @@
               }
             ],
             "call": {
-              "position": { "line": 97, "start": 8, "end": 9 },
+              "position": { "line": 98, "start": 8, "end": 9 },
               "resolves_to": [ "supers.A.__init__" ],
               "port": "formal(self, position=0)[attribute]",
-              "call_site": "97:8-97:11"
+              "call_site": "98:8-98:11"
             },
             "receiver_interval": [ { "lower": 3, "upper": 6 } ],
             "is_self_call": false
@@ -294,10 +294,10 @@
               }
             ],
             "call": {
-              "position": { "line": 98, "start": 4, "end": 5 },
+              "position": { "line": 99, "start": 4, "end": 5 },
               "resolves_to": [ "supers.E.g3" ],
               "port": "formal(self, position=0)[attribute]",
-              "call_site": "98:4-98:10"
+              "call_site": "99:4-99:10"
             },
             "receiver_interval": [ { "lower": 3, "upper": 6 } ],
             "is_self_call": false
@@ -321,9 +321,9 @@
   "kind": "issue",
   "data": {
     "callable": "supers.attribute_B_not_overwritten",
-    "callable_line": 81,
+    "callable_line": 82,
     "code": 5002,
-    "line": 82,
+    "line": 83,
     "start": 4,
     "end": 7,
     "filename": "supers.py",
@@ -344,10 +344,10 @@
               }
             ],
             "call": {
-              "position": { "line": 82, "start": 4, "end": 5 },
+              "position": { "line": 83, "start": 4, "end": 5 },
               "resolves_to": [ "supers.A.__init__" ],
               "port": "formal(self, position=0)[attribute]",
-              "call_site": "82:4-82:7"
+              "call_site": "83:4-83:7"
             },
             "receiver_interval": [ { "lower": 3, "upper": 6 } ],
             "is_self_call": false
@@ -369,10 +369,10 @@
               }
             ],
             "call": {
-              "position": { "line": 82, "start": 4, "end": 7 },
+              "position": { "line": 83, "start": 4, "end": 7 },
               "resolves_to": [ "supers.B.g1" ],
               "port": "formal(self, position=0)[attribute]",
-              "call_site": "82:4-82:12"
+              "call_site": "83:4-83:12"
             },
             "receiver_interval": [ { "lower": 3, "upper": 6 } ],
             "is_self_call": false
@@ -396,9 +396,9 @@
   "kind": "issue",
   "data": {
     "callable": "supers.attribute_C_not_overwritten",
-    "callable_line": 106,
+    "callable_line": 107,
     "code": 5002,
-    "line": 107,
+    "line": 108,
     "start": 4,
     "end": 7,
     "filename": "supers.py",
@@ -419,10 +419,10 @@
               }
             ],
             "call": {
-              "position": { "line": 107, "start": 4, "end": 5 },
+              "position": { "line": 108, "start": 4, "end": 5 },
               "resolves_to": [ "supers.A.__init__" ],
               "port": "formal(self, position=0)[attribute]",
-              "call_site": "107:4-107:7"
+              "call_site": "108:4-108:7"
             },
             "receiver_interval": [ { "lower": 7, "upper": 10 } ],
             "is_self_call": false
@@ -444,10 +444,10 @@
               }
             ],
             "call": {
-              "position": { "line": 107, "start": 4, "end": 7 },
+              "position": { "line": 108, "start": 4, "end": 7 },
               "resolves_to": [ "supers.C.g1", "supers.D.g1" ],
               "port": "formal(self, position=0)[attribute]",
-              "call_site": "107:4-107:12"
+              "call_site": "108:4-108:12"
             },
             "receiver_interval": [ { "lower": 7, "upper": 10 } ],
             "is_self_call": false
@@ -471,9 +471,9 @@
   "kind": "issue",
   "data": {
     "callable": "supers.attribute_D_not_overwritten",
-    "callable_line": 116,
+    "callable_line": 117,
     "code": 5002,
-    "line": 118,
+    "line": 119,
     "start": 4,
     "end": 5,
     "filename": "supers.py",
@@ -494,10 +494,10 @@
               }
             ],
             "call": {
-              "position": { "line": 117, "start": 8, "end": 9 },
+              "position": { "line": 118, "start": 8, "end": 9 },
               "resolves_to": [ "supers.A.__init__" ],
               "port": "formal(self, position=0)[attribute]",
-              "call_site": "117:8-117:11"
+              "call_site": "118:8-118:11"
             },
             "receiver_interval": [ { "lower": 8, "upper": 9 } ],
             "is_self_call": false
@@ -519,10 +519,10 @@
               }
             ],
             "call": {
-              "position": { "line": 118, "start": 4, "end": 5 },
+              "position": { "line": 119, "start": 4, "end": 5 },
               "resolves_to": [ "supers.D.g1" ],
               "port": "formal(self, position=0)[attribute]",
-              "call_site": "118:4-118:10"
+              "call_site": "119:4-119:10"
             },
             "receiver_interval": [ { "lower": 8, "upper": 9 } ],
             "is_self_call": false
@@ -546,7 +546,7 @@
   "kind": "issue",
   "data": {
     "callable": "supers.attribute_E_not_overwritten_RCE",
-    "callable_line": 133,
+    "callable_line": 134,
     "code": 5002,
     "line": 136,
     "start": 4,
@@ -729,7 +729,7 @@
   "data": {
     "callable": "supers.A.__init__",
     "filename": "supers.py",
-    "callable_line": 11,
+    "callable_line": 12,
     "sources": [
       {
         "port": "formal(self, position=0)[attribute]",
@@ -744,7 +744,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 12, "start": 25, "end": 39 },
+            "origin": { "line": 13, "start": 25, "end": 39 },
             "caller_interval": [ { "lower": 2, "upper": 11 } ],
             "is_self_call": false
           }
@@ -758,7 +758,7 @@
   "data": {
     "callable": "supers.A.f1",
     "filename": "supers.py",
-    "callable_line": 14,
+    "callable_line": 15,
     "sinks": [
       {
         "port": "formal(self, position=0)[attribute]",
@@ -773,10 +773,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 15, "start": 19, "end": 33 },
+            "origin": { "line": 16, "start": 19, "end": 33 },
             "caller_interval": [ { "lower": 2, "upper": 11 } ],
             "is_self_call": false,
-            "call_site": "15:8-15:34"
+            "call_site": "16:8-16:34"
           }
         ]
       }
@@ -788,7 +788,7 @@
   "data": {
     "callable": "supers.A.f2",
     "filename": "supers.py",
-    "callable_line": 17,
+    "callable_line": 18,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -803,10 +803,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 18, "start": 19, "end": 20 },
+            "origin": { "line": 19, "start": 19, "end": 20 },
             "caller_interval": [ { "lower": 2, "upper": 11 } ],
             "is_self_call": false,
-            "call_site": "18:8-18:21"
+            "call_site": "19:8-19:21"
           }
         ]
       }
@@ -818,7 +818,7 @@
   "data": {
     "callable": "supers.A.f3",
     "filename": "supers.py",
-    "callable_line": 20,
+    "callable_line": 21,
     "sources": [
       {
         "port": "result",
@@ -833,7 +833,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 21, "start": 15, "end": 29 },
+            "origin": { "line": 22, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 2, "upper": 11 } ],
             "is_self_call": false
           }
@@ -847,7 +847,7 @@
   "data": {
     "callable": "supers.B.f4",
     "filename": "supers.py",
-    "callable_line": 34,
+    "callable_line": 35,
     "sources": [
       {
         "port": "result",
@@ -862,7 +862,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 35, "start": 15, "end": 29 },
+            "origin": { "line": 36, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 3, "upper": 6 } ],
             "is_self_call": false
           }
@@ -876,7 +876,7 @@
   "data": {
     "callable": "supers.B.f5",
     "filename": "supers.py",
-    "callable_line": 37,
+    "callable_line": 38,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -891,10 +891,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 38, "start": 26, "end": 27 },
+            "origin": { "line": 39, "start": 26, "end": 27 },
             "caller_interval": [ { "lower": 3, "upper": 6 } ],
             "is_self_call": false,
-            "call_site": "38:15-38:28"
+            "call_site": "39:15-39:28"
           }
         ]
       }
@@ -914,7 +914,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 38, "start": 26, "end": 27 } ],
+            "tito_positions": [ { "line": 39, "start": 26, "end": 27 } ],
             "tito": {
               "caller_interval": [ { "lower": 3, "upper": 6 } ],
               "is_self_call": false
@@ -930,7 +930,7 @@
   "data": {
     "callable": "supers.B.g1",
     "filename": "supers.py",
-    "callable_line": 40,
+    "callable_line": 41,
     "sinks": [
       {
         "port": "formal(self, position=0)[attribute]",
@@ -944,10 +944,10 @@
               }
             ],
             "call": {
-              "position": { "line": 41, "start": 8, "end": 22 },
+              "position": { "line": 42, "start": 8, "end": 22 },
               "resolves_to": [ "supers.A.f1" ],
               "port": "formal(self, position=0)[attribute]",
-              "call_site": "41:8-41:27"
+              "call_site": "42:8-42:27"
             },
             "caller_interval": [ { "lower": 3, "upper": 6 } ],
             "receiver_interval": [ { "lower": 3, "upper": 6 } ],
@@ -962,10 +962,10 @@
               }
             ],
             "call": {
-              "position": { "line": 42, "start": 8, "end": 15 },
+              "position": { "line": 43, "start": 8, "end": 15 },
               "resolves_to": [ "supers.A.f1" ],
               "port": "formal(self, position=0)[attribute]",
-              "call_site": "42:8-42:20"
+              "call_site": "43:8-43:20"
             },
             "caller_interval": [ { "lower": 3, "upper": 6 } ],
             "receiver_interval": [ { "lower": 3, "upper": 6 } ],
@@ -980,9 +980,9 @@
   "kind": "issue",
   "data": {
     "callable": "supers.B.g1",
-    "callable_line": 40,
+    "callable_line": 41,
     "code": 5002,
-    "line": 43,
+    "line": 44,
     "start": 19,
     "end": 31,
     "filename": "supers.py",
@@ -1003,7 +1003,7 @@
               }
             ],
             "call": {
-              "position": { "line": 43, "start": 19, "end": 31 },
+              "position": { "line": 44, "start": 19, "end": 31 },
               "resolves_to": [ "supers.A.f3" ],
               "port": "result"
             },
@@ -1028,10 +1028,10 @@
               }
             ],
             "call": {
-              "position": { "line": 43, "start": 19, "end": 31 },
+              "position": { "line": 44, "start": 19, "end": 31 },
               "resolves_to": [ "supers.A.f2" ],
               "port": "formal(x, position=1)",
-              "call_site": "43:8-43:32"
+              "call_site": "44:8-44:32"
             },
             "caller_interval": [ { "lower": 3, "upper": 6 } ],
             "receiver_interval": [ { "lower": 3, "upper": 6 } ],
@@ -1056,9 +1056,9 @@
   "kind": "issue",
   "data": {
     "callable": "supers.B.g4",
-    "callable_line": 53,
+    "callable_line": 54,
     "code": 5002,
-    "line": 54,
+    "line": 55,
     "start": 16,
     "end": 25,
     "filename": "supers.py",
@@ -1079,7 +1079,7 @@
               }
             ],
             "call": {
-              "position": { "line": 54, "start": 16, "end": 25 },
+              "position": { "line": 55, "start": 16, "end": 25 },
               "resolves_to": [ "supers.B.f4" ],
               "port": "result"
             },
@@ -1104,10 +1104,10 @@
               }
             ],
             "call": {
-              "position": { "line": 54, "start": 16, "end": 25 },
+              "position": { "line": 55, "start": 16, "end": 25 },
               "resolves_to": [ "supers.B.f5" ],
               "port": "formal(x, position=1)",
-              "call_site": "54:8-54:26"
+              "call_site": "55:8-55:26"
             },
             "caller_interval": [ { "lower": 3, "upper": 6 } ],
             "receiver_interval": [ { "lower": 3, "upper": 6 } ],
@@ -1133,7 +1133,7 @@
   "data": {
     "callable": "supers.C.g1",
     "filename": "supers.py",
-    "callable_line": 61,
+    "callable_line": 62,
     "sinks": [
       {
         "port": "formal(self, position=0)[attribute]",
@@ -1147,10 +1147,10 @@
               }
             ],
             "call": {
-              "position": { "line": 62, "start": 15, "end": 22 },
+              "position": { "line": 63, "start": 15, "end": 22 },
               "resolves_to": [ "supers.A.f1" ],
               "port": "formal(self, position=0)[attribute]",
-              "call_site": "62:15-62:27"
+              "call_site": "63:15-63:27"
             },
             "caller_interval": [ { "lower": 7, "upper": 10 } ],
             "receiver_interval": [ { "lower": 7, "upper": 10 } ],
@@ -1166,7 +1166,7 @@
   "data": {
     "callable": "supers.D.g1",
     "filename": "supers.py",
-    "callable_line": 66,
+    "callable_line": 67,
     "sinks": [
       {
         "port": "formal(self, position=0)[attribute]",
@@ -1180,10 +1180,10 @@
               }
             ],
             "call": {
-              "position": { "line": 67, "start": 8, "end": 15 },
+              "position": { "line": 68, "start": 8, "end": 15 },
               "resolves_to": [ "supers.A.f1" ],
               "port": "formal(self, position=0)[attribute]",
-              "call_site": "67:8-67:20"
+              "call_site": "68:8-68:20"
             },
             "caller_interval": [ { "lower": 8, "upper": 9 } ],
             "receiver_interval": [ { "lower": 8, "upper": 9 } ],
@@ -1199,7 +1199,7 @@
   "data": {
     "callable": "supers.E.g3",
     "filename": "supers.py",
-    "callable_line": 77,
+    "callable_line": 78,
     "sinks": [
       {
         "port": "formal(self, position=0)[attribute]",
@@ -1213,10 +1213,10 @@
               }
             ],
             "call": {
-              "position": { "line": 78, "start": 8, "end": 22 },
+              "position": { "line": 79, "start": 8, "end": 22 },
               "resolves_to": [ "supers.A.f1" ],
               "port": "formal(self, position=0)[attribute]",
-              "call_site": "78:8-78:27"
+              "call_site": "79:8-79:27"
             },
             "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "receiver_interval": [ { "lower": 4, "upper": 5 } ],

@@ -3,13 +3,12 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from pysa import _test_source
-from typing import Any, Type, Union, Optional
+from typing import Any, Optional, Type, Union
 
 from django.http import Request
+from pysa import _test_source
 
-
-request: Request = ... # pyrefly: ignore[bad-assignment]
+request: Request = ...  # pyrefly: ignore[bad-assignment]
 
 
 class StrIsTainted:
@@ -91,7 +90,7 @@ def join_source_and_attribute_source(i: int):
     if i > 0:
         a: str = request.GET["tainted"]
     else:
-        a: C = C() # pyrefly: ignore
+        a: C = C()  # pyrefly: ignore
     eval(f"{a}")  # noqa: P204
 
 

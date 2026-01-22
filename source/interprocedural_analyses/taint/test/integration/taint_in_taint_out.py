@@ -3,9 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from pysa import _test_sink, _test_source
-from typing import Dict, List, Tuple, Any
 import random
+from typing import Any, Dict, List, Tuple
+
+from pysa import _test_sink, _test_source
 
 
 class Object:
@@ -19,16 +20,13 @@ class Object:
         self.baz: Any = 0
 
 
-def some_service(id):
-    ...
+def some_service(id): ...
 
 
-def _unpack(tuple):
-    ...
+def _unpack(tuple): ...
 
 
-class DataRecord:
-    ...
+class DataRecord: ...
 
 
 class Data:
@@ -50,7 +48,11 @@ def product_data(x):
         parent = None
 
     is_blocked = some_service(data["id"])
-    report_tuple = DataRecord(id=data["id"], username=data["name"], isBlocked=is_blocked) # pyrefly: ignore
+    report_tuple = DataRecord(
+        id=data["id"],  # pyrefly: ignore
+        username=data["name"],  # pyrefly: ignore
+        isBlocked=is_blocked,  # pyrefly: ignore
+    )
     return {
         "report": _unpack(report_tuple),
         "id": data["id"],
@@ -205,8 +207,7 @@ def test_complex_evaluator(evaluator: ComplexEvaluator):
 # Test tito collapse depth.
 
 
-def obscure_tito(x) -> Any:
-    ...
+def obscure_tito(x) -> Any: ...
 
 
 def into_dict_then_tito_collapse(x):
@@ -485,6 +486,7 @@ def tito_with_sink(d):
 
 # Test tito to self.
 
+
 class TitoSelf:
     def __init__(self, a, b):
         self.a = a
@@ -543,6 +545,7 @@ def test_tito_self():
 
 # Test tito to cls.
 
+
 class TitoClassMethod:
     a = ""
 
@@ -559,8 +562,8 @@ def test_tito_class_method():
 
 # Test tito between arguments.
 
-def random_integer() -> int:
-    ...
+
+def random_integer() -> int: ...
 
 
 def tito_from_0_to_1(x: str, y: Dict[int, str]):
