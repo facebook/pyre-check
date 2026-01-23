@@ -142,7 +142,6 @@ def untyped_access_self() -> None:
     _test_sink(f.tainted_instance)
     _test_sink(f.tainted_extra_instance)
 
-    # TODO(T162457000): False Positive class attribute access through instance __class__
     _test_sink(f.__class__.not_tainted_class)
     _test_sink(f.not_tainted_class)
     _test_sink(f.not_tainted_instance)
@@ -158,7 +157,6 @@ def typevar_access_self() -> None:
     _test_sink(f.tainted_instance)
     _test_sink(f.tainted_extra_instance)
 
-    # TODO(T162457164): False Positive class attribute access through typevar instance __class__
     _test_sink(f.__class__.not_tainted_class)
     _test_sink(f.not_tainted_class)
     _test_sink(f.not_tainted_instance)
@@ -174,7 +172,6 @@ def typevar_access_other() -> None:
     _test_sink(f.tainted_instance)
     _test_sink(f.tainted_extra_instance)
 
-    # TODO(T162457164): False Positive class attribute access through typevar instance __class__
     _test_sink(f.__class__.not_tainted_class)
     _test_sink(f.not_tainted_class)
     _test_sink(f.not_tainted_instance)
@@ -220,7 +217,6 @@ def selftype_access_untyped_self() -> None:
     _test_sink(f.tainted_instance)
     _test_sink(f.tainted_extra_instance)
 
-    # TODO(T162457000): False Positive class attribute access through instance __class__
     _test_sink(f.__class__.not_tainted_class)
     _test_sink(f.not_tainted_class)
     _test_sink(f.not_tainted_instance)

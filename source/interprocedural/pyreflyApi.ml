@@ -1488,6 +1488,7 @@ module ModuleCallGraphs = struct
       property_setters: JsonCallTarget.t list;
       property_getters: JsonCallTarget.t list;
       global_targets: JsonGlobalVariable.t list;
+      is_attribute: bool;
     }
 
     let from_json json =
@@ -1507,7 +1508,10 @@ module ModuleCallGraphs = struct
       JsonUtil.get_optional_list_member json "global_targets"
       >>| List.map ~f:JsonGlobalVariable.from_json
       >>= Result.all
-      >>| fun global_targets -> { if_called; property_setters; property_getters; global_targets }
+      >>= fun global_targets ->
+      JsonUtil.get_optional_bool_member ~default:false json "is_attribute"
+      >>| fun is_attribute ->
+      { if_called; property_setters; property_getters; global_targets; is_attribute }
   end
 
   module JsonIdentifierCallees = struct
@@ -4578,7 +4582,13 @@ module ReadOnly = struct
       { IdentifierCallees.global_targets; captured_variables; if_called }
     in
     let instantiate_attribute_access_callees
-        { JsonAttributeAccessCallees.if_called; property_setters; property_getters; global_targets }
+        {
+          JsonAttributeAccessCallees.if_called;
+          property_setters;
+          property_getters;
+          global_targets;
+          is_attribute;
+        }
       =
       (* TODO(T225700656): Support is_attribute, etc.. *)
       let if_called = instantiate_call_callees if_called in
@@ -4589,7 +4599,7 @@ module ReadOnly = struct
           |> List.map ~f:instantiate_call_target
           |> List.concat;
         global_targets;
-        is_attribute = not (List.is_empty global_targets);
+        is_attribute;
         if_called;
       }
     in

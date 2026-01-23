@@ -217,6 +217,7 @@ Higher order call graphs
   "calls": {
     "46:4-46:15": {
       "attribute_access": {
+        "is_attribute": true,
         "if_called": {
           "new_calls": [
             {

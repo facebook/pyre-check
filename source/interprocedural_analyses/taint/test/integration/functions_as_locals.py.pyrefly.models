@@ -579,6 +579,38 @@
 {
   "kind": "model",
   "data": {
+    "callable": "functions_as_locals.method_tito",
+    "filename": "functions_as_locals.py",
+    "callable_line": 39,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 41, "start": 6, "end": 9 },
+              "resolves_to": [ "functions_as_locals.C.m" ],
+              "port": "formal(arg, position=1)",
+              "call_site": "41:4-41:10"
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "pysa._cookies",
     "filename": "pysa/__init__.pyi",
     "callable_line": 8,

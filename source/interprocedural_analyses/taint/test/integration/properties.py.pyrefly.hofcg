@@ -533,7 +533,7 @@ Higher order call graphs
         }
       }
     },
-    "130:15-130:46": { "attribute_access": {} }
+    "130:15-130:46": { "attribute_access": { "is_attribute": true } }
   }
 }
 {
@@ -560,6 +560,7 @@ Higher order call graphs
     },
     "320:15-320:26": {
       "attribute_access": {
+        "is_attribute": true,
         "if_called": {
           "new_calls": [
             {

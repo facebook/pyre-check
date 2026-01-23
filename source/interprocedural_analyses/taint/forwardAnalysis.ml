@@ -2555,92 +2555,96 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       if resolve_properties then get_attribute_access_callees ~location ~attribute_access else None
     in
 
-    let property_call_result =
-      match attribute_access_callees with
-      | Some { property_targets = _ :: _ as property_targets; _ } ->
-          let taint, state =
-            apply_callees_with_arguments_taint
-              ~pyre_in_context
-              ~is_result_used:is_attribute_used
-              ~callee:{ CallModel.Callee.name = Some (Name.Attribute attribute_access); location }
-              ~call_location:location
-              ~arguments:[]
-              ~self_taint:(Some base_taint)
-              ~callee_taint:None
-              ~arguments_taint:[]
-              ~state
-              (CallGraph.CallCallees.create ~call_targets:property_targets ())
-          in
-          { base_taint = ForwardState.Tree.bottom; attribute_taint = taint; state }
-      | _ ->
-          {
-            base_taint = ForwardState.Tree.bottom;
-            attribute_taint = ForwardState.Tree.bottom;
-            state = bottom;
-          }
+    let analyze_property_calls property_targets state =
+      let taint, state =
+        apply_callees_with_arguments_taint
+          ~pyre_in_context
+          ~is_result_used:is_attribute_used
+          ~callee:{ CallModel.Callee.name = Some (Name.Attribute attribute_access); location }
+          ~call_location:location
+          ~arguments:[]
+          ~self_taint:(Some base_taint)
+          ~callee_taint:None
+          ~arguments_taint:[]
+          ~state
+          (CallGraph.CallCallees.create ~call_targets:property_targets ())
+      in
+      { base_taint = ForwardState.Tree.bottom; attribute_taint = taint; state }
     in
 
-    let regular_attribute_result =
+    let analyze_regular_attribute_access state =
+      let global_model =
+        GlobalModel.from_expression
+          ~pyre_in_context
+          ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+          ~call_graph:FunctionContext.call_graph_of_define
+          ~get_callee_model:FunctionContext.get_callee_model
+          ~expression
+          ~interval:FunctionContext.caller_class_interval
+      in
+      let attribute_taint =
+        GlobalModel.get_source
+          ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+          global_model
+      in
+      let add_tito_features taint =
+        let attribute_breadcrumbs =
+          global_model |> GlobalModel.get_tito |> BackwardState.Tree.joined_breadcrumbs
+        in
+        ForwardState.Tree.add_local_breadcrumbs attribute_breadcrumbs taint
+      in
+      let apply_attribute_sanitizers taint =
+        let sanitizers =
+          let sanitizer = GlobalModel.get_sanitize global_model in
+          { SanitizeTransformSet.sources = sanitizer.sources; sinks = sanitizer.sinks }
+        in
+        let taint =
+          ForwardState.Tree.apply_sanitize_transforms
+            ~taint_configuration:FunctionContext.taint_configuration
+            sanitizers
+            TaintTransformOperation.InsertLocation.Front
+            taint
+        in
+        taint
+      in
+      let attribute_taint =
+        if is_attribute_used then
+          base_taint
+          |> add_tito_features
+          |> ForwardState.Tree.read [Abstract.TreeDomain.Label.Index attribute]
+          |> ForwardState.Tree.add_local_first_field attribute
+          (* This should be applied before the join with the attribute taint, so inferred taint
+           * is sanitized, but user-specified taint on the attribute is still propagated. *)
+          |> apply_attribute_sanitizers
+          |> ForwardState.Tree.join attribute_taint
+        else
+          ForwardState.Tree.bottom
+      in
+      { base_taint; attribute_taint; state }
+    in
+
+    let has_property_targets =
+      match attribute_access_callees with
+      | Some { property_targets = _ :: _ as property_targets; _ } -> Some property_targets
+      | _ -> None
+    in
+    let is_regular_attribute =
       match attribute_access_callees with
       | Some { is_attribute = true; _ }
       | None ->
-          let global_model =
-            GlobalModel.from_expression
-              ~pyre_in_context
-              ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
-              ~call_graph:FunctionContext.call_graph_of_define
-              ~get_callee_model:FunctionContext.get_callee_model
-              ~expression
-              ~interval:FunctionContext.caller_class_interval
-          in
-          let attribute_taint =
-            GlobalModel.get_source
-              ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
-              global_model
-          in
-          let add_tito_features taint =
-            let attribute_breadcrumbs =
-              global_model |> GlobalModel.get_tito |> BackwardState.Tree.joined_breadcrumbs
-            in
-            ForwardState.Tree.add_local_breadcrumbs attribute_breadcrumbs taint
-          in
-          let apply_attribute_sanitizers taint =
-            let sanitizers =
-              let sanitizer = GlobalModel.get_sanitize global_model in
-              { SanitizeTransformSet.sources = sanitizer.sources; sinks = sanitizer.sinks }
-            in
-            let taint =
-              ForwardState.Tree.apply_sanitize_transforms
-                ~taint_configuration:FunctionContext.taint_configuration
-                sanitizers
-                TaintTransformOperation.InsertLocation.Front
-                taint
-            in
-            taint
-          in
-          let attribute_taint =
-            if is_attribute_used then
-              base_taint
-              |> add_tito_features
-              |> ForwardState.Tree.read [Abstract.TreeDomain.Label.Index attribute]
-              |> ForwardState.Tree.add_local_first_field attribute
-              (* This should be applied before the join with the attribute taint, so inferred taint
-               * is sanitized, but user-specified taint on the attribute is still propagated. *)
-              |> apply_attribute_sanitizers
-              |> ForwardState.Tree.join attribute_taint
-            else
-              ForwardState.Tree.bottom
-          in
-          { base_taint; attribute_taint; state }
-      | _ ->
-          {
-            base_taint = ForwardState.Tree.bottom;
-            attribute_taint = ForwardState.Tree.bottom;
-            state = bottom;
-          }
+          true
+      | _ -> false
     in
 
-    join_analyze_attribute_access_result property_call_result regular_attribute_result
+    match has_property_targets, is_regular_attribute with
+    | None, false ->
+        { base_taint = ForwardState.Tree.bottom; attribute_taint = ForwardState.Tree.bottom; state }
+    | None, true -> analyze_regular_attribute_access state
+    | Some property_targets, false -> analyze_property_calls property_targets state
+    | Some property_targets, true ->
+        join_analyze_attribute_access_result
+          (analyze_property_calls property_targets state)
+          (analyze_regular_attribute_access state)
 
 
   (* If there exists a triggered flow, `call_target` is the responsible callsite. We assume there is

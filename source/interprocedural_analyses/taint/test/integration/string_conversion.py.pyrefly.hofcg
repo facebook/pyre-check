@@ -460,6 +460,7 @@ Higher order call graphs
     },
     "181:7-181:18": {
       "attribute_access": {
+        "is_attribute": true,
         "if_called": {
           "new_calls": [
             {
