@@ -53,9 +53,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.foo_class_attributes",
-    "callable_line": 117,
+    "callable_line": 132,
     "code": 5002,
-    "line": 118,
+    "line": 133,
     "start": 15,
     "end": 32,
     "filename": "self.py",
@@ -76,7 +76,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 118, "start": 15, "end": 32 }
+            "origin": { "line": 133, "start": 15, "end": 32 }
           }
         ]
       },
@@ -93,8 +93,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 118, "start": 15, "end": 32 },
-            "call_site": "118:4-118:33"
+            "origin": { "line": 133, "start": 15, "end": 32 },
+            "call_site": "133:4-133:33"
           }
         ]
       }
@@ -113,9 +113,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.selftype_access_other",
-    "callable_line": 177,
+    "callable_line": 199,
     "code": 5002,
-    "line": 182,
+    "line": 205,
     "start": 15,
     "end": 33,
     "filename": "self.py",
@@ -142,12 +142,12 @@
               { "first-field": "tainted_instance" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 179, "start": 8, "end": 10 } ],
+            "tito_positions": [ { "line": 201, "start": 8, "end": 10 } ],
             "call": {
-              "position": { "line": 178, "start": 13, "end": 16 },
+              "position": { "line": 200, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_instance]",
-              "call_site": "178:13-178:24"
+              "call_site": "200:13-200:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -167,8 +167,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 182, "start": 15, "end": 33 },
-            "call_site": "182:4-182:34"
+            "origin": { "line": 205, "start": 15, "end": 33 },
+            "call_site": "205:4-205:34"
           }
         ]
       }
@@ -192,9 +192,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.selftype_access_other",
-    "callable_line": 177,
+    "callable_line": 199,
     "code": 5002,
-    "line": 183,
+    "line": 206,
     "start": 15,
     "end": 39,
     "filename": "self.py",
@@ -219,12 +219,12 @@
               { "first-field": "tainted_extra_instance" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 179, "start": 8, "end": 10 } ],
+            "tito_positions": [ { "line": 201, "start": 8, "end": 10 } ],
             "call": {
-              "position": { "line": 178, "start": 13, "end": 16 },
+              "position": { "line": 200, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_extra_instance]",
-              "call_site": "178:13-178:24"
+              "call_site": "200:13-200:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -244,8 +244,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 183, "start": 15, "end": 39 },
-            "call_site": "183:4-183:40"
+            "origin": { "line": 206, "start": 15, "end": 39 },
+            "call_site": "206:4-206:40"
           }
         ]
       }
@@ -270,9 +270,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.selftype_access_self",
-    "callable_line": 163,
+    "callable_line": 184,
     "code": 5002,
-    "line": 168,
+    "line": 190,
     "start": 15,
     "end": 33,
     "filename": "self.py",
@@ -299,12 +299,12 @@
               { "first-field": "tainted_instance" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 165, "start": 8, "end": 10 } ],
+            "tito_positions": [ { "line": 186, "start": 8, "end": 10 } ],
             "call": {
-              "position": { "line": 164, "start": 13, "end": 16 },
+              "position": { "line": 185, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_instance]",
-              "call_site": "164:13-164:24"
+              "call_site": "185:13-185:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -324,8 +324,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 168, "start": 15, "end": 33 },
-            "call_site": "168:4-168:34"
+            "origin": { "line": 190, "start": 15, "end": 33 },
+            "call_site": "190:4-190:34"
           }
         ]
       }
@@ -349,9 +349,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.selftype_access_self",
-    "callable_line": 163,
+    "callable_line": 184,
     "code": 5002,
-    "line": 169,
+    "line": 191,
     "start": 15,
     "end": 39,
     "filename": "self.py",
@@ -376,12 +376,12 @@
               { "first-field": "tainted_extra_instance" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 165, "start": 8, "end": 10 } ],
+            "tito_positions": [ { "line": 186, "start": 8, "end": 10 } ],
             "call": {
-              "position": { "line": 164, "start": 13, "end": 16 },
+              "position": { "line": 185, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_extra_instance]",
-              "call_site": "164:13-164:24"
+              "call_site": "185:13-185:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -401,8 +401,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 169, "start": 15, "end": 39 },
-            "call_site": "169:4-169:40"
+            "origin": { "line": 191, "start": 15, "end": 39 },
+            "call_site": "191:4-191:40"
           }
         ]
       }
@@ -427,9 +427,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.selftype_access_untyped_self",
-    "callable_line": 191,
+    "callable_line": 214,
     "code": 5002,
-    "line": 194,
+    "line": 217,
     "start": 15,
     "end": 40,
     "filename": "self.py",
@@ -450,7 +450,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 194, "start": 15, "end": 40 }
+            "origin": { "line": 217, "start": 15, "end": 40 }
           },
           {
             "kinds": [
@@ -472,14 +472,14 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [
-              { "line": 193, "start": 8, "end": 10 },
-              { "line": 194, "start": 15, "end": 16 }
+              { "line": 216, "start": 8, "end": 10 },
+              { "line": 217, "start": 15, "end": 16 }
             ],
             "call": {
-              "position": { "line": 192, "start": 13, "end": 16 },
+              "position": { "line": 215, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_extra_instance]",
-              "call_site": "192:13-192:24"
+              "call_site": "215:13-215:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -506,14 +506,14 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [
-              { "line": 193, "start": 8, "end": 10 },
-              { "line": 194, "start": 15, "end": 16 }
+              { "line": 216, "start": 8, "end": 10 },
+              { "line": 217, "start": 15, "end": 16 }
             ],
             "call": {
-              "position": { "line": 192, "start": 13, "end": 16 },
+              "position": { "line": 215, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_instance]",
-              "call_site": "192:13-192:24"
+              "call_site": "215:13-215:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -533,8 +533,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 194, "start": 15, "end": 40 },
-            "call_site": "194:4-194:41"
+            "origin": { "line": 217, "start": 15, "end": 40 },
+            "call_site": "217:4-217:41"
           }
         ]
       }
@@ -562,9 +562,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.selftype_access_untyped_self",
-    "callable_line": 191,
+    "callable_line": 214,
     "code": 5002,
-    "line": 196,
+    "line": 220,
     "start": 15,
     "end": 33,
     "filename": "self.py",
@@ -591,12 +591,12 @@
               { "first-field": "tainted_instance" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 193, "start": 8, "end": 10 } ],
+            "tito_positions": [ { "line": 216, "start": 8, "end": 10 } ],
             "call": {
-              "position": { "line": 192, "start": 13, "end": 16 },
+              "position": { "line": 215, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_instance]",
-              "call_site": "192:13-192:24"
+              "call_site": "215:13-215:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -616,8 +616,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 196, "start": 15, "end": 33 },
-            "call_site": "196:4-196:34"
+            "origin": { "line": 220, "start": 15, "end": 33 },
+            "call_site": "220:4-220:34"
           }
         ]
       }
@@ -641,9 +641,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.selftype_access_untyped_self",
-    "callable_line": 191,
+    "callable_line": 214,
     "code": 5002,
-    "line": 197,
+    "line": 221,
     "start": 15,
     "end": 39,
     "filename": "self.py",
@@ -668,12 +668,12 @@
               { "first-field": "tainted_extra_instance" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 193, "start": 8, "end": 10 } ],
+            "tito_positions": [ { "line": 216, "start": 8, "end": 10 } ],
             "call": {
-              "position": { "line": 192, "start": 13, "end": 16 },
+              "position": { "line": 215, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_extra_instance]",
-              "call_site": "192:13-192:24"
+              "call_site": "215:13-215:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -693,8 +693,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 197, "start": 15, "end": 39 },
-            "call_site": "197:4-197:40"
+            "origin": { "line": 221, "start": 15, "end": 39 },
+            "call_site": "221:4-221:40"
           }
         ]
       }
@@ -719,9 +719,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.selftype_access_untyped_self",
-    "callable_line": 191,
+    "callable_line": 214,
     "code": 5002,
-    "line": 199,
+    "line": 224,
     "start": 15,
     "end": 44,
     "filename": "self.py",
@@ -750,14 +750,14 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [
-              { "line": 193, "start": 8, "end": 10 },
-              { "line": 199, "start": 15, "end": 16 }
+              { "line": 216, "start": 8, "end": 10 },
+              { "line": 224, "start": 15, "end": 16 }
             ],
             "call": {
-              "position": { "line": 192, "start": 13, "end": 16 },
+              "position": { "line": 215, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_extra_instance]",
-              "call_site": "192:13-192:24"
+              "call_site": "215:13-215:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -784,14 +784,14 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [
-              { "line": 193, "start": 8, "end": 10 },
-              { "line": 199, "start": 15, "end": 16 }
+              { "line": 216, "start": 8, "end": 10 },
+              { "line": 224, "start": 15, "end": 16 }
             ],
             "call": {
-              "position": { "line": 192, "start": 13, "end": 16 },
+              "position": { "line": 215, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_instance]",
-              "call_site": "192:13-192:24"
+              "call_site": "215:13-215:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -811,8 +811,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 199, "start": 15, "end": 44 },
-            "call_site": "199:4-199:45"
+            "origin": { "line": 224, "start": 15, "end": 44 },
+            "call_site": "224:4-224:45"
           }
         ]
       }
@@ -840,9 +840,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.typevar_access_other",
-    "callable_line": 149,
+    "callable_line": 168,
     "code": 5002,
-    "line": 152,
+    "line": 171,
     "start": 15,
     "end": 40,
     "filename": "self.py",
@@ -863,7 +863,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 152, "start": 15, "end": 40 }
+            "origin": { "line": 171, "start": 15, "end": 40 }
           },
           {
             "kinds": [
@@ -885,14 +885,14 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [
-              { "line": 151, "start": 8, "end": 10 },
-              { "line": 152, "start": 15, "end": 16 }
+              { "line": 170, "start": 8, "end": 10 },
+              { "line": 171, "start": 15, "end": 16 }
             ],
             "call": {
-              "position": { "line": 150, "start": 13, "end": 16 },
+              "position": { "line": 169, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_extra_instance]",
-              "call_site": "150:13-150:24"
+              "call_site": "169:13-169:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -919,14 +919,14 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [
-              { "line": 151, "start": 8, "end": 10 },
-              { "line": 152, "start": 15, "end": 16 }
+              { "line": 170, "start": 8, "end": 10 },
+              { "line": 171, "start": 15, "end": 16 }
             ],
             "call": {
-              "position": { "line": 150, "start": 13, "end": 16 },
+              "position": { "line": 169, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_instance]",
-              "call_site": "150:13-150:24"
+              "call_site": "169:13-169:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -946,8 +946,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 152, "start": 15, "end": 40 },
-            "call_site": "152:4-152:41"
+            "origin": { "line": 171, "start": 15, "end": 40 },
+            "call_site": "171:4-171:41"
           }
         ]
       }
@@ -975,9 +975,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.typevar_access_other",
-    "callable_line": 149,
+    "callable_line": 168,
     "code": 5002,
-    "line": 154,
+    "line": 174,
     "start": 15,
     "end": 33,
     "filename": "self.py",
@@ -1004,12 +1004,12 @@
               { "first-field": "tainted_instance" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 151, "start": 8, "end": 10 } ],
+            "tito_positions": [ { "line": 170, "start": 8, "end": 10 } ],
             "call": {
-              "position": { "line": 150, "start": 13, "end": 16 },
+              "position": { "line": 169, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_instance]",
-              "call_site": "150:13-150:24"
+              "call_site": "169:13-169:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1029,8 +1029,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 154, "start": 15, "end": 33 },
-            "call_site": "154:4-154:34"
+            "origin": { "line": 174, "start": 15, "end": 33 },
+            "call_site": "174:4-174:34"
           }
         ]
       }
@@ -1054,9 +1054,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.typevar_access_other",
-    "callable_line": 149,
+    "callable_line": 168,
     "code": 5002,
-    "line": 155,
+    "line": 175,
     "start": 15,
     "end": 39,
     "filename": "self.py",
@@ -1081,12 +1081,12 @@
               { "first-field": "tainted_extra_instance" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 151, "start": 8, "end": 10 } ],
+            "tito_positions": [ { "line": 170, "start": 8, "end": 10 } ],
             "call": {
-              "position": { "line": 150, "start": 13, "end": 16 },
+              "position": { "line": 169, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_extra_instance]",
-              "call_site": "150:13-150:24"
+              "call_site": "169:13-169:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1106,8 +1106,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 155, "start": 15, "end": 39 },
-            "call_site": "155:4-155:40"
+            "origin": { "line": 175, "start": 15, "end": 39 },
+            "call_site": "175:4-175:40"
           }
         ]
       }
@@ -1132,9 +1132,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.typevar_access_other",
-    "callable_line": 149,
+    "callable_line": 168,
     "code": 5002,
-    "line": 157,
+    "line": 178,
     "start": 15,
     "end": 44,
     "filename": "self.py",
@@ -1163,14 +1163,14 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [
-              { "line": 151, "start": 8, "end": 10 },
-              { "line": 157, "start": 15, "end": 16 }
+              { "line": 170, "start": 8, "end": 10 },
+              { "line": 178, "start": 15, "end": 16 }
             ],
             "call": {
-              "position": { "line": 150, "start": 13, "end": 16 },
+              "position": { "line": 169, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_extra_instance]",
-              "call_site": "150:13-150:24"
+              "call_site": "169:13-169:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1197,14 +1197,14 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [
-              { "line": 151, "start": 8, "end": 10 },
-              { "line": 157, "start": 15, "end": 16 }
+              { "line": 170, "start": 8, "end": 10 },
+              { "line": 178, "start": 15, "end": 16 }
             ],
             "call": {
-              "position": { "line": 150, "start": 13, "end": 16 },
+              "position": { "line": 169, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_instance]",
-              "call_site": "150:13-150:24"
+              "call_site": "169:13-169:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1224,8 +1224,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 157, "start": 15, "end": 44 },
-            "call_site": "157:4-157:45"
+            "origin": { "line": 178, "start": 15, "end": 44 },
+            "call_site": "178:4-178:45"
           }
         ]
       }
@@ -1253,9 +1253,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.typevar_access_self",
-    "callable_line": 135,
+    "callable_line": 152,
     "code": 5002,
-    "line": 138,
+    "line": 155,
     "start": 15,
     "end": 40,
     "filename": "self.py",
@@ -1276,7 +1276,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 138, "start": 15, "end": 40 }
+            "origin": { "line": 155, "start": 15, "end": 40 }
           },
           {
             "kinds": [
@@ -1298,14 +1298,14 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [
-              { "line": 137, "start": 8, "end": 10 },
-              { "line": 138, "start": 15, "end": 16 }
+              { "line": 154, "start": 8, "end": 10 },
+              { "line": 155, "start": 15, "end": 16 }
             ],
             "call": {
-              "position": { "line": 136, "start": 13, "end": 16 },
+              "position": { "line": 153, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_extra_instance]",
-              "call_site": "136:13-136:24"
+              "call_site": "153:13-153:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1332,14 +1332,14 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [
-              { "line": 137, "start": 8, "end": 10 },
-              { "line": 138, "start": 15, "end": 16 }
+              { "line": 154, "start": 8, "end": 10 },
+              { "line": 155, "start": 15, "end": 16 }
             ],
             "call": {
-              "position": { "line": 136, "start": 13, "end": 16 },
+              "position": { "line": 153, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_instance]",
-              "call_site": "136:13-136:24"
+              "call_site": "153:13-153:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1359,8 +1359,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 138, "start": 15, "end": 40 },
-            "call_site": "138:4-138:41"
+            "origin": { "line": 155, "start": 15, "end": 40 },
+            "call_site": "155:4-155:41"
           }
         ]
       }
@@ -1388,9 +1388,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.typevar_access_self",
-    "callable_line": 135,
+    "callable_line": 152,
     "code": 5002,
-    "line": 140,
+    "line": 158,
     "start": 15,
     "end": 33,
     "filename": "self.py",
@@ -1417,12 +1417,12 @@
               { "first-field": "tainted_instance" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 137, "start": 8, "end": 10 } ],
+            "tito_positions": [ { "line": 154, "start": 8, "end": 10 } ],
             "call": {
-              "position": { "line": 136, "start": 13, "end": 16 },
+              "position": { "line": 153, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_instance]",
-              "call_site": "136:13-136:24"
+              "call_site": "153:13-153:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1442,8 +1442,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 140, "start": 15, "end": 33 },
-            "call_site": "140:4-140:34"
+            "origin": { "line": 158, "start": 15, "end": 33 },
+            "call_site": "158:4-158:34"
           }
         ]
       }
@@ -1467,9 +1467,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.typevar_access_self",
-    "callable_line": 135,
+    "callable_line": 152,
     "code": 5002,
-    "line": 141,
+    "line": 159,
     "start": 15,
     "end": 39,
     "filename": "self.py",
@@ -1494,12 +1494,12 @@
               { "first-field": "tainted_extra_instance" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 137, "start": 8, "end": 10 } ],
+            "tito_positions": [ { "line": 154, "start": 8, "end": 10 } ],
             "call": {
-              "position": { "line": 136, "start": 13, "end": 16 },
+              "position": { "line": 153, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_extra_instance]",
-              "call_site": "136:13-136:24"
+              "call_site": "153:13-153:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1519,8 +1519,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 141, "start": 15, "end": 39 },
-            "call_site": "141:4-141:40"
+            "origin": { "line": 159, "start": 15, "end": 39 },
+            "call_site": "159:4-159:40"
           }
         ]
       }
@@ -1545,9 +1545,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.typevar_access_self",
-    "callable_line": 135,
+    "callable_line": 152,
     "code": 5002,
-    "line": 143,
+    "line": 162,
     "start": 15,
     "end": 44,
     "filename": "self.py",
@@ -1576,14 +1576,14 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [
-              { "line": 137, "start": 8, "end": 10 },
-              { "line": 143, "start": 15, "end": 16 }
+              { "line": 154, "start": 8, "end": 10 },
+              { "line": 162, "start": 15, "end": 16 }
             ],
             "call": {
-              "position": { "line": 136, "start": 13, "end": 16 },
+              "position": { "line": 153, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_extra_instance]",
-              "call_site": "136:13-136:24"
+              "call_site": "153:13-153:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1610,14 +1610,14 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [
-              { "line": 137, "start": 8, "end": 10 },
-              { "line": 143, "start": 15, "end": 16 }
+              { "line": 154, "start": 8, "end": 10 },
+              { "line": 162, "start": 15, "end": 16 }
             ],
             "call": {
-              "position": { "line": 136, "start": 13, "end": 16 },
+              "position": { "line": 153, "start": 13, "end": 16 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_instance]",
-              "call_site": "136:13-136:24"
+              "call_site": "153:13-153:24"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1637,8 +1637,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 143, "start": 15, "end": 44 },
-            "call_site": "143:4-143:45"
+            "origin": { "line": 162, "start": 15, "end": 44 },
+            "call_site": "162:4-162:45"
           }
         ]
       }
@@ -1666,9 +1666,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.untyped_access_self",
-    "callable_line": 122,
+    "callable_line": 137,
     "code": 5002,
-    "line": 124,
+    "line": 139,
     "start": 15,
     "end": 40,
     "filename": "self.py",
@@ -1689,7 +1689,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 124, "start": 15, "end": 40 }
+            "origin": { "line": 139, "start": 15, "end": 40 }
           },
           {
             "kinds": [
@@ -1710,12 +1710,12 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito_positions": [ { "line": 124, "start": 15, "end": 16 } ],
+            "tito_positions": [ { "line": 139, "start": 15, "end": 16 } ],
             "call": {
-              "position": { "line": 123, "start": 8, "end": 11 },
+              "position": { "line": 138, "start": 8, "end": 11 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_extra_instance]",
-              "call_site": "123:8-123:19"
+              "call_site": "138:8-138:19"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1741,12 +1741,12 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito_positions": [ { "line": 124, "start": 15, "end": 16 } ],
+            "tito_positions": [ { "line": 139, "start": 15, "end": 16 } ],
             "call": {
-              "position": { "line": 123, "start": 8, "end": 11 },
+              "position": { "line": 138, "start": 8, "end": 11 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_instance]",
-              "call_site": "123:8-123:19"
+              "call_site": "138:8-138:19"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1766,8 +1766,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 124, "start": 15, "end": 40 },
-            "call_site": "124:4-124:41"
+            "origin": { "line": 139, "start": 15, "end": 40 },
+            "call_site": "139:4-139:41"
           }
         ]
       }
@@ -1795,9 +1795,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.untyped_access_self",
-    "callable_line": 122,
+    "callable_line": 137,
     "code": 5002,
-    "line": 126,
+    "line": 142,
     "start": 15,
     "end": 33,
     "filename": "self.py",
@@ -1823,10 +1823,10 @@
               { "has": "first-field" }, { "first-field": "tainted_instance" }
             ],
             "call": {
-              "position": { "line": 123, "start": 8, "end": 11 },
+              "position": { "line": 138, "start": 8, "end": 11 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_instance]",
-              "call_site": "123:8-123:19"
+              "call_site": "138:8-138:19"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1846,8 +1846,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 126, "start": 15, "end": 33 },
-            "call_site": "126:4-126:34"
+            "origin": { "line": 142, "start": 15, "end": 33 },
+            "call_site": "142:4-142:34"
           }
         ]
       }
@@ -1870,9 +1870,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.untyped_access_self",
-    "callable_line": 122,
+    "callable_line": 137,
     "code": 5002,
-    "line": 127,
+    "line": 143,
     "start": 15,
     "end": 39,
     "filename": "self.py",
@@ -1897,10 +1897,10 @@
               { "first-field": "tainted_extra_instance" }
             ],
             "call": {
-              "position": { "line": 123, "start": 8, "end": 11 },
+              "position": { "line": 138, "start": 8, "end": 11 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_extra_instance]",
-              "call_site": "123:8-123:19"
+              "call_site": "138:8-138:19"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1920,8 +1920,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 127, "start": 15, "end": 39 },
-            "call_site": "127:4-127:40"
+            "origin": { "line": 143, "start": 15, "end": 39 },
+            "call_site": "143:4-143:40"
           }
         ]
       }
@@ -1945,9 +1945,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.untyped_access_self",
-    "callable_line": 122,
+    "callable_line": 137,
     "code": 5002,
-    "line": 129,
+    "line": 146,
     "start": 15,
     "end": 44,
     "filename": "self.py",
@@ -1975,12 +1975,12 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito_positions": [ { "line": 129, "start": 15, "end": 16 } ],
+            "tito_positions": [ { "line": 146, "start": 15, "end": 16 } ],
             "call": {
-              "position": { "line": 123, "start": 8, "end": 11 },
+              "position": { "line": 138, "start": 8, "end": 11 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_extra_instance]",
-              "call_site": "123:8-123:19"
+              "call_site": "138:8-138:19"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -2006,12 +2006,12 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito_positions": [ { "line": 129, "start": 15, "end": 16 } ],
+            "tito_positions": [ { "line": 146, "start": 15, "end": 16 } ],
             "call": {
-              "position": { "line": 123, "start": 8, "end": 11 },
+              "position": { "line": 138, "start": 8, "end": 11 },
               "resolves_to": [ "self.Foo.__init__" ],
               "port": "formal(self, position=0)[tainted_instance]",
-              "call_site": "123:8-123:19"
+              "call_site": "138:8-138:19"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -2031,8 +2031,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 129, "start": 15, "end": 44 },
-            "call_site": "129:4-129:45"
+            "origin": { "line": 146, "start": 15, "end": 44 },
+            "call_site": "146:4-146:45"
           }
         ]
       }
@@ -2061,7 +2061,7 @@
   "data": {
     "callable": "self.Foo.__init__",
     "filename": "self.py",
-    "callable_line": 17,
+    "callable_line": 18,
     "sources": [
       {
         "port": "formal(self, position=0)[tainted_extra_instance]",
@@ -2076,7 +2076,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 20, "start": 43, "end": 57 },
+            "origin": { "line": 21, "start": 43, "end": 57 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }
@@ -2097,10 +2097,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 17, "start": 23, "end": 44 },
+            "origin": { "line": 18, "start": 23, "end": 44 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "17:4-21:49"
+            "call_site": "18:4-22:49"
           }
         ]
       }
@@ -2148,7 +2148,7 @@
   "data": {
     "callable": "self.Foo.selftype_access_other",
     "filename": "self.py",
-    "callable_line": 110,
+    "callable_line": 125,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -2167,7 +2167,7 @@
   "data": {
     "callable": "self.Foo.selftype_access_self",
     "filename": "self.py",
-    "callable_line": 106,
+    "callable_line": 121,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -2186,7 +2186,7 @@
   "data": {
     "callable": "self.Foo.selftype_access_untyped_self",
     "filename": "self.py",
-    "callable_line": 113,
+    "callable_line": 128,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -2205,7 +2205,7 @@
   "data": {
     "callable": "self.Foo.selftype_self_class",
     "filename": "self.py",
-    "callable_line": 78,
+    "callable_line": 87,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted_class]",
@@ -2220,10 +2220,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 80, "start": 19, "end": 37 },
+            "origin": { "line": 90, "start": 12, "end": 30 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "80:8-80:38"
+            "call_site": "89:8-91:9"
           }
         ]
       }
@@ -2246,7 +2246,7 @@
   "data": {
     "callable": "self.Foo.selftype_self_class_direct",
     "filename": "self.py",
-    "callable_line": 72,
+    "callable_line": 79,
     "sinks": [
       {
         "port": "formal(self, position=0)[__class__][tainted_class]",
@@ -2261,10 +2261,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 74, "start": 19, "end": 47 },
+            "origin": { "line": 82, "start": 12, "end": 40 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "74:8-74:48"
+            "call_site": "81:8-83:9"
           }
         ]
       }
@@ -2287,7 +2287,7 @@
   "data": {
     "callable": "self.Foo.selftype_self_extra_instance",
     "filename": "self.py",
-    "callable_line": 90,
+    "callable_line": 103,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted_extra_instance]",
@@ -2302,10 +2302,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 92, "start": 19, "end": 46 },
+            "origin": { "line": 106, "start": 12, "end": 39 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "92:8-92:47"
+            "call_site": "105:8-107:9"
           }
         ]
       }
@@ -2328,7 +2328,7 @@
   "data": {
     "callable": "self.Foo.selftype_self_instance",
     "filename": "self.py",
-    "callable_line": 84,
+    "callable_line": 95,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted_instance]",
@@ -2343,10 +2343,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 86, "start": 19, "end": 40 },
+            "origin": { "line": 98, "start": 12, "end": 33 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "86:8-86:41"
+            "call_site": "97:8-99:9"
           }
         ]
       }
@@ -2369,7 +2369,7 @@
   "data": {
     "callable": "self.Foo.selftype_self_not_tainted",
     "filename": "self.py",
-    "callable_line": 96,
+    "callable_line": 111,
     "sinks": [
       {
         "port": "formal(self, position=0)[not_tainted_class]",
@@ -2384,10 +2384,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 98, "start": 19, "end": 41 },
+            "origin": { "line": 113, "start": 19, "end": 41 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "98:8-98:42"
+            "call_site": "113:8-113:42"
           }
         ]
       },
@@ -2404,10 +2404,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 102, "start": 19, "end": 50 },
+            "origin": { "line": 117, "start": 19, "end": 50 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "102:8-102:51"
+            "call_site": "117:8-117:51"
           }
         ]
       },
@@ -2424,10 +2424,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 100, "start": 19, "end": 44 },
+            "origin": { "line": 115, "start": 19, "end": 44 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "100:8-100:45"
+            "call_site": "115:8-115:45"
           }
         ]
       }
@@ -2450,7 +2450,7 @@
   "data": {
     "callable": "self.Foo.typevar_access_other",
     "filename": "self.py",
-    "callable_line": 68,
+    "callable_line": 75,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -2469,7 +2469,7 @@
   "data": {
     "callable": "self.Foo.typevar_access_self",
     "filename": "self.py",
-    "callable_line": 65,
+    "callable_line": 72,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -2488,7 +2488,7 @@
   "data": {
     "callable": "self.Foo.typevar_self_class",
     "filename": "self.py",
-    "callable_line": 47,
+    "callable_line": 51,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted_class]",
@@ -2503,10 +2503,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 48, "start": 19, "end": 37 },
+            "origin": { "line": 53, "start": 19, "end": 37 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "48:8-48:38"
+            "call_site": "53:8-53:38"
           }
         ]
       }
@@ -2529,7 +2529,7 @@
   "data": {
     "callable": "self.Foo.typevar_self_class_direct",
     "filename": "self.py",
-    "callable_line": 43,
+    "callable_line": 47,
     "sinks": [
       {
         "port": "formal(self, position=0)",
@@ -2550,11 +2550,11 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito_positions": [ { "line": 44, "start": 19, "end": 23 } ],
-            "origin": { "line": 44, "start": 19, "end": 47 },
+            "tito_positions": [ { "line": 48, "start": 19, "end": 23 } ],
+            "origin": { "line": 48, "start": 19, "end": 47 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "44:8-44:48"
+            "call_site": "48:8-48:48"
           }
         ]
       }
@@ -2576,9 +2576,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.Foo.typevar_self_class_direct",
-    "callable_line": 43,
+    "callable_line": 47,
     "code": 5002,
-    "line": 44,
+    "line": 48,
     "start": 19,
     "end": 47,
     "filename": "self.py",
@@ -2599,7 +2599,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 44, "start": 19, "end": 47 },
+            "origin": { "line": 48, "start": 19, "end": 47 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }
@@ -2618,10 +2618,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 44, "start": 19, "end": 47 },
+            "origin": { "line": 48, "start": 19, "end": 47 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "44:8-44:48"
+            "call_site": "48:8-48:48"
           }
         ]
       }
@@ -2641,7 +2641,7 @@
   "data": {
     "callable": "self.Foo.typevar_self_extra_instance",
     "filename": "self.py",
-    "callable_line": 55,
+    "callable_line": 61,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted_extra_instance]",
@@ -2656,10 +2656,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 56, "start": 19, "end": 46 },
+            "origin": { "line": 63, "start": 19, "end": 46 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "56:8-56:47"
+            "call_site": "63:8-63:47"
           }
         ]
       }
@@ -2682,7 +2682,7 @@
   "data": {
     "callable": "self.Foo.typevar_self_instance",
     "filename": "self.py",
-    "callable_line": 51,
+    "callable_line": 56,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted_instance]",
@@ -2697,10 +2697,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 52, "start": 19, "end": 40 },
+            "origin": { "line": 58, "start": 19, "end": 40 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "52:8-52:41"
+            "call_site": "58:8-58:41"
           }
         ]
       }
@@ -2723,7 +2723,7 @@
   "data": {
     "callable": "self.Foo.typevar_self_not_tainted",
     "filename": "self.py",
-    "callable_line": 59,
+    "callable_line": 66,
     "sinks": [
       {
         "port": "formal(self, position=0)[not_tainted_class]",
@@ -2738,10 +2738,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 60, "start": 19, "end": 41 },
+            "origin": { "line": 67, "start": 19, "end": 41 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "60:8-60:42"
+            "call_site": "67:8-67:42"
           }
         ]
       },
@@ -2758,10 +2758,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 62, "start": 19, "end": 50 },
+            "origin": { "line": 69, "start": 19, "end": 50 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "62:8-62:51"
+            "call_site": "69:8-69:51"
           }
         ]
       },
@@ -2778,10 +2778,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 61, "start": 19, "end": 44 },
+            "origin": { "line": 68, "start": 19, "end": 44 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "61:8-61:45"
+            "call_site": "68:8-68:45"
           }
         ]
       }
@@ -2804,7 +2804,7 @@
   "data": {
     "callable": "self.Foo.untyped_access_self",
     "filename": "self.py",
-    "callable_line": 40,
+    "callable_line": 44,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -2823,7 +2823,7 @@
   "data": {
     "callable": "self.Foo.untyped_self_class",
     "filename": "self.py",
-    "callable_line": 26,
+    "callable_line": 27,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted_class]",
@@ -2838,10 +2838,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 27, "start": 19, "end": 37 },
+            "origin": { "line": 29, "start": 19, "end": 37 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "27:8-27:38"
+            "call_site": "29:8-29:38"
           }
         ]
       }
@@ -2853,7 +2853,7 @@
   "data": {
     "callable": "self.Foo.untyped_self_class_direct",
     "filename": "self.py",
-    "callable_line": 23,
+    "callable_line": 24,
     "sinks": [
       {
         "port": "formal(self, position=0)",
@@ -2874,11 +2874,11 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito_positions": [ { "line": 24, "start": 19, "end": 23 } ],
-            "origin": { "line": 24, "start": 19, "end": 47 },
+            "tito_positions": [ { "line": 25, "start": 19, "end": 23 } ],
+            "origin": { "line": 25, "start": 19, "end": 47 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "24:8-24:48"
+            "call_site": "25:8-25:48"
           }
         ]
       }
@@ -2889,9 +2889,9 @@
   "kind": "issue",
   "data": {
     "callable": "self.Foo.untyped_self_class_direct",
-    "callable_line": 23,
+    "callable_line": 24,
     "code": 5002,
-    "line": 24,
+    "line": 25,
     "start": 19,
     "end": 47,
     "filename": "self.py",
@@ -2912,7 +2912,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 24, "start": 19, "end": 47 },
+            "origin": { "line": 25, "start": 19, "end": 47 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }
@@ -2931,10 +2931,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 24, "start": 19, "end": 47 },
+            "origin": { "line": 25, "start": 19, "end": 47 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "24:8-24:48"
+            "call_site": "25:8-25:48"
           }
         ]
       }
@@ -2954,7 +2954,7 @@
   "data": {
     "callable": "self.Foo.untyped_self_extra_instance",
     "filename": "self.py",
-    "callable_line": 32,
+    "callable_line": 35,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted_extra_instance]",
@@ -2969,10 +2969,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 33, "start": 19, "end": 46 },
+            "origin": { "line": 37, "start": 19, "end": 46 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "33:8-33:47"
+            "call_site": "37:8-37:47"
           }
         ]
       }
@@ -2984,7 +2984,7 @@
   "data": {
     "callable": "self.Foo.untyped_self_instance",
     "filename": "self.py",
-    "callable_line": 29,
+    "callable_line": 31,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted_instance]",
@@ -2999,10 +2999,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 30, "start": 19, "end": 40 },
+            "origin": { "line": 33, "start": 19, "end": 40 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "30:8-30:41"
+            "call_site": "33:8-33:41"
           }
         ]
       }
@@ -3014,7 +3014,7 @@
   "data": {
     "callable": "self.Foo.untyped_self_not_tainted",
     "filename": "self.py",
-    "callable_line": 35,
+    "callable_line": 39,
     "sinks": [
       {
         "port": "formal(self, position=0)[not_tainted_class]",
@@ -3029,10 +3029,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 36, "start": 19, "end": 41 },
+            "origin": { "line": 40, "start": 19, "end": 41 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "36:8-36:42"
+            "call_site": "40:8-40:42"
           }
         ]
       },
@@ -3049,10 +3049,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 38, "start": 19, "end": 50 },
+            "origin": { "line": 42, "start": 19, "end": 50 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "38:8-38:51"
+            "call_site": "42:8-42:51"
           }
         ]
       },
@@ -3069,10 +3069,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 37, "start": 19, "end": 44 },
+            "origin": { "line": 41, "start": 19, "end": 44 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "37:8-37:45"
+            "call_site": "41:8-41:45"
           }
         ]
       }

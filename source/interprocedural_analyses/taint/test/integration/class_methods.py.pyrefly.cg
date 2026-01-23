@@ -1,18 +1,7 @@
 @generated
 Call dependencies
 {
-  "class_methods.C.abstract_method@decorated (method)": [
-    "abc.abstractmethod (fun)"
-  ],
-  "class_methods.C.class_abstractmethod@decorated (method)": [
-    "abc.abstractmethod (fun)", "builtins.classmethod.__init__ (method)",
-    "builtins.object.__new__ (method)"
-  ],
   "class_methods.C.class_method (method)": [ "pysa._test_sink (fun)" ],
-  "class_methods.C.my_abstract_property@decorated (method)": [
-    "abc.abstractmethod (fun)", "builtins.object.__new__ (method)",
-    "builtins.property.__init__ (method)"
-  ],
   "class_methods.C.one_hop_abstract_class_method (method)": [
     "class_methods.C.abstract_class_method (method)"
   ],
