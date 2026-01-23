@@ -43,6 +43,18 @@ Call dependencies
     "pysa._test_sink (fun)"
   ],
   "closure.closure_no_flow (fun)": [ "closure.closure (fun)" ],
+  "closure.closure_wrapper_sink_flow (fun)": [
+    "closure.closure_wrapper_sink_flow.wrapper (fun)",
+    "closure.closure_wrapper_sink_flow.wrapper (fun)[captured_variable(sink, closure.closure_wrapper_sink_flow)=closure.closure_wrapper_sink_flow.sink (fun)]",
+    "list.append (method)", "pysa._test_source (fun)"
+  ],
+  "closure.closure_wrapper_sink_flow.sink (fun)": [ "pysa._test_sink (fun)" ],
+  "closure.closure_wrapper_sink_flow.wrapper (fun)": [
+    "closure.closure_wrapper_sink_flow.sink (fun)"
+  ],
+  "closure.closure_wrapper_sink_flow.wrapper (fun)[captured_variable(sink, closure.closure_wrapper_sink_flow)=closure.closure_wrapper_sink_flow.sink (fun)]": [
+    "closure.closure_wrapper_sink_flow.sink (fun)"
+  ],
   "closure.decorator.wrapper (fun)[captured_variable(function, parameter)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]": [
     "closure.async_nonlocal_closure_tito_with_decorator.inner (fun)"
   ],
@@ -147,19 +159,47 @@ Call dependencies
     "closure.nonlocal_closure_tito.inner (fun)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)"
   ],
-  "closure.nonlocal_closure_wrapper_flow (fun)": [
-    "closure.nonlocal_closure_wrapper_flow.wrapper (fun)",
-    "closure.nonlocal_closure_wrapper_flow.wrapper (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_flow)=closure.nonlocal_closure_wrapper_flow.source (fun)]",
+  "closure.nonlocal_closure_wrapper_source_flow (fun)": [
+    "closure.nonlocal_closure_wrapper_source_flow.wrapper (fun)",
+    "closure.nonlocal_closure_wrapper_source_flow.wrapper (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_source_flow)=closure.nonlocal_closure_wrapper_source_flow.source (fun)]",
     "pysa._test_sink (fun)"
   ],
-  "closure.nonlocal_closure_wrapper_flow.source (fun)": [
+  "closure.nonlocal_closure_wrapper_source_flow.source (fun)": [
     "pysa._test_source (fun)"
   ],
-  "closure.nonlocal_closure_wrapper_flow.wrapper (fun)": [
-    "closure.nonlocal_closure_wrapper_flow.source (fun)"
+  "closure.nonlocal_closure_wrapper_source_flow.wrapper (fun)": [
+    "closure.nonlocal_closure_wrapper_source_flow.source (fun)"
   ],
-  "closure.nonlocal_closure_wrapper_flow.wrapper (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_flow)=closure.nonlocal_closure_wrapper_flow.source (fun)]": [
-    "closure.nonlocal_closure_wrapper_flow.source (fun)"
+  "closure.nonlocal_closure_wrapper_source_flow.wrapper (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_source_flow)=closure.nonlocal_closure_wrapper_source_flow.source (fun)]": [
+    "closure.nonlocal_closure_wrapper_source_flow.source (fun)"
+  ],
+  "closure.nonlocal_closure_wrapper_source_max_trace_length (fun)": [
+    "closure.nonlocal_closure_wrapper_source_max_trace_length.f3 (fun)",
+    "closure.nonlocal_closure_wrapper_source_max_trace_length.f3 (fun)[captured_variable(f2, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.f2 (fun)[captured_variable(f1, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)]]]",
+    "pysa._test_sink (fun)"
+  ],
+  "closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)": [
+    "closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)"
+  ],
+  "closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)]": [
+    "closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)"
+  ],
+  "closure.nonlocal_closure_wrapper_source_max_trace_length.f2 (fun)": [
+    "closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)"
+  ],
+  "closure.nonlocal_closure_wrapper_source_max_trace_length.f2 (fun)[captured_variable(f1, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)]]": [
+    "closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)",
+    "closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)]"
+  ],
+  "closure.nonlocal_closure_wrapper_source_max_trace_length.f3 (fun)": [
+    "closure.nonlocal_closure_wrapper_source_max_trace_length.f2 (fun)"
+  ],
+  "closure.nonlocal_closure_wrapper_source_max_trace_length.f3 (fun)[captured_variable(f2, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.f2 (fun)[captured_variable(f1, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)]]]": [
+    "closure.nonlocal_closure_wrapper_source_max_trace_length.f2 (fun)",
+    "closure.nonlocal_closure_wrapper_source_max_trace_length.f2 (fun)[captured_variable(f1, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)]]"
+  ],
+  "closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)": [
+    "pysa._test_source (fun)"
   ],
   "closure.nonlocal_closure_write_reduction (fun)": [
     "closure.nonlocal_closure_write_reduction.source (fun)",

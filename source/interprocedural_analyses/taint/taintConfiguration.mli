@@ -37,6 +37,7 @@ module ModelConstraints : sig
     maximum_overrides_to_analyze: int option;
     maximum_trace_length: int option;
     maximum_tito_depth: int option;
+    maximum_capture_trace_length: int option;
   }
 
   val default : t
@@ -251,6 +252,7 @@ val with_command_line_options
   maximum_overrides_to_analyze:int option ->
   maximum_trace_length:int option ->
   maximum_tito_depth:int option ->
+  maximum_capture_trace_length:int option ->
   (Heap.t, Error.t list) Result.t
 
 (** Perform additional checks on the taint configuration. *)

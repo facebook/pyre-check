@@ -2864,7 +2864,11 @@ Higher order call graphs
     "189:11-189:26": {
       "call": {
         "calls": [
-          { "target": "builtins.callable", "index": 0, "return_type": [] }
+          {
+            "target": "builtins.callable",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
         ]
       }
     },

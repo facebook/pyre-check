@@ -812,6 +812,7 @@ module StaticAnalysis = struct
     maximum_overrides_to_analyze: int option;
     maximum_trace_length: int option;
     maximum_tito_depth: int option;
+    maximum_capture_trace_length: int option;
     check_invariants: bool;
     limit_entrypoints: bool;
     compact_ocaml_heap: bool;
@@ -867,6 +868,7 @@ module StaticAnalysis = struct
       ?maximum_overrides_to_analyze
       ?maximum_trace_length
       ?maximum_tito_depth
+      ?maximum_capture_trace_length
       ?(check_invariants = false)
       ?(limit_entrypoints = false)
       ?(compact_ocaml_heap = false)
@@ -908,6 +910,7 @@ module StaticAnalysis = struct
       maximum_overrides_to_analyze;
       maximum_trace_length;
       maximum_tito_depth;
+      maximum_capture_trace_length;
       check_invariants;
       limit_entrypoints;
       compact_ocaml_heap;

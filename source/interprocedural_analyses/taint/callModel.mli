@@ -19,24 +19,36 @@ val at_callsite
   Model.t
 
 module ArgumentMatches : sig
+  type argument =
+    (* Argument is a concrete expression *)
+    | Expression of Expression.t
+    (* Argument is an implicit captured variable, which might or might not be visible in the local
+       scope. *)
+    | CapturedVariable of {
+        state_root: AccessPath.Root.t;
+        capture: AccessPath.CapturedVariable.t;
+      }
+  [@@deriving show]
+
   type t = {
-    argument: Expression.t;
+    argument: argument;
+    location: Location.t;
     generation_source_matches: AccessPath.argument_match list;
     sink_matches: AccessPath.argument_match list;
     tito_matches: AccessPath.argument_match list;
     sanitize_matches: AccessPath.argument_match list;
   }
   [@@deriving show]
+
+  val expression_for_logging : argument -> Expression.t
 end
 
 val match_captures
   :  pyre_in_context:PyrePysaApi.InContext.t ->
   model:Model.t ->
   captures_taint:ForwardState.t ->
-  location:Location.t ->
+  call_location:Location.t ->
   ForwardState.Tree.t list * ArgumentMatches.t list
-
-val captures_as_arguments : ArgumentMatches.t list -> Expression.Call.Argument.t list
 
 val match_actuals_to_formals
   :  model:Model.t ->

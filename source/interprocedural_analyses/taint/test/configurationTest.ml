@@ -39,6 +39,7 @@ let parse ?rule_filter ?source_filter ?sink_filter ?transform_filter configurati
           ~maximum_overrides_to_analyze:None
           ~maximum_trace_length:None
           ~maximum_tito_depth:None
+          ~maximum_capture_trace_length:None
     >>= TaintConfiguration.validate
   in
   (* Test that the configuration can be written in shared memory. *)

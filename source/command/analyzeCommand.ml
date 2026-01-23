@@ -44,6 +44,7 @@ module AnalyzeConfiguration = struct
     maximum_overrides_to_analyze: int option;
     maximum_trace_length: int option;
     maximum_tito_depth: int option;
+    maximum_capture_trace_length: int option;
     no_verify: bool;
     verify_dsl: bool;
     verify_taint_config_only: bool;
@@ -124,6 +125,9 @@ module AnalyzeConfiguration = struct
           in
           let maximum_trace_length = optional_int_member "maximum_trace_length" json in
           let maximum_tito_depth = optional_int_member "maximum_tito_depth" json in
+          let maximum_capture_trace_length =
+            optional_int_member "maximum_capture_trace_length" json
+          in
           let no_verify = bool_member "no_verify" ~default:false json in
           let verify_dsl = bool_member "verify_dsl" ~default:false json in
           let verify_taint_config_only =
@@ -191,6 +195,7 @@ module AnalyzeConfiguration = struct
               maximum_overrides_to_analyze;
               maximum_trace_length;
               maximum_tito_depth;
+              maximum_capture_trace_length;
               no_verify;
               verify_dsl;
               verify_taint_config_only;
@@ -267,6 +272,7 @@ module AnalyzeConfiguration = struct
         maximum_overrides_to_analyze;
         maximum_trace_length;
         maximum_tito_depth;
+        maximum_capture_trace_length;
         no_verify;
         verify_dsl;
         verify_taint_config_only;
@@ -360,6 +366,7 @@ module AnalyzeConfiguration = struct
       maximum_overrides_to_analyze;
       maximum_trace_length;
       maximum_tito_depth;
+      maximum_capture_trace_length;
       check_invariants;
       limit_entrypoints;
       compact_ocaml_heap;

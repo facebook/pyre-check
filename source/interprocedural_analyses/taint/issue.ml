@@ -320,6 +320,7 @@ let generate_issues
             ForwardTaint.prune_maximum_length
               ~global_maximum:(Some maximum_source_distance)
               ~maximum_per_kind:(fun _ -> None)
+              ~maximum_capture_length:None
               source_taint
         | _ -> source_taint
       in
@@ -329,6 +330,7 @@ let generate_issues
             BackwardTaint.prune_maximum_length
               ~global_maximum:(Some maximum_sink_distance)
               ~maximum_per_kind:(fun _ -> None)
+              ~maximum_capture_length:None
               sink_taint
         | _ -> sink_taint
       in

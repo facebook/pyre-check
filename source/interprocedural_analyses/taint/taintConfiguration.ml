@@ -192,6 +192,7 @@ module ModelConstraints = struct
     maximum_overrides_to_analyze: int option;
     maximum_trace_length: int option;
     maximum_tito_depth: int option;
+    maximum_capture_trace_length: int option;
   }
 
   let default =
@@ -209,6 +210,7 @@ module ModelConstraints = struct
       maximum_overrides_to_analyze = None;
       maximum_trace_length = None;
       maximum_tito_depth = None;
+      maximum_capture_trace_length = Some 4;
     }
 
 
@@ -224,6 +226,7 @@ module ModelConstraints = struct
       ~maximum_overrides_to_analyze
       ~maximum_trace_length
       ~maximum_tito_depth
+      ~maximum_capture_trace_length
       constraints
     =
     {
@@ -267,6 +270,10 @@ module ModelConstraints = struct
         (match maximum_tito_depth with
         | None -> constraints.maximum_tito_depth
         | Some _ -> maximum_tito_depth);
+      maximum_capture_trace_length =
+        (match maximum_capture_trace_length with
+        | None -> constraints.maximum_capture_trace_length
+        | Some _ -> maximum_capture_trace_length);
     }
 end
 
@@ -1686,6 +1693,8 @@ let from_json_list source_json_list =
   >>= fun maximum_trace_length ->
   parse_integer_option "maximum_tito_depth"
   >>= fun maximum_tito_depth ->
+  parse_integer_option "maximum_capture_trace_length"
+  >>= fun maximum_capture_trace_length ->
   let merge_implicit_sources left right =
     { literal_strings = left.literal_strings @ right.literal_strings }
   in
@@ -1727,6 +1736,7 @@ let from_json_list source_json_list =
         ~maximum_overrides_to_analyze
         ~maximum_trace_length
         ~maximum_tito_depth
+        ~maximum_capture_trace_length
         ModelConstraints.default;
     source_sink_filter =
       SourceSinkFilter.create
@@ -1950,6 +1960,7 @@ let with_command_line_options
     ~maximum_overrides_to_analyze
     ~maximum_trace_length
     ~maximum_tito_depth
+    ~maximum_capture_trace_length
   =
   (match source_filter with
   | None -> Result.Ok configuration
@@ -2022,6 +2033,7 @@ let with_command_line_options
       ~maximum_overrides_to_analyze
       ~maximum_trace_length
       ~maximum_tito_depth
+      ~maximum_capture_trace_length
       configuration.analysis_model_constraints
   in
   let configuration =

@@ -157,7 +157,11 @@ Higher order call graphs
     "55:8-55:28": {
       "call": {
         "calls": [
-          { "target": "call_graph.is_dict", "index": 0, "return_type": [] }
+          {
+            "target": "call_graph.is_dict",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
         ]
       }
     },
@@ -169,7 +173,11 @@ Higher order call graphs
     "57:12-57:43": {
       "call": {
         "calls": [
-          { "target": "call_graph.is_dict", "index": 1, "return_type": [] }
+          {
+            "target": "call_graph.is_dict",
+            "index": 1,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
         ]
       }
     },

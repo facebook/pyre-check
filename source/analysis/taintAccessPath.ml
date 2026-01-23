@@ -31,6 +31,10 @@ module CapturedVariable = struct
        know the defining function. *)
     | Pyre1Parameter of { name: string }
   [@@deriving compare, equal, hash, sexp, show]
+
+  let name = function
+    | FromFunction { name; _ } -> name
+    | Pyre1Parameter { name } -> name
 end
 
 (** Roots representing parameters, locals, and special return value in models. *)

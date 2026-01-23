@@ -37,6 +37,7 @@
                     "port": "leaf:complicated_name"
                   }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -316,6 +317,7 @@
                     "port": "leaf:complicated_name"
                   }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }

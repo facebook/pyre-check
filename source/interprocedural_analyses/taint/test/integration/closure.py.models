@@ -4,7 +4,7 @@
   "data": {
     "callable": "closure._test_source2",
     "filename": "closure.py",
-    "callable_line": 318,
+    "callable_line": 331,
     "sources": [
       {
         "port": "result",
@@ -21,7 +21,7 @@
   "data": {
     "callable": "closure.async_nonlocal_closure_tito_ignore_decorator.inner",
     "filename": "closure.py",
-    "callable_line": 434,
+    "callable_line": 468,
     "tito": [
       {
         "port": "captured_variable(y, parameter)",
@@ -67,7 +67,7 @@
   "data": {
     "callable": "closure.async_nonlocal_closure_tito_with_decorator.inner",
     "filename": "closure.py",
-    "callable_line": 421,
+    "callable_line": 455,
     "tito": [
       {
         "port": "captured_variable(y, parameter)",
@@ -113,7 +113,7 @@
   "data": {
     "callable": "closure.async_tito",
     "filename": "closure.py",
-    "callable_line": 410,
+    "callable_line": 444,
     "tito": [
       {
         "port": "formal(function, position=0)",
@@ -199,6 +199,7 @@
                 "leaves": [
                   { "name": "pysa._test_sink", "port": "leaf:arg" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -257,6 +258,7 @@
                   { "always-via": "special_sink" },
                   { "always-via": "captured-variable" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -306,6 +308,7 @@
                   { "always-via": "special_sink" },
                   { "always-via": "captured-variable" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -356,9 +359,38 @@
 {
   "kind": "model",
   "data": {
+    "callable": "closure.closure_wrapper_sink_flow.sink",
+    "filename": "closure.py",
+    "callable_line": 321,
+    "sinks": [
+      {
+        "port": "captured_variable(obj, closure.closure_wrapper_sink_flow)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "origin": { "line": 322, "start": 19, "end": 22 },
+            "call_site": "322:8-322:23"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "closure.decorator.wrapper",
     "filename": "closure.py",
-    "callable_line": 397,
+    "callable_line": 431,
     "tito": [
       {
         "port": "captured_variable(function, parameter)",
@@ -379,7 +411,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 398, "start": 37, "end": 45 } ],
+            "tito_positions": [ { "line": 432, "start": 37, "end": 45 } ],
             "tito": {}
           }
         ]
@@ -390,7 +422,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 398, "start": 30, "end": 35 } ],
+            "tito_positions": [ { "line": 432, "start": 30, "end": 35 } ],
             "tito": {}
           }
         ]
@@ -403,7 +435,7 @@
   "data": {
     "callable": "closure.ignored_decorator.wrapper",
     "filename": "closure.py",
-    "callable_line": 404,
+    "callable_line": 438,
     "tito": [
       {
         "port": "captured_variable(function, parameter)",
@@ -424,7 +456,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 405, "start": 37, "end": 45 } ],
+            "tito_positions": [ { "line": 439, "start": 37, "end": 45 } ],
             "tito": {}
           }
         ]
@@ -435,7 +467,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 405, "start": 30, "end": 35 } ],
+            "tito_positions": [ { "line": 439, "start": 30, "end": 35 } ],
             "tito": {}
           }
         ]
@@ -447,9 +479,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_conditional_write",
-    "callable_line": 321,
+    "callable_line": 334,
     "code": 5002,
-    "line": 334,
+    "line": 347,
     "start": 15,
     "end": 18,
     "filename": "closure.py",
@@ -468,7 +500,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 322, "start": 10, "end": 24 }
+            "origin": { "line": 335, "start": 10, "end": 24 }
           }
         ]
       },
@@ -485,8 +517,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 334, "start": 15, "end": 18 },
-            "call_site": "334:4-334:19"
+            "origin": { "line": 347, "start": 15, "end": 18 },
+            "call_site": "347:4-347:19"
           }
         ]
       }
@@ -507,9 +539,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_conditional_write",
-    "callable_line": 321,
+    "callable_line": 334,
     "code": 5002,
-    "line": 340,
+    "line": 353,
     "start": 15,
     "end": 18,
     "filename": "closure.py",
@@ -531,7 +563,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 337, "start": 10, "end": 24 }
+            "origin": { "line": 350, "start": 10, "end": 24 }
           }
         ]
       },
@@ -548,8 +580,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 340, "start": 15, "end": 18 },
-            "call_site": "340:4-340:19"
+            "origin": { "line": 353, "start": 15, "end": 18 },
+            "call_site": "353:4-353:19"
           }
         ]
       }
@@ -573,9 +605,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_conditional_write",
-    "callable_line": 321,
+    "callable_line": 334,
     "code": 5003,
-    "line": 334,
+    "line": 347,
     "start": 15,
     "end": 18,
     "filename": "closure.py",
@@ -591,12 +623,13 @@
                 "leaves": [
                   { "name": "closure._test_source2", "port": "leaf:return" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test2"
               }
             ],
             "call": {
-              "position": { "line": 333, "start": 4, "end": 27 },
+              "position": { "line": 346, "start": 4, "end": 27 },
               "resolves_to": [
                 "closure.nonlocal_closure_conditional_write.conditional_write"
               ],
@@ -618,8 +651,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 334, "start": 15, "end": 18 },
-            "call_site": "334:4-334:19"
+            "origin": { "line": 347, "start": 15, "end": 18 },
+            "call_site": "347:4-347:19"
           }
         ]
       }
@@ -641,7 +674,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_conditional_write.conditional_write",
     "filename": "closure.py",
-    "callable_line": 324,
+    "callable_line": 337,
     "sources": [
       {
         "port": "captured_variable(obj, closure.nonlocal_closure_conditional_write)",
@@ -656,7 +689,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 327, "start": 18, "end": 33 }
+            "origin": { "line": 340, "start": 18, "end": 33 }
           }
         ]
       }
@@ -705,6 +738,7 @@
                 "leaves": [
                   { "name": "pysa._test_sink", "port": "leaf:arg" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -788,6 +822,7 @@
                 "leaves": [
                   { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -813,6 +848,7 @@
                 "leaves": [
                   { "name": "pysa._test_sink", "port": "leaf:arg" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -1030,6 +1066,7 @@
                 "leaves": [
                   { "name": "pysa._test_sink", "port": "leaf:arg" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -1113,6 +1150,7 @@
                 "leaves": [
                   { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -1218,6 +1256,7 @@
                 "leaves": [
                   { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
+                "captured_variable_trace_length": 3,
                 "length": 3,
                 "kind": "Test"
               }
@@ -1282,6 +1321,7 @@
                   { "always-via": "special_source" },
                   { "always-via": "captured-variable" }
                 ],
+                "captured_variable_trace_length": 2,
                 "length": 2,
                 "kind": "Test"
               }
@@ -1325,6 +1365,7 @@
                 "leaves": [
                   { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
+                "captured_variable_trace_length": 2,
                 "length": 2,
                 "kind": "Test"
               }
@@ -1389,6 +1430,7 @@
                   { "always-via": "special_source" },
                   { "always-via": "captured-variable" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -1452,6 +1494,7 @@
                 "leaves": [
                   { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -1750,6 +1793,7 @@
                 "leaves": [
                   { "name": "pysa._test_sink", "port": "leaf:arg" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -1925,6 +1969,7 @@
                 "leaves": [
                   { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -1950,6 +1995,7 @@
                 "leaves": [
                   { "name": "pysa._test_sink", "port": "leaf:arg" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -2002,6 +2048,7 @@
                 "leaves": [
                   { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -2031,6 +2078,7 @@
                 "leaves": [
                   { "name": "pysa._test_sink", "port": "leaf:arg" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -2207,9 +2255,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_tito",
-    "callable_line": 343,
+    "callable_line": 356,
     "code": 5002,
-    "line": 350,
+    "line": 363,
     "start": 15,
     "end": 21,
     "filename": "closure.py",
@@ -2231,8 +2279,8 @@
             "local_features": [
               { "always-via": "tito" }, { "always-via": "captured-variable" }
             ],
-            "tito_positions": [ { "line": 349, "start": 13, "end": 20 } ],
-            "origin": { "line": 344, "start": 8, "end": 22 }
+            "tito_positions": [ { "line": 362, "start": 13, "end": 20 } ],
+            "origin": { "line": 357, "start": 8, "end": 22 }
           }
         ]
       },
@@ -2249,8 +2297,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 350, "start": 15, "end": 21 },
-            "call_site": "350:4-350:22"
+            "origin": { "line": 363, "start": 15, "end": 21 },
+            "call_site": "363:4-363:22"
           }
         ]
       }
@@ -2275,7 +2323,7 @@
   "data": {
     "callable": "closure.nonlocal_closure_tito.inner",
     "filename": "closure.py",
-    "callable_line": 346,
+    "callable_line": 359,
     "tito": [
       {
         "port": "captured_variable(x, closure.nonlocal_closure_tito)",
@@ -2293,7 +2341,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "closure.nonlocal_closure_wrapper_flow",
+    "callable": "closure.nonlocal_closure_wrapper_source_flow",
     "callable_line": 304,
     "code": 5002,
     "line": 315,
@@ -2315,6 +2363,7 @@
                 "leaves": [
                   { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
+                "captured_variable_trace_length": 2,
                 "length": 2,
                 "kind": "Test"
               }
@@ -2322,9 +2371,9 @@
             "call": {
               "position": { "line": 314, "start": 4, "end": 13 },
               "resolves_to": [
-                "closure.nonlocal_closure_wrapper_flow.wrapper"
+                "closure.nonlocal_closure_wrapper_source_flow.wrapper"
               ],
-              "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_flow)"
+              "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_source_flow)"
             }
           },
           {
@@ -2337,6 +2386,7 @@
                 "leaves": [
                   { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
+                "captured_variable_trace_length": 2,
                 "length": 2,
                 "kind": "Test"
               }
@@ -2344,9 +2394,9 @@
             "call": {
               "position": { "line": 314, "start": 4, "end": 13 },
               "resolves_to": [
-                "closure.nonlocal_closure_wrapper_flow.wrapper[captured_variable(source, closure.nonlocal_closure_wrapper_flow)=closure.nonlocal_closure_wrapper_flow.source]"
+                "closure.nonlocal_closure_wrapper_source_flow.wrapper[captured_variable(source, closure.nonlocal_closure_wrapper_source_flow)=closure.nonlocal_closure_wrapper_source_flow.source]"
               ],
-              "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_flow)"
+              "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_source_flow)"
             }
           }
         ]
@@ -2381,18 +2431,18 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "closure.nonlocal_closure_wrapper_flow:5002:0:Call|pysa._test_sink|0|formal(arg):65dd5353a01c1cc02b6aa4892e9e4140"
+    "master_handle": "closure.nonlocal_closure_wrapper_source_flow:5002:0:Call|pysa._test_sink|0|formal(arg):4259d7828389abd19dc54995b0d76b83"
   }
 }
 {
   "kind": "model",
   "data": {
-    "callable": "closure.nonlocal_closure_wrapper_flow.source",
+    "callable": "closure.nonlocal_closure_wrapper_source_flow.source",
     "filename": "closure.py",
     "callable_line": 307,
     "sources": [
       {
-        "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_flow)",
+        "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_source_flow)",
         "taint": [
           {
             "kinds": [
@@ -2415,12 +2465,12 @@
 {
   "kind": "model",
   "data": {
-    "callable": "closure.nonlocal_closure_wrapper_flow.wrapper",
+    "callable": "closure.nonlocal_closure_wrapper_source_flow.wrapper",
     "filename": "closure.py",
     "callable_line": 311,
     "sources": [
       {
-        "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_flow)",
+        "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_source_flow)",
         "taint": [
           {
             "kinds": [
@@ -2429,6 +2479,7 @@
                   { "always-via": "special_source" },
                   { "always-via": "captured-variable" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -2436,10 +2487,108 @@
             "call": {
               "position": { "line": 312, "start": 8, "end": 16 },
               "resolves_to": [
-                "closure.nonlocal_closure_wrapper_flow.source"
+                "closure.nonlocal_closure_wrapper_source_flow.source"
               ],
-              "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_flow)"
+              "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_source_flow)"
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.nonlocal_closure_wrapper_source_max_trace_length.f1",
+    "filename": "closure.py",
+    "callable_line": 406,
+    "sources": [
+      {
+        "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_source_max_trace_length)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "captured-variable" }
+                ],
+                "captured_variable_trace_length": 1,
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 407, "start": 8, "end": 16 },
+              "resolves_to": [
+                "closure.nonlocal_closure_wrapper_source_max_trace_length.source"
+              ],
+              "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_source_max_trace_length)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.nonlocal_closure_wrapper_source_max_trace_length.f2",
+    "filename": "closure.py",
+    "callable_line": 409,
+    "sources": [
+      {
+        "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_source_max_trace_length)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "captured-variable" }
+                ],
+                "captured_variable_trace_length": 2,
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 410, "start": 8, "end": 12 },
+              "resolves_to": [
+                "closure.nonlocal_closure_wrapper_source_max_trace_length.f1"
+              ],
+              "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_source_max_trace_length)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.nonlocal_closure_wrapper_source_max_trace_length.source",
+    "filename": "closure.py",
+    "callable_line": 402,
+    "sources": [
+      {
+        "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_source_max_trace_length)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "origin": { "line": 404, "start": 14, "end": 28 }
           }
         ]
       }
@@ -2471,6 +2620,7 @@
                 "leaves": [
                   { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -2647,6 +2797,7 @@
                   { "always-via": "special_sink" },
                   { "always-via": "captured-variable" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -2669,6 +2820,7 @@
                   { "always-via": "special_sink" },
                   { "always-via": "captured-variable" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -2691,6 +2843,7 @@
                   { "always-via": "special_sink" },
                   { "always-via": "captured-variable" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -2790,6 +2943,7 @@
                   { "always-via": "special_sink" },
                   { "always-via": "captured-variable" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -2814,6 +2968,7 @@
                   { "always-via": "special_sink" },
                   { "always-via": "captured-variable" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -2838,6 +2993,7 @@
                   { "always-via": "special_sink" },
                   { "always-via": "captured-variable" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -2927,7 +3083,7 @@
   "data": {
     "callable": "closure.parameter_order_swap_tito",
     "filename": "closure.py",
-    "callable_line": 379,
+    "callable_line": 392,
     "sinks": [
       {
         "port": "formal(z, position=2)",
@@ -2948,9 +3104,9 @@
               { "always-via": "tito" },
               { "always-via": "captured-variable" }
             ],
-            "tito_positions": [ { "line": 383, "start": 15, "end": 22 } ],
-            "origin": { "line": 383, "start": 15, "end": 25 },
-            "call_site": "383:4-383:26"
+            "tito_positions": [ { "line": 396, "start": 15, "end": 22 } ],
+            "origin": { "line": 396, "start": 15, "end": 25 },
+            "call_site": "396:4-396:26"
           }
         ]
       }
@@ -2962,7 +3118,7 @@
   "data": {
     "callable": "closure.parameter_order_swap_tito.inner",
     "filename": "closure.py",
-    "callable_line": 380,
+    "callable_line": 393,
     "tito": [
       {
         "port": "captured_variable(z, parameter)",
@@ -3208,7 +3364,7 @@
   "data": {
     "callable": "closure.tito_hof",
     "filename": "closure.py",
-    "callable_line": 375,
+    "callable_line": 388,
     "sinks": [
       {
         "port": "formal(f, position=0)",
@@ -3224,8 +3380,8 @@
               }
             ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "origin": { "line": 376, "start": 15, "end": 18 },
-            "call_site": "376:4-376:19"
+            "origin": { "line": 389, "start": 15, "end": 18 },
+            "call_site": "389:4-389:19"
           }
         ]
       }
@@ -3236,9 +3392,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.tito_propagation",
-    "callable_line": 353,
+    "callable_line": 366,
     "code": 5002,
-    "line": 354,
+    "line": 367,
     "start": 33,
     "end": 47,
     "filename": "closure.py",
@@ -3257,7 +3413,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 354, "start": 33, "end": 47 }
+            "origin": { "line": 367, "start": 33, "end": 47 }
           }
         ]
       },
@@ -3280,10 +3436,10 @@
               }
             ],
             "call": {
-              "position": { "line": 354, "start": 33, "end": 47 },
+              "position": { "line": 367, "start": 33, "end": 47 },
               "resolves_to": [ "closure.wrapper_for_tito_propagation" ],
               "port": "formal(x, position=0)",
-              "call_site": "354:4-354:48"
+              "call_site": "367:4-367:48"
             }
           }
         ]
@@ -3343,6 +3499,7 @@
                   { "always-via": "special_sink" },
                   { "always-via": "captured-variable" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -3491,7 +3648,7 @@
   "data": {
     "callable": "closure.wrapper_for_tito_propagation",
     "filename": "closure.py",
-    "callable_line": 357,
+    "callable_line": 370,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -3509,9 +3666,9 @@
             "local_features": [
               { "always-via": "tito" }, { "always-via": "captured-variable" }
             ],
-            "tito_positions": [ { "line": 361, "start": 15, "end": 22 } ],
-            "origin": { "line": 361, "start": 15, "end": 22 },
-            "call_site": "361:4-361:23"
+            "tito_positions": [ { "line": 374, "start": 15, "end": 22 } ],
+            "origin": { "line": 374, "start": 15, "end": 22 },
+            "call_site": "374:4-374:23"
           }
         ]
       }
@@ -3523,7 +3680,7 @@
   "data": {
     "callable": "closure.wrapper_for_tito_propagation.inner",
     "filename": "closure.py",
-    "callable_line": 358,
+    "callable_line": 371,
     "tito": [
       {
         "port": "captured_variable(x, parameter)",
@@ -3543,7 +3700,7 @@
   "data": {
     "callable": "closure.wrapper_for_tito_propagation_hof.inner",
     "filename": "closure.py",
-    "callable_line": 369,
+    "callable_line": 382,
     "tito": [
       {
         "port": "captured_variable(x, parameter)",
@@ -3611,6 +3768,31 @@
 {
   "kind": "model",
   "data": {
+    "callable": "list.append",
+    "filename": "builtins.pyi",
+    "callable_line": 422,
+    "tito": [
+      {
+        "port": "formal(__element, position=1, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "closure.higher_order_function[formal(f, position=0)=closure.wrapper_for_taint_propagation_hof.inner]",
     "filename": "closure.py",
     "callable_line": 50,
@@ -3643,12 +3825,12 @@
 {
   "kind": "model",
   "data": {
-    "callable": "closure.nonlocal_closure_wrapper_flow.wrapper[captured_variable(source, closure.nonlocal_closure_wrapper_flow)=closure.nonlocal_closure_wrapper_flow.source]",
+    "callable": "closure.nonlocal_closure_wrapper_source_flow.wrapper[captured_variable(source, closure.nonlocal_closure_wrapper_source_flow)=closure.nonlocal_closure_wrapper_source_flow.source]",
     "filename": "closure.py",
     "callable_line": 311,
     "sources": [
       {
-        "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_flow)",
+        "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_source_flow)",
         "taint": [
           {
             "kinds": [
@@ -3657,6 +3839,7 @@
                   { "always-via": "special_source" },
                   { "always-via": "captured-variable" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -3664,9 +3847,99 @@
             "call": {
               "position": { "line": 312, "start": 8, "end": 16 },
               "resolves_to": [
-                "closure.nonlocal_closure_wrapper_flow.source"
+                "closure.nonlocal_closure_wrapper_source_flow.source"
               ],
-              "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_flow)"
+              "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_source_flow)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.nonlocal_closure_wrapper_source_max_trace_length.f1[captured_variable(source, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.source]",
+    "filename": "closure.py",
+    "callable_line": 406,
+    "sources": [
+      {
+        "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_source_max_trace_length)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "captured-variable" }
+                ],
+                "captured_variable_trace_length": 1,
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 407, "start": 8, "end": 16 },
+              "resolves_to": [
+                "closure.nonlocal_closure_wrapper_source_max_trace_length.source"
+              ],
+              "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_source_max_trace_length)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.nonlocal_closure_wrapper_source_max_trace_length.f2[captured_variable(f1, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.f1[captured_variable(source, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.source]]",
+    "filename": "closure.py",
+    "callable_line": 409,
+    "sources": [
+      {
+        "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_source_max_trace_length)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "captured-variable" }
+                ],
+                "captured_variable_trace_length": 2,
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 410, "start": 8, "end": 12 },
+              "resolves_to": [
+                "closure.nonlocal_closure_wrapper_source_max_trace_length.f1"
+              ],
+              "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_source_max_trace_length)"
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "captured-variable" }
+                ],
+                "captured_variable_trace_length": 2,
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 410, "start": 8, "end": 12 },
+              "resolves_to": [
+                "closure.nonlocal_closure_wrapper_source_max_trace_length.f1[captured_variable(source, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.source]"
+              ],
+              "port": "captured_variable(obj, closure.nonlocal_closure_wrapper_source_max_trace_length)"
             }
           }
         ]

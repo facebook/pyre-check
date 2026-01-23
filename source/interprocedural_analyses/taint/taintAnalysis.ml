@@ -36,6 +36,7 @@ let initialize_and_verify_configuration
         maximum_overrides_to_analyze;
         maximum_trace_length;
         maximum_tito_depth;
+        maximum_capture_trace_length;
         _;
       }
   =
@@ -68,6 +69,7 @@ let initialize_and_verify_configuration
           ~maximum_overrides_to_analyze
           ~maximum_trace_length
           ~maximum_tito_depth
+          ~maximum_capture_trace_length
     |> TaintConfiguration.exception_on_error
   in
   let () = StepLogger.finish step_logger in

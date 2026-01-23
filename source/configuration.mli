@@ -333,6 +333,7 @@ module StaticAnalysis : sig
     maximum_overrides_to_analyze: int option;
     maximum_trace_length: int option;
     maximum_tito_depth: int option;
+    maximum_capture_trace_length: int option;
     check_invariants: bool;
     limit_entrypoints: bool;
     compact_ocaml_heap: bool;
@@ -384,6 +385,7 @@ module StaticAnalysis : sig
     ?maximum_overrides_to_analyze:int ->
     ?maximum_trace_length:int ->
     ?maximum_tito_depth:int ->
+    ?maximum_capture_trace_length:int ->
     ?check_invariants:bool ->
     ?limit_entrypoints:bool ->
     ?compact_ocaml_heap:bool ->

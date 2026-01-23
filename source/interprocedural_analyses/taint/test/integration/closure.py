@@ -301,7 +301,7 @@ def closure_nested_sink_flow():
     sink1()
 
 
-def nonlocal_closure_wrapper_flow():
+def nonlocal_closure_wrapper_source_flow():
     obj = ""
 
     def source():
@@ -312,7 +312,20 @@ def nonlocal_closure_wrapper_flow():
         source()
 
     wrapper()
-    _test_sink(obj)  # TODO(T169118550): FN
+    _test_sink(obj)
+
+
+def closure_wrapper_sink_flow():
+    obj: list[int] = []
+
+    def sink():
+        _test_sink(obj)
+
+    def wrapper(x):
+        sink()
+
+    obj.append(_test_source())
+    wrapper(0)
 
 
 def _test_source2(): ...
@@ -381,6 +394,27 @@ def parameter_order_swap_tito(x, y, z):
         return y, z, x
 
     _test_sink(inner()[1])
+
+
+def nonlocal_closure_wrapper_source_max_trace_length():
+    obj = ""
+
+    def source():
+        nonlocal obj
+        obj = _test_source()
+
+    def f1():
+        source()
+
+    def f2():
+        f1()
+
+    def f3():
+        f2()
+
+    # No issue because maximum_capture_trace_length=3 in closure.py.config
+    f3()
+    _test_sink(obj)
 
 
 T = TypeVar("T")

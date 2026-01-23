@@ -340,12 +340,25 @@ module CallInfo = struct
     | CallSite call_site -> CallSite { call_site with class_intervals }
 end
 
+(* Trace length: number of hops from the origin of the taint *)
 module TraceLength = struct
   include Features.MakeScalarDomain (struct
     let name = "trace length"
   end)
 
-  let increase n = if n < Int.max_value then n + 1 else n
+  let increment n = if n < Int.max_value then n + 1 else n
+end
+
+(* Number of hops where taint was propagated through a captured variable. This is bottom
+   otherwise. *)
+module CaptureVariableTraceLength = struct
+  include Features.MakeScalarDomain (struct
+    let name = "capture variable trace length"
+  end)
+
+  let increment n = if is_bottom n then 1 else n + 1
+
+  let reset _ = bottom
 end
 
 module TraceKind = struct
@@ -459,13 +472,14 @@ module Frame = struct
       | ViaFeature : Features.ViaFeatureSet.t slot
       | ReturnAccessPath : Features.ReturnAccessPathTree.t slot
       | TraceLength : TraceLength.t slot
+      | CaptureVariableTraceLength : CaptureVariableTraceLength.t slot
       | LeafName : Features.LeafNameSet.t slot
       | FirstIndex : Features.PropagatedFirstIndexSet.t slot
       | FirstField : Features.PropagatedFirstFieldSet.t slot
       | ExtraTraceFirstHopSet : ExtraTraceFirstHop.Set.t slot
 
     (* Must be consistent with above variants *)
-    let slots = 9
+    let slots = 10
 
     let slot_name (type a) (slot : a slot) =
       match slot with
@@ -474,6 +488,7 @@ module Frame = struct
       | ViaFeature -> "ViaFeature"
       | ReturnAccessPath -> "ReturnAccessPath"
       | TraceLength -> "TraceLength"
+      | CaptureVariableTraceLength -> "CaptureVariableTraceLength"
       | LeafName -> "LeafName"
       | FirstIndex -> "FirstIndex"
       | FirstField -> "FirstField"
@@ -490,6 +505,8 @@ module Frame = struct
       | ReturnAccessPath ->
           (module Features.ReturnAccessPathTree : Abstract.Domain.S with type t = a)
       | TraceLength -> (module TraceLength : Abstract.Domain.S with type t = a)
+      | CaptureVariableTraceLength ->
+          (module CaptureVariableTraceLength : Abstract.Domain.S with type t = a)
       | LeafName -> (module Features.LeafNameSet : Abstract.Domain.S with type t = a)
       | FirstIndex -> (module Features.PropagatedFirstIndexSet : Abstract.Domain.S with type t = a)
       | FirstField -> (module Features.PropagatedFirstFieldSet : Abstract.Domain.S with type t = a)
@@ -597,6 +614,7 @@ module type TAINT_DOMAIN = sig
   val prune_maximum_length
     :  global_maximum:TraceLength.t option ->
     maximum_per_kind:(kind -> TraceLength.t option) ->
+    maximum_capture_length:CaptureVariableTraceLength.t option ->
     t ->
     t
 
@@ -913,12 +931,22 @@ end = struct
       let add_kind (kind, frame) =
         let json = ["kind", `String (Kind.show kind)] in
 
-        let trace_length = Frame.get Frame.Slots.TraceLength frame in
         let json =
+          let trace_length = Frame.get Frame.Slots.TraceLength frame in
           if trace_length = 0 then
             json
           else
             ("length", `Int trace_length) :: json
+        in
+
+        let json =
+          let captured_variable_trace_length =
+            Frame.get Frame.Slots.CaptureVariableTraceLength frame
+          in
+          if CaptureVariableTraceLength.is_bottom captured_variable_trace_length then
+            json
+          else
+            ("captured_variable_trace_length", `Int captured_variable_trace_length) :: json
         in
 
         let json =
@@ -1161,14 +1189,22 @@ end = struct
     |> transform_tito Features.CollapseDepth.Self Map ~f:Features.CollapseDepth.approximate
 
 
-  let prune_maximum_length ~global_maximum ~maximum_per_kind =
+  let prune_maximum_length ~global_maximum ~maximum_per_kind ~maximum_capture_length =
     let global_maximum = Option.value global_maximum ~default:TraceLength.bottom in
+    let maximum_capture_length =
+      Option.value maximum_capture_length ~default:CaptureVariableTraceLength.bottom
+    in
     let filter_flow (kind, frame) =
-      let length = Frame.get Frame.Slots.TraceLength frame in
+      let trace_length = Frame.get Frame.Slots.TraceLength frame in
+      let capture_length = Frame.get Frame.Slots.CaptureVariableTraceLength frame in
       let kind_maximum = maximum_per_kind kind |> Option.value ~default:TraceLength.bottom in
-      TraceLength.is_bottom length
-      || TraceLength.less_or_equal ~left:global_maximum ~right:length
-         && TraceLength.less_or_equal ~left:kind_maximum ~right:length
+      TraceLength.is_bottom trace_length
+      || TraceLength.less_or_equal ~left:global_maximum ~right:trace_length
+         && TraceLength.less_or_equal ~left:kind_maximum ~right:trace_length
+         && (CaptureVariableTraceLength.is_bottom capture_length
+            || CaptureVariableTraceLength.less_or_equal
+                 ~left:maximum_capture_length
+                 ~right:capture_length)
     in
     transform KindTaintDomain.KeyValue Filter ~f:filter_flow
 
@@ -1392,9 +1428,24 @@ end = struct
                   { location; callees = [callee]; port; path; class_intervals; call_site }
               in
               let local_taint =
-                local_taint
-                |> LocalTaintDomain.transform TraceLength.Self Map ~f:TraceLength.increase
+                LocalTaintDomain.transform TraceLength.Self Map ~f:TraceLength.increment local_taint
               in
+              let local_taint =
+                match port with
+                | AccessPath.Root.CapturedVariable _ ->
+                    LocalTaintDomain.transform
+                      CaptureVariableTraceLength.Self
+                      Map
+                      ~f:CaptureVariableTraceLength.increment
+                      local_taint
+                | _ ->
+                    LocalTaintDomain.transform
+                      CaptureVariableTraceLength.Self
+                      Map
+                      ~f:CaptureVariableTraceLength.reset
+                      local_taint
+              in
+
               call_info, local_taint
           | CallInfo.Declaration { leaf_name_provided } ->
               let call_info = CallInfo.Origin { location; class_intervals; call_site } in
@@ -1680,8 +1731,11 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     |> Algorithms.fold_balanced ~f:T.join ~init:T.bottom
 
 
-  let prune_maximum_length ~global_maximum ~maximum_per_kind =
-    transform Taint.Self Map ~f:(Taint.prune_maximum_length ~global_maximum ~maximum_per_kind)
+  let prune_maximum_length ~global_maximum ~maximum_per_kind ~maximum_capture_length =
+    transform
+      Taint.Self
+      Map
+      ~f:(Taint.prune_maximum_length ~global_maximum ~maximum_per_kind ~maximum_capture_length)
 
 
   let filter_by_kind ~kind taint_tree =

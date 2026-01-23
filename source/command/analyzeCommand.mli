@@ -36,6 +36,7 @@ module AnalyzeConfiguration : sig
     maximum_overrides_to_analyze: int option;
     maximum_trace_length: int option;
     maximum_tito_depth: int option;
+    maximum_capture_trace_length: int option;
     no_verify: bool;
     verify_dsl: bool;
     verify_taint_config_only: bool;

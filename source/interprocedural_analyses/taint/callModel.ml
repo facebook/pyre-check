@@ -53,17 +53,35 @@ let at_callsite
 
 
 module ArgumentMatches = struct
+  type argument =
+    (* Argument is a concrete expression *)
+    | Expression of Expression.t
+    (* Argument is an implicit captured variable, which might or might not be visible in the local
+       scope. *)
+    | CapturedVariable of {
+        state_root: AccessPath.Root.t;
+        capture: AccessPath.CapturedVariable.t;
+      }
+  [@@deriving show]
+
   type t = {
-    argument: Expression.t;
+    argument: argument;
+    location: Location.t;
     generation_source_matches: AccessPath.argument_match list;
     sink_matches: AccessPath.argument_match list;
     tito_matches: AccessPath.argument_match list;
     sanitize_matches: AccessPath.argument_match list;
   }
   [@@deriving show]
+
+  let expression_for_logging = function
+    | Expression argument -> argument
+    | CapturedVariable { capture; _ } ->
+        Node.create_with_default_location
+          (Expression.Name (Name.Identifier (AccessPath.CapturedVariable.name capture)))
 end
 
-let match_captures ~pyre_in_context ~model ~captures_taint ~location =
+let match_captures ~pyre_in_context ~model ~captures_taint ~call_location =
   let sink_capture_roots =
     model.Model.backward.sink_taint
     |> BackwardState.roots
@@ -85,31 +103,13 @@ let match_captures ~pyre_in_context ~model ~captures_taint ~location =
     let capture_caller_root =
       PyrePysaApi.InContext.propagate_captured_variable pyre_in_context captured_variable
     in
-    let expression =
-      (* captured variables are not present at call site, so location of call expression instead of
-         location of assignment that introduces taint is used *)
-      match capture_caller_root with
-      | AccessPath.Root.Variable name ->
-          Node.create ~location (Expression.Name (Name.Identifier name))
-      | AccessPath.Root.CapturedVariable (AccessPath.CapturedVariable.Pyre1Parameter { name }) ->
-          Node.create
-            ~location
-            (Expression.Name (Name.Identifier (Analysis.Preprocessing.get_qualified_parameter name)))
-      | AccessPath.Root.CapturedVariable
-          (AccessPath.CapturedVariable.FromFunction { name; defining_function }) ->
-          Node.create
-            ~location
-            (Expression.Name
-               (Name.Identifier
-                  (Analysis.Preprocessing.get_qualified_local_identifier
-                     ~qualifier:defining_function
-                     name)))
-      | _ -> failwith "unreachable"
-    in
     let taint = ForwardState.read ~root:capture_caller_root ~path:[] captures_taint in
     let argument_match =
       {
-        ArgumentMatches.argument = expression;
+        ArgumentMatches.argument =
+          ArgumentMatches.CapturedVariable
+            { state_root = capture_caller_root; capture = captured_variable };
+        location = call_location;
         generation_source_matches = [];
         sink_matches =
           (if AccessPath.Root.Set.mem capture_root sink_capture_roots then
@@ -130,11 +130,6 @@ let match_captures ~pyre_in_context ~model ~captures_taint ~location =
   |> AccessPath.Root.Set.elements
   |> List.map ~f:make_taint_with_argument_match
   |> List.unzip
-
-
-let captures_as_arguments =
-  List.map ~f:(fun capture ->
-      { Call.Argument.name = None; value = capture.ArgumentMatches.argument })
 
 
 let match_actuals_to_formals ~model:{ Model.forward; backward; sanitizers; _ } ~arguments =
@@ -168,7 +163,8 @@ let match_actuals_to_formals ~model:{ Model.forward; backward; sanitizers; _ } ~
               ((_, sink_matches), ((_, tito_matches), (_, sanitize_matches))) )
           ->
          {
-           ArgumentMatches.argument;
+           ArgumentMatches.argument = ArgumentMatches.Expression argument;
+           location = argument.Node.location;
            generation_source_matches;
            sink_matches;
            tito_matches;

@@ -18,6 +18,8 @@ module CapturedVariable : sig
        know the defining function. *)
     | Pyre1Parameter of { name: string }
   [@@deriving compare, equal, hash, sexp, show]
+
+  val name : t -> string
 end
 
 (** Roots representing parameters, locals, and special return value in models. *)

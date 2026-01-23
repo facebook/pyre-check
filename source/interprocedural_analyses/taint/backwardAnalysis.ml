@@ -631,7 +631,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            ~init:argument_taint
     in
     let convert_tito_tree_to_taint
-        ~argument
+        ~argument_location
         ~sink_trees
         ~kind
         ~pair:{ CallModel.TaintInTaintOutMap.TreeRootsPair.tree = tito_tree; roots = tito_roots }
@@ -642,7 +642,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         tito_tree
         ~init:BackwardState.Tree.bottom
         ~f:(convert_tito_path_to_taint ~sink_trees ~tito_roots ~kind)
-      |> BackwardState.Tree.transform Features.TitoPositionSet.Element Add ~f:argument.Node.location
+      |> BackwardState.Tree.transform Features.TitoPositionSet.Element Add ~f:argument_location
       |> BackwardState.Tree.add_local_breadcrumb (Features.tito ())
       |> BackwardState.Tree.join taint_tree
     in
@@ -651,6 +651,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         (arguments_taint, state)
         {
           CallModel.ArgumentMatches.argument;
+          location = argument_location;
           generation_source_matches = _;
           sink_matches;
           tito_matches;
@@ -664,7 +665,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~step
           ~call_target:(Some target)
           ~location:call_location
-          ~argument:(Some argument)
+          ~argument:(Some (CallModel.ArgumentMatches.expression_for_logging argument))
           ~f
       in
       let convert_partial_sinks_into_triggered
@@ -673,7 +674,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let sink_tree =
           Issue.TriggeredSinkForBackward.convert_partial_sinks_into_triggered
             ~call_site
-            ~argument_location:argument.Node.location
+            ~argument_location
             ~argument_sink:sink_tree
             FunctionContext.triggered_sinks
         in
@@ -687,7 +688,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~transform_non_leaves
               ~model:taint_model
               ~call_site
-              ~location:argument.Node.location
+              ~location:argument_location
               ~call_target
               ~arguments
               ~sink_matches
@@ -714,15 +715,23 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         track_apply_call_step ApplyTitoForArgument (fun () ->
             CallModel.TaintInTaintOutMap.fold
               ~init:BackwardState.Tree.empty
-              ~f:(convert_tito_tree_to_taint ~argument ~sink_trees)
+              ~f:(convert_tito_tree_to_taint ~argument_location ~sink_trees)
               taint_in_taint_out_map)
       in
       let sink_taint = SinkTreeWithHandle.join sink_trees in
       let taint = BackwardState.Tree.join sink_taint taint_in_taint_out in
       let state =
-        match
-          PyrePysaApi.InContext.access_path_of_expression pyre_in_context ~self_variable argument
-        with
+        let access_path =
+          match argument with
+          | CallModel.ArgumentMatches.Expression argument ->
+              PyrePysaApi.InContext.access_path_of_expression
+                pyre_in_context
+                ~self_variable
+                argument
+          | CallModel.ArgumentMatches.CapturedVariable { state_root; _ } ->
+              Some { AccessPath.root = state_root; path = [] }
+        in
+        match access_path with
         | Some { AccessPath.root; path } ->
             let breadcrumbs_to_add =
               BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument sink_taint
@@ -748,7 +757,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~pyre_in_context
         ~model:taint_model
         ~captures_taint:ForwardState.empty
-        ~location:call_location
+        ~call_location
     in
     let captures_taint, _ = analyze_argument_matches captures initial_state in
 
@@ -1028,6 +1037,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            analyze_unstarred_expression ~pyre_in_context argument_taint argument state)
 
 
+  and analyze_captures ~captures ~captures_taint ~state =
+    List.fold
+      ~init:state
+      ~f:(fun state ({ CallModel.ArgumentMatches.argument; _ }, capture_taint) ->
+        let root =
+          match argument with
+          | CallModel.ArgumentMatches.CapturedVariable { state_root; _ } -> state_root
+          | _ -> failwith "unreachable"
+        in
+        store_taint ~weak:true ~root ~path:[] capture_taint state)
+      (List.zip_exn captures captures_taint)
+
+
   and analyze_callee
       ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~is_property_call
@@ -1257,17 +1279,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~implicit_argument_taint
             ~state
         in
-        let state =
-          List.fold
-            ~init:state
-            ~f:(fun state (capture, capture_taint) ->
-              analyze_expression
-                ~pyre_in_context
-                ~taint:capture_taint
-                ~state
-                ~expression:capture.value)
-            (List.zip_exn (CallModel.captures_as_arguments captures) captures_taint)
-        in
+        let state = analyze_captures ~captures ~captures_taint ~state in
         let all_taint =
           arguments_taint
           |> List.fold ~f:BackwardState.Tree.join ~init:BackwardState.Tree.bottom
@@ -1486,18 +1498,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let state =
       if CallGraph.HigherOrderParameterMap.is_empty higher_order_parameters then
-        analyze_arguments
-          ~pyre_in_context
-          ~arguments:(arguments @ CallModel.captures_as_arguments captures)
-          ~arguments_taint:(arguments_taint @ captures_taint)
-          ~state
+        let state = analyze_arguments ~pyre_in_context ~arguments ~arguments_taint ~state in
+        analyze_captures ~captures ~captures_taint ~state
       else
-        analyze_arguments_with_higher_order_parameters
-          ~pyre_in_context
-          ~arguments:(arguments @ CallModel.captures_as_arguments captures)
-          ~arguments_taint:(arguments_taint @ captures_taint)
-          ~state
-          ~higher_order_parameters
+        let state =
+          analyze_arguments_with_higher_order_parameters
+            ~pyre_in_context
+            ~arguments
+            ~arguments_taint
+            ~state
+            ~higher_order_parameters
+        in
+        analyze_captures ~captures ~captures_taint ~state
     in
 
     let state =
@@ -2398,7 +2410,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       BackwardState.Tree.transform_tito (* Treat as a call site for tito taint. *)
         Domains.TraceLength.Self
         Map
-        ~f:TraceLength.increase
+        ~f:TraceLength.increment
         taint
     in
     let call_site = CallSite.create location in
@@ -2987,10 +2999,9 @@ end
 
 let get_normalized_parameters
     ~pyre_api
-    ~qualifier
-    ~call_graph_of_define
     ~define_name
     ~captures
+    ~entry_state_roots
     { Statement.Define.signature = { parameters; _ }; _ }
   =
   let normalized_parameters =
@@ -3000,21 +3011,20 @@ let get_normalized_parameters
     |> List.map ~f:(fun ({ AccessPath.NormalizedParameter.root; qualified_name; _ }, annotations) ->
            root, AccessPath.Root.Variable qualified_name, annotations)
   in
-  let pyre_in_context =
-    PyrePysaApi.InContext.create_at_function_scope
-      pyre_api
-      ~module_qualifier:qualifier
-      ~define_name
-      ~call_graph:call_graph_of_define
-  in
   let captures =
-    List.map
-      ~f:(fun capture ->
-        let state_root =
-          PyrePysaApi.InContext.state_root_of_captured_variable pyre_in_context capture
-        in
-        AccessPath.Root.CapturedVariable capture, state_root, [])
-      captures
+    match pyre_api with
+    | PyrePysaApi.ReadOnly.Pyre1 _ ->
+        List.map
+          ~f:(fun capture ->
+            let state_root =
+              PyrePysaApi.ReadOnly.state_root_of_captured_variable pyre_api capture
+            in
+            AccessPath.Root.CapturedVariable capture, state_root, [])
+          captures
+    | PyrePysaApi.ReadOnly.Pyrefly _ ->
+        entry_state_roots
+        |> List.filter ~f:AccessPath.Root.is_captured_variable
+        |> List.map ~f:(fun root -> root, root, [])
   in
   List.append normalized_parameters captures
 
@@ -3033,6 +3043,7 @@ let extract_tito_and_sink_models
             maximum_model_tito_tree_width;
             maximum_trace_length;
             maximum_tito_depth;
+            maximum_capture_trace_length;
             maximum_tito_collapse_depth;
             _;
           };
@@ -3135,6 +3146,7 @@ let extract_tito_and_sink_models
             BackwardState.Tree.prune_maximum_length
               ~global_maximum:(Some maximum_tito_depth)
               ~maximum_per_kind:(fun _ -> None)
+              ~maximum_capture_length:None
               candidate_tree
         | _ -> candidate_tree
       in
@@ -3158,6 +3170,7 @@ let extract_tito_and_sink_models
                 ~global_maximum:(maximum_trace_length >>| decrement)
                 ~maximum_per_kind:(fun sink ->
                   sink |> SourceSinkFilter.maximum_sink_distance source_sink_filter >>| decrement)
+                ~maximum_capture_length:(maximum_capture_trace_length >>| decrement)
                 sink_tree
             in
             let sink_tree =
@@ -3357,10 +3370,12 @@ let run
   let normalized_parameters =
     get_normalized_parameters
       ~pyre_api
-      ~qualifier
-      ~call_graph_of_define
       ~define_name
       ~captures
+      ~entry_state_roots:
+        (entry_state
+        >>| (fun { State.taint } -> BackwardState.roots taint)
+        |> Option.value ~default:[])
       define.value
   in
   let extract_model State.{ taint; _ } =

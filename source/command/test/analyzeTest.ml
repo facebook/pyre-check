@@ -44,6 +44,7 @@ let test_json_parsing context =
       maximum_overrides_to_analyze = None;
       maximum_trace_length = None;
       maximum_tito_depth = None;
+      maximum_capture_trace_length = None;
       repository_root = None;
       rule_filter = None;
       source_filter = None;

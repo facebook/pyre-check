@@ -50,6 +50,15 @@ Call dependencies
     "pysa._test_sink (fun)"
   ],
   "closure.closure_no_flow (fun)": [ "closure.closure (fun)" ],
+  "closure.closure_wrapper_sink_flow (fun)": [
+    "builtins.list.append (method)",
+    "closure.closure_wrapper_sink_flow.wrapper (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "closure.closure_wrapper_sink_flow.sink (fun)": [ "pysa._test_sink (fun)" ],
+  "closure.closure_wrapper_sink_flow.wrapper (fun)": [
+    "closure.closure_wrapper_sink_flow.sink (fun)"
+  ],
   "closure.higher_order_function (fun)[formal(f, position=0)=closure.wrapper_for_taint_propagation_hof.inner (fun)]": [
     "closure.wrapper_for_taint_propagation_hof.inner (fun)"
   ],
@@ -151,15 +160,31 @@ Call dependencies
     "closure.nonlocal_closure_tito.inner (fun)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)"
   ],
-  "closure.nonlocal_closure_wrapper_flow (fun)": [
-    "closure.nonlocal_closure_wrapper_flow.wrapper (fun)",
+  "closure.nonlocal_closure_wrapper_source_flow (fun)": [
+    "closure.nonlocal_closure_wrapper_source_flow.wrapper (fun)",
     "pysa._test_sink (fun)"
   ],
-  "closure.nonlocal_closure_wrapper_flow.source (fun)": [
+  "closure.nonlocal_closure_wrapper_source_flow.source (fun)": [
     "pysa._test_source (fun)"
   ],
-  "closure.nonlocal_closure_wrapper_flow.wrapper (fun)": [
-    "closure.nonlocal_closure_wrapper_flow.source (fun)"
+  "closure.nonlocal_closure_wrapper_source_flow.wrapper (fun)": [
+    "closure.nonlocal_closure_wrapper_source_flow.source (fun)"
+  ],
+  "closure.nonlocal_closure_wrapper_source_max_trace_length (fun)": [
+    "closure.nonlocal_closure_wrapper_source_max_trace_length.f3 (fun)",
+    "pysa._test_sink (fun)"
+  ],
+  "closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)": [
+    "closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)"
+  ],
+  "closure.nonlocal_closure_wrapper_source_max_trace_length.f2 (fun)": [
+    "closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)"
+  ],
+  "closure.nonlocal_closure_wrapper_source_max_trace_length.f3 (fun)": [
+    "closure.nonlocal_closure_wrapper_source_max_trace_length.f2 (fun)"
+  ],
+  "closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)": [
+    "pysa._test_source (fun)"
   ],
   "closure.nonlocal_closure_write_reduction (fun)": [
     "closure.nonlocal_closure_write_reduction.source (fun)",

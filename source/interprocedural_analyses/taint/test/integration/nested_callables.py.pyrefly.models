@@ -85,6 +85,7 @@
                   { "always-via": "special_sink" },
                   { "always-via": "captured-variable" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
@@ -222,6 +223,7 @@
                 "leaves": [
                   { "name": "pysa._test_sink", "port": "leaf:arg" }
                 ],
+                "captured_variable_trace_length": 1,
                 "length": 1,
                 "kind": "Test"
               }
