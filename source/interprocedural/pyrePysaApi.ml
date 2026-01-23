@@ -545,6 +545,16 @@ module InContext = struct
     | Pyrefly pyrefly_context -> ReadOnly.Pyrefly (PyreflyApi.InContext.pyre_api pyrefly_context)
 
 
+  let is_pyre1 = function
+    | Pyre1 _ -> true
+    | Pyrefly _ -> false
+
+
+  let is_pyrefly = function
+    | Pyre1 _ -> false
+    | Pyrefly _ -> true
+
+
   let is_global = function
     | Pyre1 pyre_context -> Pyre1Api.InContext.is_global pyre_context
     | Pyrefly pyrefly_context -> PyreflyApi.InContext.is_global pyrefly_context

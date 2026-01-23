@@ -317,6 +317,10 @@ module InContext : sig
 
   val pyre_api : t -> ReadOnly.t
 
+  val is_pyre1 : t -> bool
+
+  val is_pyrefly : t -> bool
+
   val is_global : t -> reference:Ast.Reference.t -> bool
 
   val resolve_reference : t -> Ast.Reference.t -> Type.t

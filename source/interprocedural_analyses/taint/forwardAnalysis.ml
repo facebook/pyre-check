@@ -811,7 +811,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let apply_captured_variable_side_effects state =
       let propagate_captured_variables state root =
         match root with
-        | AccessPath.Root.CapturedVariable captured_variable ->
+        | AccessPath.Root.CapturedVariable captured_variable -> (
             (* Treat any function call, even those that wrap a closure write, as a closure write *)
             let taint =
               ForwardState.read ~root ~path:[] forward.generations
@@ -841,19 +841,21 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 taint
                 state
             in
-            (* TODO(T225700656): Improve handling of captured variable propagation. *)
-            let is_prefix =
-              match captured_variable with
-              | AccessPath.CapturedVariable.FromFunction { defining_function; _ } ->
-                  Reference.is_prefix ~prefix:FunctionContext.define_name defining_function
-              | AccessPath.CapturedVariable.Pyre1Parameter _ -> false
-            in
-            (* Propagate captured variable taint up until the function where the nonlocal variable
-               is initialized. This is only necessary for Pyre1. *)
-            if not is_prefix then
-              store_taint ~weak:true ~root ~path:[] taint state
-            else
-              state
+            match pyre_in_context with
+            | PyrePysaApi.InContext.Pyrefly _ -> state
+            | PyrePysaApi.InContext.Pyre1 _ ->
+                (* Propagate captured variable taint up until the function where the nonlocal
+                   variable is initialized. This is only necessary for Pyre1. *)
+                let is_prefix =
+                  match captured_variable with
+                  | AccessPath.CapturedVariable.FromFunction { defining_function; _ } ->
+                      Reference.is_prefix ~prefix:FunctionContext.define_name defining_function
+                  | AccessPath.CapturedVariable.Pyre1Parameter _ -> false
+                in
+                if not is_prefix then
+                  store_taint ~weak:true ~root ~path:[] taint state
+                else
+                  state)
         | _ -> state
       in
       List.fold ~init:state ~f:propagate_captured_variables (ForwardState.roots forward.generations)
@@ -3057,29 +3059,34 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~interval:FunctionContext.caller_class_interval
         |> check_flow_to_global ~location ~source_tree;
         (* Check flows to captured variables. *)
-        let state =
-          let captured_variable =
-            match Node.value target with
-            | Expression.Name (Name.Identifier identifier) ->
-                FunctionContext.call_graph_of_define
-                |> CallGraph.DefineCallGraph.resolve_identifier
-                     ~location:(Node.location target)
-                     ~identifier
-                >>| (fun { captured_variables; _ } -> captured_variables)
-                >>= List.hd
-            (* TODO(T168869049): Handle class attribute writes *)
-            | _ -> None
-          in
+        let captured_variable =
+          match Node.value target with
+          | Expression.Name (Name.Identifier identifier) ->
+              FunctionContext.call_graph_of_define
+              |> CallGraph.DefineCallGraph.resolve_identifier
+                   ~location:(Node.location target)
+                   ~identifier
+              >>| (fun { captured_variables; _ } -> captured_variables)
+              >>= List.hd
+          (* TODO(T168869049): Handle class attribute writes *)
+          | _ -> None
+        in
+        let taint =
           match captured_variable with
-          | None -> state
-          | Some captured_variable ->
+          | Some _ -> ForwardState.Tree.add_local_breadcrumb (Features.captured_variable ()) taint
+          | _ -> taint
+        in
+        let state =
+          match captured_variable with
+          | Some captured_variable when PyrePysaApi.InContext.is_pyre1 pyre_in_context ->
               (* Propagate taint for nonlocal assignment. *)
               store_taint
                 ~weak
                 ~root:(AccessPath.Root.CapturedVariable captured_variable)
                 ~path:fields
-                (ForwardState.Tree.add_local_breadcrumb (Features.captured_variable ()) taint)
+                taint
                 state
+          | _ -> state
         in
         (* Propagate taint for assignment. *)
         let access_path =
@@ -3536,11 +3543,31 @@ let extract_source_model
           ForwardState.bottom
   in
   let model =
-    ForwardState.roots exit_taint
-    |> List.filter ~f:AccessPath.Root.is_captured_variable
-    |> List.fold ~init:model ~f:(fun model root ->
-           let captured_variable_taint = ForwardState.read ~root ~path:[] exit_taint |> simplify in
-           ForwardState.assign ~root ~path:[] captured_variable_taint model)
+    match pyre_api with
+    | PyrePysaApi.ReadOnly.Pyre1 _ ->
+        (* when using pyre1, we rely on adding `Root.CapturedVariable` roots in the state on
+           assignments. *)
+        ForwardState.roots exit_taint
+        |> List.filter ~f:AccessPath.Root.is_captured_variable
+        |> List.fold ~init:model ~f:(fun model root ->
+               let captured_variable_taint =
+                 ForwardState.read ~root ~path:[] exit_taint |> simplify
+               in
+               ForwardState.assign ~root ~path:[] captured_variable_taint model)
+    | PyrePysaApi.ReadOnly.Pyrefly _ ->
+        PyrePysaApi.ReadOnly.get_callable_captures pyre_api (Target.define_name_exn callable)
+        |> List.fold ~init:model ~f:(fun model captured_variable ->
+               let root =
+                 PyrePysaApi.ReadOnly.state_root_of_captured_variable pyre_api captured_variable
+               in
+               let captured_variable_taint =
+                 ForwardState.read ~root ~path:[] exit_taint |> simplify
+               in
+               ForwardState.assign
+                 ~root:(AccessPath.Root.CapturedVariable captured_variable)
+                 ~path:[]
+                 captured_variable_taint
+                 model)
   in
   model
 

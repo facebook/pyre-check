@@ -301,6 +301,7 @@
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "captured-variable" } ],
             "origin": { "line": 80, "start": 12, "end": 26 }
           }
         ]
