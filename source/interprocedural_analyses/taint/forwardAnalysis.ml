@@ -1978,19 +1978,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | {
      callee = { Node.value = Name (Name.Identifier "getattr"); _ };
      arguments =
-       [
-         { Call.Argument.value = base; name = None };
-         {
-           Call.Argument.value =
-             {
-               Node.value =
-                 Expression.Constant (Constant.String { StringLiteral.value = attribute; _ });
-               _;
-             };
-           name = None;
-         };
-         { Call.Argument.value = default; name = _ };
-       ];
+       { Call.Argument.value = base; name = None }
+       :: {
+            Call.Argument.value =
+              {
+                Node.value =
+                  Expression.Constant (Constant.String { StringLiteral.value = attribute; _ });
+                _;
+              };
+            name = None;
+          }
+       :: (([] | [_]) as default_argument);
      origin = call_origin;
     } ->
         let attribute_expression =
@@ -2012,7 +2010,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~expression:attribute_expression
         in
         let default_taint, state =
-          analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:default
+          match default_argument with
+          | [{ Call.Argument.value = default; _ }] ->
+              analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:default
+          | [] -> ForwardState.Tree.bottom, state
+          | _ -> failwith "unreachable"
         in
         ForwardState.Tree.join attribute_taint default_taint, state
     (* `zip(a, b, ...)` creates a taint object which, when iterated on, has first index equal to

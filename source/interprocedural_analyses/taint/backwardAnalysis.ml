@@ -1109,82 +1109,97 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       if resolve_properties then get_attribute_access_callees ~location ~attribute_access else None
     in
 
-    let base_taint_property_call, state_property_call =
-      match attribute_access_callees with
-      | Some { property_targets = _ :: _ as property_targets; _ } ->
-          let {
-            arguments_taint = _;
-            implicit_argument_taint =
-              { CallModel.ImplicitArgument.Backward.callee_base = base_taint; _ };
-            captures_taint = _;
-            captures = _;
-            state;
-          }
-            =
-            apply_callees_and_return_arguments_taint
-              ~pyre_in_context
-              ~callee:{ CallModel.Callee.name = Some (Name.Attribute attribute_access); location }
-              ~call_location:location
-              ~arguments:[]
-              ~state
-              ~call_taint:attribute_taint
-              (CallGraph.CallCallees.create ~call_targets:property_targets ())
-          in
-          base_taint, state
-      | _ -> BackwardState.Tree.bottom, bottom
+    let analyze_property_calls property_targets state =
+      let {
+        arguments_taint = _;
+        implicit_argument_taint =
+          { CallModel.ImplicitArgument.Backward.callee_base = base_taint; _ };
+        captures_taint = _;
+        captures = _;
+        state;
+      }
+        =
+        apply_callees_and_return_arguments_taint
+          ~pyre_in_context
+          ~callee:{ CallModel.Callee.name = Some (Name.Attribute attribute_access); location }
+          ~call_location:location
+          ~arguments:[]
+          ~state
+          ~call_taint:attribute_taint
+          (CallGraph.CallCallees.create ~call_targets:property_targets ())
+      in
+      base_taint, state
     in
 
-    let base_taint_attribute, state_attribute =
+    let analyze_regular_attribute_access state =
+      let global_model =
+        GlobalModel.from_expression
+          ~pyre_in_context
+          ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+          ~call_graph:FunctionContext.call_graph_of_define
+          ~get_callee_model:FunctionContext.get_callee_model
+          ~expression
+          ~interval:FunctionContext.caller_class_interval
+      in
+      let add_tito_features taint =
+        let attribute_breadcrumbs =
+          global_model |> GlobalModel.get_tito |> BackwardState.Tree.joined_breadcrumbs
+        in
+        BackwardState.Tree.add_local_breadcrumbs attribute_breadcrumbs taint
+      in
+
+      let apply_attribute_sanitizers taint =
+        let sanitizer = GlobalModel.get_sanitize global_model in
+        let taint =
+          let sanitizers =
+            { SanitizeTransformSet.sources = sanitizer.sources; sinks = sanitizer.sinks }
+          in
+          BackwardState.Tree.apply_sanitize_transforms
+            ~taint_configuration:FunctionContext.taint_configuration
+            sanitizers
+            TaintTransformOperation.InsertLocation.Front
+            taint
+        in
+        taint
+      in
+
+      let base_taint =
+        attribute_taint
+        |> add_tito_features
+        |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Index attribute]
+        |> apply_attribute_sanitizers
+      in
+      base_taint, state
+    in
+
+    let has_property_targets =
+      match attribute_access_callees with
+      | Some { property_targets = _ :: _ as property_targets; _ } -> Some property_targets
+      | _ -> None
+    in
+    let is_regular_attribute =
       match attribute_access_callees with
       | Some { is_attribute = true; _ }
       | None ->
-          let global_model =
-            GlobalModel.from_expression
-              ~pyre_in_context
-              ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
-              ~call_graph:FunctionContext.call_graph_of_define
-              ~get_callee_model:FunctionContext.get_callee_model
-              ~expression
-              ~interval:FunctionContext.caller_class_interval
-          in
-          let add_tito_features taint =
-            let attribute_breadcrumbs =
-              global_model |> GlobalModel.get_tito |> BackwardState.Tree.joined_breadcrumbs
-            in
-            BackwardState.Tree.add_local_breadcrumbs attribute_breadcrumbs taint
-          in
-
-          let apply_attribute_sanitizers taint =
-            let sanitizer = GlobalModel.get_sanitize global_model in
-            let taint =
-              let sanitizers =
-                { SanitizeTransformSet.sources = sanitizer.sources; sinks = sanitizer.sinks }
-              in
-              BackwardState.Tree.apply_sanitize_transforms
-                ~taint_configuration:FunctionContext.taint_configuration
-                sanitizers
-                TaintTransformOperation.InsertLocation.Front
-                taint
-            in
-            taint
-          in
-
-          let base_taint =
-            attribute_taint
-            |> add_tito_features
-            |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Index attribute]
-            |> apply_attribute_sanitizers
-          in
-          base_taint, state
-      | _ -> BackwardState.Tree.bottom, bottom
+          true
+      | _ -> false
     in
 
-    let base_taint =
-      initial_base_taint
-      |> BackwardState.Tree.join base_taint_property_call
-      |> BackwardState.Tree.join base_taint_attribute
+    let base_taint, state =
+      match has_property_targets, is_regular_attribute with
+      | None, false -> BackwardState.Tree.bottom, state
+      | None, true -> analyze_regular_attribute_access state
+      | Some property_targets, false -> analyze_property_calls property_targets state
+      | Some property_targets, true ->
+          let base_taint_attribute, state_attribute = analyze_regular_attribute_access state in
+          let base_taint_property_call, state_property =
+            analyze_property_calls property_targets state
+          in
+          ( BackwardState.Tree.join base_taint_attribute base_taint_property_call,
+            join state_attribute state_property )
     in
-    let state = join state_property_call state_attribute in
+
+    let base_taint = BackwardState.Tree.join base_taint initial_base_taint in
     analyze_expression ~pyre_in_context ~taint:base_taint ~state ~expression:base
 
 
@@ -1858,21 +1873,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | {
      callee = { Node.value = Name (Name.Identifier "getattr"); _ };
      arguments =
-       [
-         { Call.Argument.value = base; name = None };
-         {
-           Call.Argument.value =
-             {
-               Node.value =
-                 Expression.Constant (Constant.String { StringLiteral.value = attribute; _ });
-               _;
-             };
-           name = None;
-         };
-         { Call.Argument.value = default; name = _ };
-       ];
+       { Call.Argument.value = base; name = None }
+       :: {
+            Call.Argument.value =
+              {
+                Node.value =
+                  Expression.Constant (Constant.String { StringLiteral.value = attribute; _ });
+                _;
+              };
+            name = None;
+          }
+       :: (([] | [_]) as default_argument);
      origin = call_origin;
-    } ->
+    } -> (
         let attribute_expression =
           Expression.Name
             (Name.Attribute
@@ -1887,7 +1900,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let state =
           analyze_expression ~pyre_in_context ~state ~expression:attribute_expression ~taint
         in
-        analyze_expression ~pyre_in_context ~state ~expression:default ~taint
+        match default_argument with
+        | [{ Call.Argument.value = default; _ }] ->
+            analyze_expression ~pyre_in_context ~state ~expression:default ~taint
+        | [] -> state
+        | _ -> failwith "unreachable")
     (* `zip(a, b, ...)` creates a taint object whose first index has a's taint, second index has b's
        taint, etc. *)
     | { callee = { Node.value = Name (Name.Identifier "zip"); _ }; arguments = lists; origin = _ }

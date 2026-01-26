@@ -24,15 +24,19 @@ Call dependencies
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "attributes.test_getattr_backwards (fun)": [
-    "builtins.getattr (fun)", "pysa._test_sink (fun)"
+    "attributes.Token.token (object)", "builtins.getattr (fun)",
+    "pysa._test_sink (fun)"
   ],
   "attributes.test_getattr_backwards_default (fun)": [
-    "builtins.getattr (fun)", "pysa._test_sink (fun)"
+    "attributes.Token.token (object)", "builtins.getattr (fun)",
+    "pysa._test_sink (fun)"
   ],
   "attributes.test_getattr_default (fun)": [
     "builtins.getattr (fun)", "pysa._test_source (fun)"
   ],
-  "attributes.test_getattr_forward (fun)": [ "builtins.getattr (fun)" ],
+  "attributes.test_getattr_forward (fun)": [
+    "attributes.Token.token (object)", "builtins.getattr (fun)"
+  ],
   "attributes.test_issue_with_text_key_of_dictionary (fun)": [
     "attributes.C.dictionary (object)", "builtins.dict.__getitem__ (method)",
     "pysa._test_sink (fun)"

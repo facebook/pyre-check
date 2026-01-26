@@ -3,12 +3,15 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from pysa import _test_sink, _test_source
-from typing import Any, Dict, List, MutableMapping, Optional, TypeVar, Union
 from dataclasses import dataclass
+from typing import Any, Dict, List, MutableMapping, Optional, TypeVar, Union
+
+from pysa import _test_sink, _test_source
+
 
 class Token:
     token: str = ""
+    unrelated: str = ""
 
 
 class OAuthRequest:
@@ -48,11 +51,11 @@ def test_getattr_default(t: Token):
     return getattr(t, "unrelated", _test_source())
 
 
-def test_getattr_backwards(t):
+def test_getattr_backwards(t: Token):
     _test_sink(getattr(t, "token", None))
 
 
-def test_getattr_backwards_default(t):
+def test_getattr_backwards_default(t: Token):
     _test_sink(getattr(None, "", t.token))
 
 
@@ -142,10 +145,12 @@ def test_issue_with_tito_copy_dict():
     # TODO(T184001071): This should be caught, but it's not.
     _test_sink(copied_d["tainted"])
 
+
 @dataclass(frozen=True)
 class PartiallyZonedDict(MutableMapping[str, str]):
     def copy(self) -> PartiallyZonedDict:
         return self
+
 
 @dataclass(frozen=True)
 class ZonedForm:
@@ -157,13 +162,18 @@ class ZonedForm:
     def data(self) -> PartiallyZonedDict:
         return self._data
 
+
 class RegularForm:
     def __init__(self, data: Dict[str, str]):
         self.data: Dict[str, str] = data
 
-def tito_copy_multiple_possible_dictlike_objects(d: RegularForm | ZonedForm) -> MutableMapping[str, str]:
+
+def tito_copy_multiple_possible_dictlike_objects(
+    d: RegularForm | ZonedForm,
+) -> MutableMapping[str, str]:
     # pyre-ignore[16]: For some reason Pyre doesn't understand that Dict.copy() is a valid method: D55542716
     return d.data.copy()
+
 
 def test_issue_with_tito_copy_multiple_possible_dictlike_objects():
     d = RegularForm({"tainted": _test_source()})
@@ -171,8 +181,10 @@ def test_issue_with_tito_copy_multiple_possible_dictlike_objects():
     # TODO(T184001071,T184018510): This should be caught, but it's not.
     _test_sink(copied_d["tainted"])
 
+
 class A:
     attribute: str = ""
+
 
 def test_no_issue_sanitize():
     x = A()
@@ -180,8 +192,10 @@ def test_no_issue_sanitize():
     x.attribute = ""
     _test_sink(x.attribute)
 
+
 def sanitize_attribute(x: A) -> None:
     x.attribute = ""
+
 
 def test_no_issue_sanitize_via_call():
     x = A()

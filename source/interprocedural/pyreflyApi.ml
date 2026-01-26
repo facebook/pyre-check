@@ -4590,7 +4590,6 @@ module ReadOnly = struct
           is_attribute;
         }
       =
-      (* TODO(T225700656): Support is_attribute, etc.. *)
       let if_called = instantiate_call_callees if_called in
       let global_targets = List.filter_map ~f:instantiate_global_target global_targets in
       {

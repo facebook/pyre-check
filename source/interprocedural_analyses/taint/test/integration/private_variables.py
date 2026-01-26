@@ -53,17 +53,17 @@ def test_expand_subexpression() -> None:
 
 
 def test_getattr() -> None:
-    # Expect no error, currently a false positive.
+    # No error.
     _test_sink(Simple(private=_test_source()).getattr_public())
-    # Expect no error, currently a false positive.
+    # Error.
     _test_sink(Simple(private=_test_source()).getattr_private())
-    # Expect no error, currently a false positive.
+    # No error.
     _test_sink(Simple(private=_test_source()).getattr_invalid())
-    # Expect no error, currently a false positive.
+    # Error.
     _test_sink(Simple(public=_test_source()).getattr_public())
-    # Expect no error, currently a false positive.
+    # No error.
     _test_sink(Simple(public=_test_source()).getattr_private())
-    # Expect no error, currently a false positive.
+    # No error.
     _test_sink(Simple(public=_test_source()).getattr_invalid())
 
 

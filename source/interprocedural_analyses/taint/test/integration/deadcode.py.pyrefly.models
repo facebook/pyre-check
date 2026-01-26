@@ -1,5 +1,33 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "deadcode.dead_code_by_type_refinement",
+    "filename": "deadcode.py",
+    "callable_line": 100,
+    "sinks": [
+      {
+        "port": "formal(d, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 105, "start": 23, "end": 24 },
+            "call_site": "105:12-105:25"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "deadcode.early_return_no_issue_for_else",

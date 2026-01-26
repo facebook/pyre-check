@@ -19,10 +19,12 @@ Call dependencies
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "attributes.test_getattr_backwards (fun)": [
-    "getattr (fun)", "pysa._test_sink (fun)"
+    "attributes.Token.token (object)", "getattr (fun)",
+    "pysa._test_sink (fun)"
   ],
   "attributes.test_getattr_backwards_default (fun)": [
-    "getattr (fun)", "pysa._test_sink (fun)"
+    "attributes.Token.token (object)", "getattr (fun)",
+    "pysa._test_sink (fun)"
   ],
   "attributes.test_getattr_default (fun)": [
     "getattr (fun)", "pysa._test_source (fun)"

@@ -3859,8 +3859,13 @@ let test_call_graph_of_define =
                  ExpressionCallees.from_attribute_access
                    {
                      AttributeAccessCallees.property_targets = [];
-                     global_targets = [];
-                     is_attribute = false;
+                     global_targets =
+                       [
+                         CallTarget.create_regular
+                           ~return_type:(Some ReturnType.none)
+                           (Target.Regular.Object "test.Token.token");
+                       ];
+                     is_attribute = true;
                      if_called =
                        CallCallees.create
                          ~unresolved:(Unresolved.True Unresolved.EmptyPyreflyTarget)

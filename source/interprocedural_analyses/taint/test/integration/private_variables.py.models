@@ -152,81 +152,6 @@
     "callable": "private_variables.test_getattr",
     "callable_line": 55,
     "code": 5002,
-    "line": 57,
-    "start": 15,
-    "end": 62,
-    "filename": "private_variables.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" }
-            ],
-            "tito_positions": [
-              { "line": 57, "start": 15, "end": 45 },
-              { "line": 57, "start": 30, "end": 44 }
-            ],
-            "origin": { "line": 57, "start": 30, "end": 44 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 57, "start": 15, "end": 62 },
-            "call_site": "57:4-57:63"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "pysa._test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "private_variables.test_getattr:5002:0:Call|pysa._test_sink|0|formal(arg):5ddffe952071ffb5cad1050941e2c36d"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "private_variables.test_getattr",
-    "callable_line": 55,
-    "code": 5002,
     "line": 59,
     "start": 15,
     "end": 63,
@@ -246,12 +171,7 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
               { "line": 59, "start": 15, "end": 45 },
               { "line": 59, "start": 30, "end": 44 }
@@ -282,10 +202,7 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" }
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -294,81 +211,6 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "private_variables.test_getattr:5002:0:Call|pysa._test_sink|1|formal(arg):c4be09aa0b5da33abca8fd7d14c7f89a"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "private_variables.test_getattr",
-    "callable_line": 55,
-    "code": 5002,
-    "line": 61,
-    "start": 15,
-    "end": 63,
-    "filename": "private_variables.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" }
-            ],
-            "tito_positions": [
-              { "line": 61, "start": 15, "end": 45 },
-              { "line": 61, "start": 30, "end": 44 }
-            ],
-            "origin": { "line": 61, "start": 30, "end": 44 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 61, "start": 15, "end": 63 },
-            "call_site": "61:4-61:64"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "pysa._test_sink",
-      "index": 2,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "private_variables.test_getattr:5002:0:Call|pysa._test_sink|2|formal(arg):d153f0a3bb963617be2d838da82ba807"
   }
 }
 {
@@ -396,12 +238,7 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
               { "line": 63, "start": 15, "end": 44 },
               { "line": 63, "start": 29, "end": 43 }
@@ -432,10 +269,7 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" }
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -444,156 +278,6 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "private_variables.test_getattr:5002:0:Call|pysa._test_sink|3|formal(arg):ed36944f1e3c5c5c43750fd8085a42c2"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "private_variables.test_getattr",
-    "callable_line": 55,
-    "code": 5002,
-    "line": 65,
-    "start": 15,
-    "end": 62,
-    "filename": "private_variables.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" }
-            ],
-            "tito_positions": [
-              { "line": 65, "start": 15, "end": 44 },
-              { "line": 65, "start": 29, "end": 43 }
-            ],
-            "origin": { "line": 65, "start": 29, "end": 43 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 65, "start": 15, "end": 62 },
-            "call_site": "65:4-65:63"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "pysa._test_sink",
-      "index": 4,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "private_variables.test_getattr:5002:0:Call|pysa._test_sink|4|formal(arg):c540e20302ceae57621d7646ad188d74"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "private_variables.test_getattr",
-    "callable_line": 55,
-    "code": 5002,
-    "line": 67,
-    "start": 15,
-    "end": 62,
-    "filename": "private_variables.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" }
-            ],
-            "tito_positions": [
-              { "line": 67, "start": 15, "end": 44 },
-              { "line": 67, "start": 29, "end": 43 }
-            ],
-            "origin": { "line": 67, "start": 29, "end": 43 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 67, "start": 15, "end": 62 },
-            "call_site": "67:4-67:63"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "pysa._test_sink",
-      "index": 5,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "private_variables.test_getattr:5002:0:Call|pysa._test_sink|5|formal(arg):ac64b5e3255e7ce0f71da1644f474c1b"
   }
 }
 {
@@ -1651,24 +1335,11 @@
     "callable_line": 33,
     "tito": [
       {
-        "port": "formal(self, position=0)",
+        "port": "formal(self, position=0)[__value]",
         "taint": [
           {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 36, "start": 23, "end": 27 } ],
-            "tito": {
-              "caller_interval": [ { "lower": 8, "upper": 9 } ],
-              "is_self_call": false
-            }
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
           }
         ]
       }
@@ -1683,24 +1354,11 @@
     "callable_line": 30,
     "tito": [
       {
-        "port": "formal(self, position=0)",
+        "port": "formal(self, position=0)[_Simple__value]",
         "taint": [
           {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 31, "start": 23, "end": 27 } ],
-            "tito": {
-              "caller_interval": [ { "lower": 8, "upper": 9 } ],
-              "is_self_call": false
-            }
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
           }
         ]
       }
@@ -1715,24 +1373,11 @@
     "callable_line": 27,
     "tito": [
       {
-        "port": "formal(self, position=0)",
+        "port": "formal(self, position=0)[value]",
         "taint": [
           {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 28, "start": 23, "end": 27 } ],
-            "tito": {
-              "caller_interval": [ { "lower": 8, "upper": 9 } ],
-              "is_self_call": false
-            }
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
           }
         ]
       }

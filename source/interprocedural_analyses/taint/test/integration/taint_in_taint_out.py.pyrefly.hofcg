@@ -2852,6 +2852,7 @@ Higher order call graphs
     },
     "73:11-73:31|artificial-attribute-access|get-attr-constant-literal": {
       "attribute_access": {
+        "is_attribute": true,
         "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }

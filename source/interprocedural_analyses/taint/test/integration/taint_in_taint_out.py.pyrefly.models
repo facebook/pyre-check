@@ -3638,6 +3638,15 @@
             "tito": {}
           }
         ]
+      },
+      {
+        "port": "formal(x, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
       }
     ]
   }

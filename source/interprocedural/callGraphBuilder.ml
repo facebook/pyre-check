@@ -2377,19 +2377,17 @@ module CallGraphBuilder = struct
       | {
        Call.callee = { Node.value = Name (Name.Identifier "getattr"); _ };
        arguments =
-         [
-           { Call.Argument.value = base; name = None };
-           {
-             Call.Argument.value =
-               {
-                 Node.value =
-                   Expression.Constant (Constant.String { StringLiteral.value = attribute; _ });
-                 _;
-               };
-             name = None;
-           };
-           { Call.Argument.value = _; name = None };
-         ];
+         { Call.Argument.value = base; name = None }
+         :: {
+              Call.Argument.value =
+                {
+                  Node.value =
+                    Expression.Constant (Constant.String { StringLiteral.value = attribute; _ });
+                  _;
+                };
+              name = None;
+            }
+         :: ([] | [_]);
        _;
       } ->
           let origin =
@@ -4969,7 +4967,8 @@ let build_whole_program_call_graph_for_pyrefly
     match CallablesSharedMemory.ReadOnly.get_define callables_to_definitions_map callable with
     | AstResult.Some
         {
-          CallablesSharedMemory.DefineAndQualifier.define = { Node.location; value = define };
+          CallablesSharedMemory.DefineAndQualifier.define =
+            { Node.location = define_location; value = define };
           qualifier;
         } ->
         let allow_modifier = function
@@ -5086,7 +5085,7 @@ let build_whole_program_call_graph_for_pyrefly
             ~nested_callees
             ~arguments
           >>= fun ({ Shims.ShimArgumentMapping.callee = shim_target_callee; _ } as shim) ->
-          create_shim_callee_expression ~debug ~callable ~location ~call shim
+          create_shim_callee_expression ~debug ~callable ~location:expression_location ~call shim
           >>= fun ({ Node.value = shim_callee; location = shim_callee_location } as
                   shim_callee_expression) ->
           let () =
@@ -5329,6 +5328,35 @@ let build_whole_program_call_graph_for_pyrefly
                 (* For each attribute access, check the base and determine whether the attribute has
                    a user-provided model. *)
                 add_attribute_accesses ~location:expression_location ~attribute_access call_graph
+            | Expression.Call
+                {
+                  Call.callee = { Node.value = Name (Name.Identifier "getattr"); _ };
+                  arguments =
+                    { Call.Argument.value = base; name = None }
+                    :: {
+                         Call.Argument.value =
+                           {
+                             Node.value =
+                               Expression.Constant
+                                 (Constant.String { StringLiteral.value = attribute; _ });
+                             _;
+                           };
+                         name = None;
+                       }
+                    :: ([] | [_]);
+                  origin = call_origin;
+                } ->
+                let origin =
+                  Some
+                    (Origin.create
+                       ?base:call_origin
+                       ~location:expression_location
+                       Origin.GetAttrConstantLiteral)
+                in
+                add_attribute_accesses
+                  ~location:expression_location
+                  ~attribute_access:{ Name.Attribute.base; attribute; origin }
+                  call_graph
             | Expression.Call ({ Call.arguments; _ } as call) ->
                 add_shim_target ~debug ~expression_location ~call ~arguments call_graph
                 |> Option.value ~default:call_graph
@@ -5359,7 +5387,7 @@ let build_whole_program_call_graph_for_pyrefly
         in
         NodeVisitor.visit
           call_graph
-          (Source.create [Node.create ~location (Statement.Define define)])
+          (Source.create [Node.create ~location:define_location (Statement.Define define)])
     | _ -> call_graph
   in
   let transform_call_graph _ callable call_graph =
