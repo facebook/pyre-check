@@ -153,7 +153,6 @@ Higher order call graphs
     },
     "199:15-199:26": {
       "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "new_calls": [
             {
@@ -217,7 +216,6 @@ Higher order call graphs
     },
     "205:15-205:26": {
       "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "new_calls": [
             {
@@ -330,7 +328,6 @@ Higher order call graphs
     },
     "184:15-184:26": {
       "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "new_calls": [
             {
@@ -394,7 +391,6 @@ Higher order call graphs
     },
     "190:15-190:26": {
       "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "new_calls": [
             {
@@ -507,7 +503,6 @@ Higher order call graphs
     },
     "214:15-214:26": {
       "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "new_calls": [
             {
@@ -571,7 +566,6 @@ Higher order call graphs
     },
     "220:15-220:26": {
       "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "new_calls": [
             {
@@ -684,7 +678,6 @@ Higher order call graphs
     },
     "169:15-169:26": {
       "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "new_calls": [
             {
@@ -748,7 +741,6 @@ Higher order call graphs
     },
     "175:15-175:26": {
       "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "new_calls": [
             {
@@ -861,7 +853,6 @@ Higher order call graphs
     },
     "154:15-154:26": {
       "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "new_calls": [
             {
@@ -925,7 +916,6 @@ Higher order call graphs
     },
     "160:15-160:26": {
       "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "new_calls": [
             {
@@ -1004,7 +994,6 @@ Higher order call graphs
     },
     "139:15-139:26": {
       "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "new_calls": [
             {
@@ -1068,7 +1057,6 @@ Higher order call graphs
     },
     "145:15-145:26": {
       "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "new_calls": [
             {
@@ -1152,7 +1140,6 @@ Higher order call graphs
     },
     "82:12-82:26": {
       "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "new_calls": [
             {
@@ -1346,7 +1333,6 @@ Higher order call graphs
     },
     "25:19-25:33": {
       "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "new_calls": [
             {

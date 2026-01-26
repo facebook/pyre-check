@@ -1702,28 +1702,6 @@
     "callable": "self.Foo.selftype_self_class_direct",
     "filename": "self.py",
     "callable_line": 79,
-    "sinks": [
-      {
-        "port": "formal(self, position=0)[__class__][tainted_class]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 82, "start": 12, "end": 40 },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
-            "call_site": "81:8-83:9"
-          }
-        ]
-      }
-    ],
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -2290,36 +2268,6 @@
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "29:8-29:38"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "self.Foo.untyped_self_class_direct",
-    "filename": "self.py",
-    "callable_line": 24,
-    "sinks": [
-      {
-        "port": "formal(self, position=0)[__class__][tainted_class]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 25, "start": 19, "end": 47 },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
-            "call_site": "25:8-25:48"
           }
         ]
       }
