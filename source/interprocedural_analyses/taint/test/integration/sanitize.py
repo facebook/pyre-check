@@ -291,10 +291,6 @@ def test4():
     a_sink(y)  # no flow here
 
 
-def sanitize_b_sink_tito(x):
-    return x
-
-
 def no_issue_fixpoint_sanitize_sources():
     if random.random() > 0.5:
         x = a_source()

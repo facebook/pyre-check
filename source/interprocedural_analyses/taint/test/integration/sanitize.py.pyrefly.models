@@ -267,9 +267,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.issue_propagation_of_sanitize_all_parameters_no_user_controlled",
-    "callable_line": 790,
+    "callable_line": 786,
     "code": 1000,
-    "line": 792,
+    "line": 788,
     "start": 62,
     "end": 63,
     "filename": "sanitize.py",
@@ -287,7 +287,7 @@
                 "kind": "Cookies"
               }
             ],
-            "origin": { "line": 791, "start": 8, "end": 18 }
+            "origin": { "line": 787, "start": 8, "end": 18 }
           }
         ]
       },
@@ -305,12 +305,12 @@
               }
             ],
             "call": {
-              "position": { "line": 792, "start": 62, "end": 63 },
+              "position": { "line": 788, "start": 62, "end": 63 },
               "resolves_to": [
                 "sanitize.propagation_of_sanitize_all_parameters_no_user_controlled"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "792:4-792:64"
+              "call_site": "788:4-788:64"
             }
           }
         ]
@@ -330,9 +330,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.issue_propagation_of_sanitize_parameter_no_sql_tito_in_source_trace",
-    "callable_line": 679,
+    "callable_line": 675,
     "code": 1000,
-    "line": 681,
+    "line": 677,
     "start": 9,
     "end": 10,
     "filename": "sanitize.py",
@@ -353,7 +353,7 @@
               }
             ],
             "call": {
-              "position": { "line": 680, "start": 8, "end": 71 },
+              "position": { "line": 676, "start": 8, "end": 71 },
               "resolves_to": [
                 "sanitize.propagation_of_sanitize_parameter_no_sql_tito_in_source_trace"
               ],
@@ -374,8 +374,8 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": { "line": 681, "start": 9, "end": 10 },
-            "call_site": "681:4-681:11"
+            "origin": { "line": 677, "start": 9, "end": 10 },
+            "call_site": "677:4-677:11"
           }
         ]
       }
@@ -394,9 +394,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.issue_propagation_of_sanitize_parameter_no_user_controlled",
-    "callable_line": 587,
+    "callable_line": 583,
     "code": 1000,
-    "line": 589,
+    "line": 585,
     "start": 60,
     "end": 61,
     "filename": "sanitize.py",
@@ -414,7 +414,7 @@
                 "kind": "Cookies"
               }
             ],
-            "origin": { "line": 588, "start": 8, "end": 18 }
+            "origin": { "line": 584, "start": 8, "end": 18 }
           }
         ]
       },
@@ -432,12 +432,12 @@
               }
             ],
             "call": {
-              "position": { "line": 589, "start": 60, "end": 61 },
+              "position": { "line": 585, "start": 60, "end": 61 },
               "resolves_to": [
                 "sanitize.propagation_of_sanitize_parameter_no_user_controlled"
               ],
               "port": "formal(b, position=1)",
-              "call_site": "589:4-589:62"
+              "call_site": "585:4-585:62"
             }
           }
         ]
@@ -457,9 +457,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.issue_propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace",
-    "callable_line": 643,
+    "callable_line": 639,
     "code": 1000,
-    "line": 645,
+    "line": 641,
     "start": 76,
     "end": 77,
     "filename": "sanitize.py",
@@ -477,7 +477,7 @@
                 "kind": "Cookies"
               }
             ],
-            "origin": { "line": 644, "start": 8, "end": 18 }
+            "origin": { "line": 640, "start": 8, "end": 18 }
           }
         ]
       },
@@ -496,12 +496,12 @@
               }
             ],
             "call": {
-              "position": { "line": 645, "start": 76, "end": 77 },
+              "position": { "line": 641, "start": 76, "end": 77 },
               "resolves_to": [
                 "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "645:4-645:78"
+              "call_site": "641:4-641:78"
             }
           }
         ]
@@ -521,9 +521,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.issue_propagation_of_sanitize_return_no_rce",
-    "callable_line": 755,
+    "callable_line": 751,
     "code": 1000,
-    "line": 757,
+    "line": 753,
     "start": 9,
     "end": 10,
     "filename": "sanitize.py",
@@ -543,7 +543,7 @@
               }
             ],
             "call": {
-              "position": { "line": 756, "start": 8, "end": 47 },
+              "position": { "line": 752, "start": 8, "end": 47 },
               "resolves_to": [
                 "sanitize.propagation_of_sanitize_return_no_rce"
               ],
@@ -564,8 +564,8 @@
                 "kind": "SQL"
               }
             ],
-            "origin": { "line": 757, "start": 9, "end": 10 },
-            "call_site": "757:4-757:11"
+            "origin": { "line": 753, "start": 9, "end": 10 },
+            "call_site": "753:4-753:11"
           }
         ]
       }
@@ -584,9 +584,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.issue_propagation_of_sanitize_return_no_sql_in_source_trace",
-    "callable_line": 721,
+    "callable_line": 717,
     "code": 1000,
-    "line": 723,
+    "line": 719,
     "start": 9,
     "end": 10,
     "filename": "sanitize.py",
@@ -607,7 +607,7 @@
               }
             ],
             "call": {
-              "position": { "line": 722, "start": 8, "end": 63 },
+              "position": { "line": 718, "start": 8, "end": 63 },
               "resolves_to": [
                 "sanitize.propagation_of_sanitize_return_no_sql_in_source_trace"
               ],
@@ -628,8 +628,8 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": { "line": 723, "start": 9, "end": 10 },
-            "call_site": "723:4-723:11"
+            "origin": { "line": 719, "start": 9, "end": 10 },
+            "call_site": "719:4-719:11"
           }
         ]
       }
@@ -648,9 +648,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.issue_sanitize_a_sink_attribute_in_source_trace",
-    "callable_line": 461,
+    "callable_line": 457,
     "code": 1000,
-    "line": 463,
+    "line": 459,
     "start": 11,
     "end": 12,
     "filename": "sanitize.py",
@@ -675,7 +675,7 @@
               }
             ],
             "call": {
-              "position": { "line": 462, "start": 8, "end": 51 },
+              "position": { "line": 458, "start": 8, "end": 51 },
               "resolves_to": [
                 "sanitize.sanitize_a_sink_attribute_in_source_trace"
               ],
@@ -694,8 +694,8 @@
                 "kind": "TestB"
               }
             ],
-            "origin": { "line": 463, "start": 11, "end": 12 },
-            "call_site": "463:4-463:13"
+            "origin": { "line": 459, "start": 11, "end": 12 },
+            "call_site": "459:4-459:13"
           }
         ]
       }
@@ -718,9 +718,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.issue_sanitize_test_a_source_attribute_in_sink_trace",
-    "callable_line": 366,
+    "callable_line": 362,
     "code": 1000,
-    "line": 368,
+    "line": 364,
     "start": 51,
     "end": 52,
     "filename": "sanitize.py",
@@ -738,7 +738,7 @@
                 "kind": "TestB"
               }
             ],
-            "origin": { "line": 367, "start": 8, "end": 18 }
+            "origin": { "line": 363, "start": 8, "end": 18 }
           }
         ]
       },
@@ -757,12 +757,12 @@
               }
             ],
             "call": {
-              "position": { "line": 368, "start": 51, "end": 52 },
+              "position": { "line": 364, "start": 51, "end": 52 },
               "resolves_to": [
                 "sanitize.sanitize_test_a_source_attribute_in_sink_trace"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "368:4-368:53"
+              "call_site": "364:4-364:53"
             }
           }
         ]
@@ -783,7 +783,7 @@
   "data": {
     "callable": "sanitize.no_issue_fixpoint_sanitize_sinks",
     "filename": "sanitize.py",
-    "callable_line": 308,
+    "callable_line": 304,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -795,8 +795,8 @@
                 "kind": "TestA"
               }
             ],
-            "origin": { "line": 310, "start": 15, "end": 16 },
-            "call_site": "310:8-310:17"
+            "origin": { "line": 306, "start": 15, "end": 16 },
+            "call_site": "306:8-306:17"
           },
           {
             "kinds": [
@@ -806,9 +806,9 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 312, "start": 35, "end": 36 } ],
-            "origin": { "line": 313, "start": 15, "end": 16 },
-            "call_site": "313:8-313:17"
+            "tito_positions": [ { "line": 308, "start": 35, "end": 36 } ],
+            "origin": { "line": 309, "start": 15, "end": 16 },
+            "call_site": "309:8-309:17"
           }
         ]
       }
@@ -820,7 +820,7 @@
   "data": {
     "callable": "sanitize.no_issue_fixpoint_sanitize_sources",
     "filename": "sanitize.py",
-    "callable_line": 298,
+    "callable_line": 294,
     "sources": [
       {
         "port": "result",
@@ -835,8 +835,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 301, "start": 36, "end": 37 } ],
-            "origin": { "line": 300, "start": 12, "end": 22 }
+            "tito_positions": [ { "line": 297, "start": 36, "end": 37 } ],
+            "origin": { "line": 296, "start": 12, "end": 22 }
           },
           {
             "kinds": [
@@ -849,10 +849,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 304, "start": 33, "end": 34 },
-              { "line": 305, "start": 36, "end": 37 }
+              { "line": 300, "start": 33, "end": 34 },
+              { "line": 301, "start": 36, "end": 37 }
             ],
-            "origin": { "line": 303, "start": 12, "end": 26 }
+            "origin": { "line": 299, "start": 12, "end": 26 }
           }
         ]
       }
@@ -863,9 +863,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.partial_issue_sanitize",
-    "callable_line": 340,
+    "callable_line": 336,
     "code": 1000,
-    "line": 344,
+    "line": 340,
     "start": 24,
     "end": 25,
     "filename": "sanitize.py",
@@ -885,7 +885,7 @@
               }
             ],
             "call": {
-              "position": { "line": 343, "start": 8, "end": 31 },
+              "position": { "line": 339, "start": 8, "end": 31 },
               "resolves_to": [ "sanitize.partial_issue_sources" ],
               "port": "result"
             }
@@ -904,10 +904,10 @@
               }
             ],
             "call": {
-              "position": { "line": 344, "start": 24, "end": 25 },
+              "position": { "line": 340, "start": 24, "end": 25 },
               "resolves_to": [ "sanitize.partial_issue_sinks" ],
               "port": "formal(x, position=0)",
-              "call_site": "344:4-344:26"
+              "call_site": "340:4-340:26"
             }
           }
         ]
@@ -928,7 +928,7 @@
   "data": {
     "callable": "sanitize.partial_issue_sinks",
     "filename": "sanitize.py",
-    "callable_line": 332,
+    "callable_line": 328,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -940,8 +940,8 @@
                 "kind": "TestA"
               }
             ],
-            "origin": { "line": 334, "start": 15, "end": 16 },
-            "call_site": "334:8-334:17"
+            "origin": { "line": 330, "start": 15, "end": 16 },
+            "call_site": "330:8-330:17"
           },
           {
             "kinds": [
@@ -951,9 +951,9 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 336, "start": 35, "end": 36 } ],
-            "origin": { "line": 337, "start": 15, "end": 16 },
-            "call_site": "337:8-337:17"
+            "tito_positions": [ { "line": 332, "start": 35, "end": 36 } ],
+            "origin": { "line": 333, "start": 15, "end": 16 },
+            "call_site": "333:8-333:17"
           }
         ]
       }
@@ -965,7 +965,7 @@
   "data": {
     "callable": "sanitize.partial_issue_sources",
     "filename": "sanitize.py",
-    "callable_line": 324,
+    "callable_line": 320,
     "sources": [
       {
         "port": "result",
@@ -980,8 +980,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 327, "start": 36, "end": 37 } ],
-            "origin": { "line": 326, "start": 12, "end": 22 }
+            "tito_positions": [ { "line": 323, "start": 36, "end": 37 } ],
+            "origin": { "line": 322, "start": 12, "end": 22 }
           },
           {
             "kinds": [
@@ -992,7 +992,7 @@
                 "kind": "TestA"
               }
             ],
-            "origin": { "line": 329, "start": 15, "end": 25 }
+            "origin": { "line": 325, "start": 15, "end": 25 }
           }
         ]
       }
@@ -1059,7 +1059,7 @@
   "data": {
     "callable": "sanitize.propagation_of_cookies_with_sanitize_all_parameters_no_user_controlled_tito",
     "filename": "sanitize.py",
-    "callable_line": 823,
+    "callable_line": 819,
     "sources": [
       {
         "port": "result",
@@ -1074,8 +1074,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 825, "start": 59, "end": 60 } ],
-            "origin": { "line": 824, "start": 8, "end": 18 }
+            "tito_positions": [ { "line": 821, "start": 59, "end": 60 } ],
+            "origin": { "line": 820, "start": 8, "end": 18 }
           }
         ]
       }
@@ -1087,7 +1087,7 @@
   "data": {
     "callable": "sanitize.propagation_of_cookies_with_sanitize_parameter_no_user_controlled_tito",
     "filename": "sanitize.py",
-    "callable_line": 623,
+    "callable_line": 619,
     "sources": [
       {
         "port": "result",
@@ -1102,8 +1102,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 625, "start": 54, "end": 55 } ],
-            "origin": { "line": 624, "start": 8, "end": 18 }
+            "tito_positions": [ { "line": 621, "start": 54, "end": 55 } ],
+            "origin": { "line": 620, "start": 8, "end": 18 }
           }
         ]
       }
@@ -1115,7 +1115,7 @@
   "data": {
     "callable": "sanitize.propagation_of_rce_with_sanitize_all_parameters_no_cookies_sql_tito",
     "filename": "sanitize.py",
-    "callable_line": 880,
+    "callable_line": 876,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1130,9 +1130,9 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 881, "start": 52, "end": 53 } ],
-            "origin": { "line": 882, "start": 9, "end": 10 },
-            "call_site": "882:4-882:11"
+            "tito_positions": [ { "line": 877, "start": 52, "end": 53 } ],
+            "origin": { "line": 878, "start": 9, "end": 10 },
+            "call_site": "878:4-878:11"
           }
         ]
       }
@@ -1144,7 +1144,7 @@
   "data": {
     "callable": "sanitize.propagation_of_rce_with_sanitize_all_parameters_no_sql_tito",
     "filename": "sanitize.py",
-    "callable_line": 843,
+    "callable_line": 839,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1159,9 +1159,9 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 844, "start": 44, "end": 45 } ],
-            "origin": { "line": 845, "start": 9, "end": 10 },
-            "call_site": "845:4-845:11"
+            "tito_positions": [ { "line": 840, "start": 44, "end": 45 } ],
+            "origin": { "line": 841, "start": 9, "end": 10 },
+            "call_site": "841:4-841:11"
           }
         ]
       }
@@ -1173,7 +1173,7 @@
   "data": {
     "callable": "sanitize.propagation_of_rce_with_sanitize_parameter_no_sql_tito",
     "filename": "sanitize.py",
-    "callable_line": 660,
+    "callable_line": 656,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1188,9 +1188,9 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 661, "start": 39, "end": 40 } ],
-            "origin": { "line": 662, "start": 9, "end": 10 },
-            "call_site": "662:4-662:11"
+            "tito_positions": [ { "line": 657, "start": 39, "end": 40 } ],
+            "origin": { "line": 658, "start": 9, "end": 10 },
+            "call_site": "658:4-658:11"
           }
         ]
       }
@@ -1284,7 +1284,7 @@
   "data": {
     "callable": "sanitize.propagation_of_sanitize_all_parameters_no_user_controlled",
     "filename": "sanitize.py",
-    "callable_line": 781,
+    "callable_line": 777,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1294,12 +1294,12 @@
               { "length": 1, "kind": "NotSource[UserControlled]:Test" }
             ],
             "call": {
-              "position": { "line": 782, "start": 47, "end": 48 },
+              "position": { "line": 778, "start": 47, "end": 48 },
               "resolves_to": [
                 "sanitize.sanitize_all_parameters_no_user_controlled"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "782:4-782:49"
+              "call_site": "778:4-778:49"
             }
           }
         ]
@@ -1312,7 +1312,7 @@
   "data": {
     "callable": "sanitize.propagation_of_sanitize_parameter_no_sql_tito",
     "filename": "sanitize.py",
-    "callable_line": 665,
+    "callable_line": 661,
     "tito": [
       {
         "port": "formal(b, position=1)",
@@ -1326,7 +1326,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 666, "start": 42, "end": 43 } ],
+            "tito_positions": [ { "line": 662, "start": 42, "end": 43 } ],
             "tito": {}
           }
         ]
@@ -1343,7 +1343,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 666, "start": 45, "end": 46 } ],
+            "tito_positions": [ { "line": 662, "start": 45, "end": 46 } ],
             "tito": {}
           }
         ]
@@ -1356,7 +1356,7 @@
   "data": {
     "callable": "sanitize.propagation_of_sanitize_parameter_no_sql_tito_in_source_trace",
     "filename": "sanitize.py",
-    "callable_line": 669,
+    "callable_line": 665,
     "sources": [
       {
         "port": "result",
@@ -1371,8 +1371,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 671, "start": 60, "end": 61 } ],
-            "origin": { "line": 670, "start": 8, "end": 26 }
+            "tito_positions": [ { "line": 667, "start": 60, "end": 61 } ],
+            "origin": { "line": 666, "start": 8, "end": 26 }
           }
         ]
       }
@@ -1384,7 +1384,7 @@
   "data": {
     "callable": "sanitize.propagation_of_sanitize_parameter_no_user_controlled",
     "filename": "sanitize.py",
-    "callable_line": 578,
+    "callable_line": 574,
     "sinks": [
       {
         "port": "formal(b, position=1)",
@@ -1394,12 +1394,12 @@
               { "length": 1, "kind": "NotSource[UserControlled]:SQL" }
             ],
             "call": {
-              "position": { "line": 579, "start": 42, "end": 43 },
+              "position": { "line": 575, "start": 42, "end": 43 },
               "resolves_to": [
                 "sanitize.sanitize_parameter_no_user_controlled"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "579:4-579:47"
+              "call_site": "575:4-575:47"
             }
           }
         ]
@@ -1410,12 +1410,12 @@
           {
             "kinds": [ { "length": 1, "kind": "RemoteCodeExecution" } ],
             "call": {
-              "position": { "line": 579, "start": 45, "end": 46 },
+              "position": { "line": 575, "start": 45, "end": 46 },
               "resolves_to": [
                 "sanitize.sanitize_parameter_no_user_controlled"
               ],
               "port": "formal(y, position=1)",
-              "call_site": "579:4-579:47"
+              "call_site": "575:4-575:47"
             }
           }
         ]
@@ -1428,7 +1428,7 @@
   "data": {
     "callable": "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito",
     "filename": "sanitize.py",
-    "callable_line": 629,
+    "callable_line": 625,
     "tito": [
       {
         "port": "formal(b, position=1)",
@@ -1442,7 +1442,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 630, "start": 54, "end": 55 } ],
+            "tito_positions": [ { "line": 626, "start": 54, "end": 55 } ],
             "tito": {}
           }
         ]
@@ -1459,7 +1459,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 630, "start": 57, "end": 58 } ],
+            "tito_positions": [ { "line": 626, "start": 57, "end": 58 } ],
             "tito": {}
           }
         ]
@@ -1472,7 +1472,7 @@
   "data": {
     "callable": "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace",
     "filename": "sanitize.py",
-    "callable_line": 633,
+    "callable_line": 629,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1487,9 +1487,9 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 634, "start": 69, "end": 70 } ],
-            "origin": { "line": 635, "start": 9, "end": 10 },
-            "call_site": "635:4-635:11"
+            "tito_positions": [ { "line": 630, "start": 69, "end": 70 } ],
+            "origin": { "line": 631, "start": 9, "end": 10 },
+            "call_site": "631:4-631:11"
           }
         ]
       }
@@ -1501,7 +1501,7 @@
   "data": {
     "callable": "sanitize.propagation_of_sanitize_return_no_rce",
     "filename": "sanitize.py",
-    "callable_line": 746,
+    "callable_line": 742,
     "sources": [
       {
         "port": "result",
@@ -1514,7 +1514,7 @@
               }
             ],
             "call": {
-              "position": { "line": 747, "start": 11, "end": 35 },
+              "position": { "line": 743, "start": 11, "end": 35 },
               "resolves_to": [ "sanitize.sanitize_return_no_rce" ],
               "port": "result"
             }
@@ -1529,7 +1529,7 @@
   "data": {
     "callable": "sanitize.propagation_of_sanitize_return_no_sql",
     "filename": "sanitize.py",
-    "callable_line": 706,
+    "callable_line": 702,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1543,7 +1543,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 707, "start": 34, "end": 35 } ],
+            "tito_positions": [ { "line": 703, "start": 34, "end": 35 } ],
             "tito": {}
           }
         ]
@@ -1556,7 +1556,7 @@
   "data": {
     "callable": "sanitize.propagation_of_sanitize_return_no_sql_in_source_trace",
     "filename": "sanitize.py",
-    "callable_line": 710,
+    "callable_line": 706,
     "sources": [
       {
         "port": "result",
@@ -1571,8 +1571,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 712, "start": 46, "end": 47 } ],
-            "origin": { "line": 711, "start": 8, "end": 26 }
+            "tito_positions": [ { "line": 708, "start": 46, "end": 47 } ],
+            "origin": { "line": 707, "start": 8, "end": 26 }
           }
         ]
       }
@@ -1584,7 +1584,7 @@
   "data": {
     "callable": "sanitize.propagation_of_sanitize_sql_tito_in_source_trace",
     "filename": "sanitize.py",
-    "callable_line": 848,
+    "callable_line": 844,
     "sources": [
       {
         "port": "result",
@@ -1599,8 +1599,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 850, "start": 44, "end": 45 } ],
-            "origin": { "line": 849, "start": 8, "end": 26 }
+            "tito_positions": [ { "line": 846, "start": 44, "end": 45 } ],
+            "origin": { "line": 845, "start": 8, "end": 26 }
           }
         ]
       }
@@ -1612,7 +1612,7 @@
   "data": {
     "callable": "sanitize.propagation_of_sanitize_user_controlled_tito_in_sink_trace",
     "filename": "sanitize.py",
-    "callable_line": 829,
+    "callable_line": 825,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1627,9 +1627,9 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 830, "start": 56, "end": 57 } ],
-            "origin": { "line": 831, "start": 9, "end": 10 },
-            "call_site": "831:4-831:11"
+            "tito_positions": [ { "line": 826, "start": 56, "end": 57 } ],
+            "origin": { "line": 827, "start": 9, "end": 10 },
+            "call_site": "827:4-827:11"
           }
         ]
       }
@@ -1641,7 +1641,7 @@
   "data": {
     "callable": "sanitize.propagation_of_user_controlled_with_sanitize_all_parameters_no_cookies_sql_tito",
     "filename": "sanitize.py",
-    "callable_line": 869,
+    "callable_line": 865,
     "sources": [
       {
         "port": "result",
@@ -1656,8 +1656,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 871, "start": 55, "end": 56 } ],
-            "origin": { "line": 870, "start": 8, "end": 26 }
+            "tito_positions": [ { "line": 867, "start": 55, "end": 56 } ],
+            "origin": { "line": 866, "start": 8, "end": 26 }
           }
         ]
       }
@@ -1726,7 +1726,7 @@
   "data": {
     "callable": "sanitize.sanitize_a_sink_attribute",
     "filename": "sanitize.py",
-    "callable_line": 443,
+    "callable_line": 439,
     "sinks": [
       {
         "port": "formal(c, position=0)[attribute]",
@@ -1738,8 +1738,8 @@
                 "kind": "TestB"
               }
             ],
-            "origin": { "line": 447, "start": 15, "end": 26 },
-            "call_site": "447:8-447:27"
+            "origin": { "line": 443, "start": 15, "end": 26 },
+            "call_site": "443:8-443:27"
           }
         ]
       }
@@ -1751,7 +1751,7 @@
   "data": {
     "callable": "sanitize.sanitize_a_sink_attribute_in_source_trace",
     "filename": "sanitize.py",
-    "callable_line": 450,
+    "callable_line": 446,
     "sources": [
       {
         "port": "result",
@@ -1770,8 +1770,8 @@
               { "first-field": "attribute" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 452, "start": 27, "end": 28 } ],
-            "origin": { "line": 451, "start": 8, "end": 18 }
+            "tito_positions": [ { "line": 448, "start": 27, "end": 28 } ],
+            "origin": { "line": 447, "start": 8, "end": 18 }
           }
         ]
       }
@@ -1783,7 +1783,7 @@
   "data": {
     "callable": "sanitize.sanitize_a_sink_instance",
     "filename": "sanitize.py",
-    "callable_line": 489,
+    "callable_line": 485,
     "sinks": [
       {
         "port": "formal(c, position=0)[instance]",
@@ -1795,8 +1795,8 @@
                 "kind": "TestB"
               }
             ],
-            "origin": { "line": 493, "start": 15, "end": 25 },
-            "call_site": "493:8-493:26"
+            "origin": { "line": 489, "start": 15, "end": 25 },
+            "call_site": "489:8-489:26"
           }
         ]
       }
@@ -1900,7 +1900,7 @@
   "data": {
     "callable": "sanitize.sanitize_all_parameters",
     "filename": "sanitize.py",
-    "callable_line": 764,
+    "callable_line": 760,
     "sources": [
       {
         "port": "result",
@@ -1922,8 +1922,8 @@
               { "first-field": "__add__" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [ { "line": 767, "start": 11, "end": 30 } ],
-            "origin": { "line": 767, "start": 11, "end": 30 }
+            "tito_positions": [ { "line": 763, "start": 11, "end": 30 } ],
+            "origin": { "line": 763, "start": 11, "end": 30 }
           },
           {
             "kinds": [
@@ -1938,8 +1938,8 @@
               }
             ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 767, "start": 33, "end": 52 } ],
-            "origin": { "line": 767, "start": 33, "end": 52 }
+            "tito_positions": [ { "line": 763, "start": 33, "end": 52 } ],
+            "origin": { "line": 763, "start": 33, "end": 52 }
           }
         ]
       }
@@ -1956,7 +1956,7 @@
   "data": {
     "callable": "sanitize.sanitize_all_parameters_all_tito",
     "filename": "sanitize.py",
-    "callable_line": 770,
+    "callable_line": 766,
     "sources": [
       {
         "port": "result",
@@ -1978,8 +1978,8 @@
               { "first-field": "__add__" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [ { "line": 773, "start": 11, "end": 30 } ],
-            "origin": { "line": 773, "start": 11, "end": 30 }
+            "tito_positions": [ { "line": 769, "start": 11, "end": 30 } ],
+            "origin": { "line": 769, "start": 11, "end": 30 }
           },
           {
             "kinds": [
@@ -1994,8 +1994,8 @@
               }
             ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 773, "start": 33, "end": 52 } ],
-            "origin": { "line": 773, "start": 33, "end": 52 }
+            "tito_positions": [ { "line": 769, "start": 33, "end": 52 } ],
+            "origin": { "line": 769, "start": 33, "end": 52 }
           }
         ]
       }
@@ -2013,8 +2013,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 772, "start": 15, "end": 16 },
-            "call_site": "772:4-772:17"
+            "origin": { "line": 768, "start": 15, "end": 16 },
+            "call_site": "768:4-768:17"
           }
         ]
       },
@@ -2030,8 +2030,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 771, "start": 15, "end": 16 },
-            "call_site": "771:4-771:17"
+            "origin": { "line": 767, "start": 15, "end": 16 },
+            "call_site": "767:4-767:17"
           }
         ]
       }
@@ -2044,7 +2044,7 @@
   "data": {
     "callable": "sanitize.sanitize_all_parameters_no_cookies_sql_tito",
     "filename": "sanitize.py",
-    "callable_line": 859,
+    "callable_line": 855,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2071,7 +2071,7 @@
   "data": {
     "callable": "sanitize.sanitize_all_parameters_no_rce",
     "filename": "sanitize.py",
-    "callable_line": 804,
+    "callable_line": 800,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2085,8 +2085,8 @@
                 "kind": "SQL"
               }
             ],
-            "origin": { "line": 806, "start": 13, "end": 14 },
-            "call_site": "806:8-806:15"
+            "origin": { "line": 802, "start": 13, "end": 14 },
+            "call_site": "802:8-802:15"
           }
         ]
       }
@@ -2115,7 +2115,7 @@
   "data": {
     "callable": "sanitize.sanitize_all_parameters_no_sql",
     "filename": "sanitize.py",
-    "callable_line": 795,
+    "callable_line": 791,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2129,8 +2129,8 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": { "line": 799, "start": 13, "end": 14 },
-            "call_site": "799:8-799:15"
+            "origin": { "line": 795, "start": 13, "end": 14 },
+            "call_site": "795:8-795:15"
           }
         ]
       }
@@ -2159,7 +2159,7 @@
   "data": {
     "callable": "sanitize.sanitize_all_parameters_no_sql_tito",
     "filename": "sanitize.py",
-    "callable_line": 834,
+    "callable_line": 830,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2184,7 +2184,7 @@
   "data": {
     "callable": "sanitize.sanitize_all_parameters_no_user_controlled",
     "filename": "sanitize.py",
-    "callable_line": 776,
+    "callable_line": 772,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2198,8 +2198,8 @@
                 "kind": "NotSource[UserControlled]@Test"
               }
             ],
-            "origin": { "line": 777, "start": 15, "end": 16 },
-            "call_site": "777:4-777:17"
+            "origin": { "line": 773, "start": 15, "end": 16 },
+            "call_site": "773:4-773:17"
           }
         ]
       }
@@ -2228,7 +2228,7 @@
   "data": {
     "callable": "sanitize.sanitize_all_parameters_no_user_controlled_tito",
     "filename": "sanitize.py",
-    "callable_line": 813,
+    "callable_line": 809,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2253,7 +2253,7 @@
   "data": {
     "callable": "sanitize.sanitize_all_parameters_with_user_declared_sink",
     "filename": "sanitize.py",
-    "callable_line": 885,
+    "callable_line": 881,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2310,7 +2310,7 @@
   "data": {
     "callable": "sanitize.sanitize_b_sink_attribute",
     "filename": "sanitize.py",
-    "callable_line": 466,
+    "callable_line": 462,
     "sinks": [
       {
         "port": "formal(c, position=0)[attribute]",
@@ -2322,8 +2322,8 @@
                 "kind": "TestA"
               }
             ],
-            "origin": { "line": 468, "start": 15, "end": 26 },
-            "call_site": "468:8-468:27"
+            "origin": { "line": 464, "start": 15, "end": 26 },
+            "call_site": "464:8-464:27"
           }
         ]
       }
@@ -2335,7 +2335,7 @@
   "data": {
     "callable": "sanitize.sanitize_b_sink_instance",
     "filename": "sanitize.py",
-    "callable_line": 496,
+    "callable_line": 492,
     "sinks": [
       {
         "port": "formal(c, position=0)[instance]",
@@ -2347,8 +2347,8 @@
                 "kind": "TestA"
               }
             ],
-            "origin": { "line": 498, "start": 15, "end": 25 },
-            "call_site": "498:8-498:26"
+            "origin": { "line": 494, "start": 15, "end": 25 },
+            "call_site": "494:8-494:26"
           }
         ]
       }
@@ -2383,25 +2383,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "sanitize.sanitize_b_sink_tito$2",
-    "filename": "sanitize.py",
-    "callable_line": 294,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "sanitize.sanitize_b_source_tito",
     "filename": "sanitize.py",
     "callable_line": 215,
@@ -2429,7 +2410,7 @@
   "data": {
     "callable": "sanitize.sanitize_parameter",
     "filename": "sanitize.py",
-    "callable_line": 555,
+    "callable_line": 551,
     "sources": [
       {
         "port": "result",
@@ -2451,8 +2432,8 @@
               { "first-field": "__add__" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [ { "line": 558, "start": 11, "end": 30 } ],
-            "origin": { "line": 558, "start": 11, "end": 30 }
+            "tito_positions": [ { "line": 554, "start": 11, "end": 30 } ],
+            "origin": { "line": 554, "start": 11, "end": 30 }
           },
           {
             "kinds": [
@@ -2467,8 +2448,8 @@
               }
             ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 558, "start": 33, "end": 52 } ],
-            "origin": { "line": 558, "start": 33, "end": 52 }
+            "tito_positions": [ { "line": 554, "start": 33, "end": 52 } ],
+            "origin": { "line": 554, "start": 33, "end": 52 }
           }
         ]
       }
@@ -2486,8 +2467,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 557, "start": 15, "end": 16 },
-            "call_site": "557:4-557:17"
+            "origin": { "line": 553, "start": 15, "end": 16 },
+            "call_site": "553:4-553:17"
           }
         ]
       }
@@ -2509,8 +2490,8 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito_positions": [
-              { "line": 558, "start": 33, "end": 52 },
-              { "line": 558, "start": 50, "end": 51 }
+              { "line": 554, "start": 33, "end": 52 },
+              { "line": 554, "start": 50, "end": 51 }
             ],
             "tito": {}
           }
@@ -2532,7 +2513,7 @@
   "data": {
     "callable": "sanitize.sanitize_parameter_all_tito",
     "filename": "sanitize.py",
-    "callable_line": 561,
+    "callable_line": 557,
     "sources": [
       {
         "port": "result",
@@ -2554,8 +2535,8 @@
               { "first-field": "__add__" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [ { "line": 564, "start": 11, "end": 30 } ],
-            "origin": { "line": 564, "start": 11, "end": 30 }
+            "tito_positions": [ { "line": 560, "start": 11, "end": 30 } ],
+            "origin": { "line": 560, "start": 11, "end": 30 }
           },
           {
             "kinds": [
@@ -2570,8 +2551,8 @@
               }
             ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 564, "start": 33, "end": 52 } ],
-            "origin": { "line": 564, "start": 33, "end": 52 }
+            "tito_positions": [ { "line": 560, "start": 33, "end": 52 } ],
+            "origin": { "line": 560, "start": 33, "end": 52 }
           }
         ]
       }
@@ -2589,8 +2570,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 563, "start": 15, "end": 16 },
-            "call_site": "563:4-563:17"
+            "origin": { "line": 559, "start": 15, "end": 16 },
+            "call_site": "559:4-559:17"
           }
         ]
       },
@@ -2606,8 +2587,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 562, "start": 15, "end": 16 },
-            "call_site": "562:4-562:17"
+            "origin": { "line": 558, "start": 15, "end": 16 },
+            "call_site": "558:4-558:17"
           }
         ]
       }
@@ -2629,8 +2610,8 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito_positions": [
-              { "line": 564, "start": 33, "end": 52 },
-              { "line": 564, "start": 50, "end": 51 }
+              { "line": 560, "start": 33, "end": 52 },
+              { "line": 560, "start": 50, "end": 51 }
             ],
             "tito": {}
           }
@@ -2650,7 +2631,7 @@
   "data": {
     "callable": "sanitize.sanitize_parameter_no_rce",
     "filename": "sanitize.py",
-    "callable_line": 601,
+    "callable_line": 597,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2664,8 +2645,8 @@
                 "kind": "SQL"
               }
             ],
-            "origin": { "line": 603, "start": 13, "end": 14 },
-            "call_site": "603:8-603:15"
+            "origin": { "line": 599, "start": 13, "end": 14 },
+            "call_site": "599:8-599:15"
           }
         ]
       }
@@ -2696,7 +2677,7 @@
   "data": {
     "callable": "sanitize.sanitize_parameter_no_sql",
     "filename": "sanitize.py",
-    "callable_line": 592,
+    "callable_line": 588,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2710,8 +2691,8 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": { "line": 596, "start": 13, "end": 14 },
-            "call_site": "596:8-596:15"
+            "origin": { "line": 592, "start": 13, "end": 14 },
+            "call_site": "592:8-592:15"
           }
         ]
       }
@@ -2740,7 +2721,7 @@
   "data": {
     "callable": "sanitize.sanitize_parameter_no_sql_tito",
     "filename": "sanitize.py",
-    "callable_line": 648,
+    "callable_line": 644,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -2776,7 +2757,7 @@
   "data": {
     "callable": "sanitize.sanitize_parameter_no_user_controlled",
     "filename": "sanitize.py",
-    "callable_line": 567,
+    "callable_line": 563,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -2790,8 +2771,8 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": { "line": 575, "start": 13, "end": 14 },
-            "call_site": "575:8-575:15"
+            "origin": { "line": 571, "start": 13, "end": 14 },
+            "call_site": "571:8-571:15"
           }
         ]
       },
@@ -2807,8 +2788,8 @@
                 "kind": "NotSource[UserControlled]@SQL"
               }
             ],
-            "origin": { "line": 573, "start": 13, "end": 14 },
-            "call_site": "573:8-573:15"
+            "origin": { "line": 569, "start": 13, "end": 14 },
+            "call_site": "569:8-569:15"
           }
         ]
       }
@@ -2848,7 +2829,7 @@
   "data": {
     "callable": "sanitize.sanitize_parameter_no_user_controlled_tito",
     "filename": "sanitize.py",
-    "callable_line": 610,
+    "callable_line": 606,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -2887,7 +2868,7 @@
   "data": {
     "callable": "sanitize.sanitize_parameter_with_user_declared_sink",
     "filename": "sanitize.py",
-    "callable_line": 684,
+    "callable_line": 680,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2904,7 +2885,7 @@
   "data": {
     "callable": "sanitize.sanitize_return",
     "filename": "sanitize.py",
-    "callable_line": 688,
+    "callable_line": 684,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2918,8 +2899,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 689, "start": 15, "end": 16 },
-            "call_site": "689:4-689:17"
+            "origin": { "line": 685, "start": 15, "end": 16 },
+            "call_site": "685:4-685:17"
           }
         ]
       }
@@ -2939,7 +2920,7 @@
   "data": {
     "callable": "sanitize.sanitize_return_no_cookies",
     "filename": "sanitize.py",
-    "callable_line": 726,
+    "callable_line": 722,
     "sources": [
       {
         "port": "result",
@@ -2953,7 +2934,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": { "line": 728, "start": 12, "end": 30 }
+            "origin": { "line": 724, "start": 12, "end": 30 }
           }
         ]
       }
@@ -2966,7 +2947,7 @@
   "data": {
     "callable": "sanitize.sanitize_return_no_rce",
     "filename": "sanitize.py",
-    "callable_line": 742,
+    "callable_line": 738,
     "sources": [
       {
         "port": "result",
@@ -2980,7 +2961,7 @@
                 "kind": "NotSink[RemoteCodeExecution]@UserControlled"
               }
             ],
-            "origin": { "line": 743, "start": 11, "end": 29 }
+            "origin": { "line": 739, "start": 11, "end": 29 }
           }
         ]
       }
@@ -2995,7 +2976,7 @@
   "data": {
     "callable": "sanitize.sanitize_return_no_sql",
     "filename": "sanitize.py",
-    "callable_line": 702,
+    "callable_line": 698,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -3020,7 +3001,7 @@
   "data": {
     "callable": "sanitize.sanitize_return_no_user_controlled",
     "filename": "sanitize.py",
-    "callable_line": 693,
+    "callable_line": 689,
     "sources": [
       {
         "port": "result",
@@ -3034,7 +3015,7 @@
                 "kind": "Cookies"
               }
             ],
-            "origin": { "line": 697, "start": 15, "end": 25 }
+            "origin": { "line": 693, "start": 15, "end": 25 }
           }
         ]
       }
@@ -3063,7 +3044,7 @@
   "data": {
     "callable": "sanitize.sanitize_return_no_user_controlled_cookies",
     "filename": "sanitize.py",
-    "callable_line": 734,
+    "callable_line": 730,
     "sanitizers": [
       { "port": "result", "sources": [ "Cookies", "UserControlled" ] }
     ]
@@ -3074,7 +3055,7 @@
   "data": {
     "callable": "sanitize.sanitize_return_with_user_declared_source",
     "filename": "sanitize.py",
-    "callable_line": 760,
+    "callable_line": 756,
     "sources": [
       {
         "port": "result",
@@ -3101,7 +3082,7 @@
   "data": {
     "callable": "sanitize.sanitize_single_argument_tito",
     "filename": "sanitize.py",
-    "callable_line": 922,
+    "callable_line": 918,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -3232,9 +3213,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.sanitize_test_a_sink_attribute",
-    "callable_line": 519,
+    "callable_line": 515,
     "code": 1000,
-    "line": 520,
+    "line": 516,
     "start": 30,
     "end": 44,
     "filename": "sanitize.py",
@@ -3252,7 +3233,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 520, "start": 30, "end": 44 }
+            "origin": { "line": 516, "start": 30, "end": 44 }
           }
         ]
       },
@@ -3268,10 +3249,10 @@
               }
             ],
             "call": {
-              "position": { "line": 520, "start": 30, "end": 44 },
+              "position": { "line": 516, "start": 30, "end": 44 },
               "resolves_to": [ "sanitize.sanitize_a_sink_attribute" ],
               "port": "formal(c, position=0)[attribute]",
-              "call_site": "520:4-520:45"
+              "call_site": "516:4-516:45"
             }
           }
         ]
@@ -3291,9 +3272,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.sanitize_test_a_sink_instance",
-    "callable_line": 537,
+    "callable_line": 533,
     "code": 1000,
-    "line": 538,
+    "line": 534,
     "start": 29,
     "end": 43,
     "filename": "sanitize.py",
@@ -3311,7 +3292,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 538, "start": 29, "end": 43 }
+            "origin": { "line": 534, "start": 29, "end": 43 }
           }
         ]
       },
@@ -3327,10 +3308,10 @@
               }
             ],
             "call": {
-              "position": { "line": 538, "start": 29, "end": 43 },
+              "position": { "line": 534, "start": 29, "end": 43 },
               "resolves_to": [ "sanitize.sanitize_a_sink_instance" ],
               "port": "formal(c, position=0)[instance]",
-              "call_site": "538:4-538:44"
+              "call_site": "534:4-534:44"
             }
           }
         ]
@@ -3377,9 +3358,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.sanitize_test_a_source_attribute",
-    "callable_line": 347,
+    "callable_line": 343,
     "code": 1000,
-    "line": 353,
+    "line": 349,
     "start": 15,
     "end": 26,
     "filename": "sanitize.py",
@@ -3402,8 +3383,8 @@
               { "first-field": "attribute" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 352, "start": 29, "end": 30 } ],
-            "origin": { "line": 351, "start": 12, "end": 22 }
+            "tito_positions": [ { "line": 348, "start": 29, "end": 30 } ],
+            "origin": { "line": 347, "start": 12, "end": 22 }
           }
         ]
       },
@@ -3419,8 +3400,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 353, "start": 15, "end": 26 },
-            "call_site": "353:4-353:27"
+            "origin": { "line": 349, "start": 15, "end": 26 },
+            "call_site": "349:4-349:27"
           }
         ]
       }
@@ -3444,7 +3425,7 @@
   "data": {
     "callable": "sanitize.sanitize_test_a_source_attribute_in_sink_trace",
     "filename": "sanitize.py",
-    "callable_line": 356,
+    "callable_line": 352,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -3459,9 +3440,9 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 357, "start": 29, "end": 30 } ],
-            "origin": { "line": 358, "start": 15, "end": 26 },
-            "call_site": "358:4-358:27"
+            "tito_positions": [ { "line": 353, "start": 29, "end": 30 } ],
+            "origin": { "line": 354, "start": 15, "end": 26 },
+            "call_site": "354:4-354:27"
           }
         ]
       }
@@ -3473,7 +3454,7 @@
   "data": {
     "callable": "sanitize.sanitize_test_a_source_attribute_in_tito",
     "filename": "sanitize.py",
-    "callable_line": 371,
+    "callable_line": 367,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -3487,7 +3468,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 372, "start": 29, "end": 30 } ],
+            "tito_positions": [ { "line": 368, "start": 29, "end": 30 } ],
             "tito": {}
           }
         ]
@@ -3499,9 +3480,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.sanitize_test_a_source_instance",
-    "callable_line": 405,
+    "callable_line": 401,
     "code": 1000,
-    "line": 411,
+    "line": 407,
     "start": 15,
     "end": 25,
     "filename": "sanitize.py",
@@ -3524,8 +3505,8 @@
               { "first-field": "instance" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 410, "start": 29, "end": 30 } ],
-            "origin": { "line": 409, "start": 12, "end": 22 }
+            "tito_positions": [ { "line": 406, "start": 29, "end": 30 } ],
+            "origin": { "line": 405, "start": 12, "end": 22 }
           }
         ]
       },
@@ -3541,8 +3522,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 411, "start": 15, "end": 25 },
-            "call_site": "411:4-411:26"
+            "origin": { "line": 407, "start": 15, "end": 25 },
+            "call_site": "407:4-407:26"
           }
         ]
       }
@@ -3565,9 +3546,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.sanitize_test_ab_sources_attribute",
-    "callable_line": 385,
+    "callable_line": 381,
     "code": 1000,
-    "line": 391,
+    "line": 387,
     "start": 15,
     "end": 26,
     "filename": "sanitize.py",
@@ -3588,7 +3569,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 391, "start": 15, "end": 26 }
+            "origin": { "line": 387, "start": 15, "end": 26 }
           }
         ]
       },
@@ -3604,8 +3585,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 391, "start": 15, "end": 26 },
-            "call_site": "391:4-391:27"
+            "origin": { "line": 387, "start": 15, "end": 26 },
+            "call_site": "387:4-387:27"
           }
         ]
       }
@@ -3624,9 +3605,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.sanitize_test_ab_sources_instance",
-    "callable_line": 423,
+    "callable_line": 419,
     "code": 1000,
-    "line": 429,
+    "line": 425,
     "start": 15,
     "end": 25,
     "filename": "sanitize.py",
@@ -3647,7 +3628,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 429, "start": 15, "end": 25 }
+            "origin": { "line": 425, "start": 15, "end": 25 }
           }
         ]
       },
@@ -3663,8 +3644,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 429, "start": 15, "end": 25 },
-            "call_site": "429:4-429:26"
+            "origin": { "line": 425, "start": 15, "end": 25 },
+            "call_site": "425:4-425:26"
           }
         ]
       }
@@ -3683,9 +3664,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.sanitize_test_all_sinks_attribute",
-    "callable_line": 531,
+    "callable_line": 527,
     "code": 1000,
-    "line": 534,
+    "line": 530,
     "start": 4,
     "end": 15,
     "filename": "sanitize.py",
@@ -3703,7 +3684,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 534, "start": 18, "end": 32 }
+            "origin": { "line": 530, "start": 18, "end": 32 }
           }
         ]
       },
@@ -3722,7 +3703,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 534, "start": 4, "end": 15 }
+            "origin": { "line": 530, "start": 4, "end": 15 }
           }
         ]
       }
@@ -3740,9 +3721,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.sanitize_test_all_sinks_instance",
-    "callable_line": 549,
+    "callable_line": 545,
     "code": 1000,
-    "line": 552,
+    "line": 548,
     "start": 4,
     "end": 14,
     "filename": "sanitize.py",
@@ -3760,7 +3741,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 552, "start": 17, "end": 31 }
+            "origin": { "line": 548, "start": 17, "end": 31 }
           }
         ]
       },
@@ -3779,7 +3760,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 552, "start": 4, "end": 14 }
+            "origin": { "line": 548, "start": 4, "end": 14 }
           }
         ]
       }
@@ -3797,9 +3778,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.sanitize_test_b_sink_attribute",
-    "callable_line": 523,
+    "callable_line": 519,
     "code": 1000,
-    "line": 524,
+    "line": 520,
     "start": 30,
     "end": 44,
     "filename": "sanitize.py",
@@ -3817,7 +3798,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 524, "start": 30, "end": 44 }
+            "origin": { "line": 520, "start": 30, "end": 44 }
           }
         ]
       },
@@ -3833,10 +3814,10 @@
               }
             ],
             "call": {
-              "position": { "line": 524, "start": 30, "end": 44 },
+              "position": { "line": 520, "start": 30, "end": 44 },
               "resolves_to": [ "sanitize.sanitize_b_sink_attribute" ],
               "port": "formal(c, position=0)[attribute]",
-              "call_site": "524:4-524:45"
+              "call_site": "520:4-520:45"
             }
           }
         ]
@@ -3856,9 +3837,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.sanitize_test_b_sink_instance",
-    "callable_line": 541,
+    "callable_line": 537,
     "code": 1000,
-    "line": 542,
+    "line": 538,
     "start": 29,
     "end": 43,
     "filename": "sanitize.py",
@@ -3876,7 +3857,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 542, "start": 29, "end": 43 }
+            "origin": { "line": 538, "start": 29, "end": 43 }
           }
         ]
       },
@@ -3892,10 +3873,10 @@
               }
             ],
             "call": {
-              "position": { "line": 542, "start": 29, "end": 43 },
+              "position": { "line": 538, "start": 29, "end": 43 },
               "resolves_to": [ "sanitize.sanitize_b_sink_instance" ],
               "port": "formal(c, position=0)[instance]",
-              "call_site": "542:4-542:44"
+              "call_site": "538:4-538:44"
             }
           }
         ]
@@ -3942,9 +3923,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.sanitize_test_b_source_attribute",
-    "callable_line": 376,
+    "callable_line": 372,
     "code": 1000,
-    "line": 382,
+    "line": 378,
     "start": 15,
     "end": 26,
     "filename": "sanitize.py",
@@ -3967,8 +3948,8 @@
               { "first-field": "attribute" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 381, "start": 29, "end": 30 } ],
-            "origin": { "line": 378, "start": 12, "end": 22 }
+            "tito_positions": [ { "line": 377, "start": 29, "end": 30 } ],
+            "origin": { "line": 374, "start": 12, "end": 22 }
           }
         ]
       },
@@ -3984,8 +3965,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 382, "start": 15, "end": 26 },
-            "call_site": "382:4-382:27"
+            "origin": { "line": 378, "start": 15, "end": 26 },
+            "call_site": "378:4-378:27"
           }
         ]
       }
@@ -4008,9 +3989,9 @@
   "kind": "issue",
   "data": {
     "callable": "sanitize.sanitize_test_b_source_instance",
-    "callable_line": 414,
+    "callable_line": 410,
     "code": 1000,
-    "line": 420,
+    "line": 416,
     "start": 15,
     "end": 25,
     "filename": "sanitize.py",
@@ -4033,8 +4014,8 @@
               { "first-field": "instance" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 419, "start": 29, "end": 30 } ],
-            "origin": { "line": 416, "start": 12, "end": 22 }
+            "tito_positions": [ { "line": 415, "start": 29, "end": 30 } ],
+            "origin": { "line": 412, "start": 12, "end": 22 }
           }
         ]
       },
@@ -4050,8 +4031,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 420, "start": 15, "end": 25 },
-            "call_site": "420:4-420:26"
+            "origin": { "line": 416, "start": 15, "end": 25 },
+            "call_site": "416:4-416:26"
           }
         ]
       }
@@ -4191,7 +4172,7 @@
   "data": {
     "callable": "sanitize.sink_taint_sanitize_a",
     "filename": "sanitize.py",
-    "callable_line": 892,
+    "callable_line": 888,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -4206,9 +4187,9 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 893, "start": 33, "end": 36 } ],
-            "origin": { "line": 894, "start": 9, "end": 12 },
-            "call_site": "894:4-894:13"
+            "tito_positions": [ { "line": 889, "start": 33, "end": 36 } ],
+            "origin": { "line": 890, "start": 9, "end": 12 },
+            "call_site": "890:4-890:13"
           }
         ]
       }
@@ -4220,7 +4201,7 @@
   "data": {
     "callable": "sanitize.sink_taint_sanitize_a_sanitize_b",
     "filename": "sanitize.py",
-    "callable_line": 897,
+    "callable_line": 893,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -4234,12 +4215,12 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 898, "start": 33, "end": 36 } ],
+            "tito_positions": [ { "line": 894, "start": 33, "end": 36 } ],
             "call": {
-              "position": { "line": 899, "start": 26, "end": 29 },
+              "position": { "line": 895, "start": 26, "end": 29 },
               "resolves_to": [ "sanitize.sink_taint_sanitize_a" ],
               "port": "formal(arg, position=0)",
-              "call_site": "899:4-899:30"
+              "call_site": "895:4-895:30"
             }
           }
         ]
@@ -4252,7 +4233,7 @@
   "data": {
     "callable": "sanitize.sink_taint_sanitize_a_sanitize_b_santize_test",
     "filename": "sanitize.py",
-    "callable_line": 902,
+    "callable_line": 898,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -4266,12 +4247,12 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 903, "start": 36, "end": 39 } ],
+            "tito_positions": [ { "line": 899, "start": 36, "end": 39 } ],
             "call": {
-              "position": { "line": 904, "start": 37, "end": 40 },
+              "position": { "line": 900, "start": 37, "end": 40 },
               "resolves_to": [ "sanitize.sink_taint_sanitize_a_sanitize_b" ],
               "port": "formal(arg, position=0)",
-              "call_site": "904:4-904:41"
+              "call_site": "900:4-900:41"
             }
           }
         ]
@@ -4284,7 +4265,7 @@
   "data": {
     "callable": "sanitize.sink_taint_sanitize_b",
     "filename": "sanitize.py",
-    "callable_line": 907,
+    "callable_line": 903,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -4299,9 +4280,9 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 908, "start": 33, "end": 36 } ],
-            "origin": { "line": 909, "start": 9, "end": 12 },
-            "call_site": "909:4-909:13"
+            "tito_positions": [ { "line": 904, "start": 33, "end": 36 } ],
+            "origin": { "line": 905, "start": 9, "end": 12 },
+            "call_site": "905:4-905:13"
           }
         ]
       }
@@ -4313,7 +4294,7 @@
   "data": {
     "callable": "sanitize.sink_taint_sanitize_b_sanitize_a",
     "filename": "sanitize.py",
-    "callable_line": 912,
+    "callable_line": 908,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -4327,12 +4308,12 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 913, "start": 33, "end": 36 } ],
+            "tito_positions": [ { "line": 909, "start": 33, "end": 36 } ],
             "call": {
-              "position": { "line": 914, "start": 26, "end": 29 },
+              "position": { "line": 910, "start": 26, "end": 29 },
               "resolves_to": [ "sanitize.sink_taint_sanitize_b" ],
               "port": "formal(arg, position=0)",
-              "call_site": "914:4-914:30"
+              "call_site": "910:4-910:30"
             }
           }
         ]
@@ -4345,7 +4326,7 @@
   "data": {
     "callable": "sanitize.sink_taint_sanitize_b_sanitize_a_santize_test",
     "filename": "sanitize.py",
-    "callable_line": 917,
+    "callable_line": 913,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -4359,12 +4340,12 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 918, "start": 36, "end": 39 } ],
+            "tito_positions": [ { "line": 914, "start": 36, "end": 39 } ],
             "call": {
-              "position": { "line": 919, "start": 37, "end": 40 },
+              "position": { "line": 915, "start": 37, "end": 40 },
               "resolves_to": [ "sanitize.sink_taint_sanitize_b_sanitize_a" ],
               "port": "formal(arg, position=0)",
-              "call_site": "919:4-919:41"
+              "call_site": "915:4-915:41"
             }
           }
         ]
@@ -4799,7 +4780,7 @@
   "data": {
     "callable": "sanitize.GenerationOnSelf.sanitize_all_parameters",
     "filename": "sanitize.py",
-    "callable_line": 948,
+    "callable_line": 944,
     "parameters_sanitizer": {
       "sources": "All",
       "sinks": "All",
@@ -4812,7 +4793,7 @@
   "data": {
     "callable": "sanitize.GenerationOnSelf.sanitize_all_parameters_test_a_source",
     "filename": "sanitize.py",
-    "callable_line": 951,
+    "callable_line": 947,
     "sources": [
       {
         "port": "formal(self, position=0)[foo]",
@@ -4826,7 +4807,7 @@
                 "kind": "TestB"
               }
             ],
-            "origin": { "line": 955, "start": 23, "end": 33 },
+            "origin": { "line": 951, "start": 23, "end": 33 },
             "caller_interval": [ { "lower": 18, "upper": 19 } ],
             "is_self_call": false
           }
@@ -4841,7 +4822,7 @@
   "data": {
     "callable": "sanitize.GenerationOnSelf.sanitize_parameter",
     "filename": "sanitize.py",
-    "callable_line": 939,
+    "callable_line": 935,
     "sanitizers": [
       {
         "port": "formal(self, position=0)",
@@ -4857,7 +4838,7 @@
   "data": {
     "callable": "sanitize.GenerationOnSelf.sanitize_parameter_test_a_source",
     "filename": "sanitize.py",
-    "callable_line": 942,
+    "callable_line": 938,
     "sources": [
       {
         "port": "formal(self, position=0)[foo]",
@@ -4871,7 +4852,7 @@
                 "kind": "TestB"
               }
             ],
-            "origin": { "line": 946, "start": 23, "end": 33 },
+            "origin": { "line": 942, "start": 23, "end": 33 },
             "caller_interval": [ { "lower": 18, "upper": 19 } ],
             "is_self_call": false
           }
@@ -4888,7 +4869,7 @@
   "data": {
     "callable": "sanitize.GenerationOnSelf.sanitize_return",
     "filename": "sanitize.py",
-    "callable_line": 957,
+    "callable_line": 953,
     "sources": [
       {
         "port": "formal(self, position=0)[foo]",
@@ -4902,7 +4883,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 958, "start": 19, "end": 33 },
+            "origin": { "line": 954, "start": 19, "end": 33 },
             "caller_interval": [ { "lower": 18, "upper": 19 } ],
             "is_self_call": false
           }
@@ -4924,7 +4905,7 @@
   "data": {
     "callable": "sanitize.GenerationOnSelf.sanitize_sources",
     "filename": "sanitize.py",
-    "callable_line": 930,
+    "callable_line": 926,
     "global_sanitizer": { "sources": "All" }
   }
 }
@@ -4933,7 +4914,7 @@
   "data": {
     "callable": "sanitize.GenerationOnSelf.sanitize_test_a_source",
     "filename": "sanitize.py",
-    "callable_line": 933,
+    "callable_line": 929,
     "sources": [
       {
         "port": "formal(self, position=0)[foo]",
@@ -4947,7 +4928,7 @@
                 "kind": "TestB"
               }
             ],
-            "origin": { "line": 937, "start": 23, "end": 33 },
+            "origin": { "line": 933, "start": 23, "end": 33 },
             "caller_interval": [ { "lower": 18, "upper": 19 } ],
             "is_self_call": false
           }
@@ -4962,7 +4943,7 @@
   "data": {
     "callable": "sanitize.TitoSelf.sanitize_self",
     "filename": "sanitize.py",
-    "callable_line": 962,
+    "callable_line": 958,
     "sources": [
       {
         "port": "formal(self, position=0)",
@@ -4970,7 +4951,7 @@
           {
             "kinds": [ { "length": 1, "kind": "Cookies" } ],
             "call": {
-              "position": { "line": 963, "start": 15, "end": 55 },
+              "position": { "line": 959, "start": 15, "end": 55 },
               "resolves_to": [
                 "sanitize.sanitize_return_no_user_controlled"
               ],
