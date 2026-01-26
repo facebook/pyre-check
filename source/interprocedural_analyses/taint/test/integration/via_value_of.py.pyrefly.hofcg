@@ -6,6 +6,7 @@ Higher order call graphs
   "calls": {
     "14:13-14:22": {
       "attribute_access": {
+        "is_attribute": true,
         "if_called": {
           "new_calls": [
             {

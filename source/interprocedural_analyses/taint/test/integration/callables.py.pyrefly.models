@@ -523,6 +523,30 @@
 {
   "kind": "model",
   "data": {
+    "callable": "callables.ProcessorInfo.__init__",
+    "filename": "callables.py",
+    "callable_line": 42,
+    "tito": [
+      {
+        "port": "formal(processor_type, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[processor_type]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Overrides{callables.AbstractEventProcessor.async_call_tainted}",
     "sinks": [
       {
