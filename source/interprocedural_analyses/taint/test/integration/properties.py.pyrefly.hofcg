@@ -336,7 +336,7 @@ Higher order call graphs
       "attribute_access": {
         "properties": [
           {
-            "target": "properties.TaintedGetterAndSetter.my_property",
+            "target": "Overrides{properties.TaintedGetterAndSetter.my_property@setter}",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -403,8 +403,8 @@ Higher order call graphs
       "attribute_access": {
         "properties": [
           {
-            "target": "properties.SetterMutatesValue.p",
-            "index": 1,
+            "target": "properties.SetterMutatesValue.p@setter",
+            "index": 0,
             "implicit_receiver": true,
             "return_type": [],
             "receiver_class": "properties.SetterMutatesValue"
@@ -431,7 +431,7 @@ Higher order call graphs
         "properties": [
           {
             "target": "properties.SetterMutatesValue.p",
-            "index": 2,
+            "index": 1,
             "implicit_receiver": true,
             "return_type": [],
             "receiver_class": "properties.SetterMutatesValue"
@@ -590,7 +590,7 @@ Higher order call graphs
       "attribute_access": {
         "properties": [
           {
-            "target": "properties.PropertySetterTitoModel.my_property",
+            "target": "properties.PropertySetterTitoModel.my_property@setter",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -1181,7 +1181,7 @@ Higher order call graphs
       "attribute_access": {
         "properties": [
           {
-            "target": "properties.PropertySetterInConstructor.x",
+            "target": "properties.PropertySetterInConstructor.x@setter",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -1200,7 +1200,7 @@ Higher order call graphs
       "attribute_access": {
         "properties": [
           {
-            "target": "properties.PropertySetterTitoModel.obscure_property",
+            "target": "properties.PropertySetterTitoModel.obscure_property@setter",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -1233,7 +1233,7 @@ Higher order call graphs
       "attribute_access": {
         "properties": [
           {
-            "target": "properties.PropertySetterTitoModel.my_property",
+            "target": "properties.PropertySetterTitoModel.my_property@setter",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -1261,7 +1261,7 @@ Higher order call graphs
         "properties": [
           {
             "target": "properties.PropertySetterTitoModel.my_property",
-            "index": 1,
+            "index": 0,
             "implicit_receiver": true,
             "return_type": [],
             "receiver_class": "properties.PropertySetterTitoModel"
@@ -1311,7 +1311,7 @@ Higher order call graphs
       "attribute_access": {
         "properties": [
           {
-            "target": "properties.TaintedGetterAndSetter.my_property",
+            "target": "Overrides{properties.TaintedGetterAndSetter.my_property@setter}",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],

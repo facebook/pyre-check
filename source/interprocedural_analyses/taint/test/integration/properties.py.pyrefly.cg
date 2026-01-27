@@ -43,14 +43,15 @@ Call dependencies
     "pysa._test_sink (fun)"
   ],
   "properties.PropertySetterInConstructor.__init__ (method)": [
-    "properties.PropertySetterInConstructor.x (method)"
+    "properties.PropertySetterInConstructor.x@setter (method)"
   ],
   "properties.PropertySetterTitoModel.test_obscure_property (method)": [
-    "properties.PropertySetterTitoModel.obscure_property (method)",
+    "properties.PropertySetterTitoModel.obscure_property@setter (method)",
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "properties.PropertySetterTitoModel.test_tito_property (method)": [
     "properties.PropertySetterTitoModel.my_property (method)",
+    "properties.PropertySetterTitoModel.my_property@setter (method)",
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "properties.TaintedGetterAndSetter.my_property (method)": [
@@ -60,7 +61,7 @@ Call dependencies
     "properties.TaintedGetterAndSetter.my_property (method)"
   ],
   "properties.TaintedGetterAndSetter.writes_to_property (method)": [
-    "properties.TaintedGetterAndSetter.my_property (method)",
+    "properties.TaintedGetterAndSetter.my_property@setter (override)",
     "pysa._test_source (fun)"
   ],
   "properties.TestTypeInferenceInSetter.my_property@setter (method)": [
@@ -81,14 +82,15 @@ Call dependencies
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "properties.sets_tainted_value (fun)": [
-    "properties.TaintedGetterAndSetter.my_property (method)",
+    "properties.TaintedGetterAndSetter.my_property@setter (override)",
     "pysa._test_source (fun)"
   ],
   "properties.setters_are_simulated (fun)": [
     "builtins.object.__new__ (method)",
     "properties.SetterMutatesValue.__init__ (method)",
-    "properties.SetterMutatesValue.p (method)", "pysa._test_sink (fun)",
-    "pysa._test_source (fun)"
+    "properties.SetterMutatesValue.p (method)",
+    "properties.SetterMutatesValue.p@setter (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "properties.string_source (fun)": [ "pysa._test_source (fun)" ],
   "properties.test_getattr_on_property (fun)": [
@@ -105,7 +107,7 @@ Call dependencies
   ],
   "properties.test_property_augmented_assign (fun)": [
     "builtins.int.__ror__ (method)",
-    "properties.PropertySetterTitoModel.my_property (method)"
+    "properties.PropertySetterTitoModel.my_property@setter (method)"
   ],
   "properties.test_property_callable (fun)": [
     "builtins.object.__new__ (method)",

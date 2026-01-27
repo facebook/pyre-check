@@ -361,15 +361,18 @@ Higher order call graphs
     },
     "113:4-113:26": {
       "attribute_access": {
-        "properties": [
-          {
-            "target": "class_methods.D.my_abstract_property",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "class_methods.D"
-          }
-        ]
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "class_methods.D.my_abstract_property$2@decorated",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.D"
+            }
+          ]
+        }
       }
     },
     "113:29-113:43": {
@@ -391,7 +394,7 @@ Higher order call graphs
         "properties": [
           {
             "target": "class_methods.D.my_abstract_property",
-            "index": 1,
+            "index": 0,
             "implicit_receiver": true,
             "return_type": [],
             "receiver_class": "class_methods.D"
