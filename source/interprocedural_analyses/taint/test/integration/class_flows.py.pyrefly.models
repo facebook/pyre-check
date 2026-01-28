@@ -692,6 +692,7 @@
               "call_site": "66:21-66:56"
             },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": true
           }
         ]

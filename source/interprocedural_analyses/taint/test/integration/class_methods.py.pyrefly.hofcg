@@ -503,10 +503,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "class_methods.C.abstract_class_method",
+            "target": "Overrides{class_methods.C.abstract_class_method}",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
+            "receiver_class": "class_methods.C",
             "is_class_method": true
           }
         ]
@@ -586,10 +587,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "class_methods.C.class_abstractmethod",
+            "target": "Overrides{class_methods.C.class_abstractmethod}",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
+            "receiver_class": "class_methods.C",
             "is_class_method": true
           }
         ]
@@ -632,6 +634,7 @@ Higher order call graphs
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
+            "receiver_class": "class_methods.C",
             "is_class_method": true
           }
         ]

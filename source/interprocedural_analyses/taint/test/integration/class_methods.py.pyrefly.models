@@ -68,6 +68,136 @@
     "callable": "class_methods.issue_with_abstract_class_method",
     "callable_line": 101,
     "code": 5002,
+    "line": 102,
+    "start": 36,
+    "end": 50,
+    "filename": "class_methods.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 102, "start": 36, "end": 50 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 102, "start": 36, "end": 50 },
+              "resolves_to": [
+                "class_methods.C.one_hop_abstract_class_method"
+              ],
+              "port": "formal(arg, position=1)",
+              "call_site": "102:4-102:51"
+            },
+            "receiver_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "class_methods.C.one_hop_abstract_class_method",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "class_methods.issue_with_abstract_class_method:5002:0:Call|class_methods.C.one_hop_abstract_class_method|0|formal(arg):f3ac8a25112725845df1a567affc4850"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_methods.issue_with_abstract_class_method",
+    "callable_line": 101,
+    "code": 5002,
+    "line": 107,
+    "start": 35,
+    "end": 49,
+    "filename": "class_methods.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 107, "start": 35, "end": 49 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 107, "start": 35, "end": 49 },
+              "resolves_to": [
+                "class_methods.C.one_hop_class_abstractmethod"
+              ],
+              "port": "formal(arg, position=1)",
+              "call_site": "107:4-107:50"
+            },
+            "receiver_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "class_methods.C.one_hop_class_abstractmethod",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "class_methods.issue_with_abstract_class_method:5002:0:Call|class_methods.C.one_hop_class_abstractmethod|0|formal(arg):2de3523c97a4f033d1de91a049342341"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_methods.issue_with_abstract_class_method",
+    "callable_line": 101,
+    "code": 5002,
     "line": 103,
     "start": 27,
     "end": 41,
@@ -430,6 +560,60 @@
 {
   "kind": "model",
   "data": {
+    "callable": "class_methods.C.one_hop_abstract_class_method",
+    "filename": "class_methods.py",
+    "callable_line": 30,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "call": {
+              "position": { "line": 31, "start": 34, "end": 37 },
+              "resolves_to": [ "class_methods.D.abstract_class_method" ],
+              "port": "formal(arg, position=1)",
+              "call_site": "31:8-31:38"
+            },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 5 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_methods.C.one_hop_class_abstractmethod",
+    "filename": "class_methods.py",
+    "callable_line": 56,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "call": {
+              "position": { "line": 57, "start": 33, "end": 36 },
+              "resolves_to": [ "class_methods.D.class_abstractmethod" ],
+              "port": "formal(arg, position=1)",
+              "call_site": "57:8-57:37"
+            },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 5 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "class_methods.C.one_hop_class_method",
     "filename": "class_methods.py",
     "callable_line": 38,
@@ -446,6 +630,7 @@
               "call_site": "39:8-39:29"
             },
             "caller_interval": [ { "lower": 2, "upper": 5 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": true
           }
         ]
@@ -707,6 +892,112 @@
               "caller_interval": [ { "lower": 8, "upper": 9 } ],
               "is_self_call": false
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_methods.C.abstract_class_method}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_methods.C.class_abstractmethod}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_methods.D.abstract_class_method}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_methods.D.class_abstractmethod}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
           }
         ]
       }

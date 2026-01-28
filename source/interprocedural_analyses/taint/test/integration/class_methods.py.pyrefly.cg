@@ -3,13 +3,13 @@ Call dependencies
 {
   "class_methods.C.class_method (method)": [ "pysa._test_sink (fun)" ],
   "class_methods.C.one_hop_abstract_class_method (method)": [
-    "class_methods.C.abstract_class_method (method)"
+    "class_methods.C.abstract_class_method (override)"
   ],
   "class_methods.C.one_hop_abstract_method (method)": [
     "class_methods.C.abstract_method (method)"
   ],
   "class_methods.C.one_hop_class_abstractmethod (method)": [
-    "class_methods.C.class_abstractmethod (method)"
+    "class_methods.C.class_abstractmethod (override)"
   ],
   "class_methods.C.one_hop_class_method (method)": [
     "class_methods.C.class_method (method)"

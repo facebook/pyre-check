@@ -2335,10 +2335,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "class_interval.A17.m1",
+            "target": "Overrides{class_interval.A17.m1}",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
+            "receiver_class": "class_interval.A17",
             "is_class_method": true
           }
         ]
@@ -2424,6 +2425,7 @@ Higher order call graphs
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
+            "receiver_class": "class_interval.A19",
             "is_class_method": true
           }
         ]
@@ -2526,10 +2528,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "class_interval.A21.m1",
+            "target": "Overrides{class_interval.A21.m1}",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
+            "receiver_class": "class_interval.A21",
             "is_class_method": true
           }
         ]

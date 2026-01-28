@@ -1157,6 +1157,49 @@
 {
   "kind": "model",
   "data": {
+    "callable": "class_interval.A17.m0",
+    "filename": "class_interval.py",
+    "callable_line": 513,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "SinkC" } ],
+            "call": {
+              "position": { "line": 514, "start": 15, "end": 18 },
+              "resolves_to": [
+                "class_interval.C17.m1", "class_interval.D17.m1"
+              ],
+              "port": "formal(arg, position=1)",
+              "call_site": "514:8-514:19"
+            },
+            "caller_interval": [ { "lower": 57, "upper": 58 } ],
+            "receiver_interval": [ { "lower": 54, "upper": 61 } ],
+            "is_self_call": true
+          },
+          {
+            "kinds": [ { "length": 1, "kind": "SinkC" } ],
+            "call": {
+              "position": { "line": 514, "start": 15, "end": 18 },
+              "resolves_to": [
+                "class_interval.C17.m1", "class_interval.D17.m1"
+              ],
+              "port": "formal(arg, position=1)",
+              "call_site": "514:8-514:19"
+            },
+            "caller_interval": [ { "lower": 59, "upper": 60 } ],
+            "receiver_interval": [ { "lower": 54, "upper": 61 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "class_interval.A17.m2",
     "filename": "class_interval.py",
     "callable_line": 521,
@@ -1206,6 +1249,7 @@
               "call_site": "588:8-588:17"
             },
             "caller_interval": [ { "lower": 68, "upper": 69 } ],
+            "receiver_interval": [ { "lower": 68, "upper": 69 } ],
             "is_self_call": false
           }
         ]
@@ -1333,6 +1377,70 @@
             "caller_interval": [ { "lower": 72, "upper": 73 } ],
             "receiver_interval": [ { "lower": 70, "upper": 77 } ],
             "is_self_call": true
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A21.m0",
+    "filename": "class_interval.py",
+    "callable_line": 654,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "TransformX:ExtraTraceSink" } ],
+            "call": {
+              "position": { "line": 655, "start": 22, "end": 25 },
+              "resolves_to": [ "class_interval.B21.m1" ],
+              "port": "formal(arg, position=1)",
+              "call_site": "655:15-655:26"
+            },
+            "caller_interval": [ { "lower": 87, "upper": 88 } ],
+            "receiver_interval": [ { "lower": 86, "upper": 91 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 655, "start": 22, "end": 25 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 86, "upper": 91 } ],
+              "is_self_call": false
+            }
+          },
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 2,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 655, "start": 22, "end": 25 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 87, "upper": 88 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -3079,6 +3187,45 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Overrides{class_interval.A17.m1}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "class_interval.sink_c", "port": "leaf:arg" }
+                ],
+                "kind": "SinkC"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 57, "upper": 58 } ],
+            "is_self_call": false
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "class_interval.sink_c", "port": "leaf:arg" }
+                ],
+                "kind": "SinkC"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 59, "upper": 60 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Overrides{class_interval.A2.m2}",
     "sinks": [
       {
@@ -3097,6 +3244,57 @@
             "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 72, "upper": 73 } ],
             "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.A21.m1}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "class_interval.transformX", "port": "leaf:arg" }
+                ],
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 87, "upper": 88 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          },
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": {
+              "caller_interval": [ { "lower": 87, "upper": 88 } ],
+              "is_self_call": false
+            }
           }
         ]
       }
@@ -3418,6 +3616,53 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Overrides{class_interval.B21.m1}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "class_interval.transformX", "port": "leaf:arg" }
+                ],
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 87, "upper": 88 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": {
+              "caller_interval": [ { "lower": 87, "upper": 88 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Overrides{class_interval.B22.m1}",
     "sinks": [
       {
@@ -3710,6 +3955,32 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Overrides{class_interval.C17.m1}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "class_interval.sink_c", "port": "leaf:arg" }
+                ],
+                "kind": "SinkC"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 57, "upper": 58 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Overrides{class_interval.C2.m2}",
     "sinks": [
       {
@@ -3728,6 +3999,23 @@
             "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 72, "upper": 73 } ],
             "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.C21.m1}",
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
           }
         ]
       }
@@ -3884,6 +4172,32 @@
             ],
             "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{class_interval.D17.m1}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "class_interval.sink_c", "port": "leaf:arg" }
+                ],
+                "kind": "SinkC"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 59, "upper": 60 } ],
             "is_self_call": false
           }
         ]
