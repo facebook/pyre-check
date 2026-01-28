@@ -81,13 +81,16 @@ CALLABLE_MAPPING = {
     "builtins.getattr": CallableMapping(name="getattr", line=476),
     "builtins.list.append": CallableMapping(name="list.append", line=422),
     "builtins.dict.__setitem__": CallableMapping(name="dict.__setitem__", line=399),
+    "builtins.dict.__getitem__": CallableMapping(name="dict.__getitem__", line=398),
     "builtins.dict.get": CallableMapping(name="dict.get", line=401),
     "builtins.str.__add__": CallableMapping(name="str.__add__", line=353),
     "typing.Mapping.__getitem__": CallableMapping(
         name="typing.Mapping.__getitem__", line=131
     ),
     "typing.Mapping.get": CallableMapping(name="typing.Mapping.get", line=135),
-    "typing.Mapping.update": CallableMapping(name="typing.Mapping.update", line=155),
+    "typing.MutableMapping.update": CallableMapping(
+        name="typing.MutableMapping.update", line=155
+    ),
 }
 
 

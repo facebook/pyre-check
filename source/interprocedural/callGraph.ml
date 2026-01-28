@@ -876,11 +876,15 @@ module CallCallees = struct
       match
         Target.get_regular call_target.CallTarget.target, call_target.CallTarget.receiver_class
       with
-      | Target.Regular.Method { class_name; _ }, Some receiver_class
-      | Target.Regular.Override { class_name; _ }, Some receiver_class ->
+      | (Target.Regular.Method _ | Target.Regular.Override _), Some receiver_class
+        when is_class_name receiver_class ->
           (* Is it not enough to check the class name, since methods can be inherited.
            * For instance, `__iter__` is not defined on `Mapping`, but is defined in the parent class `Iterable`. *)
-          is_class_name class_name || is_class_name receiver_class
+          true
+      | Target.Regular.Method { class_name; _ }, _
+      | Target.Regular.Override { class_name; _ }, _
+        when is_class_name class_name ->
+          true
       | _ -> false
     in
     match callees with
