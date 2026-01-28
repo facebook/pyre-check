@@ -5,9 +5,10 @@
 
 # flake8: noqa
 
-from pysa import _test_sink, _test_source
-from typing import Awaitable, Callable, TypeVar, ParamSpec, Concatenate
 import random
+from typing import Awaitable, Callable, Concatenate, ParamSpec, TypeVar
+
+from pysa import _test_sink, _test_source
 
 P = ParamSpec("P")
 

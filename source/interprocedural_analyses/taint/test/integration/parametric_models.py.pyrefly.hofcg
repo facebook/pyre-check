@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "parametric_models.f_and_g_to_test",
   "returned_callables": [],
   "calls": {
-    "23:7-23:22": {
+    "24:7-24:22": {
       "call": {
         "calls": [
           {
@@ -17,7 +17,7 @@ Higher order call graphs
         ]
       }
     },
-    "23:7-23:28|artificial-call|comparison": {
+    "24:7-24:28|artificial-call|comparison": {
       "call": {
         "calls": [
           {
@@ -30,21 +30,21 @@ Higher order call graphs
         ]
       }
     },
-    "24:12-24:15": {
+    "25:12-25:15": {
       "call": {
         "calls": [
           { "target": "parametric_models.f", "index": 0, "return_type": [] }
         ]
       }
     },
-    "26:12-26:15": {
+    "27:12-27:15": {
       "call": {
         "calls": [
           { "target": "parametric_models.g", "index": 0, "return_type": [] }
         ]
       }
     },
-    "28:4-28:11": {
+    "29:4-29:11": {
       "call": {
         "calls": [
           {
@@ -61,7 +61,7 @@ Higher order call graphs
   "callable": "parametric_models.inferred_sink",
   "returned_callables": [],
   "calls": {
-    "38:7-38:22": {
+    "39:7-39:22": {
       "call": {
         "calls": [
           {
@@ -74,7 +74,7 @@ Higher order call graphs
         ]
       }
     },
-    "38:7-38:28|artificial-call|comparison": {
+    "39:7-39:28|artificial-call|comparison": {
       "call": {
         "calls": [
           {
@@ -87,7 +87,7 @@ Higher order call graphs
         ]
       }
     },
-    "39:8-39:25": {
+    "40:8-40:25": {
       "call": {
         "calls": [
           {
@@ -98,7 +98,7 @@ Higher order call graphs
         ]
       }
     },
-    "41:8-41:25": {
+    "42:8-42:25": {
       "call": {
         "calls": [
           {
@@ -115,14 +115,14 @@ Higher order call graphs
   "callable": "parametric_models.test_to_subkind_sink",
   "returned_callables": [],
   "calls": {
-    "45:8-45:22": {
+    "46:8-46:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "46:4-46:20": {
+    "47:4-47:20": {
       "call": {
         "calls": [
           {

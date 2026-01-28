@@ -4,7 +4,7 @@
   "data": {
     "callable": "model_query_transitive_extends.misc_noalarm1",
     "filename": "model_query_transitive_extends.py",
-    "callable_line": 115,
+    "callable_line": 110,
     "sinks": [
       {
         "port": "formal(c, position=0)[attribute]",
@@ -19,8 +19,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 116, "start": 15, "end": 26 },
-            "call_site": "116:4-116:27"
+            "origin": { "line": 111, "start": 15, "end": 26 },
+            "call_site": "111:4-111:27"
           }
         ]
       }
@@ -32,7 +32,7 @@
   "data": {
     "callable": "model_query_transitive_extends.misc_noalarm2",
     "filename": "model_query_transitive_extends.py",
-    "callable_line": 119,
+    "callable_line": 114,
     "sinks": [
       {
         "port": "formal(c, position=0)[instance]",
@@ -47,8 +47,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 120, "start": 15, "end": 25 },
-            "call_site": "120:4-120:26"
+            "origin": { "line": 115, "start": 15, "end": 25 },
+            "call_site": "115:4-115:26"
           }
         ]
       }
@@ -60,7 +60,7 @@
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm1",
     "filename": "model_query_transitive_extends.py",
-    "callable_line": 67,
+    "callable_line": 62,
     "sinks": [
       {
         "port": "formal(c, position=0)[attribute]",
@@ -75,8 +75,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 68, "start": 15, "end": 26 },
-            "call_site": "68:4-68:27"
+            "origin": { "line": 63, "start": 15, "end": 26 },
+            "call_site": "63:4-63:27"
           }
         ]
       }
@@ -87,9 +87,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm1",
-    "callable_line": 67,
+    "callable_line": 62,
     "code": 5002,
-    "line": 68,
+    "line": 63,
     "start": 15,
     "end": 26,
     "filename": "model_query_transitive_extends.py",
@@ -114,7 +114,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 68, "start": 15, "end": 26 }
+            "origin": { "line": 63, "start": 15, "end": 26 }
           }
         ]
       },
@@ -131,8 +131,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 68, "start": 15, "end": 26 },
-            "call_site": "68:4-68:27"
+            "origin": { "line": 63, "start": 15, "end": 26 },
+            "call_site": "63:4-63:27"
           }
         ]
       }
@@ -152,7 +152,7 @@
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm2",
     "filename": "model_query_transitive_extends.py",
-    "callable_line": 71,
+    "callable_line": 66,
     "sinks": [
       {
         "port": "formal(c, position=0)[instance]",
@@ -167,8 +167,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 72, "start": 15, "end": 25 },
-            "call_site": "72:4-72:26"
+            "origin": { "line": 67, "start": 15, "end": 25 },
+            "call_site": "67:4-67:26"
           }
         ]
       }
@@ -179,9 +179,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm2",
-    "callable_line": 71,
+    "callable_line": 66,
     "code": 5002,
-    "line": 72,
+    "line": 67,
     "start": 15,
     "end": 25,
     "filename": "model_query_transitive_extends.py",
@@ -206,7 +206,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 72, "start": 15, "end": 25 }
+            "origin": { "line": 67, "start": 15, "end": 25 }
           }
         ]
       },
@@ -223,8 +223,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 72, "start": 15, "end": 25 },
-            "call_site": "72:4-72:26"
+            "origin": { "line": 67, "start": 15, "end": 25 },
+            "call_site": "67:4-67:26"
           }
         ]
       }
@@ -244,7 +244,7 @@
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm3",
     "filename": "model_query_transitive_extends.py",
-    "callable_line": 75,
+    "callable_line": 70,
     "sinks": [
       {
         "port": "formal(c, position=0)[attribute]",
@@ -259,8 +259,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 76, "start": 15, "end": 26 },
-            "call_site": "76:4-76:27"
+            "origin": { "line": 71, "start": 15, "end": 26 },
+            "call_site": "71:4-71:27"
           }
         ]
       }
@@ -271,9 +271,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm3",
-    "callable_line": 75,
+    "callable_line": 70,
     "code": 5002,
-    "line": 76,
+    "line": 71,
     "start": 15,
     "end": 26,
     "filename": "model_query_transitive_extends.py",
@@ -302,7 +302,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 76, "start": 15, "end": 26 }
+            "origin": { "line": 71, "start": 15, "end": 26 }
           }
         ]
       },
@@ -319,8 +319,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 76, "start": 15, "end": 26 },
-            "call_site": "76:4-76:27"
+            "origin": { "line": 71, "start": 15, "end": 26 },
+            "call_site": "71:4-71:27"
           }
         ]
       }
@@ -340,7 +340,7 @@
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm4",
     "filename": "model_query_transitive_extends.py",
-    "callable_line": 79,
+    "callable_line": 74,
     "sinks": [
       {
         "port": "formal(c, position=0)[instance]",
@@ -355,8 +355,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 80, "start": 15, "end": 25 },
-            "call_site": "80:4-80:26"
+            "origin": { "line": 75, "start": 15, "end": 25 },
+            "call_site": "75:4-75:26"
           }
         ]
       }
@@ -367,9 +367,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm4",
-    "callable_line": 79,
+    "callable_line": 74,
     "code": 5002,
-    "line": 80,
+    "line": 75,
     "start": 15,
     "end": 25,
     "filename": "model_query_transitive_extends.py",
@@ -398,7 +398,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 80, "start": 15, "end": 25 }
+            "origin": { "line": 75, "start": 15, "end": 25 }
           }
         ]
       },
@@ -415,8 +415,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 80, "start": 15, "end": 25 },
-            "call_site": "80:4-80:26"
+            "origin": { "line": 75, "start": 15, "end": 25 },
+            "call_site": "75:4-75:26"
           }
         ]
       }
@@ -436,7 +436,7 @@
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm5",
     "filename": "model_query_transitive_extends.py",
-    "callable_line": 83,
+    "callable_line": 78,
     "sinks": [
       {
         "port": "formal(c, position=0)[attribute]",
@@ -451,8 +451,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 84, "start": 15, "end": 26 },
-            "call_site": "84:4-84:27"
+            "origin": { "line": 79, "start": 15, "end": 26 },
+            "call_site": "79:4-79:27"
           }
         ]
       }
@@ -463,9 +463,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm5",
-    "callable_line": 83,
+    "callable_line": 78,
     "code": 5002,
-    "line": 84,
+    "line": 79,
     "start": 15,
     "end": 26,
     "filename": "model_query_transitive_extends.py",
@@ -486,7 +486,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 84, "start": 15, "end": 26 }
+            "origin": { "line": 79, "start": 15, "end": 26 }
           }
         ]
       },
@@ -503,8 +503,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 84, "start": 15, "end": 26 },
-            "call_site": "84:4-84:27"
+            "origin": { "line": 79, "start": 15, "end": 26 },
+            "call_site": "79:4-79:27"
           }
         ]
       }
@@ -524,7 +524,7 @@
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm6",
     "filename": "model_query_transitive_extends.py",
-    "callable_line": 87,
+    "callable_line": 82,
     "sinks": [
       {
         "port": "formal(c, position=0)[instance]",
@@ -539,8 +539,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 88, "start": 15, "end": 25 },
-            "call_site": "88:4-88:26"
+            "origin": { "line": 83, "start": 15, "end": 25 },
+            "call_site": "83:4-83:26"
           }
         ]
       }
@@ -551,9 +551,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm6",
-    "callable_line": 87,
+    "callable_line": 82,
     "code": 5002,
-    "line": 88,
+    "line": 83,
     "start": 15,
     "end": 25,
     "filename": "model_query_transitive_extends.py",
@@ -574,7 +574,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 88, "start": 15, "end": 25 }
+            "origin": { "line": 83, "start": 15, "end": 25 }
           }
         ]
       },
@@ -591,8 +591,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 88, "start": 15, "end": 25 },
-            "call_site": "88:4-88:26"
+            "origin": { "line": 83, "start": 15, "end": 25 },
+            "call_site": "83:4-83:26"
           }
         ]
       }
@@ -612,7 +612,7 @@
   "data": {
     "callable": "model_query_transitive_extends.test1_noalarm1",
     "filename": "model_query_transitive_extends.py",
-    "callable_line": 91,
+    "callable_line": 86,
     "sinks": [
       {
         "port": "formal(c, position=0)[attribute]",
@@ -627,8 +627,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 92, "start": 15, "end": 26 },
-            "call_site": "92:4-92:27"
+            "origin": { "line": 87, "start": 15, "end": 26 },
+            "call_site": "87:4-87:27"
           }
         ]
       }
@@ -640,7 +640,7 @@
   "data": {
     "callable": "model_query_transitive_extends.test1_noalarm2",
     "filename": "model_query_transitive_extends.py",
-    "callable_line": 95,
+    "callable_line": 90,
     "sinks": [
       {
         "port": "formal(c, position=0)[instance]",
@@ -655,8 +655,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 96, "start": 15, "end": 25 },
-            "call_site": "96:4-96:26"
+            "origin": { "line": 91, "start": 15, "end": 25 },
+            "call_site": "91:4-91:26"
           }
         ]
       }
@@ -667,9 +667,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_transitive_extends.test2_alarm1",
-    "callable_line": 99,
+    "callable_line": 94,
     "code": 5002,
-    "line": 100,
+    "line": 95,
     "start": 10,
     "end": 24,
     "filename": "model_query_transitive_extends.py",
@@ -688,7 +688,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 100, "start": 10, "end": 24 }
+            "origin": { "line": 95, "start": 10, "end": 24 }
           }
         ]
       },
@@ -707,10 +707,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 100, "start": 10, "end": 24 },
+            "origin": { "line": 95, "start": 10, "end": 24 },
             "receiver_interval": [ { "lower": 16, "upper": 17 } ],
             "is_self_call": false,
-            "call_site": "100:4-100:25"
+            "call_site": "95:4-95:25"
           }
         ]
       }
@@ -887,7 +887,7 @@
   "data": {
     "callable": "model_query_transitive_extends.Test2_D.foo",
     "filename": "model_query_transitive_extends.py",
-    "callable_line": 53,
+    "callable_line": 50,
     "sinks": [
       {
         "port": "formal(attribute, position=1)",

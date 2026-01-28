@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "overloads.call_me",
   "returned_callables": [],
   "calls": {
-    "27:4-27:17": {
+    "28:4-28:17": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -17,7 +17,7 @@ Higher order call graphs
   "callable": "overloads.f",
   "returned_callables": [],
   "calls": {
-    "23:4-23:14": {
+    "24:4-24:14": {
       "call": {
         "calls": [
           { "target": "overloads.call_me", "index": 0, "return_type": [] }
@@ -30,14 +30,14 @@ Higher order call graphs
   "callable": "overloads.g",
   "returned_callables": [],
   "calls": {
-    "46:8-46:22": {
+    "47:8-47:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "47:7-47:23": {
+    "48:7-48:23": {
       "call": {
         "calls": [
           {
@@ -48,7 +48,7 @@ Higher order call graphs
         ]
       }
     },
-    "48:8-48:20": {
+    "49:8-49:20": {
       "call": {
         "calls": [
           {
@@ -67,7 +67,7 @@ Higher order call graphs
   "callable": "overloads.A.call_me",
   "returned_callables": [],
   "calls": {
-    "32:8-32:21": {
+    "33:8-33:21": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }

@@ -59,9 +59,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_global_variable.f",
-    "callable_line": 13,
+    "callable_line": 14,
     "code": 1000,
-    "line": 14,
+    "line": 15,
     "start": 15,
     "end": 22,
     "filename": "model_query_global_variable.py",
@@ -79,7 +79,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 14, "start": 15, "end": 22 }
+            "origin": { "line": 15, "start": 15, "end": 22 }
           }
         ]
       },
@@ -95,8 +95,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 14, "start": 15, "end": 22 },
-            "call_site": "14:4-14:23"
+            "origin": { "line": 15, "start": 15, "end": 22 },
+            "call_site": "15:4-15:23"
           }
         ]
       }

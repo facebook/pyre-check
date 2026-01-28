@@ -4,8 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 import typing
-from pysa import _test_sink, _test_source
 from os import environ
+
+from pysa import _test_sink, _test_source
 
 foo = []
 
@@ -15,8 +16,7 @@ def f():
 
 
 # TODO (T132423781): classes are not correctly selected as sources
-class Baz:
-    ...
+class Baz: ...
 
 
 hello = "hello"

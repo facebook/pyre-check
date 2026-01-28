@@ -4,12 +4,12 @@ Higher order call graphs
   "callable": "global_flows.append_argument",
   "returned_callables": [],
   "calls": {
-    "69:4-69:5|identifier|l": {
+    "66:4-66:5|identifier|l": {
       "identifier": {
         "globals": [ { "target": "Obj{global_flows.l}", "index": 0 } ]
       }
     },
-    "69:4-69:17": {
+    "66:4-66:17": {
       "call": {
         "calls": [
           {
@@ -28,12 +28,12 @@ Higher order call graphs
   "callable": "global_flows.append_directly",
   "returned_callables": [],
   "calls": {
-    "65:4-65:5|identifier|l": {
+    "62:4-62:5|identifier|l": {
       "identifier": {
         "globals": [ { "target": "Obj{global_flows.l}", "index": 0 } ]
       }
     },
-    "65:4-65:28": {
+    "62:4-62:28": {
       "call": {
         "calls": [
           {
@@ -46,7 +46,7 @@ Higher order call graphs
         ]
       }
     },
-    "65:13-65:27": {
+    "62:13-62:27": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -59,7 +59,7 @@ Higher order call graphs
   "callable": "global_flows.append_indirectly",
   "returned_callables": [],
   "calls": {
-    "73:4-73:35": {
+    "70:4-70:35": {
       "call": {
         "calls": [
           {
@@ -70,7 +70,7 @@ Higher order call graphs
         ]
       }
     },
-    "73:20-73:34": {
+    "70:20-70:34": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -83,14 +83,14 @@ Higher order call graphs
   "callable": "global_flows.global_source",
   "returned_callables": [],
   "calls": {
-    "80:4-80:23": {
+    "77:4-77:23": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "80:15-80:22|identifier|tainted": {
+    "77:15-77:22|identifier|tainted": {
       "identifier": {
         "globals": [ { "target": "Obj{global_flows.tainted}", "index": 0 } ]
       }
@@ -101,7 +101,7 @@ Higher order call graphs
   "callable": "global_flows.indirectly_update_x_arg1",
   "returned_callables": [],
   "calls": {
-    "37:4-37:23": {
+    "35:4-35:23": {
       "call": {
         "calls": [
           {
@@ -112,7 +112,7 @@ Higher order call graphs
         ]
       }
     },
-    "37:16-37:17|identifier|x": {
+    "35:16-35:17|identifier|x": {
       "identifier": {
         "globals": [ { "target": "Obj{global_flows.x}", "index": 0 } ]
       }
@@ -123,7 +123,7 @@ Higher order call graphs
   "callable": "global_flows.indirectly_update_x_arg2",
   "returned_callables": [],
   "calls": {
-    "49:4-49:23": {
+    "47:4-47:23": {
       "call": {
         "calls": [
           {
@@ -134,7 +134,7 @@ Higher order call graphs
         ]
       }
     },
-    "49:21-49:22|identifier|x": {
+    "47:21-47:22|identifier|x": {
       "identifier": {
         "globals": [ { "target": "Obj{global_flows.x}", "index": 0 } ]
       }
@@ -145,7 +145,7 @@ Higher order call graphs
   "callable": "global_flows.unaffected_x_at_arg1",
   "returned_callables": [],
   "calls": {
-    "25:4-25:40": {
+    "23:4-23:40": {
       "call": {
         "calls": [
           {
@@ -156,7 +156,7 @@ Higher order call graphs
         ]
       }
     },
-    "25:16-25:17|identifier|x": {
+    "23:16-23:17|identifier|x": {
       "identifier": {
         "globals": [ { "target": "Obj{global_flows.x}", "index": 0 } ]
       }
@@ -167,7 +167,7 @@ Higher order call graphs
   "callable": "global_flows.unaffected_x_at_arg2",
   "returned_callables": [],
   "calls": {
-    "33:4-33:40": {
+    "31:4-31:40": {
       "call": {
         "calls": [
           {
@@ -178,7 +178,7 @@ Higher order call graphs
         ]
       }
     },
-    "33:38-33:39|identifier|x": {
+    "31:38-31:39|identifier|x": {
       "identifier": {
         "globals": [ { "target": "Obj{global_flows.x}", "index": 0 } ]
       }
@@ -189,7 +189,7 @@ Higher order call graphs
   "callable": "global_flows.update_x_at_arg1",
   "returned_callables": [],
   "calls": {
-    "21:4-21:34": {
+    "19:4-19:34": {
       "call": {
         "calls": [
           {
@@ -200,12 +200,12 @@ Higher order call graphs
         ]
       }
     },
-    "21:16-21:17|identifier|x": {
+    "19:16-19:17|identifier|x": {
       "identifier": {
         "globals": [ { "target": "Obj{global_flows.x}", "index": 0 } ]
       }
     },
-    "21:19-21:33": {
+    "19:19-19:33": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -218,7 +218,7 @@ Higher order call graphs
   "callable": "global_flows.update_x_at_arg2",
   "returned_callables": [],
   "calls": {
-    "29:4-29:34": {
+    "27:4-27:34": {
       "call": {
         "calls": [
           {
@@ -229,14 +229,14 @@ Higher order call graphs
         ]
       }
     },
-    "29:16-29:30": {
+    "27:16-27:30": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "29:32-29:33|identifier|x": {
+    "27:32-27:33|identifier|x": {
       "identifier": {
         "globals": [ { "target": "Obj{global_flows.x}", "index": 0 } ]
       }
@@ -247,7 +247,7 @@ Higher order call graphs
   "callable": "global_flows.x_not_tainted",
   "returned_callables": [],
   "calls": {
-    "45:4-45:31": {
+    "43:4-43:31": {
       "call": {
         "calls": [
           {
@@ -264,7 +264,7 @@ Higher order call graphs
   "callable": "global_flows.x_tainted_indirectly_arg1",
   "returned_callables": [],
   "calls": {
-    "41:4-41:44": {
+    "39:4-39:44": {
       "call": {
         "calls": [
           {
@@ -275,7 +275,7 @@ Higher order call graphs
         ]
       }
     },
-    "41:29-41:43": {
+    "39:29-39:43": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -288,7 +288,7 @@ Higher order call graphs
   "callable": "global_flows.x_tainted_indirectly_arg2",
   "returned_callables": [],
   "calls": {
-    "53:4-53:44": {
+    "51:4-51:44": {
       "call": {
         "calls": [
           {
@@ -299,7 +299,7 @@ Higher order call graphs
         ]
       }
     },
-    "53:29-53:43": {
+    "51:29-51:43": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }

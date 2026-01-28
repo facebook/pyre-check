@@ -5,8 +5,9 @@
 
 # flake8: noqa
 
+from typing import Any, List, Tuple
+
 from pysa import _test_sink, _test_source
-from typing import List, Tuple, Any
 
 
 def create_zipped_source() -> zip[Tuple[int, int]]:
@@ -46,8 +47,7 @@ def zipped_element_not_flowing_to_sink(x) -> None:
 
 
 class Woot:
-    def taint_self(self, item):
-        ...
+    def taint_self(self, item): ...
 
 
 def push_pop_no_taint() -> List[int]:
@@ -130,8 +130,7 @@ class HasStr:
         return ""
 
 
-def returns_list_repr(x: Any) -> List[HasRepr]:
-    ...
+def returns_list_repr(x: Any) -> List[HasRepr]: ...
 
 
 def inconsistent_type_context(l: List[HasStr]) -> None:

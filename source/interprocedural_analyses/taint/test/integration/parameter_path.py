@@ -3,8 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from pysa import _test_sink, _test_source
 from typing import Any
+
+from pysa import _test_sink, _test_source
 
 
 def source_on_first():
@@ -52,8 +53,7 @@ def issue_only_with_source_key_a():
     _test_sink(d["b"])
 
 
-def source_on_member_a() -> Any:
-    ...
+def source_on_member_a() -> Any: ...
 
 
 def issue_with_source_member():
@@ -106,11 +106,11 @@ def issue_only_with_sink_key_a():
 
 def issue_with_sink_member():
     x = object()
-    x.a = _test_source() # pyrefly: ignore[missing-attribute]
+    x.a = _test_source()  # pyrefly: ignore[missing-attribute]
     sink_on_member_a(x)
 
     y = object()
-    y.b = _test_source() # pyrefly: ignore[missing-attribute]
+    y.b = _test_source()  # pyrefly: ignore[missing-attribute]
     sink_on_member_a(y)
 
 

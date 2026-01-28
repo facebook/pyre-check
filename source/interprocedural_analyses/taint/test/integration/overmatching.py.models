@@ -72,9 +72,9 @@
   "kind": "issue",
   "data": {
     "callable": "overmatching.issue_source_on_0_and_star_to_sink_on_0",
-    "callable_line": 32,
+    "callable_line": 33,
     "code": 5002,
-    "line": 36,
+    "line": 37,
     "start": 14,
     "end": 15,
     "filename": "overmatching.py",
@@ -93,7 +93,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 35, "start": 13, "end": 27 }
+            "origin": { "line": 36, "start": 13, "end": 27 }
           }
         ]
       },
@@ -116,10 +116,10 @@
               }
             ],
             "call": {
-              "position": { "line": 36, "start": 14, "end": 15 },
+              "position": { "line": 37, "start": 14, "end": 15 },
               "resolves_to": [ "overmatching.sink_on_0" ],
               "port": "formal(x, position=0)[0]",
-              "call_site": "36:4-36:16"
+              "call_site": "37:4-37:16"
             }
           }
         ]
@@ -144,9 +144,9 @@
   "kind": "issue",
   "data": {
     "callable": "overmatching.issue_source_on_0_and_star_to_sink_on_0_and_star",
-    "callable_line": 19,
+    "callable_line": 20,
     "code": 5002,
-    "line": 23,
+    "line": 24,
     "start": 23,
     "end": 24,
     "filename": "overmatching.py",
@@ -165,7 +165,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 21, "start": 11, "end": 25 }
+            "origin": { "line": 22, "start": 11, "end": 25 }
           },
           {
             "kinds": [
@@ -177,7 +177,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 22, "start": 13, "end": 27 }
+            "origin": { "line": 23, "start": 13, "end": 27 }
           }
         ]
       },
@@ -200,10 +200,10 @@
               }
             ],
             "call": {
-              "position": { "line": 23, "start": 23, "end": 24 },
+              "position": { "line": 24, "start": 23, "end": 24 },
               "resolves_to": [ "overmatching.sink_on_0_and_star" ],
               "port": "formal(x, position=0)[*]",
-              "call_site": "23:4-23:28"
+              "call_site": "24:4-24:28"
             }
           },
           {
@@ -223,10 +223,10 @@
               }
             ],
             "call": {
-              "position": { "line": 23, "start": 23, "end": 24 },
+              "position": { "line": 24, "start": 23, "end": 24 },
               "resolves_to": [ "overmatching.sink_on_0_and_star" ],
               "port": "formal(x, position=0)[0]",
-              "call_site": "23:4-23:28"
+              "call_site": "24:4-24:28"
             }
           }
         ]
@@ -252,9 +252,9 @@
   "kind": "issue",
   "data": {
     "callable": "overmatching.issue_source_on_0_to_sink_on_0",
-    "callable_line": 39,
+    "callable_line": 40,
     "code": 5002,
-    "line": 42,
+    "line": 43,
     "start": 14,
     "end": 15,
     "filename": "overmatching.py",
@@ -273,7 +273,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 41, "start": 13, "end": 27 }
+            "origin": { "line": 42, "start": 13, "end": 27 }
           }
         ]
       },
@@ -296,10 +296,10 @@
               }
             ],
             "call": {
-              "position": { "line": 42, "start": 14, "end": 15 },
+              "position": { "line": 43, "start": 14, "end": 15 },
               "resolves_to": [ "overmatching.sink_on_0" ],
               "port": "formal(x, position=0)[0]",
-              "call_site": "42:4-42:16"
+              "call_site": "43:4-43:16"
             }
           }
         ]
@@ -324,9 +324,9 @@
   "kind": "issue",
   "data": {
     "callable": "overmatching.issue_source_on_0_to_sink_on_0_and_star",
-    "callable_line": 26,
+    "callable_line": 27,
     "code": 5002,
-    "line": 29,
+    "line": 30,
     "start": 23,
     "end": 24,
     "filename": "overmatching.py",
@@ -345,7 +345,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 28, "start": 13, "end": 27 }
+            "origin": { "line": 29, "start": 13, "end": 27 }
           }
         ]
       },
@@ -369,10 +369,10 @@
               }
             ],
             "call": {
-              "position": { "line": 29, "start": 23, "end": 24 },
+              "position": { "line": 30, "start": 23, "end": 24 },
               "resolves_to": [ "overmatching.sink_on_0_and_star" ],
               "port": "formal(x, position=0)[0]",
-              "call_site": "29:4-29:28"
+              "call_site": "30:4-30:28"
             }
           }
         ]
@@ -398,9 +398,9 @@
   "kind": "issue",
   "data": {
     "callable": "overmatching.issue_source_on_1_to_sink_on_0_and_star",
-    "callable_line": 45,
+    "callable_line": 46,
     "code": 5002,
-    "line": 48,
+    "line": 49,
     "start": 23,
     "end": 24,
     "filename": "overmatching.py",
@@ -419,7 +419,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 47, "start": 13, "end": 27 }
+            "origin": { "line": 48, "start": 13, "end": 27 }
           }
         ]
       },
@@ -442,10 +442,10 @@
               }
             ],
             "call": {
-              "position": { "line": 48, "start": 23, "end": 24 },
+              "position": { "line": 49, "start": 23, "end": 24 },
               "resolves_to": [ "overmatching.sink_on_0_and_star" ],
               "port": "formal(x, position=0)[*]",
-              "call_site": "48:4-48:28"
+              "call_site": "49:4-49:28"
             }
           }
         ]
@@ -470,9 +470,9 @@
   "kind": "issue",
   "data": {
     "callable": "overmatching.issue_source_on_star_to_sink_on_0",
-    "callable_line": 63,
+    "callable_line": 64,
     "code": 5002,
-    "line": 66,
+    "line": 67,
     "start": 14,
     "end": 15,
     "filename": "overmatching.py",
@@ -491,7 +491,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 65, "start": 11, "end": 25 }
+            "origin": { "line": 66, "start": 11, "end": 25 }
           }
         ]
       },
@@ -514,10 +514,10 @@
               }
             ],
             "call": {
-              "position": { "line": 66, "start": 14, "end": 15 },
+              "position": { "line": 67, "start": 14, "end": 15 },
               "resolves_to": [ "overmatching.sink_on_0" ],
               "port": "formal(x, position=0)[0]",
-              "call_site": "66:4-66:16"
+              "call_site": "67:4-67:16"
             }
           }
         ]
@@ -542,9 +542,9 @@
   "kind": "issue",
   "data": {
     "callable": "overmatching.issue_source_on_star_to_sink_on_0_and_star",
-    "callable_line": 57,
+    "callable_line": 58,
     "code": 5002,
-    "line": 60,
+    "line": 61,
     "start": 23,
     "end": 24,
     "filename": "overmatching.py",
@@ -563,7 +563,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 59, "start": 11, "end": 25 }
+            "origin": { "line": 60, "start": 11, "end": 25 }
           }
         ]
       },
@@ -586,10 +586,10 @@
               }
             ],
             "call": {
-              "position": { "line": 60, "start": 23, "end": 24 },
+              "position": { "line": 61, "start": 23, "end": 24 },
               "resolves_to": [ "overmatching.sink_on_0_and_star" ],
               "port": "formal(x, position=0)[*]",
-              "call_site": "60:4-60:28"
+              "call_site": "61:4-61:28"
             }
           },
           {
@@ -609,10 +609,10 @@
               }
             ],
             "call": {
-              "position": { "line": 60, "start": 23, "end": 24 },
+              "position": { "line": 61, "start": 23, "end": 24 },
               "resolves_to": [ "overmatching.sink_on_0_and_star" ],
               "port": "formal(x, position=0)[0]",
-              "call_site": "60:4-60:28"
+              "call_site": "61:4-61:28"
             }
           }
         ]
@@ -639,7 +639,7 @@
   "data": {
     "callable": "overmatching.sink_on_0",
     "filename": "overmatching.py",
-    "callable_line": 10,
+    "callable_line": 11,
     "sinks": [
       {
         "port": "formal(x, position=0)[0]",
@@ -657,8 +657,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "origin": { "line": 11, "start": 15, "end": 21 },
-            "call_site": "11:4-11:22"
+            "origin": { "line": 12, "start": 15, "end": 21 },
+            "call_site": "12:4-12:22"
           }
         ]
       }
@@ -670,7 +670,7 @@
   "data": {
     "callable": "overmatching.sink_on_0_and_star",
     "filename": "overmatching.py",
-    "callable_line": 14,
+    "callable_line": 15,
     "sinks": [
       {
         "port": "formal(x, position=0)[*]",
@@ -688,8 +688,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "origin": { "line": 16, "start": 15, "end": 19 },
-            "call_site": "16:4-16:20"
+            "origin": { "line": 17, "start": 15, "end": 19 },
+            "call_site": "17:4-17:20"
           }
         ]
       },
@@ -709,8 +709,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "origin": { "line": 15, "start": 15, "end": 21 },
-            "call_site": "15:4-15:22"
+            "origin": { "line": 16, "start": 15, "end": 21 },
+            "call_site": "16:4-16:22"
           },
           {
             "kinds": [
@@ -725,8 +725,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "origin": { "line": 16, "start": 15, "end": 19 },
-            "call_site": "16:4-16:20"
+            "origin": { "line": 17, "start": 15, "end": 19 },
+            "call_site": "17:4-17:20"
           }
         ]
       }

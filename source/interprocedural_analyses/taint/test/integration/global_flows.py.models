@@ -4,7 +4,7 @@
   "data": {
     "callable": "global_flows.append_argument",
     "filename": "global_flows.py",
-    "callable_line": 68,
+    "callable_line": 65,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -19,8 +19,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 69, "start": 13, "end": 16 } ],
-            "origin": { "line": 69, "start": 4, "end": 5 }
+            "tito_positions": [ { "line": 66, "start": 13, "end": 16 } ],
+            "origin": { "line": 66, "start": 4, "end": 5 }
           }
         ]
       }
@@ -31,9 +31,9 @@
   "kind": "issue",
   "data": {
     "callable": "global_flows.append_directly",
-    "callable_line": 64,
+    "callable_line": 61,
     "code": 5002,
-    "line": 65,
+    "line": 62,
     "start": 4,
     "end": 5,
     "filename": "global_flows.py",
@@ -53,8 +53,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 65, "start": 13, "end": 27 } ],
-            "origin": { "line": 65, "start": 13, "end": 27 }
+            "tito_positions": [ { "line": 62, "start": 13, "end": 27 } ],
+            "origin": { "line": 62, "start": 13, "end": 27 }
           }
         ]
       },
@@ -70,7 +70,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 65, "start": 4, "end": 5 }
+            "origin": { "line": 62, "start": 4, "end": 5 }
           }
         ]
       }
@@ -90,9 +90,9 @@
   "kind": "issue",
   "data": {
     "callable": "global_flows.append_indirectly",
-    "callable_line": 72,
+    "callable_line": 69,
     "code": 5002,
-    "line": 73,
+    "line": 70,
     "start": 20,
     "end": 34,
     "filename": "global_flows.py",
@@ -111,7 +111,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 73, "start": 20, "end": 34 }
+            "origin": { "line": 70, "start": 20, "end": 34 }
           }
         ]
       },
@@ -130,10 +130,10 @@
               }
             ],
             "call": {
-              "position": { "line": 73, "start": 20, "end": 34 },
+              "position": { "line": 70, "start": 20, "end": 34 },
               "resolves_to": [ "global_flows.append_argument" ],
               "port": "formal(arg, position=0)",
-              "call_site": "73:4-73:35"
+              "call_site": "70:4-70:35"
             }
           }
         ]
@@ -155,9 +155,9 @@
   "kind": "issue",
   "data": {
     "callable": "global_flows.global_source",
-    "callable_line": 79,
+    "callable_line": 76,
     "code": 5002,
-    "line": 80,
+    "line": 77,
     "start": 15,
     "end": 22,
     "filename": "global_flows.py",
@@ -178,7 +178,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 80, "start": 15, "end": 22 }
+            "origin": { "line": 77, "start": 15, "end": 22 }
           }
         ]
       },
@@ -195,8 +195,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 80, "start": 15, "end": 22 },
-            "call_site": "80:4-80:23"
+            "origin": { "line": 77, "start": 15, "end": 22 },
+            "call_site": "77:4-77:23"
           }
         ]
       }
@@ -216,7 +216,7 @@
   "data": {
     "callable": "global_flows.indirectly_update_x_arg1",
     "filename": "global_flows.py",
-    "callable_line": 36,
+    "callable_line": 34,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -231,8 +231,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 37, "start": 19, "end": 22 } ],
-            "origin": { "line": 37, "start": 16, "end": 17 }
+            "tito_positions": [ { "line": 35, "start": 19, "end": 22 } ],
+            "origin": { "line": 35, "start": 16, "end": 17 }
           }
         ]
       }
@@ -244,7 +244,7 @@
   "data": {
     "callable": "global_flows.indirectly_update_x_arg2",
     "filename": "global_flows.py",
-    "callable_line": 48,
+    "callable_line": 46,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -259,8 +259,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 49, "start": 16, "end": 19 } ],
-            "origin": { "line": 49, "start": 21, "end": 22 }
+            "tito_positions": [ { "line": 47, "start": 16, "end": 19 } ],
+            "origin": { "line": 47, "start": 21, "end": 22 }
           }
         ]
       }
@@ -297,7 +297,7 @@
   "data": {
     "callable": "global_flows.update_arg2",
     "filename": "global_flows.py",
-    "callable_line": 13,
+    "callable_line": 12,
     "tito": [
       {
         "port": "formal(arg1, position=0)",
@@ -321,9 +321,9 @@
   "kind": "issue",
   "data": {
     "callable": "global_flows.update_x_at_arg1",
-    "callable_line": 20,
+    "callable_line": 18,
     "code": 5002,
-    "line": 21,
+    "line": 19,
     "start": 16,
     "end": 17,
     "filename": "global_flows.py",
@@ -343,8 +343,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 21, "start": 19, "end": 33 } ],
-            "origin": { "line": 21, "start": 19, "end": 33 }
+            "tito_positions": [ { "line": 19, "start": 19, "end": 33 } ],
+            "origin": { "line": 19, "start": 19, "end": 33 }
           }
         ]
       },
@@ -360,7 +360,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 21, "start": 16, "end": 17 }
+            "origin": { "line": 19, "start": 16, "end": 17 }
           }
         ]
       }
@@ -380,9 +380,9 @@
   "kind": "issue",
   "data": {
     "callable": "global_flows.update_x_at_arg2",
-    "callable_line": 28,
+    "callable_line": 26,
     "code": 5002,
-    "line": 29,
+    "line": 27,
     "start": 32,
     "end": 33,
     "filename": "global_flows.py",
@@ -402,8 +402,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 29, "start": 16, "end": 30 } ],
-            "origin": { "line": 29, "start": 16, "end": 30 }
+            "tito_positions": [ { "line": 27, "start": 16, "end": 30 } ],
+            "origin": { "line": 27, "start": 16, "end": 30 }
           }
         ]
       },
@@ -419,7 +419,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 29, "start": 32, "end": 33 }
+            "origin": { "line": 27, "start": 32, "end": 33 }
           }
         ]
       }
@@ -439,9 +439,9 @@
   "kind": "issue",
   "data": {
     "callable": "global_flows.x_tainted_indirectly_arg1",
-    "callable_line": 40,
+    "callable_line": 38,
     "code": 5002,
-    "line": 41,
+    "line": 39,
     "start": 29,
     "end": 43,
     "filename": "global_flows.py",
@@ -460,7 +460,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 41, "start": 29, "end": 43 }
+            "origin": { "line": 39, "start": 29, "end": 43 }
           }
         ]
       },
@@ -479,10 +479,10 @@
               }
             ],
             "call": {
-              "position": { "line": 41, "start": 29, "end": 43 },
+              "position": { "line": 39, "start": 29, "end": 43 },
               "resolves_to": [ "global_flows.indirectly_update_x_arg1" ],
               "port": "formal(arg, position=0)",
-              "call_site": "41:4-41:44"
+              "call_site": "39:4-39:44"
             }
           }
         ]
@@ -504,9 +504,9 @@
   "kind": "issue",
   "data": {
     "callable": "global_flows.x_tainted_indirectly_arg2",
-    "callable_line": 52,
+    "callable_line": 50,
     "code": 5002,
-    "line": 53,
+    "line": 51,
     "start": 29,
     "end": 43,
     "filename": "global_flows.py",
@@ -525,7 +525,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 53, "start": 29, "end": 43 }
+            "origin": { "line": 51, "start": 29, "end": 43 }
           }
         ]
       },
@@ -544,10 +544,10 @@
               }
             ],
             "call": {
-              "position": { "line": 53, "start": 29, "end": 43 },
+              "position": { "line": 51, "start": 29, "end": 43 },
               "resolves_to": [ "global_flows.indirectly_update_x_arg2" ],
               "port": "formal(arg, position=0)",
-              "call_site": "53:4-53:44"
+              "call_site": "51:4-51:44"
             }
           }
         ]
@@ -620,7 +620,7 @@
   "data": {
     "callable": "global_flows.MyList.append",
     "filename": "global_flows.py",
-    "callable_line": 57,
+    "callable_line": 55,
     "tito": [
       {
         "port": "formal(item, position=1)",

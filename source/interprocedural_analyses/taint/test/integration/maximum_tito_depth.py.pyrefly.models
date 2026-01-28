@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "maximum_tito_depth.issue",
-    "callable_line": 67,
+    "callable_line": 66,
     "code": 1000,
-    "line": 70,
+    "line": 69,
     "start": 15,
     "end": 16,
     "filename": "maximum_tito_depth.py",
@@ -24,8 +24,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 69, "start": 19, "end": 20 } ],
-            "origin": { "line": 68, "start": 8, "end": 22 }
+            "tito_positions": [ { "line": 68, "start": 19, "end": 20 } ],
+            "origin": { "line": 67, "start": 8, "end": 22 }
           }
         ]
       },
@@ -41,8 +41,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 70, "start": 15, "end": 16 },
-            "call_site": "70:4-70:17"
+            "origin": { "line": 69, "start": 15, "end": 16 },
+            "call_site": "69:4-69:17"
           }
         ]
       }
@@ -155,7 +155,7 @@
   "data": {
     "callable": "maximum_tito_depth.tito_obscure",
     "filename": "maximum_tito_depth.py",
-    "callable_line": 56,
+    "callable_line": 55,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -171,7 +171,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 59, "start": 18, "end": 19 } ],
+            "tito_positions": [ { "line": 58, "start": 18, "end": 19 } ],
             "tito": {}
           }
         ]

@@ -7,6 +7,7 @@
 import functools
 import multiprocessing
 import typing
+
 from pysa import _test_sink, _test_source
 
 
@@ -101,8 +102,10 @@ def multiprocessing_no_sink(x):
 
 
 def multiprocessing_tainted_access_path():
-    multiprocessing.Process(target=sink_on_foo, args=(MyClass(foo=_test_source()), 1))  # Issue.
-    multiprocessing.Process(target=sink_on_foo, args=(MyClass(bar=_test_source()), 1))  # No issue.
+    # Issue.
+    multiprocessing.Process(target=sink_on_foo, args=(MyClass(foo=_test_source()), 1))
+    # No issue.
+    multiprocessing.Process(target=sink_on_foo, args=(MyClass(bar=_test_source()), 1))
 
 
 class PartialDecorator:

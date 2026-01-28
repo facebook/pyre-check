@@ -5,6 +5,7 @@
 
 from typing import Any
 
+
 def test1_d1(f, *args, **kwargs) -> Any:
     pass
 
@@ -135,6 +136,7 @@ def test_local_variable_method_decorator():
 
 
 # Test that we can still match on ignored decorators (`@IgnoreDecorator`) with DSL queries.
+
 
 def decorator_ignored(f):
     return f

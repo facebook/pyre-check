@@ -4,14 +4,14 @@ Higher order call graphs
   "callable": "model_query_parameters_viatypeof.test1_alarm1",
   "returned_callables": [],
   "calls": {
-    "15:13-15:27": {
+    "16:13-16:27": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "16:4-16:23": {
+    "17:4-17:23": {
       "call": {
         "calls": [
           {
@@ -28,14 +28,14 @@ Higher order call graphs
   "callable": "model_query_parameters_viatypeof.test1_alarm2",
   "returned_callables": [],
   "calls": {
-    "20:31-20:45": {
+    "21:31-21:45": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "21:4-21:23": {
+    "22:4-22:23": {
       "call": {
         "calls": [
           {
@@ -52,14 +52,14 @@ Higher order call graphs
   "callable": "model_query_parameters_viatypeof.test1_alarm3",
   "returned_callables": [],
   "calls": {
-    "25:13-25:27": {
+    "26:13-26:27": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "26:4-26:25": {
+    "27:4-27:25": {
       "call": {
         "calls": [
           {
@@ -76,7 +76,7 @@ Higher order call graphs
   "callable": "model_query_parameters_viatypeof.test1_noalarm1",
   "returned_callables": [],
   "calls": {
-    "30:4-30:25": {
+    "31:4-31:25": {
       "call": {
         "calls": [
           {
@@ -93,14 +93,14 @@ Higher order call graphs
   "callable": "model_query_parameters_viatypeof.test2_alarm1",
   "returned_callables": [],
   "calls": {
-    "46:13-46:27": {
+    "47:13-47:27": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "47:4-47:19": {
+    "48:4-48:19": {
       "call": {
         "calls": [
           {
@@ -119,14 +119,14 @@ Higher order call graphs
   "callable": "model_query_parameters_viatypeof.test2_alarm2",
   "returned_callables": [],
   "calls": {
-    "51:24-51:38": {
+    "52:24-52:38": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "52:4-52:19": {
+    "53:4-53:19": {
       "call": {
         "calls": [
           {
@@ -145,14 +145,14 @@ Higher order call graphs
   "callable": "model_query_parameters_viatypeof.test2_alarm3",
   "returned_callables": [],
   "calls": {
-    "56:17-56:31": {
+    "57:17-57:31": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "57:4-57:21": {
+    "58:4-58:21": {
       "call": {
         "calls": [
           {
@@ -171,14 +171,14 @@ Higher order call graphs
   "callable": "model_query_parameters_viatypeof.test2_alarm4",
   "returned_callables": [],
   "calls": {
-    "61:13-61:27": {
+    "62:13-62:27": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "62:4-62:19": {
+    "63:4-63:19": {
       "call": {
         "calls": [
           {
@@ -197,14 +197,14 @@ Higher order call graphs
   "callable": "model_query_parameters_viatypeof.test2_alarm5",
   "returned_callables": [],
   "calls": {
-    "66:29-66:43": {
+    "67:29-67:43": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "67:4-67:19": {
+    "68:4-68:19": {
       "call": {
         "calls": [
           {
@@ -223,14 +223,14 @@ Higher order call graphs
   "callable": "model_query_parameters_viatypeof.test2_alarm6",
   "returned_callables": [],
   "calls": {
-    "71:15-71:29": {
+    "72:15-72:29": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "72:4-72:21": {
+    "73:4-73:21": {
       "call": {
         "calls": [
           {
@@ -249,7 +249,7 @@ Higher order call graphs
   "callable": "model_query_parameters_viatypeof.test2_noalarm1",
   "returned_callables": [],
   "calls": {
-    "76:4-76:21": {
+    "77:4-77:21": {
       "call": {
         "calls": [
           {
@@ -268,7 +268,7 @@ Higher order call graphs
   "callable": "model_query_parameters_viatypeof.test2_noalarm2",
   "returned_callables": [],
   "calls": {
-    "80:4-80:27": {
+    "81:4-81:27": {
       "call": {
         "calls": [
           {
@@ -281,7 +281,7 @@ Higher order call graphs
         ]
       }
     },
-    "80:17-80:26": {
+    "81:17-81:26": {
       "call": {
         "new_calls": [
           {
@@ -307,14 +307,14 @@ Higher order call graphs
   "callable": "model_query_parameters_viatypeof.test3_alarm1",
   "returned_callables": [],
   "calls": {
-    "88:13-88:27": {
+    "89:13-89:27": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "89:4-89:23": {
+    "90:4-90:23": {
       "call": {
         "calls": [
           {
@@ -331,14 +331,14 @@ Higher order call graphs
   "callable": "model_query_parameters_viatypeof.test3_alarm2",
   "returned_callables": [],
   "calls": {
-    "93:31-93:45": {
+    "94:31-94:45": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "94:4-94:23": {
+    "95:4-95:23": {
       "call": {
         "calls": [
           {
@@ -355,14 +355,14 @@ Higher order call graphs
   "callable": "model_query_parameters_viatypeof.test3_alarm3",
   "returned_callables": [],
   "calls": {
-    "98:13-98:27": {
+    "99:13-99:27": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "99:4-99:25": {
+    "100:4-100:25": {
       "call": {
         "calls": [
           {
@@ -379,7 +379,7 @@ Higher order call graphs
   "callable": "model_query_parameters_viatypeof.test3_noalarm1",
   "returned_callables": [],
   "calls": {
-    "103:4-103:25": {
+    "104:4-104:25": {
       "call": {
         "calls": [
           {

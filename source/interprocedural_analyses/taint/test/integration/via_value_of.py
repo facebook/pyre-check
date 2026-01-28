@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import enum
+
 from pysa import _test_sink, _test_source
 
 
@@ -137,7 +138,8 @@ def test_kwargs_parameter():
 def test_args_kwargs_parameter():
     args = ["1"]
     kwargs = {"second": "2"}
-    return return_via_second_parameter(*args, **kwargs) # pyrefly: ignore[bad-keyword-argument]
+    # pyrefly: ignore[bad-keyword-argument]
+    return return_via_second_parameter(*args, **kwargs)
 
 
 def test_positional_kwargs_parameter():
@@ -152,12 +154,14 @@ def test_named_kwargs_parameter():
 
 def test_unknown_named_args(b, e):
     args = [e]
-    return return_via_second_parameter(*args, second=b) # pyrefly: ignore[bad-keyword-argument]
+    # pyrefly: ignore[bad-keyword-argument]
+    return return_via_second_parameter(*args, second=b)
 
 
 def test_unknown_named_kwargs(b, e):
     kwargs = {"fifth": e}
-    return return_via_second_parameter(**kwargs, second=b) # pyrefly: ignore[missing-argument]
+    # pyrefly: ignore[missing-argument]
+    return return_via_second_parameter(**kwargs, second=b)
 
 
 def test_unknown_positional_args(a, b, c):
@@ -172,12 +176,14 @@ def test_unknown_positional_kwargs(a, b, c):
 
 def test_unknown_positional_named_args1(a, b, c):
     args = [c]
-    return return_via_second_parameter(a, *args, second=b) # pyrefly: ignore[bad-keyword-argument]
+    # pyrefly: ignore[bad-keyword-argument]
+    return return_via_second_parameter(a, *args, second=b)
 
 
 def test_unknown_positional_named_args2(a, b, c, d):
     args = [d]
-    return return_via_second_parameter(a, c, *args, second=b) # pyrefly: ignore[bad-keyword-argument]
+    # pyrefly: ignore[bad-keyword-argument]
+    return return_via_second_parameter(a, c, *args, second=b)
 
 
 def test_unknown_positional_named_kwargs1(a, b, c):
@@ -187,19 +193,22 @@ def test_unknown_positional_named_kwargs1(a, b, c):
 
 def test_unknown_positional_named_kwargs2(a, b, c, d):
     kwargs = {"fourth": d}
-    return return_via_second_parameter(a, c, **kwargs, second=b) # pyrefly: ignore[bad-keyword-argument]
+    # pyrefly: ignore[bad-keyword-argument]
+    return return_via_second_parameter(a, c, **kwargs, second=b)
 
 
 def test_unknown_named_args_kwargs(a, b, c):
     args = [a]
     kwargs = {"third": c}
-    return return_via_second_parameter(*args, **kwargs, second=b) # pyrefly: ignore[bad-keyword-argument]
+    # pyrefly: ignore[bad-keyword-argument]
+    return return_via_second_parameter(*args, **kwargs, second=b)
 
 
 def test_unknown_positional_named_args_kwargs1(a, b, c, d, e):
     args = [d]
     kwargs = {"fifth": e}
-    return return_via_second_parameter(a, *args, **kwargs, second=b) # pyrefly: ignore[bad-keyword-argument]
+    # pyrefly: ignore[bad-keyword-argument]
+    return return_via_second_parameter(a, *args, **kwargs, second=b)
 
 
 def return_via_keyword_only(*, a, b):

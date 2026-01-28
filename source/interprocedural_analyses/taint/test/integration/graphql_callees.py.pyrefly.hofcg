@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "graphql_callees.return_graphql_entrypoint_1",
   "returned_callables": [],
   "calls": {
-    "35:17-35:50": {
+    "36:17-36:50": {
       "call": {
         "new_calls": [
           {
@@ -25,14 +25,14 @@ Higher order call graphs
         ]
       }
     },
-    "35:35-35:49": {
+    "36:35-36:49": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "36:4-36:21": {
+    "37:4-37:21": {
       "return": {
         "arguments_mapping": [ "ReturnExpression" ],
         "call_targets": [
@@ -57,7 +57,7 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "33:1-33:21|artificial-call|for-decorated-target": {
+    "34:1-34:21|artificial-call|for-decorated-target": {
       "call": {
         "calls": [
           {
@@ -68,7 +68,7 @@ Higher order call graphs
         ]
       }
     },
-    "34:0-36:21|identifier|return_graphql_entrypoint_1": {
+    "35:0-37:21|identifier|return_graphql_entrypoint_1": {
       "identifier": {
         "if_called": {
           "calls": [
@@ -87,7 +87,7 @@ Higher order call graphs
   "callable": "graphql_callees.return_graphql_entrypoint_2",
   "returned_callables": [],
   "calls": {
-    "42:4-42:44": {
+    "43:4-43:44": {
       "return": {
         "arguments_mapping": [ "ReturnExpression" ],
         "call_targets": [
@@ -100,7 +100,7 @@ Higher order call graphs
         ]
       }
     },
-    "42:11-42:44": {
+    "43:11-43:44": {
       "call": {
         "new_calls": [
           {
@@ -121,7 +121,7 @@ Higher order call graphs
         ]
       }
     },
-    "42:29-42:43": {
+    "43:29-43:43": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -140,7 +140,7 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "39:1-39:21|artificial-call|for-decorated-target": {
+    "40:1-40:21|artificial-call|for-decorated-target": {
       "call": {
         "calls": [
           {
@@ -151,7 +151,7 @@ Higher order call graphs
         ]
       }
     },
-    "40:0-42:44|identifier|return_graphql_entrypoint_2": {
+    "41:0-43:44|identifier|return_graphql_entrypoint_2": {
       "identifier": {
         "if_called": {
           "calls": [
@@ -170,7 +170,7 @@ Higher order call graphs
   "callable": "graphql_callees.return_graphql_entrypoint_3",
   "returned_callables": [],
   "calls": {
-    "48:4-48:21": {
+    "49:4-49:21": {
       "return": {
         "arguments_mapping": [ "ReturnExpression" ],
         "call_targets": [
@@ -195,7 +195,7 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "45:1-45:21|artificial-call|for-decorated-target": {
+    "46:1-46:21|artificial-call|for-decorated-target": {
       "call": {
         "calls": [
           {
@@ -206,7 +206,7 @@ Higher order call graphs
         ]
       }
     },
-    "46:0-48:21|identifier|return_graphql_entrypoint_3": {
+    "47:0-49:21|identifier|return_graphql_entrypoint_3": {
       "identifier": {
         "if_called": {
           "calls": [
@@ -225,7 +225,7 @@ Higher order call graphs
   "callable": "graphql_callees.return_graphql_entrypoint_strip_list",
   "returned_callables": [],
   "calls": {
-    "54:17-54:50": {
+    "55:17-55:50": {
       "call": {
         "new_calls": [
           {
@@ -246,14 +246,14 @@ Higher order call graphs
         ]
       }
     },
-    "54:35-54:49": {
+    "55:35-55:49": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "55:4-55:23": {
+    "56:4-56:23": {
       "return": {
         "arguments_mapping": [ "ReturnExpressionElement" ],
         "call_targets": [
@@ -278,7 +278,7 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "51:1-51:21|artificial-call|for-decorated-target": {
+    "52:1-52:21|artificial-call|for-decorated-target": {
       "call": {
         "calls": [
           {
@@ -289,7 +289,7 @@ Higher order call graphs
         ]
       }
     },
-    "52:0-55:23|identifier|return_graphql_entrypoint_strip_list": {
+    "53:0-56:23|identifier|return_graphql_entrypoint_strip_list": {
       "identifier": {
         "if_called": {
           "calls": [
@@ -308,7 +308,7 @@ Higher order call graphs
   "callable": "graphql_callees.return_graphql_entrypoint_strip_list_with_sink",
   "returned_callables": [],
   "calls": {
-    "63:4-63:22": {
+    "64:4-64:22": {
       "return": {
         "arguments_mapping": [ "ReturnExpressionElement" ],
         "call_targets": [
@@ -333,7 +333,7 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "58:1-58:21|artificial-call|for-decorated-target": {
+    "59:1-59:21|artificial-call|for-decorated-target": {
       "call": {
         "calls": [
           {
@@ -344,7 +344,7 @@ Higher order call graphs
         ]
       }
     },
-    "59:0-63:22|identifier|return_graphql_entrypoint_strip_list_with_sink": {
+    "60:0-64:22|identifier|return_graphql_entrypoint_strip_list_with_sink": {
       "identifier": {
         "if_called": {
           "calls": [
@@ -363,7 +363,7 @@ Higher order call graphs
   "callable": "graphql_callees.GraphQLEntrypoint.callee",
   "returned_callables": [],
   "calls": {
-    "22:8-22:24": {
+    "23:8-23:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -383,7 +383,7 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "20:5-20:21|artificial-call|for-decorated-target": {
+    "21:5-21:21|artificial-call|for-decorated-target": {
       "call": {
         "calls": [
           {
@@ -394,7 +394,7 @@ Higher order call graphs
         ]
       }
     },
-    "21:4-22:24|identifier|callee": {
+    "22:4-23:24|identifier|callee": {
       "identifier": {
         "if_called": {
           "calls": [
@@ -414,7 +414,7 @@ Higher order call graphs
   "callable": "graphql_callees.GraphQLEntrypoint.not_callee",
   "returned_callables": [],
   "calls": {
-    "26:8-26:24": {
+    "27:8-27:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }

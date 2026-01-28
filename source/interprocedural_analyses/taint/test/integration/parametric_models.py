@@ -6,8 +6,9 @@
 # flake8: noqa
 
 
-from pysa import _test_source
 import random
+
+from pysa import _test_source
 
 
 def f(): ...

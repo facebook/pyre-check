@@ -54,7 +54,7 @@ Higher order call graphs
   "callable": "callables.async_execute_event_processor",
   "returned_callables": [],
   "calls": {
-    "56:18-56:40": {
+    "55:18-55:40": {
       "call": {
         "calls": [
           {
@@ -65,7 +65,7 @@ Higher order call graphs
         ]
       }
     },
-    "56:18-56:40|artificial-call|for-iter": {
+    "55:18-55:40|artificial-call|for-iter": {
       "call": {
         "calls": [
           {
@@ -78,7 +78,7 @@ Higher order call graphs
         ]
       }
     },
-    "56:18-56:40|artificial-call|for-next": {
+    "55:18-55:40|artificial-call|for-next": {
       "call": {
         "calls": [
           {
@@ -91,7 +91,7 @@ Higher order call graphs
         ]
       }
     },
-    "57:20-57:67": {
+    "56:20-56:67": {
       "call": {
         "new_calls": [
           {
@@ -111,14 +111,14 @@ Higher order call graphs
         ]
       }
     },
-    "57:42-57:56": {
+    "56:42-56:56": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "58:14-58:35": {
+    "57:14-57:35": {
       "call": {
         "calls": [
           {
@@ -131,7 +131,7 @@ Higher order call graphs
         ]
       }
     },
-    "59:14-59:44": {
+    "58:14-58:44": {
       "call": {
         "calls": [
           {

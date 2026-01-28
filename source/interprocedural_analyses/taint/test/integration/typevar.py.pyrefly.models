@@ -54,7 +54,7 @@
   "data": {
     "callable": "typevar.issue",
     "filename": "typevar.py",
-    "callable_line": 16,
+    "callable_line": 18,
     "sinks": [
       {
         "port": "formal(foo, position=0)[tainted]",
@@ -69,8 +69,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 17, "start": 15, "end": 26 },
-            "call_site": "17:4-17:27"
+            "origin": { "line": 19, "start": 15, "end": 26 },
+            "call_site": "19:4-19:27"
           }
         ]
       }
@@ -92,9 +92,9 @@
   "kind": "issue",
   "data": {
     "callable": "typevar.issue",
-    "callable_line": 16,
+    "callable_line": 18,
     "code": 5002,
-    "line": 17,
+    "line": 19,
     "start": 15,
     "end": 26,
     "filename": "typevar.py",
@@ -115,7 +115,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 17, "start": 15, "end": 26 }
+            "origin": { "line": 19, "start": 15, "end": 26 }
           }
         ]
       },
@@ -132,8 +132,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 17, "start": 15, "end": 26 },
-            "call_site": "17:4-17:27"
+            "origin": { "line": 19, "start": 15, "end": 26 },
+            "call_site": "19:4-19:27"
           }
         ]
       }
@@ -260,7 +260,7 @@
   "data": {
     "callable": "typevar.Foo.__init__",
     "filename": "typevar.py",
-    "callable_line": 13,
+    "callable_line": 14,
     "tito": [
       {
         "port": "formal(tainted, position=1)",

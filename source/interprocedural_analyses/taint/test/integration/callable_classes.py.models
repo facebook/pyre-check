@@ -4,7 +4,7 @@
   "data": {
     "callable": "callable_classes.bar",
     "filename": "callable_classes.py",
-    "callable_line": 34,
+    "callable_line": 30,
     "sources": [
       {
         "port": "result",
@@ -22,7 +22,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "b" } ],
-            "origin": { "line": 36, "start": 11, "end": 17 },
+            "origin": { "line": 32, "start": 11, "end": 17 },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false
           }
@@ -36,7 +36,7 @@
   "data": {
     "callable": "callable_classes.foo",
     "filename": "callable_classes.py",
-    "callable_line": 21,
+    "callable_line": 19,
     "sources": [
       {
         "port": "result",
@@ -54,7 +54,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "a" } ],
-            "origin": { "line": 22, "start": 11, "end": 17 },
+            "origin": { "line": 20, "start": 11, "end": 17 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }
@@ -68,7 +68,7 @@
   "data": {
     "callable": "callable_classes.CallableProtocol.__call__",
     "filename": "callable_classes.py",
-    "callable_line": 26,
+    "callable_line": 24,
     "sources": [
       {
         "port": "result",

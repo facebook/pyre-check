@@ -5,8 +5,9 @@
 
 # flake8: noqa
 
+from typing import Union, overload
+
 from pysa import _test_sink, _test_source
-from typing import overload, Union
 
 
 @overload

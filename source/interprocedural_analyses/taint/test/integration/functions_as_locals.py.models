@@ -23,9 +23,9 @@
   "kind": "issue",
   "data": {
     "callable": "functions_as_locals.a_or_b",
-    "callable_line": 52,
+    "callable_line": 53,
     "code": 5002,
-    "line": 58,
+    "line": 59,
     "start": 6,
     "end": 20,
     "filename": "functions_as_locals.py",
@@ -44,7 +44,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 58, "start": 6, "end": 20 }
+            "origin": { "line": 59, "start": 6, "end": 20 }
           }
         ]
       },
@@ -63,10 +63,10 @@
               }
             ],
             "call": {
-              "position": { "line": 58, "start": 6, "end": 20 },
+              "position": { "line": 59, "start": 6, "end": 20 },
               "resolves_to": [ "functions_as_locals.barA" ],
               "port": "formal(arg1, position=0)",
-              "call_site": "58:4-58:25"
+              "call_site": "59:4-59:25"
             }
           }
         ]
@@ -88,9 +88,9 @@
   "kind": "issue",
   "data": {
     "callable": "functions_as_locals.a_or_b",
-    "callable_line": 52,
+    "callable_line": 53,
     "code": 5002,
-    "line": 59,
+    "line": 60,
     "start": 10,
     "end": 24,
     "filename": "functions_as_locals.py",
@@ -109,7 +109,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 59, "start": 10, "end": 24 }
+            "origin": { "line": 60, "start": 10, "end": 24 }
           }
         ]
       },
@@ -128,10 +128,10 @@
               }
             ],
             "call": {
-              "position": { "line": 59, "start": 10, "end": 24 },
+              "position": { "line": 60, "start": 10, "end": 24 },
               "resolves_to": [ "functions_as_locals.barB" ],
               "port": "formal(arg2, position=1)",
-              "call_site": "59:4-59:25"
+              "call_site": "60:4-60:25"
             }
           }
         ]
@@ -154,7 +154,7 @@
   "data": {
     "callable": "functions_as_locals.barA",
     "filename": "functions_as_locals.py",
-    "callable_line": 44,
+    "callable_line": 45,
     "sinks": [
       {
         "port": "formal(arg1, position=0)",
@@ -169,8 +169,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 45, "start": 15, "end": 19 },
-            "call_site": "45:4-45:20"
+            "origin": { "line": 46, "start": 15, "end": 19 },
+            "call_site": "46:4-46:20"
           }
         ]
       }
@@ -182,7 +182,7 @@
   "data": {
     "callable": "functions_as_locals.barB",
     "filename": "functions_as_locals.py",
-    "callable_line": 48,
+    "callable_line": 49,
     "sinks": [
       {
         "port": "formal(arg2, position=1)",
@@ -197,8 +197,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 49, "start": 15, "end": 19 },
-            "call_site": "49:4-49:20"
+            "origin": { "line": 50, "start": 15, "end": 19 },
+            "call_site": "50:4-50:20"
           }
         ]
       }
@@ -210,7 +210,7 @@
   "data": {
     "callable": "functions_as_locals.foo",
     "filename": "functions_as_locals.py",
-    "callable_line": 11,
+    "callable_line": 12,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -225,8 +225,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 12, "start": 15, "end": 18 },
-            "call_site": "12:4-12:19"
+            "origin": { "line": 13, "start": 15, "end": 18 },
+            "call_site": "13:4-13:19"
           }
         ]
       }
@@ -237,9 +237,9 @@
   "kind": "issue",
   "data": {
     "callable": "functions_as_locals.foo_as_local",
-    "callable_line": 15,
+    "callable_line": 16,
     "code": 5002,
-    "line": 18,
+    "line": 19,
     "start": 8,
     "end": 9,
     "filename": "functions_as_locals.py",
@@ -258,7 +258,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 16, "start": 8, "end": 22 }
+            "origin": { "line": 17, "start": 8, "end": 22 }
           }
         ]
       },
@@ -277,10 +277,10 @@
               }
             ],
             "call": {
-              "position": { "line": 18, "start": 8, "end": 9 },
+              "position": { "line": 19, "start": 8, "end": 9 },
               "resolves_to": [ "functions_as_locals.foo" ],
               "port": "formal(arg, position=0)",
-              "call_site": "18:4-18:10"
+              "call_site": "19:4-19:10"
             }
           }
         ]
@@ -302,9 +302,9 @@
   "kind": "issue",
   "data": {
     "callable": "functions_as_locals.foo_as_local",
-    "callable_line": 15,
+    "callable_line": 16,
     "code": 5002,
-    "line": 19,
+    "line": 20,
     "start": 6,
     "end": 7,
     "filename": "functions_as_locals.py",
@@ -323,7 +323,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 16, "start": 8, "end": 22 }
+            "origin": { "line": 17, "start": 8, "end": 22 }
           }
         ]
       },
@@ -342,10 +342,10 @@
               }
             ],
             "call": {
-              "position": { "line": 19, "start": 6, "end": 7 },
+              "position": { "line": 20, "start": 6, "end": 7 },
               "resolves_to": [ "functions_as_locals.foo" ],
               "port": "formal(arg, position=0)",
-              "call_site": "19:4-19:8"
+              "call_site": "20:4-20:8"
             }
           }
         ]
@@ -367,9 +367,9 @@
   "kind": "issue",
   "data": {
     "callable": "functions_as_locals.local_function_with_method_sink",
-    "callable_line": 32,
+    "callable_line": 33,
     "code": 5002,
-    "line": 35,
+    "line": 36,
     "start": 8,
     "end": 9,
     "filename": "functions_as_locals.py",
@@ -388,7 +388,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 34, "start": 8, "end": 22 }
+            "origin": { "line": 35, "start": 8, "end": 22 }
           }
         ]
       },
@@ -407,10 +407,10 @@
               }
             ],
             "call": {
-              "position": { "line": 35, "start": 8, "end": 9 },
+              "position": { "line": 36, "start": 8, "end": 9 },
               "resolves_to": [ "functions_as_locals.C.m" ],
               "port": "formal(arg, position=1)",
-              "call_site": "35:4-35:10"
+              "call_site": "36:4-36:10"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -434,9 +434,9 @@
   "kind": "issue",
   "data": {
     "callable": "functions_as_locals.local_function_with_method_sink",
-    "callable_line": 32,
+    "callable_line": 33,
     "code": 5002,
-    "line": 36,
+    "line": 37,
     "start": 6,
     "end": 7,
     "filename": "functions_as_locals.py",
@@ -455,7 +455,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 34, "start": 8, "end": 22 }
+            "origin": { "line": 35, "start": 8, "end": 22 }
           }
         ]
       },
@@ -474,10 +474,10 @@
               }
             ],
             "call": {
-              "position": { "line": 36, "start": 6, "end": 7 },
+              "position": { "line": 37, "start": 6, "end": 7 },
               "resolves_to": [ "functions_as_locals.C.m" ],
               "port": "formal(arg, position=1)",
-              "call_site": "36:4-36:8"
+              "call_site": "37:4-37:8"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -502,7 +502,7 @@
   "data": {
     "callable": "functions_as_locals.local_tito",
     "filename": "functions_as_locals.py",
-    "callable_line": 22,
+    "callable_line": 23,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -516,10 +516,10 @@
               }
             ],
             "call": {
-              "position": { "line": 24, "start": 6, "end": 9 },
+              "position": { "line": 25, "start": 6, "end": 9 },
               "resolves_to": [ "functions_as_locals.foo" ],
               "port": "formal(arg, position=0)",
-              "call_site": "24:4-24:10"
+              "call_site": "25:4-25:10"
             }
           }
         ]
@@ -532,7 +532,7 @@
   "data": {
     "callable": "functions_as_locals.method_tito",
     "filename": "functions_as_locals.py",
-    "callable_line": 39,
+    "callable_line": 40,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -546,10 +546,10 @@
               }
             ],
             "call": {
-              "position": { "line": 41, "start": 6, "end": 9 },
+              "position": { "line": 42, "start": 6, "end": 9 },
               "resolves_to": [ "functions_as_locals.C.m" ],
               "port": "formal(arg, position=1)",
-              "call_site": "41:4-41:10"
+              "call_site": "42:4-42:10"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -787,7 +787,7 @@
   "data": {
     "callable": "functions_as_locals.C.m",
     "filename": "functions_as_locals.py",
-    "callable_line": 28,
+    "callable_line": 29,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -802,10 +802,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 29, "start": 19, "end": 22 },
+            "origin": { "line": 30, "start": 19, "end": 22 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "29:8-29:23"
+            "call_site": "30:8-30:23"
           }
         ]
       }

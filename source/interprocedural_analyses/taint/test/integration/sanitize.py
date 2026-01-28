@@ -3,11 +3,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# flake8: noqa
-from pysa import _cookies, _rce, _sql, _test_sink, _test_source, _user_controlled
+import random
 from typing import Sequence, TypeVar
 
-import random
+# flake8: noqa
+from pysa import _cookies, _rce, _sql, _test_sink, _test_source, _user_controlled
 
 T = TypeVar("T")
 

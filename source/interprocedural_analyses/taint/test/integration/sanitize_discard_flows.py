@@ -6,16 +6,13 @@
 # Check that flows that can never match any rule are properly discarded.
 
 
-def a_source():
-    ...
+def a_source(): ...
 
 
-def a_sink(x):
-    ...
+def a_sink(x): ...
 
 
-def b_sink(x):
-    ...
+def b_sink(x): ...
 
 
 def sanitize_a_source_tito(x):

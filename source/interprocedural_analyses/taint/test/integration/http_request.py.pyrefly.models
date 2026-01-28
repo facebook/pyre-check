@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "http_request.request_get_flows_to_sink",
-    "callable_line": 23,
+    "callable_line": 22,
     "code": 5002,
-    "line": 24,
+    "line": 23,
     "start": 15,
     "end": 26,
     "filename": "http_request.py",
@@ -26,7 +26,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 24, "start": 15, "end": 26 }
+            "origin": { "line": 23, "start": 15, "end": 26 }
           }
         ]
       },
@@ -43,8 +43,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 24, "start": 15, "end": 26 },
-            "call_site": "24:4-24:27"
+            "origin": { "line": 23, "start": 15, "end": 26 },
+            "call_site": "23:4-23:27"
           }
         ]
       }
@@ -63,9 +63,9 @@
   "kind": "issue",
   "data": {
     "callable": "http_request.test_trace_has_no_tito",
-    "callable_line": 18,
+    "callable_line": 17,
     "code": 5002,
-    "line": 20,
+    "line": 19,
     "start": 15,
     "end": 26,
     "filename": "http_request.py",
@@ -86,7 +86,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 20, "start": 15, "end": 26 }
+            "origin": { "line": 19, "start": 15, "end": 26 }
           }
         ]
       },
@@ -103,8 +103,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 20, "start": 15, "end": 26 },
-            "call_site": "20:4-20:27"
+            "origin": { "line": 19, "start": 15, "end": 26 },
+            "call_site": "19:4-19:27"
           }
         ]
       }
@@ -123,9 +123,9 @@
   "kind": "issue",
   "data": {
     "callable": "http_request.test_untainted_assign",
-    "callable_line": 13,
+    "callable_line": 12,
     "code": 5002,
-    "line": 15,
+    "line": 14,
     "start": 15,
     "end": 26,
     "filename": "http_request.py",
@@ -146,7 +146,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 15, "start": 15, "end": 26 }
+            "origin": { "line": 14, "start": 15, "end": 26 }
           }
         ]
       },
@@ -163,8 +163,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 15, "start": 15, "end": 26 },
-            "call_site": "15:4-15:27"
+            "origin": { "line": 14, "start": 15, "end": 26 },
+            "call_site": "14:4-14:27"
           }
         ]
       }

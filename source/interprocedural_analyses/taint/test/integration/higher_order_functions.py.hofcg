@@ -510,7 +510,7 @@ Higher order call graphs
   "callable": "higher_order_functions.test_callable_default_value",
   "returned_callables": [],
   "calls": {
-    "201:36-201:48|artificial-attribute-access|qualification:pysa._test_source": {
+    "201:34-201:46|artificial-attribute-access|qualification:pysa._test_source": {
       "attribute_access": {
         "is_attribute": true,
         "if_called": {

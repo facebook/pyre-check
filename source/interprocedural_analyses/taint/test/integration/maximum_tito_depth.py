@@ -49,8 +49,7 @@ def tito_min_disjoint_max_consecutive(x, y):
 
 
 class C:
-    def tito(self, parameter):
-        ...
+    def tito(self, parameter): ...
 
 
 def tito_obscure(x):

@@ -4,7 +4,7 @@
   "data": {
     "callable": "partial.NestedDefineDecorator.__get__.wrapper",
     "filename": "partial.py",
-    "callable_line": 137,
+    "callable_line": 140,
     "tito": [
       {
         "port": "captured_variable(self, parameter)[_func]",
@@ -22,7 +22,7 @@
               { "always-via": "obscure:unknown-callee" },
               { "always-via": "captured-variable" }
             ],
-            "tito_positions": [ { "line": 139, "start": 19, "end": 23 } ],
+            "tito_positions": [ { "line": 142, "start": 19, "end": 23 } ],
             "tito": {
               "caller_interval": [ { "lower": 6, "upper": 7 } ],
               "is_self_call": false
@@ -46,7 +46,7 @@
               { "always-via": "obscure:unknown-callee" },
               { "always-via": "captured-variable" }
             ],
-            "tito_positions": [ { "line": 139, "start": 40, "end": 48 } ],
+            "tito_positions": [ { "line": 142, "start": 40, "end": 48 } ],
             "tito": {
               "caller_interval": [ { "lower": 6, "upper": 7 } ],
               "is_self_call": false
@@ -69,7 +69,7 @@
               { "always-via": "tito" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [ { "line": 139, "start": 40, "end": 48 } ],
+            "tito_positions": [ { "line": 142, "start": 40, "end": 48 } ],
             "tito": {
               "caller_interval": [ { "lower": 6, "upper": 7 } ],
               "is_self_call": false
@@ -92,7 +92,7 @@
               { "always-via": "tito" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [ { "line": 139, "start": 33, "end": 38 } ],
+            "tito_positions": [ { "line": 142, "start": 33, "end": 38 } ],
             "tito": {
               "caller_interval": [ { "lower": 6, "upper": 7 } ],
               "is_self_call": false
@@ -108,7 +108,7 @@
   "data": {
     "callable": "partial.a_flows_to_sink",
     "filename": "partial.py",
-    "callable_line": 29,
+    "callable_line": 30,
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -123,8 +123,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 30, "start": 15, "end": 16 },
-            "call_site": "30:4-30:17"
+            "origin": { "line": 31, "start": 15, "end": 16 },
+            "call_site": "31:4-31:17"
           }
         ]
       }
@@ -136,7 +136,7 @@
   "data": {
     "callable": "partial.dunder_call_nested_define_constructor",
     "filename": "partial.py",
-    "callable_line": 155,
+    "callable_line": 158,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -144,7 +144,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 156, "start": 38, "end": 39 } ],
+            "tito_positions": [ { "line": 159, "start": 38, "end": 39 } ],
             "tito": {}
           }
         ]
@@ -155,7 +155,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 156, "start": 35, "end": 36 } ],
+            "tito_positions": [ { "line": 159, "start": 35, "end": 36 } ],
             "tito": {}
           }
         ]
@@ -168,7 +168,7 @@
   "data": {
     "callable": "partial.dunder_call_partial_constructor",
     "filename": "partial.py",
-    "callable_line": 127,
+    "callable_line": 130,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -184,7 +184,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 129, "start": 33, "end": 34 } ],
+            "tito_positions": [ { "line": 132, "start": 33, "end": 34 } ],
             "tito": {}
           }
         ]
@@ -203,7 +203,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 129, "start": 30, "end": 31 } ],
+            "tito_positions": [ { "line": 132, "start": 30, "end": 31 } ],
             "tito": {}
           }
         ]
@@ -216,7 +216,7 @@
   "data": {
     "callable": "partial.multiprocessing_bound_method_issue",
     "filename": "partial.py",
-    "callable_line": 74,
+    "callable_line": 75,
     "sinks": [
       {
         "port": "formal(x, position=0)[sink_on_foo]",
@@ -234,10 +234,10 @@
               { "always-via": "broadening" }
             ],
             "call": {
-              "position": { "line": 76, "start": 35, "end": 36 },
+              "position": { "line": 77, "start": 35, "end": 36 },
               "resolves_to": [ "partial.MyClass.sink_on_foo" ],
               "port": "formal(self, position=0)[foo]",
-              "call_site": "76:4-76:58"
+              "call_site": "77:4-77:58"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -252,7 +252,7 @@
   "data": {
     "callable": "partial.multiprocessing_bound_method_sink",
     "filename": "partial.py",
-    "callable_line": 81,
+    "callable_line": 82,
     "sinks": [
       {
         "port": "formal(x, position=0)[sink_on_foo]",
@@ -270,10 +270,10 @@
               { "always-via": "broadening" }
             ],
             "call": {
-              "position": { "line": 82, "start": 35, "end": 36 },
+              "position": { "line": 83, "start": 35, "end": 36 },
               "resolves_to": [ "partial.MyClass.sink_on_foo" ],
               "port": "formal(self, position=0)[foo]",
-              "call_site": "82:4-82:58"
+              "call_site": "83:4-83:58"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -288,7 +288,7 @@
   "data": {
     "callable": "partial.multiprocessing_infer_sinks",
     "filename": "partial.py",
-    "callable_line": 70,
+    "callable_line": 71,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -302,10 +302,10 @@
               }
             ],
             "call": {
-              "position": { "line": 71, "start": 58, "end": 59 },
+              "position": { "line": 72, "start": 58, "end": 59 },
               "resolves_to": [ "partial.a_flows_to_sink" ],
               "port": "formal(a, position=0)",
-              "call_site": "71:4-71:64"
+              "call_site": "72:4-72:64"
             }
           }
         ]
@@ -318,7 +318,7 @@
   "data": {
     "callable": "partial.multiprocessing_nested_sink",
     "filename": "partial.py",
-    "callable_line": 93,
+    "callable_line": 94,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -336,12 +336,12 @@
               { "first-index": "a" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 94, "start": 26, "end": 27 } ],
+            "tito_positions": [ { "line": 95, "start": 26, "end": 27 } ],
             "call": {
-              "position": { "line": 95, "start": 54, "end": 60 },
+              "position": { "line": 96, "start": 54, "end": 60 },
               "resolves_to": [ "partial.sink_on_foo" ],
               "port": "formal(x, position=0)[foo]",
-              "call_site": "95:4-95:63"
+              "call_site": "96:4-96:63"
             }
           }
         ]
@@ -353,9 +353,9 @@
   "kind": "issue",
   "data": {
     "callable": "partial.multiprocessing_shim_fail",
-    "callable_line": 86,
+    "callable_line": 87,
     "code": 5002,
-    "line": 88,
+    "line": 89,
     "start": 35,
     "end": 50,
     "filename": "partial.py",
@@ -379,7 +379,7 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "origin": { "line": 87, "start": 12, "end": 26 }
+            "origin": { "line": 88, "start": 12, "end": 26 }
           }
         ]
       },
@@ -398,7 +398,7 @@
               }
             ],
             "call": {
-              "position": { "line": 88, "start": 35, "end": 50 },
+              "position": { "line": 89, "start": 35, "end": 50 },
               "resolves_to": [ "partial.a_flows_to_sink" ],
               "port": "formal(a, position=0)"
             }
@@ -426,9 +426,9 @@
   "kind": "issue",
   "data": {
     "callable": "partial.multiprocessing_tainted",
-    "callable_line": 62,
+    "callable_line": 63,
     "code": 5002,
-    "line": 63,
+    "line": 64,
     "start": 58,
     "end": 72,
     "filename": "partial.py",
@@ -447,7 +447,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 63, "start": 58, "end": 72 }
+            "origin": { "line": 64, "start": 58, "end": 72 }
           }
         ]
       },
@@ -466,10 +466,10 @@
               }
             ],
             "call": {
-              "position": { "line": 63, "start": 58, "end": 72 },
+              "position": { "line": 64, "start": 58, "end": 72 },
               "resolves_to": [ "partial.a_flows_to_sink" ],
               "port": "formal(a, position=0)",
-              "call_site": "63:4-63:77"
+              "call_site": "64:4-64:77"
             }
           }
         ]
@@ -491,9 +491,9 @@
   "kind": "issue",
   "data": {
     "callable": "partial.multiprocessing_tainted_access_path",
-    "callable_line": 103,
+    "callable_line": 104,
     "code": 5002,
-    "line": 104,
+    "line": 106,
     "start": 54,
     "end": 81,
     "filename": "partial.py",
@@ -513,8 +513,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 104, "start": 66, "end": 80 } ],
-            "origin": { "line": 104, "start": 66, "end": 80 }
+            "tito_positions": [ { "line": 106, "start": 66, "end": 80 } ],
+            "origin": { "line": 106, "start": 66, "end": 80 }
           }
         ]
       },
@@ -533,10 +533,10 @@
               }
             ],
             "call": {
-              "position": { "line": 104, "start": 54, "end": 81 },
+              "position": { "line": 106, "start": 54, "end": 81 },
               "resolves_to": [ "partial.sink_on_foo" ],
               "port": "formal(x, position=0)[foo]",
-              "call_site": "104:4-104:86"
+              "call_site": "106:4-106:86"
             }
           }
         ]
@@ -561,7 +561,7 @@
   "data": {
     "callable": "partial.partial_application_bound_method_sink",
     "filename": "partial.py",
-    "callable_line": 53,
+    "callable_line": 54,
     "sinks": [
       {
         "port": "formal(x, position=0)[sink_on_foo]",
@@ -579,10 +579,10 @@
               { "always-via": "broadening" }
             ],
             "call": {
-              "position": { "line": 54, "start": 22, "end": 23 },
+              "position": { "line": 55, "start": 22, "end": 23 },
               "resolves_to": [ "partial.MyClass.sink_on_foo" ],
               "port": "formal(self, position=0)[foo]",
-              "call_site": "54:4-54:39"
+              "call_site": "55:4-55:39"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -597,7 +597,7 @@
   "data": {
     "callable": "partial.partial_application_bound_method_tito",
     "filename": "partial.py",
-    "callable_line": 57,
+    "callable_line": 58,
     "sources": [
       {
         "port": "result[foo]",
@@ -613,8 +613,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 58, "start": 33, "end": 47 } ],
-            "origin": { "line": 58, "start": 33, "end": 47 }
+            "tito_positions": [ { "line": 59, "start": 33, "end": 47 } ],
+            "origin": { "line": 59, "start": 33, "end": 47 }
           }
         ]
       }
@@ -636,9 +636,9 @@
   "kind": "issue",
   "data": {
     "callable": "partial.partial_application_with_named_a",
-    "callable_line": 43,
+    "callable_line": 44,
     "code": 5002,
-    "line": 45,
+    "line": 46,
     "start": 41,
     "end": 42,
     "filename": "partial.py",
@@ -657,7 +657,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 44, "start": 8, "end": 22 }
+            "origin": { "line": 45, "start": 8, "end": 22 }
           }
         ]
       },
@@ -676,10 +676,10 @@
               }
             ],
             "call": {
-              "position": { "line": 45, "start": 41, "end": 42 },
+              "position": { "line": 46, "start": 41, "end": 42 },
               "resolves_to": [ "partial.a_flows_to_sink" ],
               "port": "formal(a, position=0)",
-              "call_site": "45:4-45:43"
+              "call_site": "46:4-46:43"
             }
           }
         ]
@@ -701,9 +701,9 @@
   "kind": "issue",
   "data": {
     "callable": "partial.partial_application_with_tainted",
-    "callable_line": 33,
+    "callable_line": 34,
     "code": 5002,
-    "line": 35,
+    "line": 36,
     "start": 39,
     "end": 40,
     "filename": "partial.py",
@@ -722,7 +722,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 34, "start": 8, "end": 22 }
+            "origin": { "line": 35, "start": 8, "end": 22 }
           }
         ]
       },
@@ -741,10 +741,10 @@
               }
             ],
             "call": {
-              "position": { "line": 35, "start": 39, "end": 40 },
+              "position": { "line": 36, "start": 39, "end": 40 },
               "resolves_to": [ "partial.a_flows_to_sink" ],
               "port": "formal(a, position=0)",
-              "call_site": "35:4-35:41"
+              "call_site": "36:4-36:41"
             }
           }
         ]
@@ -767,7 +767,7 @@
   "data": {
     "callable": "partial.sink_on_foo",
     "filename": "partial.py",
-    "callable_line": 25,
+    "callable_line": 26,
     "sinks": [
       {
         "port": "formal(x, position=0)[foo]",
@@ -782,8 +782,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 26, "start": 15, "end": 20 },
-            "call_site": "26:4-26:21"
+            "origin": { "line": 27, "start": 15, "end": 20 },
+            "call_site": "27:4-27:21"
           }
         ]
       }
@@ -845,7 +845,7 @@
   "data": {
     "callable": "partial.MyClass.__init__",
     "filename": "partial.py",
-    "callable_line": 14,
+    "callable_line": 15,
     "tito": [
       {
         "port": "formal(bar, position=2)",
@@ -884,7 +884,7 @@
   "data": {
     "callable": "partial.MyClass.set_foo",
     "filename": "partial.py",
-    "callable_line": 21,
+    "callable_line": 22,
     "tito": [
       {
         "port": "formal(value, position=1)",
@@ -909,7 +909,7 @@
   "data": {
     "callable": "partial.MyClass.sink_on_foo",
     "filename": "partial.py",
-    "callable_line": 18,
+    "callable_line": 19,
     "sinks": [
       {
         "port": "formal(self, position=0)[foo]",
@@ -924,10 +924,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 19, "start": 19, "end": 27 },
+            "origin": { "line": 20, "start": 19, "end": 27 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "19:8-19:28"
+            "call_site": "20:8-20:28"
           }
         ]
       }
@@ -940,7 +940,7 @@
   "data": {
     "callable": "partial.NestedDefineConstructor.__init__",
     "filename": "partial.py",
-    "callable_line": 150,
+    "callable_line": 153,
     "tito": [
       {
         "port": "formal(y, position=2)",
@@ -978,7 +978,7 @@
   "data": {
     "callable": "partial.NestedDefineDecorator.__call__",
     "filename": "partial.py",
-    "callable_line": 143,
+    "callable_line": 146,
     "tito": [
       {
         "port": "formal(**kwargs, excluded=[self])[*]",
@@ -986,7 +986,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 145, "start": 43, "end": 51 } ],
+            "tito_positions": [ { "line": 148, "start": 43, "end": 51 } ],
             "tito": {}
           }
         ]
@@ -997,7 +997,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 145, "start": 26, "end": 34 } ],
+            "tito_positions": [ { "line": 148, "start": 26, "end": 34 } ],
             "tito": {}
           }
         ]
@@ -1008,7 +1008,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 145, "start": 36, "end": 41 } ],
+            "tito_positions": [ { "line": 148, "start": 36, "end": 41 } ],
             "tito": {}
           }
         ]
@@ -1031,7 +1031,7 @@
   "data": {
     "callable": "partial.NestedDefineDecorator.__init__",
     "filename": "partial.py",
-    "callable_line": 133,
+    "callable_line": 136,
     "tito": [
       {
         "port": "formal(func, position=1)",
@@ -1055,7 +1055,7 @@
   "data": {
     "callable": "partial.PartialConstructor.__init__",
     "filename": "partial.py",
-    "callable_line": 122,
+    "callable_line": 125,
     "tito": [
       {
         "port": "formal(y, position=2)",
@@ -1093,7 +1093,7 @@
   "data": {
     "callable": "partial.PartialDecorator.__call__",
     "filename": "partial.py",
-    "callable_line": 115,
+    "callable_line": 118,
     "tito": [
       {
         "port": "formal(**kwargs, excluded=[self])[*]",
@@ -1101,7 +1101,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 117, "start": 43, "end": 51 } ],
+            "tito_positions": [ { "line": 120, "start": 43, "end": 51 } ],
             "tito": {}
           }
         ]
@@ -1112,7 +1112,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 117, "start": 26, "end": 34 } ],
+            "tito_positions": [ { "line": 120, "start": 26, "end": 34 } ],
             "tito": {}
           }
         ]
@@ -1123,7 +1123,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 117, "start": 36, "end": 41 } ],
+            "tito_positions": [ { "line": 120, "start": 36, "end": 41 } ],
             "tito": {}
           }
         ]
@@ -1146,7 +1146,7 @@
   "data": {
     "callable": "partial.PartialDecorator.__get__",
     "filename": "partial.py",
-    "callable_line": 112,
+    "callable_line": 115,
     "tito": [
       {
         "port": "formal(instance, position=1)",
@@ -1164,7 +1164,7 @@
               { "always-via": "tito" },
               { "via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [ { "line": 113, "start": 57, "end": 65 } ],
+            "tito_positions": [ { "line": 116, "start": 57, "end": 65 } ],
             "tito": {
               "caller_interval": [ { "lower": 10, "upper": 11 } ],
               "is_self_call": false
@@ -1191,8 +1191,8 @@
               { "via": "obscure:unknown-callee" }
             ],
             "tito_positions": [
-              { "line": 113, "start": 33, "end": 37 },
-              { "line": 113, "start": 33, "end": 46 }
+              { "line": 116, "start": 33, "end": 37 },
+              { "line": 116, "start": 33, "end": 46 }
             ],
             "tito": {
               "caller_interval": [ { "lower": 10, "upper": 11 } ],
@@ -1209,7 +1209,7 @@
   "data": {
     "callable": "partial.PartialDecorator.__init__",
     "filename": "partial.py",
-    "callable_line": 109,
+    "callable_line": 112,
     "tito": [
       {
         "port": "formal(func, position=1)",

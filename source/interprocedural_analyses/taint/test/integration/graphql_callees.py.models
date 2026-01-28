@@ -4,7 +4,7 @@
   "data": {
     "callable": "graphql_callees.entrypoint_decorator",
     "filename": "graphql_callees.py",
-    "callable_line": 29,
+    "callable_line": 30,
     "tito": [
       {
         "port": "formal(callable, position=0)",
@@ -23,7 +23,7 @@
   "data": {
     "callable": "graphql_callees.method_decorator",
     "filename": "graphql_callees.py",
-    "callable_line": 10,
+    "callable_line": 11,
     "tito": [
       {
         "port": "formal(callable, position=0)",
@@ -42,7 +42,7 @@
   "data": {
     "callable": "graphql_callees.return_graphql_entrypoint_1",
     "filename": "graphql_callees.py",
-    "callable_line": 34,
+    "callable_line": 35,
     "sources": [
       {
         "port": "result[x]",
@@ -57,8 +57,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 35, "start": 35, "end": 49 } ],
-            "origin": { "line": 35, "start": 35, "end": 49 }
+            "tito_positions": [ { "line": 36, "start": 35, "end": 49 } ],
+            "origin": { "line": 36, "start": 35, "end": 49 }
           }
         ]
       }
@@ -69,9 +69,9 @@
   "kind": "issue",
   "data": {
     "callable": "graphql_callees.return_graphql_entrypoint_1",
-    "callable_line": 34,
+    "callable_line": 35,
     "code": 5002,
-    "line": 36,
+    "line": 37,
     "start": 11,
     "end": 21,
     "filename": "graphql_callees.py",
@@ -94,8 +94,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 35, "start": 35, "end": 49 } ],
-            "origin": { "line": 35, "start": 35, "end": 49 }
+            "tito_positions": [ { "line": 36, "start": 35, "end": 49 } ],
+            "origin": { "line": 36, "start": 35, "end": 49 }
           }
         ]
       },
@@ -113,10 +113,10 @@
               }
             ],
             "call": {
-              "position": { "line": 36, "start": 11, "end": 21 },
+              "position": { "line": 37, "start": 11, "end": 21 },
               "resolves_to": [ "graphql_callees.GraphQLEntrypoint.callee" ],
               "port": "formal(self, position=0)",
-              "call_site": "36:4-36:21"
+              "call_site": "37:4-37:21"
             }
           }
         ]
@@ -141,7 +141,7 @@
   "data": {
     "callable": "graphql_callees.return_graphql_entrypoint_2",
     "filename": "graphql_callees.py",
-    "callable_line": 40,
+    "callable_line": 41,
     "sources": [
       {
         "port": "result[x]",
@@ -156,8 +156,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 42, "start": 29, "end": 43 } ],
-            "origin": { "line": 42, "start": 29, "end": 43 }
+            "tito_positions": [ { "line": 43, "start": 29, "end": 43 } ],
+            "origin": { "line": 43, "start": 29, "end": 43 }
           }
         ]
       }
@@ -168,9 +168,9 @@
   "kind": "issue",
   "data": {
     "callable": "graphql_callees.return_graphql_entrypoint_2",
-    "callable_line": 40,
+    "callable_line": 41,
     "code": 5002,
-    "line": 42,
+    "line": 43,
     "start": 11,
     "end": 44,
     "filename": "graphql_callees.py",
@@ -193,8 +193,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 42, "start": 29, "end": 43 } ],
-            "origin": { "line": 42, "start": 29, "end": 43 }
+            "tito_positions": [ { "line": 43, "start": 29, "end": 43 } ],
+            "origin": { "line": 43, "start": 29, "end": 43 }
           }
         ]
       },
@@ -212,10 +212,10 @@
               }
             ],
             "call": {
-              "position": { "line": 42, "start": 11, "end": 44 },
+              "position": { "line": 43, "start": 11, "end": 44 },
               "resolves_to": [ "graphql_callees.GraphQLEntrypoint.callee" ],
               "port": "formal(self, position=0)",
-              "call_site": "42:4-42:44"
+              "call_site": "43:4-43:44"
             }
           }
         ]
@@ -240,7 +240,7 @@
   "data": {
     "callable": "graphql_callees.return_graphql_entrypoint_3",
     "filename": "graphql_callees.py",
-    "callable_line": 46,
+    "callable_line": 47,
     "sinks": [
       {
         "port": "formal(entrypoint, position=0)",
@@ -248,10 +248,10 @@
           {
             "kinds": [ { "length": 1, "kind": "Test" } ],
             "call": {
-              "position": { "line": 48, "start": 11, "end": 21 },
+              "position": { "line": 49, "start": 11, "end": 21 },
               "resolves_to": [ "graphql_callees.GraphQLEntrypoint.callee" ],
               "port": "formal(self, position=0)",
-              "call_site": "48:4-48:21"
+              "call_site": "49:4-49:21"
             }
           }
         ]
@@ -275,7 +275,7 @@
   "data": {
     "callable": "graphql_callees.return_graphql_entrypoint_strip_list",
     "filename": "graphql_callees.py",
-    "callable_line": 52,
+    "callable_line": 53,
     "sources": [
       {
         "port": "result[0][x]",
@@ -290,8 +290,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 54, "start": 35, "end": 49 } ],
-            "origin": { "line": 54, "start": 35, "end": 49 }
+            "tito_positions": [ { "line": 55, "start": 35, "end": 49 } ],
+            "origin": { "line": 55, "start": 35, "end": 49 }
           }
         ]
       }
@@ -302,9 +302,9 @@
   "kind": "issue",
   "data": {
     "callable": "graphql_callees.return_graphql_entrypoint_strip_list",
-    "callable_line": 52,
+    "callable_line": 53,
     "code": 5002,
-    "line": 55,
+    "line": 56,
     "start": 4,
     "end": 23,
     "filename": "graphql_callees.py",
@@ -327,8 +327,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 54, "start": 35, "end": 49 } ],
-            "origin": { "line": 54, "start": 35, "end": 49 }
+            "tito_positions": [ { "line": 55, "start": 35, "end": 49 } ],
+            "origin": { "line": 55, "start": 35, "end": 49 }
           }
         ]
       },
@@ -346,7 +346,7 @@
               }
             ],
             "call": {
-              "position": { "line": 55, "start": 4, "end": 23 },
+              "position": { "line": 56, "start": 4, "end": 23 },
               "resolves_to": [ "graphql_callees.GraphQLEntrypoint.callee" ],
               "port": "formal(self, position=0)"
             }
@@ -373,7 +373,7 @@
   "data": {
     "callable": "graphql_callees.return_graphql_entrypoint_strip_list_with_sink",
     "filename": "graphql_callees.py",
-    "callable_line": 59,
+    "callable_line": 60,
     "sinks": [
       {
         "port": "formal(entrypoints, position=0)[*]",
@@ -381,10 +381,10 @@
           {
             "kinds": [ { "length": 1, "kind": "Test" } ],
             "call": {
-              "position": { "line": 63, "start": 11, "end": 22 },
+              "position": { "line": 64, "start": 11, "end": 22 },
               "resolves_to": [ "graphql_callees.GraphQLEntrypoint.callee" ],
               "port": "formal(self, position=0)",
-              "call_site": "63:4-63:22"
+              "call_site": "64:4-64:22"
             }
           }
         ]
@@ -438,7 +438,7 @@
   "data": {
     "callable": "graphql_callees.GraphQLEntrypoint.__init__",
     "filename": "graphql_callees.py",
-    "callable_line": 17,
+    "callable_line": 18,
     "tito": [
       {
         "port": "formal(x, position=1)",
@@ -462,7 +462,7 @@
   "data": {
     "callable": "graphql_callees.GraphQLEntrypoint.callee",
     "filename": "graphql_callees.py",
-    "callable_line": 21,
+    "callable_line": 22,
     "sinks": [
       {
         "port": "formal(self, position=0)",
@@ -476,10 +476,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 22, "start": 19, "end": 23 },
+            "origin": { "line": 23, "start": 19, "end": 23 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "22:8-22:24"
+            "call_site": "23:8-23:24"
           }
         ]
       }
@@ -491,7 +491,7 @@
   "data": {
     "callable": "graphql_callees.GraphQLEntrypoint.not_callee",
     "filename": "graphql_callees.py",
-    "callable_line": 25,
+    "callable_line": 26,
     "sinks": [
       {
         "port": "formal(self, position=0)",
@@ -505,10 +505,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 26, "start": 19, "end": 23 },
+            "origin": { "line": 27, "start": 19, "end": 23 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "26:8-26:24"
+            "call_site": "27:8-27:24"
           }
         ]
       }

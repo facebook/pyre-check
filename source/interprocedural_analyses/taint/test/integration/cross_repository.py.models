@@ -4,7 +4,7 @@
   "data": {
     "callable": "cross_repository.cross_repository_anchor_sink",
     "filename": "cross_repository.py",
-    "callable_line": 25,
+    "callable_line": 26,
     "sinks": [
       {
         "port": "formal(sink_parameter, position=0)",
@@ -33,7 +33,7 @@
   "data": {
     "callable": "cross_repository.cross_repository_source",
     "filename": "cross_repository.py",
-    "callable_line": 8,
+    "callable_line": 9,
     "sinks": [
       {
         "port": "formal(source_parameter, position=0)",
@@ -48,8 +48,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 9, "start": 15, "end": 31 },
-            "call_site": "9:4-9:32"
+            "origin": { "line": 10, "start": 15, "end": 31 },
+            "call_site": "10:4-10:32"
           }
         ]
       }
@@ -83,9 +83,9 @@
   "kind": "issue",
   "data": {
     "callable": "cross_repository.cross_repository_source",
-    "callable_line": 8,
+    "callable_line": 9,
     "code": 5002,
-    "line": 9,
+    "line": 10,
     "start": 15,
     "end": 31,
     "filename": "cross_repository.py",
@@ -108,8 +108,8 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": { "line": 8, "start": 28, "end": 44 },
-            "call_site": "8:0-9:32"
+            "origin": { "line": 9, "start": 28, "end": 44 },
+            "call_site": "9:0-10:32"
           }
         ]
       },
@@ -126,8 +126,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 9, "start": 15, "end": 31 },
-            "call_site": "9:4-9:32"
+            "origin": { "line": 10, "start": 15, "end": 31 },
+            "call_site": "10:4-10:32"
           }
         ]
       }
@@ -149,7 +149,7 @@
   "data": {
     "callable": "cross_repository.reaches_crtex_sink",
     "filename": "cross_repository.py",
-    "callable_line": 16,
+    "callable_line": 17,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -180,7 +180,7 @@
   "data": {
     "callable": "cross_repository.returns_crtex_source",
     "filename": "cross_repository.py",
-    "callable_line": 12,
+    "callable_line": 13,
     "sources": [
       {
         "port": "result",
@@ -210,9 +210,9 @@
   "kind": "issue",
   "data": {
     "callable": "cross_repository.test",
-    "callable_line": 20,
+    "callable_line": 21,
     "code": 5002,
-    "line": 22,
+    "line": 23,
     "start": 15,
     "end": 16,
     "filename": "cross_repository.py",
@@ -235,7 +235,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": { "line": 21, "start": 8, "end": 30 }
+            "origin": { "line": 22, "start": 8, "end": 30 }
           }
         ]
       },
@@ -252,8 +252,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 22, "start": 15, "end": 16 },
-            "call_site": "22:4-22:17"
+            "origin": { "line": 23, "start": 15, "end": 16 },
+            "call_site": "23:4-23:17"
           }
         ]
       }
@@ -274,9 +274,9 @@
   "kind": "issue",
   "data": {
     "callable": "cross_repository.test_cross_repository_anchor",
-    "callable_line": 29,
+    "callable_line": 30,
     "code": 5002,
-    "line": 31,
+    "line": 32,
     "start": 33,
     "end": 39,
     "filename": "cross_repository.py",
@@ -295,7 +295,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 30, "start": 13, "end": 27 }
+            "origin": { "line": 31, "start": 13, "end": 27 }
           }
         ]
       },
@@ -314,8 +314,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 31, "start": 33, "end": 39 },
-            "call_site": "31:4-31:40"
+            "origin": { "line": 32, "start": 33, "end": 39 },
+            "call_site": "32:4-32:40"
           }
         ]
       }
@@ -335,7 +335,7 @@
   "data": {
     "callable": "cross_repository.test_propagate_cross_repository_sink_once",
     "filename": "cross_repository.py",
-    "callable_line": 42,
+    "callable_line": 43,
     "sinks": [
       {
         "port": "formal(y, position=0)",
@@ -354,8 +354,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 43, "start": 23, "end": 24 },
-            "call_site": "43:4-43:25"
+            "origin": { "line": 44, "start": 23, "end": 24 },
+            "call_site": "44:4-44:25"
           }
         ]
       }
@@ -367,7 +367,7 @@
   "data": {
     "callable": "cross_repository.test_propagate_cross_repository_sink_twice",
     "filename": "cross_repository.py",
-    "callable_line": 46,
+    "callable_line": 47,
     "sinks": [
       {
         "port": "formal(z, position=0)",
@@ -381,12 +381,12 @@
               }
             ],
             "call": {
-              "position": { "line": 47, "start": 46, "end": 47 },
+              "position": { "line": 48, "start": 46, "end": 47 },
               "resolves_to": [
                 "cross_repository.test_propagate_cross_repository_sink_once"
               ],
               "port": "formal(y, position=0)",
-              "call_site": "47:4-47:48"
+              "call_site": "48:4-48:48"
             }
           }
         ]
@@ -399,7 +399,7 @@
   "data": {
     "callable": "cross_repository.test_propagate_cross_repository_source_once",
     "filename": "cross_repository.py",
-    "callable_line": 34,
+    "callable_line": 35,
     "sources": [
       {
         "port": "result",
@@ -418,7 +418,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": { "line": 35, "start": 11, "end": 33 }
+            "origin": { "line": 36, "start": 11, "end": 33 }
           }
         ]
       }
@@ -430,7 +430,7 @@
   "data": {
     "callable": "cross_repository.test_propagate_cross_repository_source_twice",
     "filename": "cross_repository.py",
-    "callable_line": 38,
+    "callable_line": 39,
     "sources": [
       {
         "port": "result",
@@ -444,7 +444,7 @@
               }
             ],
             "call": {
-              "position": { "line": 39, "start": 11, "end": 56 },
+              "position": { "line": 40, "start": 11, "end": 56 },
               "resolves_to": [
                 "cross_repository.test_propagate_cross_repository_source_once"
               ],
@@ -511,7 +511,7 @@
   "data": {
     "callable": "cross_repository.TestDSLAnchor.bar",
     "filename": "cross_repository.py",
-    "callable_line": 54,
+    "callable_line": 55,
     "sinks": [
       {
         "port": "formal(yet_another_c, position=2)",
@@ -598,7 +598,7 @@
   "data": {
     "callable": "cross_repository.TestDSLAnchor.foo",
     "filename": "cross_repository.py",
-    "callable_line": 51,
+    "callable_line": 52,
     "sinks": [
       {
         "port": "formal(**kwargs, excluded=[other_b,crtex_a,self])",

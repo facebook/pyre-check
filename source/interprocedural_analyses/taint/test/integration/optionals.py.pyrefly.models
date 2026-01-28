@@ -72,9 +72,9 @@
   "kind": "issue",
   "data": {
     "callable": "optionals.test",
-    "callable_line": 23,
+    "callable_line": 24,
     "code": 5002,
-    "line": 25,
+    "line": 26,
     "start": 32,
     "end": 46,
     "filename": "optionals.py",
@@ -93,7 +93,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 25, "start": 32, "end": 46 }
+            "origin": { "line": 26, "start": 32, "end": 46 }
           }
         ]
       },
@@ -112,10 +112,10 @@
               }
             ],
             "call": {
-              "position": { "line": 25, "start": 32, "end": 46 },
+              "position": { "line": 26, "start": 32, "end": 46 },
               "resolves_to": [ "optionals.Client.offer" ],
               "port": "formal(message, position=1)",
-              "call_site": "25:4-25:47"
+              "call_site": "26:4-26:47"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -421,7 +421,7 @@
   "data": {
     "callable": "optionals.Client.offer",
     "filename": "optionals.py",
-    "callable_line": 11,
+    "callable_line": 12,
     "sinks": [
       {
         "port": "formal(message, position=1)",
@@ -436,10 +436,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 12, "start": 19, "end": 26 },
+            "origin": { "line": 13, "start": 19, "end": 26 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "12:8-12:27"
+            "call_site": "13:8-13:27"
           }
         ]
       }

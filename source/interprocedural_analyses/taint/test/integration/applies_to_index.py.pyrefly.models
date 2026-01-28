@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "applies_to_index.issue_only_with_a_key",
-    "callable_line": 49,
+    "callable_line": 50,
     "code": 5002,
-    "line": 51,
+    "line": 52,
     "start": 15,
     "end": 21,
     "filename": "applies_to_index.py",
@@ -32,7 +32,7 @@
               { "always-type": "integer" },
               { "always-type": "scalar" }
             ],
-            "origin": { "line": 50, "start": 8, "end": 31 }
+            "origin": { "line": 51, "start": 8, "end": 31 }
           }
         ]
       },
@@ -49,8 +49,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 51, "start": 15, "end": 21 },
-            "call_site": "51:4-51:22"
+            "origin": { "line": 52, "start": 15, "end": 21 },
+            "call_site": "52:4-52:22"
           }
         ]
       }
@@ -75,9 +75,9 @@
   "kind": "issue",
   "data": {
     "callable": "applies_to_index.issue_only_with_first",
-    "callable_line": 22,
+    "callable_line": 23,
     "code": 5002,
-    "line": 24,
+    "line": 25,
     "start": 15,
     "end": 20,
     "filename": "applies_to_index.py",
@@ -101,7 +101,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 23, "start": 22, "end": 45 }
+            "origin": { "line": 24, "start": 22, "end": 45 }
           }
         ]
       },
@@ -118,8 +118,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 24, "start": 15, "end": 20 },
-            "call_site": "24:4-24:21"
+            "origin": { "line": 25, "start": 15, "end": 20 },
+            "call_site": "25:4-25:21"
           }
         ]
       }
@@ -143,7 +143,7 @@
   "data": {
     "callable": "applies_to_index.issue_only_with_nested_first",
     "filename": "applies_to_index.py",
-    "callable_line": 34,
+    "callable_line": 35,
     "sources": [
       {
         "port": "result[0][1]",
@@ -160,7 +160,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 42, "start": 11, "end": 35 }
+            "origin": { "line": 43, "start": 11, "end": 35 }
           }
         ]
       }
@@ -171,9 +171,9 @@
   "kind": "issue",
   "data": {
     "callable": "applies_to_index.issue_only_with_nested_first",
-    "callable_line": 34,
+    "callable_line": 35,
     "code": 5002,
-    "line": 38,
+    "line": 39,
     "start": 15,
     "end": 20,
     "filename": "applies_to_index.py",
@@ -197,7 +197,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 35, "start": 20, "end": 44 }
+            "origin": { "line": 36, "start": 20, "end": 44 }
           }
         ]
       },
@@ -214,8 +214,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 38, "start": 15, "end": 20 },
-            "call_site": "38:4-38:21"
+            "origin": { "line": 39, "start": 15, "end": 20 },
+            "call_site": "39:4-39:21"
           }
         ]
       }
@@ -238,9 +238,9 @@
   "kind": "issue",
   "data": {
     "callable": "applies_to_index.issue_only_with_second",
-    "callable_line": 28,
+    "callable_line": 29,
     "code": 5002,
-    "line": 31,
+    "line": 32,
     "start": 15,
     "end": 20,
     "filename": "applies_to_index.py",
@@ -264,7 +264,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 29, "start": 22, "end": 46 }
+            "origin": { "line": 30, "start": 22, "end": 46 }
           }
         ]
       },
@@ -281,8 +281,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 31, "start": 15, "end": 20 },
-            "call_site": "31:4-31:21"
+            "origin": { "line": 32, "start": 15, "end": 20 },
+            "call_site": "32:4-32:21"
           }
         ]
       }
@@ -373,7 +373,7 @@
   "data": {
     "callable": "applies_to_index.only_applies_to_a_key",
     "filename": "applies_to_index.py",
-    "callable_line": 45,
+    "callable_line": 46,
     "sources": [
       {
         "port": "result[a]",
@@ -387,7 +387,7 @@
   "data": {
     "callable": "applies_to_index.only_applies_to_a_member",
     "filename": "applies_to_index.py",
-    "callable_line": 55,
+    "callable_line": 56,
     "sources": [
       {
         "port": "result[a]",
@@ -402,7 +402,7 @@
   "data": {
     "callable": "applies_to_index.only_applies_to_first",
     "filename": "applies_to_index.py",
-    "callable_line": 10,
+    "callable_line": 11,
     "sources": [
       {
         "port": "result[0]",
@@ -416,7 +416,7 @@
   "data": {
     "callable": "applies_to_index.only_applies_to_nested",
     "filename": "applies_to_index.py",
-    "callable_line": 18,
+    "callable_line": 19,
     "sources": [
       {
         "port": "result[0][1]",
@@ -430,7 +430,7 @@
   "data": {
     "callable": "applies_to_index.only_applies_to_second",
     "filename": "applies_to_index.py",
-    "callable_line": 14,
+    "callable_line": 15,
     "sources": [
       {
         "port": "result[1]",

@@ -4,7 +4,7 @@
   "data": {
     "callable": "decorator_location.decorated_ignore_then_skip_decorator",
     "filename": "decorator_location.py",
-    "callable_line": 95,
+    "callable_line": 96,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -22,8 +22,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 96, "start": 15, "end": 16 },
-            "call_site": "96:4-96:17"
+            "origin": { "line": 97, "start": 15, "end": 16 },
+            "call_site": "97:4-97:17"
           }
         ]
       }
@@ -35,7 +35,7 @@
   "data": {
     "callable": "decorator_location.decorated_ignore_this_decorator",
     "filename": "decorator_location.py",
-    "callable_line": 79,
+    "callable_line": 80,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -53,8 +53,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 80, "start": 15, "end": 16 },
-            "call_site": "80:4-80:17"
+            "origin": { "line": 81, "start": 15, "end": 16 },
+            "call_site": "81:4-81:17"
           }
         ]
       }
@@ -66,7 +66,7 @@
   "data": {
     "callable": "decorator_location.decorated_ignore_this_decorator_class",
     "filename": "decorator_location.py",
-    "callable_line": 89,
+    "callable_line": 90,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -84,8 +84,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 90, "start": 15, "end": 16 },
-            "call_site": "90:4-90:17"
+            "origin": { "line": 91, "start": 15, "end": 16 },
+            "call_site": "91:4-91:17"
           }
         ]
       }
@@ -97,7 +97,7 @@
   "data": {
     "callable": "decorator_location.decorated_ignore_this_decorator_factory",
     "filename": "decorator_location.py",
-    "callable_line": 84,
+    "callable_line": 85,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -115,8 +115,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 85, "start": 15, "end": 16 },
-            "call_site": "85:4-85:17"
+            "origin": { "line": 86, "start": 15, "end": 16 },
+            "call_site": "86:4-86:17"
           }
         ]
       }
@@ -128,7 +128,7 @@
   "data": {
     "callable": "decorator_location.decorated_logging2_skip_this_decorator",
     "filename": "decorator_location.py",
-    "callable_line": 74,
+    "callable_line": 75,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -146,8 +146,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 75, "start": 15, "end": 16 },
-            "call_site": "75:4-75:17"
+            "origin": { "line": 76, "start": 15, "end": 16 },
+            "call_site": "76:4-76:17"
           }
         ]
       }
@@ -159,7 +159,7 @@
   "data": {
     "callable": "decorator_location.decorated_logging_ignore_this_decorator",
     "filename": "decorator_location.py",
-    "callable_line": 101,
+    "callable_line": 102,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -177,8 +177,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 102, "start": 15, "end": 16 },
-            "call_site": "102:4-102:17"
+            "origin": { "line": 103, "start": 15, "end": 16 },
+            "call_site": "103:4-103:17"
           }
         ]
       }
@@ -190,7 +190,7 @@
   "data": {
     "callable": "decorator_location.decorated_logging_logging2",
     "filename": "decorator_location.py",
-    "callable_line": 63,
+    "callable_line": 64,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -208,8 +208,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 64, "start": 15, "end": 16 },
-            "call_site": "64:4-64:17"
+            "origin": { "line": 65, "start": 15, "end": 16 },
+            "call_site": "65:4-65:17"
           }
         ]
       }
@@ -221,7 +221,7 @@
   "data": {
     "callable": "decorator_location.decorated_skip_this_decorator",
     "filename": "decorator_location.py",
-    "callable_line": 68,
+    "callable_line": 69,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -239,8 +239,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 69, "start": 15, "end": 16 },
-            "call_site": "69:4-69:17"
+            "origin": { "line": 70, "start": 15, "end": 16 },
+            "call_site": "70:4-70:17"
           }
         ]
       }
@@ -252,7 +252,7 @@
   "data": {
     "callable": "decorator_location.handle_request",
     "filename": "decorator_location.py",
-    "callable_line": 116,
+    "callable_line": 117,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -270,8 +270,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 117, "start": 15, "end": 16 },
-            "call_site": "117:4-117:17"
+            "origin": { "line": 118, "start": 15, "end": 16 },
+            "call_site": "118:4-118:17"
           }
         ]
       }
@@ -283,7 +283,7 @@
   "data": {
     "callable": "decorator_location.identity.inner",
     "filename": "decorator_location.py",
-    "callable_line": 128,
+    "callable_line": 129,
     "tito": [
       {
         "port": "captured_variable(f, parameter)",
@@ -304,7 +304,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 129, "start": 24, "end": 32 } ],
+            "tito_positions": [ { "line": 130, "start": 24, "end": 32 } ],
             "tito": {}
           }
         ]
@@ -315,7 +315,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 129, "start": 17, "end": 22 } ],
+            "tito_positions": [ { "line": 130, "start": 17, "end": 22 } ],
             "tito": {}
           }
         ]
@@ -328,7 +328,7 @@
   "data": {
     "callable": "decorator_location.ignore_this_decorator",
     "filename": "decorator_location.py",
-    "callable_line": 42,
+    "callable_line": 43,
     "tito": [
       {
         "port": "formal(f, position=0)",
@@ -347,9 +347,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator_location.main",
-    "callable_line": 145,
+    "callable_line": 146,
     "code": 5002,
-    "line": 159,
+    "line": 160,
     "start": 41,
     "end": 55,
     "filename": "decorator_location.py",
@@ -368,7 +368,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 159, "start": 41, "end": 55 }
+            "origin": { "line": 160, "start": 41, "end": 55 }
           }
         ]
       },
@@ -391,12 +391,12 @@
               }
             ],
             "call": {
-              "position": { "line": 159, "start": 41, "end": 55 },
+              "position": { "line": 160, "start": 41, "end": 55 },
               "resolves_to": [
                 "decorator_location.decorated_ignore_then_skip_decorator"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "159:4-159:56"
+              "call_site": "160:4-160:56"
             }
           }
         ]
@@ -421,9 +421,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator_location.main",
-    "callable_line": 145,
+    "callable_line": 146,
     "code": 5002,
-    "line": 153,
+    "line": 154,
     "start": 36,
     "end": 50,
     "filename": "decorator_location.py",
@@ -442,7 +442,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 153, "start": 36, "end": 50 }
+            "origin": { "line": 154, "start": 36, "end": 50 }
           }
         ]
       },
@@ -465,12 +465,12 @@
               }
             ],
             "call": {
-              "position": { "line": 153, "start": 36, "end": 50 },
+              "position": { "line": 154, "start": 36, "end": 50 },
               "resolves_to": [
                 "decorator_location.decorated_ignore_this_decorator"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "153:4-153:51"
+              "call_site": "154:4-154:51"
             }
           }
         ]
@@ -495,9 +495,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator_location.main",
-    "callable_line": 145,
+    "callable_line": 146,
     "code": 5002,
-    "line": 157,
+    "line": 158,
     "start": 42,
     "end": 56,
     "filename": "decorator_location.py",
@@ -516,7 +516,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 157, "start": 42, "end": 56 }
+            "origin": { "line": 158, "start": 42, "end": 56 }
           }
         ]
       },
@@ -539,12 +539,12 @@
               }
             ],
             "call": {
-              "position": { "line": 157, "start": 42, "end": 56 },
+              "position": { "line": 158, "start": 42, "end": 56 },
               "resolves_to": [
                 "decorator_location.decorated_ignore_this_decorator_class"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "157:4-157:57"
+              "call_site": "158:4-158:57"
             }
           }
         ]
@@ -569,9 +569,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator_location.main",
-    "callable_line": 145,
+    "callable_line": 146,
     "code": 5002,
-    "line": 155,
+    "line": 156,
     "start": 44,
     "end": 58,
     "filename": "decorator_location.py",
@@ -590,7 +590,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 155, "start": 44, "end": 58 }
+            "origin": { "line": 156, "start": 44, "end": 58 }
           }
         ]
       },
@@ -613,12 +613,12 @@
               }
             ],
             "call": {
-              "position": { "line": 155, "start": 44, "end": 58 },
+              "position": { "line": 156, "start": 44, "end": 58 },
               "resolves_to": [
                 "decorator_location.decorated_ignore_this_decorator_factory"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "155:4-155:59"
+              "call_site": "156:4-156:59"
             }
           }
         ]
@@ -643,9 +643,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator_location.main",
-    "callable_line": 145,
+    "callable_line": 146,
     "code": 5002,
-    "line": 149,
+    "line": 150,
     "start": 34,
     "end": 48,
     "filename": "decorator_location.py",
@@ -664,7 +664,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 149, "start": 34, "end": 48 }
+            "origin": { "line": 150, "start": 34, "end": 48 }
           }
         ]
       },
@@ -687,12 +687,12 @@
               }
             ],
             "call": {
-              "position": { "line": 149, "start": 34, "end": 48 },
+              "position": { "line": 150, "start": 34, "end": 48 },
               "resolves_to": [
                 "decorator_location.decorated_skip_this_decorator"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "149:4-149:49"
+              "call_site": "150:4-150:49"
             }
           }
         ]
@@ -717,9 +717,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator_location.main",
-    "callable_line": 145,
+    "callable_line": 146,
     "code": 5002,
-    "line": 165,
+    "line": 166,
     "start": 19,
     "end": 33,
     "filename": "decorator_location.py",
@@ -738,7 +738,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 165, "start": 19, "end": 33 }
+            "origin": { "line": 166, "start": 19, "end": 33 }
           }
         ]
       },
@@ -757,12 +757,12 @@
               }
             ],
             "call": {
-              "position": { "line": 165, "start": 19, "end": 33 },
+              "position": { "line": 166, "start": 19, "end": 33 },
               "resolves_to": [
                 "decorator_location.pass_local_variable_to_x.inner[captured_variable(f, parameter)=decorator_location.handle_request]"
               ],
               "port": "formal(request, position=0)",
-              "call_site": "165:4-165:42"
+              "call_site": "166:4-166:42"
             }
           }
         ]
@@ -784,9 +784,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator_location.main",
-    "callable_line": 145,
+    "callable_line": 146,
     "code": 5002,
-    "line": 147,
+    "line": 148,
     "start": 31,
     "end": 45,
     "filename": "decorator_location.py",
@@ -805,7 +805,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 147, "start": 31, "end": 45 }
+            "origin": { "line": 148, "start": 31, "end": 45 }
           },
           {
             "kinds": [
@@ -817,7 +817,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 161, "start": 44, "end": 58 }
+            "origin": { "line": 162, "start": 44, "end": 58 }
           }
         ]
       },
@@ -840,12 +840,12 @@
               }
             ],
             "call": {
-              "position": { "line": 147, "start": 31, "end": 45 },
+              "position": { "line": 148, "start": 31, "end": 45 },
               "resolves_to": [
                 "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]]"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "147:4-147:46"
+              "call_site": "148:4-148:46"
             }
           },
           {
@@ -864,12 +864,12 @@
               }
             ],
             "call": {
-              "position": { "line": 161, "start": 44, "end": 58 },
+              "position": { "line": 162, "start": 44, "end": 58 },
               "resolves_to": [
                 "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.decorated_logging_ignore_this_decorator]"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "161:4-161:59"
+              "call_site": "162:4-162:59"
             }
           }
         ]
@@ -894,9 +894,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator_location.main",
-    "callable_line": 145,
+    "callable_line": 146,
     "code": 5002,
-    "line": 151,
+    "line": 152,
     "start": 43,
     "end": 57,
     "filename": "decorator_location.py",
@@ -915,7 +915,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 151, "start": 43, "end": 57 }
+            "origin": { "line": 152, "start": 43, "end": 57 }
           }
         ]
       },
@@ -938,12 +938,12 @@
               }
             ],
             "call": {
-              "position": { "line": 151, "start": 43, "end": 57 },
+              "position": { "line": 152, "start": 43, "end": 57 },
               "resolves_to": [
                 "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging2_skip_this_decorator]"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "151:4-151:58"
+              "call_site": "152:4-152:58"
             }
           }
         ]
@@ -969,7 +969,7 @@
   "data": {
     "callable": "decorator_location.pass_local_variable_to_x.inner",
     "filename": "decorator_location.py",
-    "callable_line": 107,
+    "callable_line": 108,
     "sinks": [
       {
         "port": "formal(request, position=0)",
@@ -984,8 +984,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 108, "start": 19, "end": 26 },
-            "call_site": "108:8-108:27"
+            "origin": { "line": 109, "start": 19, "end": 26 },
+            "call_site": "109:8-109:27"
           }
         ]
       }
@@ -997,7 +997,7 @@
   "data": {
     "callable": "decorator_location.skip_this_decorator.inner",
     "filename": "decorator_location.py",
-    "callable_line": 35,
+    "callable_line": 36,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1015,8 +1015,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 36, "start": 19, "end": 20 },
-            "call_site": "36:8-36:21"
+            "origin": { "line": 37, "start": 19, "end": 20 },
+            "call_site": "37:8-37:21"
           }
         ]
       }
@@ -1028,7 +1028,7 @@
   "data": {
     "callable": "decorator_location.with_logging.inner",
     "filename": "decorator_location.py",
-    "callable_line": 18,
+    "callable_line": 19,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1046,8 +1046,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 19, "start": 19, "end": 20 },
-            "call_site": "19:8-19:21"
+            "origin": { "line": 20, "start": 19, "end": 20 },
+            "call_site": "20:8-20:21"
           },
           {
             "kinds": [
@@ -1065,12 +1065,12 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": { "line": 21, "start": 20, "end": 21 },
+              "position": { "line": 22, "start": 20, "end": 21 },
               "resolves_to": [
                 "decorator_location.with_logging.some_helper"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "21:8-21:22"
+              "call_site": "22:8-22:22"
             }
           }
         ]
@@ -1083,7 +1083,7 @@
   "data": {
     "callable": "decorator_location.with_logging.some_helper",
     "filename": "decorator_location.py",
-    "callable_line": 14,
+    "callable_line": 15,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1101,8 +1101,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 16, "start": 19, "end": 20 },
-            "call_site": "16:8-16:21"
+            "origin": { "line": 17, "start": 19, "end": 20 },
+            "call_site": "17:8-17:21"
           }
         ]
       }
@@ -1114,7 +1114,7 @@
   "data": {
     "callable": "decorator_location.with_logging2.inner",
     "filename": "decorator_location.py",
-    "callable_line": 27,
+    "callable_line": 28,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1132,8 +1132,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 28, "start": 19, "end": 20 },
-            "call_site": "28:8-28:21"
+            "origin": { "line": 29, "start": 19, "end": 20 },
+            "call_site": "29:8-29:21"
           }
         ]
       }
@@ -1195,7 +1195,7 @@
   "data": {
     "callable": "decorator_location.Foo.return_source",
     "filename": "decorator_location.py",
-    "callable_line": 121,
+    "callable_line": 122,
     "sources": [
       {
         "port": "result",
@@ -1213,7 +1213,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 122, "start": 15, "end": 29 },
+            "origin": { "line": 123, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }
@@ -1227,7 +1227,7 @@
   "data": {
     "callable": "decorator_location.ignore_this_decorator_class.__call__",
     "filename": "decorator_location.py",
-    "callable_line": 57,
+    "callable_line": 58,
     "tito": [
       {
         "port": "formal(f, position=1)",
@@ -1247,7 +1247,7 @@
   "data": {
     "callable": "decorator_location.pass_local_variable_to_x.inner[captured_variable(f, parameter)=decorator_location.handle_request]",
     "filename": "decorator_location.py",
-    "callable_line": 107,
+    "callable_line": 108,
     "sinks": [
       {
         "port": "formal(request, position=0)",
@@ -1262,8 +1262,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 108, "start": 19, "end": 26 },
-            "call_site": "108:8-108:27"
+            "origin": { "line": 109, "start": 19, "end": 26 },
+            "call_site": "109:8-109:27"
           }
         ]
       }
@@ -1275,7 +1275,7 @@
   "data": {
     "callable": "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.decorated_logging_ignore_this_decorator]",
     "filename": "decorator_location.py",
-    "callable_line": 18,
+    "callable_line": 19,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1293,8 +1293,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 19, "start": 19, "end": 20 },
-            "call_site": "19:8-19:21"
+            "origin": { "line": 20, "start": 19, "end": 20 },
+            "call_site": "20:8-20:21"
           },
           {
             "kinds": [
@@ -1312,12 +1312,12 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": { "line": 20, "start": 10, "end": 11 },
+              "position": { "line": 21, "start": 10, "end": 11 },
               "resolves_to": [
                 "decorator_location.decorated_logging_ignore_this_decorator"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "20:8-20:12"
+              "call_site": "21:8-21:12"
             }
           },
           {
@@ -1336,12 +1336,12 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": { "line": 21, "start": 20, "end": 21 },
+              "position": { "line": 22, "start": 20, "end": 21 },
               "resolves_to": [
                 "decorator_location.with_logging.some_helper"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "21:8-21:22"
+              "call_site": "22:8-22:22"
             }
           }
         ]
@@ -1354,7 +1354,7 @@
   "data": {
     "callable": "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]]",
     "filename": "decorator_location.py",
-    "callable_line": 18,
+    "callable_line": 19,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1372,8 +1372,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 19, "start": 19, "end": 20 },
-            "call_site": "19:8-19:21"
+            "origin": { "line": 20, "start": 19, "end": 20 },
+            "call_site": "20:8-20:21"
           },
           {
             "kinds": [
@@ -1391,12 +1391,12 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": { "line": 20, "start": 10, "end": 11 },
+              "position": { "line": 21, "start": 10, "end": 11 },
               "resolves_to": [
                 "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "20:8-20:12"
+              "call_site": "21:8-21:12"
             }
           },
           {
@@ -1415,12 +1415,12 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": { "line": 21, "start": 20, "end": 21 },
+              "position": { "line": 22, "start": 20, "end": 21 },
               "resolves_to": [
                 "decorator_location.with_logging.some_helper"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "21:8-21:22"
+              "call_site": "22:8-22:22"
             }
           }
         ]
@@ -1433,7 +1433,7 @@
   "data": {
     "callable": "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging2_skip_this_decorator]",
     "filename": "decorator_location.py",
-    "callable_line": 27,
+    "callable_line": 28,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1451,8 +1451,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 28, "start": 19, "end": 20 },
-            "call_site": "28:8-28:21"
+            "origin": { "line": 29, "start": 19, "end": 20 },
+            "call_site": "29:8-29:21"
           },
           {
             "kinds": [
@@ -1470,12 +1470,12 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": { "line": 29, "start": 10, "end": 11 },
+              "position": { "line": 30, "start": 10, "end": 11 },
               "resolves_to": [
                 "decorator_location.decorated_logging2_skip_this_decorator"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "29:8-29:12"
+              "call_site": "30:8-30:12"
             }
           }
         ]
@@ -1488,7 +1488,7 @@
   "data": {
     "callable": "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]",
     "filename": "decorator_location.py",
-    "callable_line": 27,
+    "callable_line": 28,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1506,8 +1506,8 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 28, "start": 19, "end": 20 },
-            "call_site": "28:8-28:21"
+            "origin": { "line": 29, "start": 19, "end": 20 },
+            "call_site": "29:8-29:21"
           },
           {
             "kinds": [
@@ -1525,12 +1525,12 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": { "line": 29, "start": 10, "end": 11 },
+              "position": { "line": 30, "start": 10, "end": 11 },
               "resolves_to": [
                 "decorator_location.decorated_logging_logging2"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "29:8-29:12"
+              "call_site": "30:8-30:12"
             }
           }
         ]

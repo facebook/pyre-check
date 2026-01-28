@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "functions_as_locals.a_or_b",
   "returned_callables": [],
   "calls": {
-    "53:7-53:22": {
+    "54:7-54:22": {
       "call": {
         "calls": [
           {
@@ -15,7 +15,7 @@ Higher order call graphs
         ]
       }
     },
-    "53:7-53:28|artificial-call|comparison": {
+    "54:7-54:28|artificial-call|comparison": {
       "call": {
         "calls": [
           {
@@ -28,7 +28,7 @@ Higher order call graphs
         ]
       }
     },
-    "53:7-53:28|artificial-call|normalize-not-comparison>comparison": {
+    "54:7-54:28|artificial-call|normalize-not-comparison>comparison": {
       "call": {
         "calls": [
           {
@@ -41,7 +41,7 @@ Higher order call graphs
         ]
       }
     },
-    "54:12-54:16|artificial-attribute-access|qualification:functions_as_locals.barA": {
+    "55:12-55:16|artificial-attribute-access|qualification:functions_as_locals.barA": {
       "attribute_access": {
         "is_attribute": true,
         "if_called": {
@@ -55,7 +55,7 @@ Higher order call graphs
         }
       }
     },
-    "56:12-56:16|artificial-attribute-access|qualification:functions_as_locals.barB": {
+    "57:12-57:16|artificial-attribute-access|qualification:functions_as_locals.barB": {
       "attribute_access": {
         "is_attribute": true,
         "if_called": {
@@ -69,7 +69,7 @@ Higher order call graphs
         }
       }
     },
-    "58:4-58:25": {
+    "59:4-59:25": {
       "call": {
         "calls": [
           {
@@ -85,14 +85,14 @@ Higher order call graphs
         ]
       }
     },
-    "58:6-58:20": {
+    "59:6-59:20": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "59:4-59:25": {
+    "60:4-60:25": {
       "call": {
         "calls": [
           {
@@ -108,7 +108,7 @@ Higher order call graphs
         ]
       }
     },
-    "59:10-59:24": {
+    "60:10-60:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 1, "return_type": [] }
@@ -121,7 +121,7 @@ Higher order call graphs
   "callable": "functions_as_locals.barA",
   "returned_callables": [],
   "calls": {
-    "45:4-45:20": {
+    "46:4-46:20": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -134,7 +134,7 @@ Higher order call graphs
   "callable": "functions_as_locals.barB",
   "returned_callables": [],
   "calls": {
-    "49:4-49:20": {
+    "50:4-50:20": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -147,7 +147,7 @@ Higher order call graphs
   "callable": "functions_as_locals.foo",
   "returned_callables": [],
   "calls": {
-    "12:4-12:19": {
+    "13:4-13:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -160,14 +160,14 @@ Higher order call graphs
   "callable": "functions_as_locals.foo_as_local",
   "returned_callables": [],
   "calls": {
-    "16:8-16:22": {
+    "17:8-17:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "17:8-17:11|artificial-attribute-access|qualification:functions_as_locals.foo": {
+    "18:8-18:11|artificial-attribute-access|qualification:functions_as_locals.foo": {
       "attribute_access": {
         "is_attribute": true,
         "if_called": {
@@ -181,7 +181,7 @@ Higher order call graphs
         }
       }
     },
-    "18:4-18:10": {
+    "19:4-19:10": {
       "call": {
         "calls": [
           {
@@ -192,7 +192,7 @@ Higher order call graphs
         ]
       }
     },
-    "19:4-19:8": {
+    "20:4-20:8": {
       "call": {
         "calls": [
           {
@@ -209,14 +209,14 @@ Higher order call graphs
   "callable": "functions_as_locals.local_function_with_method_sink",
   "returned_callables": [],
   "calls": {
-    "34:8-34:22": {
+    "35:8-35:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "35:4-35:10": {
+    "36:4-36:10": {
       "call": {
         "calls": [
           {
@@ -229,7 +229,7 @@ Higher order call graphs
         ]
       }
     },
-    "36:4-36:8": {
+    "37:4-37:8": {
       "call": {
         "calls": [
           {
@@ -248,7 +248,7 @@ Higher order call graphs
   "callable": "functions_as_locals.local_tito",
   "returned_callables": [],
   "calls": {
-    "23:8-23:11|artificial-attribute-access|qualification:functions_as_locals.foo": {
+    "24:8-24:11|artificial-attribute-access|qualification:functions_as_locals.foo": {
       "attribute_access": {
         "is_attribute": true,
         "if_called": {
@@ -262,7 +262,7 @@ Higher order call graphs
         }
       }
     },
-    "24:4-24:10": {
+    "25:4-25:10": {
       "call": {
         "calls": [
           {
@@ -279,7 +279,7 @@ Higher order call graphs
   "callable": "functions_as_locals.method_tito",
   "returned_callables": [],
   "calls": {
-    "41:4-41:10": {
+    "42:4-42:10": {
       "call": {
         "calls": [
           {
@@ -298,7 +298,7 @@ Higher order call graphs
   "callable": "functions_as_locals.C.m",
   "returned_callables": [],
   "calls": {
-    "29:8-29:23": {
+    "30:8-30:23": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }

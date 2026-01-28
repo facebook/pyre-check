@@ -3,8 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from pysa import _test_sink, _test_source
 from contextlib import contextmanager
+
+from pysa import _test_sink, _test_source
 
 
 class SourceOnEnter:
@@ -89,5 +90,5 @@ def test_generator_source_on_enter():
 
 
 def test_generator_sink_on_exit():
-    with source_on_enter_and_sink_on_exit(_test_source()): # Issue here.
+    with source_on_enter_and_sink_on_exit(_test_source()):  # Issue here.
         _test_sink("")

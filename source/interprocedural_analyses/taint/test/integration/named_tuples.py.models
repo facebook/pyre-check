@@ -4,7 +4,7 @@
   "data": {
     "callable": "named_tuples.aliased_indicies_backward",
     "filename": "named_tuples.py",
-    "callable_line": 77,
+    "callable_line": 78,
     "sinks": [
       {
         "port": "formal(a, position=0)[bad]",
@@ -19,8 +19,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 79, "start": 15, "end": 19 },
-            "call_site": "79:4-79:20"
+            "origin": { "line": 80, "start": 15, "end": 19 },
+            "call_site": "80:4-80:20"
           }
         ]
       },
@@ -37,8 +37,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 78, "start": 15, "end": 23 },
-            "call_site": "78:4-78:24"
+            "origin": { "line": 79, "start": 15, "end": 23 },
+            "call_site": "79:4-79:24"
           }
         ]
       }
@@ -50,7 +50,7 @@
   "data": {
     "callable": "named_tuples.aliased_indicies_backward_unknown_attribute",
     "filename": "named_tuples.py",
-    "callable_line": 82,
+    "callable_line": 83,
     "sinks": [
       {
         "port": "formal(a, position=0)[*]",
@@ -68,8 +68,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "origin": { "line": 83, "start": 15, "end": 19 },
-            "call_site": "83:4-83:20"
+            "origin": { "line": 84, "start": 15, "end": 19 },
+            "call_site": "84:4-84:20"
           }
         ]
       }
@@ -80,9 +80,9 @@
   "kind": "issue",
   "data": {
     "callable": "named_tuples.aliased_indicies_forward",
-    "callable_line": 65,
+    "callable_line": 66,
     "code": 5002,
-    "line": 68,
+    "line": 69,
     "start": 15,
     "end": 19,
     "filename": "named_tuples.py",
@@ -112,7 +112,7 @@
               { "first-field": "bad" }
             ],
             "call": {
-              "position": { "line": 66, "start": 8, "end": 23 },
+              "position": { "line": 67, "start": 8, "end": 23 },
               "resolves_to": [ "named_tuples.tainted_tuple" ],
               "port": "result[bad]"
             }
@@ -132,8 +132,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 68, "start": 15, "end": 19 },
-            "call_site": "68:4-68:20"
+            "origin": { "line": 69, "start": 15, "end": 19 },
+            "call_site": "69:4-69:20"
           }
         ]
       }
@@ -161,7 +161,7 @@
   "data": {
     "callable": "named_tuples.aliased_indicies_forward_unknown_attribute",
     "filename": "named_tuples.py",
-    "callable_line": 72,
+    "callable_line": 73,
     "sources": [
       {
         "port": "result",
@@ -181,7 +181,7 @@
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
             "call": {
-              "position": { "line": 73, "start": 8, "end": 23 },
+              "position": { "line": 74, "start": 8, "end": 23 },
               "resolves_to": [ "named_tuples.tainted_tuple" ],
               "port": "result[bad]"
             }
@@ -196,7 +196,7 @@
   "data": {
     "callable": "named_tuples.inherited_tuple",
     "filename": "named_tuples.py",
-    "callable_line": 51,
+    "callable_line": 52,
     "sources": [
       {
         "port": "result[bad]",
@@ -212,8 +212,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 52, "start": 35, "end": 49 } ],
-            "origin": { "line": 52, "start": 35, "end": 49 }
+            "tito_positions": [ { "line": 53, "start": 35, "end": 49 } ],
+            "origin": { "line": 53, "start": 35, "end": 49 }
           }
         ]
       }
@@ -224,9 +224,9 @@
   "kind": "issue",
   "data": {
     "callable": "named_tuples.issue_with_bad",
-    "callable_line": 20,
+    "callable_line": 21,
     "code": 5002,
-    "line": 22,
+    "line": 23,
     "start": 15,
     "end": 20,
     "filename": "named_tuples.py",
@@ -253,7 +253,7 @@
               { "has": "first-field" }, { "first-field": "bad" }
             ],
             "call": {
-              "position": { "line": 21, "start": 8, "end": 23 },
+              "position": { "line": 22, "start": 8, "end": 23 },
               "resolves_to": [ "named_tuples.tainted_tuple" ],
               "port": "result[bad]"
             }
@@ -273,8 +273,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 22, "start": 15, "end": 20 },
-            "call_site": "22:4-22:21"
+            "origin": { "line": 23, "start": 15, "end": 20 },
+            "call_site": "23:4-23:21"
           }
         ]
       }
@@ -299,9 +299,9 @@
   "kind": "issue",
   "data": {
     "callable": "named_tuples.issue_with_inherited_named_tuple",
-    "callable_line": 55,
+    "callable_line": 56,
     "code": 5002,
-    "line": 57,
+    "line": 58,
     "start": 15,
     "end": 20,
     "filename": "named_tuples.py",
@@ -328,7 +328,7 @@
               { "has": "first-field" }, { "first-field": "bad" }
             ],
             "call": {
-              "position": { "line": 56, "start": 8, "end": 25 },
+              "position": { "line": 57, "start": 8, "end": 25 },
               "resolves_to": [ "named_tuples.inherited_tuple" ],
               "port": "result[bad]"
             }
@@ -348,8 +348,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 57, "start": 15, "end": 20 },
-            "call_site": "57:4-57:21"
+            "origin": { "line": 58, "start": 15, "end": 20 },
+            "call_site": "58:4-58:21"
           }
         ]
       }
@@ -374,9 +374,9 @@
   "kind": "issue",
   "data": {
     "callable": "named_tuples.issue_with_named_tuple_with_tainted_attribute",
-    "callable_line": 91,
+    "callable_line": 92,
     "code": 5002,
-    "line": 92,
+    "line": 93,
     "start": 39,
     "end": 53,
     "filename": "named_tuples.py",
@@ -395,7 +395,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 92, "start": 39, "end": 53 }
+            "origin": { "line": 93, "start": 39, "end": 53 }
           }
         ]
       },
@@ -416,12 +416,12 @@
               }
             ],
             "call": {
-              "position": { "line": 92, "start": 39, "end": 53 },
+              "position": { "line": 93, "start": 39, "end": 53 },
               "resolves_to": [
                 "named_tuples.NamedTupleWithTaintedAttribute.__init__"
               ],
               "port": "formal(bad, position=2)",
-              "call_site": "92:4-92:64"
+              "call_site": "93:4-93:64"
             }
           }
         ]
@@ -441,9 +441,9 @@
   "kind": "issue",
   "data": {
     "callable": "named_tuples.issue_with_old_school_named_tuples",
-    "callable_line": 37,
+    "callable_line": 38,
     "code": 5002,
-    "line": 39,
+    "line": 40,
     "start": 15,
     "end": 20,
     "filename": "named_tuples.py",
@@ -470,7 +470,7 @@
               { "has": "first-field" }, { "first-field": "bad" }
             ],
             "call": {
-              "position": { "line": 38, "start": 8, "end": 27 },
+              "position": { "line": 39, "start": 8, "end": 27 },
               "resolves_to": [ "named_tuples.tainted_old_tuple" ],
               "port": "result[bad]"
             }
@@ -490,8 +490,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 39, "start": 15, "end": 20 },
-            "call_site": "39:4-39:21"
+            "origin": { "line": 40, "start": 15, "end": 20 },
+            "call_site": "40:4-40:21"
           }
         ]
       }
@@ -517,7 +517,7 @@
   "data": {
     "callable": "named_tuples.tainted_old_tuple",
     "filename": "named_tuples.py",
-    "callable_line": 33,
+    "callable_line": 34,
     "sources": [
       {
         "port": "result[bad]",
@@ -533,8 +533,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 34, "start": 35, "end": 49 } ],
-            "origin": { "line": 34, "start": 35, "end": 49 }
+            "tito_positions": [ { "line": 35, "start": 35, "end": 49 } ],
+            "origin": { "line": 35, "start": 35, "end": 49 }
           }
         ]
       }
@@ -546,7 +546,7 @@
   "data": {
     "callable": "named_tuples.tainted_tuple",
     "filename": "named_tuples.py",
-    "callable_line": 16,
+    "callable_line": 17,
     "sources": [
       {
         "port": "result[bad]",
@@ -562,8 +562,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 17, "start": 28, "end": 42 } ],
-            "origin": { "line": 17, "start": 28, "end": 42 }
+            "tito_positions": [ { "line": 18, "start": 28, "end": 42 } ],
+            "origin": { "line": 18, "start": 28, "end": 42 }
           }
         ]
       }
@@ -625,7 +625,7 @@
   "data": {
     "callable": "named_tuples.MyNamedTuple.__init__",
     "filename": "named_tuples.py",
-    "callable_line": 11,
+    "callable_line": 12,
     "tito": [
       {
         "port": "formal(bad, position=2)",
@@ -666,7 +666,7 @@
   "data": {
     "callable": "named_tuples.NamedTupleWithTaintedAttribute.__init__",
     "filename": "named_tuples.py",
-    "callable_line": 86,
+    "callable_line": 87,
     "sinks": [
       {
         "port": "formal(bad, position=2)",
@@ -683,7 +683,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 86, "start": 0, "end": 0 },
+            "origin": { "line": 87, "start": 0, "end": 0 },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false
           }
@@ -730,7 +730,7 @@
   "data": {
     "callable": "named_tuples.OldSchoolNamedTuple.__init__",
     "filename": "named_tuples.py",
-    "callable_line": 30,
+    "callable_line": 31,
     "tito": [
       {
         "port": "formal(bad, position=2)",

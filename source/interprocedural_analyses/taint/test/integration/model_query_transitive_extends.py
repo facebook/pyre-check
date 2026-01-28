@@ -35,23 +35,19 @@ class Test1_D:
 
 
 class Test2_C:
-    def foo(self, attribute):
-        ...
+    def foo(self, attribute): ...
 
 
 class Test2_C1(Test2_C):
-    def foo(self, attribute):
-        ...
+    def foo(self, attribute): ...
 
 
 class Test2_C2(Test2_C1):
-    def foo(self, attribute):
-        ...
+    def foo(self, attribute): ...
 
 
 class Test2_D:
-    def foo(self, attribute):
-        ...
+    def foo(self, attribute): ...
 
 
 class UnrelatedClass:
@@ -60,8 +56,7 @@ class UnrelatedClass:
     def __init__(self):
         self.instance = ...
 
-    def foo(self, x):
-        ...
+    def foo(self, x): ...
 
 
 def test1_alarm1(c: Test1_C1):

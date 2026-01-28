@@ -3,8 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from pysa import _test_sink, _test_source
 from typing import Any, Dict
+
+from pysa import _test_sink, _test_source
 
 
 class SomeAPI:
@@ -69,7 +70,7 @@ class BothNewAndInit:
 
     def __init__(self):
         _test_sink(self.foo)
-        self.foo = "" # declare the attribute
+        self.foo = ""  # declare the attribute
 
 
 def test_both_new_and_init_callgraph():
@@ -88,8 +89,7 @@ class DerivedConstructor(BaseConstructor):
 
 
 class InitWithModel:
-    def __init__(self, tito=None, not_tito=None):
-        ...
+    def __init__(self, tito=None, not_tito=None): ...
 
 
 def test_init_model():
@@ -98,8 +98,7 @@ def test_init_model():
 
 
 class NewWithModel:
-    def __new__(cls, tito=None, not_tito=None):
-        ...
+    def __new__(cls, tito=None, not_tito=None): ...
 
 
 def test_new_model():
@@ -107,18 +106,18 @@ def test_new_model():
     _test_sink(NewWithModel(not_tito=_test_source()))  # This is NOT an issue.
 
 
-class ClassStub:
-    ...
+class ClassStub: ...
 
 
 def test_class_stub():
     # Assume anything can happen.
-    _test_sink(ClassStub(_test_source())) # pyrefly: ignore[bad-argument-count]
+    _test_sink(ClassStub(_test_source()))  # pyrefly: ignore[bad-argument-count]
 
 
 class ConstructorWithSourceModel:
     def __init__(self):
         pass
+
 
 def test_constructor_with_source_model():
     _test_sink(ConstructorWithSourceModel())  # Issue.
@@ -160,8 +159,7 @@ def test_constructor_with_tito_model_query():
 
 
 class ConstructorObscure:
-    def __init__(self, a, b):
-        ...
+    def __init__(self, a, b): ...
 
 
 class ParentWithObscureConstructor(ConstructorObscure):
@@ -174,13 +172,12 @@ def test_parent_with_obscure_constructor():
     _test_sink(ParentWithObscureConstructor("", _test_source()))  # Issue.
 
 
-class NoConstructor:
-    ...
+class NoConstructor: ...
 
 
 class ParentWithNoConstructor(NoConstructor):
     def __init__(self, a, b):
-        super().__init__(a, b) # pyrefly: ignore[bad-argument-count]
+        super().__init__(a, b)  # pyrefly: ignore[bad-argument-count]
 
 
 def test_parent_with_no_constructor():
@@ -189,6 +186,7 @@ def test_parent_with_no_constructor():
 
 
 # Test sanitizers on constructors
+
 
 class SanitizeSingleTraceSource:
     def __init__(self):

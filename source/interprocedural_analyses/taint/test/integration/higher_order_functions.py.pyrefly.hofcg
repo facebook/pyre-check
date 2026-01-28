@@ -616,7 +616,7 @@ Higher order call graphs
   "callable": "higher_order_functions.test_callable_default_value",
   "returned_callables": [],
   "calls": {
-    "201:36-201:48|identifier|_test_source": {
+    "201:34-201:46|identifier|_test_source": {
       "identifier": {
         "if_called": {
           "calls": [

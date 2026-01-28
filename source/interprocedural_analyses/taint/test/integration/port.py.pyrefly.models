@@ -298,7 +298,7 @@
     "callable": "port.match_star_star_arg_directly",
     "callable_line": 54,
     "code": 5002,
-    "line": 55,
+    "line": 56,
     "start": 40,
     "end": 54,
     "filename": "port.py",
@@ -319,7 +319,7 @@
               }
             ],
             "call": {
-              "position": { "line": 55, "start": 40, "end": 54 },
+              "position": { "line": 56, "start": 40, "end": 54 },
               "resolves_to": [ "port.source_field" ],
               "port": "result[a]"
             }
@@ -345,10 +345,10 @@
               }
             ],
             "call": {
-              "position": { "line": 55, "start": 40, "end": 54 },
+              "position": { "line": 56, "start": 40, "end": 54 },
               "resolves_to": [ "port.star_star_arg_wrapper" ],
               "port": "formal(**kwargs, excluded=[x])[arg][a]",
-              "call_site": "55:4-55:55"
+              "call_site": "56:4-56:55"
             }
           }
         ]
@@ -450,9 +450,9 @@
   "kind": "issue",
   "data": {
     "callable": "port.refer_to_method_as_field",
-    "callable_line": 64,
+    "callable_line": 65,
     "code": 5002,
-    "line": 67,
+    "line": 68,
     "start": 15,
     "end": 20,
     "filename": "port.py",
@@ -473,7 +473,7 @@
               }
             ],
             "call": {
-              "position": { "line": 66, "start": 12, "end": 27 },
+              "position": { "line": 67, "start": 12, "end": 27 },
               "resolves_to": [ "port.Foo.some_source" ],
               "port": "result"
             },
@@ -495,8 +495,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 67, "start": 15, "end": 20 },
-            "call_site": "67:4-67:21"
+            "origin": { "line": 68, "start": 15, "end": 20 },
+            "call_site": "68:4-68:21"
           }
         ]
       }
@@ -988,7 +988,7 @@
   "data": {
     "callable": "port.Foo.some_source",
     "filename": "port.py",
-    "callable_line": 60,
+    "callable_line": 61,
     "sources": [
       {
         "port": "result",
@@ -1003,7 +1003,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 61, "start": 15, "end": 29 },
+            "origin": { "line": 62, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }

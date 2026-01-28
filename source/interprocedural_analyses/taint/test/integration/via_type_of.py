@@ -4,10 +4,11 @@
 # LICENSE file in the root directory of this source tree.
 
 import enum
-from pysa import _test_sink, _test_source
-from typing import Annotated, Any, Dict, List
-from dataclasses import dataclass
 import random
+from dataclasses import dataclass
+from typing import Annotated, Any, Dict, List
+
+from pysa import _test_sink, _test_source
 
 
 class Test1_C:
@@ -84,11 +85,10 @@ def test2_alarm4(foo):
 
 def test2_alarm5_via_constructor():
     taint: str = _test_source()
-    _test_sink(Test2_C(x={}, y=[], z=taint)) # pyrefly: ignore[bad-argument-type]
+    _test_sink(Test2_C(x={}, y=[], z=taint))  # pyrefly: ignore[bad-argument-type]
 
 
-class Test3_Foo:
-    ...
+class Test3_Foo: ...
 
 
 @dataclass

@@ -53,9 +53,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_broadening.issue_collapse",
-    "callable_line": 35,
+    "callable_line": 36,
     "code": 5002,
-    "line": 38,
+    "line": 39,
     "start": 15,
     "end": 16,
     "filename": "taint_broadening.py",
@@ -78,7 +78,7 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "origin": { "line": 37, "start": 14, "end": 28 }
+            "origin": { "line": 38, "start": 14, "end": 28 }
           }
         ]
       },
@@ -95,8 +95,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 38, "start": 15, "end": 16 },
-            "call_site": "38:4-38:17"
+            "origin": { "line": 39, "start": 15, "end": 16 },
+            "call_site": "39:4-39:17"
           }
         ]
       }
@@ -121,7 +121,7 @@
   "data": {
     "callable": "taint_broadening.model_broadening_collapse_sink_width",
     "filename": "taint_broadening.py",
-    "callable_line": 79,
+    "callable_line": 80,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -143,26 +143,6 @@
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
             ],
-            "origin": { "line": 82, "start": 19, "end": 36 },
-            "call_site": "82:8-82:37"
-          },
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "i1.2" },
-              { "always-via": "model-broadening" },
-              { "always-via": "broadening" },
-              { "always-via": "model-sink-broadening" }
-            ],
             "origin": { "line": 83, "start": 19, "end": 36 },
             "call_site": "83:8-83:37"
           },
@@ -178,7 +158,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i1.3" },
+              { "first-index": "i1.2" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -198,7 +178,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i1.4" },
+              { "first-index": "i1.3" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -218,7 +198,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i1.5" },
+              { "first-index": "i1.4" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -238,7 +218,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i1.6" },
+              { "first-index": "i1.5" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -258,7 +238,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i1.7" },
+              { "first-index": "i1.6" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -278,7 +258,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i1.8" },
+              { "first-index": "i1.7" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -298,7 +278,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i1.9" },
+              { "first-index": "i1.8" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -318,13 +298,13 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i1.10" },
+              { "first-index": "i1.9" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
             ],
-            "origin": { "line": 91, "start": 19, "end": 37 },
-            "call_site": "91:8-91:38"
+            "origin": { "line": 91, "start": 19, "end": 36 },
+            "call_site": "91:8-91:37"
           },
           {
             "kinds": [
@@ -338,7 +318,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i1.11" },
+              { "first-index": "i1.10" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -358,7 +338,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i1.12" },
+              { "first-index": "i1.11" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -378,7 +358,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i1.13" },
+              { "first-index": "i1.12" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -398,7 +378,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i1.14" },
+              { "first-index": "i1.13" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -418,7 +398,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i1.15" },
+              { "first-index": "i1.14" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -438,13 +418,13 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i2.1" },
+              { "first-index": "i1.15" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
             ],
-            "origin": { "line": 98, "start": 19, "end": 36 },
-            "call_site": "98:8-98:37"
+            "origin": { "line": 97, "start": 19, "end": 37 },
+            "call_site": "97:8-97:38"
           },
           {
             "kinds": [
@@ -458,7 +438,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i2.2" },
+              { "first-index": "i2.1" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -478,7 +458,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i2.3" },
+              { "first-index": "i2.2" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -498,7 +478,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i2.4" },
+              { "first-index": "i2.3" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -518,7 +498,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i2.5" },
+              { "first-index": "i2.4" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -538,7 +518,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i2.6" },
+              { "first-index": "i2.5" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -558,7 +538,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i2.7" },
+              { "first-index": "i2.6" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -578,7 +558,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i2.8" },
+              { "first-index": "i2.7" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -598,7 +578,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i2.9" },
+              { "first-index": "i2.8" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -618,13 +598,13 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i2.10" },
+              { "first-index": "i2.9" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
             ],
-            "origin": { "line": 107, "start": 19, "end": 37 },
-            "call_site": "107:8-107:38"
+            "origin": { "line": 107, "start": 19, "end": 36 },
+            "call_site": "107:8-107:37"
           },
           {
             "kinds": [
@@ -638,7 +618,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i2.11" },
+              { "first-index": "i2.10" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -658,7 +638,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i2.12" },
+              { "first-index": "i2.11" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -678,7 +658,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i2.13" },
+              { "first-index": "i2.12" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -698,7 +678,7 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i2.14" },
+              { "first-index": "i2.13" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
@@ -718,13 +698,33 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "i2.15" },
+              { "first-index": "i2.14" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
               { "always-via": "model-sink-broadening" }
             ],
             "origin": { "line": 112, "start": 19, "end": 37 },
             "call_site": "112:8-112:38"
+          },
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i2.15" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": { "line": 113, "start": 19, "end": 37 },
+            "call_site": "113:8-113:38"
           }
         ]
       }
@@ -736,28 +736,11 @@
   "data": {
     "callable": "taint_broadening.model_broadening_collapse_source_width",
     "filename": "taint_broadening.py",
-    "callable_line": 41,
+    "callable_line": 42,
     "sources": [
       {
         "port": "result",
         "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "model-broadening" },
-              { "always-via": "model-source-broadening" },
-              { "always-via": "broadening" }
-            ],
-            "origin": { "line": 44, "start": 25, "end": 39 }
-          },
           {
             "kinds": [
               {
@@ -909,7 +892,7 @@
               { "always-via": "model-source-broadening" },
               { "always-via": "broadening" }
             ],
-            "origin": { "line": 53, "start": 26, "end": 40 }
+            "origin": { "line": 53, "start": 25, "end": 39 }
           },
           {
             "kinds": [
@@ -1011,7 +994,7 @@
               { "always-via": "model-source-broadening" },
               { "always-via": "broadening" }
             ],
-            "origin": { "line": 60, "start": 25, "end": 39 }
+            "origin": { "line": 59, "start": 26, "end": 40 }
           },
           {
             "kinds": [
@@ -1164,7 +1147,7 @@
               { "always-via": "model-source-broadening" },
               { "always-via": "broadening" }
             ],
-            "origin": { "line": 69, "start": 26, "end": 40 }
+            "origin": { "line": 69, "start": 25, "end": 39 }
           },
           {
             "kinds": [
@@ -1250,6 +1233,23 @@
               { "always-via": "broadening" }
             ],
             "origin": { "line": 74, "start": 26, "end": 40 }
+          },
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "model-broadening" },
+              { "always-via": "model-source-broadening" },
+              { "always-via": "broadening" }
+            ],
+            "origin": { "line": 75, "start": 26, "end": 40 }
           }
         ]
       }
@@ -1261,7 +1261,7 @@
   "data": {
     "callable": "taint_broadening.model_broadening_no_collapse_sink_width",
     "filename": "taint_broadening.py",
-    "callable_line": 360,
+    "callable_line": 361,
     "sinks": [
       {
         "port": "formal(parameter, position=0)['i1.1']",
@@ -1279,8 +1279,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i1.1" }
             ],
-            "origin": { "line": 362, "start": 19, "end": 36 },
-            "call_site": "362:8-362:37"
+            "origin": { "line": 363, "start": 19, "end": 36 },
+            "call_site": "363:8-363:37"
           }
         ]
       },
@@ -1300,8 +1300,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i1.10" }
             ],
-            "origin": { "line": 371, "start": 19, "end": 37 },
-            "call_site": "371:8-371:38"
+            "origin": { "line": 372, "start": 19, "end": 37 },
+            "call_site": "372:8-372:38"
           }
         ]
       },
@@ -1321,8 +1321,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i1.11" }
             ],
-            "origin": { "line": 372, "start": 19, "end": 37 },
-            "call_site": "372:8-372:38"
+            "origin": { "line": 373, "start": 19, "end": 37 },
+            "call_site": "373:8-373:38"
           }
         ]
       },
@@ -1342,8 +1342,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i1.12" }
             ],
-            "origin": { "line": 373, "start": 19, "end": 37 },
-            "call_site": "373:8-373:38"
+            "origin": { "line": 374, "start": 19, "end": 37 },
+            "call_site": "374:8-374:38"
           }
         ]
       },
@@ -1363,8 +1363,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i1.13" }
             ],
-            "origin": { "line": 374, "start": 19, "end": 37 },
-            "call_site": "374:8-374:38"
+            "origin": { "line": 375, "start": 19, "end": 37 },
+            "call_site": "375:8-375:38"
           }
         ]
       },
@@ -1384,8 +1384,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i1.14" }
             ],
-            "origin": { "line": 375, "start": 19, "end": 37 },
-            "call_site": "375:8-375:38"
+            "origin": { "line": 376, "start": 19, "end": 37 },
+            "call_site": "376:8-376:38"
           }
         ]
       },
@@ -1405,8 +1405,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i1.15" }
             ],
-            "origin": { "line": 376, "start": 19, "end": 37 },
-            "call_site": "376:8-376:38"
+            "origin": { "line": 377, "start": 19, "end": 37 },
+            "call_site": "377:8-377:38"
           }
         ]
       },
@@ -1426,8 +1426,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i1.2" }
             ],
-            "origin": { "line": 363, "start": 19, "end": 36 },
-            "call_site": "363:8-363:37"
+            "origin": { "line": 364, "start": 19, "end": 36 },
+            "call_site": "364:8-364:37"
           }
         ]
       },
@@ -1447,8 +1447,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i1.3" }
             ],
-            "origin": { "line": 364, "start": 19, "end": 36 },
-            "call_site": "364:8-364:37"
+            "origin": { "line": 365, "start": 19, "end": 36 },
+            "call_site": "365:8-365:37"
           }
         ]
       },
@@ -1468,8 +1468,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i1.4" }
             ],
-            "origin": { "line": 365, "start": 19, "end": 36 },
-            "call_site": "365:8-365:37"
+            "origin": { "line": 366, "start": 19, "end": 36 },
+            "call_site": "366:8-366:37"
           }
         ]
       },
@@ -1489,8 +1489,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i1.5" }
             ],
-            "origin": { "line": 366, "start": 19, "end": 36 },
-            "call_site": "366:8-366:37"
+            "origin": { "line": 367, "start": 19, "end": 36 },
+            "call_site": "367:8-367:37"
           }
         ]
       },
@@ -1510,8 +1510,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i1.6" }
             ],
-            "origin": { "line": 367, "start": 19, "end": 36 },
-            "call_site": "367:8-367:37"
+            "origin": { "line": 368, "start": 19, "end": 36 },
+            "call_site": "368:8-368:37"
           }
         ]
       },
@@ -1531,8 +1531,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i1.7" }
             ],
-            "origin": { "line": 368, "start": 19, "end": 36 },
-            "call_site": "368:8-368:37"
+            "origin": { "line": 369, "start": 19, "end": 36 },
+            "call_site": "369:8-369:37"
           }
         ]
       },
@@ -1552,8 +1552,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i1.8" }
             ],
-            "origin": { "line": 369, "start": 19, "end": 36 },
-            "call_site": "369:8-369:37"
+            "origin": { "line": 370, "start": 19, "end": 36 },
+            "call_site": "370:8-370:37"
           }
         ]
       },
@@ -1573,8 +1573,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i1.9" }
             ],
-            "origin": { "line": 370, "start": 19, "end": 36 },
-            "call_site": "370:8-370:37"
+            "origin": { "line": 371, "start": 19, "end": 36 },
+            "call_site": "371:8-371:37"
           }
         ]
       },
@@ -1594,8 +1594,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i2.1" }
             ],
-            "origin": { "line": 378, "start": 19, "end": 36 },
-            "call_site": "378:8-378:37"
+            "origin": { "line": 379, "start": 19, "end": 36 },
+            "call_site": "379:8-379:37"
           }
         ]
       },
@@ -1615,8 +1615,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i2.10" }
             ],
-            "origin": { "line": 387, "start": 19, "end": 37 },
-            "call_site": "387:8-387:38"
+            "origin": { "line": 388, "start": 19, "end": 37 },
+            "call_site": "388:8-388:38"
           }
         ]
       },
@@ -1636,8 +1636,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i2.11" }
             ],
-            "origin": { "line": 388, "start": 19, "end": 37 },
-            "call_site": "388:8-388:38"
+            "origin": { "line": 389, "start": 19, "end": 37 },
+            "call_site": "389:8-389:38"
           }
         ]
       },
@@ -1657,8 +1657,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i2.12" }
             ],
-            "origin": { "line": 389, "start": 19, "end": 37 },
-            "call_site": "389:8-389:38"
+            "origin": { "line": 390, "start": 19, "end": 37 },
+            "call_site": "390:8-390:38"
           }
         ]
       },
@@ -1678,8 +1678,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i2.13" }
             ],
-            "origin": { "line": 390, "start": 19, "end": 37 },
-            "call_site": "390:8-390:38"
+            "origin": { "line": 391, "start": 19, "end": 37 },
+            "call_site": "391:8-391:38"
           }
         ]
       },
@@ -1699,8 +1699,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i2.14" }
             ],
-            "origin": { "line": 391, "start": 19, "end": 37 },
-            "call_site": "391:8-391:38"
+            "origin": { "line": 392, "start": 19, "end": 37 },
+            "call_site": "392:8-392:38"
           }
         ]
       },
@@ -1720,8 +1720,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i2.15" }
             ],
-            "origin": { "line": 392, "start": 19, "end": 37 },
-            "call_site": "392:8-392:38"
+            "origin": { "line": 393, "start": 19, "end": 37 },
+            "call_site": "393:8-393:38"
           }
         ]
       },
@@ -1741,8 +1741,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i2.2" }
             ],
-            "origin": { "line": 379, "start": 19, "end": 36 },
-            "call_site": "379:8-379:37"
+            "origin": { "line": 380, "start": 19, "end": 36 },
+            "call_site": "380:8-380:37"
           }
         ]
       },
@@ -1762,8 +1762,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i2.3" }
             ],
-            "origin": { "line": 380, "start": 19, "end": 36 },
-            "call_site": "380:8-380:37"
+            "origin": { "line": 381, "start": 19, "end": 36 },
+            "call_site": "381:8-381:37"
           }
         ]
       },
@@ -1783,8 +1783,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i2.4" }
             ],
-            "origin": { "line": 381, "start": 19, "end": 36 },
-            "call_site": "381:8-381:37"
+            "origin": { "line": 382, "start": 19, "end": 36 },
+            "call_site": "382:8-382:37"
           }
         ]
       },
@@ -1804,8 +1804,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i2.5" }
             ],
-            "origin": { "line": 382, "start": 19, "end": 36 },
-            "call_site": "382:8-382:37"
+            "origin": { "line": 383, "start": 19, "end": 36 },
+            "call_site": "383:8-383:37"
           }
         ]
       },
@@ -1825,8 +1825,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i2.6" }
             ],
-            "origin": { "line": 383, "start": 19, "end": 36 },
-            "call_site": "383:8-383:37"
+            "origin": { "line": 384, "start": 19, "end": 36 },
+            "call_site": "384:8-384:37"
           }
         ]
       },
@@ -1846,8 +1846,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i2.7" }
             ],
-            "origin": { "line": 384, "start": 19, "end": 36 },
-            "call_site": "384:8-384:37"
+            "origin": { "line": 385, "start": 19, "end": 36 },
+            "call_site": "385:8-385:37"
           }
         ]
       },
@@ -1867,8 +1867,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i2.8" }
             ],
-            "origin": { "line": 385, "start": 19, "end": 36 },
-            "call_site": "385:8-385:37"
+            "origin": { "line": 386, "start": 19, "end": 36 },
+            "call_site": "386:8-386:37"
           }
         ]
       },
@@ -1888,8 +1888,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "i2.9" }
             ],
-            "origin": { "line": 386, "start": 19, "end": 36 },
-            "call_site": "386:8-386:37"
+            "origin": { "line": 387, "start": 19, "end": 36 },
+            "call_site": "387:8-387:37"
           }
         ]
       }
@@ -1903,129 +1903,10 @@
   "data": {
     "callable": "taint_broadening.model_broadening_no_collapse_source_width",
     "filename": "taint_broadening.py",
-    "callable_line": 322,
+    "callable_line": 323,
     "sources": [
       {
         "port": "result['o1.1']",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 325, "start": 25, "end": 39 }
-          }
-        ]
-      },
-      {
-        "port": "result['o1.10']",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 334, "start": 26, "end": 40 }
-          }
-        ]
-      },
-      {
-        "port": "result['o1.11']",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 335, "start": 26, "end": 40 }
-          }
-        ]
-      },
-      {
-        "port": "result['o1.12']",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 336, "start": 26, "end": 40 }
-          }
-        ]
-      },
-      {
-        "port": "result['o1.13']",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 337, "start": 26, "end": 40 }
-          }
-        ]
-      },
-      {
-        "port": "result['o1.14']",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 338, "start": 26, "end": 40 }
-          }
-        ]
-      },
-      {
-        "port": "result['o1.15']",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 339, "start": 26, "end": 40 }
-          }
-        ]
-      },
-      {
-        "port": "result['o1.2']",
         "taint": [
           {
             "kinds": [
@@ -2042,7 +1923,109 @@
         ]
       },
       {
-        "port": "result['o1.3']",
+        "port": "result['o1.10']",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 335, "start": 26, "end": 40 }
+          }
+        ]
+      },
+      {
+        "port": "result['o1.11']",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 336, "start": 26, "end": 40 }
+          }
+        ]
+      },
+      {
+        "port": "result['o1.12']",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 337, "start": 26, "end": 40 }
+          }
+        ]
+      },
+      {
+        "port": "result['o1.13']",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 338, "start": 26, "end": 40 }
+          }
+        ]
+      },
+      {
+        "port": "result['o1.14']",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 339, "start": 26, "end": 40 }
+          }
+        ]
+      },
+      {
+        "port": "result['o1.15']",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 340, "start": 26, "end": 40 }
+          }
+        ]
+      },
+      {
+        "port": "result['o1.2']",
         "taint": [
           {
             "kinds": [
@@ -2059,7 +2042,7 @@
         ]
       },
       {
-        "port": "result['o1.4']",
+        "port": "result['o1.3']",
         "taint": [
           {
             "kinds": [
@@ -2076,7 +2059,7 @@
         ]
       },
       {
-        "port": "result['o1.5']",
+        "port": "result['o1.4']",
         "taint": [
           {
             "kinds": [
@@ -2093,7 +2076,7 @@
         ]
       },
       {
-        "port": "result['o1.6']",
+        "port": "result['o1.5']",
         "taint": [
           {
             "kinds": [
@@ -2110,7 +2093,7 @@
         ]
       },
       {
-        "port": "result['o1.7']",
+        "port": "result['o1.6']",
         "taint": [
           {
             "kinds": [
@@ -2127,7 +2110,7 @@
         ]
       },
       {
-        "port": "result['o1.8']",
+        "port": "result['o1.7']",
         "taint": [
           {
             "kinds": [
@@ -2144,7 +2127,7 @@
         ]
       },
       {
-        "port": "result['o1.9']",
+        "port": "result['o1.8']",
         "taint": [
           {
             "kinds": [
@@ -2161,126 +2144,24 @@
         ]
       },
       {
+        "port": "result['o1.9']",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 334, "start": 25, "end": 39 }
+          }
+        ]
+      },
+      {
         "port": "result['o2.1']",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 341, "start": 25, "end": 39 }
-          }
-        ]
-      },
-      {
-        "port": "result['o2.10']",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 350, "start": 26, "end": 40 }
-          }
-        ]
-      },
-      {
-        "port": "result['o2.11']",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 351, "start": 26, "end": 40 }
-          }
-        ]
-      },
-      {
-        "port": "result['o2.12']",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 352, "start": 26, "end": 40 }
-          }
-        ]
-      },
-      {
-        "port": "result['o2.13']",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 353, "start": 26, "end": 40 }
-          }
-        ]
-      },
-      {
-        "port": "result['o2.14']",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 354, "start": 26, "end": 40 }
-          }
-        ]
-      },
-      {
-        "port": "result['o2.15']",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 355, "start": 26, "end": 40 }
-          }
-        ]
-      },
-      {
-        "port": "result['o2.2']",
         "taint": [
           {
             "kinds": [
@@ -2297,7 +2178,109 @@
         ]
       },
       {
-        "port": "result['o2.3']",
+        "port": "result['o2.10']",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 351, "start": 26, "end": 40 }
+          }
+        ]
+      },
+      {
+        "port": "result['o2.11']",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 352, "start": 26, "end": 40 }
+          }
+        ]
+      },
+      {
+        "port": "result['o2.12']",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 353, "start": 26, "end": 40 }
+          }
+        ]
+      },
+      {
+        "port": "result['o2.13']",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 354, "start": 26, "end": 40 }
+          }
+        ]
+      },
+      {
+        "port": "result['o2.14']",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 355, "start": 26, "end": 40 }
+          }
+        ]
+      },
+      {
+        "port": "result['o2.15']",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 356, "start": 26, "end": 40 }
+          }
+        ]
+      },
+      {
+        "port": "result['o2.2']",
         "taint": [
           {
             "kinds": [
@@ -2314,7 +2297,7 @@
         ]
       },
       {
-        "port": "result['o2.4']",
+        "port": "result['o2.3']",
         "taint": [
           {
             "kinds": [
@@ -2331,7 +2314,7 @@
         ]
       },
       {
-        "port": "result['o2.5']",
+        "port": "result['o2.4']",
         "taint": [
           {
             "kinds": [
@@ -2348,7 +2331,7 @@
         ]
       },
       {
-        "port": "result['o2.6']",
+        "port": "result['o2.5']",
         "taint": [
           {
             "kinds": [
@@ -2365,7 +2348,7 @@
         ]
       },
       {
-        "port": "result['o2.7']",
+        "port": "result['o2.6']",
         "taint": [
           {
             "kinds": [
@@ -2382,7 +2365,7 @@
         ]
       },
       {
-        "port": "result['o2.8']",
+        "port": "result['o2.7']",
         "taint": [
           {
             "kinds": [
@@ -2399,7 +2382,7 @@
         ]
       },
       {
-        "port": "result['o2.9']",
+        "port": "result['o2.8']",
         "taint": [
           {
             "kinds": [
@@ -2414,6 +2397,23 @@
             "origin": { "line": 349, "start": 25, "end": 39 }
           }
         ]
+      },
+      {
+        "port": "result['o2.9']",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 350, "start": 25, "end": 39 }
+          }
+        ]
       }
     ],
     "model_generators": [ "disable_model_broadening" ],
@@ -2425,7 +2425,7 @@
   "data": {
     "callable": "taint_broadening.model_broadening_sink_no_collapse_depth",
     "filename": "taint_broadening.py",
-    "callable_line": 134,
+    "callable_line": 135,
     "sinks": [
       {
         "port": "formal(parameter, position=1)[a][a][a][a][1]",
@@ -2443,8 +2443,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "origin": { "line": 138, "start": 19, "end": 53 },
-            "call_site": "138:8-138:54"
+            "origin": { "line": 139, "start": 19, "end": 53 },
+            "call_site": "139:8-139:54"
           }
         ]
       },
@@ -2464,8 +2464,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "origin": { "line": 140, "start": 19, "end": 53 },
-            "call_site": "140:8-140:54"
+            "origin": { "line": 141, "start": 19, "end": 53 },
+            "call_site": "141:8-141:54"
           }
         ]
       }
@@ -2477,7 +2477,7 @@
   "data": {
     "callable": "taint_broadening.model_broadening_source_no_collapse_depth",
     "filename": "taint_broadening.py",
-    "callable_line": 115,
+    "callable_line": 116,
     "sources": [
       {
         "port": "result[a][a][a][a][1]",
@@ -2492,7 +2492,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 118, "start": 42, "end": 56 }
+            "origin": { "line": 119, "start": 42, "end": 56 }
           }
         ]
       },
@@ -2509,7 +2509,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 120, "start": 42, "end": 56 }
+            "origin": { "line": 121, "start": 42, "end": 56 }
           }
         ]
       }
@@ -2521,7 +2521,7 @@
   "data": {
     "callable": "taint_broadening.random_tito",
     "filename": "taint_broadening.py",
-    "callable_line": 204,
+    "callable_line": 205,
     "tito": [
       {
         "port": "formal(parameter, position=0)[i1]",
@@ -2567,7 +2567,7 @@
   "data": {
     "callable": "taint_broadening.recursive_sink_parent",
     "filename": "taint_broadening.py",
-    "callable_line": 150,
+    "callable_line": 151,
     "sinks": [
       {
         "port": "formal(obj, position=0)",
@@ -2582,8 +2582,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 154, "start": 19, "end": 22 },
-            "call_site": "154:8-154:23"
+            "origin": { "line": 155, "start": 19, "end": 22 },
+            "call_site": "155:8-155:23"
           },
           {
             "kinds": [
@@ -2604,10 +2604,10 @@
               { "always-via": "model-sink-shaping" }
             ],
             "call": {
-              "position": { "line": 152, "start": 30, "end": 40 },
+              "position": { "line": 153, "start": 30, "end": 40 },
               "resolves_to": [ "taint_broadening.recursive_sink_parent" ],
               "port": "formal(obj, position=0)",
-              "call_site": "152:8-152:41"
+              "call_site": "153:8-153:41"
             }
           }
         ]
@@ -2620,7 +2620,7 @@
   "data": {
     "callable": "taint_broadening.recursive_sink_parent_attribute",
     "filename": "taint_broadening.py",
-    "callable_line": 157,
+    "callable_line": 158,
     "sinks": [
       {
         "port": "formal(obj, position=0)[attribute]",
@@ -2635,8 +2635,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 161, "start": 19, "end": 32 },
-            "call_site": "161:8-161:33"
+            "origin": { "line": 162, "start": 19, "end": 32 },
+            "call_site": "162:8-162:33"
           }
         ]
       },
@@ -2652,12 +2652,12 @@
               }
             ],
             "call": {
-              "position": { "line": 159, "start": 40, "end": 50 },
+              "position": { "line": 160, "start": 40, "end": 50 },
               "resolves_to": [
                 "taint_broadening.recursive_sink_parent_attribute"
               ],
               "port": "formal(obj, position=0)[attribute]",
-              "call_site": "159:8-159:51"
+              "call_site": "160:8-160:51"
             }
           }
         ]
@@ -2674,12 +2674,12 @@
               }
             ],
             "call": {
-              "position": { "line": 159, "start": 40, "end": 50 },
+              "position": { "line": 160, "start": 40, "end": 50 },
               "resolves_to": [
                 "taint_broadening.recursive_sink_parent_attribute"
               ],
               "port": "formal(obj, position=0)[parent][attribute]",
-              "call_site": "159:8-159:51"
+              "call_site": "160:8-160:51"
             }
           }
         ]
@@ -2696,12 +2696,12 @@
               }
             ],
             "call": {
-              "position": { "line": 159, "start": 40, "end": 50 },
+              "position": { "line": 160, "start": 40, "end": 50 },
               "resolves_to": [
                 "taint_broadening.recursive_sink_parent_attribute"
               ],
               "port": "formal(obj, position=0)[parent][parent][attribute]",
-              "call_site": "159:8-159:51"
+              "call_site": "160:8-160:51"
             }
           }
         ]
@@ -2721,12 +2721,12 @@
               { "via": "broadening" }, { "via": "widen-broadening" }
             ],
             "call": {
-              "position": { "line": 159, "start": 40, "end": 50 },
+              "position": { "line": 160, "start": 40, "end": 50 },
               "resolves_to": [
                 "taint_broadening.recursive_sink_parent_attribute"
               ],
               "port": "formal(obj, position=0)[parent][parent][parent][attribute]",
-              "call_site": "159:8-159:51"
+              "call_site": "160:8-160:51"
             }
           },
           {
@@ -2745,12 +2745,12 @@
               { "via": "broadening" }, { "via": "widen-broadening" }
             ],
             "call": {
-              "position": { "line": 159, "start": 40, "end": 50 },
+              "position": { "line": 160, "start": 40, "end": 50 },
               "resolves_to": [
                 "taint_broadening.recursive_sink_parent_attribute"
               ],
               "port": "formal(obj, position=0)[parent][parent][parent][parent]",
-              "call_site": "159:8-159:51"
+              "call_site": "160:8-160:51"
             }
           }
         ]
@@ -2763,7 +2763,7 @@
   "data": {
     "callable": "taint_broadening.sink_a",
     "filename": "taint_broadening.py",
-    "callable_line": 14,
+    "callable_line": 15,
     "sinks": [
       {
         "port": "formal(parameter, position=0)[a]",
@@ -2781,8 +2781,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "origin": { "line": 15, "start": 15, "end": 29 },
-            "call_site": "15:4-15:30"
+            "origin": { "line": 16, "start": 15, "end": 29 },
+            "call_site": "16:4-16:30"
           }
         ]
       }
@@ -2794,7 +2794,7 @@
   "data": {
     "callable": "taint_broadening.sink_taint_widening_collapse_depth",
     "filename": "taint_broadening.py",
-    "callable_line": 143,
+    "callable_line": 144,
     "sinks": [
       {
         "port": "formal(parameter, position=0)[a][a][a][a]",
@@ -2815,8 +2815,8 @@
               { "via": "broadening" },
               { "via": "widen-broadening" }
             ],
-            "origin": { "line": 145, "start": 19, "end": 33 },
-            "call_site": "145:8-145:34"
+            "origin": { "line": 146, "start": 19, "end": 33 },
+            "call_site": "146:8-146:34"
           }
         ]
       },
@@ -2836,8 +2836,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "b" }
             ],
-            "origin": { "line": 145, "start": 19, "end": 33 },
-            "call_site": "145:8-145:34"
+            "origin": { "line": 146, "start": 19, "end": 33 },
+            "call_site": "146:8-146:34"
           }
         ]
       },
@@ -2857,8 +2857,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "b" }
             ],
-            "origin": { "line": 145, "start": 19, "end": 33 },
-            "call_site": "145:8-145:34"
+            "origin": { "line": 146, "start": 19, "end": 33 },
+            "call_site": "146:8-146:34"
           }
         ]
       },
@@ -2878,8 +2878,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "b" }
             ],
-            "origin": { "line": 145, "start": 19, "end": 33 },
-            "call_site": "145:8-145:34"
+            "origin": { "line": 146, "start": 19, "end": 33 },
+            "call_site": "146:8-146:34"
           }
         ]
       },
@@ -2899,8 +2899,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "b" }
             ],
-            "origin": { "line": 145, "start": 19, "end": 33 },
-            "call_site": "145:8-145:34"
+            "origin": { "line": 146, "start": 19, "end": 33 },
+            "call_site": "146:8-146:34"
           }
         ]
       }
@@ -2912,7 +2912,7 @@
   "data": {
     "callable": "taint_broadening.skip_model_broadening",
     "filename": "taint_broadening.py",
-    "callable_line": 317,
+    "callable_line": 318,
     "tito": [
       {
         "port": "formal(f, position=0)",
@@ -2931,7 +2931,7 @@
   "data": {
     "callable": "taint_broadening.source_taint_widening_collapse_depth",
     "filename": "taint_broadening.py",
-    "callable_line": 126,
+    "callable_line": 127,
     "sources": [
       {
         "port": "result[a][a][a][a]",
@@ -2949,7 +2949,7 @@
             "local_features": [
               { "via": "broadening" }, { "via": "widen-broadening" }
             ],
-            "origin": { "line": 129, "start": 36, "end": 50 }
+            "origin": { "line": 130, "start": 36, "end": 50 }
           }
         ]
       },
@@ -2966,7 +2966,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 129, "start": 36, "end": 50 }
+            "origin": { "line": 130, "start": 36, "end": 50 }
           }
         ]
       },
@@ -2983,7 +2983,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 129, "start": 36, "end": 50 }
+            "origin": { "line": 130, "start": 36, "end": 50 }
           }
         ]
       },
@@ -3000,7 +3000,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 129, "start": 36, "end": 50 }
+            "origin": { "line": 130, "start": 36, "end": 50 }
           }
         ]
       },
@@ -3017,7 +3017,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 129, "start": 36, "end": 50 }
+            "origin": { "line": 130, "start": 36, "end": 50 }
           }
         ]
       }
@@ -3028,9 +3028,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_broadening.test_different_tito_broadenings",
-    "callable_line": 240,
+    "callable_line": 241,
     "code": 5002,
-    "line": 244,
+    "line": 245,
     "start": 8,
     "end": 11,
     "filename": "taint_broadening.py",
@@ -3059,11 +3059,11 @@
               { "always-via": "model-tito-broadening" }
             ],
             "tito_positions": [
-              { "line": 242, "start": 46, "end": 52 },
-              { "line": 245, "start": 13, "end": 34 },
-              { "line": 245, "start": 23, "end": 33 }
+              { "line": 243, "start": 46, "end": 52 },
+              { "line": 246, "start": 13, "end": 34 },
+              { "line": 246, "start": 23, "end": 33 }
             ],
-            "origin": { "line": 241, "start": 13, "end": 27 }
+            "origin": { "line": 242, "start": 13, "end": 27 }
           }
         ]
       },
@@ -3080,8 +3080,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 244, "start": 8, "end": 8 },
-            "call_site": "243:4-247:5"
+            "origin": { "line": 245, "start": 8, "end": 8 },
+            "call_site": "244:4-248:5"
           }
         ]
       }
@@ -3111,7 +3111,7 @@
   "data": {
     "callable": "taint_broadening.tito_broaden_input_and_output_paths",
     "filename": "taint_broadening.py",
-    "callable_line": 164,
+    "callable_line": 165,
     "tito": [
       {
         "port": "formal(parameter, position=0)",
@@ -3135,7 +3135,7 @@
   "data": {
     "callable": "taint_broadening.tito_broaden_input_and_output_paths_single_statement",
     "filename": "taint_broadening.py",
-    "callable_line": 256,
+    "callable_line": 257,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -3159,7 +3159,7 @@
   "data": {
     "callable": "taint_broadening.tito_broaden_input_path_common_prefix",
     "filename": "taint_broadening.py",
-    "callable_line": 273,
+    "callable_line": 274,
     "tito": [
       {
         "port": "formal(x, position=0)[y]",
@@ -3183,7 +3183,7 @@
   "data": {
     "callable": "taint_broadening.tito_broaden_input_paths_but_not_output_path",
     "filename": "taint_broadening.py",
-    "callable_line": 184,
+    "callable_line": 185,
     "tito": [
       {
         "port": "formal(parameter, position=0)",
@@ -3223,7 +3223,7 @@
   "data": {
     "callable": "taint_broadening.tito_broaden_output_path_common_prefix",
     "filename": "taint_broadening.py",
-    "callable_line": 291,
+    "callable_line": 292,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -3249,7 +3249,7 @@
   "data": {
     "callable": "taint_broadening.tito_broaden_output_paths_but_not_input_path",
     "filename": "taint_broadening.py",
-    "callable_line": 215,
+    "callable_line": 216,
     "tito": [
       {
         "port": "formal(parameter, position=0)[i1]",
@@ -3264,7 +3264,6 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 219, "start": 31, "end": 40 },
               { "line": 220, "start": 31, "end": 40 },
               { "line": 221, "start": 31, "end": 40 },
               { "line": 222, "start": 31, "end": 40 },
@@ -3273,12 +3272,13 @@
               { "line": 225, "start": 31, "end": 40 },
               { "line": 226, "start": 31, "end": 40 },
               { "line": 227, "start": 31, "end": 40 },
-              { "line": 228, "start": 32, "end": 41 },
+              { "line": 228, "start": 31, "end": 40 },
               { "line": 229, "start": 32, "end": 41 },
               { "line": 230, "start": 32, "end": 41 },
               { "line": 231, "start": 32, "end": 41 },
               { "line": 232, "start": 32, "end": 41 },
-              { "line": 233, "start": 32, "end": 41 }
+              { "line": 233, "start": 32, "end": 41 },
+              { "line": 234, "start": 32, "end": 41 }
             ],
             "tito": {}
           }
@@ -3297,7 +3297,6 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 219, "start": 31, "end": 40 },
               { "line": 220, "start": 31, "end": 40 },
               { "line": 221, "start": 31, "end": 40 },
               { "line": 222, "start": 31, "end": 40 },
@@ -3306,12 +3305,13 @@
               { "line": 225, "start": 31, "end": 40 },
               { "line": 226, "start": 31, "end": 40 },
               { "line": 227, "start": 31, "end": 40 },
-              { "line": 228, "start": 32, "end": 41 },
+              { "line": 228, "start": 31, "end": 40 },
               { "line": 229, "start": 32, "end": 41 },
               { "line": 230, "start": 32, "end": 41 },
               { "line": 231, "start": 32, "end": 41 },
               { "line": 232, "start": 32, "end": 41 },
-              { "line": 233, "start": 32, "end": 41 }
+              { "line": 233, "start": 32, "end": 41 },
+              { "line": 234, "start": 32, "end": 41 }
             ],
             "tito": {}
           }
@@ -3330,7 +3330,6 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 219, "start": 31, "end": 40 },
               { "line": 220, "start": 31, "end": 40 },
               { "line": 221, "start": 31, "end": 40 },
               { "line": 222, "start": 31, "end": 40 },
@@ -3339,12 +3338,13 @@
               { "line": 225, "start": 31, "end": 40 },
               { "line": 226, "start": 31, "end": 40 },
               { "line": 227, "start": 31, "end": 40 },
-              { "line": 228, "start": 32, "end": 41 },
+              { "line": 228, "start": 31, "end": 40 },
               { "line": 229, "start": 32, "end": 41 },
               { "line": 230, "start": 32, "end": 41 },
               { "line": 231, "start": 32, "end": 41 },
               { "line": 232, "start": 32, "end": 41 },
-              { "line": 233, "start": 32, "end": 41 }
+              { "line": 233, "start": 32, "end": 41 },
+              { "line": 234, "start": 32, "end": 41 }
             ],
             "tito": {}
           }
@@ -3363,7 +3363,6 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 219, "start": 31, "end": 40 },
               { "line": 220, "start": 31, "end": 40 },
               { "line": 221, "start": 31, "end": 40 },
               { "line": 222, "start": 31, "end": 40 },
@@ -3372,12 +3371,13 @@
               { "line": 225, "start": 31, "end": 40 },
               { "line": 226, "start": 31, "end": 40 },
               { "line": 227, "start": 31, "end": 40 },
-              { "line": 228, "start": 32, "end": 41 },
+              { "line": 228, "start": 31, "end": 40 },
               { "line": 229, "start": 32, "end": 41 },
               { "line": 230, "start": 32, "end": 41 },
               { "line": 231, "start": 32, "end": 41 },
               { "line": 232, "start": 32, "end": 41 },
-              { "line": 233, "start": 32, "end": 41 }
+              { "line": 233, "start": 32, "end": 41 },
+              { "line": 234, "start": 32, "end": 41 }
             ],
             "tito": {}
           }
@@ -3390,9 +3390,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_broadening.tito_collapse_issue",
-    "callable_line": 18,
+    "callable_line": 19,
     "code": 5002,
-    "line": 22,
+    "line": 23,
     "start": 15,
     "end": 21,
     "filename": "taint_broadening.py",
@@ -3419,8 +3419,8 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito_positions": [ { "line": 21, "start": 13, "end": 14 } ],
-            "origin": { "line": 20, "start": 14, "end": 28 }
+            "tito_positions": [ { "line": 22, "start": 13, "end": 14 } ],
+            "origin": { "line": 21, "start": 14, "end": 28 }
           }
         ]
       },
@@ -3437,8 +3437,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 22, "start": 15, "end": 21 },
-            "call_site": "22:4-22:22"
+            "origin": { "line": 23, "start": 15, "end": 21 },
+            "call_site": "23:4-23:22"
           }
         ]
       }
@@ -3467,7 +3467,7 @@
   "data": {
     "callable": "taint_broadening.tito_collapse_sink",
     "filename": "taint_broadening.py",
-    "callable_line": 25,
+    "callable_line": 26,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -3490,9 +3490,9 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito_positions": [ { "line": 26, "start": 13, "end": 22 } ],
-            "origin": { "line": 27, "start": 15, "end": 21 },
-            "call_site": "27:4-27:22"
+            "tito_positions": [ { "line": 27, "start": 13, "end": 22 } ],
+            "origin": { "line": 28, "start": 15, "end": 21 },
+            "call_site": "28:4-28:22"
           }
         ]
       }
@@ -3504,7 +3504,7 @@
   "data": {
     "callable": "taint_broadening.tito_collapse_source",
     "filename": "taint_broadening.py",
-    "callable_line": 30,
+    "callable_line": 31,
     "sources": [
       {
         "port": "result",
@@ -3525,8 +3525,8 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito_positions": [ { "line": 32, "start": 16, "end": 17 } ],
-            "origin": { "line": 31, "start": 14, "end": 28 }
+            "tito_positions": [ { "line": 33, "start": 16, "end": 17 } ],
+            "origin": { "line": 32, "start": 14, "end": 28 }
           }
         ]
       }
@@ -3538,7 +3538,7 @@
   "data": {
     "callable": "taint_broadening.tito_no_broadening_input_and_output_paths",
     "filename": "taint_broadening.py",
-    "callable_line": 396,
+    "callable_line": 397,
     "tito": [
       {
         "port": "formal(parameter, position=0)[i1]",

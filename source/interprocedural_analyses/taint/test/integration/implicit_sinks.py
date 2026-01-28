@@ -5,9 +5,9 @@
 
 # flake8: noqa
 
-from pysa import _test_source
-
 import random
+
+from pysa import _test_source
 
 
 def propagate_sink_format_string(a):

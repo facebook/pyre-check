@@ -54,7 +54,7 @@
   "data": {
     "callable": "readonly.readonly_foo_not_tainted",
     "filename": "readonly.py",
-    "callable_line": 57,
+    "callable_line": 50,
     "sinks": [
       {
         "port": "formal(foo, position=0)[not_tainted]",
@@ -69,8 +69,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 58, "start": 15, "end": 30 },
-            "call_site": "58:4-58:31"
+            "origin": { "line": 51, "start": 15, "end": 30 },
+            "call_site": "51:4-51:31"
           }
         ]
       }
@@ -82,7 +82,7 @@
   "data": {
     "callable": "readonly.readonly_foo_tainted",
     "filename": "readonly.py",
-    "callable_line": 53,
+    "callable_line": 46,
     "sinks": [
       {
         "port": "formal(foo, position=0)[tainted]",
@@ -97,8 +97,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 54, "start": 15, "end": 26 },
-            "call_site": "54:4-54:27"
+            "origin": { "line": 47, "start": 15, "end": 26 },
+            "call_site": "47:4-47:27"
           }
         ]
       }
@@ -109,9 +109,9 @@
   "kind": "issue",
   "data": {
     "callable": "readonly.readonly_foo_tainted",
-    "callable_line": 53,
+    "callable_line": 46,
     "code": 5002,
-    "line": 54,
+    "line": 47,
     "start": 15,
     "end": 26,
     "filename": "readonly.py",
@@ -132,7 +132,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 54, "start": 15, "end": 26 }
+            "origin": { "line": 47, "start": 15, "end": 26 }
           }
         ]
       },
@@ -149,8 +149,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 54, "start": 15, "end": 26 },
-            "call_site": "54:4-54:27"
+            "origin": { "line": 47, "start": 15, "end": 26 },
+            "call_site": "47:4-47:27"
           }
         ]
       }
@@ -169,9 +169,9 @@
   "kind": "issue",
   "data": {
     "callable": "readonly.readonly_tito",
-    "callable_line": 42,
+    "callable_line": 35,
     "code": 5002,
-    "line": 45,
+    "line": 38,
     "start": 15,
     "end": 16,
     "filename": "readonly.py",
@@ -191,8 +191,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 44, "start": 24, "end": 38 } ],
-            "origin": { "line": 44, "start": 24, "end": 38 }
+            "tito_positions": [ { "line": 37, "start": 24, "end": 38 } ],
+            "origin": { "line": 37, "start": 24, "end": 38 }
           }
         ]
       },
@@ -209,8 +209,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 45, "start": 15, "end": 16 },
-            "call_site": "45:4-45:17"
+            "origin": { "line": 38, "start": 15, "end": 16 },
+            "call_site": "38:4-38:17"
           }
         ]
       }
@@ -234,7 +234,7 @@
   "data": {
     "callable": "readonly.regular_foo_not_tainted",
     "filename": "readonly.py",
-    "callable_line": 65,
+    "callable_line": 58,
     "sinks": [
       {
         "port": "formal(foo, position=0)[not_tainted]",
@@ -249,8 +249,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 66, "start": 15, "end": 30 },
-            "call_site": "66:4-66:31"
+            "origin": { "line": 59, "start": 15, "end": 30 },
+            "call_site": "59:4-59:31"
           }
         ]
       }
@@ -262,7 +262,7 @@
   "data": {
     "callable": "readonly.regular_foo_tainted",
     "filename": "readonly.py",
-    "callable_line": 61,
+    "callable_line": 54,
     "sinks": [
       {
         "port": "formal(foo, position=0)[tainted]",
@@ -277,8 +277,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 62, "start": 15, "end": 26 },
-            "call_site": "62:4-62:27"
+            "origin": { "line": 55, "start": 15, "end": 26 },
+            "call_site": "55:4-55:27"
           }
         ]
       }
@@ -289,9 +289,9 @@
   "kind": "issue",
   "data": {
     "callable": "readonly.regular_foo_tainted",
-    "callable_line": 61,
+    "callable_line": 54,
     "code": 5002,
-    "line": 62,
+    "line": 55,
     "start": 15,
     "end": 26,
     "filename": "readonly.py",
@@ -312,7 +312,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 62, "start": 15, "end": 26 }
+            "origin": { "line": 55, "start": 15, "end": 26 }
           }
         ]
       },
@@ -329,8 +329,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 62, "start": 15, "end": 26 },
-            "call_site": "62:4-62:27"
+            "origin": { "line": 55, "start": 15, "end": 26 },
+            "call_site": "55:4-55:27"
           }
         ]
       }
@@ -350,7 +350,7 @@
   "data": {
     "callable": "readonly.A.readonly_tito",
     "filename": "readonly.py",
-    "callable_line": 38,
+    "callable_line": 31,
     "tito": [
       {
         "port": "formal(x, position=1)",
@@ -369,7 +369,7 @@
   "data": {
     "callable": "readonly.A.self_readonly_map",
     "filename": "readonly.py",
-    "callable_line": 27,
+    "callable_line": 24,
     "sinks": [
       {
         "port": "formal(self, position=0)[mapping][]",
@@ -387,11 +387,11 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "" }
             ],
-            "tito_positions": [ { "line": 31, "start": 19, "end": 31 } ],
-            "origin": { "line": 31, "start": 19, "end": 39 },
+            "tito_positions": [ { "line": 26, "start": 19, "end": 31 } ],
+            "origin": { "line": 26, "start": 19, "end": 39 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "31:8-31:40"
+            "call_site": "26:8-26:40"
           }
         ]
       }
@@ -402,9 +402,9 @@
   "kind": "issue",
   "data": {
     "callable": "readonly.A.self_readonly_map",
-    "callable_line": 27,
+    "callable_line": 24,
     "code": 5002,
-    "line": 31,
+    "line": 26,
     "start": 19,
     "end": 39,
     "filename": "readonly.py",
@@ -428,8 +428,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "" }
             ],
-            "tito_positions": [ { "line": 31, "start": 19, "end": 31 } ],
-            "origin": { "line": 31, "start": 19, "end": 31 },
+            "tito_positions": [ { "line": 26, "start": 19, "end": 31 } ],
+            "origin": { "line": 26, "start": 19, "end": 31 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }
@@ -448,10 +448,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 31, "start": 19, "end": 39 },
+            "origin": { "line": 26, "start": 19, "end": 39 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "31:8-31:40"
+            "call_site": "26:8-26:40"
           }
         ]
       }
@@ -475,7 +475,7 @@
   "data": {
     "callable": "readonly.A.self_readonly_str",
     "filename": "readonly.py",
-    "callable_line": 17,
+    "callable_line": 18,
     "sinks": [
       {
         "port": "formal(self, position=0)[B]",
@@ -490,10 +490,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 20, "start": 19, "end": 25 },
+            "origin": { "line": 19, "start": 19, "end": 25 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "20:8-20:26"
+            "call_site": "19:8-19:26"
           }
         ]
       }
@@ -504,9 +504,9 @@
   "kind": "issue",
   "data": {
     "callable": "readonly.A.self_readonly_str",
-    "callable_line": 17,
+    "callable_line": 18,
     "code": 5002,
-    "line": 20,
+    "line": 19,
     "start": 19,
     "end": 25,
     "filename": "readonly.py",
@@ -524,7 +524,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 20, "start": 19, "end": 25 },
+            "origin": { "line": 19, "start": 19, "end": 25 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }
@@ -543,10 +543,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 20, "start": 19, "end": 25 },
+            "origin": { "line": 19, "start": 19, "end": 25 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "20:8-20:26"
+            "call_site": "19:8-19:26"
           }
         ]
       }
@@ -566,7 +566,7 @@
   "data": {
     "callable": "readonly.A.self_untyped_map",
     "filename": "readonly.py",
-    "callable_line": 33,
+    "callable_line": 28,
     "sinks": [
       {
         "port": "formal(self, position=0)[mapping][]",
@@ -584,11 +584,11 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "" }
             ],
-            "tito_positions": [ { "line": 36, "start": 19, "end": 31 } ],
-            "origin": { "line": 36, "start": 19, "end": 39 },
+            "tito_positions": [ { "line": 29, "start": 19, "end": 31 } ],
+            "origin": { "line": 29, "start": 19, "end": 39 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "36:8-36:40"
+            "call_site": "29:8-29:40"
           }
         ]
       }
@@ -599,9 +599,9 @@
   "kind": "issue",
   "data": {
     "callable": "readonly.A.self_untyped_map",
-    "callable_line": 33,
+    "callable_line": 28,
     "code": 5002,
-    "line": 36,
+    "line": 29,
     "start": 19,
     "end": 39,
     "filename": "readonly.py",
@@ -625,8 +625,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "" }
             ],
-            "tito_positions": [ { "line": 36, "start": 19, "end": 31 } ],
-            "origin": { "line": 36, "start": 19, "end": 31 },
+            "tito_positions": [ { "line": 29, "start": 19, "end": 31 } ],
+            "origin": { "line": 29, "start": 19, "end": 31 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }
@@ -645,10 +645,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 36, "start": 19, "end": 39 },
+            "origin": { "line": 29, "start": 19, "end": 39 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "36:8-36:40"
+            "call_site": "29:8-29:40"
           }
         ]
       }
@@ -672,7 +672,7 @@
   "data": {
     "callable": "readonly.A.self_untyped_str",
     "filename": "readonly.py",
-    "callable_line": 22,
+    "callable_line": 21,
     "sinks": [
       {
         "port": "formal(self, position=0)[B]",
@@ -687,10 +687,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 25, "start": 19, "end": 25 },
+            "origin": { "line": 22, "start": 19, "end": 25 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "25:8-25:26"
+            "call_site": "22:8-22:26"
           }
         ]
       }
@@ -701,9 +701,9 @@
   "kind": "issue",
   "data": {
     "callable": "readonly.A.self_untyped_str",
-    "callable_line": 22,
+    "callable_line": 21,
     "code": 5002,
-    "line": 25,
+    "line": 22,
     "start": 19,
     "end": 25,
     "filename": "readonly.py",
@@ -721,7 +721,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 25, "start": 19, "end": 25 },
+            "origin": { "line": 22, "start": 19, "end": 25 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }
@@ -740,10 +740,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 25, "start": 19, "end": 25 },
+            "origin": { "line": 22, "start": 19, "end": 25 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "25:8-25:26"
+            "call_site": "22:8-22:26"
           }
         ]
       }

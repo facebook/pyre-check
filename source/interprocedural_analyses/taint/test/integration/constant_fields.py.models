@@ -4,7 +4,7 @@
   "data": {
     "callable": "constant_fields.test_untracked_constant",
     "filename": "constant_fields.py",
-    "callable_line": 51,
+    "callable_line": 52,
     "sources": [
       {
         "port": "result",
@@ -22,7 +22,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "origin": { "line": 53, "start": 28, "end": 42 }
+            "origin": { "line": 54, "start": 28, "end": 42 }
           }
         ]
       }
@@ -34,7 +34,7 @@
   "data": {
     "callable": "constant_fields.tracked_constant_A",
     "filename": "constant_fields.py",
-    "callable_line": 39,
+    "callable_line": 40,
     "sources": [
       {
         "port": "result",
@@ -52,7 +52,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "CONSTANT_A" }
             ],
-            "origin": { "line": 41, "start": 20, "end": 34 }
+            "origin": { "line": 42, "start": 20, "end": 34 }
           }
         ]
       }
@@ -64,7 +64,7 @@
   "data": {
     "callable": "constant_fields.tracked_constant_B",
     "filename": "constant_fields.py",
-    "callable_line": 45,
+    "callable_line": 46,
     "sources": [
       {
         "port": "result",
@@ -82,7 +82,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "CONSTANT_B" }
             ],
-            "origin": { "line": 47, "start": 20, "end": 34 }
+            "origin": { "line": 48, "start": 20, "end": 34 }
           }
         ]
       }
@@ -94,7 +94,7 @@
   "data": {
     "callable": "constant_fields.tracked_index",
     "filename": "constant_fields.py",
-    "callable_line": 16,
+    "callable_line": 17,
     "sources": [
       {
         "port": "result",
@@ -112,7 +112,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "TRACKED_FIELD" }
             ],
-            "origin": { "line": 18, "start": 34, "end": 48 }
+            "origin": { "line": 19, "start": 34, "end": 48 }
           }
         ]
       }
@@ -124,7 +124,7 @@
   "data": {
     "callable": "constant_fields.untracked_index_a",
     "filename": "constant_fields.py",
-    "callable_line": 22,
+    "callable_line": 23,
     "sources": [
       {
         "port": "result",
@@ -142,7 +142,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "origin": { "line": 24, "start": 36, "end": 50 }
+            "origin": { "line": 25, "start": 36, "end": 50 }
           }
         ]
       }
@@ -154,7 +154,7 @@
   "data": {
     "callable": "constant_fields.untracked_index_b",
     "filename": "constant_fields.py",
-    "callable_line": 28,
+    "callable_line": 29,
     "sources": [
       {
         "port": "result",
@@ -172,7 +172,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "origin": { "line": 30, "start": 36, "end": 50 }
+            "origin": { "line": 31, "start": 36, "end": 50 }
           }
         ]
       }

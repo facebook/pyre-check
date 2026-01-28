@@ -4,8 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 import collections
-from pysa import _test_sink, _test_source
 from typing import NamedTuple
+
+from pysa import _test_sink, _test_source
 
 
 class MyNamedTuple(NamedTuple):

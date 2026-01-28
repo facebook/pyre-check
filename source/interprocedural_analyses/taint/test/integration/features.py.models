@@ -4,7 +4,7 @@
   "data": {
     "callable": "features.always_feature_for_duplicate_models",
     "filename": "features.py",
-    "callable_line": 108,
+    "callable_line": 109,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -31,9 +31,9 @@
   "kind": "issue",
   "data": {
     "callable": "features.async_issue_bools",
-    "callable_line": 93,
+    "callable_line": 94,
     "code": 5002,
-    "line": 95,
+    "line": 96,
     "start": 15,
     "end": 16,
     "filename": "features.py",
@@ -64,7 +64,7 @@
               { "always-type": "scalar" }
             ],
             "call": {
-              "position": { "line": 94, "start": 17, "end": 39 },
+              "position": { "line": 95, "start": 17, "end": 39 },
               "resolves_to": [ "features.async_tuple_of_bools" ],
               "port": "result[0]"
             }
@@ -84,8 +84,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 95, "start": 15, "end": 16 },
-            "call_site": "95:4-95:17"
+            "origin": { "line": 96, "start": 15, "end": 16 },
+            "call_site": "96:4-96:17"
           }
         ]
       }
@@ -111,7 +111,7 @@
   "data": {
     "callable": "features.async_tuple_of_bools",
     "filename": "features.py",
-    "callable_line": 89,
+    "callable_line": 90,
     "sources": [
       {
         "port": "result[0]",
@@ -131,7 +131,7 @@
               { "always-type": "bool" },
               { "always-type": "scalar" }
             ],
-            "origin": { "line": 90, "start": 11, "end": 25 }
+            "origin": { "line": 91, "start": 11, "end": 25 }
           }
         ]
       },
@@ -153,7 +153,7 @@
               { "always-type": "bool" },
               { "always-type": "scalar" }
             ],
-            "origin": { "line": 90, "start": 27, "end": 41 }
+            "origin": { "line": 91, "start": 27, "end": 41 }
           }
         ]
       }
@@ -165,7 +165,7 @@
   "data": {
     "callable": "features.dynamic_feature_tito",
     "filename": "features.py",
-    "callable_line": 98,
+    "callable_line": 99,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -189,9 +189,9 @@
   "kind": "issue",
   "data": {
     "callable": "features.issue_from_tuple",
-    "callable_line": 77,
+    "callable_line": 78,
     "code": 5002,
-    "line": 79,
+    "line": 80,
     "start": 15,
     "end": 16,
     "filename": "features.py",
@@ -222,7 +222,7 @@
               { "always-type": "scalar" }
             ],
             "call": {
-              "position": { "line": 78, "start": 11, "end": 34 },
+              "position": { "line": 79, "start": 11, "end": 34 },
               "resolves_to": [ "features.return_tuple_of_bools" ],
               "port": "result[0]"
             }
@@ -242,8 +242,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 79, "start": 15, "end": 16 },
-            "call_site": "79:4-79:17"
+            "origin": { "line": 80, "start": 15, "end": 16 },
+            "call_site": "80:4-80:17"
           }
         ]
       }
@@ -268,9 +268,9 @@
   "kind": "issue",
   "data": {
     "callable": "features.issue_via_bool",
-    "callable_line": 57,
+    "callable_line": 58,
     "code": 5002,
-    "line": 60,
+    "line": 61,
     "start": 15,
     "end": 16,
     "filename": "features.py",
@@ -296,8 +296,8 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 59, "start": 13, "end": 14 } ],
-            "origin": { "line": 58, "start": 8, "end": 22 }
+            "tito_positions": [ { "line": 60, "start": 13, "end": 14 } ],
+            "origin": { "line": 59, "start": 8, "end": 22 }
           }
         ]
       },
@@ -314,8 +314,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 60, "start": 15, "end": 16 },
-            "call_site": "60:4-60:17"
+            "origin": { "line": 61, "start": 15, "end": 16 },
+            "call_site": "61:4-61:17"
           }
         ]
       }
@@ -342,9 +342,9 @@
   "kind": "issue",
   "data": {
     "callable": "features.issue_via_equality",
-    "callable_line": 67,
+    "callable_line": 68,
     "code": 5002,
-    "line": 70,
+    "line": 71,
     "start": 15,
     "end": 30,
     "filename": "features.py",
@@ -371,9 +371,9 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 69, "start": 22, "end": 23 } ],
+            "tito_positions": [ { "line": 70, "start": 22, "end": 23 } ],
             "call": {
-              "position": { "line": 68, "start": 8, "end": 32 },
+              "position": { "line": 69, "start": 8, "end": 32 },
               "resolves_to": [ "features.returns_tainted_object" ],
               "port": "result"
             }
@@ -393,8 +393,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 70, "start": 15, "end": 30 },
-            "call_site": "70:4-70:31"
+            "origin": { "line": 71, "start": 15, "end": 30 },
+            "call_site": "71:4-71:31"
           }
         ]
       }
@@ -421,73 +421,7 @@
   "kind": "issue",
   "data": {
     "callable": "features.issue_via_in",
-    "callable_line": 102,
-    "code": 5002,
-    "line": 104,
-    "start": 15,
-    "end": 23,
-    "filename": "features.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-type": "bool" }, { "always-type": "scalar" }
-            ],
-            "origin": { "line": 103, "start": 8, "end": 22 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 104, "start": 15, "end": 23 },
-            "call_site": "104:4-104:24"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-type": "bool" },
-      { "always-type": "scalar" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "pysa._test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "features.issue_via_in:5002:0:Call|pysa._test_sink|0|formal(arg):3fbe2876f4b3956f18709002be6575de"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "features.issue_via_in",
-    "callable_line": 102,
+    "callable_line": 103,
     "code": 5002,
     "line": 105,
     "start": 15,
@@ -511,7 +445,7 @@
             "local_features": [
               { "always-type": "bool" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 103, "start": 8, "end": 22 }
+            "origin": { "line": 104, "start": 8, "end": 22 }
           }
         ]
       },
@@ -543,6 +477,72 @@
     "sink_handle": {
       "kind": "Call",
       "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "features.issue_via_in:5002:0:Call|pysa._test_sink|0|formal(arg):3fbe2876f4b3956f18709002be6575de"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "features.issue_via_in",
+    "callable_line": 103,
+    "code": 5002,
+    "line": 106,
+    "start": 15,
+    "end": 23,
+    "filename": "features.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "bool" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 104, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 106, "start": 15, "end": 23 },
+            "call_site": "106:4-106:24"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-type": "bool" },
+      { "always-type": "scalar" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
       "index": 1,
       "parameter": "formal(arg)"
     },
@@ -554,7 +554,7 @@
   "data": {
     "callable": "features.len",
     "filename": "features.py",
-    "callable_line": 10,
+    "callable_line": 11,
     "tito": [
       {
         "port": "formal(o, position=0)",
@@ -581,7 +581,7 @@
   "data": {
     "callable": "features.min",
     "filename": "features.py",
-    "callable_line": 14,
+    "callable_line": 15,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -617,7 +617,7 @@
   "data": {
     "callable": "features.named",
     "filename": "features.py",
-    "callable_line": 18,
+    "callable_line": 19,
     "tito": [
       {
         "port": "formal(named_parameter)",
@@ -644,7 +644,7 @@
   "data": {
     "callable": "features.no_always_when_calling_setitem",
     "filename": "features.py",
-    "callable_line": 118,
+    "callable_line": 119,
     "sources": [
       {
         "port": "result",
@@ -662,8 +662,8 @@
             "local_features": [
               { "always-via": "copy" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 121, "start": 20, "end": 21 } ],
-            "origin": { "line": 119, "start": 8, "end": 22 }
+            "tito_positions": [ { "line": 122, "start": 20, "end": 21 } ],
+            "origin": { "line": 120, "start": 8, "end": 22 }
           }
         ]
       }
@@ -675,7 +675,7 @@
   "data": {
     "callable": "features.return_tuple_of_bools",
     "filename": "features.py",
-    "callable_line": 73,
+    "callable_line": 74,
     "sources": [
       {
         "port": "result[0]",
@@ -695,7 +695,7 @@
               { "always-type": "bool" },
               { "always-type": "scalar" }
             ],
-            "origin": { "line": 74, "start": 11, "end": 25 }
+            "origin": { "line": 75, "start": 11, "end": 25 }
           }
         ]
       },
@@ -717,7 +717,7 @@
               { "always-type": "bool" },
               { "always-type": "scalar" }
             ],
-            "origin": { "line": 74, "start": 27, "end": 41 }
+            "origin": { "line": 75, "start": 27, "end": 41 }
           }
         ]
       }
@@ -729,7 +729,7 @@
   "data": {
     "callable": "features.returns_tainted_object",
     "filename": "features.py",
-    "callable_line": 63,
+    "callable_line": 64,
     "sources": [
       {
         "port": "result",
@@ -744,7 +744,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 64, "start": 11, "end": 25 }
+            "origin": { "line": 65, "start": 11, "end": 25 }
           }
         ]
       }
@@ -756,7 +756,7 @@
   "data": {
     "callable": "features.tito_via_constructor",
     "filename": "features.py",
-    "callable_line": 45,
+    "callable_line": 46,
     "tito": [
       {
         "port": "formal(o, position=0)",
@@ -775,7 +775,7 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 46, "start": 15, "end": 16 } ],
+            "tito_positions": [ { "line": 47, "start": 15, "end": 16 } ],
             "tito": {}
           }
         ]
@@ -788,7 +788,7 @@
   "data": {
     "callable": "features.tito_via_len",
     "filename": "features.py",
-    "callable_line": 22,
+    "callable_line": 23,
     "tito": [
       {
         "port": "formal(o, position=0)",
@@ -806,7 +806,7 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 23, "start": 15, "end": 16 } ],
+            "tito_positions": [ { "line": 24, "start": 15, "end": 16 } ],
             "tito": {}
           }
         ]
@@ -819,7 +819,7 @@
   "data": {
     "callable": "features.tito_via_min_left",
     "filename": "features.py",
-    "callable_line": 26,
+    "callable_line": 27,
     "tito": [
       {
         "port": "formal(o, position=0)",
@@ -837,7 +837,7 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 27, "start": 15, "end": 16 } ],
+            "tito_positions": [ { "line": 28, "start": 15, "end": 16 } ],
             "tito": {}
           }
         ]
@@ -850,7 +850,7 @@
   "data": {
     "callable": "features.tito_via_min_or_not",
     "filename": "features.py",
-    "callable_line": 38,
+    "callable_line": 39,
     "tito": [
       {
         "port": "formal(o, position=0)",
@@ -860,7 +860,7 @@
             "local_features": [
               { "type": "integer" }, { "type": "scalar" }, { "via": "tito" }
             ],
-            "tito_positions": [ { "line": 40, "start": 19, "end": 20 } ],
+            "tito_positions": [ { "line": 41, "start": 19, "end": 20 } ],
             "tito": {}
           }
         ]
@@ -873,7 +873,7 @@
   "data": {
     "callable": "features.tito_via_min_right",
     "filename": "features.py",
-    "callable_line": 30,
+    "callable_line": 31,
     "tito": [
       {
         "port": "formal(o, position=0)",
@@ -887,7 +887,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 31, "start": 18, "end": 19 } ],
+            "tito_positions": [ { "line": 32, "start": 18, "end": 19 } ],
             "tito": {}
           }
         ]
@@ -900,7 +900,7 @@
   "data": {
     "callable": "features.tito_via_named",
     "filename": "features.py",
-    "callable_line": 34,
+    "callable_line": 35,
     "tito": [
       {
         "port": "formal(o, position=0)",
@@ -918,7 +918,7 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 35, "start": 33, "end": 34 } ],
+            "tito_positions": [ { "line": 36, "start": 33, "end": 34 } ],
             "tito": {}
           }
         ]
@@ -931,7 +931,7 @@
   "data": {
     "callable": "features.tito_with_tuple",
     "filename": "features.py",
-    "callable_line": 82,
+    "callable_line": 83,
     "tito": [
       {
         "port": "formal(o, position=0)",
@@ -947,8 +947,8 @@
               { "type": "integer" }, { "type": "scalar" }, { "via": "tito" }
             ],
             "tito_positions": [
-              { "line": 84, "start": 19, "end": 20 },
-              { "line": 84, "start": 34, "end": 35 }
+              { "line": 85, "start": 19, "end": 20 },
+              { "line": 85, "start": 34, "end": 35 }
             ],
             "tito": {}
           }
@@ -1012,7 +1012,7 @@
   "data": {
     "callable": "features.SetItemClass.__setitem__",
     "filename": "features.py",
-    "callable_line": 114,
+    "callable_line": 115,
     "tito": [
       {
         "port": "formal(value, position=2)",

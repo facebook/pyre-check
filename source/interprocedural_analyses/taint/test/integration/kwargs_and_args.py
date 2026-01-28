@@ -3,8 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from pysa import _test_source, _test_sink
-from typing import Dict, Any
+from typing import Any, Dict
+
+from pysa import _test_sink, _test_source
 
 
 def async_render_to_response(
@@ -17,9 +18,9 @@ def async_render_to_response(
 def async_distillery_render(request, **kwargs: Any):
     # Any source in dict `kwargs` should not reach the sink
     # in async_render_to_response
-    kwargs['request'] = _test_source()
-    kwargs['context'] = _test_source()
-    kwargs.pop('context')
+    kwargs["request"] = _test_source()
+    kwargs["context"] = _test_source()
+    kwargs.pop("context")
     async_render_to_response(**kwargs)
     # Only the value of key 'request' in dict `kwargs` is a source
     return kwargs

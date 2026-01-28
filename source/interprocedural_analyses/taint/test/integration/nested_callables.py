@@ -5,6 +5,7 @@
 
 # flake8: noqa
 import typing
+
 from pysa import _test_sink, _test_source
 
 
@@ -115,12 +116,13 @@ def test_access_parameter_in_inner_scope_tito():
 
 
 class A:
-    a : str = ""
+    a: str = ""
 
 
 def test_mutation_of_class():
     # TODO(T165056297): We should find an issue here
     a = A()
+
     def set_a(a):
         a.a = _test_source()
 

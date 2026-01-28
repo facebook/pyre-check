@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import random
-from typing import Any, cast, Dict, List
+from typing import Any, Dict, List, cast
 
 from pysa import _cookies, _rce, _sql, _test_sink, _test_source, _user_controlled
 

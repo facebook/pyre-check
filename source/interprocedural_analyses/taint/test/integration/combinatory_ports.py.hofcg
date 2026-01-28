@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "combinatory_ports.A.method",
   "returned_callables": [],
   "calls": {
-    "28:8-28:23": {
+    "29:8-29:23": {
       "call": {
         "calls": [
           {
@@ -23,7 +23,7 @@ Higher order call graphs
   "callable": "combinatory_ports.B.method",
   "returned_callables": [],
   "calls": {
-    "36:8-36:23": {
+    "37:8-37:23": {
       "call": {
         "calls": [
           {
@@ -42,14 +42,14 @@ Higher order call graphs
   "callable": "combinatory_ports.C.method",
   "returned_callables": [],
   "calls": {
-    "45:8-45:26": {
+    "46:8-46:26": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "46:8-46:23": {
+    "47:8-47:23": {
       "call": {
         "calls": [
           {

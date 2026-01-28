@@ -4,7 +4,7 @@
   "data": {
     "callable": "obscure_tito.test_obscure_return",
     "filename": "obscure_tito.py",
-    "callable_line": 31,
+    "callable_line": 27,
     "sources": [
       {
         "port": "result",
@@ -22,8 +22,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 33, "start": 20, "end": 34 } ],
-            "origin": { "line": 33, "start": 20, "end": 34 }
+            "tito_positions": [ { "line": 29, "start": 20, "end": 34 } ],
+            "origin": { "line": 29, "start": 20, "end": 34 }
           }
         ]
       }
@@ -35,7 +35,7 @@
   "data": {
     "callable": "obscure_tito.test_obscure_sink",
     "filename": "obscure_tito.py",
-    "callable_line": 36,
+    "callable_line": 32,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -52,10 +52,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 38, "start": 22, "end": 31 },
+            "origin": { "line": 34, "start": 22, "end": 31 },
             "receiver_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": false,
-            "call_site": "38:4-38:32"
+            "call_site": "34:4-34:32"
           }
         ]
       }
@@ -67,7 +67,7 @@
   "data": {
     "callable": "obscure_tito.test_obscure_tito",
     "filename": "obscure_tito.py",
-    "callable_line": 25,
+    "callable_line": 21,
     "sources": [
       {
         "port": "result",
@@ -83,8 +83,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 27, "start": 13, "end": 27 } ],
-            "origin": { "line": 27, "start": 13, "end": 27 }
+            "tito_positions": [ { "line": 23, "start": 13, "end": 27 } ],
+            "origin": { "line": 23, "start": 13, "end": 27 }
           }
         ]
       }
@@ -146,7 +146,7 @@
   "data": {
     "callable": "obscure_tito.C.taint_parameter",
     "filename": "obscure_tito.py",
-    "callable_line": 13,
+    "callable_line": 12,
     "sinks": [
       {
         "port": "formal(tainted_parameter, position=1)",

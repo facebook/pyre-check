@@ -4,8 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 
-from pysa import _test_source
 from typing import Optional, Union
+
+from pysa import _test_source
 
 
 class Test1_C1:

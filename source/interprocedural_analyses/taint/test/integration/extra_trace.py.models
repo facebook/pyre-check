@@ -4,7 +4,7 @@
   "data": {
     "callable": "extra_trace.branch_tito_backward",
     "filename": "extra_trace.py",
-    "callable_line": 70,
+    "callable_line": 69,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -16,10 +16,10 @@
                   {
                     "message": "TransformX",
                     "call": {
-                      "position": { "line": 72, "start": 34, "end": 37 },
+                      "position": { "line": 71, "start": 34, "end": 37 },
                       "resolves_to": [ "extra_trace.nested_transform_x" ],
                       "port": "formal(arg, position=0)",
-                      "call_site": "72:15-72:38"
+                      "call_site": "71:15-71:38"
                     },
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -37,8 +37,8 @@
                 "extra_traces": [
                   {
                     "message": "TransformY",
-                    "origin": { "line": 74, "start": 27, "end": 30 },
-                    "call_site": "74:15-74:31",
+                    "origin": { "line": 73, "start": 27, "end": 30 },
+                    "call_site": "73:15-73:31",
                     "leaf_kind": "TransformY:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -54,11 +54,11 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 72, "start": 34, "end": 37 },
-              { "line": 74, "start": 27, "end": 30 }
+              { "line": 71, "start": 34, "end": 37 },
+              { "line": 73, "start": 27, "end": 30 }
             ],
-            "origin": { "line": 75, "start": 15, "end": 19 },
-            "call_site": "75:4-75:20"
+            "origin": { "line": 74, "start": 15, "end": 19 },
+            "call_site": "74:4-74:20"
           }
         ]
       }
@@ -70,7 +70,7 @@
   "data": {
     "callable": "extra_trace.branch_tito_forward",
     "filename": "extra_trace.py",
-    "callable_line": 60,
+    "callable_line": 59,
     "sources": [
       {
         "port": "result",
@@ -82,10 +82,10 @@
                   {
                     "message": "TransformX",
                     "call": {
-                      "position": { "line": 63, "start": 32, "end": 34 },
+                      "position": { "line": 62, "start": 32, "end": 34 },
                       "resolves_to": [ "extra_trace.nested_transform_x" ],
                       "port": "formal(arg, position=0)",
-                      "call_site": "63:13-63:35"
+                      "call_site": "62:13-62:35"
                     },
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -103,18 +103,18 @@
                 "extra_traces": [
                   {
                     "message": "TransformY",
-                    "origin": { "line": 66, "start": 25, "end": 27 },
-                    "call_site": "66:13-66:28",
+                    "origin": { "line": 65, "start": 25, "end": 27 },
+                    "call_site": "65:13-65:28",
                     "leaf_kind": "TransformY:ExtraTraceSink",
                     "trace_kind": "sink"
                   },
                   {
                     "message": "TransformX",
                     "call": {
-                      "position": { "line": 65, "start": 32, "end": 34 },
+                      "position": { "line": 64, "start": 32, "end": 34 },
                       "resolves_to": [ "extra_trace.nested_transform_x" ],
                       "port": "formal(arg, position=0)",
-                      "call_site": "65:13-65:35"
+                      "call_site": "64:13-64:35"
                     },
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -132,11 +132,11 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 63, "start": 32, "end": 34 },
-              { "line": 65, "start": 32, "end": 34 },
-              { "line": 66, "start": 25, "end": 27 }
+              { "line": 62, "start": 32, "end": 34 },
+              { "line": 64, "start": 32, "end": 34 },
+              { "line": 65, "start": 25, "end": 27 }
             ],
-            "origin": { "line": 61, "start": 9, "end": 23 }
+            "origin": { "line": 60, "start": 9, "end": 23 }
           }
         ]
       }
@@ -148,7 +148,7 @@
   "data": {
     "callable": "extra_trace.double_nested_transform_x",
     "filename": "extra_trace.py",
-    "callable_line": 41,
+    "callable_line": 40,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -156,10 +156,10 @@
           {
             "kinds": [ { "length": 1, "kind": "TransformX:ExtraTraceSink" } ],
             "call": {
-              "position": { "line": 42, "start": 30, "end": 33 },
+              "position": { "line": 41, "start": 30, "end": 33 },
               "resolves_to": [ "extra_trace.nested_transform_x" ],
               "port": "formal(arg, position=0)",
-              "call_site": "42:11-42:34"
+              "call_site": "41:11-41:34"
             }
           }
         ]
@@ -178,7 +178,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 42, "start": 30, "end": 33 } ],
+            "tito_positions": [ { "line": 41, "start": 30, "end": 33 } ],
             "tito": {}
           }
         ]
@@ -190,9 +190,9 @@
   "kind": "issue",
   "data": {
     "callable": "extra_trace.extra_trace_sink_as_origin",
-    "callable_line": 99,
+    "callable_line": 98,
     "code": 6000,
-    "line": 102,
+    "line": 101,
     "start": 15,
     "end": 23,
     "filename": "extra_trace.py",
@@ -207,8 +207,8 @@
                 "extra_traces": [
                   {
                     "message": "TransformX",
-                    "origin": { "line": 101, "start": 27, "end": 33 },
-                    "call_site": "101:15-101:34",
+                    "origin": { "line": 100, "start": 27, "end": 33 },
+                    "call_site": "100:15-100:34",
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -223,8 +223,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 101, "start": 27, "end": 33 } ],
-            "origin": { "line": 100, "start": 13, "end": 27 }
+            "tito_positions": [ { "line": 100, "start": 27, "end": 33 } ],
+            "origin": { "line": 99, "start": 13, "end": 27 }
           }
         ]
       },
@@ -240,8 +240,8 @@
                 "kind": "TestSink"
               }
             ],
-            "origin": { "line": 102, "start": 15, "end": 23 },
-            "call_site": "102:4-102:24"
+            "origin": { "line": 101, "start": 15, "end": 23 },
+            "call_site": "101:4-101:24"
           }
         ]
       }
@@ -262,9 +262,9 @@
   "kind": "issue",
   "data": {
     "callable": "extra_trace.extra_trace_through_override",
-    "callable_line": 115,
+    "callable_line": 114,
     "code": 6000,
-    "line": 118,
+    "line": 117,
     "start": 15,
     "end": 23,
     "filename": "extra_trace.py",
@@ -280,12 +280,12 @@
                   {
                     "message": "TransformX",
                     "call": {
-                      "position": { "line": 117, "start": 27, "end": 33 },
+                      "position": { "line": 116, "start": 27, "end": 33 },
                       "resolves_to": [
                         "extra_trace.OverrideTransform.transform"
                       ],
                       "port": "formal(arg, position=1)",
-                      "call_site": "117:15-117:34"
+                      "call_site": "116:15-116:34"
                     },
                     "receiver_interval": [ { "lower": 2, "upper": 5 } ],
                     "is_self_call": false,
@@ -303,8 +303,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 117, "start": 27, "end": 33 } ],
-            "origin": { "line": 116, "start": 13, "end": 27 }
+            "tito_positions": [ { "line": 116, "start": 27, "end": 33 } ],
+            "origin": { "line": 115, "start": 13, "end": 27 }
           }
         ]
       },
@@ -320,8 +320,8 @@
                 "kind": "TestSink"
               }
             ],
-            "origin": { "line": 118, "start": 15, "end": 23 },
-            "call_site": "118:4-118:24"
+            "origin": { "line": 117, "start": 15, "end": 23 },
+            "call_site": "117:4-117:24"
           }
         ]
       }
@@ -342,9 +342,9 @@
   "kind": "issue",
   "data": {
     "callable": "extra_trace.issue_via_transfom_captured_variable",
-    "callable_line": 170,
+    "callable_line": 169,
     "code": 6000,
-    "line": 177,
+    "line": 176,
     "start": 15,
     "end": 32,
     "filename": "extra_trace.py",
@@ -359,7 +359,7 @@
                 "extra_traces": [
                   {
                     "message": "TransformX",
-                    "origin": { "line": 177, "start": 15, "end": 32 },
+                    "origin": { "line": 176, "start": 15, "end": 32 },
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -376,8 +376,8 @@
             "local_features": [
               { "always-via": "tito" }, { "via": "captured-variable" }
             ],
-            "tito_positions": [ { "line": 177, "start": 15, "end": 32 } ],
-            "origin": { "line": 171, "start": 8, "end": 22 }
+            "tito_positions": [ { "line": 176, "start": 15, "end": 32 } ],
+            "origin": { "line": 170, "start": 8, "end": 22 }
           }
         ]
       },
@@ -393,8 +393,8 @@
                 "kind": "TestSink"
               }
             ],
-            "origin": { "line": 177, "start": 15, "end": 32 },
-            "call_site": "177:4-177:33"
+            "origin": { "line": 176, "start": 15, "end": 32 },
+            "call_site": "176:4-176:33"
           }
         ]
       }
@@ -418,7 +418,7 @@
   "data": {
     "callable": "extra_trace.issue_via_transfom_captured_variable.nested_function",
     "filename": "extra_trace.py",
-    "callable_line": 174,
+    "callable_line": 173,
     "sinks": [
       {
         "port": "captured_variable(x, extra_trace.issue_via_transfom_captured_variable)",
@@ -453,7 +453,7 @@
   "data": {
     "callable": "extra_trace.loop_tito_backward",
     "filename": "extra_trace.py",
-    "callable_line": 85,
+    "callable_line": 84,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -470,8 +470,8 @@
                 "extra_traces": [
                   {
                     "message": "TransformX",
-                    "origin": { "line": 87, "start": 26, "end": 29 },
-                    "call_site": "87:14-87:30",
+                    "origin": { "line": 86, "start": 26, "end": 29 },
+                    "call_site": "86:14-86:30",
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -486,9 +486,9 @@
               }
             ],
             "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 87, "start": 26, "end": 29 } ],
-            "origin": { "line": 88, "start": 15, "end": 18 },
-            "call_site": "88:4-88:19"
+            "tito_positions": [ { "line": 86, "start": 26, "end": 29 } ],
+            "origin": { "line": 87, "start": 15, "end": 18 },
+            "call_site": "87:4-87:19"
           }
         ]
       }
@@ -500,7 +500,7 @@
   "data": {
     "callable": "extra_trace.loop_tito_forward",
     "filename": "extra_trace.py",
-    "callable_line": 78,
+    "callable_line": 77,
     "sources": [
       {
         "port": "result",
@@ -517,8 +517,8 @@
                 "extra_traces": [
                   {
                     "message": "TransformX",
-                    "origin": { "line": 81, "start": 25, "end": 27 },
-                    "call_site": "81:13-81:28",
+                    "origin": { "line": 80, "start": 25, "end": 27 },
+                    "call_site": "80:13-80:28",
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -533,8 +533,8 @@
               }
             ],
             "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 81, "start": 25, "end": 27 } ],
-            "origin": { "line": 79, "start": 9, "end": 23 }
+            "tito_positions": [ { "line": 80, "start": 25, "end": 27 } ],
+            "origin": { "line": 78, "start": 9, "end": 23 }
           }
         ]
       }
@@ -546,7 +546,7 @@
   "data": {
     "callable": "extra_trace.mismatching_tito_extra_sink",
     "filename": "extra_trace.py",
-    "callable_line": 140,
+    "callable_line": 139,
     "sinks": [
       {
         "port": "formal(self, position=0)[transformed_key]",
@@ -563,10 +563,10 @@
               }
             ],
             "call": {
-              "position": { "line": 142, "start": 41, "end": 45 },
+              "position": { "line": 141, "start": 41, "end": 45 },
               "resolves_to": [ "extra_trace.tito_transform_attribute" ],
               "port": "formal(self, position=0)[transformed_key]",
-              "call_site": "142:16-142:46"
+              "call_site": "141:16-141:46"
             }
           }
         ]
@@ -599,7 +599,7 @@
               { "always-via": "broadening" },
               { "always-via": "model-tito-broadening" }
             ],
-            "tito_positions": [ { "line": 142, "start": 41, "end": 45 } ],
+            "tito_positions": [ { "line": 141, "start": 41, "end": 45 } ],
             "tito": {}
           }
         ]
@@ -612,7 +612,7 @@
   "data": {
     "callable": "extra_trace.nested_transform_x",
     "filename": "extra_trace.py",
-    "callable_line": 37,
+    "callable_line": 36,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -626,8 +626,8 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "origin": { "line": 38, "start": 23, "end": 26 },
-            "call_site": "38:11-38:27"
+            "origin": { "line": 37, "start": 23, "end": 26 },
+            "call_site": "37:11-37:27"
           }
         ]
       }
@@ -645,7 +645,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 38, "start": 23, "end": 26 } ],
+            "tito_positions": [ { "line": 37, "start": 23, "end": 26 } ],
             "tito": {}
           }
         ]
@@ -658,7 +658,7 @@
   "data": {
     "callable": "extra_trace.sequential_tito_backward",
     "filename": "extra_trace.py",
-    "callable_line": 53,
+    "callable_line": 52,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -670,10 +670,10 @@
                   {
                     "message": "TransformX",
                     "call": {
-                      "position": { "line": 54, "start": 30, "end": 33 },
+                      "position": { "line": 53, "start": 30, "end": 33 },
                       "resolves_to": [ "extra_trace.nested_transform_x" ],
                       "port": "formal(arg, position=0)",
-                      "call_site": "54:11-54:34"
+                      "call_site": "53:11-53:34"
                     },
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -681,10 +681,10 @@
                   {
                     "message": "TransformY:TransformZ",
                     "call": {
-                      "position": { "line": 56, "start": 24, "end": 28 },
+                      "position": { "line": 55, "start": 24, "end": 28 },
                       "resolves_to": [ "extra_trace.transform_yz" ],
                       "port": "formal(arg, position=0)",
-                      "call_site": "56:11-56:29"
+                      "call_site": "55:11-55:29"
                     },
                     "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -701,12 +701,12 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 54, "start": 30, "end": 33 },
-              { "line": 55, "start": 16, "end": 20 },
-              { "line": 56, "start": 24, "end": 28 }
+              { "line": 53, "start": 30, "end": 33 },
+              { "line": 54, "start": 16, "end": 20 },
+              { "line": 55, "start": 24, "end": 28 }
             ],
-            "origin": { "line": 57, "start": 15, "end": 19 },
-            "call_site": "57:4-57:20"
+            "origin": { "line": 56, "start": 15, "end": 19 },
+            "call_site": "56:4-56:20"
           }
         ]
       }
@@ -718,7 +718,7 @@
   "data": {
     "callable": "extra_trace.sequential_tito_forward",
     "filename": "extra_trace.py",
-    "callable_line": 45,
+    "callable_line": 44,
     "sources": [
       {
         "port": "result",
@@ -730,10 +730,10 @@
                   {
                     "message": "TransformX",
                     "call": {
-                      "position": { "line": 47, "start": 28, "end": 30 },
+                      "position": { "line": 46, "start": 28, "end": 30 },
                       "resolves_to": [ "extra_trace.nested_transform_x" ],
                       "port": "formal(arg, position=0)",
-                      "call_site": "47:9-47:31"
+                      "call_site": "46:9-46:31"
                     },
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -741,10 +741,10 @@
                   {
                     "message": "TransformY:TransformZ",
                     "call": {
-                      "position": { "line": 49, "start": 22, "end": 24 },
+                      "position": { "line": 48, "start": 22, "end": 24 },
                       "resolves_to": [ "extra_trace.transform_yz" ],
                       "port": "formal(arg, position=0)",
-                      "call_site": "49:9-49:25"
+                      "call_site": "48:9-48:25"
                     },
                     "leaf_kind": "TransformY:TransformZ:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -761,11 +761,11 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 47, "start": 28, "end": 30 },
-              { "line": 48, "start": 14, "end": 16 },
-              { "line": 49, "start": 22, "end": 24 }
+              { "line": 46, "start": 28, "end": 30 },
+              { "line": 47, "start": 14, "end": 16 },
+              { "line": 48, "start": 22, "end": 24 }
             ],
-            "origin": { "line": 46, "start": 9, "end": 23 }
+            "origin": { "line": 45, "start": 9, "end": 23 }
           }
         ]
       }
@@ -777,7 +777,7 @@
   "data": {
     "callable": "extra_trace.source_transform_nested_x_y",
     "filename": "extra_trace.py",
-    "callable_line": 95,
+    "callable_line": 94,
     "sources": [
       {
         "port": "result",
@@ -789,10 +789,10 @@
                   {
                     "message": "TransformX:TransformY",
                     "call": {
-                      "position": { "line": 96, "start": 32, "end": 46 },
+                      "position": { "line": 95, "start": 32, "end": 46 },
                       "resolves_to": [ "extra_trace.transform_nested_x_y" ],
                       "port": "formal(arg, position=0)",
-                      "call_site": "96:11-96:47"
+                      "call_site": "95:11-95:47"
                     },
                     "leaf_kind": "TransformX:TransformY:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -808,8 +808,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 96, "start": 32, "end": 46 } ],
-            "origin": { "line": 96, "start": 32, "end": 46 }
+            "tito_positions": [ { "line": 95, "start": 32, "end": 46 } ],
+            "origin": { "line": 95, "start": 32, "end": 46 }
           }
         ]
       }
@@ -821,7 +821,7 @@
   "data": {
     "callable": "extra_trace.tito",
     "filename": "extra_trace.py",
-    "callable_line": 13,
+    "callable_line": 12,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -840,7 +840,7 @@
   "data": {
     "callable": "extra_trace.tito_transform_attribute",
     "filename": "extra_trace.py",
-    "callable_line": 131,
+    "callable_line": 130,
     "sinks": [
       {
         "port": "formal(self, position=0)[transformed_key]",
@@ -857,8 +857,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "transformed_key" }
             ],
-            "origin": { "line": 133, "start": 27, "end": 50 },
-            "call_site": "133:15-133:51"
+            "origin": { "line": 132, "start": 27, "end": 50 },
+            "call_site": "132:15-132:51"
           }
         ]
       }
@@ -887,8 +887,8 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [
-              { "line": 133, "start": 27, "end": 50 },
-              { "line": 135, "start": 29, "end": 52 }
+              { "line": 132, "start": 27, "end": 50 },
+              { "line": 134, "start": 29, "end": 52 }
             ],
             "tito": {}
           }
@@ -902,7 +902,7 @@
   "data": {
     "callable": "extra_trace.transform_nested_x_y",
     "filename": "extra_trace.py",
-    "callable_line": 91,
+    "callable_line": 90,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -914,10 +914,10 @@
                   {
                     "message": "TransformX",
                     "call": {
-                      "position": { "line": 92, "start": 42, "end": 45 },
+                      "position": { "line": 91, "start": 42, "end": 45 },
                       "resolves_to": [ "extra_trace.nested_transform_x" ],
                       "port": "formal(arg, position=0)",
-                      "call_site": "92:23-92:46"
+                      "call_site": "91:23-91:46"
                     },
                     "leaf_kind": "TransformX:ExtraTraceSink",
                     "trace_kind": "sink"
@@ -933,17 +933,17 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 92, "start": 42, "end": 45 } ],
-            "origin": { "line": 92, "start": 23, "end": 46 },
-            "call_site": "92:11-92:47"
+            "tito_positions": [ { "line": 91, "start": 42, "end": 45 } ],
+            "origin": { "line": 91, "start": 23, "end": 46 },
+            "call_site": "91:11-91:47"
           },
           {
             "kinds": [ { "length": 1, "kind": "TransformX:ExtraTraceSink" } ],
             "call": {
-              "position": { "line": 92, "start": 42, "end": 45 },
+              "position": { "line": 91, "start": 42, "end": 45 },
               "resolves_to": [ "extra_trace.nested_transform_x" ],
               "port": "formal(arg, position=0)",
-              "call_site": "92:23-92:46"
+              "call_site": "91:23-91:46"
             }
           }
         ]
@@ -963,8 +963,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 92, "start": 23, "end": 46 },
-              { "line": 92, "start": 42, "end": 45 }
+              { "line": 91, "start": 23, "end": 46 },
+              { "line": 91, "start": 42, "end": 45 }
             ],
             "tito": {}
           }
@@ -978,7 +978,7 @@
   "data": {
     "callable": "extra_trace.transform_tito_with_missing_extra_sink",
     "filename": "extra_trace.py",
-    "callable_line": 159,
+    "callable_line": 158,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -1003,7 +1003,7 @@
               { "always-via": "broadening" },
               { "always-via": "model-tito-broadening" }
             ],
-            "tito_positions": [ { "line": 161, "start": 39, "end": 43 } ],
+            "tito_positions": [ { "line": 160, "start": 39, "end": 43 } ],
             "tito": {}
           }
         ]
@@ -1016,7 +1016,7 @@
   "data": {
     "callable": "extra_trace.transform_x",
     "filename": "extra_trace.py",
-    "callable_line": 17,
+    "callable_line": 16,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -1048,7 +1048,7 @@
   "data": {
     "callable": "extra_trace.transform_y",
     "filename": "extra_trace.py",
-    "callable_line": 21,
+    "callable_line": 20,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -1080,7 +1080,7 @@
   "data": {
     "callable": "extra_trace.transform_yz",
     "filename": "extra_trace.py",
-    "callable_line": 29,
+    "callable_line": 28,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -1095,9 +1095,9 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 30, "start": 16, "end": 19 } ],
-            "origin": { "line": 31, "start": 23, "end": 27 },
-            "call_site": "31:11-31:28"
+            "tito_positions": [ { "line": 29, "start": 16, "end": 19 } ],
+            "origin": { "line": 30, "start": 23, "end": 27 },
+            "call_site": "30:11-30:28"
           },
           {
             "kinds": [
@@ -1105,8 +1105,8 @@
                 "extra_traces": [
                   {
                     "message": "TransformY",
-                    "origin": { "line": 31, "start": 23, "end": 27 },
-                    "call_site": "31:11-31:28",
+                    "origin": { "line": 30, "start": 23, "end": 27 },
+                    "call_site": "30:11-30:28",
                     "leaf_kind": "TransformY:ExtraTraceSink",
                     "trace_kind": "sink"
                   }
@@ -1122,12 +1122,12 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 30, "start": 16, "end": 19 },
-              { "line": 31, "start": 23, "end": 27 },
-              { "line": 32, "start": 16, "end": 20 }
+              { "line": 29, "start": 16, "end": 19 },
+              { "line": 30, "start": 23, "end": 27 },
+              { "line": 31, "start": 16, "end": 20 }
             ],
-            "origin": { "line": 33, "start": 23, "end": 27 },
-            "call_site": "33:11-33:28"
+            "origin": { "line": 32, "start": 23, "end": 27 },
+            "call_site": "32:11-32:28"
           }
         ]
       }
@@ -1146,10 +1146,10 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 30, "start": 16, "end": 19 },
-              { "line": 31, "start": 23, "end": 27 },
-              { "line": 32, "start": 16, "end": 20 },
-              { "line": 33, "start": 23, "end": 27 }
+              { "line": 29, "start": 16, "end": 19 },
+              { "line": 30, "start": 23, "end": 27 },
+              { "line": 31, "start": 16, "end": 20 },
+              { "line": 32, "start": 23, "end": 27 }
             ],
             "tito": {}
           }
@@ -1163,7 +1163,7 @@
   "data": {
     "callable": "extra_trace.transform_z",
     "filename": "extra_trace.py",
-    "callable_line": 25,
+    "callable_line": 24,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -1229,7 +1229,7 @@
   "data": {
     "callable": "extra_trace.OverrideTransform.transform",
     "filename": "extra_trace.py",
-    "callable_line": 111,
+    "callable_line": 110,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -1243,10 +1243,10 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "origin": { "line": 112, "start": 27, "end": 30 },
+            "origin": { "line": 111, "start": 27, "end": 30 },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false,
-            "call_site": "112:15-112:31"
+            "call_site": "111:15-111:31"
           }
         ]
       }
@@ -1264,7 +1264,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 112, "start": 27, "end": 30 } ],
+            "tito_positions": [ { "line": 111, "start": 27, "end": 30 } ],
             "tito": {
               "caller_interval": [ { "lower": 3, "upper": 4 } ],
               "is_self_call": false
@@ -1280,7 +1280,7 @@
   "data": {
     "callable": "extra_trace.TransformBase.transform",
     "filename": "extra_trace.py",
-    "callable_line": 106,
+    "callable_line": 105,
     "tito": [
       {
         "port": "formal(arg, position=1)",

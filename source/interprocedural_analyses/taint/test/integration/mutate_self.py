@@ -3,8 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from pysa import _test_sink, _test_source
 from typing import TypeVar
+
+from pysa import _test_sink, _test_source
 from typing_extensions import Self
 
 MySelf = TypeVar("MySelf")
@@ -54,7 +55,7 @@ class Base:
         self.bar_sink()  # Not an issue.
 
     def mutates_foo_self_typevar(self: MySelf) -> None:
-        self.foo = _test_source() # pyrefly: ignore[missing-attribute]
+        self.foo = _test_source()  # pyrefly: ignore[missing-attribute]
 
     def issue_mutates_foo_self_typevar(self) -> None:
         self.mutates_foo_self_typevar()

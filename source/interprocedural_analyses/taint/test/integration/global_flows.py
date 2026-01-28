@@ -3,15 +3,13 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from pysa import _test_source, _test_sink
+from pysa import _test_sink, _test_source
 
 
-def update_arg1(arg1, arg2):
-    ...
+def update_arg1(arg1, arg2): ...
 
 
-def update_arg2(arg1, arg2):
-    ...
+def update_arg2(arg1, arg2): ...
 
 
 x = 1
@@ -54,11 +52,10 @@ def x_tainted_indirectly_arg2():
 
 
 class MyList:
-    def append(self, item):
-        ...
+    def append(self, item): ...
 
 
-l: MyList = ... # pyrefly: ignore[bad-assignment]
+l: MyList = ...  # pyrefly: ignore[bad-assignment]
 
 
 def append_directly():

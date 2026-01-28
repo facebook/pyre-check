@@ -3,8 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from pysa import _test_sink, _test_source
 from functools import lru_cache
+
+from pysa import _test_sink, _test_source
 
 
 def foo(x):
@@ -60,16 +61,14 @@ class GrandChild(Child):
 
 
 @lru_cache(maxsize=1)
-def positional_decorated(x, y) -> int:
-    ...
+def positional_decorated(x, y) -> int: ...
 
 
-class AttributeTestBase:
-    ...
+class AttributeTestBase: ...
 
 
 class AttributeTestClass1(AttributeTestBase):
-    attribute =  ...
+    attribute = ...
 
     def __init__(self):
         self.instance = None
@@ -218,8 +217,7 @@ class ClassTest1:
         return 0
 
 
-class NoAlarmClass:
-    ...
+class NoAlarmClass: ...
 
 
 class ClassTest2_Alarm1:
@@ -244,7 +242,6 @@ class ClassTest3_Alarm1:
 
     def method2():
         return 0
-
 
 
 def transform_x(x):

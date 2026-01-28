@@ -127,14 +127,14 @@ Higher order call graphs
   "callable": "model_query_global_variable.f",
   "returned_callables": [],
   "calls": {
-    "14:4-14:23": {
+    "15:4-15:23": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "14:15-14:22|identifier|environ": {
+    "15:15-15:22|identifier|environ": {
       "identifier": {
         "globals": [ { "target": "Obj{os.environ}", "index": 0 } ]
       }

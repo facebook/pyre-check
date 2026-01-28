@@ -4,7 +4,7 @@
   "data": {
     "callable": "context_manager.source_on_enter_and_sink_on_exit",
     "filename": "context_manager.py",
-    "callable_line": 79,
+    "callable_line": 80,
     "sources": [
       {
         "port": "result",
@@ -19,7 +19,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 81, "start": 14, "end": 28 }
+            "origin": { "line": 82, "start": 14, "end": 28 }
           }
         ]
       }
@@ -38,8 +38,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 83, "start": 19, "end": 20 },
-            "call_site": "83:8-83:21"
+            "origin": { "line": 84, "start": 19, "end": 20 },
+            "call_site": "84:8-84:21"
           }
         ]
       }
@@ -50,9 +50,9 @@
   "kind": "issue",
   "data": {
     "callable": "context_manager.test_generator_sink_on_exit",
-    "callable_line": 91,
+    "callable_line": 92,
     "code": 5002,
-    "line": 92,
+    "line": 93,
     "start": 42,
     "end": 56,
     "filename": "context_manager.py",
@@ -71,7 +71,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 92, "start": 42, "end": 56 }
+            "origin": { "line": 93, "start": 42, "end": 56 }
           }
         ]
       },
@@ -90,12 +90,12 @@
               }
             ],
             "call": {
-              "position": { "line": 92, "start": 42, "end": 56 },
+              "position": { "line": 93, "start": 42, "end": 56 },
               "resolves_to": [
                 "context_manager.source_on_enter_and_sink_on_exit"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "92:9-92:57"
+              "call_site": "93:9-93:57"
             }
           }
         ]
@@ -117,9 +117,9 @@
   "kind": "issue",
   "data": {
     "callable": "context_manager.test_generator_source_on_enter",
-    "callable_line": 86,
+    "callable_line": 87,
     "code": 5002,
-    "line": 88,
+    "line": 89,
     "start": 19,
     "end": 20,
     "filename": "context_manager.py",
@@ -144,9 +144,9 @@
               { "first-field": "__enter__" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [ { "line": 87, "start": 9, "end": 45 } ],
+            "tito_positions": [ { "line": 88, "start": 9, "end": 45 } ],
             "call": {
-              "position": { "line": 87, "start": 9, "end": 45 },
+              "position": { "line": 88, "start": 9, "end": 45 },
               "resolves_to": [
                 "context_manager.source_on_enter_and_sink_on_exit"
               ],
@@ -168,8 +168,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 88, "start": 19, "end": 20 },
-            "call_site": "88:8-88:21"
+            "origin": { "line": 89, "start": 19, "end": 20 },
+            "call_site": "89:8-89:21"
           }
         ]
       }
@@ -195,7 +195,7 @@
   "data": {
     "callable": "context_manager.test_sink_on_enter",
     "filename": "context_manager.py",
-    "callable_line": 72,
+    "callable_line": 73,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -209,9 +209,9 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 73, "start": 20, "end": 21 } ],
+            "tito_positions": [ { "line": 74, "start": 20, "end": 21 } ],
             "call": {
-              "position": { "line": 74, "start": 9, "end": 10 },
+              "position": { "line": 75, "start": 9, "end": 10 },
               "resolves_to": [ "context_manager.SinkOnEnter.__enter__" ],
               "port": "formal(self, position=0)[value]"
             },
@@ -227,9 +227,9 @@
   "kind": "issue",
   "data": {
     "callable": "context_manager.test_source_on_enter",
-    "callable_line": 22,
+    "callable_line": 23,
     "code": 5002,
-    "line": 25,
+    "line": 26,
     "start": 19,
     "end": 26,
     "filename": "context_manager.py",
@@ -253,7 +253,7 @@
               { "has": "first-field" }, { "first-field": "value" }
             ],
             "call": {
-              "position": { "line": 24, "start": 9, "end": 10 },
+              "position": { "line": 25, "start": 9, "end": 10 },
               "resolves_to": [ "context_manager.SourceOnEnter.__enter__" ],
               "port": "formal(self, position=0)[value]"
             },
@@ -275,8 +275,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 25, "start": 19, "end": 26 },
-            "call_site": "25:8-25:27"
+            "origin": { "line": 26, "start": 19, "end": 26 },
+            "call_site": "26:8-26:27"
           }
         ]
       }
@@ -300,9 +300,9 @@
   "kind": "issue",
   "data": {
     "callable": "context_manager.test_source_on_enter_as",
-    "callable_line": 28,
+    "callable_line": 29,
     "code": 5002,
-    "line": 30,
+    "line": 31,
     "start": 19,
     "end": 26,
     "filename": "context_manager.py",
@@ -326,7 +326,7 @@
               { "has": "first-field" }, { "first-field": "value" }
             ],
             "call": {
-              "position": { "line": 29, "start": 9, "end": 24 },
+              "position": { "line": 30, "start": 9, "end": 24 },
               "resolves_to": [ "context_manager.SourceOnEnter.__enter__" ],
               "port": "result[value]"
             },
@@ -348,8 +348,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 30, "start": 19, "end": 26 },
-            "call_site": "30:8-30:27"
+            "origin": { "line": 31, "start": 19, "end": 26 },
+            "call_site": "31:8-31:27"
           }
         ]
       }
@@ -617,7 +617,7 @@
   "data": {
     "callable": "context_manager.SinkOnEnter.__enter__",
     "filename": "context_manager.py",
-    "callable_line": 64,
+    "callable_line": 65,
     "sinks": [
       {
         "port": "formal(self, position=0)[value]",
@@ -632,10 +632,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 65, "start": 19, "end": 29 },
+            "origin": { "line": 66, "start": 19, "end": 29 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "65:8-65:30"
+            "call_site": "66:8-66:30"
           }
         ]
       }
@@ -658,7 +658,7 @@
   "data": {
     "callable": "context_manager.SinkOnEnter.__init__",
     "filename": "context_manager.py",
-    "callable_line": 61,
+    "callable_line": 62,
     "tito": [
       {
         "port": "formal(value, position=1)",
@@ -682,7 +682,7 @@
   "data": {
     "callable": "context_manager.SourceOnEnter.__enter__",
     "filename": "context_manager.py",
-    "callable_line": 14,
+    "callable_line": 15,
     "sources": [
       {
         "port": "formal(self, position=0)[value]",
@@ -697,7 +697,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 15, "start": 21, "end": 35 },
+            "origin": { "line": 16, "start": 21, "end": 35 },
             "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
           }
@@ -716,7 +716,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 15, "start": 21, "end": 35 },
+            "origin": { "line": 16, "start": 21, "end": 35 },
             "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
           }
@@ -741,7 +741,7 @@
   "data": {
     "callable": "context_manager.SourceOnExit.__enter__",
     "filename": "context_manager.py",
-    "callable_line": 45,
+    "callable_line": 46,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -760,7 +760,7 @@
   "data": {
     "callable": "context_manager.SourceOnExit.__exit__",
     "filename": "context_manager.py",
-    "callable_line": 48,
+    "callable_line": 49,
     "sources": [
       {
         "port": "formal(self, position=0)[value]",
@@ -775,7 +775,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 49, "start": 21, "end": 35 },
+            "origin": { "line": 50, "start": 21, "end": 35 },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false
           }

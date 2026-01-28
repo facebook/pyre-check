@@ -72,7 +72,7 @@ Higher order call graphs
   "callable": "port.match_star_star_arg_directly",
   "returned_callables": [],
   "calls": {
-    "55:4-55:55": {
+    "56:4-56:55": {
       "call": {
         "calls": [
           {
@@ -83,7 +83,7 @@ Higher order call graphs
         ]
       }
     },
-    "55:40-55:54": {
+    "56:40-56:54": {
       "call": {
         "calls": [
           { "target": "port.source_field", "index": 0, "return_type": [] }
@@ -120,7 +120,7 @@ Higher order call graphs
   "callable": "port.refer_to_method_as_field",
   "returned_callables": [],
   "calls": {
-    "66:12-66:27": {
+    "67:12-67:27": {
       "attribute_access": {
         "properties": [
           {
@@ -132,7 +132,7 @@ Higher order call graphs
         ]
       }
     },
-    "67:4-67:21": {
+    "68:4-68:21": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -249,7 +249,7 @@ Higher order call graphs
   "callable": "port.Foo.some_source",
   "returned_callables": [],
   "calls": {
-    "61:15-61:29": {
+    "62:15-62:29": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }

@@ -198,5 +198,5 @@ def test_duplicate_issues_in_different_parameterized_callables(f, flag: bool):
 test_duplicate_issues_in_different_parameterized_callables(print, _test_source())
 
 
-def test_callable_default_value(f = _test_source) -> None:
+def test_callable_default_value(f=_test_source) -> None:
     _test_sink(f())

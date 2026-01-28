@@ -4,12 +4,12 @@ Higher order call graphs
   "callable": "class_methods.$toplevel",
   "returned_callables": [],
   "calls": {
-    "21:0-21:6|identifier|$local_class_methods$TInput": {
+    "25:0-25:6|identifier|$local_class_methods$TInput": {
       "identifier": {
         "globals": [ { "target": "Obj{class_methods.TInput}", "index": 0 } ]
       }
     },
-    "21:9-21:26": {
+    "25:9-25:26": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
@@ -20,7 +20,7 @@ Higher order call graphs
   "callable": "class_methods.bar",
   "returned_callables": [],
   "calls": {
-    "18:4-18:28": {
+    "22:4-22:28": {
       "call": {
         "calls": [
           {
@@ -34,7 +34,7 @@ Higher order call graphs
         ]
       }
     },
-    "18:13-18:27": {
+    "22:13-22:27": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -47,7 +47,7 @@ Higher order call graphs
   "callable": "class_methods.issue_with_abstract_class_method",
   "returned_callables": [],
   "calls": {
-    "102:4-102:51": {
+    "106:4-106:51": {
       "call": {
         "calls": [
           {
@@ -61,14 +61,14 @@ Higher order call graphs
         ]
       }
     },
-    "102:36-102:50": {
+    "106:36-106:50": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "103:4-103:42": {
+    "107:4-107:42": {
       "call": {
         "calls": [
           {
@@ -82,14 +82,14 @@ Higher order call graphs
         ]
       }
     },
-    "103:27-103:41": {
+    "107:27-107:41": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 1, "return_type": [] }
         ]
       }
     },
-    "104:4-106:5": {
+    "108:4-110:5": {
       "call": {
         "calls": [
           {
@@ -103,14 +103,14 @@ Higher order call graphs
         ]
       }
     },
-    "105:8-105:22": {
+    "109:8-109:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 2, "return_type": [] }
         ]
       }
     },
-    "107:4-107:50": {
+    "111:4-111:50": {
       "call": {
         "calls": [
           {
@@ -124,14 +124,14 @@ Higher order call graphs
         ]
       }
     },
-    "107:35-107:49": {
+    "111:35-111:49": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 3, "return_type": [] }
         ]
       }
     },
-    "108:4-108:51": {
+    "112:4-112:51": {
       "call": {
         "calls": [
           {
@@ -145,7 +145,7 @@ Higher order call graphs
         ]
       }
     },
-    "108:36-108:50": {
+    "112:36-112:50": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 4, "return_type": [] }
@@ -158,7 +158,7 @@ Higher order call graphs
   "callable": "class_methods.issue_with_abstract_property",
   "returned_callables": [],
   "calls": {
-    "112:8-112:11": {
+    "116:8-116:11": {
       "call": {
         "new_calls": [
           {
@@ -178,7 +178,7 @@ Higher order call graphs
         ]
       }
     },
-    "113:4-113:26": {
+    "117:4-117:26": {
       "attribute_access": {
         "properties": [
           {
@@ -190,21 +190,21 @@ Higher order call graphs
         ]
       }
     },
-    "113:29-113:43": {
+    "117:29-117:43": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "114:4-114:38": {
+    "118:4-118:38": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "114:15-114:37": {
+    "118:15-118:37": {
       "attribute_access": {
         "properties": [
           {
@@ -222,7 +222,7 @@ Higher order call graphs
   "callable": "class_methods.test_obscure_class_method_tito",
   "returned_callables": [],
   "calls": {
-    "126:8-126:46": {
+    "130:8-130:46": {
       "call": {
         "new_calls": [
           {
@@ -242,21 +242,21 @@ Higher order call graphs
         ]
       }
     },
-    "126:31-126:45": {
+    "130:31-130:45": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "128:4-128:26": {
+    "132:4-132:26": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "128:15-128:25": {
+    "132:15-132:25": {
       "call": {
         "calls": [
           {
@@ -276,7 +276,7 @@ Higher order call graphs
   "callable": "class_methods.C.class_method",
   "returned_callables": [],
   "calls": {
-    "35:8-35:23": {
+    "39:8-39:23": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -289,7 +289,7 @@ Higher order call graphs
   "callable": "class_methods.C.one_hop_abstract_class_method",
   "returned_callables": [],
   "calls": {
-    "31:8-31:38": {
+    "35:8-35:38": {
       "call": {
         "calls": [
           {
@@ -308,7 +308,7 @@ Higher order call graphs
   "callable": "class_methods.C.one_hop_abstract_method",
   "returned_callables": [],
   "calls": {
-    "48:8-48:32": {
+    "52:8-52:32": {
       "call": {
         "calls": [
           {
@@ -325,7 +325,7 @@ Higher order call graphs
   "callable": "class_methods.C.one_hop_class_abstractmethod",
   "returned_callables": [],
   "calls": {
-    "57:8-57:37": {
+    "61:8-61:37": {
       "call": {
         "calls": [
           {
@@ -345,7 +345,7 @@ Higher order call graphs
   "callable": "class_methods.C.one_hop_class_method",
   "returned_callables": [],
   "calls": {
-    "39:8-39:29": {
+    "43:8-43:29": {
       "call": {
         "calls": [
           {
@@ -365,7 +365,7 @@ Higher order call graphs
   "callable": "class_methods.C.one_hop_static_abstractmethod",
   "returned_callables": [],
   "calls": {
-    "67:8-67:38": {
+    "71:8-71:38": {
       "call": {
         "calls": [
           {
@@ -383,7 +383,7 @@ Higher order call graphs
   "callable": "class_methods.C.static_abstractmethod",
   "returned_callables": [],
   "calls": {
-    "62:8-62:23": {
+    "66:8-66:23": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -396,7 +396,7 @@ Higher order call graphs
   "callable": "class_methods.D.abstract_class_method",
   "returned_callables": [],
   "calls": {
-    "83:8-83:23": {
+    "87:8-87:23": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -409,7 +409,7 @@ Higher order call graphs
   "callable": "class_methods.D.abstract_method",
   "returned_callables": [],
   "calls": {
-    "86:8-86:23": {
+    "90:8-90:23": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -422,7 +422,7 @@ Higher order call graphs
   "callable": "class_methods.D.class_abstractmethod",
   "returned_callables": [],
   "calls": {
-    "90:8-90:23": {
+    "94:8-94:23": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -435,7 +435,7 @@ Higher order call graphs
   "callable": "class_methods.Test.foo",
   "returned_callables": [],
   "calls": {
-    "14:15-14:28": {
+    "18:15-18:28": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }

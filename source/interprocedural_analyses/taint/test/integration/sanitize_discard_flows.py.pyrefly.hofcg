@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "sanitize_discard_flows.test_sink_a_sanitize_a_discarded",
   "returned_callables": [],
   "calls": {
-    "42:4-42:37": {
+    "39:4-39:37": {
       "call": {
         "calls": [
           {
@@ -15,7 +15,7 @@ Higher order call graphs
         ]
       }
     },
-    "42:11-42:36": {
+    "39:11-39:36": {
       "call": {
         "calls": [
           {
@@ -32,7 +32,7 @@ Higher order call graphs
   "callable": "sanitize_discard_flows.test_source_a_sanitize_a_b_discarded",
   "returned_callables": [],
   "calls": {
-    "38:11-38:65": {
+    "35:11-35:65": {
       "call": {
         "calls": [
           {
@@ -43,7 +43,7 @@ Higher order call graphs
         ]
       }
     },
-    "38:32-38:64": {
+    "35:32-35:64": {
       "call": {
         "calls": [
           {
@@ -54,7 +54,7 @@ Higher order call graphs
         ]
       }
     },
-    "38:53-38:63": {
+    "35:53-35:63": {
       "call": {
         "calls": [
           {
@@ -71,7 +71,7 @@ Higher order call graphs
   "callable": "sanitize_discard_flows.test_source_a_sanitize_a_kept",
   "returned_callables": [],
   "calls": {
-    "34:11-34:43": {
+    "31:11-31:43": {
       "call": {
         "calls": [
           {
@@ -82,7 +82,7 @@ Higher order call graphs
         ]
       }
     },
-    "34:32-34:42": {
+    "31:32-31:42": {
       "call": {
         "calls": [
           {

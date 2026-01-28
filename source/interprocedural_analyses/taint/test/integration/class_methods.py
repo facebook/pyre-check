@@ -3,9 +3,13 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from abc import (
+    abstractclassmethod,  # pyrefly: ignore[deprecated]
+    abstractmethod,
+)
+from typing import Generic, TypeVar
+
 from pysa import _test_sink, _test_source
-from abc import abstractclassmethod, abstractmethod  # pyrefly: ignore[deprecated]
-from typing import TypeVar, Generic
 
 
 class Test:

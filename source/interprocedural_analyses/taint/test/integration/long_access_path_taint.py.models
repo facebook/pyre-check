@@ -247,7 +247,7 @@
   "data": {
     "callable": "long_access_path_taint.C.__init__",
     "filename": "long_access_path_taint.py",
-    "callable_line": 11,
+    "callable_line": 12,
     "tito": [
       {
         "port": "formal(request, position=4)",
@@ -290,7 +290,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "app_id" }
             ],
-            "tito_positions": [ { "line": 16, "start": 22, "end": 28 } ],
+            "tito_positions": [ { "line": 17, "start": 22, "end": 28 } ],
             "tito": {}
           }
         ]
@@ -308,7 +308,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "timestamp" }
             ],
-            "tito_positions": [ { "line": 15, "start": 25, "end": 31 } ],
+            "tito_positions": [ { "line": 16, "start": 25, "end": 31 } ],
             "tito": {}
           }
         ]
@@ -338,7 +338,7 @@
   "data": {
     "callable": "long_access_path_taint.C.async_create",
     "filename": "long_access_path_taint.py",
-    "callable_line": 21,
+    "callable_line": 22,
     "tito": [
       {
         "port": "formal(request, position=3)",
@@ -352,7 +352,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 31, "start": 37, "end": 44 } ],
+            "tito_positions": [ { "line": 32, "start": 37, "end": 44 } ],
             "tito": {
               "caller_interval": [ { "lower": 2, "upper": 3 } ],
               "is_self_call": false
@@ -384,11 +384,11 @@
               { "via": "model-tito-shaping" }
             ],
             "tito_positions": [
-              { "line": 24, "start": 19, "end": 25 },
-              { "line": 29, "start": 30, "end": 36 },
-              { "line": 31, "start": 23, "end": 29 },
-              { "line": 31, "start": 31, "end": 35 },
-              { "line": 31, "start": 37, "end": 44 }
+              { "line": 25, "start": 19, "end": 25 },
+              { "line": 30, "start": 30, "end": 36 },
+              { "line": 32, "start": 23, "end": 29 },
+              { "line": 32, "start": 31, "end": 35 },
+              { "line": 32, "start": 37, "end": 44 }
             ],
             "tito": {
               "caller_interval": [ { "lower": 2, "upper": 3 } ],
@@ -413,7 +413,7 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 31, "start": 19, "end": 21 } ],
+            "tito_positions": [ { "line": 32, "start": 19, "end": 21 } ],
             "tito": {
               "caller_interval": [ { "lower": 2, "upper": 3 } ],
               "is_self_call": false

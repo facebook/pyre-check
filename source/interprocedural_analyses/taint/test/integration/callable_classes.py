@@ -7,12 +7,10 @@ from typing import Protocol
 
 
 class P:
-    def __call__(self, arg: str) -> str:
-        ...
+    def __call__(self, arg: str) -> str: ...
 
 
-def returns_p() -> P:
-    ...
+def returns_p() -> P: ...
 
 
 p: P = returns_p()
@@ -23,12 +21,10 @@ def foo() -> str:
 
 
 class CallableProtocol(Protocol):
-    def __call__(self, arg: str) -> str:
-        ...
+    def __call__(self, arg: str) -> str: ...
 
 
-def returns_callable_protocol() -> CallableProtocol:
-    ...
+def returns_callable_protocol() -> CallableProtocol: ...
 
 
 def bar() -> str:

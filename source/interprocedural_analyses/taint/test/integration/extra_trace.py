@@ -6,8 +6,7 @@
 from pysa import _test_sink, _test_source
 
 
-def non_deterministic_int() -> int:
-    ...
+def non_deterministic_int() -> int: ...
 
 
 def tito(arg):
@@ -123,16 +122,16 @@ def extra_trace_through_override(o: TransformBase):
 # That might lead to a T:LocalReturn tito being present while the T:ExtraTraceSink is missing,
 # which usually means this is a false positive.
 
-def tito_collapse(x: str) -> str:
-    ...
+
+def tito_collapse(x: str) -> str: ...
 
 
 # self[transformed_key] -> TransformX -> LocalReturn
 def tito_transform_attribute(self):
     if non_deterministic_int() > 10:
-        return transform_x(self['transformed_key'])
+        return transform_x(self["transformed_key"])
     else:
-        return tito_collapse(self['transformed_key'])
+        return tito_collapse(self["transformed_key"])
 
 
 # Tito self -> TransformX -> LocalReturn
@@ -141,23 +140,23 @@ def mismatching_tito_extra_sink(self):
     if non_deterministic_int() > 10:
         taint = tito_transform_attribute(self)
     elif non_deterministic_int() > 10:
-        taint = self['a']
+        taint = self["a"]
     elif non_deterministic_int() > 10:
-        taint = self['b']
+        taint = self["b"]
     elif non_deterministic_int() > 10:
-        taint = self['c']
+        taint = self["c"]
     elif non_deterministic_int() > 10:
-        taint = self['d']
+        taint = self["d"]
     elif non_deterministic_int() > 10:
-        taint = self['e']
+        taint = self["e"]
     else:
-        taint = self['f']
+        taint = self["f"]
     return taint
 
 
 # Tito self -> TransformX -> LocalReturn but no TransformX:ExtraTraceSink
 def transform_tito_with_missing_extra_sink(self):
-    self['transformed_key'] = ''
+    self["transformed_key"] = ""
     return mismatching_tito_extra_sink(self)
 
 

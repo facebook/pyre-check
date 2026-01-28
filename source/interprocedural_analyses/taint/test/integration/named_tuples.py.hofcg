@@ -4,21 +4,21 @@ Higher order call graphs
   "callable": "named_tuples.aliased_indicies_backward",
   "returned_callables": [],
   "calls": {
-    "78:4-78:24": {
+    "79:4-79:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "79:4-79:20": {
+    "80:4-80:20": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "79:15-79:19|artificial-call|subscript-get-item": {
+    "80:15-80:19|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -37,14 +37,14 @@ Higher order call graphs
   "callable": "named_tuples.aliased_indicies_backward_unknown_attribute",
   "returned_callables": [],
   "calls": {
-    "83:4-83:20": {
+    "84:4-84:20": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "83:15-83:19|artificial-call|subscript-get-item": {
+    "84:15-84:19|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -63,7 +63,7 @@ Higher order call graphs
   "callable": "named_tuples.aliased_indicies_forward",
   "returned_callables": [],
   "calls": {
-    "66:8-66:23": {
+    "67:8-67:23": {
       "call": {
         "calls": [
           {
@@ -74,14 +74,14 @@ Higher order call graphs
         ]
       }
     },
-    "67:4-67:20": {
+    "68:4-68:20": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "67:15-67:19|artificial-call|subscript-get-item": {
+    "68:15-68:19|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -94,14 +94,14 @@ Higher order call graphs
         ]
       }
     },
-    "68:4-68:20": {
+    "69:4-69:20": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "68:15-68:19|artificial-call|subscript-get-item": {
+    "69:15-69:19|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -114,14 +114,14 @@ Higher order call graphs
         ]
       }
     },
-    "69:4-69:20": {
+    "70:4-70:20": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 2, "return_type": [] }
         ]
       }
     },
-    "69:15-69:19|artificial-call|subscript-get-item": {
+    "70:15-70:19|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -140,7 +140,7 @@ Higher order call graphs
   "callable": "named_tuples.aliased_indicies_forward_unknown_attribute",
   "returned_callables": [],
   "calls": {
-    "73:8-73:23": {
+    "74:8-74:23": {
       "call": {
         "calls": [
           {
@@ -151,7 +151,7 @@ Higher order call graphs
         ]
       }
     },
-    "74:11-74:15|artificial-call|subscript-get-item": {
+    "75:11-75:15|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -170,7 +170,7 @@ Higher order call graphs
   "callable": "named_tuples.inherited_tuple",
   "returned_callables": [],
   "calls": {
-    "52:11-52:60": {
+    "53:11-53:60": {
       "call": {
         "new_calls": [
           {
@@ -190,7 +190,7 @@ Higher order call graphs
         ]
       }
     },
-    "52:35-52:49": {
+    "53:35-53:49": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -203,7 +203,7 @@ Higher order call graphs
   "callable": "named_tuples.issue_with_bad",
   "returned_callables": [],
   "calls": {
-    "21:8-21:23": {
+    "22:8-22:23": {
       "call": {
         "calls": [
           {
@@ -214,7 +214,7 @@ Higher order call graphs
         ]
       }
     },
-    "22:4-22:21": {
+    "23:4-23:21": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -227,7 +227,7 @@ Higher order call graphs
   "callable": "named_tuples.issue_with_inherited_named_tuple",
   "returned_callables": [],
   "calls": {
-    "56:8-56:25": {
+    "57:8-57:25": {
       "call": {
         "calls": [
           {
@@ -238,7 +238,7 @@ Higher order call graphs
         ]
       }
     },
-    "57:4-57:21": {
+    "58:4-58:21": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -251,7 +251,7 @@ Higher order call graphs
   "callable": "named_tuples.issue_with_named_tuple_with_tainted_attribute",
   "returned_callables": [],
   "calls": {
-    "92:4-92:64": {
+    "93:4-93:64": {
       "call": {
         "new_calls": [
           {
@@ -271,7 +271,7 @@ Higher order call graphs
         ]
       }
     },
-    "92:39-92:53": {
+    "93:39-93:53": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -284,7 +284,7 @@ Higher order call graphs
   "callable": "named_tuples.issue_with_old_school_named_tuples",
   "returned_callables": [],
   "calls": {
-    "38:8-38:27": {
+    "39:8-39:27": {
       "call": {
         "calls": [
           {
@@ -295,7 +295,7 @@ Higher order call graphs
         ]
       }
     },
-    "39:4-39:21": {
+    "40:4-40:21": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -308,7 +308,7 @@ Higher order call graphs
   "callable": "named_tuples.no_issue_with_benign",
   "returned_callables": [],
   "calls": {
-    "26:8-26:23": {
+    "27:8-27:23": {
       "call": {
         "calls": [
           {
@@ -319,7 +319,7 @@ Higher order call graphs
         ]
       }
     },
-    "27:4-27:24": {
+    "28:4-28:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -332,7 +332,7 @@ Higher order call graphs
   "callable": "named_tuples.no_issue_with_benign_in_inherited_named_tuple",
   "returned_callables": [],
   "calls": {
-    "61:8-61:25": {
+    "62:8-62:25": {
       "call": {
         "calls": [
           {
@@ -343,7 +343,7 @@ Higher order call graphs
         ]
       }
     },
-    "62:4-62:24": {
+    "63:4-63:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -356,7 +356,7 @@ Higher order call graphs
   "callable": "named_tuples.no_issue_with_old_school_named_tuples",
   "returned_callables": [],
   "calls": {
-    "43:8-43:27": {
+    "44:8-44:27": {
       "call": {
         "calls": [
           {
@@ -367,7 +367,7 @@ Higher order call graphs
         ]
       }
     },
-    "44:4-44:24": {
+    "45:4-45:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -380,7 +380,7 @@ Higher order call graphs
   "callable": "named_tuples.tainted_old_tuple",
   "returned_callables": [],
   "calls": {
-    "34:11-34:60": {
+    "35:11-35:60": {
       "call": {
         "new_calls": [
           {
@@ -400,7 +400,7 @@ Higher order call graphs
         ]
       }
     },
-    "34:35-34:49": {
+    "35:35-35:49": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -413,7 +413,7 @@ Higher order call graphs
   "callable": "named_tuples.tainted_tuple",
   "returned_callables": [],
   "calls": {
-    "17:11-17:53": {
+    "18:11-18:53": {
       "call": {
         "new_calls": [
           {
@@ -433,7 +433,7 @@ Higher order call graphs
         ]
       }
     },
-    "17:28-17:42": {
+    "18:28-18:42": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -446,7 +446,7 @@ Higher order call graphs
   "callable": "named_tuples.NamedTupleWithTaintedAttribute.__init__",
   "returned_callables": [],
   "calls": {
-    "86:0-88:12|artificial-attribute-access|named-tuple-constructor-assignment:bad": {
+    "87:0-89:12|artificial-attribute-access|named-tuple-constructor-assignment:bad": {
       "attribute_access": {
         "globals": [
           {

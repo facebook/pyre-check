@@ -11,14 +11,14 @@ Higher order call graphs
   "callable": "typevar.issue",
   "returned_callables": [],
   "calls": {
-    "17:4-17:27": {
+    "19:4-19:27": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "17:15-17:26": {
+    "19:15-19:26": {
       "attribute_access": {
         "globals": [
           {
@@ -36,7 +36,7 @@ Higher order call graphs
   "callable": "typevar.Foo.__init__",
   "returned_callables": [],
   "calls": {
-    "14:8-14:20": {
+    "15:8-15:20": {
       "attribute_access": {
         "globals": [
           {

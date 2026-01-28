@@ -3,16 +3,15 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# flake8: noqa
-from pysa import _test_sink, _test_source
 from typing import TypeVar
 
+# flake8: noqa
+from pysa import _test_sink, _test_source
 
 T = TypeVar("T")
 
 
-def sanitize_all(x: T) -> T:
-    ...
+def sanitize_all(x: T) -> T: ...
 
 
 def test1(x):
@@ -26,8 +25,7 @@ def test2():
     _test_sink(y)
 
 
-def sanitize_tito(x: T) -> T:
-    ...
+def sanitize_tito(x: T) -> T: ...
 
 
 def test3(x):
@@ -57,8 +55,7 @@ def b_sink(x):
     return
 
 
-def sanitize_a_tito(x):
-    ...
+def sanitize_a_tito(x): ...
 
 
 def no_propagation_with_sanitize_a_tito():
@@ -73,8 +70,7 @@ def propagation_of_b_with_sanitize_a_tito():
     return tito
 
 
-def sanitize_a_sink_tito(x):
-    ...
+def sanitize_a_sink_tito(x): ...
 
 
 def no_propagation_of_a_sink(x):
@@ -87,8 +83,7 @@ def propagation_of_b_sink(x):
     b_sink(y)
 
 
-def sanitize_a_source_tito(x):
-    ...
+def sanitize_a_source_tito(x): ...
 
 
 def no_propagation_of_a_source():
@@ -101,8 +96,7 @@ def propagation_of_b_source():
     return sanitize_a_source_tito(x)
 
 
-def sanitize_parameter_source_a_tito(x, y):
-    ...
+def sanitize_parameter_source_a_tito(x, y): ...
 
 
 def no_propagation_of_a_source_via_parameter_tito():
@@ -120,8 +114,7 @@ def propagation_of_b_source_via_parameter_tito():
     return sanitize_parameter_source_a_tito(x, 0)
 
 
-def sanitize_parameter_sink_a_tito(x, y):
-    ...
+def sanitize_parameter_sink_a_tito(x, y): ...
 
 
 def no_propagation_of_a_sink_via_parameter_tito(x):
@@ -139,8 +132,7 @@ def propagation_of_b_sink_via_parameter_tito(x):
     b_sink(y)
 
 
-def sanitize_return_source_a_tito(x):
-    ...
+def sanitize_return_source_a_tito(x): ...
 
 
 def no_propagation_of_a_source_via_return_tito():
@@ -153,8 +145,7 @@ def propagation_of_b_source_via_return_tito():
     return sanitize_return_source_a_tito(x)
 
 
-def sanitize_return_sink_a_tito(x):
-    ...
+def sanitize_return_sink_a_tito(x): ...
 
 
 def no_propagation_of_a_sink_via_return_tito(x):
@@ -167,8 +158,7 @@ def propagation_of_b_sink_via_return_tito(x):
     b_sink(y)
 
 
-def sanitize_parameter_source_a(x):
-    ...
+def sanitize_parameter_source_a(x): ...
 
 
 def no_propagation_of_a_source_via_parameter():
@@ -181,8 +171,7 @@ def propagation_of_b_source_via_parameter():
     return sanitize_parameter_source_a(x)
 
 
-def sanitize_parameter_sink_a(x):
-    ...
+def sanitize_parameter_sink_a(x): ...
 
 
 def no_propagation_of_a_sink_via_parameter(x):
@@ -195,8 +184,7 @@ def propagation_of_b_sink_via_parameter(x):
     b_sink(y)
 
 
-def sanitize_return_source_a(x):
-    ...
+def sanitize_return_source_a(x): ...
 
 
 def no_propagation_of_a_source_via_return():
@@ -209,8 +197,7 @@ def propagation_of_b_source_via_return():
     return sanitize_return_source_a(x)
 
 
-def sanitize_return_sink_a(x):
-    ...
+def sanitize_return_sink_a(x): ...
 
 
 def no_propagation_of_a_sink_via_return(x):
@@ -223,8 +210,7 @@ def propagation_of_b_sink_via_return(x):
     b_sink(y)
 
 
-def sanitize_obscure_single_argument(x, y):
-    ...
+def sanitize_obscure_single_argument(x, y): ...
 
 
 def sanitize_obscure_single_argument_tito(x, y):

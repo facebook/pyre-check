@@ -4,12 +4,12 @@ Higher order call graphs
   "callable": "callable_classes.$toplevel",
   "returned_callables": [],
   "calls": {
-    "18:0-18:1|identifier|$local_callable_classes$p": {
+    "16:0-16:1|identifier|$local_callable_classes$p": {
       "identifier": {
         "globals": [ { "target": "Obj{callable_classes.p}", "index": 0 } ]
       }
     },
-    "18:7-18:18": {
+    "16:7-16:18": {
       "call": {
         "calls": [
           {
@@ -26,7 +26,7 @@ Higher order call graphs
   "callable": "callable_classes.bar",
   "returned_callables": [],
   "calls": {
-    "35:8-35:35": {
+    "31:8-31:35": {
       "call": {
         "calls": [
           {
@@ -37,7 +37,7 @@ Higher order call graphs
         ]
       }
     },
-    "36:11-36:17": {
+    "32:11-32:17": {
       "call": {
         "calls": [
           {
@@ -57,7 +57,7 @@ Higher order call graphs
   "callable": "callable_classes.foo",
   "returned_callables": [],
   "calls": {
-    "22:11-22:17": {
+    "20:11-20:17": {
       "call": {
         "calls": [
           {

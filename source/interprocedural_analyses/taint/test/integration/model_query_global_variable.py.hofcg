@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "model_query_global_variable.$toplevel",
   "returned_callables": [],
   "calls": {
-    "10:0-10:3|identifier|$local_model_query_global_variable$foo": {
+    "11:0-11:3|identifier|$local_model_query_global_variable$foo": {
       "identifier": {
         "globals": [
           { "target": "Obj{model_query_global_variable.foo}", "index": 0 }
@@ -212,14 +212,14 @@ Higher order call graphs
   "callable": "model_query_global_variable.f",
   "returned_callables": [],
   "calls": {
-    "14:4-14:23": {
+    "15:4-15:23": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "14:15-14:22|artificial-attribute-access|qualification:os.environ": {
+    "15:15-15:22|artificial-attribute-access|qualification:os.environ": {
       "attribute_access": {
         "globals": [ { "target": "Obj{os.environ}", "index": 0 } ],
         "is_attribute": true

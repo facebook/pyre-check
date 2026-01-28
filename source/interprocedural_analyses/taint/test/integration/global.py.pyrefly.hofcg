@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "global.$toplevel",
   "returned_callables": [],
   "calls": {
-    "17:7-17:15": {
+    "18:7-18:15": {
       "call": {
         "new_calls": [
           {
@@ -25,7 +25,7 @@ Higher order call graphs
         ]
       }
     },
-    "39:7-39:15": {
+    "40:7-40:15": {
       "call": {
         "new_calls": [
           {
@@ -46,7 +46,7 @@ Higher order call graphs
         ]
       }
     },
-    "46:7-46:15": {
+    "47:7-47:15": {
       "call": {
         "new_calls": [
           {
@@ -67,14 +67,14 @@ Higher order call graphs
         ]
       }
     },
-    "64:7-64:21": {
+    "65:7-65:21": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "79:0-79:22": {
+    "81:0-81:22": {
       "call": {
         "calls": [
           {
@@ -85,7 +85,7 @@ Higher order call graphs
         ]
       }
     },
-    "88:7-88:15": {
+    "90:7-90:15": {
       "call": {
         "new_calls": [
           {
@@ -106,7 +106,7 @@ Higher order call graphs
         ]
       }
     },
-    "125:7-125:15": {
+    "127:7-127:15": {
       "call": {
         "new_calls": [
           {
@@ -133,7 +133,7 @@ Higher order call graphs
   "callable": "global.create_global_source",
   "returned_callables": [],
   "calls": {
-    "76:8-76:22": {
+    "78:8-78:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -146,14 +146,14 @@ Higher order call graphs
   "callable": "global.obj1_flow",
   "returned_callables": [],
   "calls": {
-    "30:4-30:17": {
+    "31:4-31:17": {
       "call": {
         "calls": [
           { "target": "global.obj1_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "31:4-31:15": {
+    "32:4-32:15": {
       "call": {
         "calls": [
           { "target": "global.obj1_sink", "index": 0, "return_type": [] }
@@ -166,14 +166,14 @@ Higher order call graphs
   "callable": "global.obj1_no_flow",
   "returned_callables": [],
   "calls": {
-    "35:4-35:15": {
+    "36:4-36:15": {
       "call": {
         "calls": [
           { "target": "global.obj1_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "36:4-36:17": {
+    "37:4-37:17": {
       "call": {
         "calls": [
           { "target": "global.obj1_source", "index": 0, "return_type": [] }
@@ -186,7 +186,7 @@ Higher order call graphs
   "callable": "global.obj1_sink",
   "returned_callables": [],
   "calls": {
-    "25:4-25:22": {
+    "26:4-26:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -199,7 +199,7 @@ Higher order call graphs
   "callable": "global.obj1_source",
   "returned_callables": [],
   "calls": {
-    "21:13-21:27": {
+    "22:13-22:27": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -212,7 +212,7 @@ Higher order call graphs
   "callable": "global.obj2_sink",
   "returned_callables": [],
   "calls": {
-    "43:4-43:20": {
+    "44:4-44:20": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -225,28 +225,28 @@ Higher order call graphs
   "callable": "global.obj3_flow",
   "returned_callables": [],
   "calls": {
-    "59:4-59:28": {
+    "60:4-60:28": {
       "call": {
         "calls": [
           { "target": "global.obj3_set", "index": 0, "return_type": [] }
         ]
       }
     },
-    "59:13-59:27": {
+    "60:13-60:27": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "60:8-60:21": {
+    "61:8-61:21": {
       "call": {
         "calls": [
           { "target": "global.obj3_return", "index": 0, "return_type": [] }
         ]
       }
     },
-    "61:4-61:19": {
+    "62:4-62:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -259,7 +259,7 @@ Higher order call graphs
   "callable": "global.obj4_flow",
   "returned_callables": [],
   "calls": {
-    "69:4-69:20": {
+    "70:4-70:20": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -272,14 +272,14 @@ Higher order call graphs
   "callable": "global.obj6_flow",
   "returned_callables": [],
   "calls": {
-    "102:4-102:17": {
+    "104:4-104:17": {
       "call": {
         "calls": [
           { "target": "global.obj6_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "103:4-103:15": {
+    "105:4-105:15": {
       "call": {
         "calls": [
           { "target": "global.obj6_sink", "index": 0, "return_type": [] }
@@ -292,7 +292,7 @@ Higher order call graphs
   "callable": "global.obj6_sink",
   "returned_callables": [],
   "calls": {
-    "97:4-97:20": {
+    "99:4-99:20": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -305,7 +305,7 @@ Higher order call graphs
   "callable": "global.obj6_source",
   "returned_callables": [],
   "calls": {
-    "93:11-93:25": {
+    "95:11-95:25": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -318,14 +318,14 @@ Higher order call graphs
   "callable": "global.obj7_flow",
   "returned_callables": [],
   "calls": {
-    "121:4-121:17": {
+    "123:4-123:17": {
       "call": {
         "calls": [
           { "target": "global.obj7_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "122:4-122:15": {
+    "124:4-124:15": {
       "call": {
         "calls": [
           { "target": "global.obj7_sink", "index": 0, "return_type": [] }
@@ -338,7 +338,7 @@ Higher order call graphs
   "callable": "global.obj7_sink",
   "returned_callables": [],
   "calls": {
-    "116:4-116:20": {
+    "118:4-118:20": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -351,7 +351,7 @@ Higher order call graphs
   "callable": "global.obj7_source",
   "returned_callables": [],
   "calls": {
-    "111:11-111:25": {
+    "113:11-113:25": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -364,28 +364,28 @@ Higher order call graphs
   "callable": "global.obj8_flow",
   "returned_callables": [],
   "calls": {
-    "139:4-139:28": {
+    "141:4-141:28": {
       "call": {
         "calls": [
           { "target": "global.obj8_set", "index": 0, "return_type": [] }
         ]
       }
     },
-    "139:13-139:27": {
+    "141:13-141:27": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "140:8-140:21": {
+    "142:8-142:21": {
       "call": {
         "calls": [
           { "target": "global.obj8_return", "index": 0, "return_type": [] }
         ]
       }
     },
-    "141:4-141:17": {
+    "143:4-143:17": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }

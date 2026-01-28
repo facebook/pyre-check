@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "via_attribute_name.$toplevel",
   "returned_callables": [],
   "calls": {
-    "43:1-43:10|identifier|dataclass": {
+    "44:1-44:10|identifier|dataclass": {
       "identifier": {
         "if_called": {
           "calls": [
@@ -17,7 +17,7 @@ Higher order call graphs
         }
       }
     },
-    "71:1-71:10|identifier|dataclass": {
+    "72:1-72:10|identifier|dataclass": {
       "identifier": {
         "if_called": {
           "calls": [
@@ -30,7 +30,7 @@ Higher order call graphs
         }
       }
     },
-    "90:1-90:10|identifier|dataclass": {
+    "91:1-91:10|identifier|dataclass": {
       "identifier": {
         "if_called": {
           "calls": [
@@ -49,7 +49,7 @@ Higher order call graphs
   "callable": "via_attribute_name.test_sink_attribute_x",
   "returned_callables": [],
   "calls": {
-    "79:4-79:7": {
+    "80:4-80:7": {
       "attribute_access": {
         "globals": [
           {
@@ -61,7 +61,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "79:10-79:24": {
+    "80:10-80:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -74,7 +74,7 @@ Higher order call graphs
   "callable": "via_attribute_name.test_sink_attribute_y",
   "returned_callables": [],
   "calls": {
-    "83:4-83:7": {
+    "84:4-84:7": {
       "attribute_access": {
         "globals": [
           {
@@ -86,7 +86,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "83:10-83:24": {
+    "84:10-84:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -99,7 +99,7 @@ Higher order call graphs
   "callable": "via_attribute_name.test_sink_attribute_z",
   "returned_callables": [],
   "calls": {
-    "87:4-87:7": {
+    "88:4-88:7": {
       "attribute_access": {
         "globals": [
           {
@@ -111,7 +111,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "87:10-87:24": {
+    "88:10-88:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -124,7 +124,7 @@ Higher order call graphs
   "callable": "via_attribute_name.test_source_attribute_join",
   "returned_callables": [],
   "calls": {
-    "63:10-63:13": {
+    "64:10-64:13": {
       "attribute_access": {
         "globals": [
           {
@@ -136,7 +136,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "64:7-64:22": {
+    "65:7-65:22": {
       "call": {
         "calls": [
           {
@@ -149,7 +149,7 @@ Higher order call graphs
         ]
       }
     },
-    "64:7-64:28|artificial-call|comparison": {
+    "65:7-65:28|artificial-call|comparison": {
       "call": {
         "calls": [
           {
@@ -162,7 +162,7 @@ Higher order call graphs
         ]
       }
     },
-    "65:14-65:17": {
+    "66:14-66:17": {
       "attribute_access": {
         "globals": [
           {
@@ -174,7 +174,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "66:9-66:24": {
+    "67:9-67:24": {
       "call": {
         "calls": [
           {
@@ -187,7 +187,7 @@ Higher order call graphs
         ]
       }
     },
-    "66:9-66:30|artificial-call|comparison": {
+    "67:9-67:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
@@ -200,7 +200,7 @@ Higher order call graphs
         ]
       }
     },
-    "67:14-67:17": {
+    "68:14-68:17": {
       "attribute_access": {
         "globals": [
           {
@@ -212,7 +212,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "68:4-68:19": {
+    "69:4-69:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -225,14 +225,14 @@ Higher order call graphs
   "callable": "via_attribute_name.test_source_attribute_x",
   "returned_callables": [],
   "calls": {
-    "51:4-51:19": {
+    "52:4-52:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "51:15-51:18": {
+    "52:15-52:18": {
       "attribute_access": {
         "globals": [
           {
@@ -250,14 +250,14 @@ Higher order call graphs
   "callable": "via_attribute_name.test_source_attribute_y",
   "returned_callables": [],
   "calls": {
-    "55:4-55:19": {
+    "56:4-56:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "55:15-55:18": {
+    "56:15-56:18": {
       "attribute_access": {
         "globals": [
           {
@@ -275,14 +275,14 @@ Higher order call graphs
   "callable": "via_attribute_name.test_source_attribute_z",
   "returned_callables": [],
   "calls": {
-    "59:4-59:19": {
+    "60:4-60:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "59:15-59:18": {
+    "60:15-60:18": {
       "attribute_access": {
         "globals": [
           {
@@ -300,7 +300,7 @@ Higher order call graphs
   "callable": "via_attribute_name.test_tito_attribute_join",
   "returned_callables": [],
   "calls": {
-    "34:8-34:40": {
+    "35:8-35:40": {
       "call": {
         "new_calls": [
           {
@@ -321,14 +321,14 @@ Higher order call graphs
         ]
       }
     },
-    "34:25-34:39": {
+    "35:25-35:39": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "35:10-35:13": {
+    "36:10-36:13": {
       "attribute_access": {
         "globals": [
           {
@@ -340,7 +340,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "36:7-36:22": {
+    "37:7-37:22": {
       "call": {
         "calls": [
           {
@@ -353,7 +353,7 @@ Higher order call graphs
         ]
       }
     },
-    "36:7-36:28|artificial-call|comparison": {
+    "37:7-37:28|artificial-call|comparison": {
       "call": {
         "calls": [
           {
@@ -366,7 +366,7 @@ Higher order call graphs
         ]
       }
     },
-    "37:14-37:17": {
+    "38:14-38:17": {
       "attribute_access": {
         "globals": [
           {
@@ -378,7 +378,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "38:9-38:24": {
+    "39:9-39:24": {
       "call": {
         "calls": [
           {
@@ -391,7 +391,7 @@ Higher order call graphs
         ]
       }
     },
-    "38:9-38:30|artificial-call|comparison": {
+    "39:9-39:30|artificial-call|comparison": {
       "call": {
         "calls": [
           {
@@ -404,7 +404,7 @@ Higher order call graphs
         ]
       }
     },
-    "39:14-39:17": {
+    "40:14-40:17": {
       "attribute_access": {
         "globals": [
           {
@@ -416,7 +416,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "40:4-40:19": {
+    "41:4-41:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -429,14 +429,14 @@ Higher order call graphs
   "callable": "via_attribute_name.test_tito_attribute_model_query_x",
   "returned_callables": [],
   "calls": {
-    "98:4-98:69": {
+    "99:4-99:69": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "98:15-98:68": {
+    "99:15-99:68": {
       "call": {
         "new_calls": [
           {
@@ -457,7 +457,7 @@ Higher order call graphs
         ]
       }
     },
-    "98:41-98:55": {
+    "99:41-99:55": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -470,14 +470,14 @@ Higher order call graphs
   "callable": "via_attribute_name.test_tito_attribute_model_query_y",
   "returned_callables": [],
   "calls": {
-    "102:4-102:69": {
+    "103:4-103:69": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "102:15-102:68": {
+    "103:15-103:68": {
       "call": {
         "new_calls": [
           {
@@ -498,7 +498,7 @@ Higher order call graphs
         ]
       }
     },
-    "102:47-102:61": {
+    "103:47-103:61": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -511,14 +511,14 @@ Higher order call graphs
   "callable": "via_attribute_name.test_tito_attribute_model_query_z",
   "returned_callables": [],
   "calls": {
-    "106:4-106:69": {
+    "107:4-107:69": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "106:15-106:68": {
+    "107:15-107:68": {
       "call": {
         "new_calls": [
           {
@@ -539,7 +539,7 @@ Higher order call graphs
         ]
       }
     },
-    "106:53-106:67": {
+    "107:53-107:67": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -552,7 +552,7 @@ Higher order call graphs
   "callable": "via_attribute_name.test_tito_attribute_x",
   "returned_callables": [],
   "calls": {
-    "19:8-19:40": {
+    "20:8-20:40": {
       "call": {
         "new_calls": [
           {
@@ -573,21 +573,21 @@ Higher order call graphs
         ]
       }
     },
-    "19:25-19:39": {
+    "20:25-20:39": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "20:4-20:19": {
+    "21:4-21:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "20:15-20:18": {
+    "21:15-21:18": {
       "attribute_access": {
         "globals": [
           {
@@ -605,7 +605,7 @@ Higher order call graphs
   "callable": "via_attribute_name.test_tito_attribute_y",
   "returned_callables": [],
   "calls": {
-    "24:8-24:40": {
+    "25:8-25:40": {
       "call": {
         "new_calls": [
           {
@@ -626,21 +626,21 @@ Higher order call graphs
         ]
       }
     },
-    "24:25-24:39": {
+    "25:25-25:39": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "25:4-25:19": {
+    "26:4-26:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "25:15-25:18": {
+    "26:15-26:18": {
       "attribute_access": {
         "globals": [
           {
@@ -658,7 +658,7 @@ Higher order call graphs
   "callable": "via_attribute_name.test_tito_attribute_z_with_tag",
   "returned_callables": [],
   "calls": {
-    "29:8-29:40": {
+    "30:8-30:40": {
       "call": {
         "new_calls": [
           {
@@ -679,21 +679,21 @@ Higher order call graphs
         ]
       }
     },
-    "29:25-29:39": {
+    "30:25-30:39": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "30:4-30:19": {
+    "31:4-31:19": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "30:15-30:18": {
+    "31:15-31:18": {
       "attribute_access": {
         "globals": [
           {
@@ -711,7 +711,7 @@ Higher order call graphs
   "callable": "via_attribute_name.TitoAttributes.__init__",
   "returned_callables": [],
   "calls": {
-    "13:8-13:14": {
+    "14:8-14:14": {
       "attribute_access": {
         "globals": [
           {
@@ -723,7 +723,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "14:8-14:14": {
+    "15:8-15:14": {
       "attribute_access": {
         "globals": [
           {
@@ -735,7 +735,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "15:8-15:14": {
+    "16:8-16:14": {
       "attribute_access": {
         "globals": [
           {

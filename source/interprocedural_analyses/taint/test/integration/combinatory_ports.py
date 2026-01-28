@@ -5,6 +5,7 @@
 
 from pysa import _test_sink
 
+
 """
 This test demonstrates a case where the analysis is exponential due to 4
 methods recursively calling each other with different paths. The set of sinks

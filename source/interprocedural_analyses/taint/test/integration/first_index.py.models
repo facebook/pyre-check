@@ -24,7 +24,7 @@
   "data": {
     "callable": "first_index.alternate_fields",
     "filename": "first_index.py",
-    "callable_line": 12,
+    "callable_line": 13,
     "sources": [
       {
         "port": "result",
@@ -42,7 +42,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "origin": { "line": 13, "start": 14, "end": 28 }
+            "origin": { "line": 14, "start": 14, "end": 28 }
           },
           {
             "kinds": [
@@ -57,7 +57,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "b" }
             ],
-            "origin": { "line": 13, "start": 35, "end": 49 }
+            "origin": { "line": 14, "start": 35, "end": 49 }
           }
         ]
       }
@@ -68,9 +68,9 @@
   "kind": "issue",
   "data": {
     "callable": "first_index.alternate_fields",
-    "callable_line": 12,
+    "callable_line": 13,
     "code": 5002,
-    "line": 18,
+    "line": 19,
     "start": 15,
     "end": 16,
     "filename": "first_index.py",
@@ -92,7 +92,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "origin": { "line": 13, "start": 14, "end": 28 }
+            "origin": { "line": 14, "start": 14, "end": 28 }
           },
           {
             "kinds": [
@@ -107,7 +107,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "b" }
             ],
-            "origin": { "line": 13, "start": 35, "end": 49 }
+            "origin": { "line": 14, "start": 35, "end": 49 }
           }
         ]
       },
@@ -124,8 +124,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 18, "start": 15, "end": 16 },
-            "call_site": "18:4-18:17"
+            "origin": { "line": 19, "start": 15, "end": 16 },
+            "call_site": "19:4-19:17"
           }
         ]
       }
@@ -151,7 +151,7 @@
   "data": {
     "callable": "first_index.local_fields",
     "filename": "first_index.py",
-    "callable_line": 22,
+    "callable_line": 23,
     "sources": [
       {
         "port": "result",
@@ -175,7 +175,7 @@
               { "first-index": "d" }
             ],
             "call": {
-              "position": { "line": 23, "start": 8, "end": 26 },
+              "position": { "line": 24, "start": 8, "end": 26 },
               "resolves_to": [ "first_index.alternate_fields" ],
               "port": "result"
             }
@@ -190,7 +190,7 @@
   "data": {
     "callable": "first_index.local_fields_hop",
     "filename": "first_index.py",
-    "callable_line": 31,
+    "callable_line": 32,
     "sources": [
       {
         "port": "result",
@@ -214,7 +214,7 @@
               { "first-index": "e" }
             ],
             "call": {
-              "position": { "line": 32, "start": 8, "end": 22 },
+              "position": { "line": 33, "start": 8, "end": 22 },
               "resolves_to": [ "first_index.local_fields" ],
               "port": "result"
             }

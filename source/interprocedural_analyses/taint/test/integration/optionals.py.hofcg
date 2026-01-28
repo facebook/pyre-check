@@ -4,12 +4,12 @@ Higher order call graphs
   "callable": "optionals.$toplevel",
   "returned_callables": [],
   "calls": {
-    "20:0-20:6|identifier|$local_optionals$client": {
+    "21:0-21:6|identifier|$local_optionals$client": {
       "identifier": {
         "globals": [ { "target": "Obj{optionals.client}", "index": 0 } ]
       }
     },
-    "20:26-20:43": {
+    "21:26-21:43": {
       "call": {
         "new_calls": [
           {
@@ -35,12 +35,12 @@ Higher order call graphs
   "callable": "optionals.test",
   "returned_callables": [],
   "calls": {
-    "25:4-25:10|identifier|$local_optionals$client": {
+    "26:4-26:10|identifier|$local_optionals$client": {
       "identifier": {
         "globals": [ { "target": "Obj{optionals.client}", "index": 0 } ]
       }
     },
-    "25:4-25:25": {
+    "26:4-26:25": {
       "call": {
         "calls": [
           {
@@ -53,7 +53,7 @@ Higher order call graphs
         ]
       }
     },
-    "25:4-25:47": {
+    "26:4-26:47": {
       "call": {
         "calls": [
           {
@@ -66,7 +66,7 @@ Higher order call graphs
         ]
       }
     },
-    "25:32-25:46": {
+    "26:32-26:46": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -79,7 +79,7 @@ Higher order call graphs
   "callable": "optionals.Client.offer",
   "returned_callables": [],
   "calls": {
-    "12:8-12:27": {
+    "13:8-13:27": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -92,7 +92,7 @@ Higher order call graphs
   "callable": "optionals.ClientSingleton.get_instance",
   "returned_callables": [],
   "calls": {
-    "17:15-17:23": {
+    "18:15-18:23": {
       "call": {
         "new_calls": [
           {

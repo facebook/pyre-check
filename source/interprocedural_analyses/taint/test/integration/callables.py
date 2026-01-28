@@ -7,8 +7,8 @@
 
 import abc
 from typing import Generic, List, Type, TypeVar
-from pysa import _test_source, _test_sink
 
+from pysa import _test_sink, _test_source
 
 EPInputType = TypeVar("EPInputType")
 EPOutputType = TypeVar("EPOutputType")
@@ -43,13 +43,12 @@ class ProcessorInfo(Generic[PIInputType, PIOutputType]):
         self,
         processor_type: Type[AbstractEventProcessor[PIInputType, PIOutputType]],
     ) -> None:
-        self.processor_type: Type[
-            AbstractEventProcessor[PIInputType, PIOutputType]
-        ] = processor_type
+        self.processor_type: Type[AbstractEventProcessor[PIInputType, PIOutputType]] = (
+            processor_type
+        )
 
 
-def get_event_processors() -> List[ProcessorInfo[int, int]]:
-    ...
+def get_event_processors() -> List[ProcessorInfo[int, int]]: ...
 
 
 async def async_execute_event_processor() -> None:

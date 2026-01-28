@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from dataclasses import dataclass
-from typing import Optional, Union, List, Type
+from typing import List, Optional, Type, Union
 
 
 """
@@ -58,7 +58,7 @@ def return_source_optional_dataclass() -> Optional[Dataclass]:
 
 
 def parameter_sink_union_dataclass_regular(
-    parameter: Union[Dataclass, RegularClass]
+    parameter: Union[Dataclass, RegularClass],
 ) -> None:
     pass
 

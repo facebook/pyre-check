@@ -73,7 +73,7 @@
   "data": {
     "callable": "dictionary_delete.pop_key",
     "filename": "dictionary_delete.py",
-    "callable_line": 34,
+    "callable_line": 35,
     "tito": [
       {
         "port": "formal(my_dict, position=0)[key]",
@@ -91,9 +91,9 @@
   "kind": "issue",
   "data": {
     "callable": "dictionary_delete.test_pop_method",
-    "callable_line": 43,
+    "callable_line": 44,
     "code": 5002,
-    "line": 47,
+    "line": 48,
     "start": 15,
     "end": 29,
     "filename": "dictionary_delete.py",
@@ -115,7 +115,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "key" }
             ],
-            "origin": { "line": 44, "start": 10, "end": 24 }
+            "origin": { "line": 45, "start": 10, "end": 24 }
           }
         ]
       },
@@ -132,8 +132,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 47, "start": 15, "end": 29 },
-            "call_site": "47:4-47:30"
+            "origin": { "line": 48, "start": 15, "end": 29 },
+            "call_site": "48:4-48:30"
           }
         ]
       }

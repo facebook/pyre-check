@@ -33,9 +33,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_attribute_name.test_sink_attribute_x",
-    "callable_line": 78,
+    "callable_line": 79,
     "code": 5002,
-    "line": 79,
+    "line": 80,
     "start": 4,
     "end": 7,
     "filename": "via_attribute_name.py",
@@ -53,7 +53,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 79, "start": 10, "end": 24 }
+            "origin": { "line": 80, "start": 10, "end": 24 }
           }
         ]
       },
@@ -73,7 +73,7 @@
               }
             ],
             "local_features": [ { "always-via-attribute": "x" } ],
-            "origin": { "line": 79, "start": 4, "end": 7 }
+            "origin": { "line": 80, "start": 4, "end": 7 }
           }
         ]
       }
@@ -91,9 +91,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_attribute_name.test_sink_attribute_y",
-    "callable_line": 82,
+    "callable_line": 83,
     "code": 5002,
-    "line": 83,
+    "line": 84,
     "start": 4,
     "end": 7,
     "filename": "via_attribute_name.py",
@@ -111,7 +111,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 83, "start": 10, "end": 24 }
+            "origin": { "line": 84, "start": 10, "end": 24 }
           }
         ]
       },
@@ -131,7 +131,7 @@
               }
             ],
             "local_features": [ { "always-via-attribute": "y" } ],
-            "origin": { "line": 83, "start": 4, "end": 7 }
+            "origin": { "line": 84, "start": 4, "end": 7 }
           }
         ]
       }
@@ -149,9 +149,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_attribute_name.test_sink_attribute_z",
-    "callable_line": 86,
+    "callable_line": 87,
     "code": 5002,
-    "line": 87,
+    "line": 88,
     "start": 4,
     "end": 7,
     "filename": "via_attribute_name.py",
@@ -169,7 +169,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 87, "start": 10, "end": 24 }
+            "origin": { "line": 88, "start": 10, "end": 24 }
           }
         ]
       },
@@ -189,7 +189,7 @@
               }
             ],
             "local_features": [ { "always-via-TheZ-attribute": "z" } ],
-            "origin": { "line": 87, "start": 4, "end": 7 }
+            "origin": { "line": 88, "start": 4, "end": 7 }
           }
         ]
       }
@@ -208,7 +208,7 @@
   "data": {
     "callable": "via_attribute_name.test_source_attribute_join",
     "filename": "via_attribute_name.py",
-    "callable_line": 62,
+    "callable_line": 63,
     "sinks": [
       {
         "port": "formal(c, position=0)[x]",
@@ -222,8 +222,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 68, "start": 15, "end": 18 },
-            "call_site": "68:4-68:19"
+            "origin": { "line": 69, "start": 15, "end": 18 },
+            "call_site": "69:4-69:19"
           }
         ]
       },
@@ -239,8 +239,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 68, "start": 15, "end": 18 },
-            "call_site": "68:4-68:19"
+            "origin": { "line": 69, "start": 15, "end": 18 },
+            "call_site": "69:4-69:19"
           }
         ]
       },
@@ -256,8 +256,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 68, "start": 15, "end": 18 },
-            "call_site": "68:4-68:19"
+            "origin": { "line": 69, "start": 15, "end": 18 },
+            "call_site": "69:4-69:19"
           }
         ]
       }
@@ -268,9 +268,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_attribute_name.test_source_attribute_join",
-    "callable_line": 62,
+    "callable_line": 63,
     "code": 5002,
-    "line": 68,
+    "line": 69,
     "start": 15,
     "end": 18,
     "filename": "via_attribute_name.py",
@@ -292,7 +292,7 @@
               }
             ],
             "local_features": [ { "always-via-attribute": "x" } ],
-            "origin": { "line": 63, "start": 10, "end": 13 }
+            "origin": { "line": 64, "start": 10, "end": 13 }
           },
           {
             "kinds": [
@@ -307,7 +307,7 @@
               }
             ],
             "local_features": [ { "always-via-attribute": "y" } ],
-            "origin": { "line": 65, "start": 14, "end": 17 }
+            "origin": { "line": 66, "start": 14, "end": 17 }
           },
           {
             "kinds": [
@@ -322,7 +322,7 @@
               }
             ],
             "local_features": [ { "always-via-TheZ-attribute": "z" } ],
-            "origin": { "line": 67, "start": 14, "end": 17 }
+            "origin": { "line": 68, "start": 14, "end": 17 }
           }
         ]
       },
@@ -338,8 +338,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 68, "start": 15, "end": 18 },
-            "call_site": "68:4-68:19"
+            "origin": { "line": 69, "start": 15, "end": 18 },
+            "call_site": "69:4-69:19"
           }
         ]
       }
@@ -363,7 +363,7 @@
   "data": {
     "callable": "via_attribute_name.test_source_attribute_x",
     "filename": "via_attribute_name.py",
-    "callable_line": 50,
+    "callable_line": 51,
     "sinks": [
       {
         "port": "formal(c, position=0)[x]",
@@ -377,8 +377,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 51, "start": 15, "end": 18 },
-            "call_site": "51:4-51:19"
+            "origin": { "line": 52, "start": 15, "end": 18 },
+            "call_site": "52:4-52:19"
           }
         ]
       }
@@ -389,9 +389,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_attribute_name.test_source_attribute_x",
-    "callable_line": 50,
+    "callable_line": 51,
     "code": 5002,
-    "line": 51,
+    "line": 52,
     "start": 15,
     "end": 18,
     "filename": "via_attribute_name.py",
@@ -413,7 +413,7 @@
               }
             ],
             "local_features": [ { "always-via-attribute": "x" } ],
-            "origin": { "line": 51, "start": 15, "end": 18 }
+            "origin": { "line": 52, "start": 15, "end": 18 }
           }
         ]
       },
@@ -429,8 +429,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 51, "start": 15, "end": 18 },
-            "call_site": "51:4-51:19"
+            "origin": { "line": 52, "start": 15, "end": 18 },
+            "call_site": "52:4-52:19"
           }
         ]
       }
@@ -450,7 +450,7 @@
   "data": {
     "callable": "via_attribute_name.test_source_attribute_y",
     "filename": "via_attribute_name.py",
-    "callable_line": 54,
+    "callable_line": 55,
     "sinks": [
       {
         "port": "formal(c, position=0)[y]",
@@ -464,8 +464,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 55, "start": 15, "end": 18 },
-            "call_site": "55:4-55:19"
+            "origin": { "line": 56, "start": 15, "end": 18 },
+            "call_site": "56:4-56:19"
           }
         ]
       }
@@ -476,9 +476,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_attribute_name.test_source_attribute_y",
-    "callable_line": 54,
+    "callable_line": 55,
     "code": 5002,
-    "line": 55,
+    "line": 56,
     "start": 15,
     "end": 18,
     "filename": "via_attribute_name.py",
@@ -500,7 +500,7 @@
               }
             ],
             "local_features": [ { "always-via-attribute": "y" } ],
-            "origin": { "line": 55, "start": 15, "end": 18 }
+            "origin": { "line": 56, "start": 15, "end": 18 }
           }
         ]
       },
@@ -516,8 +516,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 55, "start": 15, "end": 18 },
-            "call_site": "55:4-55:19"
+            "origin": { "line": 56, "start": 15, "end": 18 },
+            "call_site": "56:4-56:19"
           }
         ]
       }
@@ -537,7 +537,7 @@
   "data": {
     "callable": "via_attribute_name.test_source_attribute_z",
     "filename": "via_attribute_name.py",
-    "callable_line": 58,
+    "callable_line": 59,
     "sinks": [
       {
         "port": "formal(c, position=0)[z]",
@@ -551,8 +551,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 59, "start": 15, "end": 18 },
-            "call_site": "59:4-59:19"
+            "origin": { "line": 60, "start": 15, "end": 18 },
+            "call_site": "60:4-60:19"
           }
         ]
       }
@@ -563,9 +563,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_attribute_name.test_source_attribute_z",
-    "callable_line": 58,
+    "callable_line": 59,
     "code": 5002,
-    "line": 59,
+    "line": 60,
     "start": 15,
     "end": 18,
     "filename": "via_attribute_name.py",
@@ -587,7 +587,7 @@
               }
             ],
             "local_features": [ { "always-via-TheZ-attribute": "z" } ],
-            "origin": { "line": 59, "start": 15, "end": 18 }
+            "origin": { "line": 60, "start": 15, "end": 18 }
           }
         ]
       },
@@ -603,8 +603,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 59, "start": 15, "end": 18 },
-            "call_site": "59:4-59:19"
+            "origin": { "line": 60, "start": 15, "end": 18 },
+            "call_site": "60:4-60:19"
           }
         ]
       }
@@ -623,9 +623,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_attribute_name.test_tito_attribute_join",
-    "callable_line": 33,
+    "callable_line": 34,
     "code": 5002,
-    "line": 40,
+    "line": 41,
     "start": 15,
     "end": 18,
     "filename": "via_attribute_name.py",
@@ -653,8 +653,8 @@
               { "via-attribute": "x" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 34, "start": 23, "end": 39 } ],
-            "origin": { "line": 34, "start": 25, "end": 39 }
+            "tito_positions": [ { "line": 35, "start": 23, "end": 39 } ],
+            "origin": { "line": 35, "start": 25, "end": 39 }
           }
         ]
       },
@@ -670,8 +670,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 40, "start": 15, "end": 18 },
-            "call_site": "40:4-40:19"
+            "origin": { "line": 41, "start": 15, "end": 18 },
+            "call_site": "41:4-41:19"
           }
         ]
       }
@@ -699,9 +699,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_attribute_name.test_tito_attribute_model_query_x",
-    "callable_line": 97,
+    "callable_line": 98,
     "code": 5002,
-    "line": 98,
+    "line": 99,
     "start": 15,
     "end": 68,
     "filename": "via_attribute_name.py",
@@ -725,8 +725,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 98, "start": 41, "end": 55 } ],
-            "origin": { "line": 98, "start": 41, "end": 55 }
+            "tito_positions": [ { "line": 99, "start": 41, "end": 55 } ],
+            "origin": { "line": 99, "start": 41, "end": 55 }
           }
         ]
       },
@@ -742,8 +742,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 98, "start": 15, "end": 68 },
-            "call_site": "98:4-98:69"
+            "origin": { "line": 99, "start": 15, "end": 68 },
+            "call_site": "99:4-99:69"
           }
         ]
       }
@@ -767,9 +767,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_attribute_name.test_tito_attribute_model_query_y",
-    "callable_line": 101,
+    "callable_line": 102,
     "code": 5002,
-    "line": 102,
+    "line": 103,
     "start": 15,
     "end": 68,
     "filename": "via_attribute_name.py",
@@ -793,8 +793,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 102, "start": 47, "end": 61 } ],
-            "origin": { "line": 102, "start": 47, "end": 61 }
+            "tito_positions": [ { "line": 103, "start": 47, "end": 61 } ],
+            "origin": { "line": 103, "start": 47, "end": 61 }
           }
         ]
       },
@@ -810,8 +810,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 102, "start": 15, "end": 68 },
-            "call_site": "102:4-102:69"
+            "origin": { "line": 103, "start": 15, "end": 68 },
+            "call_site": "103:4-103:69"
           }
         ]
       }
@@ -835,9 +835,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_attribute_name.test_tito_attribute_model_query_z",
-    "callable_line": 105,
+    "callable_line": 106,
     "code": 5002,
-    "line": 106,
+    "line": 107,
     "start": 15,
     "end": 68,
     "filename": "via_attribute_name.py",
@@ -861,8 +861,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 106, "start": 53, "end": 67 } ],
-            "origin": { "line": 106, "start": 53, "end": 67 }
+            "tito_positions": [ { "line": 107, "start": 53, "end": 67 } ],
+            "origin": { "line": 107, "start": 53, "end": 67 }
           }
         ]
       },
@@ -878,8 +878,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 106, "start": 15, "end": 68 },
-            "call_site": "106:4-106:69"
+            "origin": { "line": 107, "start": 15, "end": 68 },
+            "call_site": "107:4-107:69"
           }
         ]
       }
@@ -903,9 +903,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_attribute_name.test_tito_attribute_x",
-    "callable_line": 18,
+    "callable_line": 19,
     "code": 5002,
-    "line": 20,
+    "line": 21,
     "start": 15,
     "end": 18,
     "filename": "via_attribute_name.py",
@@ -929,8 +929,8 @@
               { "always-via-attribute": "x" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 19, "start": 23, "end": 39 } ],
-            "origin": { "line": 19, "start": 25, "end": 39 }
+            "tito_positions": [ { "line": 20, "start": 23, "end": 39 } ],
+            "origin": { "line": 20, "start": 25, "end": 39 }
           }
         ]
       },
@@ -946,8 +946,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 20, "start": 15, "end": 18 },
-            "call_site": "20:4-20:19"
+            "origin": { "line": 21, "start": 15, "end": 18 },
+            "call_site": "21:4-21:19"
           }
         ]
       }
@@ -971,9 +971,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_attribute_name.test_tito_attribute_y",
-    "callable_line": 23,
+    "callable_line": 24,
     "code": 5002,
-    "line": 25,
+    "line": 26,
     "start": 15,
     "end": 18,
     "filename": "via_attribute_name.py",
@@ -997,8 +997,8 @@
               { "always-via-attribute": "y" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 24, "start": 23, "end": 39 } ],
-            "origin": { "line": 24, "start": 25, "end": 39 }
+            "tito_positions": [ { "line": 25, "start": 23, "end": 39 } ],
+            "origin": { "line": 25, "start": 25, "end": 39 }
           }
         ]
       },
@@ -1014,8 +1014,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 25, "start": 15, "end": 18 },
-            "call_site": "25:4-25:19"
+            "origin": { "line": 26, "start": 15, "end": 18 },
+            "call_site": "26:4-26:19"
           }
         ]
       }
@@ -1039,9 +1039,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_attribute_name.test_tito_attribute_z_with_tag",
-    "callable_line": 28,
+    "callable_line": 29,
     "code": 5002,
-    "line": 30,
+    "line": 31,
     "start": 15,
     "end": 18,
     "filename": "via_attribute_name.py",
@@ -1065,8 +1065,8 @@
               { "always-via-TheZ-attribute": "z" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 29, "start": 23, "end": 39 } ],
-            "origin": { "line": 29, "start": 25, "end": 39 }
+            "tito_positions": [ { "line": 30, "start": 23, "end": 39 } ],
+            "origin": { "line": 30, "start": 25, "end": 39 }
           }
         ]
       },
@@ -1082,8 +1082,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 30, "start": 15, "end": 18 },
-            "call_site": "30:4-30:19"
+            "origin": { "line": 31, "start": 15, "end": 18 },
+            "call_site": "31:4-31:19"
           }
         ]
       }
@@ -1403,7 +1403,7 @@
   "data": {
     "callable": "via_attribute_name.TitoAttributes.__init__",
     "filename": "via_attribute_name.py",
-    "callable_line": 12,
+    "callable_line": 13,
     "tito": [
       {
         "port": "formal(z, position=3)",

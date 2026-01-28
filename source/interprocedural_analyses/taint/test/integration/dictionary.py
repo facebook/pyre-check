@@ -3,18 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import Any, Dict, Generic, Iterable, Mapping, Optional, TypeVar, Union, cast
+
 from pysa import _test_sink, _test_source
-from typing import (
-    Any,
-    cast,
-    Dict,
-    Generic,
-    Iterable,
-    Mapping,
-    Optional,
-    TypeVar,
-    Union,
-)
 
 
 def dictionary_source():

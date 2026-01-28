@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "long_access_path_taint.test",
   "returned_callables": [],
   "calls": {
-    "35:16-35:71": {
+    "36:16-36:71": {
       "call": {
         "calls": [
           {
@@ -18,21 +18,21 @@ Higher order call graphs
         ]
       }
     },
-    "35:35-35:49": {
+    "36:35-36:49": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "35:51-35:65": {
+    "36:51-36:65": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 1, "return_type": [] }
         ]
       }
     },
-    "36:4-36:22": {
+    "37:4-37:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -45,7 +45,7 @@ Higher order call graphs
   "callable": "long_access_path_taint.C.__init__",
   "returned_callables": [],
   "calls": {
-    "15:25-15:48": {
+    "16:25-16:48": {
       "call": {
         "calls": [
           {
@@ -58,7 +58,7 @@ Higher order call graphs
         ]
       }
     },
-    "16:22-16:42": {
+    "17:22-17:42": {
       "call": {
         "calls": [
           {
@@ -77,7 +77,7 @@ Higher order call graphs
   "callable": "long_access_path_taint.C.async_create",
   "returned_callables": [],
   "calls": {
-    "24:15-24:26|artificial-call|str-call-to-dunder-method": {
+    "25:15-25:26|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -90,7 +90,7 @@ Higher order call graphs
         ]
       }
     },
-    "25:11-25:33|artificial-call|comparison": {
+    "26:11-26:33|artificial-call|comparison": {
       "call": {
         "calls": [
           {
@@ -103,7 +103,7 @@ Higher order call graphs
         ]
       }
     },
-    "25:11-25:33|artificial-call|normalize-not-comparison>comparison": {
+    "26:11-26:33|artificial-call|normalize-not-comparison>comparison": {
       "call": {
         "calls": [
           {
@@ -116,7 +116,7 @@ Higher order call graphs
         ]
       }
     },
-    "29:26-29:37|artificial-call|str-call-to-dunder-method": {
+    "30:26-30:37|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
@@ -129,7 +129,7 @@ Higher order call graphs
         ]
       }
     },
-    "31:15-31:45": {
+    "32:15-32:45": {
       "call": {
         "new_calls": [
           {

@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "class_flows.global_class_attribute_issue",
   "returned_callables": [],
   "calls": {
-    "57:4-57:29": {
+    "58:4-58:29": {
       "attribute_access": {
         "globals": [
           {
@@ -15,7 +15,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "57:32-57:46": {
+    "58:32-58:46": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -28,7 +28,7 @@ Higher order call graphs
   "callable": "class_flows.tainted_attribute_flow_issue",
   "returned_callables": [],
   "calls": {
-    "22:4-22:23": {
+    "23:4-23:23": {
       "attribute_access": {
         "globals": [
           { "target": "Obj{class_flows.C.tainted_attribute}", "index": 0 }
@@ -36,7 +36,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "22:26-22:40": {
+    "23:26-23:40": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -49,7 +49,7 @@ Higher order call graphs
   "callable": "class_flows.tainted_attribute_for_class_not_issue",
   "returned_callables": [],
   "calls": {
-    "30:26-30:40": {
+    "31:26-31:40": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -62,7 +62,7 @@ Higher order call graphs
   "callable": "class_flows.tainted_attribute_through_inheritance_issue",
   "returned_callables": [],
   "calls": {
-    "34:4-34:23": {
+    "35:4-35:23": {
       "attribute_access": {
         "globals": [
           { "target": "Obj{class_flows.C.tainted_attribute}", "index": 0 }
@@ -70,7 +70,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "34:26-34:40": {
+    "35:26-35:40": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -83,7 +83,7 @@ Higher order call graphs
   "callable": "class_flows.tainted_class_attribute_through_class_issue",
   "returned_callables": [],
   "calls": {
-    "42:4-42:40": {
+    "43:4-43:40": {
       "attribute_access": {
         "globals": [
           {
@@ -94,7 +94,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "42:43-42:57": {
+    "43:43-43:57": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -107,7 +107,7 @@ Higher order call graphs
   "callable": "class_flows.tainted_class_attribute_through_double_underscore_class_issue",
   "returned_callables": [],
   "calls": {
-    "46:4-46:15": {
+    "47:4-47:15": {
       "attribute_access": {
         "properties": [
           {
@@ -119,7 +119,7 @@ Higher order call graphs
         ]
       }
     },
-    "46:4-46:39": {
+    "47:4-47:39": {
       "attribute_access": {
         "globals": [
           {
@@ -130,7 +130,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "46:42-46:56": {
+    "47:42-47:56": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -143,7 +143,7 @@ Higher order call graphs
   "callable": "class_flows.tainted_class_attribute_through_instance_not_issue",
   "returned_callables": [],
   "calls": {
-    "38:32-38:46": {
+    "39:32-39:46": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -156,7 +156,7 @@ Higher order call graphs
   "callable": "class_flows.tainted_class_attribute_through_optional_class_issue",
   "returned_callables": [],
   "calls": {
-    "53:8-53:44": {
+    "54:8-54:44": {
       "attribute_access": {
         "globals": [
           {
@@ -167,7 +167,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "53:47-53:61": {
+    "54:47-54:61": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -180,7 +180,7 @@ Higher order call graphs
   "callable": "class_flows.test_classmethod",
   "returned_callables": [],
   "calls": {
-    "79:4-79:78": {
+    "80:4-80:78": {
       "call": {
         "calls": [
           {
@@ -194,7 +194,7 @@ Higher order call graphs
         ]
       }
     },
-    "79:63-79:77": {
+    "80:63-80:77": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -207,7 +207,7 @@ Higher order call graphs
   "callable": "class_flows.test_decorated_classmethod",
   "returned_callables": [],
   "calls": {
-    "90:4-90:51": {
+    "91:4-91:51": {
       "call": {
         "calls": [
           {
@@ -221,7 +221,7 @@ Higher order call graphs
         ]
       }
     },
-    "90:36-90:50": {
+    "91:36-91:50": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -234,7 +234,7 @@ Higher order call graphs
   "callable": "class_flows.untainted_flow_not_issue",
   "returned_callables": [],
   "calls": {
-    "26:20-26:34": {
+    "27:20-27:34": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -247,7 +247,7 @@ Higher order call graphs
   "callable": "class_flows.C.$class_toplevel",
   "returned_callables": [],
   "calls": {
-    "13:4-13:27|artificial-attribute-access|qualification:class_flows.C.tainted_class_attribute": {
+    "14:4-14:27|artificial-attribute-access|qualification:class_flows.C.tainted_class_attribute": {
       "attribute_access": {
         "globals": [
           {
@@ -264,7 +264,7 @@ Higher order call graphs
   "callable": "class_flows.HasClassmethods._async_results_for_non_empty_query_from_db",
   "returned_callables": [],
   "calls": {
-    "64:21-64:57": {
+    "65:21-65:57": {
       "call": {
         "calls": [
           {
@@ -278,7 +278,7 @@ Higher order call graphs
         ]
       }
     },
-    "66:21-66:56": {
+    "67:21-67:56": {
       "call": {
         "calls": [
           {
@@ -298,7 +298,7 @@ Higher order call graphs
   "callable": "class_flows.HasClassmethods._get_multi_word_results",
   "returned_callables": [],
   "calls": {
-    "70:8-70:26": {
+    "71:8-71:26": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -311,7 +311,7 @@ Higher order call graphs
   "callable": "class_flows.HasDecoratedClassmethod.to_sink",
   "returned_callables": [],
   "calls": {
-    "86:8-86:21": {
+    "87:8-87:21": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }

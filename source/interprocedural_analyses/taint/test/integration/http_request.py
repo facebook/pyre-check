@@ -5,9 +5,8 @@
 
 # flake8: noqa
 
-from pysa import _test_sink, _test_source
-
 from django.http.request import HttpRequest
+from pysa import _test_sink, _test_source
 
 
 def test_untainted_assign(request: HttpRequest):

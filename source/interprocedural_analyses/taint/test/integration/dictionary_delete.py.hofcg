@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "dictionary_delete.dict_into_sink",
   "returned_callables": [],
   "calls": {
-    "39:8-39:22|artificial-call|subscript-get-item": {
+    "40:8-40:22|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -17,14 +17,14 @@ Higher order call graphs
         ]
       }
     },
-    "40:4-40:30": {
+    "41:4-41:30": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "40:15-40:29|artificial-call|subscript-get-item": {
+    "41:15-41:29|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -43,7 +43,7 @@ Higher order call graphs
   "callable": "dictionary_delete.pop_dict_with_bad_key",
   "returned_callables": [],
   "calls": {
-    "30:4-30:22": {
+    "31:4-31:22": {
       "call": {
         "calls": [
           {
@@ -56,7 +56,7 @@ Higher order call graphs
         ]
       }
     },
-    "31:11-31:25|artificial-call|subscript-get-item": {
+    "32:11-32:25|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -75,7 +75,7 @@ Higher order call graphs
   "callable": "dictionary_delete.pop_key",
   "returned_callables": [],
   "calls": {
-    "35:11-35:29": {
+    "36:11-36:29": {
       "call": {
         "calls": [
           {
@@ -94,14 +94,14 @@ Higher order call graphs
   "callable": "dictionary_delete.return_dict_with_bad_key",
   "returned_callables": [],
   "calls": {
-    "18:10-18:24": {
+    "19:10-19:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "20:8-20:22|artificial-call|subscript-get-item": {
+    "21:8-21:22|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -120,7 +120,7 @@ Higher order call graphs
   "callable": "dictionary_delete.take_dict_with_bad_key",
   "returned_callables": [],
   "calls": {
-    "25:8-25:22|artificial-call|subscript-get-item": {
+    "26:8-26:22|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -133,7 +133,7 @@ Higher order call graphs
         ]
       }
     },
-    "26:11-26:25|artificial-call|subscript-get-item": {
+    "27:11-27:25|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -152,14 +152,14 @@ Higher order call graphs
   "callable": "dictionary_delete.test_del_keyword",
   "returned_callables": [],
   "calls": {
-    "11:10-11:24": {
+    "12:10-12:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "13:8-13:22|artificial-call|subscript-get-item": {
+    "14:8-14:22|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -172,14 +172,14 @@ Higher order call graphs
         ]
       }
     },
-    "14:4-14:30": {
+    "15:4-15:30": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "14:15-14:29|artificial-call|subscript-get-item": {
+    "15:15-15:29|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -198,14 +198,14 @@ Higher order call graphs
   "callable": "dictionary_delete.test_pop_method",
   "returned_callables": [],
   "calls": {
-    "44:10-44:24": {
+    "45:10-45:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "46:4-46:22": {
+    "47:4-47:22": {
       "call": {
         "calls": [
           {
@@ -218,14 +218,14 @@ Higher order call graphs
         ]
       }
     },
-    "47:4-47:30": {
+    "48:4-48:30": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "47:15-47:29|artificial-call|subscript-get-item": {
+    "48:15-48:29|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {

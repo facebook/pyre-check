@@ -129,9 +129,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test1_alarm1",
-    "callable_line": 20,
+    "callable_line": 21,
     "code": 5002,
-    "line": 23,
+    "line": 24,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -157,8 +157,8 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 22, "start": 16, "end": 32 } ],
-            "origin": { "line": 22, "start": 18, "end": 32 }
+            "tito_positions": [ { "line": 23, "start": 16, "end": 32 } ],
+            "origin": { "line": 23, "start": 18, "end": 32 }
           }
         ]
       },
@@ -174,8 +174,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 23, "start": 15, "end": 18 },
-            "call_site": "23:4-23:19"
+            "origin": { "line": 24, "start": 15, "end": 18 },
+            "call_site": "24:4-24:19"
           }
         ]
       }
@@ -201,9 +201,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test1_alarm2",
-    "callable_line": 26,
+    "callable_line": 27,
     "code": 5002,
-    "line": 29,
+    "line": 30,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -227,8 +227,8 @@
               { "always-via-type": "str" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 28, "start": 16, "end": 32 } ],
-            "origin": { "line": 28, "start": 18, "end": 32 }
+            "tito_positions": [ { "line": 29, "start": 16, "end": 32 } ],
+            "origin": { "line": 29, "start": 18, "end": 32 }
           }
         ]
       },
@@ -244,8 +244,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 29, "start": 15, "end": 18 },
-            "call_site": "29:4-29:19"
+            "origin": { "line": 30, "start": 15, "end": 18 },
+            "call_site": "30:4-30:19"
           }
         ]
       }
@@ -269,9 +269,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test1_alarm3",
-    "callable_line": 32,
+    "callable_line": 33,
     "code": 5002,
-    "line": 35,
+    "line": 36,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -295,8 +295,8 @@
               { "always-via-TheZ-type": "str" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 34, "start": 16, "end": 32 } ],
-            "origin": { "line": 34, "start": 18, "end": 32 }
+            "tito_positions": [ { "line": 35, "start": 16, "end": 32 } ],
+            "origin": { "line": 35, "start": 18, "end": 32 }
           }
         ]
       },
@@ -312,8 +312,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 35, "start": 15, "end": 18 },
-            "call_site": "35:4-35:19"
+            "origin": { "line": 36, "start": 15, "end": 18 },
+            "call_site": "36:4-36:19"
           }
         ]
       }
@@ -337,9 +337,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test1_alarm4",
-    "callable_line": 38,
+    "callable_line": 39,
     "code": 5002,
-    "line": 46,
+    "line": 47,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -369,8 +369,8 @@
               { "type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 40, "start": 16, "end": 32 } ],
-            "origin": { "line": 40, "start": 18, "end": 32 }
+            "tito_positions": [ { "line": 41, "start": 16, "end": 32 } ],
+            "origin": { "line": 41, "start": 18, "end": 32 }
           }
         ]
       },
@@ -386,8 +386,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 46, "start": 15, "end": 18 },
-            "call_site": "46:4-46:19"
+            "origin": { "line": 47, "start": 15, "end": 18 },
+            "call_site": "47:4-47:19"
           }
         ]
       }
@@ -417,9 +417,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test2_alarm1",
-    "callable_line": 56,
+    "callable_line": 57,
     "code": 5002,
-    "line": 59,
+    "line": 60,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -444,8 +444,8 @@
               { "always-via-type": "dict[str, int]" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 58, "start": 16, "end": 32 } ],
-            "origin": { "line": 58, "start": 18, "end": 32 }
+            "tito_positions": [ { "line": 59, "start": 16, "end": 32 } ],
+            "origin": { "line": 59, "start": 18, "end": 32 }
           }
         ]
       },
@@ -461,8 +461,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 59, "start": 15, "end": 18 },
-            "call_site": "59:4-59:19"
+            "origin": { "line": 60, "start": 15, "end": 18 },
+            "call_site": "60:4-60:19"
           }
         ]
       }
@@ -487,9 +487,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test2_alarm2",
-    "callable_line": 62,
+    "callable_line": 63,
     "code": 5002,
-    "line": 65,
+    "line": 66,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -514,8 +514,8 @@
               { "always-via-type": "list[str]" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 64, "start": 16, "end": 32 } ],
-            "origin": { "line": 64, "start": 18, "end": 32 }
+            "tito_positions": [ { "line": 65, "start": 16, "end": 32 } ],
+            "origin": { "line": 65, "start": 18, "end": 32 }
           }
         ]
       },
@@ -531,8 +531,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 65, "start": 15, "end": 18 },
-            "call_site": "65:4-65:19"
+            "origin": { "line": 66, "start": 15, "end": 18 },
+            "call_site": "66:4-66:19"
           }
         ]
       }
@@ -557,9 +557,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test2_alarm3",
-    "callable_line": 68,
+    "callable_line": 69,
     "code": 5002,
-    "line": 71,
+    "line": 72,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -584,8 +584,8 @@
               { "always-via-TheZ-type": "unknown" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 70, "start": 16, "end": 32 } ],
-            "origin": { "line": 70, "start": 18, "end": 32 }
+            "tito_positions": [ { "line": 71, "start": 16, "end": 32 } ],
+            "origin": { "line": 71, "start": 18, "end": 32 }
           }
         ]
       },
@@ -601,8 +601,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 71, "start": 15, "end": 18 },
-            "call_site": "71:4-71:19"
+            "origin": { "line": 72, "start": 15, "end": 18 },
+            "call_site": "72:4-72:19"
           }
         ]
       }
@@ -627,9 +627,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test2_alarm4",
-    "callable_line": 74,
+    "callable_line": 75,
     "code": 5002,
-    "line": 82,
+    "line": 83,
     "start": 15,
     "end": 18,
     "filename": "via_type_of.py",
@@ -659,8 +659,8 @@
               { "via-TheZ-type": "unknown" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 76, "start": 16, "end": 32 } ],
-            "origin": { "line": 76, "start": 18, "end": 32 }
+            "tito_positions": [ { "line": 77, "start": 16, "end": 32 } ],
+            "origin": { "line": 77, "start": 18, "end": 32 }
           }
         ]
       },
@@ -676,8 +676,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 82, "start": 15, "end": 18 },
-            "call_site": "82:4-82:19"
+            "origin": { "line": 83, "start": 15, "end": 18 },
+            "call_site": "83:4-83:19"
           }
         ]
       }
@@ -707,9 +707,9 @@
   "kind": "issue",
   "data": {
     "callable": "via_type_of.test2_alarm5_via_constructor",
-    "callable_line": 85,
+    "callable_line": 86,
     "code": 5002,
-    "line": 87,
+    "line": 88,
     "start": 15,
     "end": 43,
     "filename": "via_type_of.py",
@@ -733,8 +733,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 87, "start": 37, "end": 42 } ],
-            "origin": { "line": 86, "start": 17, "end": 31 }
+            "tito_positions": [ { "line": 88, "start": 37, "end": 42 } ],
+            "origin": { "line": 87, "start": 17, "end": 31 }
           }
         ]
       },
@@ -750,8 +750,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 87, "start": 15, "end": 43 },
-            "call_site": "87:4-87:44"
+            "origin": { "line": 88, "start": 15, "end": 43 },
+            "call_site": "88:4-88:44"
           }
         ]
       }
@@ -1749,7 +1749,7 @@
   "data": {
     "callable": "via_type_of.Test1_C.__init__",
     "filename": "via_type_of.py",
-    "callable_line": 14,
+    "callable_line": 15,
     "tito": [
       {
         "port": "formal(z, position=3)",

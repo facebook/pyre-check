@@ -5,9 +5,10 @@
 
 # flake8: noqa
 
-from pysa import _test_sink, _test_source
 from functools import wraps
 from typing import Awaitable, Callable
+
+from pysa import _test_sink, _test_source
 
 
 def with_logging(f: Callable[[int], None]) -> Callable[[int], None]:

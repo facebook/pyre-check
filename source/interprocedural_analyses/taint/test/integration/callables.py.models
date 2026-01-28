@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "callables.async_execute_event_processor",
-    "callable_line": 55,
+    "callable_line": 54,
     "code": 5002,
-    "line": 59,
+    "line": 58,
     "start": 14,
     "end": 23,
     "filename": "callables.py",
@@ -25,8 +25,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 57, "start": 42, "end": 56 } ],
-            "origin": { "line": 57, "start": 42, "end": 56 }
+            "tito_positions": [ { "line": 56, "start": 42, "end": 56 } ],
+            "origin": { "line": 56, "start": 42, "end": 56 }
           }
         ]
       },
@@ -45,12 +45,12 @@
               }
             ],
             "call": {
-              "position": { "line": 59, "start": 14, "end": 23 },
+              "position": { "line": 58, "start": 14, "end": 23 },
               "resolves_to": [
                 "callables.ConcreteEventProcessor.async_call_tainted"
               ],
               "port": "formal(self, position=0)[tainted]",
-              "call_site": "59:14-59:44"
+              "call_site": "58:14-58:44"
             },
             "receiver_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": false

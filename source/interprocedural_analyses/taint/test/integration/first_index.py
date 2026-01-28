@@ -5,8 +5,9 @@
 
 # flake8: noqa
 
-from pysa import _test_sink, _test_source
 import random
+
+from pysa import _test_sink, _test_source
 
 
 def alternate_fields():

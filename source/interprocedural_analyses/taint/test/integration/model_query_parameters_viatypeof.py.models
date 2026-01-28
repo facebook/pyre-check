@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_parameters_viatypeof.test1_alarm1",
-    "callable_line": 14,
+    "callable_line": 15,
     "code": 5002,
-    "line": 16,
+    "line": 17,
     "start": 13,
     "end": 14,
     "filename": "model_query_parameters_viatypeof.py",
@@ -24,7 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 15, "start": 13, "end": 27 }
+            "origin": { "line": 16, "start": 13, "end": 27 }
           }
         ]
       },
@@ -44,8 +44,8 @@
               }
             ],
             "local_features": [ { "always-via-type": "str" } ],
-            "origin": { "line": 16, "start": 13, "end": 14 },
-            "call_site": "16:4-16:23"
+            "origin": { "line": 17, "start": 13, "end": 14 },
+            "call_site": "17:4-17:23"
           }
         ]
       }
@@ -66,9 +66,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_parameters_viatypeof.test1_alarm2",
-    "callable_line": 19,
+    "callable_line": 20,
     "code": 5002,
-    "line": 21,
+    "line": 22,
     "start": 18,
     "end": 19,
     "filename": "model_query_parameters_viatypeof.py",
@@ -87,7 +87,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 20, "start": 31, "end": 45 }
+            "origin": { "line": 21, "start": 31, "end": 45 }
           }
         ]
       },
@@ -107,8 +107,8 @@
               }
             ],
             "local_features": [ { "always-via-type": "str" } ],
-            "origin": { "line": 21, "start": 18, "end": 19 },
-            "call_site": "21:4-21:23"
+            "origin": { "line": 22, "start": 18, "end": 19 },
+            "call_site": "22:4-22:23"
           }
         ]
       }
@@ -129,9 +129,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_parameters_viatypeof.test1_alarm3",
-    "callable_line": 24,
+    "callable_line": 25,
     "code": 5002,
-    "line": 26,
+    "line": 27,
     "start": 23,
     "end": 24,
     "filename": "model_query_parameters_viatypeof.py",
@@ -153,7 +153,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 25, "start": 13, "end": 27 }
+            "origin": { "line": 26, "start": 13, "end": 27 }
           }
         ]
       },
@@ -173,8 +173,8 @@
               }
             ],
             "local_features": [ { "always-via-type": "int" } ],
-            "origin": { "line": 26, "start": 23, "end": 24 },
-            "call_site": "26:4-26:25"
+            "origin": { "line": 27, "start": 23, "end": 24 },
+            "call_site": "27:4-27:25"
           }
         ]
       }
@@ -199,7 +199,7 @@
   "data": {
     "callable": "model_query_parameters_viatypeof.test1_f1",
     "filename": "model_query_parameters_viatypeof.py",
-    "callable_line": 10,
+    "callable_line": 11,
     "sinks": [
       {
         "port": "formal(c, position=2)",
@@ -257,9 +257,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_parameters_viatypeof.test2_alarm1",
-    "callable_line": 45,
+    "callable_line": 46,
     "code": 5002,
-    "line": 47,
+    "line": 48,
     "start": 9,
     "end": 10,
     "filename": "model_query_parameters_viatypeof.py",
@@ -278,7 +278,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 46, "start": 13, "end": 27 }
+            "origin": { "line": 47, "start": 13, "end": 27 }
           }
         ]
       },
@@ -298,10 +298,10 @@
               }
             ],
             "local_features": [ { "always-via-type": "str" } ],
-            "origin": { "line": 47, "start": 9, "end": 10 },
+            "origin": { "line": 48, "start": 9, "end": 10 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "47:4-47:19"
+            "call_site": "48:4-48:19"
           }
         ]
       }
@@ -322,9 +322,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_parameters_viatypeof.test2_alarm2",
-    "callable_line": 50,
+    "callable_line": 51,
     "code": 5002,
-    "line": 52,
+    "line": 53,
     "start": 14,
     "end": 15,
     "filename": "model_query_parameters_viatypeof.py",
@@ -343,7 +343,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 51, "start": 24, "end": 38 }
+            "origin": { "line": 52, "start": 24, "end": 38 }
           }
         ]
       },
@@ -365,10 +365,10 @@
             "local_features": [
               { "always-via-type": "typing.Dict[str, int]" }
             ],
-            "origin": { "line": 52, "start": 14, "end": 15 },
+            "origin": { "line": 53, "start": 14, "end": 15 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "52:4-52:19"
+            "call_site": "53:4-53:19"
           }
         ]
       }
@@ -390,9 +390,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_parameters_viatypeof.test2_alarm3",
-    "callable_line": 55,
+    "callable_line": 56,
     "code": 5002,
-    "line": 57,
+    "line": 58,
     "start": 19,
     "end": 20,
     "filename": "model_query_parameters_viatypeof.py",
@@ -411,7 +411,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 56, "start": 17, "end": 31 }
+            "origin": { "line": 57, "start": 17, "end": 31 }
           }
         ]
       },
@@ -435,10 +435,10 @@
                 "always-via-type": "model_query_parameters_viatypeof.Test2_T"
               }
             ],
-            "origin": { "line": 57, "start": 19, "end": 20 },
+            "origin": { "line": 58, "start": 19, "end": 20 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "57:4-57:21"
+            "call_site": "58:4-58:21"
           }
         ]
       }
@@ -460,9 +460,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_parameters_viatypeof.test2_alarm4",
-    "callable_line": 60,
+    "callable_line": 61,
     "code": 5002,
-    "line": 62,
+    "line": 63,
     "start": 9,
     "end": 10,
     "filename": "model_query_parameters_viatypeof.py",
@@ -484,7 +484,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 61, "start": 13, "end": 27 }
+            "origin": { "line": 62, "start": 13, "end": 27 }
           }
         ]
       },
@@ -504,10 +504,10 @@
               }
             ],
             "local_features": [ { "always-via-type": "int" } ],
-            "origin": { "line": 62, "start": 9, "end": 10 },
+            "origin": { "line": 63, "start": 9, "end": 10 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "62:4-62:19"
+            "call_site": "63:4-63:19"
           }
         ]
       }
@@ -531,9 +531,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_parameters_viatypeof.test2_alarm5",
-    "callable_line": 65,
+    "callable_line": 66,
     "code": 5002,
-    "line": 67,
+    "line": 68,
     "start": 14,
     "end": 15,
     "filename": "model_query_parameters_viatypeof.py",
@@ -552,7 +552,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 66, "start": 29, "end": 43 }
+            "origin": { "line": 67, "start": 29, "end": 43 }
           }
         ]
       },
@@ -576,10 +576,10 @@
                 "always-via-type": "typing.List[typing.List[model_query_parameters_viatypeof.Test2_T]]"
               }
             ],
-            "origin": { "line": 67, "start": 14, "end": 15 },
+            "origin": { "line": 68, "start": 14, "end": 15 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "67:4-67:19"
+            "call_site": "68:4-68:19"
           }
         ]
       }
@@ -603,9 +603,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_parameters_viatypeof.test2_alarm6",
-    "callable_line": 70,
+    "callable_line": 71,
     "code": 5002,
-    "line": 72,
+    "line": 73,
     "start": 19,
     "end": 20,
     "filename": "model_query_parameters_viatypeof.py",
@@ -625,7 +625,7 @@
               }
             ],
             "local_features": [ { "always-type": "scalar" } ],
-            "origin": { "line": 71, "start": 15, "end": 29 }
+            "origin": { "line": 72, "start": 15, "end": 29 }
           }
         ]
       },
@@ -645,10 +645,10 @@
               }
             ],
             "local_features": [ { "always-via-type": "float" } ],
-            "origin": { "line": 72, "start": 19, "end": 20 },
+            "origin": { "line": 73, "start": 19, "end": 20 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
-            "call_site": "72:4-72:21"
+            "call_site": "73:4-73:21"
           }
         ]
       }
@@ -671,9 +671,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_parameters_viatypeof.test3_alarm1",
-    "callable_line": 87,
+    "callable_line": 88,
     "code": 5002,
-    "line": 89,
+    "line": 90,
     "start": 13,
     "end": 14,
     "filename": "model_query_parameters_viatypeof.py",
@@ -692,7 +692,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 88, "start": 13, "end": 27 }
+            "origin": { "line": 89, "start": 13, "end": 27 }
           }
         ]
       },
@@ -712,8 +712,8 @@
               }
             ],
             "local_features": [ { "always-via-tag-type": "str" } ],
-            "origin": { "line": 89, "start": 13, "end": 14 },
-            "call_site": "89:4-89:23"
+            "origin": { "line": 90, "start": 13, "end": 14 },
+            "call_site": "90:4-90:23"
           }
         ]
       }
@@ -734,9 +734,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_parameters_viatypeof.test3_alarm2",
-    "callable_line": 92,
+    "callable_line": 93,
     "code": 5002,
-    "line": 94,
+    "line": 95,
     "start": 18,
     "end": 19,
     "filename": "model_query_parameters_viatypeof.py",
@@ -755,7 +755,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 93, "start": 31, "end": 45 }
+            "origin": { "line": 94, "start": 31, "end": 45 }
           }
         ]
       },
@@ -775,8 +775,8 @@
               }
             ],
             "local_features": [ { "always-via-tag-type": "str" } ],
-            "origin": { "line": 94, "start": 18, "end": 19 },
-            "call_site": "94:4-94:23"
+            "origin": { "line": 95, "start": 18, "end": 19 },
+            "call_site": "95:4-95:23"
           }
         ]
       }
@@ -797,9 +797,9 @@
   "kind": "issue",
   "data": {
     "callable": "model_query_parameters_viatypeof.test3_alarm3",
-    "callable_line": 97,
+    "callable_line": 98,
     "code": 5002,
-    "line": 99,
+    "line": 100,
     "start": 23,
     "end": 24,
     "filename": "model_query_parameters_viatypeof.py",
@@ -821,7 +821,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": { "line": 98, "start": 13, "end": 27 }
+            "origin": { "line": 99, "start": 13, "end": 27 }
           }
         ]
       },
@@ -841,8 +841,8 @@
               }
             ],
             "local_features": [ { "always-via-tag-type": "int" } ],
-            "origin": { "line": 99, "start": 23, "end": 24 },
-            "call_site": "99:4-99:25"
+            "origin": { "line": 100, "start": 23, "end": 24 },
+            "call_site": "100:4-100:25"
           }
         ]
       }
@@ -867,7 +867,7 @@
   "data": {
     "callable": "model_query_parameters_viatypeof.test3_f1",
     "filename": "model_query_parameters_viatypeof.py",
-    "callable_line": 83,
+    "callable_line": 84,
     "sinks": [
       {
         "port": "formal(c, position=2)",
@@ -988,7 +988,7 @@
   "data": {
     "callable": "model_query_parameters_viatypeof.Test2_C.f1",
     "filename": "model_query_parameters_viatypeof.py",
-    "callable_line": 34,
+    "callable_line": 35,
     "sinks": [
       {
         "port": "formal(c, position=3)",
@@ -1047,7 +1047,7 @@
   "data": {
     "callable": "model_query_parameters_viatypeof.Test2_C.f2",
     "filename": "model_query_parameters_viatypeof.py",
-    "callable_line": 37,
+    "callable_line": 38,
     "sinks": [
       {
         "port": "formal(c, position=3)",

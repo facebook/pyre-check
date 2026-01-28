@@ -54,7 +54,7 @@
   "data": {
     "callable": "side_effects.change_arg0",
     "filename": "side_effects.py",
-    "callable_line": 74,
+    "callable_line": 75,
     "tito": [
       {
         "port": "formal(arg1, position=1)",
@@ -104,7 +104,7 @@
   "data": {
     "callable": "side_effects.dict_to_sink_via_side_effect",
     "filename": "side_effects.py",
-    "callable_line": 65,
+    "callable_line": 66,
     "sinks": [
       {
         "port": "formal(y, position=0)",
@@ -120,9 +120,9 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 67, "start": 26, "end": 27 } ],
-            "origin": { "line": 68, "start": 15, "end": 16 },
-            "call_site": "68:4-68:17"
+            "tito_positions": [ { "line": 68, "start": 26, "end": 27 } ],
+            "origin": { "line": 69, "start": 15, "end": 16 },
+            "call_site": "69:4-69:17"
           }
         ]
       }
@@ -134,7 +134,7 @@
   "data": {
     "callable": "side_effects.test_from_0_to_1",
     "filename": "side_effects.py",
-    "callable_line": 27,
+    "callable_line": 28,
     "sources": [
       {
         "port": "result",
@@ -154,8 +154,8 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 29, "start": 16, "end": 30 } ],
-            "origin": { "line": 29, "start": 16, "end": 30 }
+            "tito_positions": [ { "line": 30, "start": 16, "end": 30 } ],
+            "origin": { "line": 30, "start": 16, "end": 30 }
           }
         ]
       }
@@ -167,7 +167,7 @@
   "data": {
     "callable": "side_effects.test_from_1_to_0",
     "filename": "side_effects.py",
-    "callable_line": 21,
+    "callable_line": 22,
     "sources": [
       {
         "port": "result",
@@ -187,8 +187,8 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 23, "start": 19, "end": 33 } ],
-            "origin": { "line": 23, "start": 19, "end": 33 }
+            "tito_positions": [ { "line": 24, "start": 19, "end": 33 } ],
+            "origin": { "line": 24, "start": 19, "end": 33 }
           }
         ]
       }
@@ -200,7 +200,7 @@
   "data": {
     "callable": "side_effects.test_from_1_to_0_nested",
     "filename": "side_effects.py",
-    "callable_line": 33,
+    "callable_line": 34,
     "sources": [
       {
         "port": "result",
@@ -220,8 +220,8 @@
               { "first-field": "foo" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 35, "start": 23, "end": 37 } ],
-            "origin": { "line": 35, "start": 23, "end": 37 }
+            "tito_positions": [ { "line": 36, "start": 23, "end": 37 } ],
+            "origin": { "line": 36, "start": 23, "end": 37 }
           }
         ]
       }
@@ -233,7 +233,7 @@
   "data": {
     "callable": "side_effects.test_list_append",
     "filename": "side_effects.py",
-    "callable_line": 45,
+    "callable_line": 46,
     "sources": [
       {
         "port": "result",
@@ -249,8 +249,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 47, "start": 13, "end": 27 } ],
-            "origin": { "line": 47, "start": 13, "end": 27 }
+            "tito_positions": [ { "line": 48, "start": 13, "end": 27 } ],
+            "origin": { "line": 48, "start": 13, "end": 27 }
           }
         ]
       }
@@ -262,7 +262,7 @@
   "data": {
     "callable": "side_effects.to_sink_via_side_effect",
     "filename": "side_effects.py",
-    "callable_line": 59,
+    "callable_line": 60,
     "sinks": [
       {
         "port": "formal(y, position=0)",
@@ -278,9 +278,9 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 61, "start": 19, "end": 20 } ],
-            "origin": { "line": 62, "start": 15, "end": 16 },
-            "call_site": "62:4-62:17"
+            "tito_positions": [ { "line": 62, "start": 19, "end": 20 } ],
+            "origin": { "line": 63, "start": 15, "end": 16 },
+            "call_site": "63:4-63:17"
           }
         ]
       }
@@ -399,7 +399,7 @@
   "data": {
     "callable": "side_effects.MyList.append",
     "filename": "side_effects.py",
-    "callable_line": 17,
+    "callable_line": 18,
     "tito": [
       {
         "port": "formal(arg, position=1)",

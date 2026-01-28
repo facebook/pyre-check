@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "obscure_models.should_collapse_depth_zero",
   "returned_callables": [],
   "calls": {
-    "86:11-86:25": {
+    "79:11-79:25": {
       "call": {
         "calls": [
           {
@@ -23,14 +23,14 @@ Higher order call graphs
   "callable": "obscure_models.test_collapse_depth",
   "returned_callables": [],
   "calls": {
-    "90:14-90:28": {
+    "83:14-83:28": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "91:8-91:42": {
+    "84:8-84:42": {
       "call": {
         "calls": [
           {
@@ -41,7 +41,7 @@ Higher order call graphs
         ]
       }
     },
-    "91:38-91:41": {
+    "84:38-84:41": {
       "call": {
         "new_calls": [
           {
@@ -61,14 +61,14 @@ Higher order call graphs
         ]
       }
     },
-    "92:4-92:22": {
+    "85:4-85:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "92:15-92:21|artificial-call|subscript-get-item": {
+    "85:15-85:21|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
@@ -79,14 +79,14 @@ Higher order call graphs
   "callable": "obscure_models.test_collapse_source",
   "returned_callables": [],
   "calls": {
-    "75:14-75:28": {
+    "68:14-68:28": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "76:8-76:20": {
+    "69:8-69:20": {
       "call": {
         "calls": [
           {
@@ -99,14 +99,14 @@ Higher order call graphs
         ]
       }
     },
-    "77:4-77:22": {
+    "70:4-70:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "77:15-77:21|artificial-call|subscript-get-item": {
+    "70:15-70:21|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
@@ -117,14 +117,14 @@ Higher order call graphs
   "callable": "obscure_models.test_issue",
   "returned_callables": [],
   "calls": {
-    "69:8-69:22": {
+    "62:8-62:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "70:8-70:20": {
+    "63:8-63:20": {
       "call": {
         "calls": [
           {
@@ -137,7 +137,7 @@ Higher order call graphs
         ]
       }
     },
-    "71:4-71:17": {
+    "64:4-64:17": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
@@ -150,7 +150,7 @@ Higher order call graphs
   "callable": "obscure_models.test_obscure",
   "returned_callables": [],
   "calls": {
-    "37:11-37:39": {
+    "30:11-30:39": {
       "call": {
         "calls": [
           {
@@ -163,7 +163,7 @@ Higher order call graphs
         ]
       }
     },
-    "37:24-37:38": {
+    "30:24-30:38": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -176,14 +176,14 @@ Higher order call graphs
   "callable": "obscure_models.test_obscure_from_model",
   "returned_callables": [],
   "calls": {
-    "104:4-104:50": {
+    "96:4-96:50": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "104:15-104:49": {
+    "96:15-96:49": {
       "call": {
         "calls": [
           {
@@ -194,7 +194,7 @@ Higher order call graphs
         ]
       }
     },
-    "104:34-104:48": {
+    "96:34-96:48": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -207,7 +207,7 @@ Higher order call graphs
   "callable": "obscure_models.test_obscure_with_multiple_models",
   "returned_callables": [],
   "calls": {
-    "61:11-61:60": {
+    "54:11-54:60": {
       "call": {
         "calls": [
           {
@@ -220,7 +220,7 @@ Higher order call graphs
         ]
       }
     },
-    "61:45-61:59": {
+    "54:45-54:59": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -233,7 +233,7 @@ Higher order call graphs
   "callable": "obscure_models.test_obscure_with_skip_inlining",
   "returned_callables": [],
   "calls": {
-    "45:11-45:58": {
+    "38:11-38:58": {
       "call": {
         "calls": [
           {
@@ -246,7 +246,7 @@ Higher order call graphs
         ]
       }
     },
-    "45:43-45:57": {
+    "38:43-38:57": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -259,7 +259,7 @@ Higher order call graphs
   "callable": "obscure_models.test_obscure_with_skip_obscure",
   "returned_callables": [],
   "calls": {
-    "53:11-53:57": {
+    "46:11-46:57": {
       "call": {
         "calls": [
           {
@@ -272,7 +272,7 @@ Higher order call graphs
         ]
       }
     },
-    "53:42-53:56": {
+    "46:42-46:56": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -285,7 +285,7 @@ Higher order call graphs
   "callable": "obscure_models.test_obscure_with_skip_obscure_and_tito",
   "returned_callables": [],
   "calls": {
-    "57:11-57:66": {
+    "50:11-50:66": {
       "call": {
         "calls": [
           {
@@ -298,7 +298,7 @@ Higher order call graphs
         ]
       }
     },
-    "57:51-57:65": {
+    "50:51-50:65": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -311,7 +311,7 @@ Higher order call graphs
   "callable": "obscure_models.test_obscure_with_skip_overrides",
   "returned_callables": [],
   "calls": {
-    "41:11-41:59": {
+    "34:11-34:59": {
       "call": {
         "calls": [
           {
@@ -324,7 +324,7 @@ Higher order call graphs
         ]
       }
     },
-    "41:44-41:58": {
+    "34:44-34:58": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -337,7 +337,7 @@ Higher order call graphs
   "callable": "obscure_models.test_obscure_with_source",
   "returned_callables": [],
   "calls": {
-    "49:11-49:51": {
+    "42:11-42:51": {
       "call": {
         "calls": [
           {
@@ -350,7 +350,7 @@ Higher order call graphs
         ]
       }
     },
-    "49:36-49:50": {
+    "42:36-42:50": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -363,14 +363,14 @@ Higher order call graphs
   "callable": "obscure_models.test_obscure_with_tito",
   "returned_callables": [],
   "calls": {
-    "65:4-65:51": {
+    "58:4-58:51": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "65:15-65:50": {
+    "58:15-58:50": {
       "call": {
         "calls": [
           {
@@ -383,7 +383,7 @@ Higher order call graphs
         ]
       }
     },
-    "65:35-65:49": {
+    "58:35-58:49": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -396,7 +396,7 @@ Higher order call graphs
   "callable": "obscure_models.test_sink_collapse",
   "returned_callables": [],
   "calls": {
-    "81:8-81:22": {
+    "74:8-74:22": {
       "call": {
         "calls": [
           {
@@ -409,14 +409,14 @@ Higher order call graphs
         ]
       }
     },
-    "82:4-82:22": {
+    "75:4-75:22": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "82:15-82:21|artificial-call|subscript-get-item": {
+    "75:15-75:21|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }

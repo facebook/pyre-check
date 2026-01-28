@@ -4,20 +4,16 @@
 # LICENSE file in the root directory of this source tree.
 
 
-def source_a():
-    ...
+def source_a(): ...
 
 
-def sink_b(arg):
-    ...
+def sink_b(arg): ...
 
 
-def source_c():
-    ...
+def source_c(): ...
 
 
-def sink_d(arg):
-    ...
+def sink_d(arg): ...
 
 
 def transform_x(arg):
@@ -38,8 +34,7 @@ def taint_with_transform_x():
     return beta
 
 
-def transform_x_obscure(arg):
-    ...
+def transform_x_obscure(arg): ...
 
 
 def taint_with_transform_x_obscure():
@@ -48,8 +43,7 @@ def taint_with_transform_x_obscure():
     return beta
 
 
-def transform_x_skip_obscure(arg):
-    ...
+def transform_x_skip_obscure(arg): ...
 
 
 def taint_with_transform_x_skip_obscure():
@@ -594,8 +588,7 @@ def tito_propagation_source_sink_sanitizers_mixed_2(arg):
     return delta
 
 
-def sanitize_all(arg):
-    ...
+def sanitize_all(arg): ...
 
 
 def transform_x_sanitize_all(arg):

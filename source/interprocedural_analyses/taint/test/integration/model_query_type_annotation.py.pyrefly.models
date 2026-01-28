@@ -46,7 +46,7 @@
   "data": {
     "callable": "model_query_type_annotation.test4_taint_1",
     "filename": "model_query_type_annotation.py",
-    "callable_line": 43,
+    "callable_line": 40,
     "sources": [
       {
         "port": "result",
@@ -61,7 +61,7 @@
   "data": {
     "callable": "model_query_type_annotation.test5_taint_1",
     "filename": "model_query_type_annotation.py",
-    "callable_line": 63,
+    "callable_line": 57,
     "sources": [
       {
         "port": "result",
@@ -76,7 +76,7 @@
   "data": {
     "callable": "model_query_type_annotation.test5_taint_2",
     "filename": "model_query_type_annotation.py",
-    "callable_line": 67,
+    "callable_line": 61,
     "sources": [
       {
         "port": "result",
@@ -198,7 +198,7 @@
   "data": {
     "callable": "model_query_type_annotation.Test2_C.test2_f1",
     "filename": "model_query_type_annotation.py",
-    "callable_line": 30,
+    "callable_line": 27,
     "parameter_sources": [
       {
         "port": "formal(taint_2, position=2)",
@@ -217,7 +217,7 @@
   "data": {
     "callable": "model_query_type_annotation.Test2_C.test2_f2",
     "filename": "model_query_type_annotation.py",
-    "callable_line": 34,
+    "callable_line": 31,
     "parameter_sources": [
       {
         "port": "formal(taint_1, position=1)",

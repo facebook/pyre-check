@@ -34,7 +34,7 @@
   "data": {
     "callable": "sanitize_obscure.a_sink",
     "filename": "sanitize_obscure.py",
-    "callable_line": 52,
+    "callable_line": 50,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -50,7 +50,7 @@
   "data": {
     "callable": "sanitize_obscure.a_source",
     "filename": "sanitize_obscure.py",
-    "callable_line": 44,
+    "callable_line": 42,
     "sources": [
       {
         "port": "result",
@@ -66,7 +66,7 @@
   "data": {
     "callable": "sanitize_obscure.b_sink",
     "filename": "sanitize_obscure.py",
-    "callable_line": 56,
+    "callable_line": 54,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -82,7 +82,7 @@
   "data": {
     "callable": "sanitize_obscure.b_source",
     "filename": "sanitize_obscure.py",
-    "callable_line": 48,
+    "callable_line": 46,
     "sources": [
       {
         "port": "result",
@@ -98,7 +98,7 @@
   "data": {
     "callable": "sanitize_obscure.propagation_of_a_sink_via_other_parameter_tito",
     "filename": "sanitize_obscure.py",
-    "callable_line": 132,
+    "callable_line": 125,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -115,9 +115,9 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 133, "start": 46, "end": 47 } ],
-            "origin": { "line": 134, "start": 11, "end": 12 },
-            "call_site": "134:4-134:13"
+            "tito_positions": [ { "line": 126, "start": 46, "end": 47 } ],
+            "origin": { "line": 127, "start": 11, "end": 12 },
+            "call_site": "127:4-127:13"
           }
         ]
       }
@@ -129,7 +129,7 @@
   "data": {
     "callable": "sanitize_obscure.propagation_of_a_source_via_other_parameter_tito",
     "filename": "sanitize_obscure.py",
-    "callable_line": 113,
+    "callable_line": 107,
     "sources": [
       {
         "port": "result",
@@ -149,8 +149,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 115, "start": 46, "end": 47 } ],
-            "origin": { "line": 114, "start": 8, "end": 18 }
+            "tito_positions": [ { "line": 109, "start": 46, "end": 47 } ],
+            "origin": { "line": 108, "start": 8, "end": 18 }
           }
         ]
       }
@@ -162,7 +162,7 @@
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_sink",
     "filename": "sanitize_obscure.py",
-    "callable_line": 85,
+    "callable_line": 81,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -179,9 +179,9 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 86, "start": 29, "end": 30 } ],
-            "origin": { "line": 87, "start": 11, "end": 12 },
-            "call_site": "87:4-87:13"
+            "tito_positions": [ { "line": 82, "start": 29, "end": 30 } ],
+            "origin": { "line": 83, "start": 11, "end": 12 },
+            "call_site": "83:4-83:13"
           }
         ]
       }
@@ -193,7 +193,7 @@
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_sink_via_parameter",
     "filename": "sanitize_obscure.py",
-    "callable_line": 193,
+    "callable_line": 182,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -210,9 +210,9 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 194, "start": 34, "end": 35 } ],
-            "origin": { "line": 195, "start": 11, "end": 12 },
-            "call_site": "195:4-195:13"
+            "tito_positions": [ { "line": 183, "start": 34, "end": 35 } ],
+            "origin": { "line": 184, "start": 11, "end": 12 },
+            "call_site": "184:4-184:13"
           }
         ]
       }
@@ -224,7 +224,7 @@
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_sink_via_parameter_tito",
     "filename": "sanitize_obscure.py",
-    "callable_line": 137,
+    "callable_line": 130,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -241,9 +241,9 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 138, "start": 39, "end": 40 } ],
-            "origin": { "line": 139, "start": 11, "end": 12 },
-            "call_site": "139:4-139:13"
+            "tito_positions": [ { "line": 131, "start": 39, "end": 40 } ],
+            "origin": { "line": 132, "start": 11, "end": 12 },
+            "call_site": "132:4-132:13"
           }
         ]
       }
@@ -255,7 +255,7 @@
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_sink_via_return",
     "filename": "sanitize_obscure.py",
-    "callable_line": 221,
+    "callable_line": 208,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -272,9 +272,9 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 222, "start": 31, "end": 32 } ],
-            "origin": { "line": 223, "start": 11, "end": 12 },
-            "call_site": "223:4-223:13"
+            "tito_positions": [ { "line": 209, "start": 31, "end": 32 } ],
+            "origin": { "line": 210, "start": 11, "end": 12 },
+            "call_site": "210:4-210:13"
           }
         ]
       }
@@ -286,7 +286,7 @@
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_sink_via_return_tito",
     "filename": "sanitize_obscure.py",
-    "callable_line": 165,
+    "callable_line": 156,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -303,9 +303,9 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 166, "start": 36, "end": 37 } ],
-            "origin": { "line": 167, "start": 11, "end": 12 },
-            "call_site": "167:4-167:13"
+            "tito_positions": [ { "line": 157, "start": 36, "end": 37 } ],
+            "origin": { "line": 158, "start": 11, "end": 12 },
+            "call_site": "158:4-158:13"
           }
         ]
       }
@@ -317,7 +317,7 @@
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_source",
     "filename": "sanitize_obscure.py",
-    "callable_line": 99,
+    "callable_line": 94,
     "sources": [
       {
         "port": "result",
@@ -337,8 +337,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 101, "start": 34, "end": 35 } ],
-            "origin": { "line": 100, "start": 8, "end": 18 }
+            "tito_positions": [ { "line": 96, "start": 34, "end": 35 } ],
+            "origin": { "line": 95, "start": 8, "end": 18 }
           }
         ]
       }
@@ -350,7 +350,7 @@
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_source_via_parameter",
     "filename": "sanitize_obscure.py",
-    "callable_line": 179,
+    "callable_line": 169,
     "sources": [
       {
         "port": "result",
@@ -370,8 +370,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 181, "start": 39, "end": 40 } ],
-            "origin": { "line": 180, "start": 8, "end": 18 }
+            "tito_positions": [ { "line": 171, "start": 39, "end": 40 } ],
+            "origin": { "line": 170, "start": 8, "end": 18 }
           }
         ]
       }
@@ -383,7 +383,7 @@
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_source_via_parameter_tito",
     "filename": "sanitize_obscure.py",
-    "callable_line": 118,
+    "callable_line": 112,
     "sources": [
       {
         "port": "result",
@@ -403,8 +403,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 120, "start": 44, "end": 45 } ],
-            "origin": { "line": 119, "start": 8, "end": 18 }
+            "tito_positions": [ { "line": 114, "start": 44, "end": 45 } ],
+            "origin": { "line": 113, "start": 8, "end": 18 }
           }
         ]
       }
@@ -416,7 +416,7 @@
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_source_via_return",
     "filename": "sanitize_obscure.py",
-    "callable_line": 207,
+    "callable_line": 195,
     "sources": [
       {
         "port": "result",
@@ -436,8 +436,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 209, "start": 36, "end": 37 } ],
-            "origin": { "line": 208, "start": 8, "end": 18 }
+            "tito_positions": [ { "line": 197, "start": 36, "end": 37 } ],
+            "origin": { "line": 196, "start": 8, "end": 18 }
           }
         ]
       }
@@ -449,7 +449,7 @@
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_source_via_return_tito",
     "filename": "sanitize_obscure.py",
-    "callable_line": 151,
+    "callable_line": 143,
     "sources": [
       {
         "port": "result",
@@ -469,8 +469,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 153, "start": 41, "end": 42 } ],
-            "origin": { "line": 152, "start": 8, "end": 18 }
+            "tito_positions": [ { "line": 145, "start": 41, "end": 42 } ],
+            "origin": { "line": 144, "start": 8, "end": 18 }
           }
         ]
       }
@@ -482,7 +482,7 @@
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_with_sanitize_a_tito",
     "filename": "sanitize_obscure.py",
-    "callable_line": 70,
+    "callable_line": 67,
     "sources": [
       {
         "port": "result",
@@ -502,8 +502,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 72, "start": 27, "end": 28 } ],
-            "origin": { "line": 71, "start": 8, "end": 18 }
+            "tito_positions": [ { "line": 69, "start": 27, "end": 28 } ],
+            "origin": { "line": 68, "start": 8, "end": 18 }
           }
         ]
       }
@@ -515,7 +515,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_a_sink_tito",
     "filename": "sanitize_obscure.py",
-    "callable_line": 76,
+    "callable_line": 73,
     "global_sanitizer": { "tito": { "sinks": [ "TestA" ] } },
     "modes": [ "Obscure" ]
   }
@@ -525,7 +525,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_a_source_tito",
     "filename": "sanitize_obscure.py",
-    "callable_line": 90,
+    "callable_line": 86,
     "global_sanitizer": { "tito": { "sources": [ "TestA" ] } },
     "modes": [ "Obscure" ]
   }
@@ -535,7 +535,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_a_tito",
     "filename": "sanitize_obscure.py",
-    "callable_line": 60,
+    "callable_line": 58,
     "global_sanitizer": { "tito": { "sources": [ "TestA" ] } },
     "modes": [ "Obscure" ]
   }
@@ -559,7 +559,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_obscure_single_argument",
     "filename": "sanitize_obscure.py",
-    "callable_line": 226,
+    "callable_line": 213,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -591,7 +591,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_obscure_single_argument_tito",
     "filename": "sanitize_obscure.py",
-    "callable_line": 230,
+    "callable_line": 216,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -607,7 +607,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 231, "start": 47, "end": 48 } ],
+            "tito_positions": [ { "line": 217, "start": 47, "end": 48 } ],
             "tito": {}
           }
         ]
@@ -626,7 +626,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 231, "start": 44, "end": 45 } ],
+            "tito_positions": [ { "line": 217, "start": 44, "end": 45 } ],
             "tito": {}
           }
         ]
@@ -639,7 +639,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_parameter_sink_a",
     "filename": "sanitize_obscure.py",
-    "callable_line": 184,
+    "callable_line": 174,
     "sanitizers": [
       { "port": "formal(x, position=0)", "sinks": [ "TestA" ] }
     ],
@@ -651,7 +651,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_parameter_sink_a_tito",
     "filename": "sanitize_obscure.py",
-    "callable_line": 123,
+    "callable_line": 117,
     "sanitizers": [
       { "port": "formal(x, position=0)", "tito": { "sinks": [ "TestA" ] } }
     ],
@@ -663,7 +663,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_parameter_source_a",
     "filename": "sanitize_obscure.py",
-    "callable_line": 170,
+    "callable_line": 161,
     "sanitizers": [
       { "port": "formal(x, position=0)", "sources": [ "TestA" ] }
     ],
@@ -675,7 +675,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_parameter_source_a_tito",
     "filename": "sanitize_obscure.py",
-    "callable_line": 104,
+    "callable_line": 99,
     "sanitizers": [
       { "port": "formal(x, position=0)", "tito": { "sources": [ "TestA" ] } }
     ],
@@ -687,7 +687,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_return_sink_a",
     "filename": "sanitize_obscure.py",
-    "callable_line": 212,
+    "callable_line": 200,
     "sanitizers": [ { "port": "result", "sinks": [ "TestA" ] } ],
     "modes": [ "Obscure" ]
   }
@@ -697,7 +697,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_return_sink_a_tito",
     "filename": "sanitize_obscure.py",
-    "callable_line": 156,
+    "callable_line": 148,
     "sanitizers": [ { "port": "result", "tito": { "sinks": [ "TestA" ] } } ],
     "modes": [ "Obscure" ]
   }
@@ -707,7 +707,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_return_source_a",
     "filename": "sanitize_obscure.py",
-    "callable_line": 198,
+    "callable_line": 187,
     "sanitizers": [ { "port": "result", "sources": [ "TestA" ] } ],
     "modes": [ "Obscure" ]
   }
@@ -717,7 +717,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_return_source_a_tito",
     "filename": "sanitize_obscure.py",
-    "callable_line": 142,
+    "callable_line": 135,
     "sanitizers": [
       { "port": "result", "tito": { "sources": [ "TestA" ] } }
     ],
@@ -729,7 +729,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_tito",
     "filename": "sanitize_obscure.py",
-    "callable_line": 29,
+    "callable_line": 28,
     "global_sanitizer": { "tito": { "sources": "All", "sinks": "All" } },
     "modes": [ "Obscure" ]
   }

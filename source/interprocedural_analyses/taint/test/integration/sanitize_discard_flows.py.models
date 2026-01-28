@@ -4,7 +4,7 @@
   "data": {
     "callable": "sanitize_discard_flows.a_sink",
     "filename": "sanitize_discard_flows.py",
-    "callable_line": 13,
+    "callable_line": 12,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -38,7 +38,7 @@
   "data": {
     "callable": "sanitize_discard_flows.b_sink",
     "filename": "sanitize_discard_flows.py",
-    "callable_line": 17,
+    "callable_line": 15,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -55,7 +55,7 @@
   "data": {
     "callable": "sanitize_discard_flows.sanitize_a_sink_tito",
     "filename": "sanitize_discard_flows.py",
-    "callable_line": 25,
+    "callable_line": 22,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -80,7 +80,7 @@
   "data": {
     "callable": "sanitize_discard_flows.sanitize_a_source_tito",
     "filename": "sanitize_discard_flows.py",
-    "callable_line": 21,
+    "callable_line": 18,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -105,7 +105,7 @@
   "data": {
     "callable": "sanitize_discard_flows.sanitize_b_sink_tito",
     "filename": "sanitize_discard_flows.py",
-    "callable_line": 29,
+    "callable_line": 26,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -130,7 +130,7 @@
   "data": {
     "callable": "sanitize_discard_flows.test_source_a_sanitize_a_kept",
     "filename": "sanitize_discard_flows.py",
-    "callable_line": 33,
+    "callable_line": 30,
     "sources": [
       {
         "port": "result",
@@ -148,8 +148,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 34, "start": 32, "end": 42 } ],
-            "origin": { "line": 34, "start": 32, "end": 42 }
+            "tito_positions": [ { "line": 31, "start": 32, "end": 42 } ],
+            "origin": { "line": 31, "start": 32, "end": 42 }
           }
         ]
       }
