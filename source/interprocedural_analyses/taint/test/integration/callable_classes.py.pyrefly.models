@@ -34,6 +34,38 @@
 {
   "kind": "model",
   "data": {
+    "callable": "callable_classes.foo",
+    "filename": "callable_classes.py",
+    "callable_line": 19,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "callable_classes.P.__call__",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via-value": "a" } ],
+            "origin": { "line": 20, "start": 11, "end": 17 },
+            "receiver_interval": [ { "lower": 4, "upper": 5 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "ast._Attributes.__init__",
     "filename": "*",
     "tito": [

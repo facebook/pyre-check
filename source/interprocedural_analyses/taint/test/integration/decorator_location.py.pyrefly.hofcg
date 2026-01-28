@@ -624,7 +624,11 @@ Higher order call graphs
 {
   "callable": "decorator_location.identity.inner",
   "returned_callables": [],
-  "calls": { "130:15-130:33": { "call": {} } }
+  "calls": {
+    "130:15-130:33": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
 }
 {
   "callable": "decorator_location.identity.inner@decorated",
@@ -737,7 +741,9 @@ Higher order call graphs
   "callable": "decorator_location.ignore_this_decorator_factory.decorator.inner",
   "returned_callables": [],
   "calls": {
-    "50:12-50:22": { "call": {} },
+    "50:12-50:22": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
     "50:14-50:21|artificial-call|binary": {
       "call": {
         "calls": [
@@ -1010,7 +1016,9 @@ Higher order call graphs
         ]
       }
     },
-    "111:8-111:38": { "call": {} }
+    "111:8-111:38": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
   }
 }
 {
@@ -1158,7 +1166,7 @@ Higher order call graphs
         ]
       }
     },
-    "38:8-38:12": { "call": {} }
+    "38:8-38:12": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
   }
 }
 {
@@ -1219,7 +1227,7 @@ Higher order call graphs
         ]
       }
     },
-    "21:8-21:12": { "call": {} },
+    "21:8-21:12": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } },
     "22:8-22:22": {
       "call": {
         "calls": [
@@ -1300,7 +1308,7 @@ Higher order call graphs
         ]
       }
     },
-    "30:8-30:12": { "call": {} }
+    "30:8-30:12": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
   }
 }
 {
@@ -1429,7 +1437,9 @@ Higher order call graphs
   "callable": "decorator_location.ignore_this_decorator_factory.decorator.inner[captured_variable(f, decorator_location.ignore_this_decorator_factory.decorator)=decorator_location.decorated_ignore_this_decorator_factory]",
   "returned_callables": [],
   "calls": {
-    "50:12-50:22": { "call": {} },
+    "50:12-50:22": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
     "50:14-50:21|artificial-call|binary": {
       "call": {
         "calls": [
@@ -1613,7 +1623,7 @@ Higher order call graphs
         ]
       }
     },
-    "38:8-38:12": { "call": {} }
+    "38:8-38:12": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
   }
 }
 {
@@ -1627,7 +1637,7 @@ Higher order call graphs
         ]
       }
     },
-    "38:8-38:12": { "call": {} }
+    "38:8-38:12": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
   }
 }
 {
@@ -1797,7 +1807,7 @@ Higher order call graphs
         ]
       }
     },
-    "21:8-21:12": { "call": {} },
+    "21:8-21:12": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } },
     "22:8-22:22": {
       "call": {
         "calls": [
@@ -1822,7 +1832,7 @@ Higher order call graphs
         ]
       }
     },
-    "21:8-21:12": { "call": {} },
+    "21:8-21:12": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } },
     "22:8-22:22": {
       "call": {
         "calls": [
@@ -1847,7 +1857,7 @@ Higher order call graphs
         ]
       }
     },
-    "21:8-21:12": { "call": {} },
+    "21:8-21:12": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } },
     "22:8-22:22": {
       "call": {
         "calls": [
@@ -1995,7 +2005,7 @@ Higher order call graphs
         ]
       }
     },
-    "30:8-30:12": { "call": {} }
+    "30:8-30:12": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
   }
 }
 {
@@ -2009,6 +2019,6 @@ Higher order call graphs
         ]
       }
     },
-    "30:8-30:12": { "call": {} }
+    "30:8-30:12": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
   }
 }

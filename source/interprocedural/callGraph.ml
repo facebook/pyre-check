@@ -331,7 +331,7 @@ module Unresolved = struct
     | NoRecordInCallGraph
     (* reasons from pyrefly *)
     | UnexpectedPyreflyTarget
-    | EmptyPyreflyTarget
+    | EmptyPyreflyCallTarget
     | UnknownClassField
     | ClassFieldOnlyExistInObject
     | UnsupportedFunctionTarget
@@ -375,7 +375,7 @@ module Unresolved = struct
     | "SkippedMatchCondition" -> Some SkippedMatchCondition
     | "NoRecordInCallGraph" -> Some NoRecordInCallGraph
     | "UnexpectedPyreflyTarget" -> Some UnexpectedPyreflyTarget
-    | "EmptyPyreflyTarget" -> Some EmptyPyreflyTarget
+    | "EmptyPyreflyCallTarget" -> Some EmptyPyreflyCallTarget
     | "UnknownClassField" -> Some UnknownClassField
     | "ClassFieldOnlyExistInObject" -> Some ClassFieldOnlyExistInObject
     | "UnsupportedFunctionTarget" -> Some UnsupportedFunctionTarget

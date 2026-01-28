@@ -55,12 +55,8 @@ Higher order call graphs
         }
       ]
     },
-    "46:14-46:40": {
-      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
-    },
-    "46:25-46:39": {
-      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
-    }
+    "46:14-46:40": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } },
+    "46:25-46:39": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } }
   }
 }
 {
@@ -101,9 +97,7 @@ Higher order call graphs
         { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
-    "41:14-41:34": {
-      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
-    }
+    "41:14-41:34": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } }
   }
 }
 {
@@ -161,9 +155,7 @@ Higher order call graphs
         }
       ]
     },
-    "37:21-37:35": {
-      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
-    }
+    "37:21-37:35": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } }
   }
 }
 {

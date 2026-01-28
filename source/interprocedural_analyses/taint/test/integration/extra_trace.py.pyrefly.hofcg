@@ -244,7 +244,8 @@ Higher order call graphs
             "name": "x",
             "defining_function": "extra_trace.issue_via_transfom_captured_variable"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }

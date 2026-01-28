@@ -847,6 +847,73 @@
     "callable": "decorator.main",
     "callable_line": 200,
     "code": 5002,
+    "line": 218,
+    "start": 29,
+    "end": 43,
+    "filename": "decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 218, "start": 29, "end": 43 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 218, "start": 29, "end": 43 },
+              "resolves_to": [
+                "decorator.with_logging_helper_functions.inner[captured_variable(f, decorator.with_logging_helper_functions)=decorator.foo_with_helper_function]"
+              ],
+              "port": "formal(*args, position=0)",
+              "call_site": "218:4-218:53"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator.with_logging_helper_functions.inner",
+      "index": 0,
+      "parameter": "formal(*rest0)"
+    },
+    "master_handle": "decorator.main:5002:0:Call|decorator.with_logging_helper_functions.inner|0|formal(*rest0):86cd09390b9b830061fc199ea964d26b"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator.main",
+    "callable_line": 200,
+    "code": 5002,
     "line": 214,
     "start": 32,
     "end": 46,
@@ -1635,6 +1702,38 @@
 {
   "kind": "model",
   "data": {
+    "callable": "decorator.with_logging_helper_functions.inner",
+    "filename": "decorator.py",
+    "callable_line": 150,
+    "sinks": [
+      {
+        "port": "formal(*args, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 154, "start": 18, "end": 23 },
+              "resolves_to": [
+                "decorator.with_logging_helper_functions.after"
+              ],
+              "port": "formal(*args, position=0)",
+              "call_site": "154:12-154:34"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "decorator.with_logging_sink.inner",
     "filename": "decorator.py",
     "callable_line": 85,
@@ -2230,6 +2329,38 @@
             ],
             "origin": { "line": 134, "start": 23, "end": 38 },
             "call_site": "134:12-134:39"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decorator.with_logging_helper_functions.inner[captured_variable(f, decorator.with_logging_helper_functions)=decorator.foo_with_helper_function]",
+    "filename": "decorator.py",
+    "callable_line": 150,
+    "sinks": [
+      {
+        "port": "formal(*args, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 154, "start": 18, "end": 23 },
+              "resolves_to": [
+                "decorator.with_logging_helper_functions.after"
+              ],
+              "port": "formal(*args, position=0)",
+              "call_site": "154:12-154:34"
+            }
           }
         ]
       }

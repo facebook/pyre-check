@@ -18,6 +18,11 @@ Higher order call graphs
         ]
       }
     },
+    "9:11-9:12|identifier|x": {
+      "identifier": {
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      }
+    },
     "16:4-16:18": {
       "call": {
         "calls": [
@@ -30,6 +35,11 @@ Higher order call graphs
         "calls": [
           { "target": "top_level.foo", "index": 0, "return_type": [] }
         ]
+      }
+    },
+    "17:4-17:5|identifier|y": {
+      "identifier": {
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }

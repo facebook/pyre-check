@@ -464,6 +464,83 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "named_tuples.issue_with_old_school_named_tuples",
+    "callable_line": 38,
+    "code": 5002,
+    "line": 40,
+    "start": 15,
+    "end": 20,
+    "filename": "named_tuples.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "obscure:model" },
+                  { "always-via": "tito" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" }, { "first-field": "bad" }
+            ],
+            "call": {
+              "position": { "line": 39, "start": 8, "end": 27 },
+              "resolves_to": [ "named_tuples.tainted_old_tuple" ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 40, "start": 15, "end": 20 },
+            "call_site": "40:4-40:21"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "bad" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "named_tuples.issue_with_old_school_named_tuples:5002:0:Call|pysa._test_sink|0|formal(arg):101e235688bd0bf5b5befe3387478785"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "named_tuples.no_issue_with_benign",
     "callable_line": 26,
     "code": 5002,
@@ -613,6 +690,114 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "named_tuples.no_issue_with_benign_in_inherited_named_tuple:5002:0:Call|pysa._test_sink|0|formal(arg):ecb0e478f2af9416d187415faea9ea6b"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "named_tuples.no_issue_with_old_school_named_tuples",
+    "callable_line": 43,
+    "code": 5002,
+    "line": 45,
+    "start": 15,
+    "end": 23,
+    "filename": "named_tuples.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "obscure:model" },
+                  { "always-via": "tito" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" }, { "first-field": "benign" }
+            ],
+            "call": {
+              "position": { "line": 44, "start": 8, "end": 27 },
+              "resolves_to": [ "named_tuples.tainted_old_tuple" ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 45, "start": 15, "end": 23 },
+            "call_site": "45:4-45:24"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "benign" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "named_tuples.no_issue_with_old_school_named_tuples:5002:0:Call|pysa._test_sink|0|formal(arg):8bb7e5978bf75cd339c545f1689b3f0b"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "named_tuples.tainted_old_tuple",
+    "filename": "named_tuples.py",
+    "callable_line": 34,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 35, "start": 35, "end": 49 } ],
+            "origin": { "line": 35, "start": 35, "end": 49 }
+          }
+        ]
+      }
+    ]
   }
 }
 {

@@ -24,7 +24,8 @@ Higher order call graphs
             "name": "instance",
             "defining_function": "partial.NestedDefineDecorator.__get__"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     },
     "142:19-142:23|identifier|self": {
@@ -34,7 +35,8 @@ Higher order call graphs
             "name": "self",
             "defining_function": "partial.NestedDefineDecorator.__get__"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedDefiningClass" ] }
       }
     },
     "142:19-142:49": {

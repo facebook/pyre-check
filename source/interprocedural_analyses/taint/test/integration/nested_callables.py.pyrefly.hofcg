@@ -46,7 +46,8 @@ Higher order call graphs
             "name": "x",
             "defining_function": "nested_callables.access_parameter_in_inner_scope_sink"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -90,7 +91,8 @@ Higher order call graphs
             "name": "x",
             "defining_function": "nested_callables.access_parameter_in_inner_scope_tito"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -148,7 +150,8 @@ Higher order call graphs
             "name": "x",
             "defining_function": "nested_callables.access_variables_in_outer_scope_issue"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -199,7 +202,8 @@ Higher order call graphs
             "name": "x",
             "defining_function": "nested_callables.access_variables_in_outer_scope_source"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }

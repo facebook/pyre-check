@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "builder_pattern.$toplevel",
   "returned_callables": [],
   "calls": {
-    "10:4-10:16": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } },
+    "10:4-10:16": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } },
     "96:17-96:24|identifier|Builder": {
       "identifier": {
         "if_called": {

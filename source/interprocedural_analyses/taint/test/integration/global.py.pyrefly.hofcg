@@ -265,6 +265,11 @@ Higher order call graphs
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
+    },
+    "70:15-70:19|identifier|obj4": {
+      "identifier": {
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      }
     }
   }
 }

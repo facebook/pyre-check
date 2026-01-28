@@ -3868,7 +3868,7 @@ let test_call_graph_of_define =
                      is_attribute = true;
                      if_called =
                        CallCallees.create
-                         ~unresolved:(Unresolved.True Unresolved.EmptyPyreflyTarget)
+                         ~unresolved:(Unresolved.True Unresolved.EmptyPyreflyCallTarget)
                          ();
                    } );
              ]

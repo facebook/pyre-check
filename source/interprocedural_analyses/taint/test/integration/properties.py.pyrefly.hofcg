@@ -97,7 +97,7 @@ Higher order call graphs
       }
     },
     "139:4-139:31": {
-      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] }
     },
     "139:17-139:22|identifier|Class": {
       "identifier": {

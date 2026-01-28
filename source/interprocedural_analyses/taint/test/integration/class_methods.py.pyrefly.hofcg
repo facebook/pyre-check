@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "class_methods.$toplevel",
   "returned_callables": [],
   "calls": {
-    "25:9-25:26": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } },
+    "25:9-25:26": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } },
     "28:8-28:23|artificial-call|subscript-get-item": {
       "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
     },

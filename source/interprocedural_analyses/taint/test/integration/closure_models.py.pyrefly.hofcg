@@ -237,7 +237,8 @@ Higher order call graphs
             "name": "complicated_name",
             "defining_function": "closure_models.captured_variable_model_sink"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -295,7 +296,8 @@ Higher order call graphs
             "name": "complicated_name",
             "defining_function": "closure_models.captured_variable_model_tito"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -374,7 +376,11 @@ Higher order call graphs
 {
   "callable": "closure_models.some_decorator.wrapper_func",
   "returned_callables": [],
-  "calls": { "111:8-111:14": { "call": {} } }
+  "calls": {
+    "111:8-111:14": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    }
+  }
 }
 {
   "callable": "closure_models.test",
@@ -697,7 +703,8 @@ Higher order call graphs
       "identifier": {
         "captured_variables": [
           { "name": "source", "defining_function": "closure_models.test" }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -734,7 +741,8 @@ Higher order call graphs
       "identifier": {
         "captured_variables": [
           { "name": "source", "defining_function": "closure_models.test" }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -1033,7 +1041,8 @@ Higher order call graphs
             "name": "source",
             "defining_function": "closure_models.test_tito_transform"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -1060,7 +1069,8 @@ Higher order call graphs
             "name": "source",
             "defining_function": "closure_models.test_tito_transform"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }

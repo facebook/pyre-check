@@ -4,6 +4,29 @@ Higher order call graphs
   "callable": "dictionary.$toplevel",
   "returned_callables": [],
   "calls": {
+    "190:25-190:29|identifier|Dict": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.dict.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.dict.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "builtins.dict"
+            }
+          ]
+        }
+      }
+    },
     "190:25-190:39|artificial-call|subscript-get-item": {
       "call": { "unresolved": [ "UnresolvedMagicDunderAttr" ] }
     },
@@ -54,10 +77,33 @@ Higher order call graphs
       }
     },
     "310:5-310:18": {
-      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] }
     },
     "317:14-317:25|artificial-call|subscript-get-item": {
       "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "422:13-422:17|identifier|Dict": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.dict.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.dict.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "builtins.dict"
+            }
+          ]
+        }
+      }
     },
     "422:13-422:27|artificial-call|subscript-get-item": {
       "call": { "unresolved": [ "UnresolvedMagicDunderAttr" ] }

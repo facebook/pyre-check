@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "sanitize_obscure.$toplevel",
   "returned_callables": [],
   "calls": {
-    "11:4-11:16": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
+    "11:4-11:16": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } }
   }
 }
 {

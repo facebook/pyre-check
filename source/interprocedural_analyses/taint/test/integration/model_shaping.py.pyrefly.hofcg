@@ -188,6 +188,29 @@ Higher order call graphs
         ]
       }
     },
+    "50:30-50:34|identifier|List": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.list.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "builtins.list"
+            }
+          ]
+        }
+      }
+    },
     "50:30-50:39|artificial-call|subscript-get-item": {
       "call": { "unresolved": [ "UnresolvedMagicDunderAttr" ] }
     },

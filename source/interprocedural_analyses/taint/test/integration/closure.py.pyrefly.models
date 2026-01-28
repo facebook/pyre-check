@@ -520,6 +520,70 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "closure.decorator.wrapper",
+    "filename": "closure.py",
+    "callable_line": 431,
+    "tito": [
+      {
+        "port": "formal(**kwargs)[*]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito_positions": [ { "line": 432, "start": 37, "end": 45 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(*args, position=0)[*]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito_positions": [ { "line": 432, "start": 30, "end": 35 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.ignored_decorator.wrapper",
+    "filename": "closure.py",
+    "callable_line": 438,
+    "tito": [
+      {
+        "port": "formal(**kwargs)[*]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito_positions": [ { "line": 439, "start": 37, "end": 45 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(*args, position=0)[*]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito_positions": [ { "line": 439, "start": 30, "end": 35 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_conditional_write",
@@ -4118,6 +4182,38 @@
 {
   "kind": "model",
   "data": {
+    "callable": "closure.decorator.wrapper[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
+    "filename": "closure.py",
+    "callable_line": 431,
+    "tito": [
+      {
+        "port": "formal(**kwargs)[*]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito_positions": [ { "line": 432, "start": 37, "end": 45 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(*args, position=0)[*]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito_positions": [ { "line": 432, "start": 30, "end": 35 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "closure.higher_order_function[formal(f, position=0)=closure.wrapper_for_taint_propagation_hof.inner]",
     "filename": "closure.py",
     "callable_line": 50,
@@ -4167,6 +4263,38 @@
               "port": "formal(z, position=0)",
               "call_site": "51:4-51:8"
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.ignored_decorator.wrapper[captured_variable(function, closure.ignored_decorator)=closure.async_nonlocal_closure_tito_ignore_decorator.inner]",
+    "filename": "closure.py",
+    "callable_line": 438,
+    "tito": [
+      {
+        "port": "formal(**kwargs)[*]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito_positions": [ { "line": 439, "start": 37, "end": 45 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(*args, position=0)[*]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito_positions": [ { "line": 439, "start": 30, "end": 35 } ],
+            "tito": {}
           }
         ]
       }

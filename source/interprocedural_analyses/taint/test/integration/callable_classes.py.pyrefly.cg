@@ -5,5 +5,6 @@ Call dependencies
   "callable_classes.bar (fun)": [
     "callable_classes.CallableProtocol.__call__ (method)",
     "callable_classes.returns_callable_protocol (fun)"
-  ]
+  ],
+  "callable_classes.foo (fun)": [ "callable_classes.P.__call__ (method)" ]
 }

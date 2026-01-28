@@ -119,7 +119,7 @@ module Unresolved : sig
     | NoRecordInCallGraph
     (* reasons from pyrefly *)
     | UnexpectedPyreflyTarget
-    | EmptyPyreflyTarget
+    | EmptyPyreflyCallTarget
     | UnknownClassField
     | ClassFieldOnlyExistInObject
     | UnsupportedFunctionTarget
