@@ -230,109 +230,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "partial.multiprocessing_bound_method_issue",
-    "filename": "partial.py",
-    "callable_line": 75,
-    "sinks": [
-      {
-        "port": "formal(x, position=0)[sink_on_foo]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "shim-broadening" },
-              { "always-via": "broadening" }
-            ],
-            "call": {
-              "position": { "line": 77, "start": 35, "end": 36 },
-              "resolves_to": [ "partial.MyClass.sink_on_foo" ],
-              "port": "formal(self, position=0)[foo]",
-              "call_site": "77:4-77:58"
-            },
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "partial.multiprocessing_bound_method_issue",
-    "callable_line": 75,
-    "code": 5002,
-    "line": 77,
-    "start": 35,
-    "end": 36,
-    "filename": "partial.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 76, "start": 12, "end": 26 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 77, "start": 35, "end": 36 },
-              "resolves_to": [ "partial.MyClass.sink_on_foo" ],
-              "port": "formal(self, position=0)[foo]",
-              "call_site": "77:35-77:48"
-            },
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "partial.MyClass.sink_on_foo",
-      "index": 0,
-      "parameter": "formal(self)"
-    },
-    "master_handle": "partial.multiprocessing_bound_method_issue:5002:0:Call|partial.MyClass.sink_on_foo|0|formal(self):b1d9533aa5757579aad2561563c53294"
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "partial.multiprocessing_bound_method_sink",
     "filename": "partial.py",
     "callable_line": 82,
@@ -353,32 +250,6 @@
               "resolves_to": [ "partial.MyClass.sink_on_foo" ],
               "port": "formal(self, position=0)[foo]",
               "call_site": "83:35-83:48"
-            },
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
-          }
-        ]
-      },
-      {
-        "port": "formal(x, position=0)[sink_on_foo]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "shim-broadening" },
-              { "always-via": "broadening" }
-            ],
-            "call": {
-              "position": { "line": 83, "start": 35, "end": 36 },
-              "resolves_to": [ "partial.MyClass.sink_on_foo" ],
-              "port": "formal(self, position=0)[foo]",
-              "call_site": "83:4-83:58"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -798,32 +669,6 @@
               "resolves_to": [ "partial.MyClass.sink_on_foo" ],
               "port": "formal(self, position=0)[foo]",
               "call_site": "55:22-55:35"
-            },
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
-          }
-        ]
-      },
-      {
-        "port": "formal(x, position=0)[sink_on_foo]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "shim-broadening" },
-              { "always-via": "broadening" }
-            ],
-            "call": {
-              "position": { "line": 55, "start": 22, "end": 23 },
-              "resolves_to": [ "partial.MyClass.sink_on_foo" ],
-              "port": "formal(self, position=0)[foo]",
-              "call_site": "55:4-55:39"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -1710,35 +1555,6 @@
               { "line": 116, "start": 33, "end": 37 },
               { "line": 116, "start": 33, "end": 46 },
               { "line": 116, "start": 57, "end": 65 }
-            ],
-            "tito": {
-              "caller_interval": [ { "lower": 10, "upper": 11 } ],
-              "is_self_call": false
-            }
-          }
-        ]
-      },
-      {
-        "port": "formal(self, position=0)[__call__]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "via": "shim-broadening" },
-              { "via": "obscure:model" },
-              { "always-via": "tito" },
-              { "via": "broadening" },
-              { "via": "obscure:unknown-callee" }
-            ],
-            "tito_positions": [
-              { "line": 116, "start": 33, "end": 37 },
-              { "line": 116, "start": 33, "end": 46 }
             ],
             "tito": {
               "caller_interval": [ { "lower": 10, "upper": 11 } ],

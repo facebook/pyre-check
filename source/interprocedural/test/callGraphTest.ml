@@ -5358,7 +5358,7 @@ let test_call_graph_of_define =
                ( "16:22-16:27",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~is_attribute:true
+                      ~is_attribute:false
                       ~if_called:
                         (CallCallees.create
                            ~call_targets:
@@ -5515,7 +5515,7 @@ let test_call_graph_of_define =
                ( "18:22-18:27",
                  ExpressionCallees.from_attribute_access
                    (AttributeAccessCallees.create
-                      ~is_attribute:true
+                      ~is_attribute:false
                       ~if_called:
                         (CallCallees.create
                            ~call_targets:

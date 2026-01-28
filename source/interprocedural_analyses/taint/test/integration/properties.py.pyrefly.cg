@@ -112,6 +112,7 @@ Call dependencies
   "properties.test_property_callable (fun)": [
     "builtins.object.__new__ (method)",
     "properties.PropertyCallable.__init__ (method)",
+    "properties.PropertyCallableReturn.__call__ (method)",
     "pysa._test_source (fun)"
   ],
   "properties.test_type_variable_properties_are_resolved (fun)": [

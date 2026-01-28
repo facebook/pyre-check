@@ -361,7 +361,6 @@ Higher order call graphs
     },
     "117:4-117:26": {
       "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "calls": [
             {
@@ -399,7 +398,8 @@ Higher order call graphs
             "return_type": [],
             "receiver_class": "class_methods.D"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }

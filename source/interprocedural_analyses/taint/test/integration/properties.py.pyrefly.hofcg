@@ -482,7 +482,8 @@ Higher order call graphs
             "return_type": [],
             "receiver_class": "properties.TaintedGetterAndSetter"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "EmptyPyreflyCallTarget" ] }
       }
     }
   }
@@ -533,7 +534,7 @@ Higher order call graphs
         }
       }
     },
-    "130:15-130:46": { "attribute_access": { "is_attribute": true } }
+    "130:15-130:46": { "attribute_access": {} }
   }
 }
 {
@@ -596,7 +597,8 @@ Higher order call graphs
             "return_type": [],
             "receiver_class": "properties.PropertySetterTitoModel"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     },
     "311:4-311:22|artificial-call|augmented-assign-dunder-call": {
@@ -646,7 +648,20 @@ Higher order call graphs
         ]
       }
     },
-    "188:11-188:40": { "call": {} },
+    "188:11-188:40": {
+      "call": {
+        "calls": [
+          {
+            "target": "properties.PropertyCallableReturn.__call__",
+            "index": 0,
+            "implicit_receiver": true,
+            "implicit_dunder_call": true,
+            "return_type": [],
+            "receiver_class": "properties.PropertyCallableReturn"
+          }
+        ]
+      }
+    },
     "188:25-188:39": {
       "call": {
         "calls": [
@@ -1266,7 +1281,8 @@ Higher order call graphs
             "return_type": [],
             "receiver_class": "properties.PropertySetterTitoModel"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }

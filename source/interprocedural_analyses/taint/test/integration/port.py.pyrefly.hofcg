@@ -130,7 +130,8 @@ Higher order call graphs
             "return_type": [],
             "receiver_class": "port.Foo"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     },
     "68:4-68:21": {

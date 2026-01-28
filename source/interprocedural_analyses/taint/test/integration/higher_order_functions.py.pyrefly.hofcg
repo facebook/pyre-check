@@ -184,7 +184,6 @@ Higher order call graphs
     },
     "34:26-34:42": {
       "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "calls": [
             {
@@ -1259,7 +1258,6 @@ Higher order call graphs
     },
     "43:26-43:40": {
       "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "calls": [
             {
