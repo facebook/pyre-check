@@ -25,7 +25,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.NestedTypedDict"
           }
         ]
       }
@@ -51,7 +52,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.NestedTypedDict"
           }
         ]
       }
@@ -63,7 +65,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SanitizedFieldTypedDict"
           }
         ]
       }
@@ -89,7 +92,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 3,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.NestedTypedDict"
           }
         ]
       }
@@ -101,7 +105,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 4,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SanitizedFieldTypedDict"
           }
         ]
       }
@@ -127,7 +132,8 @@ Higher order call graphs
             "target": "typed_dict.SimpleTypedDict.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -153,7 +159,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -172,7 +179,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -192,7 +200,8 @@ Higher order call graphs
             "target": "typed_dict.SimpleTypedDict.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -218,7 +227,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -240,7 +250,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 3,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -262,7 +273,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 4,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -284,7 +296,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 5,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -307,7 +320,8 @@ Higher order call graphs
             "target": "typed_dict.SimpleTypedDict.__init__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -333,7 +347,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 6,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -352,7 +367,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 7,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -372,7 +388,8 @@ Higher order call graphs
             "target": "typed_dict.SimpleTypedDict.__init__",
             "index": 3,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -398,7 +415,8 @@ Higher order call graphs
             "target": "_typeshed._type_checker_internals.TypedDictFallback.keys",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -417,7 +435,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 8,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -436,7 +455,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 9,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -456,7 +476,8 @@ Higher order call graphs
             "target": "typed_dict.SimpleTypedDict.__init__",
             "index": 4,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -482,7 +503,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 10,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -501,7 +523,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 11,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -536,7 +559,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -555,7 +579,8 @@ Higher order call graphs
             "target": "typing.Mapping.__getitem__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
