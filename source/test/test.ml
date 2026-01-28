@@ -3577,17 +3577,17 @@ module ScratchPyreflyProject = struct
       ]
     in
     Log.info "Running command: %s" (Stdlib.Filename.quote_command pyrefly_binary arguments);
-    let stdout, stdin, stderr =
+    let stdout_channel, stdin_channel, stderr_channel =
       CamlUnix.open_process_args_full
         pyrefly_binary
         (Array.of_list ("pyrefly" :: arguments))
         (CamlUnix.environment ())
     in
-    let () = Out_channel.close stdin in
-    Log.info "Pyrefly stdout: %s" (In_channel.input_all stdout);
-    Log.info "Pyrefly stderr: %s" (In_channel.input_all stderr);
-    let () = In_channel.close stdout in
-    let () = In_channel.close stderr in
+    let () = Out_channel.close stdin_channel in
+    let stdout_content = In_channel.input_all stdout_channel in
+    let stderr_content = In_channel.input_all stderr_channel in
+    let () = In_channel.close stdout_channel in
+    let () = In_channel.close stderr_channel in
     let configuration =
       Configuration.Analysis.create
         ~parallel:false
@@ -3605,6 +3605,8 @@ module ScratchPyreflyProject = struct
           result_directory
       with
       | Interprocedural.PyreflyApi.PyreflyFileFormatError { path; error } ->
+          Log.error "Pyrefly stdout: %s" stdout_content;
+          Log.error "Pyrefly stderr: %s" stderr_content;
           failwith
             (Format.asprintf "%a: %a" PyrePath.pp path Interprocedural.PyreflyApi.Error.pp error)
     in

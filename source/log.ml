@@ -78,7 +78,8 @@ module GlobalState = struct
 
   let initialize_for_tests () =
     Hash_set.clear enabled;
-    Hash_set.add enabled "Dump"
+    Hash_set.add enabled "Dump";
+    Hash_set.add enabled "Error"
 
 
   type t = string list
