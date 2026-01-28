@@ -3,8 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from pysa import _test_sink, _test_source
 from typing import Any
+
+from pysa import _test_sink, _test_source
 
 
 def inner_sink_wrapper():
@@ -24,12 +25,10 @@ class Reclassification:
         return self.inner()
 
 
-def reclassify(inner, feature) -> Reclassification:
-    ...
+def reclassify(inner, feature) -> Reclassification: ...
 
 
-def outer() -> Any:
-    ...
+def outer() -> Any: ...
 
 
 def use_source(x):
@@ -145,7 +144,7 @@ def captured_variable_model_parameter_source():
         _test_sink(complicated_name)
 
     model_all_captured_as_parameter_sources()
-    _test_sink(complicated_name)  # no issue
+    _test_sink(complicated_name)  # issue with pyrefly, no issue with pyre1
 
 
 def captured_variable_model_generation_source():
