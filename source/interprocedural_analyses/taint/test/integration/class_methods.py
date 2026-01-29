@@ -72,16 +72,19 @@ class C(Generic[TInput]):
 
     @property
     @abstractmethod
-    def my_abstract_property(self):
-        pass
+    def my_abstract_property(self) -> TInput: ...
 
     @my_abstract_property.setter
     @abstractmethod
-    def my_abstract_property(self, my_abstract_property):
+    def my_abstract_property(self, my_abstract_property: TInput):
         pass
 
 
 class D(C[str]):
+    def __init__(self):
+        super().__init__()
+        self._my_abstract_property = ""
+
     @classmethod
     def abstract_class_method(cls, arg: str):
         _test_sink(arg)
@@ -94,11 +97,11 @@ class D(C[str]):
         _test_sink(arg)
 
     @property
-    def my_abstract_property(self):
+    def my_abstract_property(self) -> str:
         return self._my_abstract_property
 
     @my_abstract_property.setter
-    def my_abstract_property(self, my_abstract_property):
+    def my_abstract_property(self, my_abstract_property: str):
         self._my_abstract_property = my_abstract_property
 
 

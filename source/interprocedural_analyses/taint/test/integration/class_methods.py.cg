@@ -20,6 +20,10 @@ Call dependencies
   "class_methods.C.static_abstractmethod (method)": [
     "pysa._test_sink (fun)"
   ],
+  "class_methods.D.__init__ (method)": [
+    "object.__init__ (method)", "object.__new__ (method)",
+    "super.__init__ (method)"
+  ],
   "class_methods.D.abstract_class_method (method)": [
     "pysa._test_sink (fun)"
   ],
@@ -40,10 +44,11 @@ Call dependencies
     "pysa._test_source (fun)"
   ],
   "class_methods.issue_with_abstract_property (fun)": [
+    "class_methods.D.__init__ (method)",
     "class_methods.D.my_abstract_property (method)",
     "class_methods.D.my_abstract_property@setter (method)",
-    "object.__init__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
   ],
   "class_methods.test_obscure_class_method_tito (fun)": [
     "class_methods.ObscureClassMethodTito.__init__ (method)",
