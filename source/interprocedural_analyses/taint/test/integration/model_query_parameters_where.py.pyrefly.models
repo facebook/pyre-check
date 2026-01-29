@@ -8,7 +8,12 @@
     "parameter_sources": [
       {
         "port": "formal(d, position=3)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+        "taint": [
+          {
+            "kinds": [ { "kind": "SourceD" }, { "kind": "Test" } ],
+            "declaration": null
+          }
+        ]
       },
       {
         "port": "formal(c_foo, position=2)",
@@ -55,6 +60,7 @@
       "get_model_query_parameters_test10_SourceA",
       "get_model_query_parameters_test10_SourceB",
       "get_model_query_parameters_test10_SourceC",
+      "get_model_query_parameters_test10_SourceD",
       "get_model_query_parameters_test10_source"
     ]
   }
@@ -1182,9 +1188,73 @@
       {
         "port": "formal(c, position=2)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(a, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "model_generators": [ "get_model_query_parameters_test4_source" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test4_alarm1",
+    "callable_line": 62,
+    "code": 1000,
+    "line": 63,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_parameters_where.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_parameters_where.test4_alarm1",
+                    "port": "leaf:a"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 62, "start": 17, "end": 29 },
+            "call_site": "62:0-63:17"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 63, "start": 15, "end": 16 },
+            "call_site": "63:4-63:17"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parameters_where.test4_alarm1:1000:0:Call|pysa._test_sink|0|formal(arg):ef2bf99f44eeb620525372b20b3de644"
   }
 }
 {
@@ -1309,6 +1379,10 @@
     "parameter_sources": [
       {
         "port": "formal(c, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(a, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -2213,6 +2287,36 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_parameters_where.Test5.test5_alarm1",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 79,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "get_model_query_parameters_test5_sink" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_parameters_where.Test5.test5_alarm2",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 82,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "get_model_query_parameters_test5_sink" ]
   }
 }
 {

@@ -26,9 +26,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 64, "start": 14, "end": 29 } ],
             "origin": { "line": 63, "start": 22, "end": 45 }
           }
@@ -59,9 +57,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via": "obscure:model" }, { "always-via": "tito" }
-    ],
+    "features": [ { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "StringFormat",
       "callee": "Obj{<format-string>}",
@@ -98,9 +94,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 66, "start": 14, "end": 29 } ],
             "origin": { "line": 63, "start": 22, "end": 45 }
           }
@@ -131,9 +125,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via": "obscure:model" }, { "always-via": "tito" }
-    ],
+    "features": [ { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "StringFormat",
       "callee": "Obj{<format-string>}",
@@ -170,9 +162,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 52, "start": 13, "end": 28 } ],
             "origin": { "line": 51, "start": 22, "end": 45 }
           }
@@ -203,9 +193,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via": "obscure:model" }, { "always-via": "tito" }
-    ],
+    "features": [ { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "StringFormat",
       "callee": "Obj{<format-string>}",
@@ -523,9 +511,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 57, "start": 13, "end": 28 } ],
             "origin": { "line": 56, "start": 22, "end": 45 }
           }
@@ -556,9 +542,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via": "obscure:model" }, { "always-via": "tito" }
-    ],
+    "features": [ { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "StringFormat",
       "callee": "Obj{<format-string>}",
@@ -595,9 +579,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 58, "start": 13, "end": 28 } ],
             "origin": { "line": 56, "start": 22, "end": 45 }
           }
@@ -628,9 +610,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via": "obscure:model" }, { "always-via": "tito" }
-    ],
+    "features": [ { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "StringFormat",
       "callee": "Obj{<format-string>}",
@@ -805,7 +785,6 @@
               }
             ],
             "local_features": [
-              { "always-via": "obscure:model" },
               { "always-via": "string_concat_rhs" },
               { "always-via": "format-string" },
               { "always-via": "tito" }
@@ -1374,6 +1353,26 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.str.__format__",
+    "filename": "builtins.pyi",
+    "callable_line": 1833,
+    "tito": [
+      {
+        "port": "formal(self, position=0, positional_only)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "SkipObscure" ]
   }
 }
 {

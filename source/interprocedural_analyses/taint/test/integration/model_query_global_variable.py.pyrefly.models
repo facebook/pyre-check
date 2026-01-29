@@ -446,6 +446,51 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Obj{model_query_global_variable.typed_global_callable}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "SelectCallable" } ], "declaration": null }
+        ]
+      }
+    ],
+    "model_generators": [ "get_callables" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_global_variable.typed_global_dict}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "SelectDict" } ], "declaration": null }
+        ]
+      }
+    ],
+    "model_generators": [ "get_typed_dict" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_global_variable.typed_global_lambda}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "SelectCallable" } ], "declaration": null }
+        ]
+      }
+    ],
+    "model_generators": [ "get_callables" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Obj{model_query_global_variable.untyped_global_callable}",
     "sources": [
       {

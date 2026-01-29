@@ -14,7 +14,7 @@ class UnknownSourceDef:
 
 
 def test_unknown_source_def(x: UnknownSourceDef) -> None:
-    # TODO(T90322028): we don't find the flow here.
+    # TODO(T90322028): we don't find the flow here (with pyre1)
     y = x.unknown()
     _test_sink(y)
 
@@ -27,7 +27,7 @@ class UnknownSourceAttribute:
 
 
 def test_unknown_source_attribute(x: UnknownSourceAttribute) -> None:
-    # TODO(T205677349): We don't find the flow here.
+    # TODO(T205677349): We don't find the flow here (with pyre1)
     y = x.unknown()
     _test_sink(y)
 
@@ -40,7 +40,7 @@ class UnknownSinkDef:
 
 
 def test_unknown_sink_def(x: UnknownSinkDef) -> None:
-    # TODO(T90322028): we don't find the flow here.
+    # TODO(T90322028): we don't find the flow here (with pyre1)
     x.unknown(_test_source())
 
 
@@ -52,5 +52,5 @@ class UnknownSinkAttribute:
 
 
 def test_unknown_sink_attribute(x: UnknownSinkAttribute) -> None:
-    # TODO(T90322028): we don't find the flow here.
+    # TODO(T90322028): we don't find the flow here (with pyre1)
     x.unknown(_test_source())

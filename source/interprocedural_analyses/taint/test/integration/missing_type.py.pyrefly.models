@@ -1,5 +1,253 @@
 @generated
 {
+  "kind": "issue",
+  "data": {
+    "callable": "missing_type.test_unknown_sink_attribute",
+    "callable_line": 54,
+    "code": 5002,
+    "line": 56,
+    "start": 14,
+    "end": 28,
+    "filename": "missing_type.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 56, "start": 14, "end": 28 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "missing_type.UnknownSinkAttribute.sink",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 56, "start": 14, "end": 28 },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "call_site": "56:4-56:29"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "missing_type.UnknownSinkAttribute.sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "missing_type.test_unknown_sink_attribute:5002:0:Call|missing_type.UnknownSinkAttribute.sink|0|formal(x):00d566aef2764f302f8c7013928eef67"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "missing_type.test_unknown_sink_def",
+    "callable_line": 42,
+    "code": 5002,
+    "line": 44,
+    "start": 14,
+    "end": 28,
+    "filename": "missing_type.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 44, "start": 14, "end": 28 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "missing_type.UnknownSinkDef.sink",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 44, "start": 14, "end": 28 },
+            "receiver_interval": [ { "lower": 4, "upper": 5 } ],
+            "is_self_call": false,
+            "call_site": "44:4-44:29"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "missing_type.UnknownSinkDef.sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "missing_type.test_unknown_sink_def:5002:0:Call|missing_type.UnknownSinkDef.sink|0|formal(x):f7937f65269cf1d6a0c9274f1eef49b1"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "missing_type.test_unknown_source_attribute",
+    "callable_line": 29,
+    "code": 5002,
+    "line": 32,
+    "start": 15,
+    "end": 16,
+    "filename": "missing_type.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "missing_type.UnknownSourceAttribute.source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 31, "start": 8, "end": 19 },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 32, "start": 15, "end": 16 },
+            "call_site": "32:4-32:17"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "missing_type.test_unknown_source_attribute:5002:0:Call|pysa._test_sink|0|formal(arg):7ea4434a87e861384009122104b69e23"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "missing_type.test_unknown_source_def",
+    "callable_line": 16,
+    "code": 5002,
+    "line": 19,
+    "start": 15,
+    "end": 16,
+    "filename": "missing_type.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "missing_type.UnknownSourceDef.source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 18, "start": 8, "end": 19 },
+            "receiver_interval": [ { "lower": 8, "upper": 9 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 19, "start": 15, "end": 16 },
+            "call_site": "19:4-19:17"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "missing_type.test_unknown_source_def:5002:0:Call|pysa._test_sink|0|formal(arg):38078c4f9a1b04814b276f120f9eaad7"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "pysa._test_sink",
@@ -159,56 +407,56 @@
 {
   "kind": "model",
   "data": {
-    "callable": "missing_type.UnknownSinkAttribute.unknown",
-    "filename": "*",
-    "sinks": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "missing_type.UnknownSinkDef.unknown",
-    "filename": "*",
+    "callable": "missing_type.UnknownSinkAttribute.sink",
+    "filename": "missing_type.py",
+    "callable_line": 48,
     "sinks": [
       {
         "port": "formal(x, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ],
-    "modes": [ "Obscure" ]
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
-    "callable": "missing_type.UnknownSourceAttribute.unknown",
-    "filename": "*",
-    "sources": [
+    "callable": "missing_type.UnknownSinkDef.sink",
+    "filename": "missing_type.py",
+    "callable_line": 36,
+    "sinks": [
       {
-        "port": "result",
+        "port": "formal(x, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ],
-    "modes": [ "Obscure" ]
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
-    "callable": "missing_type.UnknownSourceDef.unknown",
-    "filename": "*",
+    "callable": "missing_type.UnknownSourceAttribute.source",
+    "filename": "missing_type.py",
+    "callable_line": 23,
     "sources": [
       {
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ],
-    "modes": [ "Obscure" ]
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "missing_type.UnknownSourceDef.source",
+    "filename": "missing_type.py",
+    "callable_line": 10,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
   }
 }

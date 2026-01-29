@@ -40,7 +40,7 @@ ModelQuery(
       TaintSource[Test],
       where=[
         Not(name.matches("a")),
-        Not(type_annotation.fully_qualified.equals("str"))
+        Not(type_annotation.fully_qualified.equals("str")),
       ]
     )
   ]
@@ -58,6 +58,7 @@ ModelQuery(
       where=[
         AnyOf(
           type_annotation.fully_qualified.equals("typing.List[str]"),
+          type_annotation.fully_qualified.equals("list[str]"),
           type_annotation.fully_qualified.equals("model_query_parameters_where.C")
         )
       ]
@@ -80,6 +81,7 @@ ModelQuery(
         Not(name.equals("self")),
         AnyOf(
           type_annotation.fully_qualified.matches("typing.List"),
+          type_annotation.fully_qualified.matches("list"),
           type_annotation.fully_qualified.matches("C"),
         )
       ]
@@ -245,7 +247,10 @@ ModelQuery(
     Parameters(
       TaintSource[SourceD],
       where=[
-        type_annotation.fully_qualified.matches("typing.List")
+        AnyOf(
+          type_annotation.fully_qualified.matches("typing.List"),
+          type_annotation.fully_qualified.matches("list")
+        )
       ]
     )
   ]
