@@ -3605,8 +3605,8 @@ module ScratchPyreflyProject = struct
           result_directory
       with
       | Interprocedural.PyreflyApi.PyreflyFileFormatError { path; error } ->
-          Log.error "Pyrefly stdout: %s" stdout_content;
-          Log.error "Pyrefly stderr: %s" stderr_content;
+          Log.dump "Pyrefly stdout: %s" stdout_content;
+          Log.dump "Pyrefly stderr: %s" stderr_content;
           failwith
             (Format.asprintf "%a: %a" PyrePath.pp path Interprocedural.PyreflyApi.Error.pp error)
     in
