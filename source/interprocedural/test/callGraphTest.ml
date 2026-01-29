@@ -1344,6 +1344,7 @@ let test_call_graph_of_define =
                                        value = ShimArgumentMapping.Target.Argument { index = 1 };
                                      };
                                    ];
+                                 discard_higher_order_parameters = true;
                                };
                            })
                       ()) );
@@ -1383,19 +1384,6 @@ let test_call_graph_of_define =
                             (Target.Regular.Method
                                { class_name = "object"; method_name = "__init__"; kind = Normal });
                         ]
-                      ~higher_order_parameters:
-                        (HigherOrderParameterMap.from_list
-                           [
-                             {
-                               index = 0;
-                               call_targets =
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.f"; kind = Normal });
-                                 ];
-                               unresolved = CallGraph.Unresolved.False;
-                             };
-                           ])
                       ~shim_target:
                         (Some
                            {
@@ -1416,6 +1404,7 @@ let test_call_graph_of_define =
                                        value = ShimArgumentMapping.Target.Argument { index = 1 };
                                      };
                                    ];
+                                 discard_higher_order_parameters = true;
                                };
                            })
                       ()) );
@@ -5212,6 +5201,7 @@ let test_call_graph_of_define =
                                        value = ShimArgumentMapping.Target.Argument { index = 1 };
                                      };
                                    ];
+                                 discard_higher_order_parameters = true;
                                };
                            })
                       ()) );
@@ -5276,6 +5266,7 @@ let test_call_graph_of_define =
                                        value = ShimArgumentMapping.Target.Argument { index = 1 };
                                      };
                                    ];
+                                 discard_higher_order_parameters = true;
                                };
                            })
                       ()) );
@@ -5393,24 +5384,6 @@ let test_call_graph_of_define =
                             (Target.Regular.Method
                                { class_name = "object"; method_name = "__init__"; kind = Normal });
                         ]
-                      ~higher_order_parameters:
-                        (HigherOrderParameterMap.from_list
-                           [
-                             {
-                               index = 0;
-                               call_targets =
-                                 [
-                                   CallTarget.create_regular
-                                     ~implicit_receiver:true
-                                     ~is_class_method:true
-                                     ~index:1
-                                     ~receiver_class:"test.C"
-                                     (Target.Regular.Method
-                                        { class_name = "test.C"; method_name = "f"; kind = Normal });
-                                 ];
-                               unresolved = CallGraph.Unresolved.False;
-                             };
-                           ])
                       ~shim_target:
                         (Some
                            {
@@ -5436,6 +5409,7 @@ let test_call_graph_of_define =
                                        value = ShimArgumentMapping.Target.Argument { index = 1 };
                                      };
                                    ];
+                                 discard_higher_order_parameters = true;
                                };
                            })
                       ()) );
@@ -5552,24 +5526,6 @@ let test_call_graph_of_define =
                             (Target.Regular.Method
                                { class_name = "object"; method_name = "__init__"; kind = Normal });
                         ]
-                      ~higher_order_parameters:
-                        (HigherOrderParameterMap.from_list
-                           [
-                             {
-                               index = 0;
-                               call_targets =
-                                 [
-                                   CallTarget.create_regular
-                                     ~implicit_receiver:true
-                                     ~is_class_method:true
-                                     ~index:1
-                                     ~receiver_class:"test.C"
-                                     (Target.Regular.Method
-                                        { class_name = "test.C"; method_name = "h"; kind = Normal });
-                                 ];
-                               unresolved = CallGraph.Unresolved.False;
-                             };
-                           ])
                       ~shim_target:
                         (Some
                            {
@@ -5595,6 +5551,7 @@ let test_call_graph_of_define =
                                        value = ShimArgumentMapping.Target.Argument { index = 1 };
                                      };
                                    ];
+                                 discard_higher_order_parameters = true;
                                };
                            })
                       ()) );

@@ -230,38 +230,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "partial.multiprocessing_bound_method_sink",
-    "filename": "partial.py",
-    "callable_line": 82,
-    "sinks": [
-      {
-        "port": "formal(x, position=0)[foo]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 83, "start": 35, "end": 36 },
-              "resolves_to": [ "partial.MyClass.sink_on_foo" ],
-              "port": "formal(self, position=0)[foo]",
-              "call_site": "83:35-83:48"
-            },
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "partial.multiprocessing_infer_sinks",
     "filename": "partial.py",
     "callable_line": 71,
@@ -269,21 +237,6 @@
       {
         "port": "formal(x, position=0)",
         "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "local_features": [ { "always-via": "higher-order-parameter" } ],
-            "call": {
-              "position": { "line": 72, "start": 35, "end": 50 },
-              "resolves_to": [ "partial.a_flows_to_sink" ],
-              "port": "formal(a, position=0)"
-            }
-          },
           {
             "kinds": [
               {
@@ -338,79 +291,6 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "partial.multiprocessing_not_tainted",
-    "callable_line": 67,
-    "code": 5002,
-    "line": 68,
-    "start": 35,
-    "end": 50,
-    "filename": "partial.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "higher-order-parameter" },
-              { "always-via": "broadening" },
-              { "always-via": "issue-broadening" }
-            ],
-            "origin": { "line": 68, "start": 61, "end": 75 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 68, "start": 35, "end": 50 },
-              "resolves_to": [ "partial.a_flows_to_sink" ],
-              "port": "formal(a, position=0)"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "higher-order-parameter" },
-      { "always-via": "broadening" },
-      { "always-via": "issue-broadening" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "partial.a_flows_to_sink",
-      "index": 0,
-      "parameter": "formal(a)"
-    },
-    "master_handle": "partial.multiprocessing_not_tainted:5002:0:Call|partial.a_flows_to_sink|0|formal(a):b5e3b1a6a7e05ce811c77f9151ba34e1"
   }
 }
 {
@@ -493,8 +373,8 @@
     "callable_line": 63,
     "code": 5002,
     "line": 64,
-    "start": 35,
-    "end": 50,
+    "start": 58,
+    "end": 72,
     "filename": "partial.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -511,11 +391,6 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [
-              { "via": "higher-order-parameter" },
-              { "via": "broadening" },
-              { "via": "issue-broadening" }
-            ],
             "origin": { "line": 64, "start": 58, "end": 72 }
           }
         ]
@@ -523,23 +398,6 @@
       {
         "name": "backward",
         "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 64, "start": 35, "end": 50 },
-              "resolves_to": [ "partial.a_flows_to_sink" ],
-              "port": "formal(a, position=0)"
-            }
-          },
           {
             "kinds": [
               {
@@ -562,11 +420,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "higher-order-parameter" },
-      { "via": "broadening" },
-      { "via": "issue-broadening" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -649,38 +503,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "partial.partial_application_bound_method_sink",
-    "filename": "partial.py",
-    "callable_line": 54,
-    "sinks": [
-      {
-        "port": "formal(x, position=0)[foo]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 55, "start": 22, "end": 23 },
-              "resolves_to": [ "partial.MyClass.sink_on_foo" ],
-              "port": "formal(self, position=0)[foo]",
-              "call_site": "55:22-55:35"
-            },
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "partial.partial_application_bound_method_tito",
     "filename": "partial.py",
     "callable_line": 58,
@@ -698,13 +520,8 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [
-              { "via": "higher-order-parameter" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [
-              { "line": 59, "start": 22, "end": 31 },
-              { "line": 59, "start": 33, "end": 47 }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 59, "start": 33, "end": 47 } ],
             "origin": { "line": 59, "start": 33, "end": 47 }
           }
         ]
@@ -730,8 +547,8 @@
     "callable_line": 44,
     "code": 5002,
     "line": 46,
-    "start": 22,
-    "end": 37,
+    "start": 41,
+    "end": 42,
     "filename": "partial.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -748,7 +565,6 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "via": "higher-order-parameter" } ],
             "origin": { "line": 45, "start": 8, "end": 22 }
           }
         ]
@@ -756,23 +572,6 @@
       {
         "name": "backward",
         "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 46, "start": 22, "end": 37 },
-              "resolves_to": [ "partial.a_flows_to_sink" ],
-              "port": "formal(a, position=0)"
-            }
-          },
           {
             "kinds": [
               {
@@ -795,9 +594,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "higher-order-parameter" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -811,79 +608,12 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "partial.partial_application_with_named_b",
-    "callable_line": 49,
-    "code": 5002,
-    "line": 51,
-    "start": 22,
-    "end": 37,
-    "filename": "partial.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [ { "always-via": "higher-order-parameter" } ],
-            "origin": { "line": 50, "start": 8, "end": 22 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 51, "start": 22, "end": 37 },
-              "resolves_to": [ "partial.a_flows_to_sink" ],
-              "port": "formal(a, position=0)"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "higher-order-parameter" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "partial.a_flows_to_sink",
-      "index": 0,
-      "parameter": "formal(a)"
-    },
-    "master_handle": "partial.partial_application_with_named_b:5002:0:Call|partial.a_flows_to_sink|0|formal(a):d732a57a326b4496b50c680b85aaaae0"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
     "callable": "partial.partial_application_with_tainted",
     "callable_line": 34,
     "code": 5002,
     "line": 36,
-    "start": 22,
-    "end": 37,
+    "start": 39,
+    "end": 40,
     "filename": "partial.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -900,7 +630,6 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "via": "higher-order-parameter" } ],
             "origin": { "line": 35, "start": 8, "end": 22 }
           }
         ]
@@ -908,23 +637,6 @@
       {
         "name": "backward",
         "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 36, "start": 22, "end": 37 },
-              "resolves_to": [ "partial.a_flows_to_sink" ],
-              "port": "formal(a, position=0)"
-            }
-          },
           {
             "kinds": [
               {
@@ -947,9 +659,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "higher-order-parameter" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1544,47 +1254,11 @@
               }
             ],
             "local_features": [
-              { "via": "shim-broadening" },
-              { "via": "higher-order-parameter" },
               { "via": "obscure:model" },
               { "always-via": "tito" },
-              { "via": "broadening" },
               { "via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [
-              { "line": 116, "start": 33, "end": 37 },
-              { "line": 116, "start": 33, "end": 46 },
-              { "line": 116, "start": 57, "end": 65 }
-            ],
-            "tito": {
-              "caller_interval": [ { "lower": 10, "upper": 11 } ],
-              "is_self_call": false
-            }
-          }
-        ]
-      },
-      {
-        "port": "formal(self, position=0)[_func]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "via": "shim-broadening" },
-              { "via": "obscure:model" },
-              { "always-via": "tito" },
-              { "via": "broadening" },
-              { "always-via": "obscure:unknown-callee" }
-            ],
-            "tito_positions": [
-              { "line": 116, "start": 33, "end": 37 },
-              { "line": 116, "start": 33, "end": 46 }
-            ],
+            "tito_positions": [ { "line": 116, "start": 57, "end": 65 } ],
             "tito": {
               "caller_interval": [ { "lower": 10, "upper": 11 } ],
               "is_self_call": false

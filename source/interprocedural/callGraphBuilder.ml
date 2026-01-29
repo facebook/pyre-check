@@ -766,6 +766,7 @@ let apply_identified_shim_call ~identified_callee ~arguments =
                   Argument.name = name >>| Node.value;
                   value = Target.Argument { index = index_minus_one + 1 };
                 });
+          discard_higher_order_parameters = true;
         }
   | ( Some Shims.IdentifiedCallee.MultiprocessingProcess,
       [
@@ -787,6 +788,7 @@ let apply_identified_shim_call ~identified_callee ~arguments =
                   Argument.name = None;
                   value = Target.GetTupleElement { index; inner = Target.Argument { index = 1 } };
                 });
+          discard_higher_order_parameters = true;
         }
   | _ -> None
 
@@ -5085,7 +5087,11 @@ let build_whole_program_call_graph_for_pyrefly
             ~callees:(fetch_regular_targets original_call_callees)
             ~nested_callees
             ~arguments
-          >>= fun ({ Shims.ShimArgumentMapping.callee = shim_target_callee; _ } as shim) ->
+          >>= fun ({
+                     Shims.ShimArgumentMapping.callee = shim_target_callee;
+                     discard_higher_order_parameters;
+                     _;
+                   } as shim) ->
           create_shim_callee_expression ~debug ~callable ~location:expression_location ~call shim
           >>= fun ({ Node.value = shim_callee; location = shim_callee_location } as
                   shim_callee_expression) ->
@@ -5116,7 +5122,18 @@ let build_whole_program_call_graph_for_pyrefly
                 ~error_if_new:false
                 ~location:expression_location
                 ~call
-                ~callees:{ original_call_callees with CallCallees.shim_target }
+                ~callees:
+                  {
+                    original_call_callees with
+                    CallCallees.shim_target;
+                    higher_order_parameters =
+                      (if discard_higher_order_parameters then
+                         (* Otherwise we may end up with false positives due to analyzing
+                            `higher_order_parameters`. *)
+                         HigherOrderParameterMap.empty
+                      else
+                        original_call_callees.CallCallees.higher_order_parameters);
+                  }
                 call_graph
           in
           match shim_callee, shim_target_callee, nested_callees with

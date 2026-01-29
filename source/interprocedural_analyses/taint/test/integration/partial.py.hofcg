@@ -123,6 +123,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "multiprocessing.Process",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": []
@@ -165,6 +166,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "multiprocessing.Process",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": []
@@ -205,6 +207,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "multiprocessing.Process",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [
@@ -294,6 +297,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "multiprocessing.Process",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [
@@ -389,6 +393,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "multiprocessing.Process",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [
@@ -464,6 +469,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "multiprocessing.Process",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [
@@ -599,6 +605,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "multiprocessing.Process",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [
@@ -675,6 +682,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "multiprocessing.Process",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [
@@ -765,6 +773,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "multiprocessing.Process",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [
@@ -863,6 +872,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "functools.partial",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [ { "value": { "kind": "argument", "index": 1 } } ]
@@ -905,6 +915,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "functools.partial",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [ { "value": { "kind": "argument", "index": 1 } } ]
@@ -952,6 +963,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "functools.partial",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [ { "value": { "kind": "argument", "index": 1 } } ]
@@ -1013,6 +1025,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "functools.partial",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [
@@ -1079,6 +1092,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "functools.partial",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [
@@ -1145,6 +1159,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "functools.partial",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [ { "value": { "kind": "argument", "index": 1 } } ]
@@ -1406,6 +1421,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "functools.partial",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [

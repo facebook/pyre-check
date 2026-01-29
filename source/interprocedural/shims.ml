@@ -135,13 +135,19 @@ module ShimArgumentMapping = struct
     identifier: string;
     callee: Target.t;
     arguments: Argument.t list;
+    discard_higher_order_parameters: bool;
   }
   [@@deriving equal, show { with_path = false }]
 
   let create_artificial_call
       ~call_location
       { Call.callee = call_callee; arguments = call_arguments; origin = call_origin }
-      { identifier; callee = shim_callee; arguments = shim_arguments }
+      {
+        identifier;
+        callee = shim_callee;
+        arguments = shim_arguments;
+        discard_higher_order_parameters = _;
+      }
     =
     let open Core.Result in
     let rec from_target = function
@@ -249,11 +255,19 @@ module ShimArgumentMapping = struct
     { Call.callee; arguments; origin }
 
 
-  let to_json { identifier; callee; arguments } =
-    `Assoc
+  let to_json { identifier; callee; arguments; discard_higher_order_parameters } =
+    let json =
       [
         "identifier", `String identifier;
         "callee", Target.to_json callee;
         "arguments", `List (List.map arguments ~f:Argument.to_json);
       ]
+    in
+    let json =
+      if discard_higher_order_parameters then
+        ("discard_higher_order_parameters", `Bool true) :: json
+      else
+        json
+    in
+    `Assoc json
 end

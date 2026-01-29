@@ -149,20 +149,6 @@ Higher order call graphs
             "receiver_class": "multiprocessing.context.Process"
           }
         ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
-              {
-                "target": "partial.MyClass.sink_on_foo",
-                "index": 0,
-                "implicit_receiver": true,
-                "return_type": [],
-                "receiver_class": "partial.MyClass"
-              }
-            ]
-          }
-        ],
         "shim": {
           "calls": [
             {
@@ -174,6 +160,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "multiprocessing.Process",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": []
@@ -221,20 +208,6 @@ Higher order call graphs
             "receiver_class": "multiprocessing.context.Process"
           }
         ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
-              {
-                "target": "partial.MyClass.sink_on_foo",
-                "index": 0,
-                "implicit_receiver": true,
-                "return_type": [],
-                "receiver_class": "partial.MyClass"
-              }
-            ]
-          }
-        ],
         "shim": {
           "calls": [
             {
@@ -246,6 +219,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "multiprocessing.Process",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": []
@@ -293,18 +267,6 @@ Higher order call graphs
             "receiver_class": "multiprocessing.context.Process"
           }
         ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
-              {
-                "target": "partial.a_flows_to_sink",
-                "index": 0,
-                "return_type": []
-              }
-            ]
-          }
-        ],
         "shim": {
           "calls": [
             {
@@ -314,6 +276,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "multiprocessing.Process",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [
@@ -395,18 +358,6 @@ Higher order call graphs
             "receiver_class": "multiprocessing.context.Process"
           }
         ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
-              {
-                "target": "partial.sink_on_foo",
-                "index": 0,
-                "return_type": []
-              }
-            ]
-          }
-        ],
         "shim": {
           "calls": [
             {
@@ -416,6 +367,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "multiprocessing.Process",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [
@@ -503,18 +455,6 @@ Higher order call graphs
             "receiver_class": "multiprocessing.context.Process"
           }
         ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
-              {
-                "target": "partial.sink_on_foo",
-                "index": 0,
-                "return_type": []
-              }
-            ]
-          }
-        ],
         "shim": {
           "calls": [
             {
@@ -524,6 +464,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "multiprocessing.Process",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [
@@ -590,18 +531,6 @@ Higher order call graphs
             "receiver_class": "multiprocessing.context.Process"
           }
         ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
-              {
-                "target": "partial.a_flows_to_sink",
-                "index": 0,
-                "return_type": []
-              }
-            ]
-          }
-        ],
         "shim": {
           "calls": [
             {
@@ -611,6 +540,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "multiprocessing.Process",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [
@@ -737,18 +667,6 @@ Higher order call graphs
             "receiver_class": "multiprocessing.context.Process"
           }
         ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
-              {
-                "target": "partial.a_flows_to_sink",
-                "index": 0,
-                "return_type": []
-              }
-            ]
-          }
-        ],
         "shim": {
           "calls": [
             {
@@ -758,6 +676,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "multiprocessing.Process",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [
@@ -825,18 +744,6 @@ Higher order call graphs
             "receiver_class": "multiprocessing.context.Process"
           }
         ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
-              {
-                "target": "partial.sink_on_foo",
-                "index": 0,
-                "return_type": []
-              }
-            ]
-          }
-        ],
         "shim": {
           "calls": [
             {
@@ -846,6 +753,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "multiprocessing.Process",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [
@@ -928,18 +836,6 @@ Higher order call graphs
             "receiver_class": "multiprocessing.context.Process"
           }
         ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
-              {
-                "target": "partial.sink_on_foo",
-                "index": 1,
-                "return_type": []
-              }
-            ]
-          }
-        ],
         "shim": {
           "calls": [
             {
@@ -949,6 +845,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "multiprocessing.Process",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [
@@ -1036,20 +933,6 @@ Higher order call graphs
             "return_type": []
           }
         ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
-              {
-                "target": "partial.MyClass.sink_on_foo",
-                "index": 0,
-                "implicit_receiver": true,
-                "return_type": [],
-                "receiver_class": "partial.MyClass"
-              }
-            ]
-          }
-        ],
         "shim": {
           "calls": [
             {
@@ -1061,6 +944,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "functools.partial",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [ { "value": { "kind": "argument", "index": 1 } } ]
@@ -1107,20 +991,6 @@ Higher order call graphs
             "return_type": []
           }
         ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
-              {
-                "target": "partial.MyClass.set_foo",
-                "index": 0,
-                "implicit_receiver": true,
-                "return_type": [],
-                "receiver_class": "partial.MyClass"
-              }
-            ]
-          }
-        ],
         "shim": {
           "calls": [
             {
@@ -1132,6 +1002,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "functools.partial",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [ { "value": { "kind": "argument", "index": 1 } } ]
@@ -1185,18 +1056,6 @@ Higher order call graphs
             "return_type": []
           }
         ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
-              {
-                "target": "partial.a_flows_to_sink",
-                "index": 0,
-                "return_type": []
-              }
-            ]
-          }
-        ],
         "shim": {
           "calls": [
             {
@@ -1206,6 +1065,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "functools.partial",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [ { "value": { "kind": "argument", "index": 1 } } ]
@@ -1257,18 +1117,6 @@ Higher order call graphs
             "return_type": []
           }
         ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
-              {
-                "target": "partial.a_flows_to_sink",
-                "index": 0,
-                "return_type": []
-              }
-            ]
-          }
-        ],
         "shim": {
           "calls": [
             {
@@ -1278,6 +1126,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "functools.partial",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [
@@ -1331,18 +1180,6 @@ Higher order call graphs
             "return_type": []
           }
         ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
-              {
-                "target": "partial.a_flows_to_sink",
-                "index": 0,
-                "return_type": []
-              }
-            ]
-          }
-        ],
         "shim": {
           "calls": [
             {
@@ -1352,6 +1189,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "functools.partial",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [
@@ -1405,18 +1243,6 @@ Higher order call graphs
             "return_type": []
           }
         ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
-              {
-                "target": "partial.a_flows_to_sink",
-                "index": 0,
-                "return_type": []
-              }
-            ]
-          }
-        ],
         "shim": {
           "calls": [
             {
@@ -1426,6 +1252,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "functools.partial",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [ { "value": { "kind": "argument", "index": 1 } } ]
@@ -1672,20 +1499,6 @@ Higher order call graphs
             "return_type": []
           }
         ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
-              {
-                "target": "partial.PartialDecorator.__call__",
-                "index": 0,
-                "implicit_receiver": true,
-                "return_type": [],
-                "receiver_class": "partial.PartialDecorator"
-              }
-            ]
-          }
-        ],
         "shim": {
           "calls": [
             {
@@ -1697,6 +1510,7 @@ Higher order call graphs
             }
           ],
           "argument_mapping": {
+            "discard_higher_order_parameters": true,
             "identifier": "functools.partial",
             "callee": { "kind": "argument", "index": 0 },
             "arguments": [

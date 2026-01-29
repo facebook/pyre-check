@@ -84,6 +84,7 @@ module ShimArgumentMapping : sig
     identifier: string;
     callee: Target.t;
     arguments: Argument.t list;
+    discard_higher_order_parameters: bool;
   }
   [@@deriving equal, show { with_path = false }]
 
