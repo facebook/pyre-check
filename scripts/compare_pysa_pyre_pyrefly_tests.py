@@ -13,6 +13,7 @@ by comparing `.py.models` files (Pyre output) with `.py.pyrefly.models` files
 """
 
 import argparse
+import enum
 import json
 import logging
 import subprocess
@@ -155,11 +156,17 @@ def normalize_pyrefly_models(path: Path) -> str:
     return "\n".join(lines)
 
 
+class TestResult(enum.Enum):
+    MARKED_PASSING = enum.auto()
+    PERFECT_MATCH = enum.auto()
+    FAILING = enum.auto()
+
+
 def compare_models(
     test_file: Path,
     temporary_directory: Path,
     compare_passing: bool,
-) -> None:
+) -> TestResult:
     """
     Compare .py.models and .py.pyrefly.models files for a given test file.
     """
@@ -177,8 +184,10 @@ def compare_models(
     )
     if marked_as_passing:
         if not compare_passing:
-            print(f"Test {test_file.name} is marked as passing (skipping comparison)")
-            return
+            print(
+                f"✅ Test {test_file.name} is marked as passing (skipping comparison)"
+            )
+            return TestResult.MARKED_PASSING
         else:
             print(f"Test {test_file.name} is marked as passing")
 
@@ -205,11 +214,13 @@ def compare_models(
     )
 
     if result.returncode != 0:
-        print(f"Mismatch for test {test_file.name}:")
+        print(f"❌ Mismatch for test {test_file.name}:")
         for line in result.stdout.splitlines():
             print(f"  {line}")
+        return TestResult.FAILING
     else:
-        print(f"Perfect match for test {test_file.name}")
+        print(f"✅ Perfect match for test {test_file.name}")
+        return TestResult.PERFECT_MATCH
 
 
 def main() -> int:
@@ -237,6 +248,16 @@ def main() -> int:
         action="store_true",
         help="Compare tests marked as passing (.pyrefly.passing file exists)",
     )
+    parser.add_argument(
+        "--reverse-order",
+        action="store_true",
+        help="Go in backward alphabetical order",
+    )
+    parser.add_argument(
+        "--preserve-temporary-directory",
+        action="store_true",
+        help="Preserve the temporary directory used for comparisons",
+    )
 
     parsed = parser.parse_args()
 
@@ -255,6 +276,8 @@ def main() -> int:
     print()
 
     test_files = find_integration_tests(integration_directory, parsed.filter)
+    if parsed.reverse_order:
+        test_files = list(reversed(test_files))
 
     if not test_files:
         print("No integration tests found.")
@@ -263,10 +286,16 @@ def main() -> int:
     print(f"Found {len(test_files)} integration tests.")
     print()
 
-    with tempfile.TemporaryDirectory() as temporary_directory:
+    with tempfile.TemporaryDirectory(
+        delete=not parsed.preserve_temporary_directory
+    ) as temporary_directory:
         for test_file in test_files:
-            compare_models(test_file, Path(temporary_directory), parsed.compare_passing)
-            if parsed.interactive:
+            result = compare_models(
+                test_file,
+                Path(temporary_directory),
+                parsed.compare_passing,
+            )
+            if parsed.interactive and result != TestResult.MARKED_PASSING:
                 print("[Press enter to continue] ", end="")
                 input()
 
