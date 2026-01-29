@@ -26,6 +26,8 @@ end
 
 module SerializableMap : Data_structures.SerializableMap.S with type key = t
 
+module SerializableSet : Data_structures.SerializableSet.S with type elt = t
+
 module Set : Set.S with type Elt.t = t
 
 include Hashable with type t := t

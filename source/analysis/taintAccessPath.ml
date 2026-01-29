@@ -49,7 +49,7 @@ module Root = struct
         }
       | NamedParameter of { name: Identifier.t }
       | StarParameter of { position: int }
-      | StarStarParameter of { excluded: Identifier.t list }
+      | StarStarParameter of { excluded: Identifier.SerializableSet.t }
       | Variable of Identifier.t
       | CapturedVariable of CapturedVariable.t
     [@@deriving compare, equal, hash, sexp]
@@ -93,12 +93,13 @@ module Root = struct
             (if positional_only then ", positional_only" else "")
       | NamedParameter { name } -> Format.fprintf formatter "formal(%s)" name
       | StarParameter { position } -> Format.fprintf formatter "formal(*args, position=%d)" position
-      | StarStarParameter { excluded = [] } -> Format.fprintf formatter "formal(**kwargs)"
+      | StarStarParameter { excluded } when Identifier.SerializableSet.is_empty excluded ->
+          Format.fprintf formatter "formal(**kwargs)"
       | StarStarParameter { excluded } ->
           Format.fprintf
             formatter
             "formal(**kwargs, excluded=[%s])"
-            (String.concat ~sep:"," excluded)
+            (excluded |> Identifier.SerializableSet.elements |> String.concat ~sep:",")
       | Variable name -> Format.fprintf formatter "local(%s)" name
       | CapturedVariable (CapturedVariable.FromFunction { name; defining_function }) ->
           Format.fprintf formatter "captured_variable(%s, %a)" name Reference.pp defining_function
@@ -135,7 +136,8 @@ module Root = struct
 
 
     (* Represent the origins of triggered sinks for string combine functions. *)
-    let sink_port_in_string_combine_functions = StarStarParameter { excluded = [] }
+    let sink_port_in_string_combine_functions =
+      StarStarParameter { excluded = Identifier.SerializableSet.empty }
   end
 
   include T
@@ -200,7 +202,7 @@ let normalize_parameters parameters =
       let unqualified_name = Root.chop_parameter_prefix qualified_name in
       ( position + 1,
         true,
-        unqualified_name :: excluded,
+        Identifier.SerializableSet.add unqualified_name excluded,
         {
           NormalizedParameter.root = Root.NamedParameter { name = unqualified_name };
           qualified_name;
@@ -214,7 +216,7 @@ let normalize_parameters parameters =
       in
       ( position + 1,
         false,
-        unqualified_name :: excluded,
+        Identifier.SerializableSet.add unqualified_name excluded,
         {
           NormalizedParameter.root =
             Root.PositionalParameter { position; name = unqualified_name; positional_only };
@@ -223,7 +225,12 @@ let normalize_parameters parameters =
         }
         :: normalized )
   in
-  let _, _, _, parameters = List.fold parameters ~f:normalize_parameters ~init:(0, false, [], []) in
+  let _, _, _, parameters =
+    List.fold
+      parameters
+      ~f:normalize_parameters
+      ~init:(0, false, Identifier.SerializableSet.empty, [])
+  in
   List.rev parameters
 
 
@@ -273,7 +280,7 @@ let match_actuals_to_formals arguments roots =
       when Identifier.equal actual_name name ->
         Some { root = formal; actual_path = []; formal_path = [] }
     | `Name actual_name, Root.StarStarParameter { excluded }
-      when not (List.exists ~f:(Identifier.equal actual_name) excluded) ->
+      when not (Identifier.SerializableSet.mem actual_name excluded) ->
         let index = Root.chop_parameter_prefix actual_name in
         Some
           {

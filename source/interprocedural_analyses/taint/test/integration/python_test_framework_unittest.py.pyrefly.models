@@ -249,7 +249,7 @@
     "filename": "*",
     "tito": [
       {
-        "port": "formal(**kwargs, excluded=[subject,issuer,version,serialNumber,notBefore,notAfter,subjectAltName,OCSP,caIssuers,crlDistributionPoints])",
+        "port": "formal(**kwargs, excluded=[OCSP,caIssuers,crlDistributionPoints,issuer,notAfter,notBefore,serialNumber,subject,subjectAltName,version])",
         "taint": [
           {
             "kinds": [
@@ -645,7 +645,7 @@
     "filename": "*",
     "tito": [
       {
-        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "port": "formal(**kwargs, excluded=[col_offset,end_col_offset,end_lineno,lineno])",
         "taint": [
           {
             "kinds": [

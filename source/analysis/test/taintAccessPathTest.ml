@@ -109,7 +109,9 @@ let test_match_actuals_to_formals _ =
   in
   let double_starred ?(excluded = []) formal_path =
     {
-      AccessPath.root = AccessPath.Root.StarStarParameter { excluded };
+      AccessPath.root =
+        AccessPath.Root.StarStarParameter
+          { excluded = Ast.Identifier.SerializableSet.of_list excluded };
       actual_path = [];
       formal_path = [Abstract.TreeDomain.Label.Index formal_path];
     }
@@ -147,7 +149,8 @@ let test_match_actuals_to_formals _ =
           ^ (List.map ~f:AccessPath.show_argument_match matches |> String.concat ~sep:", "))
       |> String.concat ~sep:"\n"
     in
-    assert_equal ~printer (sort expected) (sort actual)
+    let cmp = [%compare.equal: (string * AccessPath.argument_match list) list] in
+    assert_equal ~cmp ~printer (sort expected) (sort actual)
   in
   assert_match ~signature:"def foo(x): ..." ~call:"foo(1)" ~expected:["1", [positional (0, "x")]] ();
   assert_match
@@ -204,7 +207,8 @@ let test_match_actuals_to_formals _ =
             named ~actual_path:[Abstract.TreeDomain.Label.Index "d"] "d";
             {
               AccessPath.root =
-                AccessPath.Root.StarStarParameter { excluded = ["d"; "c"; "b"; "a"] };
+                AccessPath.Root.StarStarParameter
+                  { excluded = Ast.Identifier.SerializableSet.of_list ["a"; "b"; "c"; "d"] };
               actual_path = [];
               formal_path = [];
             };

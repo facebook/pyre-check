@@ -513,7 +513,7 @@
     "filename": "*",
     "tito": [
       {
-        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "port": "formal(**kwargs, excluded=[col_offset,end_col_offset,end_lineno,lineno])",
         "taint": [
           {
             "kinds": [
@@ -708,7 +708,7 @@
     "callable_line": 52,
     "sinks": [
       {
-        "port": "formal(**kwargs, excluded=[other_b,crtex_a,self])",
+        "port": "formal(**kwargs, excluded=[crtex_a,other_b,self])",
         "taint": [
           {
             "kinds": [

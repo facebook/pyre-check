@@ -747,7 +747,7 @@
     "filename": "*",
     "tito": [
       {
-        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "port": "formal(**kwargs, excluded=[col_offset,end_col_offset,end_lineno,lineno])",
         "taint": [
           {
             "kinds": [
@@ -933,7 +933,7 @@
     "filename": "*",
     "tito": [
       {
-        "port": "formal(**kwargs, excluded=[sanitized,safe])",
+        "port": "formal(**kwargs, excluded=[safe,sanitized])",
         "taint": [
           {
             "kinds": [
@@ -1012,7 +1012,7 @@
     "filename": "*",
     "tito": [
       {
-        "port": "formal(**kwargs, excluded=[foo,bar])",
+        "port": "formal(**kwargs, excluded=[bar,foo])",
         "taint": [
           {
             "kinds": [

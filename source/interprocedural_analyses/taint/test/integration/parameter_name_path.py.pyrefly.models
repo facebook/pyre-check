@@ -84,7 +84,7 @@
     "callable_line": 29,
     "tito": [
       {
-        "port": "formal(**kwargs, excluded=[g,f,d,c,b,a])",
+        "port": "formal(**kwargs, excluded=[a,b,c,d,f,g])",
         "taint": [
           {
             "kinds": [
@@ -183,7 +183,7 @@
     "callable_line": 33,
     "tito": [
       {
-        "port": "formal(**kwargs, excluded=[g,f,d,c,b,a])",
+        "port": "formal(**kwargs, excluded=[a,b,c,d,f,g])",
         "taint": [
           {
             "kinds": [
@@ -271,7 +271,7 @@
     "callable_line": 37,
     "tito": [
       {
-        "port": "formal(**kwargs, excluded=[g,f,b,a])",
+        "port": "formal(**kwargs, excluded=[a,b,f,g])",
         "taint": [
           {
             "kinds": [
@@ -476,7 +476,7 @@
     "filename": "*",
     "tito": [
       {
-        "port": "formal(**kwargs, excluded=[lineno,col_offset,end_lineno,end_col_offset])",
+        "port": "formal(**kwargs, excluded=[col_offset,end_col_offset,end_lineno,lineno])",
         "taint": [
           {
             "kinds": [

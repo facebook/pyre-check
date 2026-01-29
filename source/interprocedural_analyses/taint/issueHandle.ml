@@ -64,7 +64,7 @@ module Sink = struct
       | PositionalParameter { name; _ } -> NamedParameter { name }
       | NamedParameter { name } -> NamedParameter { name }
       | StarParameter _ -> StarParameter { position = 0 }
-      | StarStarParameter _ -> StarStarParameter { excluded = [] }
+      | StarStarParameter _ -> StarStarParameter { excluded = Ast.Identifier.SerializableSet.empty }
       | Variable name -> Variable name
       | CapturedVariable name -> CapturedVariable name
     in

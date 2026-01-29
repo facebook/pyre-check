@@ -33,7 +33,7 @@ module Root : sig
       }
     | NamedParameter of { name: Identifier.t }
     | StarParameter of { position: int }
-    | StarStarParameter of { excluded: Identifier.t list }
+    | StarStarParameter of { excluded: Identifier.SerializableSet.t }
     | Variable of Identifier.t
     | CapturedVariable of CapturedVariable.t
   [@@deriving compare, equal, hash, sexp, show]

@@ -1198,7 +1198,9 @@ module ModelQueries = struct
           TaintAccessPath.Root.PositionalParameter { position; name; positional_only = false }
       | KeywordOnly { name; _ } -> TaintAccessPath.Root.NamedParameter { name }
       | Variable { position; _ } -> TaintAccessPath.Root.StarParameter { position }
-      | Keywords { excluded; _ } -> TaintAccessPath.Root.StarStarParameter { excluded }
+      | Keywords { excluded; _ } ->
+          TaintAccessPath.Root.StarStarParameter
+            { excluded = Ast.Identifier.SerializableSet.of_list excluded }
 
 
     let annotation = function
@@ -1330,7 +1332,7 @@ module ModelQueries = struct
         match root with
         | TaintAccessPath.Root.PositionalParameter { position; name; positional_only } ->
             ( position + 1,
-              name :: excluded,
+              Ast.Identifier.SerializableSet.add name excluded,
               (if positional_only then
                  FunctionParameter.PositionalOnly
                    {
@@ -1350,7 +1352,7 @@ module ModelQueries = struct
               :: sofar )
         | TaintAccessPath.Root.NamedParameter { name } ->
             ( position + 1,
-              name :: excluded,
+              Ast.Identifier.SerializableSet.add name excluded,
               FunctionParameter.KeywordOnly
                 { name; annotation = get_annotation (); has_default = Option.is_some default_value }
               :: sofar )
@@ -1364,14 +1366,18 @@ module ModelQueries = struct
             ( position + 1,
               excluded,
               FunctionParameter.Keywords
-                { name = Some name; annotation = get_annotation (); excluded }
+                {
+                  name = Some name;
+                  annotation = get_annotation ();
+                  excluded = Ast.Identifier.SerializableSet.elements excluded;
+                }
               :: sofar )
         | _ -> failwith "unsupported root"
       in
       let parameters =
         parameters
         |> TaintAccessPath.normalize_parameters
-        |> List.fold ~init:(0, [], []) ~f:fold_parameters
+        |> List.fold ~init:(0, Ast.Identifier.SerializableSet.empty, []) ~f:fold_parameters
         |> (fun (_, _, parameters) -> parameters)
         |> List.rev
       in

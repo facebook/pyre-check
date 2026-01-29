@@ -36,7 +36,8 @@ let unknown_callee_model _ =
       sink_leaf
       BackwardState.empty
     |> BackwardState.assign
-         ~root:(AccessPath.Root.StarStarParameter { excluded = [] })
+         ~root:
+           (AccessPath.Root.StarStarParameter { excluded = Ast.Identifier.SerializableSet.empty })
          ~path:[]
          sink_leaf
   in
@@ -52,7 +53,8 @@ let unknown_callee_model _ =
       local_return
       BackwardState.empty
     |> BackwardState.assign
-         ~root:(AccessPath.Root.StarStarParameter { excluded = [] })
+         ~root:
+           (AccessPath.Root.StarStarParameter { excluded = Ast.Identifier.SerializableSet.empty })
          ~path:[]
          local_return
   in

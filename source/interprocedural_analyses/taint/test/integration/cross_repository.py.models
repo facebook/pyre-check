@@ -601,7 +601,7 @@
     "callable_line": 52,
     "sinks": [
       {
-        "port": "formal(**kwargs, excluded=[other_b,crtex_a,self])",
+        "port": "formal(**kwargs, excluded=[crtex_a,other_b,self])",
         "taint": [
           {
             "kinds": [

@@ -239,7 +239,9 @@ let infer ~scheduler ~scheduler_policies ~pyre_api ~user_models =
            ~breadcrumbs:Features.BreadcrumbMayAlwaysSet.bottom
            ~via_features:Features.ViaFeatureSet.bottom
       |> add_tito
-           ~input_root:(AccessPath.Root.StarStarParameter { excluded = fields })
+           ~input_root:
+             (AccessPath.Root.StarStarParameter
+                { excluded = Identifier.SerializableSet.of_list fields })
            ~input_path:[]
            ~output_root:(Sinks.ParameterUpdate self)
            ~output_path:[Abstract.TreeDomain.Label.AnyIndex]

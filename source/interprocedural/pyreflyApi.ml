@@ -4215,7 +4215,8 @@ module ReadOnly = struct
     let normalize_root = function
       | AccessPath.Root.PositionalParameter { position; positional_only = true; _ } ->
           AccessPath.Root.PositionalParameter { position; positional_only = true; name = "" }
-      | AccessPath.Root.StarStarParameter _ -> AccessPath.Root.StarStarParameter { excluded = [] }
+      | AccessPath.Root.StarStarParameter _ ->
+          AccessPath.Root.StarStarParameter { excluded = Identifier.SerializableSet.empty }
       | root -> root
     in
     let fold_signature_parameter sofar parameter =
