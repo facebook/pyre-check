@@ -116,6 +116,147 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "context_manager.test_generator_sink_on_exit",
+    "callable_line": 92,
+    "code": 5002,
+    "line": 93,
+    "start": 42,
+    "end": 56,
+    "filename": "context_manager.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 93, "start": 42, "end": 56 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 93, "start": 42, "end": 56 },
+              "resolves_to": [
+                "context_manager.source_on_enter_and_sink_on_exit"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "93:9-93:57"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "context_manager.source_on_enter_and_sink_on_exit",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "context_manager.test_generator_sink_on_exit:5002:0:Call|context_manager.source_on_enter_and_sink_on_exit|0|formal(x):befd19857229e05e8245aaf5e7ace8a1"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "context_manager.test_generator_source_on_enter",
+    "callable_line": 87,
+    "code": 5002,
+    "line": 89,
+    "start": 19,
+    "end": 20,
+    "filename": "context_manager.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 88, "start": 9, "end": 45 } ],
+            "call": {
+              "position": { "line": 88, "start": 9, "end": 45 },
+              "resolves_to": [
+                "context_manager.source_on_enter_and_sink_on_exit"
+              ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 89, "start": 19, "end": 20 },
+            "call_site": "89:8-89:21"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "context_manager.test_generator_source_on_enter:5002:0:Call|pysa._test_sink|0|formal(arg):92bfcd007364b2d51b7e0555ccf18aed"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "context_manager.test_sink_on_enter",

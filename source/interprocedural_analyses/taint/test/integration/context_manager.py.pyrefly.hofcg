@@ -64,7 +64,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "context_manager.source_on_enter_and_sink_on_exit@decorated",
+            "target": "context_manager.source_on_enter_and_sink_on_exit",
             "index": 0,
             "return_type": []
           }
@@ -108,7 +108,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "context_manager.source_on_enter_and_sink_on_exit@decorated",
+            "target": "context_manager.source_on_enter_and_sink_on_exit",
             "index": 0,
             "return_type": []
           }

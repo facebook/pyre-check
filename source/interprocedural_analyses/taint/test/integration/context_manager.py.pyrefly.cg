@@ -17,12 +17,12 @@ Call dependencies
     "contextlib.contextmanager (fun)"
   ],
   "context_manager.test_generator_sink_on_exit (fun)": [
-    "context_manager.source_on_enter_and_sink_on_exit@decorated (fun)",
+    "context_manager.source_on_enter_and_sink_on_exit (fun)",
     "contextlib.AbstractContextManager.__enter__ (method)",
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "context_manager.test_generator_source_on_enter (fun)": [
-    "context_manager.source_on_enter_and_sink_on_exit@decorated (fun)",
+    "context_manager.source_on_enter_and_sink_on_exit (fun)",
     "contextlib.AbstractContextManager.__enter__ (method)",
     "pysa._test_sink (fun)"
   ],

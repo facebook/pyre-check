@@ -3935,7 +3935,8 @@ module HigherOrderCallGraph = struct
                 state
             in
             CallTarget.Set.join global_callables callables_from_variable, state
-        | Name (Name.Attribute attribute_access) ->
+        | Name (Name.Attribute ({ Name.Attribute.base; _ } as attribute_access)) ->
+            let _, state = analyze_expression ~pyre_in_context ~state ~expression:base in
             let callables =
               Context.input_define_call_graph
               |> DefineCallGraph.resolve_attribute_access ~location ~attribute_access
