@@ -505,15 +505,15 @@ module ReadOnly = struct
     | IncompatibleVariableType { incompatible_type = { name; mismatch = { actual; expected; _ } } }
       ->
         let message =
-          let pp_type = pp_type ~concise in
+          let pp = pp_type ~concise in
           if concise then
             Format.asprintf
               "%a has type `%a`; used as `%a`.%s"
               pp_reference
               name
-              pp_type
+              pp
               expected
-              pp_type
+              pp
               actual
               readonly_entrypoint_message
           else
@@ -521,9 +521,9 @@ module ReadOnly = struct
               "%a is declared to have type `%a` but is used as type `%a`.%s"
               pp_reference
               name
-              pp_type
+              pp
               expected
-              pp_type
+              pp
               actual
               readonly_entrypoint_message
         in
@@ -546,14 +546,14 @@ module ReadOnly = struct
           else
             Format.asprintf "In %s, for %s," callee parameter
         in
-        let pp_type = pp_type ~concise in
+        let pp = pp_type ~concise in
         [
           Format.asprintf
             "%s expected `%a` but got `%a`.%s"
             target
-            pp_type
+            pp
             expected
-            pp_type
+            pp
             actual
             readonly_entrypoint_message;
         ]
@@ -569,11 +569,11 @@ module ReadOnly = struct
           mismatch = { actual; expected; _ };
           define_location = { Location.start = { line = return_line; _ }; _ };
         } ->
-        let pp_type = pp_type ~concise in
+        let pp = pp_type ~concise in
         let trace =
           Format.asprintf
             "Type `%a` expected on line %d, specified on line %d."
-            pp_type
+            pp
             expected
             stop_line
             return_line
@@ -581,9 +581,9 @@ module ReadOnly = struct
         let message =
           Format.asprintf
             "Expected `%a` but got `%a`.%s"
-            pp_type
+            pp
             expected
-            pp_type
+            pp
             actual
             readonly_entrypoint_message
         in
@@ -3212,9 +3212,7 @@ let rec messages ~concise ~signature location kind =
   | AssertType { actual; expected } ->
       let mismatch = { actual; expected; due_to_invariance = false } in
       let { actual; expected; _ } = simplify_mismatch mismatch in
-      let expected = Format.asprintf "`%a`" pp_type expected in
-      let actual = Format.asprintf "`%a`" pp_type actual in
-      [Format.sprintf "Expected %s but got %s." expected actual]
+      [Format.asprintf "Expected `%a` but got `%a`." pp_type expected pp_type actual]
 
 
 module T = struct

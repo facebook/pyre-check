@@ -16,15 +16,17 @@ open Pyre
 module ExpressionParameter = Parameter
 
 let dequalify_reference map reference =
-  let rec fold accumulator reference =
-    if Core.Map.mem map reference then
-      Reference.combine (Core.Map.find_exn map reference) (Reference.create_from_list accumulator)
+  let rec fold accumulator current =
+    if Core.Map.mem map current then
+      Some
+        (Reference.combine (Core.Map.find_exn map current) (Reference.create_from_list accumulator))
     else
-      match Reference.prefix reference with
-      | Some prefix -> fold (Reference.last reference :: accumulator) prefix
-      | None -> Reference.create_from_list accumulator
+      match Reference.prefix current with
+      | Some prefix -> fold (Reference.last current :: accumulator) prefix
+      | None -> None
   in
-  fold [] reference
+  (* If no simplification was found in the map, return the original reference unchanged *)
+  fold [] reference |> Option.value ~default:reference
 
 
 let dequalify_identifier map identifier =
@@ -3640,7 +3642,7 @@ module GenericParameter = struct
     | Variable.Declaration.DParamSpec { name } -> GpParamSpec { name }
 
 
-  (* A zip function + result type used when we need to use type paramter information of a type
+  (* A zip function + result type used when we need to use type parameter information of a type
    * constructor to compare two specializations of that type constructor: we want to zip the
    * two argument lists * up with the parameters.
    *
