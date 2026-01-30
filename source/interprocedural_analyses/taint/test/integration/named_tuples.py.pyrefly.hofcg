@@ -417,6 +417,30 @@ Higher order call graphs
   "callable": "named_tuples.tainted_old_tuple",
   "returned_callables": [],
   "calls": {
+    "35:11-35:30|identifier|OldSchoolNamedTuple": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "named_tuples.OldSchoolNamedTuple.__new__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "named_tuples.OldSchoolNamedTuple.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "named_tuples.OldSchoolNamedTuple"
+            }
+          ]
+        }
+      }
+    },
     "35:11-35:60": {
       "call": {
         "new_calls": [

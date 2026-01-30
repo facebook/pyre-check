@@ -791,6 +791,14 @@ Higher order call graphs
   "callable": "closure.decorator.wrapper",
   "returned_callables": [],
   "calls": {
+    "432:21-432:29|identifier|function": {
+      "identifier": {
+        "captured_variables": [
+          { "name": "function", "defining_function": "closure.decorator" }
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      }
+    },
     "432:21-432:46": {
       "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
@@ -843,6 +851,17 @@ Higher order call graphs
   "callable": "closure.ignored_decorator.wrapper",
   "returned_callables": [],
   "calls": {
+    "439:21-439:29|identifier|function": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "function",
+            "defining_function": "closure.ignored_decorator"
+          }
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      }
+    },
     "439:21-439:46": {
       "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
@@ -3172,8 +3191,24 @@ Higher order call graphs
   "callable": "closure.decorator.wrapper[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
   "returned_callables": [],
   "calls": {
+    "432:21-432:29|identifier|function": {
+      "identifier": {
+        "captured_variables": [
+          { "name": "function", "defining_function": "closure.decorator" }
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      }
+    },
     "432:21-432:46": {
-      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "closure.async_nonlocal_closure_tito_with_decorator.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
     }
   }
 }
@@ -3239,8 +3274,27 @@ Higher order call graphs
   "callable": "closure.ignored_decorator.wrapper[captured_variable(function, closure.ignored_decorator)=closure.async_nonlocal_closure_tito_ignore_decorator.inner]",
   "returned_callables": [],
   "calls": {
+    "439:21-439:29|identifier|function": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "function",
+            "defining_function": "closure.ignored_decorator"
+          }
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      }
+    },
     "439:21-439:46": {
-      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "closure.async_nonlocal_closure_tito_ignore_decorator.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
     }
   }
 }

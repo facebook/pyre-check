@@ -59,8 +59,14 @@ Call dependencies
   "closure.closure_wrapper_sink_flow.wrapper (fun)": [
     "closure.closure_wrapper_sink_flow.sink (fun)"
   ],
+  "closure.decorator.wrapper (fun)[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]": [
+    "closure.async_nonlocal_closure_tito_with_decorator.inner (fun)"
+  ],
   "closure.higher_order_function (fun)[formal(f, position=0)=closure.wrapper_for_taint_propagation_hof.inner (fun)]": [
     "closure.wrapper_for_taint_propagation_hof.inner (fun)"
+  ],
+  "closure.ignored_decorator.wrapper (fun)[captured_variable(function, closure.ignored_decorator)=closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)]": [
+    "closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)"
   ],
   "closure.nonlocal_closure_conditional_write (fun)": [
     "closure.nonlocal_closure_conditional_write.clear (fun)",

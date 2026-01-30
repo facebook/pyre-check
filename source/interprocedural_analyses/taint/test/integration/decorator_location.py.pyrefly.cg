@@ -74,7 +74,8 @@ Call dependencies
     "builtins.int.__add__ (method)"
   ],
   "decorator_location.ignore_this_decorator_factory.decorator.inner (fun)[captured_variable(f, decorator_location.ignore_this_decorator_factory.decorator)=decorator_location.decorated_ignore_this_decorator_factory (fun)]": [
-    "builtins.int.__add__ (method)"
+    "builtins.int.__add__ (method)",
+    "decorator_location.decorated_ignore_this_decorator_factory (fun)"
   ],
   "decorator_location.main (fun)": [
     "decorator_location.call_return_foo (fun)",
@@ -108,9 +109,15 @@ Call dependencies
     "pysa._test_sink (fun)"
   ],
   "decorator_location.skip_this_decorator.inner (fun)[captured_variable(f, decorator_location.skip_this_decorator)=decorator_location.decorated_ignore_then_skip_decorator (fun)]": [
+    "decorator_location.decorated_ignore_then_skip_decorator (fun)",
+    "pysa._test_sink (fun)"
+  ],
+  "decorator_location.skip_this_decorator.inner (fun)[captured_variable(f, decorator_location.skip_this_decorator)=decorator_location.decorated_logging2_skip_this_decorator (fun)]": [
+    "decorator_location.decorated_logging2_skip_this_decorator (fun)",
     "pysa._test_sink (fun)"
   ],
   "decorator_location.skip_this_decorator.inner (fun)[captured_variable(f, decorator_location.skip_this_decorator)=decorator_location.decorated_skip_this_decorator (fun)]": [
+    "decorator_location.decorated_skip_this_decorator (fun)",
     "pysa._test_sink (fun)"
   ],
   "decorator_location.with_logging.inner (fun)": [
@@ -118,25 +125,33 @@ Call dependencies
     "pysa._test_sink (fun)"
   ],
   "decorator_location.with_logging.inner (fun)[captured_variable(f, decorator_location.with_logging)=decorator_location.decorated_logging_ignore_this_decorator (fun)]": [
+    "decorator_location.decorated_logging_ignore_this_decorator (fun)",
     "decorator_location.with_logging.some_helper (fun)",
     "pysa._test_sink (fun)"
   ],
   "decorator_location.with_logging.inner (fun)[captured_variable(f, decorator_location.with_logging)=decorator_location.with_logging2.inner (fun)[captured_variable(f, decorator_location.with_logging2)=decorator_location.decorated_logging_logging2 (fun)]]": [
     "decorator_location.with_logging.some_helper (fun)",
+    "decorator_location.with_logging2.inner (fun)[captured_variable(f, decorator_location.with_logging2)=decorator_location.decorated_logging_logging2 (fun)]",
     "pysa._test_sink (fun)"
   ],
   "decorator_location.with_logging.inner (fun)[captured_variable(f, decorator_location.with_logging)=decorator_location.with_logging2.inner (fun)]": [
     "decorator_location.with_logging.some_helper (fun)",
-    "pysa._test_sink (fun)"
+    "decorator_location.with_logging2.inner (fun)", "pysa._test_sink (fun)"
   ],
   "decorator_location.with_logging.some_helper (fun)": [
     "builtins.print (fun)", "pysa._test_sink (fun)"
   ],
   "decorator_location.with_logging2.inner (fun)": [ "pysa._test_sink (fun)" ],
+  "decorator_location.with_logging2.inner (fun)[captured_variable(f, decorator_location.with_logging2)=decorator_location.decorated_logging_logging2 (fun)]": [
+    "decorator_location.decorated_logging_logging2 (fun)",
+    "pysa._test_sink (fun)"
+  ],
   "decorator_location.with_logging2.inner (fun)[captured_variable(f, decorator_location.with_logging2)=decorator_location.skip_this_decorator.inner (fun)[captured_variable(f, decorator_location.skip_this_decorator)=decorator_location.decorated_logging2_skip_this_decorator (fun)]]": [
+    "decorator_location.skip_this_decorator.inner (fun)[captured_variable(f, decorator_location.skip_this_decorator)=decorator_location.decorated_logging2_skip_this_decorator (fun)]",
     "pysa._test_sink (fun)"
   ],
   "decorator_location.with_logging2.inner (fun)[captured_variable(f, decorator_location.with_logging2)=decorator_location.skip_this_decorator.inner (fun)]": [
+    "decorator_location.skip_this_decorator.inner (fun)",
     "pysa._test_sink (fun)"
   ]
 }

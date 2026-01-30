@@ -52,6 +52,22 @@ Higher order call graphs
   "callable": "callable_classes.foo",
   "returned_callables": [],
   "calls": {
+    "20:11-20:12|identifier|p": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "callable_classes.P.__call__",
+              "index": 0,
+              "implicit_receiver": true,
+              "implicit_dunder_call": true,
+              "return_type": [],
+              "receiver_class": "callable_classes.P"
+            }
+          ]
+        }
+      }
+    },
     "20:11-20:17": {
       "call": {
         "calls": [

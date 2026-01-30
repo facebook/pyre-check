@@ -286,6 +286,19 @@
     "callable_line": 129,
     "tito": [
       {
+        "port": "captured_variable(f, decorator_location.identity)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [
+              { "always-via": "obscure:unknown-callee" },
+              { "always-via": "captured-variable" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
         "port": "formal(**kwargs)[*]",
         "taint": [
           {
@@ -550,6 +563,84 @@
       "parameter": "formal(x)"
     },
     "master_handle": "decorator_location.main:5002:0:Call|decorator_location.decorated_ignore_this_decorator_factory|0|formal(x):de9c16696546837dc0f327d4a3cbd5ec"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator_location.main",
+    "callable_line": 146,
+    "code": 5002,
+    "line": 156,
+    "start": 44,
+    "end": 58,
+    "filename": "decorator_location.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 156, "start": 44, "end": 58 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-via": "obscure:model" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" },
+                  { "always-via": "tito" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 156, "start": 44, "end": 58 },
+              "resolves_to": [
+                "decorator_location.ignore_this_decorator_factory.decorator.inner[captured_variable(f, decorator_location.ignore_this_decorator_factory.decorator)=decorator_location.decorated_ignore_this_decorator_factory]"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "156:4-156:59"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure:model" },
+      { "always-type": "integer" },
+      { "always-type": "scalar" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator_location.ignore_this_decorator_factory.decorator.inner",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.ignore_this_decorator_factory.decorator.inner|0|formal(x):561c9d06b7a3c684c5da6ea04040d95d"
   }
 }
 {
@@ -1428,6 +1519,83 @@
 {
   "kind": "model",
   "data": {
+    "callable": "decorator_location.ignore_this_decorator_factory.decorator.inner[captured_variable(f, decorator_location.ignore_this_decorator_factory.decorator)=decorator_location.decorated_ignore_this_decorator_factory]",
+    "filename": "decorator_location.py",
+    "callable_line": 49,
+    "sinks": [
+      {
+        "port": "captured_variable(add, decorator_location.ignore_this_decorator_factory)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" },
+              { "always-via": "tito" },
+              { "always-via": "captured-variable" }
+            ],
+            "tito_positions": [ { "line": 50, "start": 18, "end": 21 } ],
+            "call": {
+              "position": { "line": 50, "start": 14, "end": 21 },
+              "resolves_to": [
+                "decorator_location.decorated_ignore_this_decorator_factory"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "50:12-50:22"
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 50, "start": 14, "end": 15 } ],
+            "call": {
+              "position": { "line": 50, "start": 14, "end": 21 },
+              "resolves_to": [
+                "decorator_location.decorated_ignore_this_decorator_factory"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "50:12-50:22"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "decorator_location.skip_this_decorator.inner[captured_variable(f, decorator_location.skip_this_decorator)=decorator_location.decorated_ignore_then_skip_decorator]",
     "filename": "decorator_location.py",
     "callable_line": 36,
@@ -1450,6 +1618,85 @@
             ],
             "origin": { "line": 37, "start": 19, "end": 20 },
             "call_site": "37:8-37:21"
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "call": {
+              "position": { "line": 38, "start": 10, "end": 11 },
+              "resolves_to": [
+                "decorator_location.decorated_ignore_then_skip_decorator"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "38:8-38:12"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decorator_location.skip_this_decorator.inner[captured_variable(f, decorator_location.skip_this_decorator)=decorator_location.decorated_logging2_skip_this_decorator]",
+    "filename": "decorator_location.py",
+    "callable_line": 36,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 37, "start": 19, "end": 20 },
+            "call_site": "37:8-37:21"
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "call": {
+              "position": { "line": 38, "start": 10, "end": 11 },
+              "resolves_to": [
+                "decorator_location.decorated_logging2_skip_this_decorator"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "38:8-38:12"
+            }
           }
         ]
       }
@@ -1481,6 +1728,30 @@
             ],
             "origin": { "line": 37, "start": 19, "end": 20 },
             "call_site": "37:8-37:21"
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "call": {
+              "position": { "line": 38, "start": 10, "end": 11 },
+              "resolves_to": [
+                "decorator_location.decorated_skip_this_decorator"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "38:8-38:12"
+            }
           }
         ]
       }
@@ -1512,6 +1783,30 @@
             ],
             "origin": { "line": 20, "start": 19, "end": 20 },
             "call_site": "20:8-20:21"
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "call": {
+              "position": { "line": 21, "start": 10, "end": 11 },
+              "resolves_to": [
+                "decorator_location.decorated_logging_ignore_this_decorator"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "21:8-21:12"
+            }
           },
           {
             "kinds": [
@@ -1584,6 +1879,28 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
+              "position": { "line": 21, "start": 10, "end": 11 },
+              "resolves_to": [ "decorator_location.with_logging2.inner" ],
+              "port": "formal(x, position=0)",
+              "call_site": "21:8-21:12"
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "call": {
               "position": { "line": 22, "start": 20, "end": 21 },
               "resolves_to": [
                 "decorator_location.with_logging.some_helper"
@@ -1639,12 +1956,91 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
+              "position": { "line": 21, "start": 10, "end": 11 },
+              "resolves_to": [
+                "decorator_location.with_logging2.inner[captured_variable(f, decorator_location.with_logging2)=decorator_location.decorated_logging_logging2]"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "21:8-21:12"
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "call": {
               "position": { "line": 22, "start": 20, "end": 21 },
               "resolves_to": [
                 "decorator_location.with_logging.some_helper"
               ],
               "port": "formal(x, position=0)",
               "call_site": "22:8-22:22"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decorator_location.with_logging2.inner[captured_variable(f, decorator_location.with_logging2)=decorator_location.decorated_logging_logging2]",
+    "filename": "decorator_location.py",
+    "callable_line": 28,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 29, "start": 19, "end": 20 },
+            "call_site": "29:8-29:21"
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "call": {
+              "position": { "line": 30, "start": 10, "end": 11 },
+              "resolves_to": [
+                "decorator_location.decorated_logging_logging2"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "30:8-30:12"
             }
           }
         ]
@@ -1677,6 +2073,30 @@
             ],
             "origin": { "line": 29, "start": 19, "end": 20 },
             "call_site": "29:8-29:21"
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "call": {
+              "position": { "line": 30, "start": 10, "end": 11 },
+              "resolves_to": [
+                "decorator_location.skip_this_decorator.inner"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "30:8-30:12"
+            }
           }
         ]
       }
@@ -1708,6 +2128,30 @@
             ],
             "origin": { "line": 29, "start": 19, "end": 20 },
             "call_site": "29:8-29:21"
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "call": {
+              "position": { "line": 30, "start": 10, "end": 11 },
+              "resolves_to": [
+                "decorator_location.skip_this_decorator.inner[captured_variable(f, decorator_location.skip_this_decorator)=decorator_location.decorated_logging2_skip_this_decorator]"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "30:8-30:12"
+            }
           }
         ]
       }

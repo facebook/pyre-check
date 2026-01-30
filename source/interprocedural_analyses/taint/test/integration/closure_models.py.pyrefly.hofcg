@@ -377,6 +377,17 @@ Higher order call graphs
   "callable": "closure_models.some_decorator.wrapper_func",
   "returned_callables": [],
   "calls": {
+    "111:8-111:12|identifier|func": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "func",
+            "defining_function": "closure_models.some_decorator"
+          }
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      }
+    },
     "111:8-111:14": {
       "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }

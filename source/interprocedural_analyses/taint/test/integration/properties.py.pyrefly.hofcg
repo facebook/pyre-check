@@ -648,6 +648,31 @@ Higher order call graphs
         ]
       }
     },
+    "188:11-188:24": {
+      "attribute_access": {
+        "properties": [
+          {
+            "target": "properties.PropertyCallable.attribute",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "properties.PropertyCallable"
+          }
+        ],
+        "if_called": {
+          "calls": [
+            {
+              "target": "properties.PropertyCallableReturn.__call__",
+              "index": 0,
+              "implicit_receiver": true,
+              "implicit_dunder_call": true,
+              "return_type": [],
+              "receiver_class": "properties.PropertyCallableReturn"
+            }
+          ]
+        }
+      }
+    },
     "188:11-188:40": {
       "call": {
         "calls": [
