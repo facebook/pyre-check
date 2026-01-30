@@ -5375,6 +5375,48 @@ let build_whole_program_call_graph_for_pyrefly
                   ~location:expression_location
                   ~attribute_access:{ Name.Attribute.base; attribute; origin }
                   call_graph
+            | Expression.Call
+                {
+                  Call.callee =
+                    {
+                      Node.value =
+                        Name
+                          (Name.Attribute
+                            {
+                              base = { Node.value = Name (Name.Identifier "object"); _ };
+                              attribute = "__setattr__";
+                              _;
+                            });
+                      _;
+                    };
+                  arguments =
+                    [
+                      { Call.Argument.value = self; name = None };
+                      {
+                        Call.Argument.value =
+                          {
+                            Node.value =
+                              Expression.Constant
+                                (Constant.String { value = attribute; kind = String });
+                            _;
+                          };
+                        name = None;
+                      };
+                      { Call.Argument.value = _; name = None };
+                    ];
+                  origin = call_origin;
+                } ->
+                let origin =
+                  Some
+                    (Origin.create
+                       ?base:call_origin
+                       ~location:expression_location
+                       Origin.SetAttrConstantLiteral)
+                in
+                add_attribute_accesses
+                  ~location:expression_location
+                  ~attribute_access:{ Name.Attribute.base = self; attribute; origin }
+                  call_graph
             | Expression.Call ({ Call.arguments; _ } as call) ->
                 add_shim_target ~debug ~expression_location ~call ~arguments call_graph
                 |> Option.value ~default:call_graph

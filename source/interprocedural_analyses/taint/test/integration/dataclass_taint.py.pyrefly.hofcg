@@ -771,6 +771,18 @@ Higher order call graphs
           }
         ]
       }
+    },
+    "54:8-54:53|artificial-attribute-access|set-attr-constant-literal": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{dataclass_taint.WeirdDataClass.bad_sink}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
     }
   }
 }

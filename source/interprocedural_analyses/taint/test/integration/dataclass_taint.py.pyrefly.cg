@@ -6,7 +6,8 @@ Call dependencies
     "pysa._test_sink (fun)"
   ],
   "dataclass_taint.WeirdDataClass.__init__ (method)": [
-    "builtins.object.__setattr__ (method)"
+    "builtins.object.__setattr__ (method)",
+    "dataclass_taint.WeirdDataClass.bad_sink (object)"
   ],
   "dataclass_taint.bad_is_tainted (fun)": [
     "builtins.object.__new__ (method)",

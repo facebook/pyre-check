@@ -1417,6 +1417,30 @@
       {
         "port": "formal(bad_sink, position=2)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(another, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{dataclass_taint.WeirdDataClass.bad_sink}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 54, "start": 8, "end": 53 },
+            "caller_interval": [ { "lower": 16, "upper": 17 } ],
+            "is_self_call": false
+          }
+        ]
       }
     ],
     "tito": [
