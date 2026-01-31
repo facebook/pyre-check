@@ -9,7 +9,6 @@
 import ast
 import inspect
 import types
-
 from typing import (
     Any,
     Callable,
@@ -22,7 +21,6 @@ from typing import (
     Union,
 )
 
-import astunparse
 from typing_extensions import Annotated
 
 from .parameter import Parameter
@@ -78,12 +76,38 @@ def extract_parameters(
 def ast_to_pretty_string(ast_expression: ast.expr) -> str:
     """
     This function unparse an expression and modifies the result to make it compatible with the type annotation syntax.
-    For example astunparse.unparse will return `Tuple[(int, int)]\n` when parsing a Tuple annotation.
+    For example ast.unparse will return `Tuple[(int, int)]\n` when parsing a Tuple annotation.
     This function converts this in Tuple[int, int] which is the valid type syntax
     """
-    return (
-        astunparse.unparse(ast_expression).strip().replace("[(", "[").replace(")]", "]")
-    )
+    unparsed = ast.unparse(ast_expression).strip()
+    # Only replace "[(..." at the start of subscripts and "...)]" at the end
+    # to avoid incorrectly modifying tuples inside nested expressions like
+    # Annotated[TestClass, ExampleAnnotation(accesses=(Access.REVIEWED,))]
+    if unparsed.endswith(")]") and "[(" in unparsed:
+        # Check if this is a simple Tuple[(x, y)] pattern by verifying
+        # there's a matching "[(" for the ending ")]"
+        bracket_count = 0
+        paren_count = 0
+        for char in unparsed:
+            if char == "[":
+                bracket_count += 1
+            elif char == "]":
+                bracket_count -= 1
+            elif char == "(":
+                paren_count += 1
+            elif char == ")":
+                paren_count -= 1
+        # Only apply the transformation if brackets and parens are balanced
+        # and the pattern is specifically "[(" followed by ")]"
+        if bracket_count == 0 and paren_count == 0:
+            # Check if it's a simple type subscript like Tuple[(int, int)]
+            # by looking for pattern Type[(...)]
+            import re
+
+            if re.match(r"^[A-Za-z_][A-Za-z0-9_]*\[\(.*\)\]$", unparsed):
+                unparsed = unparsed.replace("[(", "[", 1)
+                unparsed = unparsed[:-2] + "]"
+    return unparsed
 
 
 def strip_custom_annotations(annotation: str) -> str:
