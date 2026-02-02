@@ -690,6 +690,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~call_site
               ~location:argument_location
               ~call_target
+              ~callee
               ~arguments
               ~sink_matches
               ~is_class_method

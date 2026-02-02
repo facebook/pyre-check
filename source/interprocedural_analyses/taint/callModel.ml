@@ -52,6 +52,80 @@ let at_callsite
       expand_model_via_features model
 
 
+module Callee = struct
+  type t = {
+    (* Treat a callee expression at a call site as a `Name.t`, when applicable. *)
+    name: Name.t option;
+    location: Location.t;
+  }
+
+  let from_callee_expression { Node.value; location } =
+    {
+      name =
+        (match value with
+        | Expression.Name name -> Some name
+        | _ -> None);
+      location;
+    }
+
+
+  let from_stringify_call_target
+      ~base
+      ~stringify_origin
+      ~location
+      { CallGraph.CallTarget.target; _ }
+    =
+    let callee_name_from_method_name method_name =
+      Some (Name.Attribute { base; attribute = method_name; origin = stringify_origin })
+    in
+    let name =
+      match Target.get_regular target with
+      | Target.Regular.Method { method_name; _ } -> callee_name_from_method_name method_name
+      | Override { method_name; _ } -> callee_name_from_method_name method_name
+      | Function { name; _ } -> Some (Name.Identifier name)
+      | Object _ -> failwith "callees should be either methods or functions"
+    in
+    { name; location }
+
+
+  (* We do not expect such expressions to affect taint analysis, such as attaching breadcrumbs or
+     having global taint. *)
+  let placeholder_expression = Expression.Constant Constant.NoneLiteral
+
+  let as_argument { name; location } =
+    let callee =
+      match name with
+      | Some name -> Expression.Name name
+      | None -> placeholder_expression
+    in
+    { Call.Argument.name = None; value = Node.create ~location callee }
+
+
+  let get_base = function
+    | { name = Some (Name.Attribute { base; _ }); _ } -> base
+    | { location; _ } -> Node.create ~location placeholder_expression
+
+
+  (* TODO(T114580705): Better precision when deciding if an expression is `self` *)
+  let is_self_call { name; _ } =
+    match name with
+    | Some
+        (Name.Attribute
+          { Name.Attribute.base = { Node.value = Name (Name.Identifier identifier); _ }; _ }) ->
+        String.equal (Identifier.sanitized identifier) "self"
+    | _ -> false
+
+
+  (* TODO(T114580705): Better precision when deciding if an expression is `cls` *)
+  let is_cls_call { name; _ } =
+    match name with
+    | Some
+        (Name.Attribute
+          { Name.Attribute.base = { Node.value = Name (Name.Identifier identifier); _ }; _ }) ->
+        String.equal (Identifier.sanitized identifier) "cls"
+    | _ -> false
+end
+
 module ArgumentMatches = struct
   type argument =
     (* Argument is a concrete expression *)
@@ -376,6 +450,7 @@ let sink_trees_of_argument
     ~call_site
     ~location
     ~call_target:({ CallGraph.CallTarget.target; _ } as call_target)
+    ~callee:{ Callee.name = callee_as_name; _ }
     ~arguments
     ~sink_matches
     ~is_class_method
@@ -401,7 +476,7 @@ let sink_trees_of_argument
     in
     {
       SinkTreeWithHandle.sink_tree;
-      handle = IssueHandle.Sink.make_call ~call_target ~root;
+      handle = IssueHandle.Sink.make_call ~call_target ~root ~callee_as_name;
       port = root;
     }
   in
@@ -763,78 +838,4 @@ module ImplicitArgument = struct
         callee = BackwardState.Tree.join left_callee right_callee;
       }
   end
-end
-
-module Callee = struct
-  type t = {
-    (* Treat a callee expression at a call site as a `Name.t`, when applicable. *)
-    name: Name.t option;
-    location: Location.t;
-  }
-
-  let from_callee_expression { Node.value; location } =
-    {
-      name =
-        (match value with
-        | Expression.Name name -> Some name
-        | _ -> None);
-      location;
-    }
-
-
-  let from_stringify_call_target
-      ~base
-      ~stringify_origin
-      ~location
-      { CallGraph.CallTarget.target; _ }
-    =
-    let callee_name_from_method_name method_name =
-      Some (Name.Attribute { base; attribute = method_name; origin = stringify_origin })
-    in
-    let name =
-      match Target.get_regular target with
-      | Target.Regular.Method { method_name; _ } -> callee_name_from_method_name method_name
-      | Override { method_name; _ } -> callee_name_from_method_name method_name
-      | Function { name; _ } -> Some (Name.Identifier name)
-      | Object _ -> failwith "callees should be either methods or functions"
-    in
-    { name; location }
-
-
-  (* We do not expect such expressions to affect taint analysis, such as attaching breadcrumbs or
-     having global taint. *)
-  let placeholder_expression = Expression.Constant Constant.NoneLiteral
-
-  let as_argument { name; location } =
-    let callee =
-      match name with
-      | Some name -> Expression.Name name
-      | None -> placeholder_expression
-    in
-    { Call.Argument.name = None; value = Node.create ~location callee }
-
-
-  let get_base = function
-    | { name = Some (Name.Attribute { base; _ }); _ } -> base
-    | { location; _ } -> Node.create ~location placeholder_expression
-
-
-  (* TODO(T114580705): Better precision when deciding if an expression is `self` *)
-  let is_self_call { name; _ } =
-    match name with
-    | Some
-        (Name.Attribute
-          { Name.Attribute.base = { Node.value = Name (Name.Identifier identifier); _ }; _ }) ->
-        String.equal (Identifier.sanitized identifier) "self"
-    | _ -> false
-
-
-  (* TODO(T114580705): Better precision when deciding if an expression is `cls` *)
-  let is_cls_call { name; _ } =
-    match name with
-    | Some
-        (Name.Attribute
-          { Name.Attribute.base = { Node.value = Name (Name.Identifier identifier); _ }; _ }) ->
-        String.equal (Identifier.sanitized identifier) "cls"
-    | _ -> false
 end

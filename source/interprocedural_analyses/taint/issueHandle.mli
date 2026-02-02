@@ -12,6 +12,7 @@ module Sink : sig
   type t =
     | Call of {
         callee: Target.t;
+        callee_suffix: string option;
         index: int;
         parameter: Analysis.TaintAccessPath.Root.t;
       }
@@ -29,7 +30,11 @@ module Sink : sig
       }
   [@@deriving compare, equal, hash, sexp, show]
 
-  val make_call : call_target:CallGraph.CallTarget.t -> root:Analysis.TaintAccessPath.Root.t -> t
+  val make_call
+    :  call_target:CallGraph.CallTarget.t ->
+    root:Analysis.TaintAccessPath.Root.t ->
+    callee_as_name:Ast.Expression.Name.t option ->
+    t
 
   val make_global : call_target:CallGraph.CallTarget.t -> t
 

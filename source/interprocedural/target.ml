@@ -362,6 +362,18 @@ let as_regular_exn = function
   | Parameterized _ -> failwith "expect `Regular`"
 
 
+let collect_nested_regular_targets =
+  let rec fold sofar = function
+    | Regular regular -> regular :: sofar
+    | Parameterized { regular; parameters } ->
+        ParameterMap.fold
+          (fun _ parameter sofar -> fold sofar parameter)
+          parameters
+          (regular :: sofar)
+  in
+  fold []
+
+
 let create_function ?kind reference = Function (Function.create ?kind reference) |> from_regular
 
 let create_method ?kind class_name method_name =

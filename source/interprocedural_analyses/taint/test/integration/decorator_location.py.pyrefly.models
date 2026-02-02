@@ -349,6 +349,80 @@
     "callable": "decorator_location.main",
     "callable_line": 146,
     "code": 5002,
+    "line": 160,
+    "start": 41,
+    "end": 55,
+    "filename": "decorator_location.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 160, "start": 41, "end": 55 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 160, "start": 41, "end": 55 },
+              "resolves_to": [
+                "decorator_location.skip_this_decorator.inner[captured_variable(f, decorator_location.skip_this_decorator)=decorator_location.decorated_ignore_then_skip_decorator]"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "160:4-160:56"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-type": "integer" },
+      { "always-type": "scalar" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator_location.decorated_ignore_then_skip_decorator",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.decorated_ignore_then_skip_decorator|0|formal(x):043568a048472a4cab8e24ec478d8dda"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator_location.main",
+    "callable_line": 146,
+    "code": 5002,
     "line": 154,
     "start": 36,
     "end": 50,
@@ -546,57 +620,7 @@
               "port": "formal(x, position=0)",
               "call_site": "156:4-156:59"
             }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-type": "integer" },
-      { "always-type": "scalar" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "decorator_location.decorated_ignore_this_decorator_factory",
-      "index": 0,
-      "parameter": "formal(x)"
-    },
-    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.decorated_ignore_this_decorator_factory|0|formal(x):de9c16696546837dc0f327d4a3cbd5ec"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "decorator_location.main",
-    "callable_line": 146,
-    "code": 5002,
-    "line": 156,
-    "start": 44,
-    "end": 58,
-    "filename": "decorator_location.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 156, "start": 44, "end": 58 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
+          },
           {
             "kinds": [
               {
@@ -629,305 +653,18 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "always-via": "obscure:model" },
+      { "via": "obscure:model" },
       { "always-type": "integer" },
       { "always-type": "scalar" },
-      { "always-via": "tito" }
+      { "via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "decorator_location.ignore_this_decorator_factory.decorator.inner",
+      "callee": "decorator_location.decorated_ignore_this_decorator_factory",
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.ignore_this_decorator_factory.decorator.inner|0|formal(x):561c9d06b7a3c684c5da6ea04040d95d"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "decorator_location.main",
-    "callable_line": 146,
-    "code": 5002,
-    "line": 166,
-    "start": 19,
-    "end": 33,
-    "filename": "decorator_location.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 166, "start": 19, "end": 33 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 166, "start": 19, "end": 33 },
-              "resolves_to": [
-                "decorator_location.pass_local_variable_to_x.inner"
-              ],
-              "port": "formal(request, position=0)",
-              "call_site": "166:4-166:42"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "decorator_location.pass_local_variable_to_x.inner",
-      "index": 1,
-      "parameter": "formal(request)"
-    },
-    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.pass_local_variable_to_x.inner|1|formal(request):82f7d4577e8382e80afb2647653556b6"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "decorator_location.main",
-    "callable_line": 146,
-    "code": 5002,
-    "line": 150,
-    "start": 34,
-    "end": 48,
-    "filename": "decorator_location.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 150, "start": 34, "end": 48 }
-          },
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 160, "start": 41, "end": 55 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "always-via": "special_sink" },
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 150, "start": 34, "end": 48 },
-              "resolves_to": [
-                "decorator_location.skip_this_decorator.inner[captured_variable(f, decorator_location.skip_this_decorator)=decorator_location.decorated_skip_this_decorator]"
-              ],
-              "port": "formal(x, position=0)",
-              "call_site": "150:4-150:49"
-            }
-          },
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "always-via": "special_sink" },
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 160, "start": 41, "end": 55 },
-              "resolves_to": [
-                "decorator_location.skip_this_decorator.inner[captured_variable(f, decorator_location.skip_this_decorator)=decorator_location.decorated_ignore_then_skip_decorator]"
-              ],
-              "port": "formal(x, position=0)",
-              "call_site": "160:4-160:56"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-type": "integer" },
-      { "always-type": "scalar" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "decorator_location.skip_this_decorator.inner",
-      "index": 0,
-      "parameter": "formal(x)"
-    },
-    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.skip_this_decorator.inner|0|formal(x):b156c6080de5dab0d8b3254420661dce"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "decorator_location.main",
-    "callable_line": 146,
-    "code": 5002,
-    "line": 148,
-    "start": 31,
-    "end": 45,
-    "filename": "decorator_location.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 148, "start": 31, "end": 45 }
-          },
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 162, "start": 44, "end": 58 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "always-via": "special_sink" },
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 148, "start": 31, "end": 45 },
-              "resolves_to": [
-                "decorator_location.with_logging.inner[captured_variable(f, decorator_location.with_logging)=decorator_location.with_logging2.inner[captured_variable(f, decorator_location.with_logging2)=decorator_location.decorated_logging_logging2]]"
-              ],
-              "port": "formal(x, position=0)",
-              "call_site": "148:4-148:46"
-            }
-          },
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "always-via": "special_sink" },
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 162, "start": 44, "end": 58 },
-              "resolves_to": [
-                "decorator_location.with_logging.inner[captured_variable(f, decorator_location.with_logging)=decorator_location.decorated_logging_ignore_this_decorator]"
-              ],
-              "port": "formal(x, position=0)",
-              "call_site": "162:4-162:59"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-type": "integer" },
-      { "always-type": "scalar" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "decorator_location.with_logging.inner",
-      "index": 0,
-      "parameter": "formal(x)"
-    },
-    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.with_logging.inner|0|formal(x):eff32f2e762a45be1fd1ddec49d80960"
+    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.decorated_ignore_this_decorator_factory|0|formal(x):de9c16696546837dc0f327d4a3cbd5ec"
   }
 }
 {
@@ -997,11 +734,300 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "decorator_location.with_logging2.inner",
+      "callee": "decorator_location.decorated_logging2_skip_this_decorator",
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.with_logging2.inner|0|formal(x):674013cf71f9d36fa6e4f601661b0559"
+    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.decorated_logging2_skip_this_decorator|0|formal(x):c8486e09d329a9bf36860938c961e0d2"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator_location.main",
+    "callable_line": 146,
+    "code": 5002,
+    "line": 162,
+    "start": 44,
+    "end": 58,
+    "filename": "decorator_location.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 162, "start": 44, "end": 58 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 162, "start": 44, "end": 58 },
+              "resolves_to": [
+                "decorator_location.with_logging.inner[captured_variable(f, decorator_location.with_logging)=decorator_location.decorated_logging_ignore_this_decorator]"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "162:4-162:59"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-type": "integer" },
+      { "always-type": "scalar" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator_location.decorated_logging_ignore_this_decorator",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.decorated_logging_ignore_this_decorator|0|formal(x):5a3aa72f4ec0faeb9474ef269b1afd91"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator_location.main",
+    "callable_line": 146,
+    "code": 5002,
+    "line": 148,
+    "start": 31,
+    "end": 45,
+    "filename": "decorator_location.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 148, "start": 31, "end": 45 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 148, "start": 31, "end": 45 },
+              "resolves_to": [
+                "decorator_location.with_logging.inner[captured_variable(f, decorator_location.with_logging)=decorator_location.with_logging2.inner[captured_variable(f, decorator_location.with_logging2)=decorator_location.decorated_logging_logging2]]"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "148:4-148:46"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-type": "integer" },
+      { "always-type": "scalar" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator_location.decorated_logging_logging2",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.decorated_logging_logging2|0|formal(x):665ac0149845861e1115c1114dbdd17d"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator_location.main",
+    "callable_line": 146,
+    "code": 5002,
+    "line": 150,
+    "start": 34,
+    "end": 48,
+    "filename": "decorator_location.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 150, "start": 34, "end": 48 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 150, "start": 34, "end": 48 },
+              "resolves_to": [
+                "decorator_location.skip_this_decorator.inner[captured_variable(f, decorator_location.skip_this_decorator)=decorator_location.decorated_skip_this_decorator]"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "150:4-150:49"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-type": "integer" },
+      { "always-type": "scalar" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator_location.decorated_skip_this_decorator",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.decorated_skip_this_decorator|0|formal(x):3de023c274bd2f80301ef72415ef0ce1"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator_location.main",
+    "callable_line": 146,
+    "code": 5002,
+    "line": 166,
+    "start": 19,
+    "end": 33,
+    "filename": "decorator_location.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 166, "start": 19, "end": 33 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 166, "start": 19, "end": 33 },
+              "resolves_to": [
+                "decorator_location.pass_local_variable_to_x.inner"
+              ],
+              "port": "formal(request, position=0)",
+              "call_site": "166:4-166:42"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator_location.pass_local_variable_to_x.inner",
+      "index": 1,
+      "parameter": "formal(request)"
+    },
+    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.pass_local_variable_to_x.inner|1|formal(request):82f7d4577e8382e80afb2647653556b6"
   }
 }
 {

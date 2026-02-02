@@ -134,6 +134,8 @@ val as_regular_exn : t -> Regular.t
 
 val strip_parameters : t -> t
 
+val collect_nested_regular_targets : t -> Regular.t list
+
 val get_corresponding_method_exn : must_be_regular:bool -> t -> t
 
 (* Accessors. *)
