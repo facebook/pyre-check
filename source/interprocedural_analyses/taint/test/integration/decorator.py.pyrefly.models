@@ -840,26 +840,6 @@
             "call": {
               "position": { "line": 224, "start": 16, "end": 30 },
               "resolves_to": [
-                "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, decorator.with_logging_args_kwargs_no_sink)=decorator.with_logging_args_kwargs.inner]"
-              ],
-              "port": "formal(**kwargs)",
-              "call_site": "224:4-224:31"
-            }
-          },
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "length": 2,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 224, "start": 16, "end": 30 },
-              "resolves_to": [
                 "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, decorator.with_logging_args_kwargs_no_sink)=decorator.with_logging_args_kwargs.inner[captured_variable(f, decorator.with_logging_args_kwargs)=decorator.Foo.bar]]"
               ],
               "port": "formal(**kwargs)",
@@ -2321,24 +2301,6 @@
             ],
             "call": {
               "position": { "line": 94, "start": 17, "end": 35 },
-              "resolves_to": [ "decorator.with_logging_sink.inner" ],
-              "port": "formal(y, position=0)",
-              "call_site": "94:8-94:36"
-            }
-          },
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 94, "start": 17, "end": 35 },
               "resolves_to": [
                 "decorator.with_logging_sink.inner[captured_variable(callable, decorator.with_logging_sink)=decorator.foo_with_shady_decorators]"
               ],
@@ -2591,25 +2553,6 @@
       {
         "port": "formal(x, position=2)",
         "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "length": 2,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 192, "start": 20, "end": 21 },
-              "resolves_to": [
-                "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, decorator.with_logging_args_kwargs_no_sink)=decorator.with_logging_args_kwargs.inner]"
-              ],
-              "port": "formal(**kwargs)",
-              "call_site": "192:8-192:22"
-            },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
-          },
           {
             "kinds": [
               {
@@ -3122,36 +3065,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, decorator.with_logging_args_kwargs_no_sink)=decorator.with_logging_args_kwargs.inner]",
-    "filename": "decorator.py",
-    "callable_line": 73,
-    "sinks": [
-      {
-        "port": "formal(**kwargs)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 74, "start": 17, "end": 25 },
-              "resolves_to": [ "decorator.with_logging_args_kwargs.inner" ],
-              "port": "formal(**kwargs)",
-              "call_site": "74:8-74:26"
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, decorator.with_logging_args_kwargs_no_sink)=decorator.Foo.foo]",
     "filename": "decorator.py",
     "callable_line": 73,
@@ -3481,38 +3394,6 @@
             ],
             "origin": { "line": 86, "start": 19, "end": 20 },
             "call_site": "86:8-86:21"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "decorator.with_logging_source.inner[captured_variable(callable, decorator.with_logging_source)=decorator.with_logging_sink.inner]",
-    "filename": "decorator.py",
-    "callable_line": 93,
-    "sinks": [
-      {
-        "port": "formal(y, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 94, "start": 17, "end": 18 } ],
-            "call": {
-              "position": { "line": 94, "start": 17, "end": 35 },
-              "resolves_to": [ "decorator.with_logging_sink.inner" ],
-              "port": "formal(y, position=0)",
-              "call_site": "94:8-94:36"
-            }
           }
         ]
       }

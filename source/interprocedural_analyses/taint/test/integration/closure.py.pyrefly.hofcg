@@ -104,11 +104,6 @@ Higher order call graphs
       "define": {
         "define_targets": [
           {
-            "target": "closure.ignored_decorator.wrapper",
-            "index": 0,
-            "return_type": []
-          },
-          {
             "target": "closure.ignored_decorator.wrapper[captured_variable(function, closure.ignored_decorator)=closure.async_nonlocal_closure_tito_ignore_decorator.inner]",
             "index": 0,
             "return_type": []
@@ -119,11 +114,6 @@ Higher order call graphs
     "471:19-471:36": {
       "call": {
         "calls": [
-          {
-            "target": "closure.async_tito[formal(function, position=0)=closure.ignored_decorator.wrapper]",
-            "index": 0,
-            "return_type": []
-          },
           {
             "target": "closure.async_tito[formal(function, position=0)=closure.ignored_decorator.wrapper[captured_variable(function, closure.ignored_decorator)=closure.async_nonlocal_closure_tito_ignore_decorator.inner]]",
             "index": 0,
@@ -183,11 +173,6 @@ Higher order call graphs
   "callable": "closure.async_nonlocal_closure_tito_ignore_decorator.inner@decorated",
   "returned_callables": [
     {
-      "target": "closure.ignored_decorator.wrapper",
-      "index": 0,
-      "return_type": []
-    },
-    {
       "target": "closure.ignored_decorator.wrapper[captured_variable(function, closure.ignored_decorator)=closure.async_nonlocal_closure_tito_ignore_decorator.inner]",
       "index": 0,
       "return_type": []
@@ -235,11 +220,6 @@ Higher order call graphs
       "define": {
         "define_targets": [
           {
-            "target": "closure.decorator.wrapper",
-            "index": 0,
-            "return_type": []
-          },
-          {
             "target": "closure.decorator.wrapper[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
             "index": 0,
             "return_type": []
@@ -250,11 +230,6 @@ Higher order call graphs
     "458:19-458:36": {
       "call": {
         "calls": [
-          {
-            "target": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper]",
-            "index": 0,
-            "return_type": []
-          },
           {
             "target": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner]]",
             "index": 0,
@@ -313,7 +288,6 @@ Higher order call graphs
 {
   "callable": "closure.async_nonlocal_closure_tito_with_decorator.inner@decorated",
   "returned_callables": [
-    { "target": "closure.decorator.wrapper", "index": 0, "return_type": [] },
     {
       "target": "closure.decorator.wrapper[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
       "index": 0,
@@ -3083,40 +3057,6 @@ Higher order call graphs
   }
 }
 {
-  "callable": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper]",
-  "returned_callables": [],
-  "calls": {
-    "445:17-445:27": {
-      "call": {
-        "calls": [
-          {
-            "target": "closure.decorator.wrapper",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    }
-  }
-}
-{
-  "callable": "closure.async_tito[formal(function, position=0)=closure.ignored_decorator.wrapper]",
-  "returned_callables": [],
-  "calls": {
-    "445:17-445:27": {
-      "call": {
-        "calls": [
-          {
-            "target": "closure.ignored_decorator.wrapper",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    }
-  }
-}
-{
   "callable": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner]]",
   "returned_callables": [],
   "calls": {
@@ -3153,7 +3093,6 @@ Higher order call graphs
 {
   "callable": "closure.decorator[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
   "returned_callables": [
-    { "target": "closure.decorator.wrapper", "index": 0, "return_type": [] },
     {
       "target": "closure.decorator.wrapper[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner]",
       "index": 0,
@@ -3232,11 +3171,6 @@ Higher order call graphs
 {
   "callable": "closure.ignored_decorator[formal(function, position=0)=closure.async_nonlocal_closure_tito_ignore_decorator.inner]",
   "returned_callables": [
-    {
-      "target": "closure.ignored_decorator.wrapper",
-      "index": 0,
-      "return_type": []
-    },
     {
       "target": "closure.ignored_decorator.wrapper[captured_variable(function, closure.ignored_decorator)=closure.async_nonlocal_closure_tito_ignore_decorator.inner]",
       "index": 0,

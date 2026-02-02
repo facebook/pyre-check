@@ -4460,68 +4460,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper]",
-    "filename": "closure.py",
-    "callable_line": 444,
-    "tito": [
-      {
-        "port": "captured_variable(function, closure.decorator)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure:unknown-callee" },
-              { "always-via": "captured-variable" }
-            ],
-            "tito_positions": [ { "line": 445, "start": 17, "end": 27 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "closure.async_tito[formal(function, position=0)=closure.ignored_decorator.wrapper]",
-    "filename": "closure.py",
-    "callable_line": 444,
-    "tito": [
-      {
-        "port": "captured_variable(function, closure.ignored_decorator)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure:unknown-callee" },
-              { "always-via": "captured-variable" }
-            ],
-            "tito_positions": [ { "line": 445, "start": 17, "end": 27 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner]]",
     "filename": "closure.py",
     "callable_line": 444,

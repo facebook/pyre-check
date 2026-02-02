@@ -3166,6 +3166,30 @@ module HigherOrderCallGraph = struct
       |> CallTarget.Set.join (State.get TaintAccessPath.Root.LocalResult state)
 
 
+    (* Join a set of call targets from the original call graph with targets inferred from the
+       analysis. *)
+    let join_original_targets_with_inferred ~original ~inferred =
+      let fold_inferred { CallTarget.target = inferred_target; _ } original_targets =
+        (* If we inferred a parameterized target, drop the non-parameterized version from the
+           original set *)
+        match inferred_target with
+        | Target.Parameterized { regular = inferred_target; _ } ->
+            CallTarget.Set.transform
+              CallTarget.Set.Element
+              Filter
+              ~f:(fun { CallTarget.target; _ } ->
+                match target with
+                | Target.Regular target when Target.Regular.equal target inferred_target -> false
+                | _ -> true)
+              original_targets
+        | _ -> original_targets
+      in
+      let original =
+        CallTarget.Set.fold CallTarget.Set.Element ~init:original ~f:fold_inferred inferred
+      in
+      CallTarget.Set.join original inferred
+
+
     let cartesian_product_with_limit ~limit ~message_when_exceeding_limit list =
       match limit, list with
       | Some limit, head :: tail when limit > 0 ->
@@ -3936,7 +3960,10 @@ module HigherOrderCallGraph = struct
                 (PyrePysaApi.InContext.root_of_identifier pyre_in_context ~location ~identifier)
                 state
             in
-            CallTarget.Set.join global_callables callables_from_variable, state
+            ( join_original_targets_with_inferred
+                ~original:global_callables
+                ~inferred:callables_from_variable,
+              state )
         | Name (Name.Attribute ({ Name.Attribute.base; _ } as attribute_access)) ->
             let _, state = analyze_expression ~pyre_in_context ~state ~expression:base in
             let callables =
@@ -4383,7 +4410,7 @@ let higher_order_call_graph_of_define
   log
     ~debug:Context.debug
     "Building higher order call graph of `%a` with initial state `%a`. Define call graph: `%a`"
-    Target.pp
+    Target.pp_external
     callable
     HigherOrderCallGraph.State.pp
     initial_state
@@ -4422,14 +4449,24 @@ let higher_order_call_graph_of_define
     |> Option.value ~default:CallTarget.Set.bottom
   in
   let call_indexer = CallGraph.Indexer.create () in
-  {
-    HigherOrderCallGraph.returned_callables;
-    call_graph =
-      !Context.output_define_call_graph
-      |> DefineCallGraph.filter_empty_attribute_access
-      |> DefineCallGraph.dedup_and_sort
-      |> DefineCallGraph.regenerate_call_indices ~indexer:call_indexer;
-  }
+  let higher_order_call_graph =
+    {
+      HigherOrderCallGraph.returned_callables;
+      call_graph =
+        !Context.output_define_call_graph
+        |> DefineCallGraph.filter_empty_attribute_access
+        |> DefineCallGraph.dedup_and_sort
+        |> DefineCallGraph.regenerate_call_indices ~indexer:call_indexer;
+    }
+  in
+  log
+    ~debug:Context.debug
+    "Built higher order call graph of `%a`: `%a`"
+    Target.pp_external
+    callable
+    HigherOrderCallGraph.pp
+    higher_order_call_graph;
+  higher_order_call_graph
 
 
 let call_graph_of_define

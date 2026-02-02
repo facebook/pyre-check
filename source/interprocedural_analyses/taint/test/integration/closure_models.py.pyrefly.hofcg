@@ -779,11 +779,6 @@ Higher order call graphs
       "define": {
         "define_targets": [
           {
-            "target": "closure_models.some_decorator.wrapper_func",
-            "index": 0,
-            "return_type": []
-          },
-          {
             "target": "closure_models.some_decorator.wrapper_func[captured_variable(func, closure_models.some_decorator)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable]",
             "index": 0,
             "return_type": []
@@ -819,11 +814,6 @@ Higher order call graphs
 {
   "callable": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable@decorated",
   "returned_callables": [
-    {
-      "target": "closure_models.some_decorator.wrapper_func",
-      "index": 0,
-      "return_type": []
-    },
     {
       "target": "closure_models.some_decorator.wrapper_func[captured_variable(func, closure_models.some_decorator)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable]",
       "index": 0,
@@ -1098,11 +1088,6 @@ Higher order call graphs
 {
   "callable": "closure_models.some_decorator[formal(func, position=0)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable]",
   "returned_callables": [
-    {
-      "target": "closure_models.some_decorator.wrapper_func",
-      "index": 0,
-      "return_type": []
-    },
     {
       "target": "closure_models.some_decorator.wrapper_func[captured_variable(func, closure_models.some_decorator)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable]",
       "index": 0,
