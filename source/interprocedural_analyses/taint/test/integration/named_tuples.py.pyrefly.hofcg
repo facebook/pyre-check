@@ -21,7 +21,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{named_tuples.MyNamedTuple.__init__}",
+              "target": "named_tuples.MyNamedTuple.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -489,7 +489,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "Overrides{named_tuples.MyNamedTuple.__init__}",
+            "target": "named_tuples.MyNamedTuple.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],

@@ -35,27 +35,6 @@ Higher order call graphs
               "implicit_receiver": true,
               "return_type": [],
               "receiver_class": "model_query_parent_decorator.TestC"
-            },
-            {
-              "target": "model_query_parent_decorator.TestC_1.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "model_query_parent_decorator.TestC"
-            },
-            {
-              "target": "model_query_parent_decorator.TestC_2.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "model_query_parent_decorator.TestC"
-            },
-            {
-              "target": "model_query_parent_decorator.TestC_3.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "model_query_parent_decorator.TestC"
             }
           ]
         }
@@ -88,27 +67,6 @@ Higher order call graphs
           "init_calls": [
             {
               "target": "builtins.object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "model_query_parent_decorator.TestC"
-            },
-            {
-              "target": "model_query_parent_decorator.TestC_1.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "model_query_parent_decorator.TestC"
-            },
-            {
-              "target": "model_query_parent_decorator.TestC_2.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "model_query_parent_decorator.TestC"
-            },
-            {
-              "target": "model_query_parent_decorator.TestC_3.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -158,27 +116,6 @@ Higher order call graphs
           "init_calls": [
             {
               "target": "builtins.object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "model_query_parent_decorator.TestC"
-            },
-            {
-              "target": "model_query_parent_decorator.TestC_1.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "model_query_parent_decorator.TestC"
-            },
-            {
-              "target": "model_query_parent_decorator.TestC_2.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "model_query_parent_decorator.TestC"
-            },
-            {
-              "target": "model_query_parent_decorator.TestC_3.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],

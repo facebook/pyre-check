@@ -22,27 +22,6 @@ Higher order call graphs
               "implicit_receiver": true,
               "return_type": [],
               "receiver_class": "combinatory_ports.Base"
-            },
-            {
-              "target": "combinatory_ports.A.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "combinatory_ports.Base"
-            },
-            {
-              "target": "combinatory_ports.B.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "combinatory_ports.Base"
-            },
-            {
-              "target": "combinatory_ports.C.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "combinatory_ports.Base"
             }
           ]
         }
@@ -66,27 +45,6 @@ Higher order call graphs
               "implicit_receiver": true,
               "return_type": [],
               "receiver_class": "combinatory_ports.Base"
-            },
-            {
-              "target": "combinatory_ports.A.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "combinatory_ports.Base"
-            },
-            {
-              "target": "combinatory_ports.B.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "combinatory_ports.Base"
-            },
-            {
-              "target": "combinatory_ports.C.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "combinatory_ports.Base"
             }
           ]
         }
@@ -106,27 +64,6 @@ Higher order call graphs
           "init_calls": [
             {
               "target": "builtins.object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "combinatory_ports.Base"
-            },
-            {
-              "target": "combinatory_ports.A.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "combinatory_ports.Base"
-            },
-            {
-              "target": "combinatory_ports.B.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "combinatory_ports.Base"
-            },
-            {
-              "target": "combinatory_ports.C.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],

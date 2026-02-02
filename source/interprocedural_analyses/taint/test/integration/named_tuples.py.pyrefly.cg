@@ -48,7 +48,7 @@ Call dependencies
     "pysa._test_source (fun)"
   ],
   "named_tuples.tainted_tuple (fun)": [
-    "named_tuples.MyNamedTuple.__init__ (override)",
+    "named_tuples.MyNamedTuple.__init__ (method)",
     "named_tuples.MyNamedTuple.__new__ (method)", "pysa._test_source (fun)"
   ]
 }

@@ -70,7 +70,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "Overrides{builtins.object.__init__}",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],

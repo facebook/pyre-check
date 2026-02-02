@@ -17,7 +17,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{model_query_transitive_extends.Test1_C.__init__}",
+              "target": "model_query_transitive_extends.Test1_C.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -40,7 +40,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{model_query_transitive_extends.Test1_C1.__init__}",
+              "target": "model_query_transitive_extends.Test1_C1.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],

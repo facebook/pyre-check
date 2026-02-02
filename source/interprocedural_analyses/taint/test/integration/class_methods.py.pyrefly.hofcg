@@ -26,13 +26,6 @@ Higher order call graphs
               "implicit_receiver": true,
               "return_type": [],
               "receiver_class": "class_methods.C"
-            },
-            {
-              "target": "class_methods.D.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_methods.C"
             }
           ]
         }
@@ -498,13 +491,6 @@ Higher order call graphs
               "implicit_receiver": true,
               "return_type": [],
               "receiver_class": "class_methods.C"
-            },
-            {
-              "target": "class_methods.D.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_methods.C"
             }
           ]
         }
@@ -548,13 +534,6 @@ Higher order call graphs
               "implicit_receiver": true,
               "return_type": [],
               "receiver_class": "class_methods.C"
-            },
-            {
-              "target": "class_methods.D.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_methods.C"
             }
           ]
         }
@@ -592,13 +571,6 @@ Higher order call graphs
           "init_calls": [
             {
               "target": "builtins.object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_methods.C"
-            },
-            {
-              "target": "class_methods.D.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -646,13 +618,6 @@ Higher order call graphs
               "implicit_receiver": true,
               "return_type": [],
               "receiver_class": "class_methods.C"
-            },
-            {
-              "target": "class_methods.D.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_methods.C"
             }
           ]
         }
@@ -692,13 +657,6 @@ Higher order call graphs
           "init_calls": [
             {
               "target": "builtins.object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_methods.C"
-            },
-            {
-              "target": "class_methods.D.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],

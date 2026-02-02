@@ -40,7 +40,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{taint_in_taint_out.GetQuery.__init__}",
+              "target": "taint_in_taint_out.GetQuery.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -2932,7 +2932,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{taint_in_taint_out.GetQuery.__init__}",
+              "target": "taint_in_taint_out.GetQuery.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],

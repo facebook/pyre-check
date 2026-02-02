@@ -68,20 +68,6 @@ Higher order call graphs
               "implicit_receiver": true,
               "return_type": [],
               "receiver_class": "model_query.AttributeTestBase"
-            },
-            {
-              "target": "model_query.AttributeTestClass1.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "model_query.AttributeTestBase"
-            },
-            {
-              "target": "model_query.AttributeTestClass2.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "model_query.AttributeTestBase"
             }
           ]
         }
@@ -105,20 +91,6 @@ Higher order call graphs
               "implicit_receiver": true,
               "return_type": [],
               "receiver_class": "model_query.AttributeTestBase"
-            },
-            {
-              "target": "model_query.AttributeTestClass1.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "model_query.AttributeTestBase"
-            },
-            {
-              "target": "model_query.AttributeTestClass2.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "model_query.AttributeTestBase"
             }
           ]
         }
@@ -137,7 +109,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{model_query.AttributeTestClass7.__init__}",
+              "target": "model_query.AttributeTestClass7.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],

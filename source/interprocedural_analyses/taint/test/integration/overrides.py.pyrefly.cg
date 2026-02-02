@@ -64,16 +64,16 @@ Call dependencies
     "overrides.Base.methodB (method)"
   ],
   "overrides.testMakeB (fun)": [
-    "builtins.object.__new__ (method)", "overrides.B.__init__ (override)",
+    "builtins.object.__new__ (method)", "overrides.B.__init__ (method)",
     "overrides.B.methodB (override)"
   ],
   "overrides.testMakeBase (fun)": [
-    "builtins.object.__new__ (method)", "overrides.Base.__init__ (override)",
+    "builtins.object.__new__ (method)", "overrides.Base.__init__ (method)",
     "overrides.Base.methodB (override)"
   ],
   "overrides.testMakeC (fun)": [
     "builtins.object.__new__ (method)", "overrides.B.methodB (override)",
-    "overrides.C.__init__ (override)"
+    "overrides.C.__init__ (method)"
   ],
   "overrides.testMakeD (fun)": [
     "builtins.object.__new__ (method)", "overrides.D.__init__ (method)",

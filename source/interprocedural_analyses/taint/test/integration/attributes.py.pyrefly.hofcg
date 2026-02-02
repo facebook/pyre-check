@@ -28,42 +28,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "attributes.PartiallyZonedDict.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "typing.MutableMapping"
-            },
-            {
-              "target": "builtins.dict.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "typing.MutableMapping"
-            },
-            {
               "target": "builtins.object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "typing.MutableMapping"
-            },
-            {
-              "target": "collections.ChainMap.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "typing.MutableMapping"
-            },
-            {
-              "target": "collections.UserDict.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "typing.MutableMapping"
-            },
-            {
-              "target": "os._Environ.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],

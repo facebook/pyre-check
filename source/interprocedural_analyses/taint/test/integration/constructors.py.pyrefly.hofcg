@@ -40,7 +40,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{constructors.BaseConstructor.__init__}",
+              "target": "constructors.BaseConstructor.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -63,7 +63,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{constructors.ConstructorWithTitoModel.__init__}",
+              "target": "constructors.ConstructorWithTitoModel.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -86,7 +86,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{constructors.ConstructorTitoModelQuery.__init__}",
+              "target": "constructors.ConstructorTitoModelQuery.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -109,7 +109,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{constructors.ConstructorObscure.__init__}",
+              "target": "constructors.ConstructorObscure.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -133,13 +133,6 @@ Higher order call graphs
           "init_calls": [
             {
               "target": "builtins.object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "constructors.NoConstructor"
-            },
-            {
-              "target": "constructors.ParentWithNoConstructor.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -1102,7 +1095,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{builtins.object.__init__}",
+              "target": "builtins.object.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],

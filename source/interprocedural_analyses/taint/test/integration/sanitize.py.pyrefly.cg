@@ -550,9 +550,8 @@ Call dependencies
     "sanitize.sink_taint_sanitize_b_sanitize_a (fun)"
   ],
   "sanitize.test1 (fun)": [
-    "builtins.object.__init__ (override)",
-    "builtins.object.__new__ (method)", "pysa._test_source (fun)",
-    "sanitize.test2 (fun)", "sanitize.test3 (fun)"
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "pysa._test_source (fun)", "sanitize.test2 (fun)", "sanitize.test3 (fun)"
   ],
   "sanitize.test2 (fun)": [
     "pysa._test_sink (fun)", "sanitize.return_taint_sanitize (fun)"

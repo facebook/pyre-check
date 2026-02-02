@@ -17,7 +17,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{overrides.Base.__init__}",
+              "target": "overrides.Base.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -40,7 +40,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{overrides.Base.__init__}",
+              "target": "overrides.Base.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -63,7 +63,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{overrides.B.__init__}",
+              "target": "overrides.B.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -86,7 +86,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{overrides.C.__init__}",
+              "target": "overrides.C.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -496,7 +496,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{overrides.B.__init__}",
+              "target": "overrides.B.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -565,7 +565,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{overrides.Base.__init__}",
+              "target": "overrides.Base.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -634,7 +634,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{overrides.C.__init__}",
+              "target": "overrides.C.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -785,7 +785,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "Overrides{overrides.B.__init__}",
+            "target": "overrides.B.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -825,7 +825,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "Overrides{overrides.Base.__init__}",
+            "target": "overrides.Base.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -865,7 +865,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "Overrides{overrides.C.__init__}",
+            "target": "overrides.C.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -1015,7 +1015,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{overrides.B.__init__}",
+              "target": "overrides.B.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -1071,7 +1071,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{overrides.Base.__init__}",
+              "target": "overrides.Base.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -1127,7 +1127,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{overrides.C.__init__}",
+              "target": "overrides.C.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -1352,7 +1352,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{overrides.B.__init__}",
+              "target": "overrides.B.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -1441,7 +1441,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{overrides.B.__init__}",
+              "target": "overrides.B.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],
@@ -1504,7 +1504,7 @@ Higher order call graphs
           ],
           "init_calls": [
             {
-              "target": "Overrides{overrides.C.__init__}",
+              "target": "overrides.C.__init__",
               "index": 0,
               "implicit_receiver": true,
               "return_type": [],

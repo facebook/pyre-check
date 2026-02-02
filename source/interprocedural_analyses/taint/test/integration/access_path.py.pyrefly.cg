@@ -12,9 +12,8 @@ Call dependencies
   ],
   "access_path.indexes_are_attributes_for___dict__ (fun)": [
     "builtins.dict.__getitem__ (method)",
-    "builtins.object.__init__ (override)",
-    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
-    "pysa._test_source (fun)"
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "access_path.indexes_are_strings (fun)": [
     "builtins.dict.__getitem__ (method)",
