@@ -1082,6 +1082,136 @@
 {
   "kind": "model",
   "data": {
+    "callable": "ssl.Purpose.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(oid, position=4)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[oid]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(longname, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[longname]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(shortname, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[shortname]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(nid, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[nid]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ssl._ASN1Object.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(oid, position=4)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[oid]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(longname, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[longname]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(shortname, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[shortname]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(nid, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[nid]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "ssl._ASN1ObjectBase.__init__",
     "filename": "*",
     "tito": [

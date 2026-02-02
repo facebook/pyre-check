@@ -248,6 +248,8 @@ module ReadOnly : sig
 
     val named_tuple_attributes : t -> PysaClassSummary.t -> string list
   end
+
+  val named_tuple_attributes : t -> string -> string list option
 end
 
 val add_builtins_prefix : Ast.Reference.t -> Ast.Reference.t

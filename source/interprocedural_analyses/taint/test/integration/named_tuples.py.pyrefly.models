@@ -192,6 +192,35 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "named_tuples.inherited_tuple",
+    "filename": "named_tuples.py",
+    "callable_line": 52,
+    "sources": [
+      {
+        "port": "result[bad]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 53, "start": 35, "end": 49 } ],
+            "origin": { "line": 53, "start": 35, "end": 49 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "named_tuples.issue_with_bad",
@@ -264,6 +293,81 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "named_tuples.issue_with_bad:5002:0:Call|pysa._test_sink|0|formal(arg):18c130686317abefc087299cb1f606f1"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "named_tuples.issue_with_inherited_named_tuple",
+    "callable_line": 56,
+    "code": 5002,
+    "line": 58,
+    "start": 15,
+    "end": 20,
+    "filename": "named_tuples.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "tito" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" }, { "first-field": "bad" }
+            ],
+            "call": {
+              "position": { "line": 57, "start": 8, "end": 25 },
+              "resolves_to": [ "named_tuples.inherited_tuple" ],
+              "port": "result[bad]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 58, "start": 15, "end": 20 },
+            "call_site": "58:4-58:21"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "bad" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "named_tuples.issue_with_inherited_named_tuple:5002:0:Call|pysa._test_sink|0|formal(arg):44fe75a39644786440a81381896d7b15"
   }
 }
 {
@@ -747,6 +851,43 @@
             "kinds": [
               {
                 "return_paths": { "[name]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "named_tuples.InheritedNamedTuple.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(bad, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[bad]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(benign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[benign]": 999999 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],

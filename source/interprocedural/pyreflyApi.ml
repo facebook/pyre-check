@@ -5015,6 +5015,22 @@ module ReadOnly = struct
           | Some ClassFieldDeclarationKind.DeclaredWithoutAnnotation -> true
           | _ -> false)
   end
+
+  let named_tuple_attributes api class_name =
+    if class_name |> get_class_summary api |> ClassSummary.is_named_tuple api then
+      let mro = class_name :: class_mro api class_name in
+      List.find_map
+        ~f:(fun parent ->
+          let attributes =
+            parent |> get_class_summary api |> ClassSummary.named_tuple_attributes api
+          in
+          if List.is_empty attributes then
+            None
+          else
+            Some attributes)
+        mro
+    else
+      None
 end
 
 (* List of symbols exported from the 'builtins' module. To keep it short, this only contains symbols
