@@ -731,3 +731,142 @@
     "modes": [ "InferSelfTito" ]
   }
 }
+{
+  "kind": "model",
+  "data": {
+    "callable": "decimal.DecimalTuple.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(exponent, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[exponent]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(digits, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[digits]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(sign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[sign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "importlib.metadata.EntryPoint.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(dist, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[dist]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(pattern, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[pattern]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "importlib.metadata._EntryPointBase.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(group, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[group]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(value, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[value]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(name, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[name]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}

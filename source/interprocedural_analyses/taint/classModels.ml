@@ -171,39 +171,68 @@ let infer ~scheduler ~scheduler_policies ~pyre_api ~user_models =
         BackwardState.assign ~weak:true ~root ~path:[] taint existing_state
     | None -> existing_state
   in
+  let taint_in_taint_out_for_positional_parameters ~class_name =
+    List.foldi
+      ~f:(fun position ->
+        add_parameter_to_self_attribute_tito ~class_name ~positional:true (position + 1))
+      ~init:BackwardState.empty
+  in
+  let sink_taint_for_positional_parameters ~class_name =
+    List.foldi ~init:BackwardState.empty ~f:(fun position ->
+        add_sink_from_attribute_model ~class_name ~positional:true (position + 1))
+  in
 
   let compute_dataclass_models class_name class_summary =
     let attributes =
       PyrePysaApi.ReadOnly.ClassSummary.dataclass_ordered_attributes pyre_api class_summary
     in
-    let taint_in_taint_out =
-      List.foldi
-        ~f:(fun position ->
-          add_parameter_to_self_attribute_tito ~class_name ~positional:true (position + 1))
-        ~init:BackwardState.empty
-        attributes
-    in
-    let sink_taint =
-      List.foldi attributes ~init:BackwardState.empty ~f:(fun position ->
-          add_sink_from_attribute_model ~class_name ~positional:true (position + 1))
-    in
     [
       ( Target.create_method (Reference.create class_name) "__init__",
-        { Model.empty_model with backward = { Model.Backward.taint_in_taint_out; sink_taint } } );
+        {
+          Model.empty_model with
+          backward =
+            {
+              Model.Backward.taint_in_taint_out =
+                taint_in_taint_out_for_positional_parameters ~class_name attributes;
+              sink_taint = sink_taint_for_positional_parameters ~class_name attributes;
+            };
+        } );
     ]
   in
   (* We always generate a special `_fields` attribute for NamedTuples which is a tuple containing
      field names. *)
   let compute_named_tuple_models class_name class_summary =
+    let attributes =
+      PyrePysaApi.ReadOnly.named_tuple_attributes pyre_api class_name |> Option.value ~default:[]
+    in
+    let prepend_init_model models =
+      match pyre_api with
+      | PyrePysaApi.ReadOnly.Pyrefly _ ->
+          let init_model =
+            ( Target.create_method (Reference.create class_name) "__init__",
+              {
+                Model.empty_model with
+                backward =
+                  {
+                    Model.Backward.taint_in_taint_out =
+                      taint_in_taint_out_for_positional_parameters ~class_name attributes;
+                    sink_taint = sink_taint_for_positional_parameters ~class_name attributes;
+                  };
+              } )
+          in
+          init_model :: models
+      | PyrePysaApi.ReadOnly.Pyre1 _ -> models
+    in
     (* If a user-specified __new__ exist, don't override it. *)
     (* TODO(T225700656): This is not doing the right check when using pyrefly, since
        `get_class_attributes` doesn't return functions. *)
-    if PyrePysaApi.ReadOnly.ClassSummary.has_custom_new pyre_api class_summary then
-      []
+    (if PyrePysaApi.ReadOnly.ClassSummary.has_custom_new pyre_api class_summary then
+       []
     else
       (* Should not omit this model. Otherwise the mode is "obscure", thus leading to a tito model,
          which joins the taint on every element of the tuple. *)
-      [Target.create_method (Reference.create class_name) "__new__", Model.empty_model]
+      [Target.create_method (Reference.create class_name) "__new__", Model.empty_model])
+    |> prepend_init_model
   in
   let compute_typed_dict_models class_name class_summary =
     let fields =
