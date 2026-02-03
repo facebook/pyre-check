@@ -101,6 +101,9 @@ STRIP_STDLIB_CALLABLES = {
     "ssl._Cipher.__init__",
     "_ssl._CertInfo.__init__",
     "functools._CacheParameters.__init__",
+    "importlib.metadata._EntryPointBase.__init__",
+    "importlib.metadata.EntryPoint.__init__",
+    "decimal.DecimalTuple.__init__",
 }
 
 

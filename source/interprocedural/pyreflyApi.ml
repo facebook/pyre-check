@@ -4945,6 +4945,7 @@ module ReadOnly = struct
           (* TODO(T225700656): Use the class id from class names *)
           String.is_prefix ~prefix:"typing.Mapping[" string
           || String.is_prefix ~prefix:"builtins.dict[" string
+          || String.is_prefix ~prefix:"dict[" string (* anonymous typed dicts *)
   end
 
   module ClassSummary = struct

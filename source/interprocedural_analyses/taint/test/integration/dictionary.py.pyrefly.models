@@ -390,25 +390,6 @@
     "callable_line": 164,
     "sources": [
       {
-        "port": "result[*]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 170, "start": 13, "end": 14 } ],
-            "origin": { "line": 169, "start": 14, "end": 28 }
-          }
-        ]
-      },
-      {
         "port": "result[a]",
         "taint": [
           {
@@ -422,7 +403,12 @@
               }
             ],
             "origin": { "line": 166, "start": 13, "end": 27 }
-          },
+          }
+        ]
+      },
+      {
+        "port": "result[b]",
+        "taint": [
           {
             "kinds": [
               {
@@ -433,7 +419,6 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 170, "start": 13, "end": 14 } ],
             "origin": { "line": 169, "start": 14, "end": 28 }
           }
@@ -498,13 +483,8 @@
         "taint": [
           {
             "kinds": [
-              {
-                "return_paths": { "[*]": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
+              { "return_paths": { "[b]": 3 }, "kind": "LocalReturn" }
             ],
-            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 180, "start": 13, "end": 14 } ],
             "tito": {}
           }
