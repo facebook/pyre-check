@@ -574,6 +574,9 @@ module ProjectFile = struct
     modules: Module.t ModuleMap.t;
     builtin_module_id: ModuleId.t;
     object_class_id: LocalClassId.t;
+    dict_class_id: LocalClassId.t;
+    typing_module_id: ModuleId.t;
+    typing_mapping_class_id: LocalClassId.t;
   }
 
   let from_json json =
@@ -596,11 +599,20 @@ module ProjectFile = struct
     JsonUtil.get_int_member json "builtin_module_id"
     >>= fun builtin_module_id ->
     JsonUtil.get_int_member json "object_class_id"
-    >>| fun object_class_id ->
+    >>= fun object_class_id ->
+    JsonUtil.get_int_member json "dict_class_id"
+    >>= fun dict_class_id ->
+    JsonUtil.get_int_member json "typing_module_id"
+    >>= fun typing_module_id ->
+    JsonUtil.get_int_member json "typing_mapping_class_id"
+    >>| fun typing_mapping_class_id ->
     {
       modules;
       builtin_module_id = ModuleId.from_int builtin_module_id;
       object_class_id = LocalClassId.from_int object_class_id;
+      dict_class_id = LocalClassId.from_int dict_class_id;
+      typing_module_id = ModuleId.from_int typing_module_id;
+      typing_mapping_class_id = LocalClassId.from_int typing_mapping_class_id;
     }
 
 
@@ -2247,6 +2259,8 @@ module ReadWrite = struct
     callable_define_signature_shared_memory: CallableDefineSignatureSharedMemory.t;
     callable_undecorated_signatures_shared_memory: CallableUndecoratedSignaturesSharedMemory.t;
     object_class: FullyQualifiedName.t;
+    dict_class_id: GlobalClassId.t;
+    typing_mapping_class_id: GlobalClassId.t;
   }
 
   (* Build a mapping from unique module qualifiers (module name + path prefix) to module. *)
@@ -2357,7 +2371,15 @@ module ReadWrite = struct
   let parse_modules ~pyrefly_directory =
     let timer = Timer.start () in
     let () = Log.info "Parsing module list from pyrefly..." in
-    let { ProjectFile.modules; builtin_module_id; object_class_id } =
+    let {
+      ProjectFile.modules;
+      builtin_module_id;
+      object_class_id;
+      dict_class_id;
+      typing_module_id;
+      typing_mapping_class_id;
+    }
+      =
       ProjectFile.from_path_exn (PyrePath.append pyrefly_directory ~element:"pyrefly.pysa.json")
     in
     let qualifier_to_module_map =
@@ -2366,6 +2388,12 @@ module ReadWrite = struct
     let object_class_id =
       { GlobalClassId.module_id = builtin_module_id; local_class_id = object_class_id }
     in
+    let dict_class_id =
+      { GlobalClassId.module_id = builtin_module_id; local_class_id = dict_class_id }
+    in
+    let typing_mapping_class_id =
+      { GlobalClassId.module_id = typing_module_id; local_class_id = typing_mapping_class_id }
+    in
     Log.info "Parsed module list from pyrefly: %.3fs" (Timer.stop_in_sec timer);
     Statistics.performance
       ~name:"Parsed module list from pyrefly"
@@ -2373,7 +2401,7 @@ module ReadWrite = struct
       ~timer
       ~integers:["modules", Map.length qualifier_to_module_map]
       ();
-    qualifier_to_module_map, object_class_id
+    qualifier_to_module_map, object_class_id, dict_class_id, typing_mapping_class_id
 
 
   let write_module_infos_to_shared_memory ~qualifier_to_module_map =
@@ -3628,7 +3656,9 @@ module ReadWrite = struct
 
 
   let create_from_directory ~scheduler ~scheduler_policies ~configuration pyrefly_directory =
-    let qualifier_to_module_map, object_class_id = parse_modules ~pyrefly_directory in
+    let qualifier_to_module_map, object_class_id, dict_class_id, typing_mapping_class_id =
+      parse_modules ~pyrefly_directory
+    in
 
     let module_infos_shared_memory, module_id_to_qualifier_shared_memory =
       write_module_infos_to_shared_memory ~qualifier_to_module_map
@@ -3712,6 +3742,8 @@ module ReadWrite = struct
       callable_define_signature_shared_memory;
       callable_undecorated_signatures_shared_memory;
       object_class;
+      dict_class_id;
+      typing_mapping_class_id;
     }
 
 
@@ -3799,6 +3831,8 @@ module ReadWrite = struct
         callable_define_signature_shared_memory;
         callable_undecorated_signatures_shared_memory;
         object_class = _;
+        dict_class_id = _;
+        typing_mapping_class_id = _;
       }
       ~scheduler
     =
@@ -3900,6 +3934,8 @@ module ReadOnly = struct
     class_id_to_qualified_name_shared_memory: ClassIdToQualifiedNameSharedMemory.t;
     callable_id_to_qualified_name_shared_memory: CallableIdToQualifiedNameSharedMemory.t;
     object_class: FullyQualifiedName.t;
+    dict_class_id: GlobalClassId.t;
+    typing_mapping_class_id: GlobalClassId.t;
   }
 
   let of_read_write_api
@@ -3922,6 +3958,8 @@ module ReadOnly = struct
         class_id_to_qualified_name_shared_memory;
         callable_id_to_qualified_name_shared_memory;
         object_class;
+        dict_class_id;
+        typing_mapping_class_id;
         _;
       }
     =
@@ -3944,6 +3982,8 @@ module ReadOnly = struct
       class_id_to_qualified_name_shared_memory;
       callable_id_to_qualified_name_shared_memory;
       object_class;
+      dict_class_id;
+      typing_mapping_class_id;
     }
 
 
@@ -4936,16 +4976,25 @@ module ReadOnly = struct
           }
 
 
-    let is_dictionary_or_mapping _ pysa_type =
+    let is_dictionary_or_mapping { dict_class_id; typing_mapping_class_id; _ } pysa_type =
       match PysaType.as_pyrefly_type pysa_type with
       | None ->
           failwith
             "ReadOnly.Type.is_dictionary_or_mapping: trying to use a pyre1 type with a pyrefly API."
-      | Some { PyreflyType.string; _ } ->
-          (* TODO(T225700656): Use the class id from class names *)
-          String.is_prefix ~prefix:"typing.Mapping[" string
-          || String.is_prefix ~prefix:"builtins.dict[" string
-          || String.is_prefix ~prefix:"dict[" string (* anonymous typed dicts *)
+      | Some { PyreflyType.class_names = None; _ } -> false
+      | Some { PyreflyType.class_names = Some { classes; _ }; _ } ->
+          List.exists
+            classes
+            ~f:(fun { PyreflyType.ClassWithModifiers.module_id; class_id; modifiers } ->
+              let global_class_id =
+                {
+                  GlobalClassId.module_id = ModuleId.from_int module_id;
+                  local_class_id = LocalClassId.from_int class_id;
+                }
+              in
+              List.for_all modifiers ~f:(Pyre1Api.TypeModifier.equal Pyre1Api.TypeModifier.Optional)
+              && (GlobalClassId.equal global_class_id dict_class_id
+                 || GlobalClassId.equal global_class_id typing_mapping_class_id))
   end
 
   module ClassSummary = struct
