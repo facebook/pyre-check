@@ -2214,40 +2214,6 @@ Higher order call graphs
   }
 }
 {
-  "callable": "class_interval.A13.g@decorated",
-  "returned_callables": [
-    {
-      "target": "class_interval.A13.g",
-      "index": 0,
-      "implicit_receiver": true,
-      "return_type": []
-    }
-  ],
-  "calls": {
-    "378:5-378:19|artificial-call|for-decorated-target": {
-      "call": {
-        "calls": [
-          { "target": "abc.abstractmethod", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "379:4-380:14|identifier|g": {
-      "identifier": {
-        "if_called": {
-          "calls": [
-            {
-              "target": "class_interval.A13.g",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    }
-  }
-}
-{
   "callable": "class_interval.A14.m1",
   "returned_callables": [],
   "calls": {

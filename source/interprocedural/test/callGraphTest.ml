@@ -69,11 +69,11 @@ let compute_define_call_graph
   in
   let callables_to_decorators_map =
     CallableToDecoratorsMap.SharedMemory.create
+      ~scheduler
+      ~pyre_api
+      ~scheduler_policy
       ~callables_to_definitions_map:
         (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
-      ~scheduler
-      ~scheduler_policy
-      ~is_pyrefly:(PyrePysaApi.ReadOnly.is_pyrefly pyre_api)
       definitions
   in
   let call_graph =
@@ -2218,7 +2218,7 @@ let test_call_graph_of_define =
                         [
                           CallTarget.create_regular
                             ~return_type:(Some ReturnType.none)
-                            (Target.Regular.Function { name = "test.foo.inner"; kind = Decorated });
+                            (Target.Regular.Function { name = "test.foo.inner"; kind = Normal });
                         ]
                       ()) );
                ( "9:2-9:9",
@@ -2228,7 +2228,7 @@ let test_call_graph_of_define =
                         [
                           CallTarget.create_regular
                             ~return_type:(Some ReturnType.integer)
-                            (Target.Regular.Function { name = "test.foo.inner"; kind = Decorated });
+                            (Target.Regular.Function { name = "test.foo.inner"; kind = Normal });
                         ]
                       ()) );
              ]
@@ -8748,11 +8748,11 @@ let assert_resolve_decorator_callees
   in
   let callables_to_decorators_map =
     CallableToDecoratorsMap.SharedMemory.create
-      ~callables_to_definitions_map:
-        (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~scheduler
       ~scheduler_policy
-      ~is_pyrefly:(PyrePysaApi.ReadOnly.is_pyrefly pyre_api)
+      ~pyre_api
+      ~callables_to_definitions_map:
+        (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       definitions_and_stubs
   in
   let pyrefly_define_call_graphs =

@@ -20,10 +20,6 @@ Call dependencies
   "class_methods.C.static_abstractmethod (method)": [
     "pysa._test_sink (fun)"
   ],
-  "class_methods.C.static_abstractmethod@decorated (method)": [
-    "abc.abstractmethod (fun)", "builtins.object.__new__ (method)",
-    "builtins.staticmethod.__init__ (method)"
-  ],
   "class_methods.D.__init__ (method)": [
     "builtins.object.__new__ (method)", "builtins.super.__init__ (method)"
   ],

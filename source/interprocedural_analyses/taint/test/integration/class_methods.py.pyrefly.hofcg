@@ -694,61 +694,6 @@ Higher order call graphs
   }
 }
 {
-  "callable": "class_methods.C.static_abstractmethod@decorated",
-  "returned_callables": [
-    {
-      "target": "class_methods.C.static_abstractmethod",
-      "index": 0,
-      "return_type": [],
-      "is_static_method": true
-    }
-  ],
-  "calls": {
-    "63:5-63:17|artificial-call|for-decorated-target": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "builtins.object.__new__",
-            "index": 0,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "builtins.staticmethod.__init__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "builtins.staticmethod"
-          }
-        ]
-      }
-    },
-    "64:5-64:19|artificial-call|for-decorated-target": {
-      "call": {
-        "calls": [
-          { "target": "abc.abstractmethod", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "65:4-66:23|identifier|static_abstractmethod": {
-      "identifier": {
-        "if_called": {
-          "calls": [
-            {
-              "target": "class_methods.C.static_abstractmethod",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ]
-        }
-      }
-    }
-  }
-}
-{
   "callable": "class_methods.D.__init__",
   "returned_callables": [],
   "calls": {

@@ -92,7 +92,7 @@ let ignored_decorators_for_higher_order =
   |> SerializableStringSet.of_list
 
 
-let filter_decorator decorator =
+let should_keep_decorator_pyre1 decorator =
   if
     Analysis.DecoratorPreprocessing.has_any_decorator_action
       ~actions:(Analysis.DecoratorPreprocessing.Action.Set.of_list [Discard])
@@ -111,7 +111,70 @@ let filter_decorator decorator =
     | None -> true
 
 
-let collect_decorators ~callables_to_definitions_map callable =
+let pyrefly_ignored_builtin_decorators =
+  [
+    "property";
+    "dataclass";
+    "classmethod";
+    "abstractclassmethod";
+    "staticmethod";
+    "abstractstaticmethod";
+  ]
+  |> SerializableStringSet.of_list
+
+
+let should_keep_decorator_pyrefly ~pyrefly_api ~callable decorator =
+  let decorator_callees =
+    let callee =
+      match Node.value decorator with
+      | Ast.Expression.Expression.Call { callee; _ } ->
+          (* Decorator factory, such as `@foo(1)` *) callee
+      | Ast.Expression.Expression.Name _ -> (* Regular decorator, such as `@foo` *) decorator
+      | _ -> decorator
+    in
+    PyreflyApi.ReadOnly.get_callable_decorator_callees
+      pyrefly_api
+      (Target.define_name_exn callable)
+      (Node.location callee)
+  in
+  let drop_suffix ~suffix reference =
+    match List.rev (Reference.as_list reference) with
+    | head :: tail when String.equal head suffix -> Reference.create_from_list (List.rev tail)
+    | _ -> reference
+  in
+  let is_ignored_unresolved_builtin_decorator () =
+    (* Some builtin decorators are not resolved by pyrefly. Match on the AST for those. *)
+    match Decorator.from_expression decorator with
+    | Some { Decorator.name = { Node.value = decorator_name; _ }; _ }
+      when SerializableStringSet.mem
+             (Reference.show decorator_name)
+             pyrefly_ignored_builtin_decorators ->
+        true
+    | _ -> false
+  in
+  let is_ignored_hardcoded_decorator () =
+    match decorator_callees with
+    | Some decorator_callees ->
+        List.exists decorator_callees ~f:(fun decorator_callee ->
+            SerializableStringSet.mem
+              (decorator_callee |> drop_suffix ~suffix:"__call__" |> Reference.show)
+              ignored_decorators_for_higher_order)
+    | None -> false
+  in
+  let is_decorator_skipped_by_model () =
+    match decorator_callees with
+    | Some decorator_callees ->
+        List.exists decorator_callees ~f:(fun decorator_callee ->
+            Analysis.DecoratorPreprocessing.has_decorator_action decorator_callee Discard)
+    | None -> false
+  in
+  not
+    (is_ignored_unresolved_builtin_decorator ()
+    || is_ignored_hardcoded_decorator ()
+    || is_decorator_skipped_by_model ())
+
+
+let collect_decorators ~pyre_api ~callables_to_definitions_map callable =
   callable
   |> Option.some_if (Target.is_normal callable)
   >>| CallablesSharedMemory.ReadOnly.get_signature callables_to_definitions_map
@@ -123,11 +186,21 @@ let collect_decorators ~callables_to_definitions_map callable =
         qualifier;
         _;
       } ->
-      let decorators = decorators |> List.filter ~f:filter_decorator |> List.rev in
+      let decorators =
+        match pyre_api with
+        | PyrePysaApi.ReadOnly.Pyre1 _ -> List.filter ~f:should_keep_decorator_pyre1 decorators
+        | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->
+            List.filter ~f:(should_keep_decorator_pyrefly ~pyrefly_api ~callable) decorators
+      in
       if List.is_empty decorators then
         None
       else
-        Some { Decorators.decorators; define_location; module_qualifier = qualifier }
+        Some
+          {
+            Decorators.decorators = List.rev decorators;
+            define_location;
+            module_qualifier = qualifier;
+          }
   | _ -> None
 
 
@@ -241,7 +314,7 @@ module SharedMemory = struct
 
   (* We assume `DecoratorPreprocessing.setup_preprocessing` is called before since we use its shared
      memory here. *)
-  let create ~callables_to_definitions_map ~scheduler ~scheduler_policy ~is_pyrefly callables =
+  let create ~scheduler ~scheduler_policy ~pyre_api ~callables_to_definitions_map callables =
     (* TODO(T240882988): This ends up copying decorators from `CallablesSharedMemory` to
        `CallableToDecoratorsMap.SharedMemory`. Instead, we could just store the
        `callables_to_definitions_map` handle and a set of targets with decorators. *)
@@ -250,7 +323,7 @@ module SharedMemory = struct
     let empty_shared_memory = T.AddOnly.create_empty shared_memory_add_only in
     let map =
       List.fold ~init:empty_shared_memory ~f:(fun shared_memory target ->
-          match collect_decorators ~callables_to_definitions_map target with
+          match collect_decorators ~pyre_api ~callables_to_definitions_map target with
           | Some value -> T.AddOnly.add shared_memory target value
           | None -> shared_memory)
     in
@@ -266,7 +339,7 @@ module SharedMemory = struct
         ()
     in
     let shared_memory = T.from_add_only shared_memory_add_only in
-    { handle = shared_memory; is_pyrefly }
+    { handle = shared_memory; is_pyrefly = PyrePysaApi.ReadOnly.is_pyrefly pyre_api }
 
 
   let is_decorated { ReadOnly.handle; _ } callable =

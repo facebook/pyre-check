@@ -21,42 +21,6 @@ Higher order call graphs
   }
 }
 {
-  "callable": "context_manager.source_on_enter_and_sink_on_exit@decorated",
-  "returned_callables": [
-    {
-      "target": "context_manager.source_on_enter_and_sink_on_exit",
-      "index": 0,
-      "return_type": []
-    }
-  ],
-  "calls": {
-    "79:1-79:15|artificial-call|for-decorated-target": {
-      "call": {
-        "calls": [
-          {
-            "target": "contextlib.contextmanager",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "80:0-84:21|identifier|source_on_enter_and_sink_on_exit": {
-      "identifier": {
-        "if_called": {
-          "calls": [
-            {
-              "target": "context_manager.source_on_enter_and_sink_on_exit",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    }
-  }
-}
-{
   "callable": "context_manager.test_generator_sink_on_exit",
   "returned_callables": [],
   "calls": {

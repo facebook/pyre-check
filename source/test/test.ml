@@ -3762,6 +3762,11 @@ end = struct
     let timer = Timer.start () in
     let external_sources = Map.to_alist external_sources in
     let sources = Map.to_alist sources in
+    let () =
+      match decorator_preprocessing_configuration with
+      | Some configuration -> PyrePysaLogic.DecoratorPreprocessing.setup_preprocessing configuration
+      | None -> ()
+    in
     let result =
       match Lazy.force pyrefly_binary with
       | Some pyrefly_binary when not force_pyre1 ->
@@ -3777,12 +3782,6 @@ end = struct
           Pyrefly { project; pyrefly_api }
       | _ ->
           let project = ScratchProject.setup ~context ~external_sources sources in
-          let () =
-            match decorator_preprocessing_configuration with
-            | Some configuration ->
-                PyrePysaLogic.DecoratorPreprocessing.setup_preprocessing configuration
-            | None -> ()
-          in
           let _, errors = ScratchProject.build_type_environment_and_postprocess project in
           let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
           Pyre1 { project; pyre_api; errors }

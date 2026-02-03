@@ -78,11 +78,11 @@ let assert_higher_order_call_graph_fixpoint
   in
   let callables_to_decorators_map =
     CallableToDecoratorsMap.SharedMemory.create
-      ~callables_to_definitions_map:
-        (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~scheduler
       ~scheduler_policy
-      ~is_pyrefly:(PyrePysaApi.ReadOnly.is_pyrefly pyre_api)
+      ~pyre_api
+      ~callables_to_definitions_map:
+        (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       definitions
   in
   let ({ SharedMemory.whole_program_call_graph; define_call_graphs } as call_graph) =

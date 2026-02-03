@@ -781,6 +781,14 @@ let run_taint_analysis
       ~static_analysis_configuration
   in
 
+  let pyre_read_write_api =
+    PyrePysaApi.ReadWrite.parse_type_of_expressions
+      pyre_read_write_api
+      ~scheduler
+      ~scheduler_policies
+  in
+  let pyre_api = PyrePysaApi.ReadOnly.of_read_write_api pyre_read_write_api in
+
   let callables_to_decorators_map =
     let step_logger =
       StepLogger.start
@@ -790,15 +798,15 @@ let run_taint_analysis
     in
     let callables_to_decorators_map =
       Interprocedural.CallableToDecoratorsMap.SharedMemory.create
-        ~callables_to_definitions_map:
-          (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
         ~scheduler
         ~scheduler_policy:
           (Scheduler.Policy.from_configuration_or_default
              scheduler_policies
              Configuration.ScheduleIdentifier.CallableToDecoratorsMap
              ~default:Interprocedural.CallGraphBuilder.default_scheduler_policy)
-        ~is_pyrefly:(PyrePysaApi.ReadOnly.is_pyrefly pyre_api)
+        ~pyre_api
+        ~callables_to_definitions_map:
+          (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
         definitions
     in
     let () =
@@ -810,14 +818,6 @@ let run_taint_analysis
     let () = StepLogger.finish step_logger in
     callables_to_decorators_map
   in
-
-  let pyre_read_write_api =
-    PyrePysaApi.ReadWrite.parse_type_of_expressions
-      pyre_read_write_api
-      ~scheduler
-      ~scheduler_policies
-  in
-  let pyre_api = PyrePysaApi.ReadOnly.of_read_write_api pyre_read_write_api in
 
   let type_of_expression_shared_memory =
     Interprocedural.TypeOfExpressionSharedMemory.create

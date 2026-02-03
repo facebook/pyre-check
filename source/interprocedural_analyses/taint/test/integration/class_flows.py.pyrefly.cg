@@ -11,10 +11,6 @@ Call dependencies
   "class_flows.HasDecoratedClassmethod.to_sink (method)": [
     "pysa._test_sink (fun)"
   ],
-  "class_flows.HasDecoratedClassmethod.to_sink@decorated (method)": [
-    "builtins.classmethod.__init__ (method)",
-    "builtins.object.__new__ (method)", "contextlib.contextmanager (fun)"
-  ],
   "class_flows.global_class_attribute_issue (fun)": [
     "class_flows.C.__class__.tainted_class_attribute (object)",
     "pysa._test_source (fun)"

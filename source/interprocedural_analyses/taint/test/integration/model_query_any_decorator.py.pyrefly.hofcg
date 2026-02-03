@@ -28,42 +28,6 @@ Higher order call graphs
   }
 }
 {
-  "callable": "model_query_any_decorator.source_on_decorator_ignored@decorated",
-  "returned_callables": [
-    {
-      "target": "model_query_any_decorator.source_on_decorator_ignored",
-      "index": 0,
-      "return_type": []
-    }
-  ],
-  "calls": {
-    "145:1-145:18|artificial-call|for-decorated-target": {
-      "call": {
-        "calls": [
-          {
-            "target": "model_query_any_decorator.decorator_ignored[formal(f, position=0)=model_query_any_decorator.source_on_decorator_ignored]",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "146:0-147:12|identifier|source_on_decorator_ignored": {
-      "identifier": {
-        "if_called": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.source_on_decorator_ignored",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    }
-  }
-}
-{
   "callable": "model_query_any_decorator.test1_alarm1@decorated",
   "returned_callables": [],
   "calls": {
@@ -721,15 +685,4 @@ Higher order call graphs
       }
     }
   }
-}
-{
-  "callable": "model_query_any_decorator.decorator_ignored[formal(f, position=0)=model_query_any_decorator.source_on_decorator_ignored]",
-  "returned_callables": [
-    {
-      "target": "model_query_any_decorator.source_on_decorator_ignored",
-      "index": 0,
-      "return_type": []
-    }
-  ],
-  "calls": {}
 }

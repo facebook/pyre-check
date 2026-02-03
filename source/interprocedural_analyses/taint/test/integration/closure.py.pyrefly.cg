@@ -2,11 +2,8 @@
 Call dependencies
 {
   "closure.async_nonlocal_closure_tito_ignore_decorator (fun)": [
-    "closure.async_tito (fun)[formal(function, position=0)=closure.ignored_decorator.wrapper (fun)[captured_variable(function, closure.ignored_decorator)=closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)]]",
+    "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)]",
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
-  ],
-  "closure.async_nonlocal_closure_tito_ignore_decorator.inner@decorated (fun)": [
-    "closure.ignored_decorator (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)]"
   ],
   "closure.async_nonlocal_closure_tito_with_decorator (fun)": [
     "closure.async_tito (fun)[formal(function, position=0)=closure.decorator.wrapper (fun)[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]]",
@@ -15,11 +12,11 @@ Call dependencies
   "closure.async_nonlocal_closure_tito_with_decorator.inner@decorated (fun)": [
     "closure.decorator (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]"
   ],
+  "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)]": [
+    "closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)"
+  ],
   "closure.async_tito (fun)[formal(function, position=0)=closure.decorator.wrapper (fun)[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]]": [
     "closure.decorator.wrapper (fun)[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]"
-  ],
-  "closure.async_tito (fun)[formal(function, position=0)=closure.ignored_decorator.wrapper (fun)[captured_variable(function, closure.ignored_decorator)=closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)]]": [
-    "closure.ignored_decorator.wrapper (fun)[captured_variable(function, closure.ignored_decorator)=closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)]"
   ],
   "closure.closure (fun)": [
     "builtins.object.__new__ (method)", "closure.Object.__init__ (method)"
@@ -56,9 +53,6 @@ Call dependencies
   ],
   "closure.higher_order_function (fun)[formal(f, position=0)=closure.wrapper_for_taint_propagation_hof.inner (fun)]": [
     "closure.wrapper_for_taint_propagation_hof.inner (fun)"
-  ],
-  "closure.ignored_decorator.wrapper (fun)[captured_variable(function, closure.ignored_decorator)=closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)]": [
-    "closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)"
   ],
   "closure.nonlocal_closure_conditional_write (fun)": [
     "closure.nonlocal_closure_conditional_write.clear (fun)",

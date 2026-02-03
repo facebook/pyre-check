@@ -466,7 +466,9 @@
               ],
               "port": "formal(x, position=1)",
               "call_site": "91:4-91:51"
-            }
+            },
+            "receiver_interval": [ { "lower": 8, "upper": 9 } ],
+            "is_self_call": false
           }
         ]
       }

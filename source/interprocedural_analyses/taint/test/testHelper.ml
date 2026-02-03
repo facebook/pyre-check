@@ -775,11 +775,11 @@ let initialize
   (* The call graph building depends on initial models for global targets. *)
   let callables_to_decorators_map =
     Interprocedural.CallableToDecoratorsMap.SharedMemory.create
-      ~callables_to_definitions_map:
-        (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~scheduler
       ~scheduler_policy
-      ~is_pyrefly:(PyrePysaApi.ReadOnly.is_pyrefly pyre_api)
+      ~pyre_api
+      ~callables_to_definitions_map:
+        (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       definitions
   in
   let skip_analysis_targets =

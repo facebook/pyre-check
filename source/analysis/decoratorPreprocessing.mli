@@ -27,6 +27,8 @@ module Configuration : sig
   val disable_preprocessing : t
 end
 
+val has_decorator_action : Reference.t -> Action.t -> bool
+
 val has_any_decorator_action : actions:Action.Set.t -> Expression.t -> bool
 
 val setup_preprocessing : Configuration.t -> unit

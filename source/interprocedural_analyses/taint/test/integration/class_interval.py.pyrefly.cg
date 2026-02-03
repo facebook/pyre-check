@@ -8,7 +8,6 @@ Call dependencies
     "class_interval.A10.f (object)"
   ],
   "class_interval.A13.f (method)": [ "class_interval.A13.g (override)" ],
-  "class_interval.A13.g@decorated (method)": [ "abc.abstractmethod (fun)" ],
   "class_interval.A14.m1 (method)": [ "class_interval.A14.m2 (override)" ],
   "class_interval.A15.m1 (method)": [ "class_interval.A15.m2 (override)" ],
   "class_interval.A16.m1 (method)": [ "class_interval.A16.m2 (override)" ],

@@ -36,10 +36,10 @@ module SharedMemory : sig
   (* We assume `DecoratorPreprocessing.setup_preprocessing` is called before since we use its shared
      memory here. *)
   val create
-    :  callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
-    scheduler:Scheduler.t ->
+    :  scheduler:Scheduler.t ->
     scheduler_policy:Scheduler.Policy.t ->
-    is_pyrefly:bool ->
+    pyre_api:PyrePysaApi.ReadOnly.t ->
+    callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
     Target.t list ->
     t
 

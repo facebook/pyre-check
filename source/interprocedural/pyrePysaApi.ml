@@ -56,6 +56,8 @@ module ReadWrite = struct
     =
     match pyrefly_results with
     | Some pyrefly_results ->
+        (* This is required by CallableToDecoratorsMap *)
+        let () = Analysis.DecoratorPreprocessing.setup_preprocessing decorator_configuration in
         Pyrefly
           (PyreflyApi.ReadWrite.create_from_directory
              ~scheduler

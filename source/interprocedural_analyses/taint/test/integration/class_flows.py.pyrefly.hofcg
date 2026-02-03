@@ -433,6 +433,7 @@ Higher order call graphs
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
+            "receiver_class": "class_flows.HasDecoratedClassmethod",
             "is_class_method": true
           }
         ]
@@ -562,67 +563,6 @@ Higher order call graphs
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
-      }
-    }
-  }
-}
-{
-  "callable": "class_flows.HasDecoratedClassmethod.to_sink@decorated",
-  "returned_callables": [
-    {
-      "target": "class_flows.HasDecoratedClassmethod.to_sink",
-      "index": 0,
-      "implicit_receiver": true,
-      "return_type": [],
-      "is_class_method": true
-    }
-  ],
-  "calls": {
-    "84:5-84:16|artificial-call|for-decorated-target": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "builtins.object.__new__",
-            "index": 0,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "builtins.classmethod.__init__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "builtins.classmethod"
-          }
-        ]
-      }
-    },
-    "85:5-85:19|artificial-call|for-decorated-target": {
-      "call": {
-        "calls": [
-          {
-            "target": "contextlib.contextmanager",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "86:4-87:21|identifier|to_sink": {
-      "identifier": {
-        "if_called": {
-          "calls": [
-            {
-              "target": "class_flows.HasDecoratedClassmethod.to_sink",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "is_class_method": true
-            }
-          ]
-        }
       }
     }
   }
