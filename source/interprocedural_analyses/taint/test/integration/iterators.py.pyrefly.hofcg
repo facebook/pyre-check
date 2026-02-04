@@ -433,7 +433,17 @@ Higher order call graphs
       }
     },
     "27:20-27:27|artificial-call|iter-call": {
-      "call": { "unresolved": [ "UnexpectedDefiningClass" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
     },
     "29:9-29:23": {
       "call": {
@@ -481,7 +491,7 @@ Higher order call graphs
         "calls": [
           {
             "target": "builtins.dict.__iter__",
-            "index": 0,
+            "index": 1,
             "implicit_receiver": true,
             "return_type": [],
             "receiver_class": "builtins.dict"

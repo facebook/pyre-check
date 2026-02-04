@@ -342,66 +342,6 @@
     "callable": "iterators.test_next_iter",
     "callable_line": 11,
     "code": 5002,
-    "line": 27,
-    "start": 15,
-    "end": 28,
-    "filename": "iterators.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 26, "start": 14, "end": 28 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 27, "start": 15, "end": 28 },
-            "call_site": "27:4-27:29"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "pysa._test_sink",
-      "index": 6,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "iterators.test_next_iter:5002:0:Call|pysa._test_sink|6|formal(arg):e5def4348a50aab7143b38d4461bc688"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "iterators.test_next_iter",
-    "callable_line": 11,
-    "code": 5002,
     "line": 30,
     "start": 15,
     "end": 28,
