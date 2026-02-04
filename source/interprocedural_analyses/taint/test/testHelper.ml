@@ -806,6 +806,7 @@ let initialize
         ~callables_to_decorators_map:
           (Interprocedural.CallableToDecoratorsMap.SharedMemory.read_only
              callables_to_decorators_map)
+        ~global_constants:(Interprocedural.GlobalConstants.SharedMemory.read_only global_constants)
         ~type_of_expression_shared_memory
         ~create_dependency_for:Interprocedural.CallGraph.AllTargetsUseCase.CallGraphDependency
     with
@@ -884,6 +885,7 @@ let call_graph_of_callable
     ~object_targets
     ~callables_to_definitions_map
     ~callables_to_decorators_map
+    ~global_constants
     ~type_of_expression_shared_memory
     ~check_invariants
     ~module_name
@@ -925,6 +927,7 @@ let call_graph_of_callable
             ~resolve_module_path:None
             ~callables_to_definitions_map
             ~callables_to_decorators_map
+            ~global_constants
             ~type_of_expression_shared_memory
             ~override_graph
             ~store_shared_memory:true

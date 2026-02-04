@@ -2868,12 +2868,25 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           in
 
           let global_taint, state =
-            let as_reference = identifier |> Reference.create |> Reference.delocalize in
+            let as_reference =
+              match FunctionContext.pyre_api with
+              | PyrePysaApi.ReadOnly.Pyre1 _ ->
+                  identifier |> Reference.create |> Reference.delocalize |> Option.some
+              | PyrePysaApi.ReadOnly.Pyrefly _ ->
+                  CallGraph.DefineCallGraph.resolve_identifier
+                    FunctionContext.call_graph_of_define
+                    ~location
+                    ~identifier
+                  >>| (fun { CallGraph.IdentifierCallees.global_targets; _ } -> global_targets)
+                  >>= List.hd
+                  >>| CallGraph.CallTarget.target
+                  >>| Target.object_name
+            in
             let global_string =
-              Interprocedural.GlobalConstants.SharedMemory.ReadOnly.get
-                FunctionContext.global_constants
-                ~cache:true
-                as_reference
+              as_reference
+              >>= Interprocedural.GlobalConstants.SharedMemory.ReadOnly.get
+                    FunctionContext.global_constants
+                    ~cache:true
             in
             (* Reanalyze expression with global identifier replaced by assigned string *)
             match global_string with

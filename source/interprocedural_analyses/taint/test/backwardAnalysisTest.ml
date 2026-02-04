@@ -68,6 +68,8 @@ let assert_taint ?(skip_for_pyrefly = false) ~context source expected =
              ~is_pyrefly:(PyrePysaApi.ReadOnly.is_pyrefly pyre_api)
              ()
           |> Interprocedural.CallableToDecoratorsMap.SharedMemory.read_only)
+        ~global_constants:
+          (GlobalConstants.SharedMemory.create () |> GlobalConstants.SharedMemory.read_only)
         ~type_of_expression_shared_memory
         ~check_invariants:true
         ~normalize_to_pyre1:false
@@ -1727,7 +1729,7 @@ let test_assignment context =
     ~context
     {|
       from pysa import ClassWithSinkAttribute
-      
+
       def assigns_to_sink(assigned_to_sink):
         sink = ClassWithSinkAttribute()
         sink.attribute = assigned_to_sink

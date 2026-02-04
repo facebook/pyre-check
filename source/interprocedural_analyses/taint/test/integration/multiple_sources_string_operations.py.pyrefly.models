@@ -1214,6 +1214,74 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources_string_operations.string_operations",
+    "callable_line": 29,
+    "code": 4324,
+    "line": 41,
+    "start": 24,
+    "end": 39,
+    "filename": "multiple_sources_string_operations.py",
+    "message": "User controlled data flows into potential SQL strings",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources_string_operations.user_controlled_input",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 41, "start": 24, "end": 39 } ],
+            "origin": { "line": 31, "start": 27, "end": 50 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source StringMayBeSQL",
+                    "origin": { "line": 41, "start": 4, "end": 16 },
+                    "leaf_kind": "StringMayBeSQL",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  { "name": "builtins.str.format", "port": "leaf:**" }
+                ],
+                "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
+              }
+            ],
+            "origin": { "line": 41, "start": 4, "end": 40 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "tito" } ],
+    "sink_handle": {
+      "kind": "StringFormat",
+      "callee": "builtins.str.format",
+      "index": 2,
+      "parameter_index": 2
+    },
+    "master_handle": "multiple_sources_string_operations.string_operations:4324:0:StringFormat|builtins.str.format|2|2:4f90f52a570bcc34a8304da919921fa2"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "multiple_sources_string_operations.tito",

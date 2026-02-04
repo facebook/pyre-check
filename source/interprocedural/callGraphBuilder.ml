@@ -4936,6 +4936,7 @@ let build_whole_program_call_graph_for_pyrefly
     ~pyrefly_api
     ~callables_to_definitions_map
     ~callables_to_decorators_map
+    ~global_constants
     ~override_graph
     ~store_shared_memory
     ~attribute_targets
@@ -5517,11 +5518,15 @@ let build_whole_program_call_graph_for_pyrefly
           (Target.Regular (Target.Regular.Method method_name))
     | None -> false
   in
+  let global_is_string_literal global =
+    GlobalConstants.SharedMemory.ReadOnly.mem global_constants global
+  in
   PyreflyApi.ReadOnly.parse_call_graphs
     pyrefly_api
     ~scheduler
     ~scheduler_policies
     ~method_has_overrides
+    ~global_is_string_literal
     ~store_shared_memory
     ~attribute_targets
     ~skip_analysis_targets
@@ -5540,6 +5545,7 @@ let build_whole_program_call_graph
     ~resolve_module_path
     ~callables_to_definitions_map
     ~callables_to_decorators_map
+    ~global_constants
     ~type_of_expression_shared_memory
     ~override_graph
     ~store_shared_memory
@@ -5573,6 +5579,7 @@ let build_whole_program_call_graph
           ~pyrefly_api
           ~callables_to_definitions_map
           ~callables_to_decorators_map
+          ~global_constants
           ~override_graph
           ~attribute_targets
           ~store_shared_memory

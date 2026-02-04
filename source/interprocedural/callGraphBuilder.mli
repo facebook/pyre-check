@@ -161,6 +161,7 @@ val build_whole_program_call_graph
   resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
   callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
   callables_to_decorators_map:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
+  global_constants:GlobalConstants.SharedMemory.ReadOnly.t ->
   type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   store_shared_memory:bool ->

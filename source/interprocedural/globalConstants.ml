@@ -57,9 +57,6 @@ module Heap = struct
             None
       | _ -> None
     in
-    let split_for_map = function
-      | name, value -> name, value
-    in
     let open Option.Monad_infix in
     qualifier
     |> PyrePysaApi.ReadOnly.get_qualifier_top_level_define_name pyre_api
@@ -77,7 +74,6 @@ module Heap = struct
     |> Preprocessing.toplevel_assigns
     |> List.concat_map ~f:Preprocessing.toplevel_expand_tuple_assign
     |> List.filter_map ~f:extract_string
-    |> List.map ~f:split_for_map
     (* Overwrite with the newer expression for duplicate global assigns *)
     |> Ast.Reference.Map.of_alist_reduce ~f:(fun _old updated -> updated)
 

@@ -227,6 +227,13 @@ Higher order call graphs
   "callable": "implicit_sinks.propagate_sink_add_global",
   "returned_callables": [],
   "calls": {
+    "54:4-54:15|identifier|https_start": {
+      "identifier": {
+        "globals": [
+          { "target": "Obj{implicit_sinks.https_start}", "index": 0 }
+        ]
+      }
+    },
     "54:4-54:19|artificial-call|binary": {
       "call": {
         "calls": [

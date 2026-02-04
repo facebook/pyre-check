@@ -4454,6 +4454,7 @@ module ReadOnly = struct
          _;
        } as api)
       ~method_has_overrides
+      ~global_is_string_literal
       ~attribute_targets
       ~callable
       json_call_graph
@@ -4559,11 +4560,12 @@ module ReadOnly = struct
           module_id_to_qualifier_shared_memory
           module_id
       in
-      let object_target =
+      let object_reference =
         Reference.create ~prefix:(ModuleQualifier.to_reference module_qualifier) name
-        |> Target.create_object
       in
-      if Target.Set.mem object_target attribute_targets then
+      let object_target = Target.create_object object_reference in
+      if Target.Set.mem object_target attribute_targets || global_is_string_literal object_reference
+      then
         Some (CallTarget.create ~return_type:None object_target)
       else
         None
@@ -4708,6 +4710,7 @@ module ReadOnly = struct
       ~scheduler
       ~scheduler_policies
       ~method_has_overrides
+      ~global_is_string_literal
       ~store_shared_memory
       ~attribute_targets
       ~skip_analysis_targets
@@ -4821,6 +4824,7 @@ module ReadOnly = struct
                 instantiate_call_graph
                   api
                   ~method_has_overrides
+                  ~global_is_string_literal
                   ~attribute_targets
                   ~callable
                   call_graph

@@ -576,6 +576,16 @@ Higher order call graphs
         ]
       }
     },
+    "41:4-41:16|identifier|global_query": {
+      "identifier": {
+        "globals": [
+          {
+            "target": "Obj{multiple_sources_string_operations.global_query}",
+            "index": 0
+          }
+        ]
+      }
+    },
     "41:4-41:40": {
       "call": {
         "calls": [

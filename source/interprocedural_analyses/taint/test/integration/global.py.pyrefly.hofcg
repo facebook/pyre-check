@@ -399,3 +399,14 @@ Higher order call graphs
     }
   }
 }
+{
+  "callable": "global.return_global_source",
+  "returned_callables": [],
+  "calls": {
+    "87:11-87:12|identifier|z": {
+      "identifier": {
+        "globals": [ { "target": "Obj{global.z}", "index": 0 } ]
+      }
+    }
+  }
+}

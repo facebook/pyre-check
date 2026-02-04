@@ -45,6 +45,13 @@ Higher order call graphs
         ]
       }
     },
+    "54:6-54:24|identifier|untracked_constant": {
+      "identifier": {
+        "globals": [
+          { "target": "Obj{constant_fields.untracked_constant}", "index": 0 }
+        ]
+      }
+    },
     "54:28-54:42": {
       "call": {
         "calls": [
@@ -62,6 +69,13 @@ Higher order call graphs
             "return_type": [],
             "receiver_class": "builtins.dict"
           }
+        ]
+      }
+    },
+    "55:13-55:31|identifier|untracked_constant": {
+      "identifier": {
+        "globals": [
+          { "target": "Obj{constant_fields.untracked_constant}", "index": 1 }
         ]
       }
     }
@@ -84,6 +98,13 @@ Higher order call graphs
         ]
       }
     },
+    "42:6-42:16|identifier|CONSTANT_A": {
+      "identifier": {
+        "globals": [
+          { "target": "Obj{constant_fields.CONSTANT_A}", "index": 0 }
+        ]
+      }
+    },
     "42:20-42:34": {
       "call": {
         "calls": [
@@ -101,6 +122,13 @@ Higher order call graphs
             "return_type": [],
             "receiver_class": "builtins.dict"
           }
+        ]
+      }
+    },
+    "43:13-43:23|identifier|CONSTANT_A": {
+      "identifier": {
+        "globals": [
+          { "target": "Obj{constant_fields.CONSTANT_A}", "index": 1 }
         ]
       }
     }

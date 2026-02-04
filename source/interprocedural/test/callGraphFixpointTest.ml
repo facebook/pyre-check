@@ -100,6 +100,8 @@ let assert_higher_order_call_graph_fixpoint
         (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~callables_to_decorators_map:
         (CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
+      ~global_constants:
+        (GlobalConstants.SharedMemory.create () |> GlobalConstants.SharedMemory.read_only)
       ~type_of_expression_shared_memory
       ~check_invariants:true
       ~create_dependency_for:Interprocedural.CallGraph.AllTargetsUseCase.CallGraphDependency

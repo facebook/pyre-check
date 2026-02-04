@@ -864,6 +864,8 @@ let run_taint_analysis
           ~callables_to_decorators_map:
             (Interprocedural.CallableToDecoratorsMap.SharedMemory.read_only
                callables_to_decorators_map)
+          ~global_constants:
+            (Interprocedural.GlobalConstants.SharedMemory.read_only global_constants)
           ~type_of_expression_shared_memory
           ~create_dependency_for:Interprocedural.CallGraph.AllTargetsUseCase.CallGraphDependency)
   in

@@ -100,6 +100,8 @@ let assert_taint ?models ?models_source ?(skip_for_pyrefly = false) ~context sou
              ~is_pyrefly:(PyrePysaApi.ReadOnly.is_pyrefly pyre_api)
              ()
           |> Interprocedural.CallableToDecoratorsMap.SharedMemory.read_only)
+        ~global_constants:
+          (GlobalConstants.SharedMemory.create () |> GlobalConstants.SharedMemory.read_only)
         ~type_of_expression_shared_memory
         ~check_invariants:true
         ~normalize_to_pyre1:false

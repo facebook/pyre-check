@@ -87,6 +87,8 @@ let compute_define_call_graph
         (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
       ~callables_to_decorators_map:
         (CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
+      ~global_constants:
+        (GlobalConstants.SharedMemory.create () |> GlobalConstants.SharedMemory.read_only)
       ~type_of_expression_shared_memory
       ~check_invariants:true
       ~module_name
@@ -8769,6 +8771,8 @@ let assert_resolve_decorator_callees
               (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
             ~callables_to_decorators_map:
               (CallableToDecoratorsMap.SharedMemory.read_only callables_to_decorators_map)
+            ~global_constants:
+              (GlobalConstants.SharedMemory.create () |> GlobalConstants.SharedMemory.read_only)
             ~type_of_expression_shared_memory
             ~override_graph:
               (Some

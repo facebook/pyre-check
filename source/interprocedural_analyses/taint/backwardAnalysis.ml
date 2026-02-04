@@ -313,13 +313,26 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let analyze_definition ~define:_ state = state
 
   let globals_to_constants = function
-    | { Node.value = Expression.Name (Name.Identifier identifier); _ } as value -> (
-        let as_reference = identifier |> Reference.create |> Reference.delocalize in
+    | { Node.value = Expression.Name (Name.Identifier identifier); location } as value -> (
+        let as_reference =
+          match FunctionContext.pyre_api with
+          | PyrePysaApi.ReadOnly.Pyre1 _ ->
+              identifier |> Reference.create |> Reference.delocalize |> Option.some
+          | PyrePysaApi.ReadOnly.Pyrefly _ ->
+              CallGraph.DefineCallGraph.resolve_identifier
+                FunctionContext.call_graph_of_define
+                ~location
+                ~identifier
+              >>| (fun { CallGraph.IdentifierCallees.global_targets; _ } -> global_targets)
+              >>= List.hd
+              >>| CallGraph.CallTarget.target
+              >>| Target.object_name
+        in
         let global_string =
-          Interprocedural.GlobalConstants.SharedMemory.ReadOnly.get
-            FunctionContext.global_constants
-            ~cache:true
-            as_reference
+          as_reference
+          >>= Interprocedural.GlobalConstants.SharedMemory.ReadOnly.get
+                FunctionContext.global_constants
+                ~cache:true
         in
         match global_string with
         | Some global_string ->

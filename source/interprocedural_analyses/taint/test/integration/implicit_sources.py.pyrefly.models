@@ -215,6 +215,76 @@
 {
   "kind": "model",
   "data": {
+    "callable": "implicit_sources.string_source_top_level",
+    "filename": "implicit_sources.py",
+    "callable_line": 41,
+    "sources": [
+      {
+        "port": "result[key]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "GoogleAPIKey"
+              }
+            ],
+            "origin": { "line": 42, "start": 21, "end": 35 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "implicit_sources.toplevel_simultaneous_assignment",
+    "filename": "implicit_sources.py",
+    "callable_line": 69,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "HTMLPattern"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 70, "start": 11, "end": 16 },
+              { "line": 70, "start": 11, "end": 23 }
+            ],
+            "origin": { "line": 70, "start": 11, "end": 16 }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "HTMLPattern"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 70, "start": 26, "end": 29 } ],
+            "origin": { "line": 70, "start": 26, "end": 29 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "ast._Attributes.__init__",
     "filename": "*",
     "tito": [

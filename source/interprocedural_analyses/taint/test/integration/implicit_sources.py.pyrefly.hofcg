@@ -146,9 +146,29 @@ Higher order call graphs
   }
 }
 {
+  "callable": "implicit_sources.string_source_top_level",
+  "returned_callables": [],
+  "calls": {
+    "42:21-42:35|identifier|GOOGLE_API_KEY": {
+      "identifier": {
+        "globals": [
+          { "target": "Obj{implicit_sources.GOOGLE_API_KEY}", "index": 0 }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "implicit_sources.toplevel_simultaneous_assignment",
   "returned_callables": [],
   "calls": {
+    "70:11-70:16|identifier|START": {
+      "identifier": {
+        "globals": [
+          { "target": "Obj{implicit_sources.START}", "index": 0 }
+        ]
+      }
+    },
     "70:11-70:23|artificial-call|binary": {
       "call": {
         "calls": [
@@ -171,6 +191,16 @@ Higher order call graphs
             "return_type": []
           }
         ]
+      }
+    },
+    "70:19-70:23|identifier|BODY": {
+      "identifier": {
+        "globals": [ { "target": "Obj{implicit_sources.BODY}", "index": 0 } ]
+      }
+    },
+    "70:26-70:29|identifier|END": {
+      "identifier": {
+        "globals": [ { "target": "Obj{implicit_sources.END}", "index": 0 } ]
       }
     }
   }

@@ -207,6 +207,7 @@ module ReadOnly : sig
     scheduler:Scheduler.t ->
     scheduler_policies:Configuration.SchedulerPolicies.t ->
     method_has_overrides:(Target.Method.t -> bool) ->
+    global_is_string_literal:(Ast.Reference.t -> bool) ->
     store_shared_memory:bool ->
     attribute_targets:Target.Set.t ->
     skip_analysis_targets:Target.HashSet.t ->

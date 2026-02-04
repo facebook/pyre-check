@@ -359,6 +359,34 @@
 {
   "kind": "model",
   "data": {
+    "callable": "implicit_sinks.propagate_sink_add_global",
+    "filename": "implicit_sinks.py",
+    "callable_line": 53,
+    "sinks": [
+      {
+        "port": "formal(a, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 54, "start": 18, "end": 19 } ],
+            "origin": { "line": 54, "start": 4, "end": 19 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "implicit_sinks.propagate_sink_dot_format",
     "filename": "implicit_sinks.py",
     "callable_line": 23,
