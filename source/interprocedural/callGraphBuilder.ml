@@ -5004,9 +5004,9 @@ let build_whole_program_call_graph_for_pyrefly
            ())
       call_graph
   in
-  let add_targets callable call_graph =
-    match CallablesSharedMemory.ReadOnly.get_define callables_to_definitions_map callable with
-    | AstResult.Some
+  let add_targets ~debug ~define_and_qualifier callable call_graph =
+    match define_and_qualifier with
+    | Some
         {
           CallablesSharedMemory.DefineAndQualifier.define =
             { Node.location = define_location; value = define };
@@ -5371,10 +5371,6 @@ let build_whole_program_call_graph_for_pyrefly
         let module NodeVisitor = Ast.Visit.MakeNodeVisitor (struct
           type t = DefineCallGraph.t
 
-          let debug =
-            Ast.Statement.Define.dump define || Ast.Statement.Define.dump_call_graph define
-
-
           let visit_expression
               call_graph
               { Node.value = expression; location = expression_location }
@@ -5489,6 +5485,26 @@ let build_whole_program_call_graph_for_pyrefly
     | _ -> call_graph
   in
   let transform_call_graph _ callable call_graph =
+    let debug, define_and_qualifier =
+      match CallablesSharedMemory.ReadOnly.get_define callables_to_definitions_map callable with
+      | AstResult.Some
+          ({ CallablesSharedMemory.DefineAndQualifier.define = { Node.value = define; _ }; _ } as
+          define_and_qualifier) ->
+          let debug =
+            Ast.Statement.Define.dump define || Ast.Statement.Define.dump_call_graph define
+          in
+          debug, Some define_and_qualifier
+      | _ -> false, None
+    in
+    let () =
+      log
+        ~debug
+        "Transforming Pyrefly call graph for `%a`: %a"
+        Target.pp_external
+        callable
+        DefineCallGraph.pp
+        call_graph
+    in
     let call_indexer = CallGraph.Indexer.create () in
     let call_graph =
       if Target.is_decorated callable then
@@ -5501,7 +5517,7 @@ let build_whole_program_call_graph_for_pyrefly
                   callables_to_decorators_map)
              ~map_call_if:CallCallees.should_redirect_to_decorated
              ~map_return_if:(fun _ -> false)
-        |> add_targets callable
+        |> add_targets ~debug ~define_and_qualifier callable
     in
     call_graph
     |> DefineCallGraph.dedup_and_sort
