@@ -55,7 +55,7 @@ val to_error : taint_configuration:TaintConfiguration.Heap.t -> t -> Error.t
    means we found one source, and must find the other source, in order to file an issue for a
    multi-source. This map is created for each call site. *)
 module TriggeredSinkForCall : sig
-  type t
+  type t [@@deriving show]
 
   val create : unit -> t
 

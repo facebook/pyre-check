@@ -244,6 +244,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      analysis. *)
   let store_triggered_sinks_to_propagate_for_call ~call_site ~triggered_sinks =
     if not (Issue.TriggeredSinkForCall.is_empty triggered_sinks) then
+      let () =
+        log
+          "Storing triggered sinks at `%a`: `%a`"
+          Location.pp
+          call_site
+          Issue.TriggeredSinkForCall.pp
+          triggered_sinks
+      in
       Issue.TriggeredSinkForBackward.add
         ~call_site
         ~triggered_sinks_for_call:triggered_sinks
@@ -305,6 +313,25 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~string_combine_partial_sink_tree
         source_tree
       =
+      log
+        "Checking triggered flows for %dth parameter in call `%a` at `%a`"
+        parameter_index
+        Target.pp_pretty_with_kind
+        target
+        Location.pp
+        location;
+      if
+        (not (ForwardState.Tree.is_bottom source_tree))
+        && not (BackwardState.Tree.is_bottom string_combine_partial_sink_tree)
+      then
+        log
+          "Sources flowing into sinks at `%a`@,With sources: %a@,With sinks: %a"
+          Location.pp
+          location
+          ForwardState.Tree.pp
+          source_tree
+          BackwardState.Tree.pp
+          string_combine_partial_sink_tree;
       let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
       let sink_handle = IssueHandle.Sink.StringFormat { callee = target; index; parameter_index } in
       check_triggered_flows

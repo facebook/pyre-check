@@ -397,7 +397,7 @@ module TriggeredSinkForCall = struct
         source: Sources.TriggeringSource.t;
         argument_location: Location.t;
       }
-      [@@deriving compare]
+      [@@deriving compare, show]
     end
 
     include T
@@ -439,6 +439,33 @@ module TriggeredSinkForCall = struct
   end
 
   type t = Domains.ExtraTraceFirstHop.Set.t Trigger.Map.t HashMap.t
+
+  let pp formatter map =
+    let pp_binding formatter (trigger, extra_traces) =
+      Format.fprintf
+        formatter
+        "@[<v 2>%a -> %a@]"
+        Trigger.pp
+        trigger
+        Domains.ExtraTraceFirstHop.Set.pp
+        extra_traces
+    in
+    let pp_entry formatter (partial_sink, trigger_map) =
+      Format.fprintf
+        formatter
+        "@[<v 2>%s -> {@[<v 2>%a@]}@]"
+        partial_sink
+        (Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ",@ ") pp_binding)
+        (Trigger.Map.bindings trigger_map)
+    in
+    Format.fprintf
+      formatter
+      "{@[<v 2>%a@]}"
+      (Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ",@ ") pp_entry)
+      (Core.Hashtbl.to_alist map)
+
+
+  let show = Format.asprintf "%a" pp
 
   let create () = HashMap.create ()
 
