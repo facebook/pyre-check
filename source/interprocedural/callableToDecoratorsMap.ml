@@ -462,7 +462,6 @@ module SharedMemory = struct
 
 
   let register_decorator_defines decorators ~pyre_api callables_to_definitions_map =
-    let artificial_decorator_defines = Reference.create "artificial_decorator_defines" in
     let read_only_decorators = read_only decorators in
     decorators
     |> targets_with_decorators
@@ -480,11 +479,12 @@ module SharedMemory = struct
                  CallablesSharedMemory.CallableSignature.from_define_for_pyre1
                    ~pyre1_api
                    ~target:callable
-                   ~qualifier:artificial_decorator_defines
+                   ~qualifier:Analysis.PyrePysaEnvironment.artificial_decorator_define_module
                    define
              | PyrePysaApi.ReadOnly.Pyrefly _ ->
                  {
-                   CallablesSharedMemory.CallableSignature.qualifier = artificial_decorator_defines;
+                   CallablesSharedMemory.CallableSignature.qualifier =
+                     Analysis.PyrePysaEnvironment.artificial_decorator_define_module;
                    define_name = Target.define_name_exn callable;
                    location = AstResult.Some Location.any;
                    parameters = AstResult.Some [];

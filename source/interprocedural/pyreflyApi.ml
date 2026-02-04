@@ -3988,11 +3988,15 @@ module ReadOnly = struct
 
 
   let artifact_path_of_qualifier { module_infos_shared_memory; _ } qualifier =
-    ModuleInfosSharedMemory.get
-      module_infos_shared_memory
-      (ModuleQualifier.from_reference_unchecked qualifier)
-    |> assert_shared_memory_key_exists "missing module info for qualifier"
-    |> fun { ModuleInfosSharedMemory.Module.absolute_source_path; _ } -> absolute_source_path
+    if Reference.equal qualifier Analysis.PyrePysaEnvironment.artificial_decorator_define_module
+    then
+      None
+    else
+      ModuleInfosSharedMemory.get
+        module_infos_shared_memory
+        (ModuleQualifier.from_reference_unchecked qualifier)
+      |> assert_shared_memory_key_exists "missing module info for qualifier"
+      |> fun { ModuleInfosSharedMemory.Module.absolute_source_path; _ } -> absolute_source_path
 
 
   let absolute_source_path_of_qualifier api qualifier =

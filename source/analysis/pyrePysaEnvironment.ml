@@ -12,6 +12,10 @@ open Core
 open Pyre
 module PyreType = Type
 
+(* Fake module containing all implicit "decorated" targets, which are functions that inline
+   decorators. *)
+let artificial_decorator_define_module = Ast.Reference.create "artificial_decorator_defines"
+
 (* Scalar properties of a type (it is a bool/int/float/etc.) *)
 module ScalarTypeProperties = struct
   type t = int [@@deriving compare, equal, sexp, hash]

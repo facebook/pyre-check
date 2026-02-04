@@ -7,6 +7,10 @@
 
 open Core
 
+(* Fake module containing all implicit "decorated" targets, which are functions that inline
+   decorators. *)
+val artificial_decorator_define_module : Ast.Reference.t
+
 (* Scalar properties of a type (it is a bool/int/float/etc.) *)
 module ScalarTypeProperties : sig
   type t [@@deriving compare, equal, sexp, hash, show]
