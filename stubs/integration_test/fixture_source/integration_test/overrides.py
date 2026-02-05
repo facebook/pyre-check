@@ -18,9 +18,9 @@ class MyIterable(Iterable[T]):
         return source()
 
 
-def issue_with_direct_call_of_subclass(mi: MyIterable[int]):
-    eval(mi.__iter__())
+def issue_with_direct_call_of_subclass(mi: MyIterable[str]):
+    eval(mi.__iter__().__next__())
 
 
-def no_issue_with_iterable_call(mi: Iterable[int]):
-    eval(mi.__iter__())
+def no_issue_with_iterable_call(mi: Iterable[str]):
+    eval(mi.__iter__().__next__())

@@ -8,12 +8,12 @@
 from typing import Awaitable, Callable
 
 
-def with_logging_with_helper(f: Callable[[int], None]) -> Callable[[int], None]:
-    def some_helper(x: int) -> None:
+def with_logging_with_helper(f: Callable[[str], None]) -> Callable[[str], None]:
+    def some_helper(x: str) -> None:
         print(x)
         eval(x)
 
-    def inner(x: int) -> None:
+    def inner(x: str) -> None:
         eval(x)
         f(x)
         some_helper(x)
@@ -21,8 +21,8 @@ def with_logging_with_helper(f: Callable[[int], None]) -> Callable[[int], None]:
     return inner
 
 
-def with_logging_without_helper(f: Callable[[int], None]) -> Callable[[int], None]:
-    def inner(x: int) -> None:
+def with_logging_without_helper(f: Callable[[str], None]) -> Callable[[str], None]:
+    def inner(x: str) -> None:
         eval(x)
         f(x)
 

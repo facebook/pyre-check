@@ -22,16 +22,18 @@ class ParentWithoutConstructor: ...
 
 class ChildWithoutParentConstructor(ParentWithoutConstructor):
     def __init__(self, arg):
-        super(ChildWithoutParentConstructor, self).__init__(arg)
+        super(ChildWithoutParentConstructor, self).__init__(arg) # pyrefly: ignore[bad-argument-count]
 
 
 def test1():
     tainted = source()
     child = ChildWithParentConstructor(tainted)
+    # pyrefly: ignore[missing-attribute]
     sink(child.arg)  # Issue.
 
 
 def test2():
     tainted = source()
     child = ChildWithoutParentConstructor(tainted)
+    # pyrefly: ignore[missing-attribute]
     sink(child.arg)  # Issue.

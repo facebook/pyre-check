@@ -38,6 +38,7 @@ def main(
     require_pyre_env: bool,
     ignore_positions: bool,
     write_actual_results_on_failure: bool,
+    use_pyrefly: bool,
 ) -> None:
     """
     Entry point function to run a full end-to-end integration test.
@@ -65,6 +66,7 @@ def main(
         typeshed=typeshed,
         compact_ocaml_heap=compact_ocaml_heap,
         check_invariants=check_invariants,
+        use_pyrefly=use_pyrefly,
         working_directory=working_directory,
     )
 
@@ -73,11 +75,12 @@ def main(
     )
     test_runner_lib.compare_to_expected_json(
         actual_results=pysa_results,
-        expected_results_path=working_directory / "result.json",
+        test_directory=working_directory,
         test_result_directory=test_result_directory,
         filter_issues=filter_issues,
         ignore_positions=ignore_positions,
         write_actual_results_on_failure=write_actual_results_on_failure,
+        use_pyrefly=use_pyrefly,
     )
 
 
@@ -141,6 +144,12 @@ if __name__ == "__main__":
         type=Path,
         help="Path to the typeshed to use",
     )
+    parser.add_argument(
+        "--use-pyrefly",
+        action="store_true",
+        default=False,
+        help="Use pyrefly as the type checker, instead of pyre1",
+    )
 
     parsed: argparse.Namespace = parser.parse_args()
     main(
@@ -156,4 +165,5 @@ if __name__ == "__main__":
         require_pyre_env=parsed.require_pyre_env,
         ignore_positions=parsed.ignore_positions,
         write_actual_results_on_failure=parsed.write_actual_results_on_failure,
+        use_pyrefly=parsed.use_pyrefly,
     )

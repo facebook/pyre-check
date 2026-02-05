@@ -11,5 +11,7 @@ from django.http import HttpRequest
 
 # Integration test illustrating that we check top-level functions.
 
+# pyrefly: ignore[bad-assignment]
 request: HttpRequest = ...
+
 eval(request.GET["bad"])

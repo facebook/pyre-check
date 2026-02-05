@@ -21,6 +21,7 @@ import os.path
 import re
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
@@ -220,106 +221,186 @@ def run_pysa(
     silent: bool = False,
     shard_taint_output: bool = False,
     error_help: Optional[str] = None,
+    use_pyrefly: bool = False,
 ) -> str:
     """Run pysa for the given test and produce a list of errors in JSON."""
-    if run_from_source:
-        command = [
-            "python",
-            "-mpyre-check.client.pyre",
-        ]
+    with tempfile.TemporaryDirectory(prefix="pyrefly-results-") as temporary_directory:
+        pyrefly_results = None
+        if use_pyrefly:
+            LOG.info("Building pyrefly from source...")
+            command = [
+                "buck2",
+                "build",
+                "--show-full-simple-output",
+                "fbcode//pyrefly/pyrefly:pyrefly",
+            ]
+            LOG.info(f"Running `{' '.join(command)}`")
+            try:
+                pyrefly_binary = subprocess.run(
+                    command,
+                    check=True,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=(subprocess.DEVNULL if silent else None),
+                    cwd=working_directory,
+                ).stdout.strip()
+            except subprocess.CalledProcessError as exception:
+                LOG.error(
+                    f"`buck build` failed with return code {exception.returncode}"
+                )
+                sys.stdout.write(exception.stdout)
+                if error_help is not None:
+                    sys.stdout.write("\n")
+                    sys.stdout.write(error_help)
+                sys.exit(exception.returncode)
+
+            LOG.info("Running type checking...")
+            command = [
+                # pyre-fixme: false positive because pyre doesn't know sys.exit does not return.
+                pyrefly_binary,
+                "check",
+                "-v",
+                "--report-pysa",
+                temporary_directory,
+            ]
+            LOG.info(f"Running `{' '.join(command)}`")
+            try:
+                subprocess.run(
+                    command,
+                    check=True,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=(subprocess.DEVNULL if silent else None),
+                    cwd=working_directory,
+                )
+            except subprocess.CalledProcessError as exception:
+                LOG.error(
+                    f"`pyrefly check` failed with return code {exception.returncode}"
+                )
+                sys.stdout.write(exception.stdout)
+                if error_help is not None:
+                    sys.stdout.write("\n")
+                    sys.stdout.write(error_help)
+                sys.exit(exception.returncode)
+
+            pyrefly_results = temporary_directory
+
+        if run_from_source:
+            command = [
+                "python",
+                "-mpyre-check.client.pyre",
+            ]
+        else:
+            command = ["pyre"]
+
+        command.append("--noninteractive")
+
+        if isolation_prefix is not None:
+            command.extend(["--isolation-prefix", isolation_prefix])
+
+        if number_of_workers is not None:
+            command.append(f"--number-of-workers={number_of_workers}")
+
+        # Only override the typeshed when not using pyrefly.
+        if typeshed is not None and pyrefly_results is None:
+            command.extend(["--typeshed", typeshed.absolute().as_posix()])
+
+        if target is not None:
+            command.append(f"--target={target}")
+
+        if excludes is not None:
+            for exclude in excludes:
+                command.extend(["--exclude", exclude])
+
+        command.append("analyze")
+
+        if pyrefly_results is not None:
+            command.extend(["--pyrefly-results", temporary_directory])
+
+            # For now, ignore model verification errors when using pyrefly.
+            command.append("--no-verify")
+
+        if skip_model_verification:
+            command.append("--no-verify")
+
+        if repository_root is not None:
+            command.extend(["--repository-root", str(repository_root)])
+
+        if save_results_to is not None:
+            command.extend(["--save-results-to", str(save_results_to)])
+
+        if compact_ocaml_heap:
+            command.append("--compact-ocaml-heap")
+
+        if check_invariants:
+            command.append("--check-invariants")
+
+        if maximum_trace_length is not None:
+            command.append(f"--maximum-trace-length={maximum_trace_length}")
+
+        if maximum_tito_depth is not None:
+            command.append(f"--maximum-tito-depth={maximum_tito_depth}")
+
+        if shard_taint_output:
+            command.append("--output-format=sharded-json")
+
+        if passthrough_args is not None:
+            command.extend(passthrough_args)
+
+        LOG.info(f"Running `{' '.join(command)}`")
+        try:
+            process = subprocess.run(
+                command,
+                check=True,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=(subprocess.DEVNULL if silent else None),
+                cwd=working_directory,
+            )
+        except subprocess.CalledProcessError as exception:
+            LOG.error(f"`pyre analyze` failed with return code {exception.returncode}")
+            sys.stdout.write(exception.stdout)
+            if error_help is not None:
+                sys.stdout.write("\n")
+                sys.stdout.write(error_help)
+            sys.exit(exception.returncode)
+
+        if save_results_to is not None:
+            errors = (save_results_to / "errors.json").read_text()
+        else:
+            errors = process.stdout
+
+        if save_errors_to is not None:
+            save_errors_to.write_text(errors)
+
+        return errors
+
+
+def add_pyrefly_extension(prefix: str, suffix: str, use_pyrefly: bool) -> str:
+    if use_pyrefly:
+        return f"{prefix}.pyrefly{suffix}"
     else:
-        command = ["pyre"]
-
-    command.append("--noninteractive")
-
-    if isolation_prefix is not None:
-        command.extend(["--isolation-prefix", isolation_prefix])
-
-    if number_of_workers is not None:
-        command.append(f"--number-of-workers={number_of_workers}")
-
-    if typeshed is not None:
-        command.extend(["--typeshed", typeshed.absolute().as_posix()])
-
-    if target is not None:
-        command.append(f"--target={target}")
-
-    if excludes is not None:
-        for exclude in excludes:
-            command.extend(["--exclude", exclude])
-
-    command.append("analyze")
-
-    if skip_model_verification:
-        command.append("--no-verify")
-
-    if repository_root is not None:
-        command.extend(["--repository-root", str(repository_root)])
-
-    if save_results_to is not None:
-        command.extend(["--save-results-to", str(save_results_to)])
-
-    if compact_ocaml_heap:
-        command.append("--compact-ocaml-heap")
-
-    if check_invariants:
-        command.append("--check-invariants")
-
-    if maximum_trace_length is not None:
-        command.append(f"--maximum-trace-length={maximum_trace_length}")
-
-    if maximum_tito_depth is not None:
-        command.append(f"--maximum-tito-depth={maximum_tito_depth}")
-
-    if shard_taint_output:
-        command.append("--output-format=sharded-json")
-
-    if passthrough_args is not None:
-        command.extend(passthrough_args)
-
-    LOG.info(f"Running `{' '.join(command)}`")
-    try:
-        process = subprocess.run(
-            command,
-            check=True,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=(subprocess.DEVNULL if silent else None),
-            cwd=working_directory,
-        )
-    except subprocess.CalledProcessError as exception:
-        LOG.error(f"`pyre analyze` failed with return code {exception.returncode}")
-        sys.stdout.write(exception.stdout)
-        if error_help is not None:
-            sys.stdout.write("\n")
-            sys.stdout.write(error_help)
-        sys.exit(exception.returncode)
-
-    if save_results_to is not None:
-        errors = (save_results_to / "errors.json").read_text()
-    else:
-        errors = process.stdout
-
-    if save_errors_to is not None:
-        save_errors_to.write_text(errors)
-
-    return errors
+        return f"{prefix}{suffix}"
 
 
 def compare_to_expected_json(
     *,
     actual_results: str,
-    expected_results_path: Path,
+    test_directory: Path,
     test_result_directory: Path,
     filter_issues: bool,
     ignore_positions: bool,
     write_actual_results_on_failure: bool,
+    use_pyrefly: bool = False,
     error_help: Optional[str] = None,
 ) -> None:
     """
     Compare the errors from `run_pysa` to a set of expected
     errors from a JSON file.
     """
+    expected_results_path = test_directory / add_pyrefly_extension(
+        "result", ".json", use_pyrefly
+    )
     if not os.path.isfile(expected_results_path):
         raise FileNotFoundError(
             f"Could NOT find expected result file `{expected_results_path}`"
@@ -336,9 +417,14 @@ def compare_to_expected_json(
         LOG.info("Run produced expected results")
         return
 
-    actual_results_path = test_result_directory / "result.actual"
+    actual_results_path = test_result_directory / add_pyrefly_extension(
+        "result", ".actual", use_pyrefly
+    )
 
-    (test_result_directory / "full_result.json").write_text(actual_results)
+    full_results_path = test_result_directory / add_pyrefly_extension(
+        "full_result", ".json", use_pyrefly
+    )
+    full_results_path.write_text(actual_results)
     actual_results_path.write_text(
         normalized_json_dump(
             actual_results, ignore_positions=False, filter_issues=filter_issues
@@ -346,17 +432,19 @@ def compare_to_expected_json(
     )
 
     if ignore_positions:
-        actual_invariant_results_path = (
-            test_result_directory / "position_invariant_result.actual"
+        actual_invariant_results_path = test_result_directory / add_pyrefly_extension(
+            "position_invariant_result", ".actual", use_pyrefly
         )
         actual_invariant_results_path.write_text(normalized_pysa_results)
 
-        expected_invariant_results_path = (
-            test_result_directory / "position_invariant_result.json"
+        expected_invariant_results_path = test_result_directory / add_pyrefly_extension(
+            "position_invariant_result", ".json", use_pyrefly
         )
         expected_invariant_results_path.write_text(normalized_expected_results)
     else:
-        actual_invariant_results_path = test_result_directory / "result.actual"
+        actual_invariant_results_path = test_result_directory / add_pyrefly_extension(
+            "result", ".actual", use_pyrefly
+        )
         expected_invariant_results_path = expected_results_path
 
     if ignore_positions:

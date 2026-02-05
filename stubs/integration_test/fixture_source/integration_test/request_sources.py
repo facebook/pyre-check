@@ -18,14 +18,15 @@ def test_index(request: HttpRequest):
 
 
 def test_get(request: HttpRequest):
-    eval(request.GET.get("bad"))
+    eval(request.GET.get("bad", ""))
 
 
 def test_getlist(request: HttpRequest):
-    eval(request.GET.getlist("bad"))
+    eval(request.GET.getlist("bad", [])[0])
 
 
 def test_optional(request: Optional[HttpRequest]):
+    # pyrefly: ignore[missing-attribute]
     eval(request.GET["bad"])
 
 

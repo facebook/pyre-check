@@ -100,9 +100,13 @@ def dict_setdefault(i: int):
 
 def dict_get():
     d = {"a": {0: source()}}
+    # pyrefly: ignore[unsupported-operation]
     sink(d.get("a")[0])  # This is an issue.
+    # pyrefly: ignore[unsupported-operation]
     sink(d.get("a")[1])  # This is NOT an issue.
+    # pyrefly: ignore[unsupported-operation]
     sink(d.get("b")[0])  # This is NOT an issue.
+    # pyrefly: ignore[unsupported-operation]
     sink(d.get("b")[1])  # This is NOT an issue.
 
 

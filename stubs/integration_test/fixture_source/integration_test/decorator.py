@@ -27,7 +27,7 @@ def foo(x: str) -> None:
 
 @with_logging_with_helper
 @with_logging_without_helper
-def foo2(x: int) -> None:
+def foo2(x: str) -> None:
     sink(x)
 
 
