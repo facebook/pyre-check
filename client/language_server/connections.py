@@ -408,7 +408,7 @@ async def create_async_stdin_stdout() -> Tuple[AsyncTextReader, AsyncTextWriter]
     not need to worry about whether the underlying async I/O channel comes from
     sockets or from stdin/stdout.
     """
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     stream_reader = asyncio.StreamReader(loop=loop)
     await loop.connect_read_pipe(
         lambda: asyncio.StreamReaderProtocol(stream_reader), sys.stdin
