@@ -1959,7 +1959,7 @@ end
 
 let assert_shared_memory_key_exists message = function
   | Some value -> value
-  | None -> failwith (Format.sprintf "unexpected: %s" message)
+  | None -> failwith (Format.sprintf "unexpected: %s" (message ()))
 
 
 let strip_invalid_locations =
@@ -2087,7 +2087,7 @@ module ModuleIdToQualifierSharedMemory = struct
       end)
 
   let get_module_qualifier handle module_id =
-    module_id |> get handle |> assert_shared_memory_key_exists "unknown module id"
+    module_id |> get handle |> assert_shared_memory_key_exists (fun () -> "unknown module id")
 end
 
 module ClassIdToQualifiedNameSharedMemory = struct
@@ -2103,7 +2103,7 @@ module ClassIdToQualifiedNameSharedMemory = struct
       end)
 
   let get_class_name handle class_id =
-    class_id |> get handle |> assert_shared_memory_key_exists "unknown class id"
+    class_id |> get handle |> assert_shared_memory_key_exists (fun () -> "unknown class id")
 end
 
 module CallableIdToQualifiedNameSharedMemory = struct
@@ -2120,7 +2120,8 @@ module CallableIdToQualifiedNameSharedMemory = struct
 
   let get_opt = get
 
-  let get handle id = get_opt handle id |> assert_shared_memory_key_exists "unknown callable id"
+  let get handle id =
+    get_opt handle id |> assert_shared_memory_key_exists (fun () -> "unknown callable id")
 end
 
 module ClassField = struct
@@ -2493,7 +2494,11 @@ module ReadWrite = struct
             }
               =
               CallableMetadataSharedMemory.get callable_metadata_shared_memory callable
-              |> assert_shared_memory_key_exists "missing callable metadata for callable"
+              |> assert_shared_memory_key_exists (fun () ->
+                     Format.asprintf
+                       "missing callable metadata: `%a`"
+                       FullyQualifiedName.pp
+                       callable)
             in
             match local_function_id, name_location with
             | LocalFunctionId.Function _, NameLocation.DefineName location ->
@@ -2678,7 +2683,7 @@ module ReadWrite = struct
         classes
         |> List.map ~f:(fun class_name ->
                ClassMetadataSharedMemory.get class_metadata_shared_memory class_name
-               |> assert_shared_memory_key_exists "missing class metadata for class"
+               |> assert_shared_memory_key_exists (fun () -> "missing class metadata for class")
                |> fun { ClassMetadataSharedMemory.Metadata.name_location; _ } ->
                name_location, class_name)
         |> Location.Map.of_alist_exn
@@ -2747,7 +2752,7 @@ module ReadWrite = struct
       let add_synthesized_class (location_to_class, class_to_statement) (location, class_name) =
         let { ClassMetadataSharedMemory.Metadata.is_synthesized; _ } =
           ClassMetadataSharedMemory.get class_metadata_shared_memory class_name
-          |> assert_shared_memory_key_exists "missing class metadata for class"
+          |> assert_shared_memory_key_exists (fun () -> "missing class metadata for class")
         in
         if is_synthesized then
           let class_statement =
@@ -3846,7 +3851,8 @@ module ReadWrite = struct
     let cleanup_callable ~module_id callable_name =
       let { CallableMetadataSharedMemory.Value.local_function_id; _ } =
         CallableMetadataSharedMemory.get callable_metadata_shared_memory callable_name
-        |> assert_shared_memory_key_exists "missing callable metadata"
+        |> assert_shared_memory_key_exists (fun () ->
+               Format.asprintf "missing callable metadata: `%a`" FullyQualifiedName.pp callable_name)
       in
       CallableMetadataSharedMemory.remove callable_metadata_shared_memory callable_name;
       CallableAstSharedMemory.remove callable_ast_shared_memory callable_name;
@@ -3864,7 +3870,7 @@ module ReadWrite = struct
     let cleanup_class ~module_id class_name =
       let { ClassMetadataSharedMemory.Metadata.local_class_id; _ } =
         ClassMetadataSharedMemory.get class_metadata_shared_memory class_name
-        |> assert_shared_memory_key_exists "missing class metadata"
+        |> assert_shared_memory_key_exists (fun () -> "missing class metadata")
       in
       ClassMetadataSharedMemory.remove class_metadata_shared_memory class_name;
       ClassFieldsSharedMemory.remove class_fields_shared_memory class_name;
@@ -3877,20 +3883,20 @@ module ReadWrite = struct
     let cleanup_module module_qualifier =
       let { ModuleInfosSharedMemory.Module.module_id; pyrefly_info_filename; _ } =
         ModuleInfosSharedMemory.get module_infos_shared_memory module_qualifier
-        |> assert_shared_memory_key_exists "missing module info"
+        |> assert_shared_memory_key_exists (fun () -> "missing module info")
       in
       ModuleInfosSharedMemory.remove module_infos_shared_memory module_qualifier;
       ModuleIdToQualifierSharedMemory.remove module_id_to_qualifier_shared_memory module_id;
       let () =
         if Option.is_some pyrefly_info_filename then
           ModuleCallablesSharedMemory.get module_callables_shared_memory module_qualifier
-          |> assert_shared_memory_key_exists "missing module callables"
+          |> assert_shared_memory_key_exists (fun () -> "missing module callables")
           |> List.iter ~f:(cleanup_callable ~module_id)
       in
       let () =
         if Option.is_some pyrefly_info_filename then
           ModuleClassesSharedMemory.get module_classes_shared_memory module_qualifier
-          |> assert_shared_memory_key_exists "missing module classes"
+          |> assert_shared_memory_key_exists (fun () -> "missing module classes")
           |> List.iter ~f:(cleanup_class ~module_id)
       in
       ModuleCallablesSharedMemory.remove module_callables_shared_memory module_qualifier;
@@ -3995,7 +4001,7 @@ module ReadOnly = struct
       ModuleInfosSharedMemory.get
         module_infos_shared_memory
         (ModuleQualifier.from_reference_unchecked qualifier)
-      |> assert_shared_memory_key_exists "missing module info for qualifier"
+      |> assert_shared_memory_key_exists (fun () -> "missing module info for qualifier")
       |> fun { ModuleInfosSharedMemory.Module.absolute_source_path; _ } -> absolute_source_path
 
 
@@ -4009,14 +4015,14 @@ module ReadOnly = struct
     ModuleInfosSharedMemory.get
       module_infos_shared_memory
       (ModuleQualifier.from_reference_unchecked qualifier)
-    |> assert_shared_memory_key_exists "missing module info for qualifier"
+    |> assert_shared_memory_key_exists (fun () -> "missing module info for qualifier")
     |> fun { ModuleInfosSharedMemory.Module.relative_source_path; _ } -> relative_source_path
 
 
   (* Return all qualifiers with source code *)
   let explicit_qualifiers { qualifiers_shared_memory; _ } =
     QualifiersSharedMemory.get qualifiers_shared_memory Memory.SingletonKey.key
-    |> assert_shared_memory_key_exists "missing qualifiers with source in shared memory"
+    |> assert_shared_memory_key_exists (fun () -> "missing qualifiers with source in shared memory")
     |> List.filter_map ~f:(fun { QualifiersSharedMemory.Value.module_qualifier; has_source; _ } ->
            Option.some_if has_source (ModuleQualifier.to_reference module_qualifier))
 
@@ -4025,7 +4031,7 @@ module ReadOnly = struct
     ModuleInfosSharedMemory.get
       module_infos_shared_memory
       (ModuleQualifier.from_reference_unchecked qualifier)
-    |> assert_shared_memory_key_exists "missing module info for qualifier"
+    |> assert_shared_memory_key_exists (fun () -> "missing module info for qualifier")
     |> fun { ModuleInfosSharedMemory.Module.is_test; _ } -> is_test
 
 
@@ -4033,7 +4039,7 @@ module ReadOnly = struct
     ModuleInfosSharedMemory.get
       module_infos_shared_memory
       (ModuleQualifier.from_reference_unchecked qualifier)
-    |> assert_shared_memory_key_exists "missing module info for qualifier"
+    |> assert_shared_memory_key_exists (fun () -> "missing module info for qualifier")
     |> fun { ModuleInfosSharedMemory.Module.is_stub; _ } -> is_stub
 
 
@@ -4048,20 +4054,21 @@ module ReadOnly = struct
       ModuleClassesSharedMemory.get
         module_classes_shared_memory
         (ModuleQualifier.from_reference_unchecked qualifier)
-      |> assert_shared_memory_key_exists "missing module classes for qualifier"
+      |> assert_shared_memory_key_exists (fun () -> "missing module classes for qualifier")
       |> List.map ~f:FullyQualifiedName.to_reference
 
 
   let all_classes { qualifiers_shared_memory; module_classes_shared_memory; _ } ~scheduler =
     let qualifiers =
       QualifiersSharedMemory.get qualifiers_shared_memory Memory.SingletonKey.key
-      |> assert_shared_memory_key_exists "missing qualifiers with source in shared memory"
+      |> assert_shared_memory_key_exists (fun () ->
+             "missing qualifiers with source in shared memory")
       |> List.filter_map ~f:(fun { QualifiersSharedMemory.Value.module_qualifier; has_info; _ } ->
              Option.some_if has_info module_qualifier)
     in
     let get_class_names_for_qualifier module_qualifier =
       ModuleClassesSharedMemory.get module_classes_shared_memory module_qualifier
-      |> assert_shared_memory_key_exists "missing module classes for qualifier"
+      |> assert_shared_memory_key_exists (fun () -> "missing module classes for qualifier")
       |> List.map ~f:FullyQualifiedName.to_reference
       |> List.map ~f:Reference.show
     in
@@ -4085,13 +4092,14 @@ module ReadOnly = struct
   let all_global_variables { qualifiers_shared_memory; module_globals_shared_memory; _ } ~scheduler =
     let qualifiers =
       QualifiersSharedMemory.get qualifiers_shared_memory Memory.SingletonKey.key
-      |> assert_shared_memory_key_exists "missing qualifiers with source in shared memory"
+      |> assert_shared_memory_key_exists (fun () ->
+             "missing qualifiers with source in shared memory")
       |> List.filter_map ~f:(fun { QualifiersSharedMemory.Value.module_qualifier; has_info; _ } ->
              Option.some_if has_info module_qualifier)
     in
     let get_globals_for_qualifier module_qualifier =
       ModuleGlobalsSharedMemory.get module_globals_shared_memory module_qualifier
-      |> assert_shared_memory_key_exists "missing module globals for qualifier"
+      |> assert_shared_memory_key_exists (fun () -> "missing module globals for qualifier")
       |> SerializableStringMap.keys
       |> List.map ~f:(Reference.create ~prefix:(ModuleQualifier.to_reference module_qualifier))
     in
@@ -4123,7 +4131,7 @@ module ReadOnly = struct
       ModuleCallablesSharedMemory.get
         module_callables_shared_memory
         (ModuleQualifier.from_reference_unchecked qualifier)
-      |> assert_shared_memory_key_exists "missing module callables for qualifier"
+      |> assert_shared_memory_key_exists (fun () -> "missing module callables for qualifier")
       |> List.map ~f:FullyQualifiedName.to_reference
 
 
@@ -4149,7 +4157,7 @@ module ReadOnly = struct
             parents
     in
     ClassMetadataSharedMemory.get class_metadata_shared_memory class_name
-    |> assert_shared_memory_key_exists "missing class metadata for class"
+    |> assert_shared_memory_key_exists (fun () -> "missing class metadata for class")
     |> get_parents_from_class_metadata
     |> List.map ~f:FullyQualifiedName.to_reference
     |> List.map ~f:Reference.show
@@ -4180,7 +4188,7 @@ module ReadOnly = struct
           mro @ [object_class]
     in
     ClassMetadataSharedMemory.get class_metadata_shared_memory class_name
-    |> assert_shared_memory_key_exists "missing class metadata for class"
+    |> assert_shared_memory_key_exists (fun () -> "missing class metadata for class")
     |> get_mro_from_class_metadata
     |> List.map ~f:FullyQualifiedName.to_reference
     |> List.map ~f:Reference.show
@@ -4190,7 +4198,8 @@ module ReadOnly = struct
     CallableMetadataSharedMemory.get
       callable_metadata_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
-    |> assert_shared_memory_key_exists "missing callable metadata"
+    |> assert_shared_memory_key_exists (fun () ->
+           Format.asprintf "missing callable metadata: `%a`" Reference.pp define_name)
     |> fun { CallableMetadataSharedMemory.Value.metadata; _ } -> metadata
 
 
@@ -4203,7 +4212,8 @@ module ReadOnly = struct
     CallableMetadataSharedMemory.get
       callable_metadata_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
-    |> assert_shared_memory_key_exists "missing callable metadata"
+    |> assert_shared_memory_key_exists (fun () ->
+           Format.asprintf "missing callable metadata: `%a`" Reference.pp define_name)
     |> fun { CallableMetadataSharedMemory.Value.overridden_base_method; _ } ->
     overridden_base_method
     >>| CallableIdToQualifiedNameSharedMemory.get callable_id_to_qualified_name_shared_memory
@@ -4217,7 +4227,8 @@ module ReadOnly = struct
     CallableMetadataSharedMemory.get
       callable_metadata_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
-    |> assert_shared_memory_key_exists "missing callable metadata"
+    |> assert_shared_memory_key_exists (fun () ->
+           Format.asprintf "missing callable metadata: `%a`" Reference.pp define_name)
     |> fun { CallableMetadataSharedMemory.Value.captured_variables; _ } ->
     List.map
       ~f:(fun { CapturedVariable.name; outer_function } ->
@@ -4241,7 +4252,8 @@ module ReadOnly = struct
     CallableUndecoratedSignaturesSharedMemory.get
       callable_undecorated_signatures_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
-    |> assert_shared_memory_key_exists "missing callable metadata"
+    |> assert_shared_memory_key_exists (fun () ->
+           Format.asprintf "missing callable metadata: `%a`" Reference.pp define_name)
     |> List.map ~f:(fun { FunctionSignature.return_annotation; _ } -> return_annotation)
 
 
@@ -4254,7 +4266,8 @@ module ReadOnly = struct
       CallableUndecoratedSignaturesSharedMemory.get
         callable_undecorated_signatures_shared_memory
         (FullyQualifiedName.from_reference_unchecked define_name)
-      |> assert_shared_memory_key_exists "missing callable metadata"
+      |> assert_shared_memory_key_exists (fun () ->
+             Format.asprintf "missing callable metadata: `%a`" Reference.pp define_name)
     in
     let normalize_root = function
       | AccessPath.Root.PositionalParameter { position; positional_only = true; _ } ->
@@ -4304,7 +4317,8 @@ module ReadOnly = struct
     CallableMetadataSharedMemory.get
       callable_metadata_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
-    |> assert_shared_memory_key_exists "missing callable metadata"
+    |> assert_shared_memory_key_exists (fun () ->
+           Format.asprintf "missing callable metadata: `%a`" Reference.pp define_name)
     |> (fun { CallableMetadataSharedMemory.Value.decorator_callees; _ } -> decorator_callees)
     |> Location.SerializableMap.find_opt location
     >>| List.map
@@ -4328,7 +4342,8 @@ module ReadOnly = struct
       let convert_to_method_in_qualifier callable =
         callable
         |> CallableMetadataSharedMemory.get callable_metadata_shared_memory
-        |> assert_shared_memory_key_exists "missing callable metadata"
+        |> assert_shared_memory_key_exists (fun () ->
+               Format.asprintf "missing callable metadata: `%a`" FullyQualifiedName.pp callable)
         |> fun {
                  CallableMetadataSharedMemory.Value.defining_class;
                  name = method_name;
@@ -4349,7 +4364,7 @@ module ReadOnly = struct
       ModuleCallablesSharedMemory.get
         module_callables_shared_memory
         (ModuleQualifier.from_reference_unchecked qualifier)
-      |> assert_shared_memory_key_exists "missing module callables for qualifier"
+      |> assert_shared_memory_key_exists (fun () -> "missing module callables for qualifier")
       |> List.filter_map ~f:convert_to_method_in_qualifier
 
 
@@ -4357,21 +4372,21 @@ module ReadOnly = struct
     CallableAstSharedMemory.get
       callable_ast_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
-    |> assert_shared_memory_key_exists "missing callable ast"
+    |> assert_shared_memory_key_exists (fun () -> "missing callable ast")
 
 
   let get_undecorated_signatures { callable_undecorated_signatures_shared_memory; _ } define_name =
     CallableUndecoratedSignaturesSharedMemory.get
       callable_undecorated_signatures_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
-    |> assert_shared_memory_key_exists "missing callable undecorated signature"
+    |> assert_shared_memory_key_exists (fun () -> "missing callable undecorated signature")
 
 
   let get_class_summary { class_metadata_shared_memory; _ } class_name =
     let class_name = FullyQualifiedName.from_reference_unchecked (Reference.create class_name) in
     let metadata =
       ClassMetadataSharedMemory.get class_metadata_shared_memory class_name
-      |> assert_shared_memory_key_exists "missing class metadata for class"
+      |> assert_shared_memory_key_exists (fun () -> "missing class metadata for class")
     in
     { PysaClassSummary.class_name; metadata }
 
@@ -4380,7 +4395,7 @@ module ReadOnly = struct
     ClassDecoratorsSharedMemory.get
       class_decorators_shared_memory
       (FullyQualifiedName.from_reference_unchecked (Reference.create class_name))
-    |> assert_shared_memory_key_exists "missing callable ast"
+    |> assert_shared_memory_key_exists (fun () -> "missing callable ast")
 
 
   let get_class_attributes
@@ -4401,9 +4416,9 @@ module ReadOnly = struct
     ClassFieldsSharedMemory.get
       class_fields_shared_memory
       (FullyQualifiedName.from_reference_unchecked (Reference.create class_name))
-    |> assert_shared_memory_key_exists "missing class fields for class"
+    |> assert_shared_memory_key_exists (fun () -> "missing class fields for class")
     |> SerializableStringMap.find_opt attribute
-    |> assert_shared_memory_key_exists "missing class field"
+    |> assert_shared_memory_key_exists (fun () -> "missing class field")
     |> fun { ClassField.type_; _ } -> type_
 
 
@@ -4415,9 +4430,9 @@ module ReadOnly = struct
     ClassFieldsSharedMemory.get
       class_fields_shared_memory
       (FullyQualifiedName.from_reference_unchecked (Reference.create class_name))
-    |> assert_shared_memory_key_exists "missing class fields for class"
+    |> assert_shared_memory_key_exists (fun () -> "missing class fields for class")
     |> SerializableStringMap.find_opt attribute
-    |> assert_shared_memory_key_exists "missing class field"
+    |> assert_shared_memory_key_exists (fun () -> "missing class field")
     |> fun { ClassField.explicit_annotation; _ } -> explicit_annotation
 
 
@@ -4425,9 +4440,9 @@ module ReadOnly = struct
     ModuleGlobalsSharedMemory.get
       module_globals_shared_memory
       (ModuleQualifier.from_reference_unchecked qualifier)
-    |> assert_shared_memory_key_exists "missing module globals"
+    |> assert_shared_memory_key_exists (fun () -> "missing module globals")
     |> SerializableStringMap.find_opt name
-    |> assert_shared_memory_key_exists "missing global variable"
+    |> assert_shared_memory_key_exists (fun () -> "missing global variable")
     |> fun { GlobalVariable.type_; _ } -> type_
 
 
@@ -4747,7 +4762,11 @@ module ReadOnly = struct
             Target.define_name_exn callable
             |> FullyQualifiedName.from_reference_unchecked
             |> CallableMetadataSharedMemory.get callable_metadata_shared_memory
-            |> assert_shared_memory_key_exists "missing callable metadata"
+            |> assert_shared_memory_key_exists (fun () ->
+                   Format.asprintf
+                     "missing callable metadata: `%a`"
+                     Target.pp_pretty_with_kind
+                     callable)
           in
           let module_definitions_map =
             Map.update
@@ -4800,7 +4819,7 @@ module ReadOnly = struct
     let parse_module_call_graphs sofar (module_qualifier, callables) =
       let { ModuleInfosSharedMemory.Module.pyrefly_info_filename; _ } =
         ModuleInfosSharedMemory.get module_infos_shared_memory module_qualifier
-        |> assert_shared_memory_key_exists "missing module info"
+        |> assert_shared_memory_key_exists (fun () -> "missing module info")
       in
       let pyrefly_info_filename =
         match pyrefly_info_filename with
@@ -4911,7 +4930,7 @@ module ReadOnly = struct
       in
       let { ModuleInfosSharedMemory.Module.relative_source_path; _ } =
         ModuleInfosSharedMemory.get module_infos_shared_memory module_qualifier
-        |> assert_shared_memory_key_exists "invalid module id"
+        |> assert_shared_memory_key_exists (fun () -> "invalid module id")
       in
       {
         Analysis.AnalysisError.Instantiated.line = start_line;
@@ -4971,7 +4990,7 @@ module ReadOnly = struct
                   GlobalClassId.module_id = ModuleId.from_int module_id;
                   local_class_id = LocalClassId.from_int class_id;
                 }
-              |> assert_shared_memory_key_exists "missing class id"
+              |> assert_shared_memory_key_exists (fun () -> "missing class id")
               |> FullyQualifiedName.to_reference
               |> Reference.show
             in
@@ -5036,7 +5055,7 @@ module ReadOnly = struct
       =
       let fields =
         ClassFieldsSharedMemory.get class_fields_shared_memory class_name
-        |> assert_shared_memory_key_exists "missing class fields for class"
+        |> assert_shared_memory_key_exists (fun () -> "missing class fields for class")
       in
       let compare_by_location
           (_, { ClassField.location = left; _ })
@@ -5307,7 +5326,8 @@ module ModelQueries = struct
           CallableUndecoratedSignaturesSharedMemory.get
             callable_undecorated_signatures_shared_memory
             (FullyQualifiedName.from_reference_unchecked name)
-          |> assert_shared_memory_key_exists "missing undecorated signatures for callable"
+          |> assert_shared_memory_key_exists (fun () ->
+                 "missing undecorated signatures for callable")
         in
         Some
           (Global.Function
@@ -5368,14 +5388,14 @@ module ModelQueries = struct
             CallableDefineSignatureSharedMemory.get
               callable_define_signature_shared_memory
               callable_name
-            |> assert_shared_memory_key_exists "missing signature for callable"
+            |> assert_shared_memory_key_exists (fun () -> "missing signature for callable")
             |> AstResult.to_option
             >>| Node.value
           in
           FullyQualifiedName.to_reference callable_name, signature
         in
         ModuleCallablesSharedMemory.get module_callables_shared_memory module_qualifier
-        |> assert_shared_memory_key_exists "missing module callables for qualifier"
+        |> assert_shared_memory_key_exists (fun () -> "missing module callables for qualifier")
         |> List.filter ~f:is_method_for_class
         |> List.map ~f:add_signature
         |> Option.some
