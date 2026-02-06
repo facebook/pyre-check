@@ -290,12 +290,32 @@ module ReadOnly = struct
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.global"
 
 
-  let get_overriden_base_method api ~class_name ~method_name =
+  let get_overriden_base_method api method_reference =
     match api with
     | Pyre1 pyre_api ->
-        Pyre1Api.ReadOnly.get_overriden_base_method pyre_api ~class_name ~method_name
+        Analysis.PyrePysaEnvironment.ReadOnly.get_overriden_base_method pyre_api method_reference
     | Pyrefly pyrefly_api ->
-        PyreflyApi.ReadOnly.get_overriden_base_method pyrefly_api ~class_name ~method_name
+        PyreflyApi.ReadOnly.get_overriden_base_method pyrefly_api method_reference
+
+
+  let target_from_method_reference api method_reference =
+    let method_reference, is_property_setter =
+      match method_reference with
+      | Analysis.PyrePysaEnvironment.MethodReference.Pyre1
+          { class_name; method_name; is_property_setter } ->
+          Ast.Reference.create ~prefix:class_name method_name, is_property_setter
+      | Analysis.PyrePysaEnvironment.MethodReference.Pyrefly { define_name; is_property_setter } ->
+          define_name, is_property_setter
+    in
+    let kind =
+      if is_property_setter then
+        match api with
+        | Pyre1 _ -> Target.Pyre1PropertySetter
+        | Pyrefly _ -> Target.PyreflyPropertySetter
+      else
+        Target.Normal
+    in
+    Target.create_method_from_reference ~kind method_reference
 
 
   let annotation_parser = function

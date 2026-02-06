@@ -452,12 +452,23 @@ module ReadWrite = struct
     ()
 end
 
-module MethodInQualifier = struct
-  type t = {
-    class_name: Ast.Reference.t;
-    method_name: string;
-    is_property_setter: bool;
-  }
+module MethodReference = struct
+  type t =
+    | Pyre1 of {
+        class_name: Ast.Reference.t;
+        method_name: string;
+        is_property_setter: bool;
+      }
+    | Pyrefly of {
+        define_name: Ast.Reference.t;
+        is_property_setter: bool;
+      }
+  [@@deriving show]
+
+  let class_name = function
+    | Pyre1 { class_name; _ } -> class_name
+    | Pyrefly { define_name; _ } ->
+        define_name |> Ast.Reference.prefix |> Option.value_exn ~message:"Expect a method name"
 end
 
 module ReadOnly = struct
@@ -666,30 +677,34 @@ module ReadOnly = struct
 
   let get_variable api = GlobalResolution.get_variable (global_resolution api)
 
-  let get_overriden_base_method api ~class_name ~method_name =
-    let ancestor =
-      GlobalResolution.overrides
-        (global_resolution api)
-        (Ast.Reference.show class_name)
-        ~name:method_name
-    in
-    let open Core.Option.Monad_infix in
-    ancestor
-    >>= fun ancestor ->
-    let parent_annotation = AnnotatedAttribute.parent ancestor in
-    let ancestor_parent =
-      Type.Primitive parent_annotation
-      |> Type.expression
-      |> Ast.Expression.show
-      |> Ast.Reference.create
-    in
-    (* This special case exists only for `type`. Our override lookup for a class C first looks at
-       the regular MRO. If that fails, it looks for Type[C]'s MRO. However, when C is type, this
-       causes a cycle to get registered. *)
-    if Ast.Reference.equal ancestor_parent class_name then
-      None
-    else
-      Some (Ast.Reference.create ~prefix:ancestor_parent method_name)
+  let get_overriden_base_method api method_reference =
+    match method_reference with
+    | MethodReference.Pyrefly _ -> None
+    | MethodReference.Pyre1 { class_name; method_name; is_property_setter } ->
+        let ancestor =
+          GlobalResolution.overrides
+            (global_resolution api)
+            (Ast.Reference.show class_name)
+            ~name:method_name
+        in
+        let open Core.Option.Monad_infix in
+        ancestor
+        >>= fun ancestor ->
+        let parent_annotation = AnnotatedAttribute.parent ancestor in
+        let ancestor_parent =
+          Type.Primitive parent_annotation
+          |> Type.expression
+          |> Ast.Expression.show
+          |> Ast.Reference.create
+        in
+        (* This special case exists only for `type`. Our override lookup for a class C first looks
+           at the regular MRO. If that fails, it looks for Type[C]'s MRO. However, when C is type,
+           this causes a cycle to get registered. *)
+        if Ast.Reference.equal ancestor_parent class_name then
+          None
+        else
+          Some
+            (MethodReference.Pyre1 { class_name = ancestor_parent; method_name; is_property_setter })
 
 
   let annotation_parser api = global_resolution api |> GlobalResolution.annotation_parser
@@ -1048,11 +1063,12 @@ module ReadOnly = struct
         List.filter_map body ~f:(function
             | { Ast.Node.value = Ast.Statement.Statement.Define define; _ } ->
                 Some
-                  {
-                    MethodInQualifier.class_name;
-                    method_name = Ast.Statement.Define.unqualified_name define;
-                    is_property_setter = Ast.Statement.Define.is_property_setter define;
-                  }
+                  (MethodReference.Pyre1
+                     {
+                       class_name;
+                       method_name = Ast.Statement.Define.unqualified_name define;
+                       is_property_setter = Ast.Statement.Define.is_property_setter define;
+                     })
             | _ -> None)
       in
       methods

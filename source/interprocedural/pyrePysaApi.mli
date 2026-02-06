@@ -120,7 +120,7 @@ module ReadOnly : sig
     :  t ->
     exclude_test_modules:bool ->
     Ast.Reference.t ->
-    Analysis.PyrePysaEnvironment.MethodInQualifier.t list
+    Analysis.PyrePysaEnvironment.MethodReference.t list
 
   val get_qualifier_top_level_define_name : t -> Ast.Reference.t -> Ast.Reference.t
 
@@ -175,9 +175,10 @@ module ReadOnly : sig
 
   val get_overriden_base_method
     :  t ->
-    class_name:Ast.Reference.t ->
-    method_name:string ->
-    Ast.Reference.t option
+    Analysis.PyrePysaEnvironment.MethodReference.t ->
+    Analysis.PyrePysaEnvironment.MethodReference.t option
+
+  val target_from_method_reference : t -> Analysis.PyrePysaEnvironment.MethodReference.t -> Target.t
 
   val get_captured_variable_from_nonlocal_target
     :  t ->

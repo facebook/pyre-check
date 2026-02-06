@@ -144,9 +144,8 @@ module ReadOnly : sig
 
   val get_overriden_base_method
     :  t ->
-    class_name:Ast.Reference.t ->
-    method_name:string ->
-    Ast.Reference.t option
+    Analysis.PyrePysaEnvironment.MethodReference.t ->
+    Analysis.PyrePysaEnvironment.MethodReference.t option
 
   val get_callable_captures
     :  t ->
@@ -163,7 +162,7 @@ module ReadOnly : sig
     :  t ->
     exclude_test_modules:bool ->
     Ast.Reference.t ->
-    Analysis.PyrePysaEnvironment.MethodInQualifier.t list
+    Analysis.PyrePysaEnvironment.MethodReference.t list
 
   (* Is this a test module (i.e, unit test code that we shouldn't analyze) *)
   val is_test_qualifier : t -> Ast.Reference.t -> bool

@@ -1979,6 +1979,8 @@ module CallableMetadataSharedMemory = struct
       decorator_callees: GlobalCallableId.t list Location.SerializableMap.t;
       captured_variables: CapturedVariable.t list;
     }
+
+    let _unused_fields { name = _; defining_class = _; _ } = ()
   end
 
   include
@@ -4205,19 +4207,22 @@ module ReadOnly = struct
 
   let get_overriden_base_method
       { callable_metadata_shared_memory; callable_id_to_qualified_name_shared_memory; _ }
-      ~class_name
-      ~method_name
+      method_reference
     =
-    let define_name = Reference.create ~prefix:class_name method_name in
-    CallableMetadataSharedMemory.get
-      callable_metadata_shared_memory
-      (FullyQualifiedName.from_reference_unchecked define_name)
-    |> assert_shared_memory_key_exists (fun () ->
-           Format.asprintf "missing callable metadata: `%a`" Reference.pp define_name)
-    |> fun { CallableMetadataSharedMemory.Value.overridden_base_method; _ } ->
-    overridden_base_method
-    >>| CallableIdToQualifiedNameSharedMemory.get callable_id_to_qualified_name_shared_memory
-    >>| FullyQualifiedName.to_reference
+    match method_reference with
+    | Analysis.PyrePysaEnvironment.MethodReference.Pyre1 _ -> None
+    | Analysis.PyrePysaEnvironment.MethodReference.Pyrefly { define_name; is_property_setter } ->
+        CallableMetadataSharedMemory.get
+          callable_metadata_shared_memory
+          (FullyQualifiedName.from_reference_unchecked define_name)
+        |> assert_shared_memory_key_exists (fun () ->
+               Format.asprintf "missing callable metadata: `%a`" Reference.pp define_name)
+        |> fun { CallableMetadataSharedMemory.Value.overridden_base_method; _ } ->
+        overridden_base_method
+        >>| CallableIdToQualifiedNameSharedMemory.get callable_id_to_qualified_name_shared_memory
+        >>| fun define_name ->
+        Analysis.PyrePysaEnvironment.MethodReference.Pyrefly
+          { define_name = FullyQualifiedName.to_reference define_name; is_property_setter }
 
 
   let get_callable_captures
@@ -4327,45 +4332,27 @@ module ReadOnly = struct
 
 
   let get_methods_for_qualifier
-      ({
-         module_callables_shared_memory;
-         callable_metadata_shared_memory;
-         class_id_to_qualified_name_shared_memory;
-         _;
-       } as api)
+      ({ module_callables_shared_memory; callable_metadata_shared_memory; _ } as api)
       ~exclude_test_modules
       qualifier
     =
     if exclude_test_modules && is_test_qualifier api qualifier then
       []
     else
-      let convert_to_method_in_qualifier callable =
+      let convert_to_method_reference callable =
         callable
         |> CallableMetadataSharedMemory.get callable_metadata_shared_memory
         |> assert_shared_memory_key_exists (fun () ->
                Format.asprintf "missing callable metadata: `%a`" FullyQualifiedName.pp callable)
-        |> fun {
-                 CallableMetadataSharedMemory.Value.defining_class;
-                 name = method_name;
-                 metadata = { is_property_setter; _ };
-                 _;
-               } ->
-        defining_class
-        >>| ClassIdToQualifiedNameSharedMemory.get_class_name
-              class_id_to_qualified_name_shared_memory
-        >>| fun defining_class ->
-        {
-          Analysis.PyrePysaEnvironment.MethodInQualifier.class_name =
-            FullyQualifiedName.to_reference defining_class;
-          method_name;
-          is_property_setter;
-        }
+        |> fun { CallableMetadataSharedMemory.Value.metadata = { is_property_setter; _ }; _ } ->
+        Analysis.PyrePysaEnvironment.MethodReference.Pyrefly
+          { define_name = FullyQualifiedName.to_reference callable; is_property_setter }
       in
       ModuleCallablesSharedMemory.get
         module_callables_shared_memory
         (ModuleQualifier.from_reference_unchecked qualifier)
       |> assert_shared_memory_key_exists (fun () -> "missing module callables for qualifier")
-      |> List.filter_map ~f:convert_to_method_in_qualifier
+      |> List.map ~f:convert_to_method_reference
 
 
   let get_define_opt { callable_ast_shared_memory; _ } define_name =

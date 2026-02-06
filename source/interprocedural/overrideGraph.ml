@@ -52,41 +52,25 @@ module Heap = struct
       overriding_class: Reference.t;
     }
 
-    let from_method_in_qualifier
-        ~pyre_api
-        {
-          Analysis.PyrePysaEnvironment.MethodInQualifier.class_name;
-          method_name;
-          is_property_setter;
-        }
-      =
+    let from_method_reference ~pyre_api method_reference =
       let base_callable =
-        try PyrePysaApi.ReadOnly.get_overriden_base_method pyre_api ~class_name ~method_name with
+        try PyrePysaApi.ReadOnly.get_overriden_base_method pyre_api method_reference with
         | Analysis.ClassHierarchy.Untracked untracked_type ->
             Log.warning
-              "Found untracked type `%s` when looking for a parent of `%a.%s`. The method will be \
+              "Found untracked type `%s` when looking for a parent of `%a`. The method will be \
                considered has having no parent, which could lead to false negatives."
               untracked_type
-              Reference.pp
-              class_name
-              method_name;
+              Analysis.PyrePysaEnvironment.MethodReference.pp
+              method_reference;
             None
-      in
-      let kind =
-        if is_property_setter then
-          if PyrePysaApi.ReadOnly.is_pyrefly pyre_api then
-            Target.PyreflyPropertySetter
-          else
-            Target.Pyre1PropertySetter
-        else
-          Target.Normal
       in
       base_callable
       >>= fun base_callable ->
       Some
         {
-          base_callable = Target.create_method_from_reference ~kind base_callable;
-          overriding_class = class_name;
+          base_callable = PyrePysaApi.ReadOnly.target_from_method_reference pyre_api base_callable;
+          overriding_class =
+            Analysis.PyrePysaEnvironment.MethodReference.class_name method_reference;
         }
   end
 
@@ -118,7 +102,7 @@ module Heap = struct
 
   let from_qualifier ~pyre_api ~skip_overrides_targets qualifier =
     PyrePysaApi.ReadOnly.get_methods_for_qualifier ~exclude_test_modules:true pyre_api qualifier
-    |> List.filter_map ~f:(OverridingRelation.from_method_in_qualifier ~pyre_api)
+    |> List.filter_map ~f:(OverridingRelation.from_method_reference ~pyre_api)
     |> from_overriding_relations
     |> skip_overrides ~to_skip:skip_overrides_targets
 

@@ -188,12 +188,20 @@ module ReadWrite : sig
   val purge_sources_from_shared_memory : t -> unit
 end
 
-module MethodInQualifier : sig
-  type t = {
-    class_name: Ast.Reference.t;
-    method_name: string;
-    is_property_setter: bool;
-  }
+module MethodReference : sig
+  type t =
+    | Pyre1 of {
+        class_name: Ast.Reference.t;
+        method_name: string;
+        is_property_setter: bool;
+      }
+    | Pyrefly of {
+        define_name: Ast.Reference.t;
+        is_property_setter: bool;
+      }
+  [@@deriving show]
+
+  val class_name : t -> Ast.Reference.t
 end
 
 module ReadOnly : sig
@@ -302,11 +310,7 @@ module ReadOnly : sig
 
   val global : t -> Ast.Reference.t -> AttributeResolution.Global.t option
 
-  val get_overriden_base_method
-    :  t ->
-    class_name:Ast.Reference.t ->
-    method_name:string ->
-    Ast.Reference.t option
+  val get_overriden_base_method : t -> MethodReference.t -> MethodReference.t option
 
   val annotation_parser : t -> AnnotatedCallable.annotation_parser
 
@@ -410,7 +414,7 @@ module ReadOnly : sig
     :  t ->
     exclude_test_modules:bool ->
     Ast.Reference.t ->
-    MethodInQualifier.t list
+    MethodReference.t list
 end
 
 module InContext : sig
