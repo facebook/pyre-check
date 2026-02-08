@@ -2925,6 +2925,35 @@ let test_string_locations =
                          ~stop:(1, 5)
                          (Expression.Constant (Constant.String (StringLiteral.create "foo")))));
                ];
+        (* Test special symbols. *)
+        labeled_test_case __FUNCTION__ __LINE__
+        @@ assert_parsed
+             "\"😄\" + x"
+             ~expected:
+               [
+                 node
+                   ~start:(1, 0)
+                   ~stop:(1, 10)
+                   (Statement.Expression
+                      (node
+                         ~start:(1, 0)
+                         ~stop:(1, 10)
+                         (Expression.BinaryOperator
+                            {
+                              operator = BinaryOperator.Add;
+                              left =
+                                node
+                                  ~start:(1, 0)
+                                  ~stop:(1, 6)
+                                  (Expression.Constant (Constant.String (StringLiteral.create "😄")));
+                              right =
+                                node
+                                  ~start:(1, 9)
+                                  ~stop:(1, 10)
+                                  (Expression.Name (Name.Identifier "x"));
+                              origin = None;
+                            })));
+               ];
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "'''foo'''"
