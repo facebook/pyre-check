@@ -76,14 +76,14 @@ class TargetCollector(builtin_ast.NodeVisitor):
     ) -> Optional[str]:
         value = field.value
         if field.arg == "name":
-            if isinstance(value, builtin_ast.Str):
-                return value.s
+            if isinstance(value, builtin_ast.Constant) and isinstance(value.value, str):
+                return value.value
         return name
 
     def _get_check_types(self, field: builtin_ast.keyword, check_types: bool) -> bool:
         value = field.value
         if field.arg == "check_types":
-            if isinstance(value, builtin_ast.NameConstant):
+            if isinstance(value, builtin_ast.Constant) and isinstance(value.value, bool):
                 return check_types or value.value
         return check_types
 
@@ -92,18 +92,18 @@ class TargetCollector(builtin_ast.NodeVisitor):
     ) -> bool:
         value = field.value
         if field.arg == "check_types_options":
-            if isinstance(value, builtin_ast.Str):
-                return is_strict or (uses_pyre and "strict" in value.s.lower())
+            if isinstance(value, builtin_ast.Constant) and isinstance(value.value, str):
+                return is_strict or (uses_pyre and "strict" in value.value.lower())
         elif field.arg == "typing_options":
-            if isinstance(value, builtin_ast.Str):
-                is_strict = is_strict or "strict" in value.s.lower()
+            if isinstance(value, builtin_ast.Constant) and isinstance(value.value, str):
+                is_strict = is_strict or "strict" in value.value.lower()
         return is_strict
 
     def _get_uses_pyre(self, field: builtin_ast.keyword, uses_pyre: bool) -> bool:
         value = field.value
         if field.arg == "check_types_options":
-            if isinstance(value, builtin_ast.Str):
-                return uses_pyre and "mypy" not in value.s.lower()
+            if isinstance(value, builtin_ast.Constant) and isinstance(value.value, str):
+                return uses_pyre and "mypy" not in value.value.lower()
         return uses_pyre
 
     def _get_has_typing_settings(
