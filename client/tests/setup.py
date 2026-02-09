@@ -23,8 +23,8 @@ import threading
 from pathlib import Path
 from typing import (
     Any,
-    Awaitable,
     Callable,
+    Coroutine,
     Generator,
     Iterable,
     Mapping,
@@ -90,7 +90,7 @@ def switch_environment(environment: Mapping[str, str]) -> Generator[None, None, 
         os.environ.update(old_environment)
 
 
-def async_test(func: Callable[TParams, Awaitable[T]]) -> Callable[TParams, T]:
+def async_test(func: Callable[TParams, Coroutine[Any, Any, T]]) -> Callable[TParams, T]:
     """
     Simple Decorator to allow for asyncio test methods in a standard
     `unittest.TestCase`.
@@ -98,7 +98,7 @@ def async_test(func: Callable[TParams, Awaitable[T]]) -> Callable[TParams, T]:
 
     @functools.wraps(func)
     def wrapper(*args: TParams.args, **kwargs: TParams.kwargs) -> T:
-        return asyncio.get_event_loop().run_until_complete(func(*args, **kwargs))
+        return asyncio.run(func(*args, **kwargs))
 
     return wrapper
 
