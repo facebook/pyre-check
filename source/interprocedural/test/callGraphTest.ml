@@ -2689,19 +2689,24 @@ let test_call_graph_of_define =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
            ~_migrated_to_pyrefly:true
+           ~skip_for_pyrefly:false
            ~source:
              {|
-       import typing
-       def foo() -> typing.Dict[str, int]:
+       from typing import Dict, Any
+       def foo() -> Dict[str, int]:
          return {"a": 0}
        def bar():
          return 1
        def baz():
          return "b"
-       def fun(d: typing.Dict[str, int], e: typing.Dict[str, typing.Dict[str, int]]):
+       def fun(d: Dict[str, int], e: Dict[str, Dict[str, int]], g: Dict[str, Any]):
          foo()["a"] = bar()
          d[baz()] = bar()
          e["a"]["b"] = 0
+         g["a"] = {}  # type: Dict[str, Any]
+         g["b"] = (
+           10000  # Stop location of `value` is not necesssarily the stop location of statement
+         )
       |}
            ~define_name:"test.fun"
            ~expected:
@@ -2789,6 +2794,150 @@ let test_call_graph_of_define =
                             ~implicit_receiver:true
                             ~receiver_class:"dict"
                             ~index:2
+                            (Target.Regular.Method
+                               { class_name = "dict"; method_name = "__setitem__"; kind = Normal });
+                        ]
+                      ()) );
+               ( "13:2-13:37|artificial-call|subscript-set-item",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~receiver_class:"dict"
+                            ~index:3
+                            (Target.Regular.Method
+                               { class_name = "dict"; method_name = "__setitem__"; kind = Normal });
+                        ]
+                      ()) );
+               ( "14:2-16:3|artificial-call|subscript-set-item",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~receiver_class:"dict"
+                            ~index:4
+                            (Target.Regular.Method
+                               { class_name = "dict"; method_name = "__setitem__"; kind = Normal });
+                        ]
+                      ()) );
+             ]
+           ~pyrefly_expected:
+             [
+               ( "10:2-10:7",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                        ]
+                      ()) );
+               ( "10:2-10:20|artificial-call|subscript-set-item",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~receiver_class:"dict"
+                            (Target.Regular.Method
+                               { class_name = "dict"; method_name = "__setitem__"; kind = Normal });
+                        ]
+                      ()) );
+               ( "10:15-10:20",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~return_type:(Some ReturnType.integer)
+                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                        ]
+                      ()) );
+               ( "11:2-11:18|artificial-call|subscript-set-item",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~receiver_class:"dict"
+                            ~index:1
+                            (Target.Regular.Method
+                               { class_name = "dict"; method_name = "__setitem__"; kind = Normal });
+                        ]
+                      ()) );
+               ( "11:4-11:9",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            (Target.Regular.Function { name = "test.baz"; kind = Normal });
+                        ]
+                      ()) );
+               ( "11:13-11:18",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~return_type:(Some ReturnType.integer)
+                            ~index:1
+                            (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                        ]
+                      ()) );
+               ( "12:2-12:8|artificial-call|subscript-get-item",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~receiver_class:"dict"
+                            (Target.Regular.Method
+                               { class_name = "dict"; method_name = "__getitem__"; kind = Normal });
+                        ]
+                      ()) );
+               ( "12:2-12:17|artificial-call|subscript-set-item",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~receiver_class:"dict"
+                            ~index:2
+                            (Target.Regular.Method
+                               { class_name = "dict"; method_name = "__setitem__"; kind = Normal });
+                        ]
+                      ()) );
+               ( "13:2-13:13|artificial-call|subscript-set-item",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~receiver_class:"dict"
+                            ~index:3
+                            (Target.Regular.Method
+                               { class_name = "dict"; method_name = "__setitem__"; kind = Normal });
+                        ]
+                      ()) );
+               ( "14:2-16:3|artificial-call|subscript-set-item",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~receiver_class:"dict"
+                            ~index:4
                             (Target.Regular.Method
                                { class_name = "dict"; method_name = "__setitem__"; kind = Normal });
                         ]
