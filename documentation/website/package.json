@@ -20,7 +20,7 @@
     "@docusaurus/plugin-client-redirects": "2.1.0",
     "@docusaurus/plugin-google-gtag": "2.1.0",
     "@docusaurus/preset-classic": "2.1.0",
-    "axios": "0.30.2",
+    "axios": "1.13.5",
     "classnames": "^2.2.6",
     "codemirror": "^5.59.0",
     "docusaurus-lunr-search": "^3.4.0",
