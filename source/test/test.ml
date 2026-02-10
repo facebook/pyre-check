@@ -2652,15 +2652,15 @@ let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions =
             def group(self, *args, **kwargs) -> Callable[[Callable[..., Any]], Group]: ...
 
 
-        class CommandCollection(MultiCommand):
-            sources: List[MultiCommand]
+        class CommandCollection(Group):
+            sources: List[Group]
 
             def __init__(
-                self, name: Optional[str] = ..., sources: Optional[List[MultiCommand]] = ..., **attrs
+                self, name: Optional[str] = ..., sources: Optional[List[Group]] = ..., **attrs
             ) -> None:
                 ...
 
-            def add_source(self, multi_cmd: MultiCommand) -> None:
+            def add_source(self, multi_cmd: Group) -> None:
                 ...
 
 
