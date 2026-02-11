@@ -3597,17 +3597,24 @@ module HigherOrderCallGraph = struct
             match DefineCallGraph.resolve_call ~location ~call Context.input_define_call_graph with
             | Some callees -> callees
             | None ->
+                let () =
+                  Log.error
+                    "Call graph of `%a`: `%a`"
+                    Target.pp_pretty
+                    Context.callable
+                    DefineCallGraph.pp
+                    Context.input_define_call_graph
+                in
                 failwith
                   (Format.asprintf
-                     "Could not find callees for `%a` in `%a` at `%a` in the call graph: `%a`"
+                     "Could not find callees for `%a` in `%a` at `%a` in the call graph (see logs \
+                      above)."
                      Ast.Expression.Call.pp
                      call
                      Target.pp_pretty
                      Context.callable
                      Location.pp
-                     location
-                     DefineCallGraph.pp
-                     Context.input_define_call_graph))
+                     location))
       in
       (* The analysis of the callee AST handles the redirection to artifically created decorator
          defines. *)
