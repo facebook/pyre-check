@@ -311,7 +311,14 @@ module SharedMemory = struct
 
   (* We assume `DecoratorPreprocessing.setup_preprocessing` is called before since we use its shared
      memory here. *)
-  let create ~scheduler ~scheduler_policy ~pyre_api ~callables_to_definitions_map callables =
+  let create
+      ~scheduler
+      ~scheduler_policy
+      ~pyre_api
+      ~callables_to_definitions_map
+      ~skip_analysis_targets
+      callables
+    =
     (* TODO(T240882988): This ends up copying decorators from `CallablesSharedMemory` to
        `CallableToDecoratorsMap.SharedMemory`. Instead, we could just store the
        `callables_to_definitions_map` handle and a set of targets with decorators. *)
@@ -324,6 +331,10 @@ module SharedMemory = struct
           | Some value -> T.AddOnly.add shared_memory target value
           | None -> shared_memory)
     in
+    let inputs =
+      List.filter callables ~f:(fun callable ->
+          not (Core.Hash_set.mem skip_analysis_targets callable))
+    in
     let shared_memory_add_only =
       Scheduler.map_reduce
         scheduler
@@ -332,7 +343,7 @@ module SharedMemory = struct
         ~map
         ~reduce:(fun left right ->
           T.AddOnly.merge_same_handle_disjoint_keys ~smaller:left ~larger:right)
-        ~inputs:callables
+        ~inputs
         ()
     in
     let shared_memory = T.from_add_only shared_memory_add_only in

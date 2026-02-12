@@ -772,6 +772,12 @@ let initialize
   in
 
   (* Initialize models *)
+  let skip_analysis_targets =
+    initial_models
+    |> SharedModels.skip_analysis ~scheduler
+    |> Target.Set.elements
+    |> Target.HashSet.of_list
+  in
   (* The call graph building depends on initial models for global targets. *)
   let callables_to_decorators_map =
     Interprocedural.CallableToDecoratorsMap.SharedMemory.create
@@ -780,13 +786,8 @@ let initialize
       ~pyre_api
       ~callables_to_definitions_map:
         (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
+      ~skip_analysis_targets
       definitions
-  in
-  let skip_analysis_targets =
-    initial_models
-    |> SharedModels.skip_analysis ~scheduler
-    |> Target.Set.elements
-    |> Target.HashSet.of_list
   in
   let ({ CallGraph.SharedMemory.whole_program_call_graph; define_call_graphs } as call_graph) =
     try

@@ -789,6 +789,19 @@ let run_taint_analysis
   in
   let pyre_api = PyrePysaApi.ReadOnly.of_read_write_api pyre_read_write_api in
 
+  let type_of_expression_shared_memory =
+    Interprocedural.TypeOfExpressionSharedMemory.create
+      ~pyre_api
+      ~callables_to_definitions_map:
+        (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
+      ()
+  in
+
+  let attribute_targets = SharedModels.object_targets initial_models in
+  let skip_analysis_targets = SharedModels.skip_analysis ~scheduler initial_models in
+  let skip_analysis_targets_hashset =
+    skip_analysis_targets |> Target.Set.elements |> Target.HashSet.of_list
+  in
   let callables_to_decorators_map =
     let step_logger =
       StepLogger.start
@@ -807,6 +820,7 @@ let run_taint_analysis
         ~pyre_api
         ~callables_to_definitions_map:
           (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
+        ~skip_analysis_targets:skip_analysis_targets_hashset
         definitions
     in
     let () =
@@ -819,21 +833,8 @@ let run_taint_analysis
     callables_to_decorators_map
   in
 
-  let type_of_expression_shared_memory =
-    Interprocedural.TypeOfExpressionSharedMemory.create
-      ~pyre_api
-      ~callables_to_definitions_map:
-        (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
-      ()
-  in
-
   let step_logger =
     StepLogger.start ~start_message:"Building call graph" ~end_message:"Call graph built" ()
-  in
-  let attribute_targets = SharedModels.object_targets initial_models in
-  let skip_analysis_targets = SharedModels.skip_analysis ~scheduler initial_models in
-  let skip_analysis_targets_hashset =
-    skip_analysis_targets |> Target.Set.elements |> Target.HashSet.of_list
   in
   let ( ({
            Interprocedural.CallGraph.SharedMemory.whole_program_call_graph =

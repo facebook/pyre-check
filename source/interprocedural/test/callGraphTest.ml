@@ -74,6 +74,7 @@ let compute_define_call_graph
       ~scheduler_policy
       ~callables_to_definitions_map:
         (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
+      ~skip_analysis_targets:(Target.HashSet.create ())
       definitions
   in
   let call_graph =
@@ -8904,6 +8905,7 @@ let assert_resolve_decorator_callees
       ~pyre_api
       ~callables_to_definitions_map:
         (CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
+      ~skip_analysis_targets:(Target.HashSet.create ())
       definitions_and_stubs
   in
   let pyrefly_define_call_graphs =
