@@ -274,6 +274,7 @@ Call dependencies
     "object.__init__ (method)", "object.__new__ (method)",
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
+  "dictionary.test_type_comments (fun)": [ "dict.__setitem__ (method)" ],
   "dictionary.test_with_issue_in_dict_comprehension (fun)": [
     "list.__iter__ (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)", "typing.Iterator.__next__ (method)"

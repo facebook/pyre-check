@@ -184,6 +184,7 @@ module Analysis : sig
     ?enable_strict_any_check:bool ->
     ?enable_unawaited_awaitable_analysis:bool ->
     ?include_suppressed_errors:bool ->
+    ?use_pyrefly_results:bool ->
     source_paths:SearchPath.t list ->
     unit ->
     t

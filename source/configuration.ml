@@ -442,6 +442,7 @@ module Analysis = struct
       ?(enable_strict_any_check = default_enable_strict_any_check)
       ?(enable_unawaited_awaitable_analysis = default_enable_unawaited_awaitable_analysis)
       ?(include_suppressed_errors = default_include_suppressed_errors)
+      ?(use_pyrefly_results = false)
       ~source_paths
       ()
     =
@@ -454,6 +455,15 @@ module Analysis = struct
         shared_memory_dependency_table_power_from_configuration
       else
         1
+    in
+    let enable_type_comments =
+      if use_pyrefly_results then
+        (* "Disabling parsing type comments due to using Pyrefly results, so that the locations of
+           statements that contain type comments can be consistent between Pyre parser and Pyrefly
+           parser". *)
+        false
+      else
+        enable_type_comments
     in
     {
       parallel;

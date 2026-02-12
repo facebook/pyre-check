@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Any, Dict, Generic, Iterable, Mapping, Optional, TypeVar, Union, cast
+from typing import Any, cast, Dict, Generic, Iterable, Mapping, Optional, TypeVar, Union
 
 from pysa import _test_sink, _test_source
 
@@ -567,3 +567,8 @@ def dict_getitem_mutate(x: str, j: int) -> str:
 
 def test_dict_getitem_mutate():
     _test_sink(dict_getitem_mutate(_test_source(), 1))
+
+
+def test_type_comments(g: Dict[str, Any]):
+    # Test disabling the parsing of type comments
+    g["a"] = {}  # type: Dict[str, Any]

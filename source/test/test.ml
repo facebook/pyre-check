@@ -3300,6 +3300,7 @@ module ScratchProject = struct
           ~show_error_traces
           ~parallel:false
           ~python_version:(Option.value python_version ~default:default_python_version)
+          ~use_pyrefly_results:false
           ?system_platform
           ?strict
           ?debug
@@ -3594,6 +3595,7 @@ module ScratchPyreflyProject = struct
         ~source_paths:[]
         ~search_paths:[]
         ~python_version
+        ~use_pyrefly_results:true
         ()
     in
     let api =

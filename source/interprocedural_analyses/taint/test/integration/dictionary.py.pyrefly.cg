@@ -283,6 +283,9 @@ Call dependencies
     "dictionary.Service.async_get_mapping (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)"
   ],
+  "dictionary.test_type_comments (fun)": [
+    "builtins.dict.__setitem__ (method)"
+  ],
   "dictionary.test_with_issue_in_dict_comprehension (fun)": [
     "builtins.list.__iter__ (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)", "typing.Iterator.__next__ (method)"

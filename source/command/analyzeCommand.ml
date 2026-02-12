@@ -333,6 +333,7 @@ module AnalyzeConfiguration = struct
         ~enable_strict_any_check
         ~enable_unawaited_awaitable_analysis
         ~include_suppressed_errors
+        ~use_pyrefly_results:(Option.is_some pyrefly_results)
         ()
     in
     {

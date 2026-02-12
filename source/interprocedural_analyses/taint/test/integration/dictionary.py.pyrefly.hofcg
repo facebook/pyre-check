@@ -3660,6 +3660,25 @@ Higher order call graphs
   }
 }
 {
+  "callable": "dictionary.test_type_comments",
+  "returned_callables": [],
+  "calls": {
+    "574:4-574:15|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "dictionary.test_with_issue_in_dict_comprehension",
   "returned_callables": [],
   "calls": {
