@@ -279,11 +279,38 @@ module Metadata = struct
             | _ -> false)
         | _ -> false
       in
+      let unannotated_globals = UnannotatedGlobal.raw_alist_of_source source in
+      (* Extract explicit __all__ names so that stub files can re-export names listed in __all__
+         even without the `y as y` pattern. *)
+      let explicit_dunder_all_names =
+        if is_stub then
+          let open Expression in
+          let extract_dunder_all = function
+            | ( "__all__",
+                SimpleAssign
+                  { value = Some { Node.value = Expression.(List names | Tuple names); _ }; _ } ) ->
+                let to_identifier = function
+                  | { Node.value = Expression.Constant (Constant.String { value = name; _ }); _ } ->
+                      Some name
+                  | _ -> None
+                in
+                Some (List.filter_map ~f:to_identifier names)
+            | _ -> None
+          in
+          List.find_map unannotated_globals ~f:extract_dunder_all
+          |> Option.map ~f:(Set.of_list (module String))
+        else
+          None
+      in
       let collect_export sofar (name, unannotated_global) =
         match unannotated_global with
         | Imported (ImportModule { implicit_alias; _ } | ImportFrom { implicit_alias; _ })
-          when implicit_alias && is_stub ->
-            (* Stub files do not re-export unaliased imports *)
+          when implicit_alias
+               && is_stub
+               && not
+                    (Option.value_map explicit_dunder_all_names ~default:false ~f:(fun set ->
+                         Set.mem set name)) ->
+            (* Stub files do not re-export unaliased imports, unless they appear in __all__ *)
             sofar
         | Imported (ImportModule { target; implicit_alias }) ->
             let exported_module_name =
@@ -325,7 +352,7 @@ module Metadata = struct
             exports_from_missing_classes MissingFromStubs.missing_typing_extensions_classes
         | _ -> Identifier.Map.Tree.empty
       in
-      UnannotatedGlobal.raw_alist_of_source source |> List.fold ~init ~f:collect_export
+      unannotated_globals |> List.fold ~init ~f:collect_export
     in
     Explicit { exports }
 

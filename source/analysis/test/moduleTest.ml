@@ -299,6 +299,31 @@ let test_exports context =
     |}
     (* Unfortunately since we don't really follow control we can't really join the two. *)
     ~expected:["foo", Name Name.GlobalVariable];
+  (* Stub files with explicit __all__ should re-export unaliased imports listed in __all__ *)
+  assert_exports
+    {|
+       from f.g import h
+       from i.j import k
+       __all__ = ["h"]
+    |}
+    ~is_stub:true
+    ~expected:["__all__", Name Name.GlobalVariable; "h", NameAlias { from = !&"f.g"; name = "h" }];
+  (* Stub files with explicit __all__: import module also re-exported when in __all__ *)
+  assert_exports
+    {|
+       import a.b
+       __all__ = ["a"]
+    |}
+    ~is_stub:true
+    ~expected:["__all__", Name Name.GlobalVariable; "a", Module !&"a"];
+  (* Stub files without __all__: unaliased imports are still filtered *)
+  assert_exports
+    {|
+       from f.g import h
+       from i.j import k as l
+    |}
+    ~is_stub:true
+    ~expected:["l", NameAlias { from = !&"i.j"; name = "k" }];
   ()
 
 

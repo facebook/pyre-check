@@ -448,7 +448,53 @@ let test_check_stub_imports context =
   ()
 
 
+let test_check_stub_dunder_all_reexport context =
+  (* Names listed in explicit __all__ should be re-exported from stub files, even without the `y as
+     y` pattern *)
+  assert_type_errors
+    ~other_sources:
+      [
+        { handle = "base.pyi"; source = {|
+              def y() -> int: ...
+          |} };
+        {
+          handle = "reexporter.pyi";
+          source = {|
+              from base import y
+              __all__ = ["y"]
+          |};
+        };
+      ]
+    {|
+      from reexporter import y
+      reveal_type(y())
+    |}
+    ["Revealed type [-1]: Revealed type for `reexporter.y()` is `int`."]
+    context;
+  (* Without __all__, plain imports in stubs should NOT be re-exported *)
+  assert_type_errors
+    ~other_sources:
+      [
+        { handle = "base2.pyi"; source = {|
+              def z() -> int: ...
+          |} };
+        { handle = "no_all.pyi"; source = {|
+              from base2 import z
+          |} };
+      ]
+    {|
+      from no_all import z
+    |}
+    ["Undefined import [21]: Could not find a name `z` defined in module `no_all`."]
+    context;
+  ()
+
+
 let () =
   "import"
-  >::: ["check_imports" >:: test_check_imports; "check_stub_imports" >:: test_check_stub_imports]
+  >::: [
+         "check_imports" >:: test_check_imports;
+         "check_stub_imports" >:: test_check_stub_imports;
+         "check_stub_dunder_all_reexport" >:: test_check_stub_dunder_all_reexport;
+       ]
   |> Test.run
