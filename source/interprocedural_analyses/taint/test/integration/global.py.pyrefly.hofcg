@@ -133,6 +133,11 @@ Higher order call graphs
   "callable": "global.create_global_source",
   "returned_callables": [],
   "calls": {
+    "78:4-78:5|identifier|z": {
+      "identifier": {
+        "globals": [ { "target": "Obj{global.z}", "index": 0 } ]
+      }
+    },
     "78:8-78:22": {
       "call": {
         "calls": [

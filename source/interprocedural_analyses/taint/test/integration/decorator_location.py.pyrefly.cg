@@ -17,9 +17,6 @@ Call dependencies
   "decorator_location.decorated_ignore_this_decorator_class (fun)": [
     "pysa._test_sink (fun)"
   ],
-  "decorator_location.decorated_ignore_this_decorator_class@decorated (fun)": [
-    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)"
-  ],
   "decorator_location.decorated_ignore_this_decorator_factory (fun)": [
     "pysa._test_sink (fun)"
   ],

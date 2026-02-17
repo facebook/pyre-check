@@ -462,6 +462,72 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "properties.test_issue_in_class_property",
+    "callable_line": 129,
+    "code": 5002,
+    "line": 130,
+    "start": 15,
+    "end": 46,
+    "filename": "properties.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "string_concat_lhs" } ],
+                "leaves": [
+                  {
+                    "name": "properties.ClassProperty.my_class_property",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "higher-order-parameter" } ],
+            "origin": { "line": 130, "start": 15, "end": 46 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 130, "start": 15, "end": 46 },
+            "call_site": "130:4-130:47"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_sink" },
+      { "always-via": "higher-order-parameter" },
+      { "always-via": "string_concat_lhs" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "properties.test_issue_in_class_property:5002:0:Call|pysa._test_sink|0|formal(arg):1114d786fa4ba51494eb469cff3523f5"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "properties.test_property_callable",

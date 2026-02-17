@@ -2166,28 +2166,6 @@
     "callable": "self.Foo.typevar_self_class_direct",
     "filename": "self.py",
     "callable_line": 47,
-    "sinks": [
-      {
-        "port": "formal(self, position=0)[__class__][tainted_class]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 48, "start": 19, "end": 47 },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
-            "call_site": "48:8-48:48"
-          }
-        ]
-      }
-    ],
     "tito": [
       {
         "port": "formal(self, position=0)",

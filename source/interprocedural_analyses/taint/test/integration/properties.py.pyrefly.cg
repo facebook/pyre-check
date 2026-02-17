@@ -99,7 +99,7 @@ Call dependencies
     "pysa._test_sink (fun)"
   ],
   "properties.test_issue_in_class_property (fun)": [
-    "properties.ClassProperty.my_class_property@decorated (method)",
+    "properties.ClassProperty.my_class_property (method)",
     "pysa._test_sink (fun)"
   ],
   "properties.test_object_class (fun)": [

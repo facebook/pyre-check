@@ -67,55 +67,6 @@ Higher order call graphs
   }
 }
 {
-  "callable": "decorator_location.decorated_ignore_this_decorator_class@decorated",
-  "returned_callables": [
-    {
-      "target": "decorator_location.decorated_ignore_this_decorator_class",
-      "index": 0,
-      "return_type": []
-    }
-  ],
-  "calls": {
-    "89:1-89:30": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "builtins.object.__new__",
-            "index": 0,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "builtins.object.__init__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "decorator_location.ignore_this_decorator_class"
-          }
-        ]
-      }
-    },
-    "89:1-89:30|artificial-call|for-decorated-target": {
-      "call": { "unresolved": [ "UnexpectedCalleeExpression" ] }
-    },
-    "90:0-91:17|identifier|decorated_ignore_this_decorator_class": {
-      "identifier": {
-        "if_called": {
-          "calls": [
-            {
-              "target": "decorator_location.decorated_ignore_this_decorator_class",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    }
-  }
-}
-{
   "callable": "decorator_location.decorated_ignore_this_decorator_factory",
   "returned_callables": [],
   "calls": {
