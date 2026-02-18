@@ -360,6 +360,7 @@ module ModulePath : sig
     | Namespace of PyrePath.t
     | Memory of PyrePath.t
     | BundledTypeshed of PyrePath.t
+    | BundledTypeshedThirdParty of PyrePath.t
   [@@deriving compare, equal, show]
 end
 

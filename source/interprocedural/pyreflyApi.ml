@@ -206,6 +206,7 @@ module ModulePath = struct
     | Namespace of PyrePath.t
     | Memory of PyrePath.t
     | BundledTypeshed of PyrePath.t
+    | BundledTypeshedThirdParty of PyrePath.t
   [@@deriving compare, equal, show]
 
   let from_json = function
@@ -215,6 +216,8 @@ module ModulePath = struct
     | `Assoc [("Memory", `String path)] -> Ok (Memory (PyrePath.create_absolute path))
     | `Assoc [("BundledTypeshed", `String path)] ->
         Ok (BundledTypeshed (PyrePath.create_absolute path))
+    | `Assoc [("BundledTypeshedThirdParty", `String path)] ->
+        Ok (BundledTypeshedThirdParty (PyrePath.create_absolute path))
     | json -> Error (FormatError.UnexpectedJsonType { json; message = "expected a module path" })
 
 
@@ -226,6 +229,12 @@ module ModulePath = struct
         Some
           (pyrefly_directory
           |> PyrePath.append ~element:"typeshed"
+          |> PyrePath.append ~element:(PyrePath.absolute path)
+          |> ArtifactPath.create)
+    | BundledTypeshedThirdParty path ->
+        Some
+          (pyrefly_directory
+          |> PyrePath.append ~element:"typeshed_third_party"
           |> PyrePath.append ~element:(PyrePath.absolute path)
           |> ArtifactPath.create)
 end
@@ -2285,6 +2294,8 @@ module ReadWrite = struct
             | ModulePath.Namespace path -> "namespace:/" :: pyre_path_elements path
             | ModulePath.Memory path -> "memory:/" :: pyre_path_elements path
             | ModulePath.BundledTypeshed path -> "typeshed:/" :: pyre_path_elements path
+            | ModulePath.BundledTypeshedThirdParty path ->
+                "typeshed-third-party:/" :: pyre_path_elements path
           in
           let rec find_shortest_unique_prefix ~prefix_length modules_with_path =
             let map =
