@@ -20,12 +20,19 @@ import dataclasses
 import glob
 import logging
 import os
-from typing import Dict, Iterable, List, Sequence, Union
+import re
+from typing import Dict, Iterable, List, Sequence, Tuple, Union
 
 from .. import filesystem
 from . import exceptions
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+dist_info_in_root: Dict[str, List[str]] = {}
+
+_site_filter = re.compile(r".*-([0-99]\.)*dist-info")  # type: re.Pattern[str]
+
+_PYCACHE = re.compile("__pycache__(/)*.*")  # type: re.Pattern[str]
 
 
 def _expand_relative_root(path: str, relative_root: str) -> str:
@@ -36,11 +43,11 @@ def _expand_relative_root(path: str, relative_root: str) -> str:
 
 class Element(abc.ABC):
     @abc.abstractmethod
-    def path(self) -> str:
+    def path(self) -> Union[str, None]:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def command_line_argument(self) -> str:
+    def command_line_argument(self) -> Union[str, None]:
         raise NotImplementedError()
 
 
@@ -73,15 +80,55 @@ class SitePackageElement(Element):
     package_name: str
     is_toplevel_module: bool = False
 
-    def package_path(self) -> str:
-        module_suffix = ".py" if self.is_toplevel_module else ""
-        return self.package_name + module_suffix
+    def package_path(self) -> Union[str, None]:
+        if not self.is_toplevel_module:
+            return self.package_name
 
-    def path(self) -> str:
-        return os.path.join(self.site_root, self.package_path())
+        this_pkg_filter = re.compile(
+            r"{}-([0-99]\.)*dist-info(/)*.*".format(self.package_name)
+        )  # type: re.Pattern[str]
 
-    def command_line_argument(self) -> str:
-        return self.site_root + "$" + self.package_path()
+        if self.site_root not in dist_info_in_root:
+            dist_info_in_root[self.site_root] = []
+            for directory in os.listdir(self.site_root):
+                if _site_filter.fullmatch(directory) is not None:
+                    dist_info_in_root[self.site_root].append(directory)
+
+        for directory in dist_info_in_root[self.site_root]:
+            if this_pkg_filter.fullmatch(directory):
+                dist_info_path = f"{self.site_root}/{directory}"
+                break
+        else:
+            return None
+
+        not_toplevel_patterns = (
+            this_pkg_filter,
+            _PYCACHE,
+        )  # type: Tuple[re.Pattern[str], re.Pattern[str]]
+
+        # pyre-fixme[61]: Local variable `dist_info_path` is undefined, or not always defined.
+        with open(file=f"{dist_info_path}/RECORD", mode="r") as record:
+            for line in record.readlines():
+                file_name = line.split(",")[0]
+                for pattern in not_toplevel_patterns:
+                    if pattern.fullmatch(file_name):
+                        break
+                else:
+                    return file_name
+
+        return None
+
+    def path(self) -> Union[str, None]:
+        excepted_package_path: Union[str, None] = self.package_path()
+        if excepted_package_path is None:
+            return None
+        return os.path.join(self.site_root, excepted_package_path)
+
+    def command_line_argument(self) -> Union[str, None]:
+        excepted_package_path: Union[str, None] = self.package_path()
+        if excepted_package_path is None:
+            return None
+        return self.site_root + "$" + excepted_package_path
 
 
 class RawElement(abc.ABC):
@@ -224,10 +271,11 @@ def process_raw_elements(
     elements: List[Element] = []
 
     def add_if_exists(element: Element) -> bool:
-        if os.path.exists(element.path()):
-            elements.append(element)
-            return True
-        return False
+        expected_path = element.path()
+        if expected_path is None or not os.path.exists(expected_path):
+            return False
+        elements.append(element)
+        return True
 
     for raw_element in raw_elements:
         expanded_raw_elements = raw_element.expand_glob()
