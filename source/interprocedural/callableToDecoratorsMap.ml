@@ -152,23 +152,23 @@ let should_keep_decorator_pyrefly ~pyrefly_api ~callable decorator =
         true
     | _ -> false
   in
-  let is_ignored_hardcoded_decorator, is_decorator_skipped_by_model, has_decorator_callees =
-    match decorator_callees with
-    | Some decorator_callees ->
-        ( List.exists decorator_callees ~f:(fun decorator_callee ->
-              SerializableStringSet.mem
-                (decorator_callee |> drop_suffix ~suffix:"__call__" |> Reference.show)
-                ignored_decorators_for_higher_order),
-          List.exists decorator_callees ~f:(fun decorator_callee ->
-              Analysis.DecoratorPreprocessing.has_decorator_action decorator_callee Discard),
-          true )
-    | None -> false, false, false
-  in
-  has_decorator_callees
-  && not
-       (is_ignored_unresolved_builtin_decorator ()
-       || is_ignored_hardcoded_decorator
-       || is_decorator_skipped_by_model)
+  match decorator_callees with
+  | None -> false
+  | Some decorator_callees ->
+      let is_ignored_hardcoded_decorator () =
+        List.exists decorator_callees ~f:(fun decorator_callee ->
+            SerializableStringSet.mem
+              (decorator_callee |> drop_suffix ~suffix:"__call__" |> Reference.show)
+              ignored_decorators_for_higher_order)
+      in
+      let is_decorator_skipped_by_model () =
+        List.exists decorator_callees ~f:(fun decorator_callee ->
+            Analysis.DecoratorPreprocessing.has_decorator_action decorator_callee Discard)
+      in
+      not
+        (is_ignored_unresolved_builtin_decorator ()
+        || is_ignored_hardcoded_decorator ()
+        || is_decorator_skipped_by_model ())
 
 
 let collect_decorators ~pyre_api ~callables_to_definitions_map callable =
