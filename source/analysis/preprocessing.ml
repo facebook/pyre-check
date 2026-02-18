@@ -1582,10 +1582,6 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
       [%compare: int] actual_version given_version |> Comparison.evaluate ~operator
 
 
-    let evaluate_two_versions ~operator actual_versions given_versions =
-      [%compare: int * int] actual_versions given_versions |> Comparison.evaluate ~operator
-
-
     let evaluate_three_versions ~operator actual_versions given_versions =
       [%compare: int * int * int] actual_versions given_versions |> Comparison.evaluate ~operator
 
@@ -1744,10 +1740,10 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                   _;
                 } )
             when is_system_version_expression left ->
-              evaluate_two_versions
+              evaluate_three_versions
                 ~operator
-                (major_version, minor_version)
-                (given_major_version, given_minor_version)
+                (major_version, minor_version, micro_version)
+                (given_major_version, given_minor_version, -1)
               |> do_replace
           | Some
               ( operator,
@@ -1763,7 +1759,11 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                   _;
                 } )
             when is_system_version_expression left ->
-              evaluate_one_version ~operator major_version given_major_version |> do_replace
+              evaluate_three_versions
+                ~operator
+                (major_version, minor_version, micro_version)
+                (given_major_version, -1, -1)
+              |> do_replace
           | Some
               ( operator,
                 left,
@@ -1845,10 +1845,10 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 },
                 right )
             when is_system_version_expression right ->
-              evaluate_two_versions
+              evaluate_three_versions
                 ~operator:(Comparison.inverse operator)
-                (major_version, minor_version)
-                (given_major_version, given_minor_version)
+                (major_version, minor_version, micro_version)
+                (given_major_version, given_minor_version, -1)
               |> do_replace
           | Some
               ( operator,
@@ -1864,10 +1864,10 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 },
                 right )
             when is_system_version_expression right ->
-              evaluate_one_version
+              evaluate_three_versions
                 ~operator:(Comparison.inverse operator)
-                major_version
-                given_major_version
+                (major_version, minor_version, micro_version)
+                (given_major_version, -1, -1)
               |> do_replace
           | Some
               ( operator,

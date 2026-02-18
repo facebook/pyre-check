@@ -3055,7 +3055,7 @@ let test_replace_version_specific_code =
     |}
            {|
       class C():
-        def incompatible()->int:
+        def compatible()->str:
           ...
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -3196,6 +3196,34 @@ let test_replace_version_specific_code =
            ~minor_version:6
            ~micro_version:12
            {|
+      if sys.version_info <= (3,):
+        from A import B
+      else:
+        from A import C
+    |}
+           {|
+       from A import C
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_preprocessed
+           ~major_version:2
+           ~minor_version:7
+           ~micro_version:6
+           {|
+      if sys.version_info <= (3,):
+        from A import B
+      else:
+        from A import C
+    |}
+           {|
+       from A import B
+    |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_preprocessed
+           ~major_version:3
+           ~minor_version:6
+           ~micro_version:12
+           {|
       if sys.version_info[0] >= 3:
         a = 1
       else:
@@ -3272,7 +3300,7 @@ let test_replace_version_specific_code =
         a = 2
     |}
            {|
-      a = 1
+      a = 2
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_preprocessed
@@ -3286,7 +3314,7 @@ let test_replace_version_specific_code =
         a = 2
     |}
            {|
-      a = 2
+      a = 1
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_preprocessed
