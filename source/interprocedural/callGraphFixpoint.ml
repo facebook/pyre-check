@@ -107,18 +107,24 @@ module CallGraphAnalysis = struct
       ~previous_model:_
       ~get_callee_model
     =
-    let { CallablesSharedMemory.DefineAndQualifier.qualifier; define } =
+    if
       callable
       |> Target.strip_parameters
-      |> CallablesSharedMemory.ReadOnly.get_define callables_to_definitions_map
-      |> PyrePysaApi.AstResult.value_exn
+      |> CallablesSharedMemory.ReadOnly.is_stub_like callables_to_definitions_map
+      |> Option.value_exn
            ~message:(Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable)
-    in
-    if Ast.Statement.Define.is_stub (Ast.Node.value define) then
+    then
       (* Skip analyzing stubs, which do not have initial call graphs. Otherwise we would fail to get
          their initial call graphs below, when analyzing them in the next iteration. *)
       { AnalyzeDefineResult.result = (); model = empty_model; additional_dependencies = [] }
     else
+      let { CallablesSharedMemory.DefineAndQualifier.qualifier; define } =
+        callable
+        |> Target.strip_parameters
+        |> CallablesSharedMemory.ReadOnly.get_define callables_to_definitions_map
+        |> PyrePysaApi.AstResult.value_exn
+             ~message:(Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable)
+      in
       let define_call_graph =
         define_call_graphs
         |> CallGraph.SharedMemory.ReadOnly.get
@@ -177,7 +183,9 @@ module CallGraphAnalysis = struct
         |> Target.Set.filter (fun callable ->
                callable
                |> Target.strip_parameters
-               |> CallablesSharedMemory.ReadOnly.mem callables_to_definitions_map)
+               |> CallablesSharedMemory.ReadOnly.is_stub_like callables_to_definitions_map
+               |> Option.value ~default:true
+               |> not)
       in
       if CallGraphBuilder.debug_higher_order_call_graph (Ast.Node.value define) then (
         Log.dump

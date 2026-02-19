@@ -65,11 +65,11 @@ module CallableSignature = struct
           PyreflyApi.CallableMetadata.module_qualifier;
           is_classmethod;
           is_staticmethod;
-          is_stub;
           parent_is_class;
           _;
         }
       ~captures
+      ~is_stub_like
       define
     =
     let define_signature =
@@ -84,15 +84,6 @@ module CallableSignature = struct
         Some Target.MethodKind.Instance
       else
         None
-    in
-    let is_stub_like =
-      match define with
-      | _ when is_stub -> true
-      | AstResult.Some _ -> false
-      | AstResult.ParseError -> true
-      | AstResult.TestFile -> true
-      | AstResult.Synthesized -> true
-      | AstResult.Pyre1NotFound -> failwith "unreachable"
     in
     {
       qualifier = module_qualifier;
@@ -119,8 +110,14 @@ let get_signature_and_definition ~pyre_api callable =
       let metadata = PyreflyApi.ReadOnly.get_callable_metadata pyrefly_api define_name in
       let define = PyreflyApi.ReadOnly.get_define_opt pyrefly_api define_name in
       let captures = PyreflyApi.ReadOnly.get_callable_captures pyrefly_api define_name in
+      let is_stub_like = PyreflyApi.ReadOnly.is_stub_like_callable pyrefly_api define_name in
       let signature =
-        CallableSignature.from_define_for_pyrefly ~define_name ~metadata ~captures define
+        CallableSignature.from_define_for_pyrefly
+          ~define_name
+          ~metadata
+          ~captures
+          ~is_stub_like
+          define
       in
       Some (signature, define)
   | PyrePysaApi.ReadOnly.Pyre1 pyre1_api ->

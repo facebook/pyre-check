@@ -59,7 +59,7 @@ module CallableMetadata : sig
     is_property_setter: bool;
     is_toplevel: bool; (* Is this the body of a module? *)
     is_class_toplevel: bool; (* Is this the body of a class? *)
-    is_stub: bool; (* Is this a stub definition, e.g `def foo(): ...` *)
+    is_stub_define: bool; (* Is this a stub definition, e.g `def foo(): ...` *)
     is_def_statement: bool; (* Is this associated with a `def ..` statement? *)
     parent_is_class: bool;
   }
@@ -129,6 +129,8 @@ module ReadOnly : sig
   val class_mro : t -> string -> string list
 
   val get_callable_metadata : t -> Ast.Reference.t -> CallableMetadata.t
+
+  val is_stub_like_callable : t -> Ast.Reference.t -> bool
 
   val get_callable_return_annotations
     :  t ->

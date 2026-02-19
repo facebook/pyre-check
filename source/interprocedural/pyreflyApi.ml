@@ -1959,7 +1959,7 @@ module CallableMetadata = struct
     is_property_setter: bool;
     is_toplevel: bool; (* Is this the body of a module? *)
     is_class_toplevel: bool; (* Is this the body of a class? *)
-    is_stub: bool; (* Is this a stub definition, e.g `def foo(): ...` *)
+    is_stub_define: bool; (* Is this a stub definition, e.g `def foo(): ...`. *)
     is_def_statement: bool; (* Is this associated with a `def ..` statement? *)
     parent_is_class: bool;
   }
@@ -2188,6 +2188,17 @@ module CallableDefineSignatureSharedMemory =
       let description = "pyrefly define signature of callables"
     end)
 
+module CallableParseResultSharedMemory =
+  Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+    (FullyQualifiedNameSharedMemoryKey)
+    (struct
+      type t = unit AstResult.t
+
+      let prefix = Hack_parallel.Std.Prefix.make ()
+
+      let description = "pyrefly callable parse result"
+    end)
+
 (* Undecorated signatures of each callable, provided by pyrefly. *)
 module CallableUndecoratedSignaturesSharedMemory =
   Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
@@ -2269,6 +2280,7 @@ module ReadWrite = struct
     callable_id_to_qualified_name_shared_memory: CallableIdToQualifiedNameSharedMemory.t;
     callable_ast_shared_memory: CallableAstSharedMemory.t;
     callable_define_signature_shared_memory: CallableDefineSignatureSharedMemory.t;
+    callable_parse_result_shared_memory: CallableParseResultSharedMemory.t;
     callable_undecorated_signatures_shared_memory: CallableUndecoratedSignaturesSharedMemory.t;
     object_class: FullyQualifiedName.t;
     dict_class_id: GlobalClassId.t;
@@ -2473,6 +2485,7 @@ module ReadWrite = struct
     let () = Log.info "Parsing source files..." in
     let callable_ast_shared_memory = CallableAstSharedMemory.create () in
     let callable_define_signature_shared_memory = CallableDefineSignatureSharedMemory.create () in
+    let callable_parse_result_shared_memory = CallableParseResultSharedMemory.create () in
     let class_decorators_shared_memory = ClassDecoratorsSharedMemory.create () in
     let controls =
       Analysis.EnvironmentControls.create
@@ -2490,7 +2503,11 @@ module ReadWrite = struct
             callable_define_signature_shared_memory
             callable
             signature_result;
-          ())
+          ();
+          CallableParseResultSharedMemory.add
+            callable_parse_result_shared_memory
+            callable
+            (AstResult.map ~f:(fun _ -> ()) define_result))
     in
     let store_class_decorators classes decorator_result =
       List.iter classes ~f:(fun class_name ->
@@ -2688,6 +2705,10 @@ module ReadWrite = struct
               (AstResult.map_node
                  ~f:(fun { Statement.Define.signature; _ } -> signature)
                  define_result);
+            CallableParseResultSharedMemory.add
+              callable_parse_result_shared_memory
+              callable
+              (AstResult.map ~f:(fun _ -> ()) define_result);
             ())
           callable_to_define
     in
@@ -2933,6 +2954,7 @@ module ReadWrite = struct
     Statistics.performance ~name:"Parsed source files" ~phase_name:"Parsing source files" ~timer ();
     ( callable_ast_shared_memory,
       callable_define_signature_shared_memory,
+      callable_parse_result_shared_memory,
       class_decorators_shared_memory )
 
 
@@ -3388,7 +3410,7 @@ module ReadWrite = struct
                     is_property_setter;
                     is_toplevel;
                     is_class_toplevel;
-                    is_stub;
+                    is_stub_define = is_stub;
                     is_def_statement;
                     parent_is_class = Option.is_some defining_class;
                   };
@@ -3720,6 +3742,7 @@ module ReadWrite = struct
 
     let ( callable_ast_shared_memory,
           callable_define_signature_shared_memory,
+          callable_parse_result_shared_memory,
           class_decorators_shared_memory )
       =
       parse_source_files
@@ -3758,6 +3781,7 @@ module ReadWrite = struct
       callable_id_to_qualified_name_shared_memory;
       callable_ast_shared_memory;
       callable_define_signature_shared_memory;
+      callable_parse_result_shared_memory;
       callable_undecorated_signatures_shared_memory;
       object_class;
       dict_class_id;
@@ -3847,6 +3871,7 @@ module ReadWrite = struct
         callable_id_to_qualified_name_shared_memory;
         callable_ast_shared_memory;
         callable_define_signature_shared_memory;
+        callable_parse_result_shared_memory;
         callable_undecorated_signatures_shared_memory;
         object_class = _;
         dict_class_id = _;
@@ -3872,6 +3897,7 @@ module ReadWrite = struct
       CallableDefineSignatureSharedMemory.remove
         callable_define_signature_shared_memory
         callable_name;
+      CallableParseResultSharedMemory.remove callable_parse_result_shared_memory callable_name;
       CallableUndecoratedSignaturesSharedMemory.remove
         callable_undecorated_signatures_shared_memory
         callable_name;
@@ -3947,6 +3973,7 @@ module ReadOnly = struct
     module_globals_shared_memory: ModuleGlobalsSharedMemory.t;
     callable_ast_shared_memory: CallableAstSharedMemory.t;
     callable_define_signature_shared_memory: CallableDefineSignatureSharedMemory.t;
+    callable_parse_result_shared_memory: CallableParseResultSharedMemory.t;
     callable_undecorated_signatures_shared_memory: CallableUndecoratedSignaturesSharedMemory.t;
     type_of_expressions_shared_memory: TypeOfExpressionsSharedMemory.t option;
     module_id_to_qualifier_shared_memory: ModuleIdToQualifierSharedMemory.t;
@@ -3971,6 +3998,7 @@ module ReadOnly = struct
         module_globals_shared_memory;
         callable_ast_shared_memory;
         callable_define_signature_shared_memory;
+        callable_parse_result_shared_memory;
         callable_undecorated_signatures_shared_memory;
         type_of_expressions_shared_memory;
         module_id_to_qualifier_shared_memory;
@@ -3995,6 +4023,7 @@ module ReadOnly = struct
       module_globals_shared_memory;
       callable_ast_shared_memory;
       callable_define_signature_shared_memory;
+      callable_parse_result_shared_memory;
       callable_undecorated_signatures_shared_memory;
       type_of_expressions_shared_memory;
       module_id_to_qualifier_shared_memory;
@@ -4214,6 +4243,31 @@ module ReadOnly = struct
     |> assert_shared_memory_key_exists (fun () ->
            Format.asprintf "missing callable metadata: `%a`" Reference.pp define_name)
     |> fun { CallableMetadataSharedMemory.Value.metadata; _ } -> metadata
+
+
+  let is_stub_like_callable ({ callable_parse_result_shared_memory; _ } as api) define_name =
+    (* Considered as stub:
+     * - Stub functions, i.e when the body is an ellipsis `def foo(): ...`
+     * - Functions in a module considered a unit test module
+     * - Synthesized functions that we don't have the code for (for instance,
+     *   generated `__init__` of a dataclass)
+     *)
+    let { CallableMetadata.is_stub_define; _ } = get_callable_metadata api define_name in
+    is_stub_define
+    ||
+    let parse_result =
+      CallableParseResultSharedMemory.get
+        callable_parse_result_shared_memory
+        (FullyQualifiedName.from_reference_unchecked define_name)
+      |> assert_shared_memory_key_exists (fun () ->
+             Format.asprintf "missing callable parse result: `%a`" Reference.pp define_name)
+    in
+    match parse_result with
+    | AstResult.Some () -> false
+    | AstResult.ParseError -> true
+    | AstResult.TestFile -> true
+    | AstResult.Synthesized -> true
+    | AstResult.Pyre1NotFound -> failwith "unreachable"
 
 
   let get_overriden_base_method
