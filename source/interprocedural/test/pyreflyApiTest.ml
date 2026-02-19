@@ -53,6 +53,7 @@ let test_module_qualifiers _ =
         is_test = false;
         is_interface = false;
         is_init = false;
+        is_internal = false;
       }
     in
     let make_testing_module { ModuleQualifierExpected.module_name; source_path; id; qualifier = _ } =
@@ -64,6 +65,7 @@ let test_module_qualifiers _ =
         pyrefly_info_filename = None;
         is_test = false;
         is_stub = false;
+        is_internal = false;
       }
     in
     let to_string map =

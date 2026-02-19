@@ -172,6 +172,9 @@ module ReadOnly : sig
   (* Is this a stub module, i.e a `.pyi` file. *)
   val is_stub_qualifier : t -> Ast.Reference.t -> bool
 
+  (* Is this an internal module (within the project's source directories). *)
+  val is_internal_qualifier : t -> Ast.Reference.t -> bool
+
   (* Return the AST for the given function *)
   val get_define_opt : t -> Ast.Reference.t -> Ast.Statement.Define.t Ast.Node.t AstResult.t
 
@@ -385,6 +388,7 @@ module ProjectFile : sig
       is_test: bool;
       is_interface: bool;
       is_init: bool;
+      is_internal: bool;
     }
     [@@deriving equal, show]
   end
@@ -597,6 +601,7 @@ module Testing : sig
       pyrefly_info_filename: ModuleInfoFilename.t option;
       is_test: bool;
       is_stub: bool;
+      is_internal: bool;
     }
     [@@deriving compare, equal, show]
   end

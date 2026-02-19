@@ -150,6 +150,7 @@ let from_qualifier_with_pyrefly ~pyrefly_api ~qualifier =
       qualifier
   in
   let is_stub_module = PyreflyApi.ReadOnly.is_stub_qualifier pyrefly_api qualifier in
+  let is_internal = PyreflyApi.ReadOnly.is_internal_qualifier pyrefly_api qualifier in
   let add_target result define_name =
     let target =
       PyreflyApi.ReadOnly.target_from_define_name pyrefly_api ~override:false define_name
@@ -163,14 +164,14 @@ let from_qualifier_with_pyrefly ~pyrefly_api ~qualifier =
       result
     else if is_stub_like then
       { result with stubs = target :: result.stubs }
-    else
-      (* TODO(T225700656): For now, all modules are considered internal. We could potentially use
-         the "roots" of pyrefly to determine if a callable is internal or not. *)
+    else if is_internal then
       {
         result with
         internals = target :: result.internals;
         definitions = target :: result.definitions;
       }
+    else
+      { result with definitions = target :: result.definitions }
   in
   List.fold define_names ~init:empty ~f:add_target
 

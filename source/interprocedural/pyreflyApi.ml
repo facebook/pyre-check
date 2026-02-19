@@ -542,6 +542,7 @@ module ProjectFile = struct
       is_test: bool;
       is_interface: bool;
       is_init: bool;
+      is_internal: bool;
     }
     [@@deriving equal, show]
 
@@ -564,7 +565,9 @@ module ProjectFile = struct
       JsonUtil.get_optional_bool_member ~default:false json "is_interface"
       >>= fun is_interface ->
       JsonUtil.get_optional_bool_member ~default:false json "is_init"
-      >>| fun is_init ->
+      >>= fun is_init ->
+      JsonUtil.get_optional_bool_member ~default:false json "is_internal"
+      >>| fun is_internal ->
       {
         module_id = ModuleId.from_int module_id;
         module_name = Reference.create module_name;
@@ -574,6 +577,7 @@ module ProjectFile = struct
         is_test;
         is_interface;
         is_init;
+        is_internal;
       }
   end
 
@@ -1782,6 +1786,7 @@ module ModuleInfosSharedMemory = struct
       pyrefly_info_filename: ModuleInfoFilename.t option;
       is_test: bool; (* Is this a test file? *)
       is_stub: bool; (* Is this a stub file (e.g, `a.pyi`)? *)
+      is_internal: bool; (* Is this an internal module (within the project's source directories)? *)
     }
   end
 
@@ -2235,6 +2240,7 @@ module ReadWrite = struct
       pyrefly_info_filename: ModuleInfoFilename.t option;
       is_test: bool;
       is_stub: bool;
+      is_internal: bool;
     }
     [@@deriving compare, equal, show]
 
@@ -2248,6 +2254,7 @@ module ReadWrite = struct
           info_filename;
           is_test;
           is_interface;
+          is_internal;
           _;
         }
       =
@@ -2259,6 +2266,7 @@ module ReadWrite = struct
         pyrefly_info_filename = info_filename;
         is_test;
         is_stub = is_interface;
+        is_internal;
       }
   end
 
@@ -2370,6 +2378,7 @@ module ReadWrite = struct
                         pyrefly_info_filename = None;
                         is_test = false;
                         is_stub = false;
+                        is_internal = false;
                       } );
                   ]
             in
@@ -2447,6 +2456,7 @@ module ReadWrite = struct
                     pyrefly_info_filename;
                     is_test;
                     is_stub;
+                    is_internal;
                     _;
                   } )
               ->
@@ -2460,6 +2470,7 @@ module ReadWrite = struct
                  pyrefly_info_filename;
                  is_test;
                  is_stub;
+                 is_internal;
                };
              ModuleIdToQualifierSharedMemory.add
                module_id_to_qualifier_shared_memory
@@ -4083,6 +4094,14 @@ module ReadOnly = struct
       (ModuleQualifier.from_reference_unchecked qualifier)
     |> assert_shared_memory_key_exists (fun () -> "missing module info for qualifier")
     |> fun { ModuleInfosSharedMemory.Module.is_stub; _ } -> is_stub
+
+
+  let is_internal_qualifier { module_infos_shared_memory; _ } qualifier =
+    ModuleInfosSharedMemory.get
+      module_infos_shared_memory
+      (ModuleQualifier.from_reference_unchecked qualifier)
+    |> assert_shared_memory_key_exists (fun () -> "missing module info for qualifier")
+    |> fun { ModuleInfosSharedMemory.Module.is_internal; _ } -> is_internal
 
 
   let get_class_names_for_qualifier
