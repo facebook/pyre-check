@@ -367,6 +367,27 @@ def initialize_opam_switch(
     _install_dependencies(opam_root, opam_version, add_environment_variables, rust_path)
 
 
+def build_pyrefly(current_working_directory: Path) -> str:
+    LOG.info("Building Pyrefly...")
+    pyrefly_binary = _run_command(
+        [
+            "buck2",
+            "build",
+            "--flagfile",
+            "fbcode//mode/opt-clang-thinlto",
+            "--show-full-simple-output",
+            "fbcode//pyrefly/pyrefly:pyrefly",
+        ],
+        current_working_directory=current_working_directory,
+    )
+    try:
+        LOG.info("Stripping Pyrefly binary...")
+        _run_command(["/opt/llvm/bin/llvm-strip", "--strip-all", pyrefly_binary])
+    except subprocess.CalledProcessError:
+        LOG.warning("llvm-strip failed. Continuing...")
+    return pyrefly_binary
+
+
 def full_setup(
     opam_root: Path,
     opam_version: Tuple[int, ...],
