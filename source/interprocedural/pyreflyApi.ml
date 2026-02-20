@@ -418,6 +418,7 @@ module PyreflyTarget = struct
         base_method: GlobalCallableId.t;
         subset: t list;
       }
+    | OverrideSubsetThreshold of { base_method: GlobalCallableId.t }
     | FormatString
   [@@deriving compare, equal, show]
 
@@ -438,6 +439,10 @@ module PyreflyTarget = struct
         >>| List.map ~f:from_json
         >>= Result.all
         >>| fun subset -> OverrideSubset { base_method; subset }
+    | `Assoc [("OverrideSubsetThreshold", override_subset_threshold)] ->
+        JsonUtil.get_object_member override_subset_threshold "base_method"
+        >>= (fun base_method -> GlobalCallableId.from_json (`Assoc base_method))
+        >>| fun base_method -> OverrideSubsetThreshold { base_method }
     | `String "FormatString" -> Ok FormatString
     | _ -> Error (FormatError.UnexpectedJsonType { json; message = "Unknown type of target" })
 end
@@ -4611,6 +4616,27 @@ module ReadOnly = struct
             [target]
           else
             subset |> List.map ~f:instantiate_target |> List.concat |> List.cons target
+      | PyreflyTarget.OverrideSubsetThreshold { base_method = base_method_id } ->
+          let fully_qualified_base_method =
+            CallableIdToQualifiedNameSharedMemory.get
+              callable_id_to_qualified_name_shared_memory
+              base_method_id
+          in
+          let target =
+            target_from_define_name
+              api
+              ~override:true
+              (FullyQualifiedName.to_reference fully_qualified_base_method)
+          in
+          let target_method =
+            match target with
+            | Target.Regular (Target.Regular.Override target_method) -> target_method
+            | _ -> failwith "unreachable"
+          in
+          if not (method_has_overrides target_method) then
+            [Target.Regular (Target.Regular.Method target_method)]
+          else
+            [target]
       | PyreflyTarget.FormatString -> [Target.ArtificialTargets.format_string]
     in
     let instantiate_call_target
