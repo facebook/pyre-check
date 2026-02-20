@@ -380,11 +380,10 @@ def build_pyrefly(current_working_directory: Path) -> str:
         ],
         current_working_directory=current_working_directory,
     )
-    try:
-        LOG.info("Stripping Pyrefly binary...")
-        _run_command(["/opt/llvm/bin/llvm-strip", "--strip-all", pyrefly_binary])
-    except subprocess.CalledProcessError:
-        LOG.warning("llvm-strip failed. Continuing...")
+
+    LOG.info("Stripping Pyrefly binary...")
+    _run_command(["/opt/llvm/bin/llvm-strip", "--strip-all", pyrefly_binary])
+
     return pyrefly_binary
 
 
