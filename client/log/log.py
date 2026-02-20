@@ -330,6 +330,10 @@ class StreamLogger:
     _server_log_pattern: Pattern[str] = re.compile(
         r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (\w+)(.*)"
     )
+    # Exclude syntax warnings from the CPython parser.
+    _server_log_exclude_pattern: Pattern[str] = re.compile(
+        r"<unknown>:\d+: SyntaxWarning: invalid escape sequence '.*'"
+    )
 
     def __init__(self, stream: Iterable[str]) -> None:
         self._reader = threading.Thread(target=self._read_stream, args=(stream,))
@@ -349,6 +353,9 @@ class StreamLogger:
         else:
             section = self._current_section
             message = line
+
+        if self._server_log_exclude_pattern.match(message):
+            return
 
         if section == "ERROR":
             LOG.error(message)
