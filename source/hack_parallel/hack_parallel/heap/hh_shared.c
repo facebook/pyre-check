@@ -1345,6 +1345,7 @@ static unsigned int find_slot(value key) {
   uint64_t hash = get_hash(key);
   unsigned int slot = hash & (hashtbl_size - 1);
   unsigned int init_slot = slot;
+  unsigned int attempts = 0;
   while (1) {
     if (hashtbl[slot].hash == hash) {
       return slot;
@@ -1356,6 +1357,14 @@ static unsigned int find_slot(value key) {
 
     if (slot == init_slot) {
       raise_hash_table_full();
+    }
+    attempts++;
+    if (attempts >= 10000) {
+      // Hash table is getting full.
+      fprintf(
+          stderr,
+          "WARNING: find_slot() is taking >10000 iterations to find an available slot\n");
+      attempts = 0;
     }
   }
 }
