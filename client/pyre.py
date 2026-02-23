@@ -445,6 +445,19 @@ def pyre(
     help="Directory to pyrefly results (pyrefly --report-pysa).",
 )
 @click.option(
+    "--use-pyrefly",
+    is_flag=True,
+    default=False,
+    help="Whether to run Pysa with Pyrefly.",
+)
+@click.option(
+    "--pyrefly-binary",
+    type=click.Path(),
+    show_envvar=True,
+    envvar="PYREFLY_BINARY",
+    help="Override location of the Pyrefly binary.",
+)
+@click.option(
     "--dump-call-graph",
     type=str,
     help="Dump the call graph in the given file.",
@@ -630,6 +643,8 @@ def analyze(
     version: command_arguments.VersionKind,
     save_results_to: Optional[str],
     output_format: Optional[str],
+    use_pyrefly: bool,
+    pyrefly_binary: Optional[str],
     pyrefly_results: Optional[str],
     dump_call_graph: Optional[str],
     repository_root: Optional[str],
@@ -717,6 +732,8 @@ def analyze(
                 if output_format is not None
                 else None
             ),
+            use_pyrefly=use_pyrefly,
+            pyrefly_binary=pyrefly_binary,
             pyrefly_results=pyrefly_results,
             sequential=command_argument.sequential,
             taint_models_path=list(taint_models_path),

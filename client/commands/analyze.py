@@ -15,6 +15,7 @@ import json
 import logging
 import os
 import subprocess
+import tempfile
 import time
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Sequence
@@ -251,6 +252,7 @@ class Arguments:
 def create_analyze_arguments(
     configuration: frontend_configuration.Base,
     analyze_arguments: command_arguments.AnalyzeArguments,
+    pyrefly_results: Optional[str],
 ) -> Arguments:
     """
     Translate client configurations to backend analyze configurations.
@@ -294,7 +296,6 @@ def create_analyze_arguments(
     if repository_root is not None:
         repository_root = str(Path(repository_root).resolve(strict=False))
 
-    pyrefly_results = analyze_arguments.pyrefly_results
     if pyrefly_results is None:
         source_paths = backend_arguments.get_source_path_for_check(
             configuration,
@@ -399,8 +400,11 @@ def create_analyze_arguments(
 def create_analyze_arguments_and_cleanup(
     configuration: frontend_configuration.Base,
     analyze_arguments: command_arguments.AnalyzeArguments,
+    pyrefly_results: Optional[str],
 ) -> Iterator[Arguments]:
-    arguments = create_analyze_arguments(configuration, analyze_arguments)
+    arguments = create_analyze_arguments(
+        configuration, analyze_arguments, pyrefly_results
+    )
     try:
         yield arguments
     finally:
@@ -424,6 +428,12 @@ def parse_model_validation_errors(
     return validate_models.parse_validation_errors(response_json)
 
 
+def _flush_log_file() -> None:
+    # Give time for the log file to be flushed.
+    # Without this, we sometimes miss the last few lines of the log.
+    time.sleep(0.01)
+
+
 def _run_analyze_command(
     command: Sequence[str],
     output: str,
@@ -443,9 +453,7 @@ def _run_analyze_command(
             )
             return_code = result.returncode
 
-            # Give time for the log file to be flushed.
-            # Without this, we sometimes miss the last few lines of the log.
-            time.sleep(0.01)
+            _flush_log_file()
 
             # Interpretation of the return code needs to be kept in sync with
             # `command/analyzeCommand.ml`.
@@ -482,6 +490,73 @@ def _run_analyze_command(
                 return commands.ExitCode.FAILURE
 
 
+def _run_pyrefly(
+    pyrefly_binary_path: Path, pyrefly_results: str, forward_stdout: bool
+) -> commands.ExitCode:
+    with (
+        backend_arguments.backend_log_file(prefix="pyrefly_check") as log_file,
+        start.background_logging(Path(log_file.name)),
+    ):
+        pyrefly_check_command = [
+            str(pyrefly_binary_path),
+            "check",
+            "--verbose",
+            "--report-pysa",
+            pyrefly_results,
+        ]
+        # lint-ignore: NoUnsafeExecRule
+        result = subprocess.run(
+            pyrefly_check_command,
+            stdout=subprocess.PIPE,
+            stderr=log_file.file,
+            universal_newlines=True,
+            errors="replace",
+        )
+        _flush_log_file()
+
+        return_code = result.returncode
+        # Keep in sync with `CommandExitStatus` in Pyrefly.
+        if return_code == 0 or return_code == 1:
+            if forward_stdout:
+                log.stdout.write(result.stdout)
+            return commands.ExitCode.SUCCESS
+        else:
+            LOG.error(f"Pyrefly exited with error return code: {return_code}.")
+            return commands.ExitCode.PYREFLY_INTERNAL_ERROR
+
+
+def _run_pysa(
+    configuration: frontend_configuration.Base,
+    analyze_arguments: command_arguments.AnalyzeArguments,
+    start_command: frontend_configuration.ServerStartCommand,
+    save_results_to: Optional[str],
+    pyrefly_results: Optional[str],
+) -> commands.ExitCode:
+    with (
+        create_analyze_arguments_and_cleanup(
+            configuration, analyze_arguments, pyrefly_results
+        ) as arguments,
+        backend_arguments.temporary_argument_file(arguments) as argument_file_path,
+    ):
+        analyze_command = [
+            str(start_command.get_pyre_binary_location()),
+            "analyze",
+            str(argument_file_path),
+        ]
+        environment = None
+        if analyze_arguments.check_invariants:
+            # We need to pass this specific argument as an environment variable,
+            # because it is needed during the global initialization.
+            environment = dict(os.environ)
+            environment["PYSA_CHECK_INVARIANTS"] = "1"
+        return _run_analyze_command(
+            command=analyze_command,
+            environment=environment,
+            output=analyze_arguments.output,
+            forward_stdout=(save_results_to is None),
+        )
+
+
 def run(
     configuration: frontend_configuration.Base,
     analyze_arguments: command_arguments.AnalyzeArguments,
@@ -496,24 +571,53 @@ def run(
     save_results_to = analyze_arguments.save_results_to
     if save_results_to is not None:
         Path(save_results_to).mkdir(parents=True, exist_ok=True)
-    with create_analyze_arguments_and_cleanup(
-        configuration, analyze_arguments
-    ) as arguments:
-        with backend_arguments.temporary_argument_file(arguments) as argument_file_path:
-            analyze_command = [
-                str(start_command.get_pyre_binary_location()),
-                "analyze",
-                str(argument_file_path),
-            ]
-            environment = None
-            if analyze_arguments.check_invariants:
-                # We need to pass this specific argument as an environment variable,
-                # because it is needed during the global initialization.
-                environment = dict(os.environ)
-                environment["PYSA_CHECK_INVARIANTS"] = "1"
-            return _run_analyze_command(
-                command=analyze_command,
-                environment=environment,
-                output=analyze_arguments.output,
+
+    # TODO: Deprecate explicitly specifying `pyrefly_results`.
+    if analyze_arguments.pyrefly_results is not None:
+        return _run_pysa(
+            configuration,
+            analyze_arguments,
+            start_command,
+            save_results_to,
+            pyrefly_results=analyze_arguments.pyrefly_results,
+        )
+
+    if analyze_arguments.use_pyrefly:
+        with (
+            tempfile.NamedTemporaryFile(
+                mode="w", delete=True, delete_on_close=False
+            ) as temporary_file,
+            tempfile.TemporaryDirectory() as pyrefly_results,
+        ):
+            pyrefly_binary_path = configuration.get_pysa_pyrefly_binary_location(
+                user_provided_pyrefly_binary=analyze_arguments.pyrefly_binary,
+                download_path=Path(temporary_file.name),
+            )
+            if pyrefly_binary_path is None:
+                return commands.ExitCode.MISSING_PYREFLY_BINARY
+            LOG.info(f"Pyrefly binary is located at `{pyrefly_binary_path}`")
+            temporary_file.close()
+
+            return_code = _run_pyrefly(
+                pyrefly_binary_path,
+                pyrefly_results,
                 forward_stdout=(save_results_to is None),
             )
+            if return_code != commands.ExitCode.SUCCESS:
+                return return_code
+
+            return _run_pysa(
+                configuration,
+                analyze_arguments,
+                start_command,
+                save_results_to,
+                pyrefly_results,
+            )
+    else:
+        return _run_pysa(
+            configuration,
+            analyze_arguments,
+            start_command,
+            save_results_to,
+            pyrefly_results=None,
+        )

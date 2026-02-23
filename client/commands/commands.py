@@ -31,6 +31,8 @@ class ExitCode(enum.IntEnum):
     # Exit should only happen after a shutdown message
     LANGUAGE_SERVER_EXIT = 13
     PYREFLY_FILE_FORMAT_ERROR = 14
+    PYREFLY_INTERNAL_ERROR = 15
+    MISSING_PYREFLY_BINARY = 16
     # If the process exited due to a signal, this will be the negative signal number.
     SIGSEGV = -signal.SIGSEGV
 

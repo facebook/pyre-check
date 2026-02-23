@@ -218,6 +218,12 @@ class Base(abc.ABC):
     def get_only_privacy_errors(self) -> bool:
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def get_pysa_pyrefly_binary_location(
+        self, user_provided_pyrefly_binary: Optional[str], download_path: Path
+    ) -> Optional[Path]:
+        raise NotImplementedError()
+
     def get_local_root(self) -> Optional[Path]:
         relative_local_root = self.get_relative_local_root()
         if relative_local_root is None:
@@ -417,3 +423,13 @@ class OpenSource(Base):
 
     def get_only_privacy_errors(self) -> bool:
         return False
+
+    def get_pysa_pyrefly_binary_location(
+        self, user_provided_pyrefly_binary: Optional[str], download_path: Path
+    ) -> Optional[Path]:
+        if user_provided_pyrefly_binary is not None:
+            return Path(user_provided_pyrefly_binary)
+        LOG.error(
+            "Using Pysa with auto-downloaded Pyrefly is not supported yet. Please consider using a local Pyrefly binary."
+        )
+        return None

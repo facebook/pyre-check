@@ -216,6 +216,7 @@ class ArgumentTest(testslide.TestCase):
                         maximum_target_depth=4,
                         maximum_parameterized_targets_at_call_site=1000,
                     ),
+                    pyrefly_results=None,
                 ),
                 analyze.Arguments(
                     base_arguments=backend_arguments.BaseArguments(
@@ -286,5 +287,6 @@ class ArgumentTest(testslide.TestCase):
                     higher_order_call_graph_max_iterations=10,
                     maximum_target_depth=4,
                     maximum_parameterized_targets_at_call_site=1000,
+                    pyrefly_results=None,
                 ),
             )
