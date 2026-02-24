@@ -58,20 +58,36 @@ def marshal.load(__file: TaintSink[FileSystem_Other]): ...
 def marshal.dump(__value, __file: TaintSink[FileSystem_Other], __version): ...
 def shelve.DbfilenameShelf.__init__(self, filename: TaintSink[FileSystem_Other], flag, protocol, writeback): ...
 def shelve.open(filename: TaintSink[FileSystem_Other], flag, protocol, writeback): ...
-def pickle.Unpickler.__init__(
-    self,
-    file: TaintSink[FileSystem_Other],
-    fix_imports,
-    encoding,
-    errors
-): ...
-def pickle.load(
-    file: TaintSink[FileSystem_Other],
-    *,
-    fix_imports,
-    encoding,
-    errors,
-  ): ...
+if USING_PYRE1:
+    def pickle.Unpickler.__init__(
+        self,
+        file: TaintSink[FileSystem_Other],
+        fix_imports,
+        encoding,
+        errors
+    ): ...
+    def pickle.load(
+        file: TaintSink[FileSystem_Other],
+        *,
+        fix_imports,
+        encoding,
+        errors,
+      ): ...
+if USING_PYREFLY:
+    def _pickle.Unpickler.__init__(
+        self,
+        file: TaintSink[FileSystem_Other],
+        fix_imports,
+        encoding,
+        errors
+    ): ...
+    def _pickle.load(
+        file: TaintSink[FileSystem_Other],
+        *,
+        fix_imports,
+        encoding,
+        errors,
+      ): ...
 def urllib.request.urlretrieve(url, filename: TaintSink[FileSystem_Other], reporthook, data): ...
 
 def pathlib.Path.symlink_to(self: TaintSink[FileSystem_Other], target: TaintSink[FileSystem_Other], target_is_directory): ...

@@ -17,30 +17,56 @@ def __import__(
   fromlist,
   level,
 ): ...
-def pickle.loads(
-  data: TaintSink[ExecDeserializationSink],
-  /,
-  *,
-  fix_imports,
-  encoding,
-  errors,
-  buffers,
-): ...
-def pickle.load(
-    file: TaintSink[FileContentDeserializationSink],
-    *,
-    fix_imports,
-    encoding,
-    errors,
-    buffers,
-  ): ...
-def pickle.Unpickler.__init__(
-    self,
-    file: TaintSink[FileContentDeserializationSink],
-    fix_imports,
-    encoding,
-    errors
-): ...
+if USING_PYRE1:
+    def pickle.loads(
+      data: TaintSink[ExecDeserializationSink],
+      /,
+      *,
+      fix_imports,
+      encoding,
+      errors,
+      buffers,
+    ): ...
+    def pickle.load(
+        file: TaintSink[FileContentDeserializationSink],
+        *,
+        fix_imports,
+        encoding,
+        errors,
+        buffers,
+      ): ...
+    def pickle.Unpickler.__init__(
+        self,
+        file: TaintSink[FileContentDeserializationSink],
+        fix_imports,
+        encoding,
+        errors
+    ): ...
+if USING_PYREFLY:
+    def _pickle.loads(
+      data: TaintSink[ExecDeserializationSink],
+      /,
+      *,
+      fix_imports,
+      encoding,
+      errors,
+      buffers,
+    ): ...
+    def _pickle.load(
+        file: TaintSink[FileContentDeserializationSink],
+        *,
+        fix_imports,
+        encoding,
+        errors,
+        buffers,
+      ): ...
+    def _pickle.Unpickler.__init__(
+        self,
+        file: TaintSink[FileContentDeserializationSink],
+        fix_imports,
+        encoding,
+        errors
+    ): ...
 def yaml.load(
   stream: TaintSink[ExecDeserializationSink],
   Loader,
@@ -255,7 +281,10 @@ def shelve.open(filename: TaintSink[FileContentDeserializationSink], flag, proto
 def shlex.quote(s: TaintInTaintOut[Via[shell_escape]]): ...
 
 # Code module (https://docs.python.org/3/library/code.html)
-def code.compile_command(source: TaintSink[RemoteCodeExecution], filename: TaintSink[RemoteCodeExecution]): ...
+if USING_PYRE1:
+    def code.compile_command(source: TaintSink[RemoteCodeExecution], filename: TaintSink[RemoteCodeExecution]): ...
+if USING_PYREFLY:
+    def codeop.compile_command(source: TaintSink[RemoteCodeExecution], filename: TaintSink[RemoteCodeExecution]): ...
 def code.InteractiveInterpreter.runsource(source: TaintSink[RemoteCodeExecution], filename: TaintSink[RemoteCodeExecution]): ...
 def code.InteractiveInterpreter.runcode(code: TaintSink[RemoteCodeExecution]): ...
 def code.InteractiveConsole.push(line: TaintSink[RemoteCodeExecution]): ...
