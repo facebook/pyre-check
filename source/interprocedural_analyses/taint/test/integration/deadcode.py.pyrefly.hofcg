@@ -56,6 +56,7 @@ Higher order call graphs
     },
     "102:22-102:25": {
       "attribute_access": {
+        "is_attribute": true,
         "if_called": {
           "calls": [
             {

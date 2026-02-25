@@ -1009,7 +1009,8 @@ Higher order call graphs
             "implicit_receiver": true,
             "return_type": []
           }
-        ]
+        ],
+        "is_attribute": true
       }
     },
     "176:11-176:24": {
@@ -1047,6 +1048,7 @@ Higher order call graphs
   "calls": {
     "217:8-217:14": {
       "attribute_access": {
+        "is_attribute": true,
         "if_called": {
           "calls": [
             {

@@ -814,7 +814,8 @@ Higher order call graphs
             "implicit_receiver": true,
             "return_type": []
           }
-        ]
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -907,7 +908,8 @@ Higher order call graphs
             "implicit_receiver": true,
             "return_type": []
           }
-        ]
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -1261,7 +1263,8 @@ Higher order call graphs
             "return_type": [],
             "receiver_class": "properties.PropertySetterTitoModel"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     },
     "274:27-274:41": {

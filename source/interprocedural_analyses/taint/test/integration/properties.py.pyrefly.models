@@ -820,6 +820,21 @@
           {
             "kinds": [
               {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 210, "start": 31, "end": 32 } ],
+            "origin": { "line": 211, "start": 15, "end": 30 },
+            "call_site": "211:4-211:31"
+          },
+          {
+            "kinds": [
+              {
                 "features": [ { "always-via": "special_sink" } ],
                 "length": 1,
                 "kind": "Test"
@@ -911,6 +926,24 @@
       {
         "port": "result",
         "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "my_property" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 201, "start": 31, "end": 45 } ],
+            "origin": { "line": 201, "start": 31, "end": 45 }
+          },
           {
             "kinds": [
               {
