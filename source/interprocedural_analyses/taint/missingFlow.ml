@@ -73,7 +73,6 @@ let add_obscure_models
     ~stubs
     ~initial_models
   =
-  let stubs = Hash_set.to_list stubs in
   let remove_sinks models =
     SharedModels.map_parallel
       ~scheduler

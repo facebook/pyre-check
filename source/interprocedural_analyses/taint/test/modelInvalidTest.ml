@@ -94,8 +94,7 @@ let assert_invalid_model
       ~source_sink_filter:None
       ?path
       ~source:(Test.trim_extra_indentation model_source)
-      ~definitions:None
-      ~stubs:([] |> Target.HashsetSharedMemory.from_heap |> Target.HashsetSharedMemory.read_only)
+      ~callables_to_definitions_map:None
       ~python_version:(ModelParser.PythonVersion.create ())
       ()
     |> fun { ModelParseResult.errors; _ } ->

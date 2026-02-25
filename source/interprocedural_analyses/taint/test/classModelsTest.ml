@@ -27,9 +27,7 @@ let assert_class_models ~context ?user_models ~source ~expected () =
             ~source:(Test.trim_extra_indentation user_models)
             ~taint_configuration:TaintConfiguration.Heap.default
             ~source_sink_filter:None
-            ~definitions:None
-            ~stubs:
-              ([] |> Target.HashsetSharedMemory.from_heap |> Target.HashsetSharedMemory.read_only)
+            ~callables_to_definitions_map:None
             ~python_version:(ModelParser.PythonVersion.create ())
             ()
         in

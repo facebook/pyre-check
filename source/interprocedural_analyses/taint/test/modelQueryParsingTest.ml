@@ -49,14 +49,22 @@ let set_up_environment ?source ~context ~model_source ~validate () =
 
   PyrePysaApi.ModelQueries.invalidate_cache pyre_api;
   let stubs, definitions = get_stubs_and_definitions ~source_file_name ~project in
+  let callables_to_definitions_map =
+    Interprocedural.CallablesSharedMemory.ReadWrite.from_callables
+      ~scheduler:(Test.mock_scheduler ())
+      ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+      ~pyre_api
+      (List.rev_append stubs definitions)
+  in
   let ({ ModelParseResult.errors; _ } as parse_result) =
     ModelParser.parse
       ~pyre_api
       ~source
       ~taint_configuration
       ~source_sink_filter:(Some taint_configuration.source_sink_filter)
-      ~definitions:(Some (Target.HashSet.of_list definitions))
-      ~stubs:(stubs |> Target.HashsetSharedMemory.from_heap |> Target.HashsetSharedMemory.read_only)
+      ~callables_to_definitions_map:
+        (Some
+           (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map))
       ~python_version:(ModelParser.PythonVersion.create ())
       ()
   in

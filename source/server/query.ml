@@ -644,8 +644,7 @@ let rec process_request_exn
           ~source
           ~taint_configuration
           ~source_sink_filter:None
-          ~definitions:None
-          ~stubs:([] |> Target.HashsetSharedMemory.from_heap |> Target.HashsetSharedMemory.read_only)
+          ~callables_to_definitions_map:None
           ~python_version
           ()
         |> fun { Taint.ModelParseResult.queries; errors; _ } ->
@@ -721,10 +720,6 @@ let rec process_request_exn
         Taint.StepLogger.finish step_logger;
         class_hierarchy_graph
       in
-      let stubs_shared_memory_handle =
-        Target.HashsetSharedMemory.from_heap
-          (Interprocedural.FetchCallables.get_stubs initial_callables)
-      in
       let definitions_and_stubs =
         Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
       in
@@ -763,7 +758,6 @@ let rec process_request_exn
         ~error_on_empty_result:true
         ~definitions_and_stubs:
           (Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true)
-        ~stubs:(Target.HashsetSharedMemory.read_only stubs_shared_memory_handle)
         model_queries
     in
     let open Response in

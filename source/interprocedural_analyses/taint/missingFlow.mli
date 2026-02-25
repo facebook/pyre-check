@@ -18,7 +18,7 @@ val add_obscure_models
   :  scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
-  stubs:Target.HashSet.t ->
+  stubs:Target.t list ->
   initial_models:SharedModels.t ->
   SharedModels.t
 

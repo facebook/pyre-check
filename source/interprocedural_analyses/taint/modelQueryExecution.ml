@@ -1209,7 +1209,7 @@ module type QUERY_KIND = sig
   val generate_model_from_annotations
     :  pyre_api:PyrePysaApi.ReadOnly.t ->
     source_sink_filter:SourceSinkFilter.t option ->
-    stubs:Target.HashsetSharedMemory.ReadOnly.t ->
+    callables_to_definitions_map:Interprocedural.CallablesSharedMemory.ReadOnly.t ->
     target:Target.t ->
     modelable:Modelable.t ->
     annotation list ->
@@ -1287,7 +1287,6 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~callables_to_definitions_map
       ~class_hierarchy_graph
       ~source_sink_filter
-      ~stubs
       ~target
       ~modelable
       query
@@ -1306,7 +1305,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
         QueryKind.generate_model_from_annotations
           ~pyre_api
           ~source_sink_filter
-          ~stubs
+          ~callables_to_definitions_map
           ~target
           ~modelable
           annotations
@@ -1325,7 +1324,6 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~callables_to_definitions_map
       ~class_hierarchy_graph
       ~source_sink_filter
-      ~stubs
       ~targets
       query
     =
@@ -1338,7 +1336,6 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           ~callables_to_definitions_map
           ~class_hierarchy_graph
           ~source_sink_filter
-          ~stubs
           ~target
           ~modelable
           query
@@ -1358,7 +1355,6 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~class_hierarchy_graph
       ~callables_to_definitions_map
       ~source_sink_filter
-      ~stubs
       ~queries
       target
     =
@@ -1371,7 +1367,6 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           ~callables_to_definitions_map
           ~class_hierarchy_graph
           ~source_sink_filter
-          ~stubs
           ~target
           ~modelable
           query
@@ -1398,7 +1393,6 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~class_hierarchy_graph
       ~callables_to_definitions_map
       ~source_sink_filter
-      ~stubs
       ~targets
       ~queries
       accumulator
@@ -1413,7 +1407,6 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
             ~class_hierarchy_graph
             ~callables_to_definitions_map
             ~source_sink_filter
-            ~stubs
             ~queries
             target
         in
@@ -1534,7 +1527,6 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~callables_to_definitions_map
       ~class_hierarchy_graph
       ~source_sink_filter
-      ~stubs
       ~cache
       read_from_cache_queries
     =
@@ -1559,7 +1551,6 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
               ~callables_to_definitions_map
               ~class_hierarchy_graph
               ~source_sink_filter
-              ~stubs
               ~targets:(Target.Set.elements candidates)
               query
           in
@@ -1582,7 +1573,6 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~callables_to_definitions_map
       ~class_hierarchy_graph
       ~source_sink_filter
-      ~stubs
       ~targets
       accumulator
     = function
@@ -1596,7 +1586,6 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
             ~class_hierarchy_graph
             ~callables_to_definitions_map
             ~source_sink_filter
-            ~stubs
             ~targets
             ~queries:regular_queries
             empty_accumulator
@@ -1630,7 +1619,6 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~callables_to_definitions_map
       ~class_hierarchy_graph
       ~source_sink_filter
-      ~stubs
       ~targets
       ~queries
       execution_result
@@ -1661,7 +1649,6 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           ~callables_to_definitions_map
           ~class_hierarchy_graph
           ~source_sink_filter
-          ~stubs
           ~targets
           execution_result
           regular_queries
@@ -1706,7 +1693,6 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           ~callables_to_definitions_map
           ~class_hierarchy_graph
           ~source_sink_filter
-          ~stubs
           ~cache
           read_from_cache_queries
       in
@@ -1932,16 +1918,22 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
   let generate_model_from_annotations
       ~pyre_api
       ~source_sink_filter
-      ~stubs
+      ~callables_to_definitions_map
       ~target:callable
       ~modelable
       annotations
     =
+    let is_obscure =
+      Interprocedural.CallablesSharedMemory.ReadOnly.is_stub_like
+        callables_to_definitions_map
+        callable
+      |> Option.value ~default:false
+    in
     ModelParser.create_callable_model_from_annotations
       ~pyre_api
       ~modelable
       ~source_sink_filter
-      ~is_obscure:(Target.HashsetSharedMemory.ReadOnly.mem stubs callable)
+      ~is_obscure
       annotations
 end)
 
@@ -2011,7 +2003,7 @@ module AttributeQueryExecutor = struct
     let generate_model_from_annotations
         ~pyre_api
         ~source_sink_filter
-        ~stubs:_
+        ~callables_to_definitions_map:_
         ~target
         ~modelable:_
         annotations
@@ -2077,7 +2069,7 @@ module GlobalVariableQueryExecutor = struct
     let generate_model_from_annotations
         ~pyre_api
         ~source_sink_filter
-        ~stubs:_
+        ~callables_to_definitions_map:_
         ~target
         ~modelable:_
         annotations
@@ -2101,7 +2093,6 @@ let generate_models_from_queries
     ~error_on_unexpected_models
     ~error_on_empty_result
     ~definitions_and_stubs
-    ~stubs
     queries
   =
   let queries =
@@ -2136,7 +2127,6 @@ let generate_models_from_queries
         ~callables_to_definitions_map
         ~class_hierarchy_graph
         ~source_sink_filter
-        ~stubs
         ~targets:definitions_and_stubs
         ~queries:callable_queries
         execution_result
@@ -2156,7 +2146,6 @@ let generate_models_from_queries
         ~callables_to_definitions_map
         ~class_hierarchy_graph
         ~source_sink_filter
-        ~stubs
         ~targets:attributes
         ~queries:attribute_queries
         execution_result
@@ -2176,7 +2165,6 @@ let generate_models_from_queries
         ~callables_to_definitions_map
         ~class_hierarchy_graph
         ~source_sink_filter
-        ~stubs
         ~targets:globals
         ~queries:global_queries
         execution_result

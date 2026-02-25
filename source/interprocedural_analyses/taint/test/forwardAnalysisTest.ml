@@ -46,8 +46,7 @@ let assert_taint ?models ?models_source ?(skip_for_pyrefly = false) ~context sou
         ~source:models
         ~taint_configuration:TaintConfiguration.Heap.default
         ~source_sink_filter:None
-        ~definitions:None
-        ~stubs:([] |> Target.HashsetSharedMemory.from_heap |> Target.HashsetSharedMemory.read_only)
+        ~callables_to_definitions_map:None
         ~python_version:(ModelParser.PythonVersion.create ())
         ()
     in

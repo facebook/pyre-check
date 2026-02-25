@@ -146,6 +146,5 @@ val generate_models_from_queries
   error_on_unexpected_models:bool ->
   error_on_empty_result:bool ->
   definitions_and_stubs:Target.t list ->
-  stubs:Target.HashsetSharedMemory.ReadOnly.t ->
   ModelParseResult.ModelQuery.t list ->
   ExecutionResult.t

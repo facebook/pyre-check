@@ -29,8 +29,7 @@ val parse
   source:string ->
   taint_configuration:TaintConfiguration.Heap.t ->
   source_sink_filter:SourceSinkFilter.t option ->
-  definitions:Target.HashSet.t option ->
-  stubs:Target.HashsetSharedMemory.ReadOnly.t ->
+  callables_to_definitions_map:Interprocedural.CallablesSharedMemory.ReadOnly.t option ->
   python_version:PythonVersion.t ->
   unit ->
   ModelParseResult.t

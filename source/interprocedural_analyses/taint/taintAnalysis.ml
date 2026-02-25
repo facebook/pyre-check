@@ -256,13 +256,10 @@ let parse_models_and_queries_from_sources
     ~pyre_api
     ~taint_configuration
     ~source_sink_filter
-    ~definitions
-    ~stubs
+    ~callables_to_definitions_map
     ~python_version
     sources
   =
-  (* TODO(T117715045): Do not pass all definitions explicitly to map_reduce,
-   * since this will marshal-ed between processes and hence is costly. *)
   let map sources =
     let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
     List.fold sources ~init:ModelParseResult.empty ~f:(fun state (path, source) ->
@@ -272,8 +269,7 @@ let parse_models_and_queries_from_sources
           ~source
           ~taint_configuration
           ~source_sink_filter:(Some source_sink_filter)
-          ~definitions
-          ~stubs
+          ~callables_to_definitions_map
           ~python_version
           ()
         |> ModelParseResult.join state)
@@ -299,8 +295,7 @@ let parse_models_and_queries_from_configuration
     ~static_analysis_configuration:{ Configuration.StaticAnalysis.verify_models; configuration; _ }
     ~taint_configuration
     ~source_sink_filter
-    ~definitions
-    ~stubs
+    ~callables_to_definitions_map
   =
   let python_version = ModelParser.PythonVersion.from_configuration configuration in
   let ({ ModelParseResult.errors; _ } as parse_result) =
@@ -310,8 +305,7 @@ let parse_models_and_queries_from_configuration
          ~pyre_api
          ~taint_configuration
          ~source_sink_filter
-         ~definitions
-         ~stubs
+         ~callables_to_definitions_map
          ~python_version
   in
   let errors = ModelVerifier.filter_unused_stdlib_modules_errors errors in
@@ -341,12 +335,6 @@ let initialize_models
   let step_logger =
     StepLogger.start ~start_message:"Parsing taint models" ~end_message:"Parsed taint models" ()
   in
-  let definitions_hashset =
-    initial_callables |> Interprocedural.FetchCallables.get_definitions |> Target.HashSet.of_list
-  in
-  let stubs_list = Interprocedural.FetchCallables.get_stubs initial_callables in
-  let stubs_hashset = Target.HashSet.of_list stubs_list in
-  let stubs_shared_memory = Target.HashsetSharedMemory.from_heap stubs_list in
   let { ModelParseResult.models = regular_models; queries; errors } =
     parse_models_and_queries_from_configuration
       ~scheduler
@@ -354,8 +342,7 @@ let initialize_models
       ~static_analysis_configuration
       ~taint_configuration:taint_configuration_shared_memory
       ~source_sink_filter:taint_configuration.source_sink_filter
-      ~definitions:(Some definitions_hashset)
-      ~stubs:(Target.HashsetSharedMemory.read_only stubs_shared_memory)
+      ~callables_to_definitions_map:(Some callables_to_definitions_map)
   in
   let () =
     StepLogger.finish
@@ -387,7 +374,6 @@ let initialize_models
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~definitions_and_stubs:
               (Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true)
-            ~stubs:(Target.HashsetSharedMemory.read_only stubs_shared_memory)
             queries
         in
         let () =
@@ -430,11 +416,9 @@ let initialize_models
       ~scheduler
       ~static_analysis_configuration
       ~callables_to_definitions_map
-      ~stubs:stubs_hashset
+      ~stubs:(Interprocedural.FetchCallables.get_stubs initial_callables)
       ~initial_models:models
   in
-
-  let () = Target.HashsetSharedMemory.cleanup ~clean_old:true stubs_shared_memory in
 
   { ModelGenerationResult.models; errors }
 

@@ -4017,14 +4017,21 @@ let create_models_from_class
             (BaseModuleNotInEnvironment { module_name; name = Reference.show class_name }))
 
 
-let is_obscure ~definitions ~stubs call_target =
-  (* The callable is obscure if and only if it is a type stub or it is not in the set of known
-     definitions. *)
-  Target.HashsetSharedMemory.ReadOnly.mem stubs call_target
-  || definitions >>| Core.Fn.flip Hash_set.mem call_target >>| not |> Option.value ~default:false
+let is_obscure ~callables_to_definitions_map call_target =
+  match callables_to_definitions_map with
+  | None -> false
+  | Some map ->
+      Interprocedural.CallablesSharedMemory.ReadOnly.is_stub_like map call_target
+      |> Option.value ~default:true
 
 
-let parse_models ~pyre_api ~taint_configuration ~source_sink_filter ~definitions ~stubs models =
+let parse_models
+    ~pyre_api
+    ~taint_configuration
+    ~source_sink_filter
+    ~callables_to_definitions_map
+    models
+  =
   let open Core.Result in
   List.map models ~f:(fun (parsed_signature, model_source) ->
       create_model_from_signature
@@ -4032,7 +4039,7 @@ let parse_models ~pyre_api ~taint_configuration ~source_sink_filter ~definitions
         ~path:None
         ~taint_configuration
         ~source_sink_filter
-        ~is_obscure:(is_obscure ~definitions ~stubs)
+        ~is_obscure:(is_obscure ~callables_to_definitions_map)
         parsed_signature
       >>| fun { Model.WithTarget.target; model } ->
       { ModelQuery.ExpectedModel.model; target; model_source })
@@ -4126,8 +4133,7 @@ let rec parse_statement
     ~path
     ~taint_configuration
     ~source_sink_filter
-    ~definitions
-    ~stubs
+    ~callables_to_definitions_map
     ~python_version
     statement
   =
@@ -4368,8 +4374,7 @@ let rec parse_statement
                        ~path
                        ~taint_configuration
                        ~source_sink_filter
-                       ~definitions
-                       ~stubs
+                       ~callables_to_definitions_map
                        ~python_version)
             >>| List.concat
             >>| List.partition_result
@@ -4424,8 +4429,7 @@ let rec parse_statement
                       ~pyre_api
                       ~taint_configuration
                       ~source_sink_filter
-                      ~definitions
-                      ~stubs
+                      ~callables_to_definitions_map
                       parsed_signatures))
       in
       let as_result_error_list = function
@@ -4528,8 +4532,7 @@ let rec parse_statement
                       ~path
                       ~taint_configuration
                       ~source_sink_filter
-                      ~definitions
-                      ~stubs
+                      ~callables_to_definitions_map
                       ~python_version)
             |> List.concat
       in
@@ -4557,8 +4560,7 @@ let rec parse_statement
                 ~path
                 ~taint_configuration
                 ~source_sink_filter
-                ~definitions
-                ~stubs
+                ~callables_to_definitions_map
                 ~python_version)
       |> List.concat
   | {
@@ -4580,8 +4582,7 @@ let rec parse_statement
                 ~path
                 ~taint_configuration
                 ~source_sink_filter
-                ~definitions
-                ~stubs
+                ~callables_to_definitions_map
                 ~python_version)
       |> List.concat
   | { Node.value = If { If.test; _ }; location } ->
@@ -4611,8 +4612,7 @@ let create
     ~path
     ~taint_configuration
     ~source_sink_filter
-    ~definitions
-    ~stubs
+    ~callables_to_definitions_map
     ~python_version
     source
   =
@@ -4629,8 +4629,7 @@ let create
                     ~path
                     ~taint_configuration
                     ~source_sink_filter
-                    ~definitions
-                    ~stubs
+                    ~callables_to_definitions_map
                     ~python_version)
           |> List.concat
           |> List.partition_result
@@ -4651,7 +4650,7 @@ let create
           ~path
           ~taint_configuration
           ~source_sink_filter
-          ~is_obscure:(is_obscure ~definitions ~stubs)
+          ~is_obscure:(is_obscure ~callables_to_definitions_map)
           parsed_signature
         >>| fun model -> Models [model]
     | ParsedAttribute parsed_attribute ->
@@ -4668,7 +4667,7 @@ let create
           ~path
           ~taint_configuration
           ~source_sink_filter
-          ~is_obscure:(is_obscure ~definitions ~stubs)
+          ~is_obscure:(is_obscure ~callables_to_definitions_map)
           parsed_class
         >>| fun models -> Models models
     | ParsedQuery query -> Ok (Query query)
@@ -4754,8 +4753,7 @@ let parse
     ~source
     ~taint_configuration
     ~source_sink_filter
-    ~definitions
-    ~stubs
+    ~callables_to_definitions_map
     ~python_version
     ()
   =
@@ -4765,8 +4763,7 @@ let parse
       ~path
       ~taint_configuration
       ~source_sink_filter
-      ~definitions
-      ~stubs
+      ~callables_to_definitions_map
       ~python_version
       source
     |> List.partition_result

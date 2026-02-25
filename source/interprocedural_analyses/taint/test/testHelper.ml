@@ -460,8 +460,7 @@ let get_initial_models ~pyre_api =
       ~source:initial_models_source
       ~taint_configuration:TaintConfiguration.Heap.default
       ~source_sink_filter:None
-      ~definitions:None
-      ~stubs:([] |> Target.HashsetSharedMemory.from_heap |> Target.HashsetSharedMemory.read_only)
+      ~callables_to_definitions_map:None
       ~python_version:(ModelParser.PythonVersion.create ())
       ()
   in
@@ -496,7 +495,6 @@ module TestEnvironment = struct
     class_interval_graph: ClassIntervalSetGraph.Heap.t;
     class_interval_graph_shared_memory: ClassIntervalSetGraph.SharedMemory.t;
     global_constants: GlobalConstants.SharedMemory.t;
-    stubs_shared_memory_handle: Target.HashsetSharedMemory.t;
     callables_to_definitions_map: Interprocedural.CallablesSharedMemory.ReadWrite.t;
     callables_to_decorators_map: Interprocedural.CallableToDecoratorsMap.SharedMemory.t;
     type_of_expression_shared_memory: Interprocedural.TypeOfExpressionSharedMemory.t;
@@ -521,7 +519,6 @@ module TestEnvironment = struct
         class_interval_graph;
         class_interval_graph_shared_memory;
         global_constants;
-        stubs_shared_memory_handle;
         callables_to_definitions_map;
         callables_to_decorators_map;
         type_of_expression_shared_memory = _;
@@ -536,7 +533,6 @@ module TestEnvironment = struct
     ClassIntervalSetGraph.SharedMemory.cleanup
       class_interval_graph_shared_memory
       class_interval_graph;
-    Target.HashsetSharedMemory.cleanup ~clean_old:true stubs_shared_memory_handle;
     GlobalConstants.SharedMemory.cleanup global_constants;
     Interprocedural.CallablesSharedMemory.ReadWrite.cleanup callables_to_definitions_map;
     Interprocedural.CallableToDecoratorsMap.SharedMemory.cleanup callables_to_decorators_map
@@ -632,7 +628,6 @@ let initialize
   let stubs = FetchCallables.get_stubs initial_callables_in_source in
   let definitions = FetchCallables.get_definitions initial_callables_in_source in
   let class_hierarchy_graph = ClassHierarchyGraph.Heap.from_qualifier ~pyre_api ~qualifier in
-  let stubs_shared_memory_handle = Target.HashsetSharedMemory.from_heap stubs in
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
   let qualifiers = PyrePysaApi.ReadOnly.explicit_qualifiers pyre_api in
@@ -673,7 +668,6 @@ let initialize
     match models_source with
     | None -> SharedModels.create (), ModelQueryExecution.ExecutionResult.create_empty ()
     | Some source ->
-        let stubs_shared_memory = Target.HashsetSharedMemory.from_heap stubs in
         PyrePysaApi.ModelQueries.invalidate_cache pyre_api;
         let { ModelParseResult.models = regular_models; errors; queries } =
           ModelParser.parse
@@ -682,8 +676,10 @@ let initialize
             ~source:(Test.trim_extra_indentation source)
             ~taint_configuration
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
-            ~definitions:(Some (Target.HashSet.of_list definitions))
-            ~stubs:(Target.HashsetSharedMemory.read_only stubs_shared_memory)
+            ~callables_to_definitions_map:
+              (Some
+                 (Interprocedural.CallablesSharedMemory.ReadOnly.read_only
+                    callables_to_definitions_map))
             ~python_version:(ModelParser.PythonVersion.create ())
             ()
         in
@@ -712,7 +708,6 @@ let initialize
             ~error_on_unexpected_models:true
             ~error_on_empty_result:verify_empty_model_queries
             ~definitions_and_stubs:(List.rev_append stubs definitions)
-            ~stubs:(Target.HashsetSharedMemory.read_only stubs_shared_memory_handle)
             queries
         in
         let errors = ModelQueryExecution.ExecutionResult.get_errors model_query_results in
@@ -733,7 +728,7 @@ let initialize
             ~callables_to_definitions_map:
               (Interprocedural.CallablesSharedMemory.ReadOnly.read_only
                  callables_to_definitions_map)
-            ~stubs:(Target.HashSet.of_list stubs)
+            ~stubs
             ~initial_models:models
         in
         models, model_query_results
@@ -872,7 +867,6 @@ let initialize
     class_interval_graph;
     class_interval_graph_shared_memory;
     global_constants;
-    stubs_shared_memory_handle;
     callables_to_definitions_map;
     callables_to_decorators_map;
     type_of_expression_shared_memory;
