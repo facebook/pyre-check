@@ -1,6 +1,10 @@
 @generated
 Call dependencies
 {
+  "attributes.IsAttributeBug.issue (method)": [
+    "attributes.IsAttributeBug.__init__ (method)", "object.__new__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
   "attributes.NoListInference.sink (method)": [ "pysa._test_sink (fun)" ],
   "attributes.Request.$class_toplevel (method)": [
     "object.__init__ (method)", "object.__new__ (method)"

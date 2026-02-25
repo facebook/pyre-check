@@ -1,7 +1,8 @@
 @generated
 Overrides
+attributes.IsAttributeBug.__init__ (override) -> [attributes.IsAttributeBug.__init__ (method)]
 attributes.NoListInference.__init__ (override) -> [attributes.NoListInference.__init__ (method)]
 attributes.RegularForm.__init__ (override) -> [attributes.RegularForm.__init__ (method)]
 attributes.UseViaDict.__init__ (override) -> [attributes.UseViaDict.__init__ (method)]
 attributes.ZonedForm.__init__ (override) -> [attributes.ZonedForm.__init__ (method)]
-object.__init__ (override) -> [attributes.NoListInference.__init__ (override) attributes.RegularForm.__init__ (override) attributes.UseViaDict.__init__ (override) attributes.ZonedForm.__init__ (override) object.__init__ (method)]
+object.__init__ (override) -> [attributes.IsAttributeBug.__init__ (override) attributes.NoListInference.__init__ (override) attributes.RegularForm.__init__ (override) attributes.UseViaDict.__init__ (override) attributes.ZonedForm.__init__ (override) object.__init__ (method)]

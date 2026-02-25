@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import weakref
 from dataclasses import dataclass
 from typing import Any, Dict, List, MutableMapping, Optional, TypeVar, Union
 
@@ -202,3 +203,20 @@ def test_no_issue_sanitize_via_call():
     x.attribute = _test_source()
     sanitize_attribute(x)
     _test_sink(x.attribute)  # TODO(T218153519): False positive
+
+
+class IsAttributeBug:
+    def __init__(
+        self,
+        a: Optional[str],
+        b: Optional[weakref.ReferenceType[str]],
+        c: Optional[str],
+    ):
+        self.a = a
+        # pyrefly returns an attribute access callees with is_attribute=false.
+        self.b: Optional[weakref.ReferenceType[str]] = b
+        self.c = c
+
+    @staticmethod
+    def issue():
+        _test_sink(IsAttributeBug(a=_test_source(), b=None, c=None))

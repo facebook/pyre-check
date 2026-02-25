@@ -4,7 +4,7 @@
   "data": {
     "callable": "attributes.test_attribute",
     "filename": "attributes.py",
-    "callable_line": 42,
+    "callable_line": 43,
     "sources": [
       {
         "port": "result",
@@ -21,7 +21,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 43, "start": 11, "end": 18 }
+            "origin": { "line": 44, "start": 11, "end": 18 }
           }
         ]
       }
@@ -43,9 +43,9 @@
   "kind": "issue",
   "data": {
     "callable": "attributes.test_attribute_union_sink",
-    "callable_line": 92,
+    "callable_line": 93,
     "code": 5002,
-    "line": 93,
+    "line": 94,
     "start": 4,
     "end": 11,
     "filename": "attributes.py",
@@ -64,7 +64,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 93, "start": 14, "end": 28 }
+            "origin": { "line": 94, "start": 14, "end": 28 }
           }
         ]
       },
@@ -83,7 +83,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 93, "start": 4, "end": 11 }
+            "origin": { "line": 94, "start": 4, "end": 11 }
           }
         ]
       }
@@ -101,9 +101,9 @@
   "kind": "issue",
   "data": {
     "callable": "attributes.test_attribute_union_sink",
-    "callable_line": 92,
+    "callable_line": 93,
     "code": 5002,
-    "line": 95,
+    "line": 96,
     "start": 8,
     "end": 15,
     "filename": "attributes.py",
@@ -122,7 +122,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 95, "start": 18, "end": 32 }
+            "origin": { "line": 96, "start": 18, "end": 32 }
           }
         ]
       },
@@ -141,7 +141,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 95, "start": 8, "end": 15 }
+            "origin": { "line": 96, "start": 8, "end": 15 }
           }
         ]
       }
@@ -160,7 +160,7 @@
   "data": {
     "callable": "attributes.test_attribute_union_source",
     "filename": "attributes.py",
-    "callable_line": 80,
+    "callable_line": 81,
     "sinks": [
       {
         "port": "formal(t, position=0)[token]",
@@ -175,8 +175,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 81, "start": 15, "end": 22 },
-            "call_site": "81:4-81:23"
+            "origin": { "line": 82, "start": 15, "end": 22 },
+            "call_site": "82:4-82:23"
           },
           {
             "kinds": [
@@ -188,8 +188,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 83, "start": 19, "end": 26 },
-            "call_site": "83:8-83:27"
+            "origin": { "line": 84, "start": 19, "end": 26 },
+            "call_site": "84:8-84:27"
           },
           {
             "kinds": [
@@ -201,8 +201,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 85, "start": 19, "end": 26 },
-            "call_site": "85:8-85:27"
+            "origin": { "line": 86, "start": 19, "end": 26 },
+            "call_site": "86:8-86:27"
           }
         ]
       }
@@ -213,9 +213,9 @@
   "kind": "issue",
   "data": {
     "callable": "attributes.test_attribute_union_source",
-    "callable_line": 80,
+    "callable_line": 81,
     "code": 5002,
-    "line": 81,
+    "line": 82,
     "start": 15,
     "end": 22,
     "filename": "attributes.py",
@@ -236,7 +236,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 81, "start": 15, "end": 22 }
+            "origin": { "line": 82, "start": 15, "end": 22 }
           }
         ]
       },
@@ -253,8 +253,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 81, "start": 15, "end": 22 },
-            "call_site": "81:4-81:23"
+            "origin": { "line": 82, "start": 15, "end": 22 },
+            "call_site": "82:4-82:23"
           }
         ]
       }
@@ -273,9 +273,9 @@
   "kind": "issue",
   "data": {
     "callable": "attributes.test_attribute_union_source",
-    "callable_line": 80,
+    "callable_line": 81,
     "code": 5002,
-    "line": 83,
+    "line": 84,
     "start": 19,
     "end": 26,
     "filename": "attributes.py",
@@ -296,7 +296,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 83, "start": 19, "end": 26 }
+            "origin": { "line": 84, "start": 19, "end": 26 }
           }
         ]
       },
@@ -313,8 +313,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 83, "start": 19, "end": 26 },
-            "call_site": "83:8-83:27"
+            "origin": { "line": 84, "start": 19, "end": 26 },
+            "call_site": "84:8-84:27"
           }
         ]
       }
@@ -333,9 +333,9 @@
   "kind": "issue",
   "data": {
     "callable": "attributes.test_attribute_via_dunder_dict",
-    "callable_line": 68,
+    "callable_line": 69,
     "code": 5002,
-    "line": 71,
+    "line": 72,
     "start": 15,
     "end": 27,
     "filename": "attributes.py",
@@ -359,8 +359,8 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 69, "start": 23, "end": 37 } ],
-            "origin": { "line": 69, "start": 23, "end": 37 }
+            "tito_positions": [ { "line": 70, "start": 23, "end": 37 } ],
+            "origin": { "line": 70, "start": 23, "end": 37 }
           }
         ]
       },
@@ -377,8 +377,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 71, "start": 15, "end": 27 },
-            "call_site": "71:4-71:28"
+            "origin": { "line": 72, "start": 15, "end": 27 },
+            "call_site": "72:4-72:28"
           }
         ]
       }
@@ -403,9 +403,9 @@
   "kind": "issue",
   "data": {
     "callable": "attributes.test_attribute_via_dunder_dict",
-    "callable_line": 68,
+    "callable_line": 69,
     "code": 5002,
-    "line": 72,
+    "line": 73,
     "start": 15,
     "end": 32,
     "filename": "attributes.py",
@@ -429,8 +429,8 @@
               { "first-index": "a" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 69, "start": 23, "end": 37 } ],
-            "origin": { "line": 69, "start": 23, "end": 37 }
+            "tito_positions": [ { "line": 70, "start": 23, "end": 37 } ],
+            "origin": { "line": 70, "start": 23, "end": 37 }
           }
         ]
       },
@@ -447,8 +447,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 72, "start": 15, "end": 32 },
-            "call_site": "72:4-72:33"
+            "origin": { "line": 73, "start": 15, "end": 32 },
+            "call_site": "73:4-73:33"
           }
         ]
       }
@@ -474,7 +474,7 @@
   "data": {
     "callable": "attributes.test_getattr_backwards",
     "filename": "attributes.py",
-    "callable_line": 54,
+    "callable_line": 55,
     "sinks": [
       {
         "port": "formal(t, position=0)[token]",
@@ -489,8 +489,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 55, "start": 15, "end": 40 },
-            "call_site": "55:4-55:41"
+            "origin": { "line": 56, "start": 15, "end": 40 },
+            "call_site": "56:4-56:41"
           }
         ]
       }
@@ -501,9 +501,9 @@
   "kind": "issue",
   "data": {
     "callable": "attributes.test_getattr_backwards",
-    "callable_line": 54,
+    "callable_line": 55,
     "code": 5002,
-    "line": 55,
+    "line": 56,
     "start": 15,
     "end": 40,
     "filename": "attributes.py",
@@ -524,7 +524,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 55, "start": 15, "end": 40 }
+            "origin": { "line": 56, "start": 15, "end": 40 }
           }
         ]
       },
@@ -541,8 +541,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 55, "start": 15, "end": 40 },
-            "call_site": "55:4-55:41"
+            "origin": { "line": 56, "start": 15, "end": 40 },
+            "call_site": "56:4-56:41"
           }
         ]
       }
@@ -562,7 +562,7 @@
   "data": {
     "callable": "attributes.test_getattr_backwards_default",
     "filename": "attributes.py",
-    "callable_line": 58,
+    "callable_line": 59,
     "sinks": [
       {
         "port": "formal(t, position=0)[token]",
@@ -577,8 +577,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 59, "start": 15, "end": 41 },
-            "call_site": "59:4-59:42"
+            "origin": { "line": 60, "start": 15, "end": 41 },
+            "call_site": "60:4-60:42"
           }
         ]
       }
@@ -589,9 +589,9 @@
   "kind": "issue",
   "data": {
     "callable": "attributes.test_getattr_backwards_default",
-    "callable_line": 58,
+    "callable_line": 59,
     "code": 5002,
-    "line": 59,
+    "line": 60,
     "start": 15,
     "end": 41,
     "filename": "attributes.py",
@@ -612,7 +612,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 59, "start": 33, "end": 40 }
+            "origin": { "line": 60, "start": 33, "end": 40 }
           }
         ]
       },
@@ -629,8 +629,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 59, "start": 15, "end": 41 },
-            "call_site": "59:4-59:42"
+            "origin": { "line": 60, "start": 15, "end": 41 },
+            "call_site": "60:4-60:42"
           }
         ]
       }
@@ -650,7 +650,7 @@
   "data": {
     "callable": "attributes.test_getattr_default",
     "filename": "attributes.py",
-    "callable_line": 50,
+    "callable_line": 51,
     "sources": [
       {
         "port": "result",
@@ -665,7 +665,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 51, "start": 35, "end": 49 }
+            "origin": { "line": 52, "start": 35, "end": 49 }
           }
         ]
       }
@@ -688,7 +688,7 @@
   "data": {
     "callable": "attributes.test_getattr_forward",
     "filename": "attributes.py",
-    "callable_line": 46,
+    "callable_line": 47,
     "sources": [
       {
         "port": "result",
@@ -705,7 +705,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 47, "start": 11, "end": 36 }
+            "origin": { "line": 48, "start": 11, "end": 36 }
           }
         ]
       }
@@ -728,7 +728,7 @@
   "data": {
     "callable": "attributes.test_issue_with_text_key_of_dictionary",
     "filename": "attributes.py",
-    "callable_line": 104,
+    "callable_line": 105,
     "sinks": [
       {
         "port": "formal(c, position=0)[dictionary][text]",
@@ -746,8 +746,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "text" }
             ],
-            "origin": { "line": 105, "start": 15, "end": 35 },
-            "call_site": "105:4-105:36"
+            "origin": { "line": 106, "start": 15, "end": 35 },
+            "call_site": "106:4-106:36"
           }
         ]
       }
@@ -758,9 +758,9 @@
   "kind": "issue",
   "data": {
     "callable": "attributes.test_issue_with_text_key_of_dictionary",
-    "callable_line": 104,
+    "callable_line": 105,
     "code": 5002,
-    "line": 105,
+    "line": 106,
     "start": 15,
     "end": 35,
     "filename": "attributes.py",
@@ -784,7 +784,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "text" }
             ],
-            "origin": { "line": 105, "start": 15, "end": 27 }
+            "origin": { "line": 106, "start": 15, "end": 27 }
           }
         ]
       },
@@ -801,8 +801,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 105, "start": 15, "end": 35 },
-            "call_site": "105:4-105:36"
+            "origin": { "line": 106, "start": 15, "end": 35 },
+            "call_site": "106:4-106:36"
           }
         ]
       }
@@ -825,9 +825,9 @@
   "kind": "issue",
   "data": {
     "callable": "attributes.test_issue_with_update_to_self_attribute",
-    "callable_line": 116,
+    "callable_line": 117,
     "code": 5002,
-    "line": 117,
+    "line": 118,
     "start": 4,
     "end": 12,
     "filename": "attributes.py",
@@ -847,8 +847,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 117, "start": 20, "end": 34 } ],
-            "origin": { "line": 117, "start": 20, "end": 34 }
+            "tito_positions": [ { "line": 118, "start": 20, "end": 34 } ],
+            "origin": { "line": 118, "start": 20, "end": 34 }
           }
         ]
       },
@@ -867,7 +867,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 117, "start": 4, "end": 12 }
+            "origin": { "line": 118, "start": 4, "end": 12 }
           }
         ]
       }
@@ -887,9 +887,9 @@
   "kind": "issue",
   "data": {
     "callable": "attributes.test_no_issue_sanitize_via_call",
-    "callable_line": 200,
+    "callable_line": 201,
     "code": 5002,
-    "line": 204,
+    "line": 205,
     "start": 15,
     "end": 26,
     "filename": "attributes.py",
@@ -911,7 +911,7 @@
             "local_features": [
               { "has": "first-field" }, { "first-field": "attribute" }
             ],
-            "origin": { "line": 202, "start": 18, "end": 32 }
+            "origin": { "line": 203, "start": 18, "end": 32 }
           }
         ]
       },
@@ -928,8 +928,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 204, "start": 15, "end": 26 },
-            "call_site": "204:4-204:27"
+            "origin": { "line": 205, "start": 15, "end": 26 },
+            "call_site": "205:4-205:27"
           }
         ]
       }
@@ -954,7 +954,7 @@
   "data": {
     "callable": "attributes.test_no_issue_with_other_key_of_dictionary",
     "filename": "attributes.py",
-    "callable_line": 108,
+    "callable_line": 109,
     "sinks": [
       {
         "port": "formal(c, position=0)[dictionary][other]",
@@ -972,8 +972,8 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "other" }
             ],
-            "origin": { "line": 109, "start": 15, "end": 36 },
-            "call_site": "109:4-109:37"
+            "origin": { "line": 110, "start": 15, "end": 36 },
+            "call_site": "110:4-110:37"
           }
         ]
       }
@@ -984,9 +984,9 @@
   "kind": "issue",
   "data": {
     "callable": "attributes.test_no_list_inference",
-    "callable_line": 132,
+    "callable_line": 133,
     "code": 5002,
-    "line": 135,
+    "line": 136,
     "start": 4,
     "end": 5,
     "filename": "attributes.py",
@@ -1006,8 +1006,8 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 134, "start": 13, "end": 27 } ],
-            "origin": { "line": 134, "start": 13, "end": 27 }
+            "tito_positions": [ { "line": 135, "start": 13, "end": 27 } ],
+            "origin": { "line": 135, "start": 13, "end": 27 }
           }
         ]
       },
@@ -1026,12 +1026,12 @@
               }
             ],
             "call": {
-              "position": { "line": 135, "start": 4, "end": 5 },
+              "position": { "line": 136, "start": 4, "end": 5 },
               "resolves_to": [ "attributes.NoListInference.sink" ],
               "port": "formal(self, position=0)[buffer]",
-              "call_site": "135:4-135:12"
+              "call_site": "136:4-136:12"
             },
-            "receiver_interval": [ { "lower": 8, "upper": 9 } ],
+            "receiver_interval": [ { "lower": 10, "upper": 11 } ],
             "is_self_call": false
           }
         ]
@@ -1056,7 +1056,7 @@
   "data": {
     "callable": "attributes.test_via_non_optional",
     "filename": "attributes.py",
-    "callable_line": 35,
+    "callable_line": 36,
     "sources": [
       {
         "port": "result",
@@ -1073,7 +1073,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 38, "start": 15, "end": 33 }
+            "origin": { "line": 39, "start": 15, "end": 33 }
           }
         ]
       }
@@ -1096,7 +1096,7 @@
   "data": {
     "callable": "attributes.test_via_optional",
     "filename": "attributes.py",
-    "callable_line": 26,
+    "callable_line": 27,
     "sources": [
       {
         "port": "result",
@@ -1113,7 +1113,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 31, "start": 19, "end": 37 }
+            "origin": { "line": 32, "start": 19, "end": 37 }
           }
         ]
       }
@@ -1136,7 +1136,7 @@
   "data": {
     "callable": "attributes.tito_copy_dict",
     "filename": "attributes.py",
-    "callable_line": 138,
+    "callable_line": 139,
     "tito": [
       {
         "port": "formal(d, position=0)[copy]",
@@ -1156,7 +1156,7 @@
   "data": {
     "callable": "attributes.tito_copy_multiple_possible_dictlike_objects",
     "filename": "attributes.py",
-    "callable_line": 171,
+    "callable_line": 172,
     "tito": [
       {
         "port": "formal(d, position=0)[_data]",
@@ -1173,8 +1173,8 @@
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [
-              { "line": 175, "start": 11, "end": 12 },
-              { "line": 175, "start": 11, "end": 17 }
+              { "line": 176, "start": 11, "end": 12 },
+              { "line": 176, "start": 11, "end": 17 }
             ],
             "tito": {}
           }
@@ -1343,9 +1343,117 @@
 {
   "kind": "model",
   "data": {
+    "callable": "attributes.IsAttributeBug.__init__",
+    "filename": "attributes.py",
+    "callable_line": 209,
+    "tito": [
+      {
+        "port": "formal(c, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[c]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "attributes.IsAttributeBug.issue",
+    "callable_line": 221,
+    "code": 5002,
+    "line": 222,
+    "start": 19,
+    "end": 67,
+    "filename": "attributes.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
+            ],
+            "tito_positions": [ { "line": 222, "start": 36, "end": 50 } ],
+            "origin": { "line": 222, "start": 36, "end": 50 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 222, "start": 19, "end": 67 },
+            "call_site": "222:8-222:68"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "attributes.IsAttributeBug.issue:5002:0:Call|pysa._test_sink|0|formal(arg):07e2450bbab8ad5dbeba6534cea18faf"
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "attributes.NoListInference.append",
     "filename": "attributes.py",
-    "callable_line": 125,
+    "callable_line": 126,
     "tito": [
       {
         "port": "formal(row, position=1)",
@@ -1359,9 +1467,9 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 126, "start": 27, "end": 30 } ],
+            "tito_positions": [ { "line": 127, "start": 27, "end": 30 } ],
             "tito": {
-              "caller_interval": [ { "lower": 8, "upper": 9 } ],
+              "caller_interval": [ { "lower": 10, "upper": 11 } ],
               "is_self_call": false
             }
           }
@@ -1375,7 +1483,7 @@
   "data": {
     "callable": "attributes.NoListInference.sink",
     "filename": "attributes.py",
-    "callable_line": 128,
+    "callable_line": 129,
     "sinks": [
       {
         "port": "formal(self, position=0)[buffer]",
@@ -1390,10 +1498,10 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 129, "start": 19, "end": 30 },
-            "caller_interval": [ { "lower": 8, "upper": 9 } ],
+            "origin": { "line": 130, "start": 19, "end": 30 },
+            "caller_interval": [ { "lower": 10, "upper": 11 } ],
             "is_self_call": false,
-            "call_site": "129:8-129:31"
+            "call_site": "130:8-130:31"
           }
         ]
       }
@@ -1405,7 +1513,7 @@
   "data": {
     "callable": "attributes.PartiallyZonedDict.copy",
     "filename": "attributes.py",
-    "callable_line": 151,
+    "callable_line": 152,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -1424,7 +1532,7 @@
   "data": {
     "callable": "attributes.RegularForm.__init__",
     "filename": "attributes.py",
-    "callable_line": 167,
+    "callable_line": 168,
     "tito": [
       {
         "port": "formal(data, position=1)",
@@ -1448,7 +1556,7 @@
   "data": {
     "callable": "attributes.UseViaDict.__init__",
     "filename": "attributes.py",
-    "callable_line": 63,
+    "callable_line": 64,
     "tito": [
       {
         "port": "formal(b, position=2)",
@@ -1486,7 +1594,7 @@
   "data": {
     "callable": "attributes.ZonedForm.__init__",
     "filename": "attributes.py",
-    "callable_line": 157,
+    "callable_line": 158,
     "tito": [
       {
         "port": "formal(data, position=1)",
@@ -1510,7 +1618,7 @@
   "data": {
     "callable": "attributes.ZonedForm.data",
     "filename": "attributes.py",
-    "callable_line": 162,
+    "callable_line": 163,
     "tito": [
       {
         "port": "formal(self, position=0)[_data]",

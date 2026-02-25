@@ -2,6 +2,11 @@
 Call dependencies
 {
   "attributes.$toplevel (fun)": [ "dataclasses.dataclass (fun)" ],
+  "attributes.IsAttributeBug.issue (method)": [
+    "attributes.IsAttributeBug.__init__ (method)",
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
+  ],
   "attributes.NoListInference.append (method)": [
     "builtins.list.append (method)"
   ],

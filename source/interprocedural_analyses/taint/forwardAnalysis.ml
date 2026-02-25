@@ -3301,47 +3301,71 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~pyre_in_context ~state ~is_result_used:false ~expression:value |> snd
         else
           match target_value with
-          | Expression.Name (Name.Attribute attribute_access) ->
+          | Expression.Name (Name.Attribute attribute_access) -> (
               let attribute_access_callees =
                 get_attribute_access_callees ~location ~attribute_access
               in
 
-              let property_call_state =
-                match attribute_access_callees with
-                | Some { property_targets = _ :: _ as property_targets; _ } ->
-                    (* a.property = x *)
-                    let _, state =
-                      apply_callees
-                        ~pyre_in_context
-                        ~is_result_used:false
-                        ~is_property:true
-                        ~callee:target
-                        ~call_location:location
-                        ~arguments:[{ Call.Argument.name = None; value }]
-                        ~origin:None
-                        ~state
-                        (CallGraph.CallCallees.create ~call_targets:property_targets ())
-                    in
-                    state
-                | _ -> bottom
+              let analyze_property_calls property_targets state =
+                (* a.property = x *)
+                let _, state =
+                  apply_callees
+                    ~pyre_in_context
+                    ~is_result_used:false
+                    ~is_property:true
+                    ~callee:target
+                    ~call_location:location
+                    ~arguments:[{ Call.Argument.name = None; value }]
+                    ~origin:None
+                    ~state
+                    (CallGraph.CallCallees.create ~call_targets:property_targets ())
+                in
+                state
               in
 
-              let regular_attribute_state =
+              let analyze_regular_attribute_access state =
+                let taint, state =
+                  analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:value
+                in
+                analyze_assignment ~pyre_in_context target taint taint state
+              in
+
+              let has_property_targets =
+                match attribute_access_callees with
+                | Some { property_targets = _ :: _ as property_targets; _ } -> Some property_targets
+                | _ -> None
+              in
+              let is_regular_attribute =
                 match attribute_access_callees with
                 | Some { is_attribute = true; _ }
                 | None ->
-                    let taint, state =
-                      analyze_expression
-                        ~pyre_in_context
-                        ~state
-                        ~is_result_used:true
-                        ~expression:value
-                    in
-                    analyze_assignment ~pyre_in_context target taint taint state
-                | _ -> bottom
+                    true
+                | _ -> false
               in
 
-              join property_call_state regular_attribute_state
+              match has_property_targets, is_regular_attribute with
+              | None, false ->
+                  let _, state =
+                    analyze_expression
+                      ~pyre_in_context
+                      ~state
+                      ~is_result_used:false
+                      ~expression:value
+                  in
+                  let _, state =
+                    analyze_expression
+                      ~pyre_in_context
+                      ~state
+                      ~is_result_used:false
+                      ~expression:target
+                  in
+                  state
+              | None, true -> analyze_regular_attribute_access state
+              | Some property_targets, false -> analyze_property_calls property_targets state
+              | Some property_targets, true ->
+                  join
+                    (analyze_regular_attribute_access state)
+                    (analyze_property_calls property_targets state))
           | _ ->
               let taint, state =
                 analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:value

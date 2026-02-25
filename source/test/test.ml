@@ -3170,6 +3170,15 @@ let typeshed_stubs ?(include_helper_builtins = true) ?(include_pyre_extensions =
             ...
       |}
     );
+    ( "weakref.pyi",
+      {|
+        from typing import TypeVar, Callable, Any, Generic
+        _T = TypeVar('_T')
+
+        class ReferenceType(Generic[_T]):
+          def __call__(self) -> _T | None: ...
+        |}
+    );
   ]
   @ sqlalchemy_stubs
   @ torch_stubs

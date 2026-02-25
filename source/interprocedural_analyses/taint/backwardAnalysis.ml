@@ -2911,37 +2911,55 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~expression:value
         else
           match target_value with
-          | Expression.Name (Name.Attribute attribute_access) ->
+          | Expression.Name (Name.Attribute attribute_access) -> (
               let attribute_access_callees =
                 get_attribute_access_callees ~location ~attribute_access
               in
 
-              let property_call_state =
-                match attribute_access_callees with
-                | Some { property_targets = _ :: _ as property_targets; _ } ->
-                    (* `a.property = x` *)
-                    apply_callees
-                      ~pyre_in_context
-                      ~is_property:true
-                      ~callee:target
-                      ~call_location:location
-                      ~arguments:[{ name = None; value }]
-                      ~origin:None
-                      ~state
-                      ~call_taint:BackwardState.Tree.empty
-                      (CallGraph.CallCallees.create ~call_targets:property_targets ())
-                | _ -> bottom
+              let analyze_property_calls property_targets state =
+                (* `a.property = x` *)
+                apply_callees
+                  ~pyre_in_context
+                  ~is_property:true
+                  ~callee:target
+                  ~call_location:location
+                  ~arguments:[{ name = None; value }]
+                  ~origin:None
+                  ~state
+                  ~call_taint:BackwardState.Tree.empty
+                  (CallGraph.CallCallees.create ~call_targets:property_targets ())
               in
 
-              let attribute_state =
+              let analyze_regular_attribute_access state =
+                analyze_assignment ~pyre_in_context ~target ~value state
+              in
+
+              let has_property_targets =
+                match attribute_access_callees with
+                | Some { property_targets = _ :: _ as property_targets; _ } -> Some property_targets
+                | _ -> None
+              in
+              let is_regular_attribute =
                 match attribute_access_callees with
                 | Some { is_attribute = true; _ }
                 | None ->
-                    analyze_assignment ~pyre_in_context ~target ~value state
-                | _ -> bottom
+                    true
+                | _ -> false
               in
 
-              join property_call_state attribute_state
+              match has_property_targets, is_regular_attribute with
+              | None, false ->
+                  analyze_expression
+                    ~pyre_in_context
+                    ~taint:BackwardState.Tree.bottom
+                    ~state
+                    ~expression:value
+              | None, true -> analyze_regular_attribute_access state
+              | Some property_targets, false -> analyze_property_calls property_targets state
+              | Some property_targets, true ->
+                  join
+                    (analyze_regular_attribute_access state)
+                    (analyze_property_calls property_targets state))
           | _ -> analyze_assignment ~pyre_in_context ~target ~value state)
     | Assert { test; _ } ->
         analyze_expression ~pyre_in_context ~taint:BackwardState.Tree.empty ~state ~expression:test
