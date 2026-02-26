@@ -294,8 +294,7 @@ Higher order call graphs
             "index": 0,
             "return_type": []
           }
-        ],
-        "unresolved": [ "Mixed" ]
+        ]
       }
     }
   }

@@ -69,8 +69,7 @@ Higher order call graphs
             "index": 0,
             "return_type": []
           }
-        ],
-        "unresolved": [ "UnsupportedFunctionTarget" ]
+        ]
       }
     },
     "59:6-59:20": {
@@ -93,8 +92,7 @@ Higher order call graphs
             "index": 1,
             "return_type": []
           }
-        ],
-        "unresolved": [ "UnsupportedFunctionTarget" ]
+        ]
       }
     },
     "60:10-60:24": {
@@ -188,8 +186,7 @@ Higher order call graphs
             "index": 1,
             "return_type": []
           }
-        ],
-        "unresolved": [ "UnsupportedFunctionTarget" ]
+        ]
       }
     }
   }
@@ -273,8 +270,7 @@ Higher order call graphs
             "index": 0,
             "return_type": []
           }
-        ],
-        "unresolved": [ "UnsupportedFunctionTarget" ]
+        ]
       }
     }
   }

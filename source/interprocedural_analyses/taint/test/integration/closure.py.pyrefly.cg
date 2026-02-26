@@ -23,7 +23,10 @@ Call dependencies
   ],
   "closure.closure.sink (fun)": [ "pysa._test_sink (fun)" ],
   "closure.closure.source (fun)": [ "pysa._test_source (fun)" ],
-  "closure.closure_flow (fun)": [ "closure.closure (fun)" ],
+  "closure.closure_flow (fun)": [
+    "closure.closure (fun)", "closure.closure.sink (fun)",
+    "closure.closure.source (fun)"
+  ],
   "closure.closure_nested_sink_flow (fun)": [
     "closure.closure_nested_sink_flow.sink1 (fun)", "pysa._test_source (fun)"
   ],
@@ -38,7 +41,10 @@ Call dependencies
   "closure.closure_nested_sink_flow.sink1.sink2.sink3 (fun)": [
     "pysa._test_sink (fun)"
   ],
-  "closure.closure_no_flow (fun)": [ "closure.closure (fun)" ],
+  "closure.closure_no_flow (fun)": [
+    "closure.closure (fun)", "closure.closure.sink (fun)",
+    "closure.closure.source (fun)"
+  ],
   "closure.closure_wrapper_sink_flow (fun)": [
     "builtins.list.append (method)",
     "closure.closure_wrapper_sink_flow.wrapper (fun)",
@@ -186,10 +192,14 @@ Call dependencies
     "pysa._test_source (fun)"
   ],
   "closure.nonlocal_obscure_flow (fun)": [
-    "closure.nonlocal_closure_obscure (fun)"
+    "closure.nonlocal_closure_obscure (fun)",
+    "closure.nonlocal_closure_obscure.sink (fun)",
+    "closure.nonlocal_closure_obscure.source (fun)"
   ],
   "closure.nonlocal_obscure_no_flow (fun)": [
-    "closure.nonlocal_closure_obscure (fun)"
+    "closure.nonlocal_closure_obscure (fun)",
+    "closure.nonlocal_closure_obscure.sink (fun)",
+    "closure.nonlocal_closure_obscure.source (fun)"
   ],
   "closure.parameter_order_swap (fun)": [
     "closure.parameter_order_swap.inner (fun)"

@@ -635,8 +635,7 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
-        ],
-        "unresolved": [ "Mixed" ]
+        ]
       }
     }
   }
@@ -1024,6 +1023,24 @@ Higher order call graphs
         ]
       }
     },
+    "185:8-185:9|identifier|x": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.bar",
+              "index": 0,
+              "return_type": []
+            },
+            {
+              "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.foo",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
     "185:11-185:25": {
       "call": {
         "calls": [
@@ -1078,6 +1095,20 @@ Higher order call graphs
             "return_type": []
           }
         ]
+      }
+    },
+    "194:10-194:11|identifier|y": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2",
+              "index": 0,
+              "return_type": []
+            },
+            { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+          ]
+        }
       }
     },
     "194:13-194:27": {
@@ -1813,6 +1844,24 @@ Higher order call graphs
         ]
       }
     },
+    "185:8-185:9|identifier|x": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.bar",
+              "index": 0,
+              "return_type": []
+            },
+            {
+              "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.foo",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
     "185:11-185:25": {
       "call": {
         "calls": [
@@ -1867,6 +1916,20 @@ Higher order call graphs
             "return_type": []
           }
         ]
+      }
+    },
+    "194:10-194:11|identifier|y": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2",
+              "index": 0,
+              "return_type": []
+            },
+            { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+          ]
+        }
       }
     },
     "194:13-194:27": {

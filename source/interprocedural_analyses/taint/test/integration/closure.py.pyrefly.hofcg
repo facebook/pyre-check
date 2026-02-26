@@ -429,10 +429,22 @@ Higher order call graphs
       }
     },
     "124:4-124:12": {
-      "call": { "unresolved": [ "UnsupportedFunctionTarget" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "closure.closure.source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
     },
     "125:4-125:10": {
-      "call": { "unresolved": [ "UnsupportedFunctionTarget" ] }
+      "call": {
+        "calls": [
+          { "target": "closure.closure.sink", "index": 0, "return_type": [] }
+        ]
+      }
     }
   }
 }
@@ -599,10 +611,22 @@ Higher order call graphs
       }
     },
     "130:4-130:10": {
-      "call": { "unresolved": [ "UnsupportedFunctionTarget" ] }
+      "call": {
+        "calls": [
+          { "target": "closure.closure.sink", "index": 0, "return_type": [] }
+        ]
+      }
     },
     "131:4-131:12": {
-      "call": { "unresolved": [ "UnsupportedFunctionTarget" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "closure.closure.source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
     }
   }
 }
@@ -2372,10 +2396,26 @@ Higher order call graphs
       }
     },
     "253:4-253:12": {
-      "call": { "unresolved": [ "UnsupportedFunctionTarget" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "closure.nonlocal_closure_obscure.source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
     },
     "254:4-254:10": {
-      "call": { "unresolved": [ "UnsupportedFunctionTarget" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "closure.nonlocal_closure_obscure.sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
     }
   }
 }
@@ -2395,10 +2435,26 @@ Higher order call graphs
       }
     },
     "259:4-259:10": {
-      "call": { "unresolved": [ "UnsupportedFunctionTarget" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "closure.nonlocal_closure_obscure.sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
     },
     "260:4-260:12": {
-      "call": { "unresolved": [ "UnsupportedFunctionTarget" ] }
+      "call": {
+        "calls": [
+          {
+            "target": "closure.nonlocal_closure_obscure.source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
     }
   }
 }

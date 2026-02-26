@@ -437,6 +437,112 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "closure.closure_flow",
+    "filename": "closure.py",
+    "callable_line": 121,
+    "sources": [
+      {
+        "port": "captured_variable(obj, closure.closure)[x]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "captured_variable_trace_length": 1,
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 124, "start": 4, "end": 12 },
+              "resolves_to": [ "closure.closure.source" ],
+              "port": "captured_variable(obj, closure.closure)[x]"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure.closure_flow",
+    "callable_line": 121,
+    "code": 5002,
+    "line": 125,
+    "start": 4,
+    "end": 10,
+    "filename": "closure.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "captured_variable_trace_length": 1,
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 124, "start": 4, "end": 12 },
+              "resolves_to": [ "closure.closure.source" ],
+              "port": "captured_variable(obj, closure.closure)[x]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-via": "captured-variable" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "captured_variable_trace_length": 1,
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 125, "start": 4, "end": 10 },
+              "resolves_to": [ "closure.closure.sink" ],
+              "port": "captured_variable(obj, closure.closure)[x]"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "captured-variable" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure.closure.sink",
+      "index": 0,
+      "parameter": "captured_variable(obj, closure.closure)"
+    },
+    "master_handle": "closure.closure_flow:5002:0:Call|closure.closure.sink|0|captured_variable(obj, closure.closure):8a8af9c129eaa65c8c589eedd3f46774"
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "closure.closure_nested_sink_flow",
@@ -629,6 +735,36 @@
             "local_features": [ { "always-via": "captured-variable" } ],
             "origin": { "line": 292, "start": 27, "end": 32 },
             "call_site": "292:16-292:33"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.closure_no_flow",
+    "filename": "closure.py",
+    "callable_line": 128,
+    "sources": [
+      {
+        "port": "captured_variable(obj, closure.closure)[x]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "captured_variable_trace_length": 1,
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 131, "start": 4, "end": 12 },
+              "resolves_to": [ "closure.closure.source" ],
+              "port": "captured_variable(obj, closure.closure)[x]"
+            }
           }
         ]
       }
@@ -3131,6 +3267,151 @@
               }
             ],
             "origin": { "line": 141, "start": 15, "end": 29 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.nonlocal_obscure_flow",
+    "filename": "closure.py",
+    "callable_line": 249,
+    "sources": [
+      {
+        "port": "captured_variable(obj, closure.nonlocal_closure_obscure)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "captured-variable" }
+                ],
+                "captured_variable_trace_length": 1,
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 253, "start": 4, "end": 12 },
+              "resolves_to": [ "closure.nonlocal_closure_obscure.source" ],
+              "port": "captured_variable(obj, closure.nonlocal_closure_obscure)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure.nonlocal_obscure_flow",
+    "callable_line": 249,
+    "code": 5002,
+    "line": 254,
+    "start": 4,
+    "end": 10,
+    "filename": "closure.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "captured-variable" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "captured_variable_trace_length": 1,
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 253, "start": 4, "end": 12 },
+              "resolves_to": [ "closure.nonlocal_closure_obscure.source" ],
+              "port": "captured_variable(obj, closure.nonlocal_closure_obscure)"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-via": "captured-variable" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "captured_variable_trace_length": 1,
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 254, "start": 4, "end": 10 },
+              "resolves_to": [ "closure.nonlocal_closure_obscure.sink" ],
+              "port": "captured_variable(obj, closure.nonlocal_closure_obscure)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "captured-variable" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure.nonlocal_closure_obscure.sink",
+      "index": 0,
+      "parameter": "captured_variable(obj, closure.nonlocal_closure_obscure)"
+    },
+    "master_handle": "closure.nonlocal_obscure_flow:5002:0:Call|closure.nonlocal_closure_obscure.sink|0|captured_variable(obj, closure.nonlocal_closure_obscure):537708fe14c79b875bad67a0275f0f61"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.nonlocal_obscure_no_flow",
+    "filename": "closure.py",
+    "callable_line": 257,
+    "sources": [
+      {
+        "port": "captured_variable(obj, closure.nonlocal_closure_obscure)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "captured-variable" }
+                ],
+                "captured_variable_trace_length": 1,
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 260, "start": 4, "end": 12 },
+              "resolves_to": [ "closure.nonlocal_closure_obscure.source" ],
+              "port": "captured_variable(obj, closure.nonlocal_closure_obscure)"
+            }
           }
         ]
       }
