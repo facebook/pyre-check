@@ -2465,7 +2465,7 @@ module ReadWrite = struct
                     _;
                   } )
               ->
-             ModuleInfosSharedMemory.add
+             ModuleInfosSharedMemory.write_around
                module_infos_shared_memory
                qualifier
                {
@@ -2477,7 +2477,7 @@ module ReadWrite = struct
                  is_stub;
                  is_internal;
                };
-             ModuleIdToQualifierSharedMemory.add
+             ModuleIdToQualifierSharedMemory.write_around
                module_id_to_qualifier_shared_memory
                module_id
                qualifier)
@@ -3411,7 +3411,7 @@ module ReadWrite = struct
               decorator_callees;
               _;
             } ->
-            CallableMetadataSharedMemory.add
+            CallableMetadataSharedMemory.write_around
               callable_metadata_shared_memory
               qualified_name
               {
@@ -3437,7 +3437,7 @@ module ReadWrite = struct
                 decorator_callees;
                 captured_variables;
               };
-            CallableIdToQualifiedNameSharedMemory.add
+            CallableIdToQualifiedNameSharedMemory.write_around
               callable_id_to_qualified_name_shared_memory
               { GlobalCallableId.module_id; local_function_id }
               qualified_name;
@@ -3457,7 +3457,7 @@ module ReadWrite = struct
               decorator_callees;
               _;
             } ->
-            ClassMetadataSharedMemory.add
+            ClassMetadataSharedMemory.write_around
               class_metadata_shared_memory
               qualified_name
               {
@@ -3499,8 +3499,8 @@ module ReadWrite = struct
                        } ))
               |> SerializableStringMap.of_alist_exn
             in
-            ClassFieldsSharedMemory.add class_fields_shared_memory qualified_name fields;
-            ClassIdToQualifiedNameSharedMemory.add
+            ClassFieldsSharedMemory.write_around class_fields_shared_memory qualified_name fields;
+            ClassIdToQualifiedNameSharedMemory.write_around
               class_id_to_qualified_name_shared_memory
               { GlobalClassId.module_id; local_class_id }
               qualified_name;
@@ -3515,7 +3515,10 @@ module ReadWrite = struct
                name, { GlobalVariable.type_ = type_ >>| JsonType.to_pysa_type; location })
         |> SerializableStringMap.of_alist_exn
       in
-      ModuleGlobalsSharedMemory.add module_globals_shared_memory module_qualifier global_variables;
+      ModuleGlobalsSharedMemory.write_around
+        module_globals_shared_memory
+        module_qualifier
+        global_variables;
       {
         DefinitionCount.number_callables = List.length callables;
         number_classes = List.length classes;
@@ -3830,7 +3833,7 @@ module ReadWrite = struct
       in
       Map.iteri type_of_expression ~f:(fun ~key:location ~data:type_ ->
           let type_ = JsonType.to_pysa_type type_ in
-          TypeOfExpressionsSharedMemory.add
+          TypeOfExpressionsSharedMemory.write_around
             type_of_expressions_shared_memory
             { TypeOfExpressionsSharedMemory.Key.module_qualifier; location }
             type_)
