@@ -26,6 +26,7 @@ let parse ?rule_filter ?source_filter ?sink_filter ?transform_filter configurati
           ~transform_filter
           ~find_missing_flows:None
           ~dump_model_query_results_path:None
+          ~disable_model_shaping:false
           ~infer_self_tito:false
           ~infer_argument_tito:false
           ~maximum_model_source_tree_width:None

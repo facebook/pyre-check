@@ -45,6 +45,7 @@ class Arguments:
     dump_call_graph: Optional[str] = None
     dump_model_query_results: Optional[str] = None
     find_missing_flows: Optional[str] = None
+    disable_model_shaping: bool = False
     infer_self_tito: bool = True
     infer_argument_tito: bool = False
     maximum_model_source_tree_width: Optional[int] = None
@@ -133,6 +134,7 @@ class Arguments:
                 if find_missing_flows is None
                 else {"find_missing_flows": find_missing_flows}
             ),
+            "disable_model_shaping": self.disable_model_shaping,
             "infer_self_tito": self.infer_self_tito,
             "infer_argument_tito": self.infer_argument_tito,
             **(
@@ -352,6 +354,7 @@ def create_analyze_arguments(
         find_missing_flows=(
             str(find_missing_flows.value) if find_missing_flows is not None else None
         ),
+        disable_model_shaping=analyze_arguments.disable_model_shaping,
         infer_self_tito=analyze_arguments.infer_self_tito,
         infer_argument_tito=analyze_arguments.infer_argument_tito,
         maximum_model_source_tree_width=analyze_arguments.maximum_model_source_tree_width,

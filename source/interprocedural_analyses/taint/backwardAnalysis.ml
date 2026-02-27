@@ -3097,6 +3097,7 @@ let extract_tito_and_sink_models
             _;
           };
         source_sink_filter;
+        disable_model_shaping;
         _;
       }
     ~existing_backward
@@ -3106,10 +3107,16 @@ let extract_tito_and_sink_models
   (* Simplify trees by keeping only essential structure and merging details back into that. *)
   let simplify ~shape_breadcrumbs ~limit_breadcrumbs ~maximum_tree_width tree =
     if apply_broadening then
+      let tree =
+        if not disable_model_shaping then
+          tree
+          |> BackwardState.Tree.shape
+               ~mold_with_return_access_paths:is_constructor
+               ~breadcrumbs:shape_breadcrumbs
+        else
+          tree
+      in
       tree
-      |> BackwardState.Tree.shape
-           ~mold_with_return_access_paths:is_constructor
-           ~breadcrumbs:shape_breadcrumbs
       |> BackwardState.Tree.limit_to ~breadcrumbs:limit_breadcrumbs ~width:maximum_tree_width
       |> BackwardState.Tree.transform_tito
            Features.ReturnAccessPathTree.Self

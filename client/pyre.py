@@ -510,6 +510,12 @@ def pyre(
     help="Build the cache and exit without computing results..",
 )
 @click.option(
+    "--disable-model-shaping",
+    is_flag=True,
+    default=False,
+    help="Disable model shaping during the taint analysis.",
+)
+@click.option(
     "--infer-self-tito/--no-infer-self-tito",
     is_flag=True,
     default=True,
@@ -656,6 +662,7 @@ def analyze(
     dump_model_query_results: Optional[str],
     use_cache: bool,
     build_cache_only: bool,
+    disable_model_shaping: bool,
     infer_self_tito: bool,
     infer_argument_tito: bool,
     maximum_model_source_tree_width: Optional[int],
@@ -703,6 +710,7 @@ def analyze(
                 if find_missing_flows is not None
                 else None
             ),
+            disable_model_shaping=disable_model_shaping,
             infer_self_tito=infer_self_tito,
             infer_argument_tito=infer_argument_tito,
             log_identifier=command_argument.log_identifier,

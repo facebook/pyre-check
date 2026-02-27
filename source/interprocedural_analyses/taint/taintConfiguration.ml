@@ -523,6 +523,7 @@ module Heap = struct
     string_combine_partial_sinks: StringOperationPartialSinks.t;
     find_missing_flows: Configuration.MissingFlowKind.t option;
     dump_model_query_results_path: PyrePath.t option;
+    disable_model_shaping: bool;
     infer_self_tito: bool;
     infer_argument_tito: bool;
     analysis_model_constraints: ModelConstraints.t;
@@ -548,6 +549,7 @@ module Heap = struct
       string_combine_partial_sinks = StringOperationPartialSinks.empty;
       find_missing_flows = None;
       dump_model_query_results_path = None;
+      disable_model_shaping = false;
       infer_self_tito = true;
       infer_argument_tito = false;
       analysis_model_constraints = ModelConstraints.default;
@@ -727,6 +729,7 @@ module Heap = struct
       string_combine_partial_sinks = StringOperationPartialSinks.empty;
       find_missing_flows = None;
       dump_model_query_results_path = None;
+      disable_model_shaping = false;
       infer_self_tito = true;
       infer_argument_tito = false;
       analysis_model_constraints = ModelConstraints.default;
@@ -1721,6 +1724,7 @@ let from_json_list source_json_list =
     string_combine_partial_sinks;
     find_missing_flows = None;
     dump_model_query_results_path = None;
+    disable_model_shaping = false;
     infer_self_tito = true;
     infer_argument_tito = false;
     analysis_model_constraints =
@@ -1947,6 +1951,7 @@ let with_command_line_options
     ~transform_filter
     ~find_missing_flows
     ~dump_model_query_results_path
+    ~disable_model_shaping
     ~infer_self_tito
     ~infer_argument_tito
     ~maximum_model_source_tree_width
@@ -2069,6 +2074,7 @@ let with_command_line_options
     rules;
     implicit_sources;
     implicit_sinks;
+    disable_model_shaping = configuration.disable_model_shaping || disable_model_shaping;
     infer_self_tito = configuration.infer_self_tito && infer_self_tito;
     infer_argument_tito = configuration.infer_argument_tito || infer_argument_tito;
     source_sink_filter;

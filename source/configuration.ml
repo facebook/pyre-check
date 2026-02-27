@@ -809,6 +809,7 @@ module StaticAnalysis = struct
     dump_model_query_results: PyrePath.t option;
     use_cache: bool;
     build_cache_only: bool;
+    disable_model_shaping: bool;
     infer_self_tito: bool;
     infer_argument_tito: bool;
     maximum_model_source_tree_width: int option;
@@ -865,6 +866,7 @@ module StaticAnalysis = struct
       ?dump_model_query_results
       ?(use_cache = false)
       ?(build_cache_only = false)
+      ?(disable_model_shaping = false)
       ?(infer_self_tito = true)
       ?(infer_argument_tito = false)
       ?maximum_model_source_tree_width
@@ -907,6 +909,7 @@ module StaticAnalysis = struct
       dump_model_query_results;
       use_cache;
       build_cache_only;
+      disable_model_shaping;
       infer_self_tito;
       infer_argument_tito;
       maximum_model_source_tree_width;

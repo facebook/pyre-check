@@ -3538,6 +3538,7 @@ let extract_source_model
         TaintConfiguration.Heap.analysis_model_constraints =
           { maximum_model_source_tree_width; maximum_trace_length; maximum_capture_trace_length; _ };
         source_sink_filter;
+        disable_model_shaping;
         _;
       }
     ~callable
@@ -3566,10 +3567,16 @@ let extract_source_model
         tree
     in
     if apply_broadening then
+      let tree =
+        if not disable_model_shaping then
+          tree
+          |> ForwardState.Tree.shape
+               ~mold_with_return_access_paths:false
+               ~breadcrumbs:(Features.model_source_shaping_set ())
+        else
+          tree
+      in
       tree
-      |> ForwardState.Tree.shape
-           ~mold_with_return_access_paths:false
-           ~breadcrumbs:(Features.model_source_shaping_set ())
       |> ForwardState.Tree.limit_to
            ~breadcrumbs:(Features.model_source_broadening_set ())
            ~width:maximum_model_source_tree_width

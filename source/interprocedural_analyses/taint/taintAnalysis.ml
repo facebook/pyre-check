@@ -23,6 +23,7 @@ let initialize_and_verify_configuration
         transform_filter;
         find_missing_flows;
         dump_model_query_results;
+        disable_model_shaping;
         infer_self_tito;
         infer_argument_tito;
         maximum_model_source_tree_width;
@@ -56,6 +57,7 @@ let initialize_and_verify_configuration
           ~transform_filter
           ~find_missing_flows
           ~dump_model_query_results_path:dump_model_query_results
+          ~disable_model_shaping
           ~infer_self_tito
           ~infer_argument_tito
           ~maximum_model_source_tree_width
