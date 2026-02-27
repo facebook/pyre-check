@@ -320,15 +320,6 @@ module Make (Analysis : ANALYSIS) = struct
             let description = "InterproceduralFixpointMetadata"
           end)
 
-      let get_is_partial shared_fixpoint callable =
-        match get shared_fixpoint callable with
-        | Some { is_partial; _ } -> is_partial
-        | None -> (
-            match get_old shared_fixpoint callable with
-            | None -> true
-            | Some { is_partial; _ } -> is_partial)
-
-
       let get_meta_data shared_fixpoint callable =
         match get shared_fixpoint callable with
         | Some _ as meta_data -> meta_data
@@ -720,6 +711,8 @@ module Make (Analysis : ANALYSIS) = struct
     expensive_callables: expensive_callable list;
     (* Need to be considered in the next iteration. *)
     additional_dependencies: DependencyGraph.t;
+    (* Callables whose result changed and need re-analysis along with their callers. *)
+    partial_callables: Target.t list;
   }
 
   (* Called on a worker with a set of targets to analyze. *)
@@ -733,7 +726,7 @@ module Make (Analysis : ANALYSIS) = struct
       ~step:({ iteration; _ } as step)
       ~callables
     =
-    let analyze_target (expensive_callables, additional_dependencies) callable =
+    let analyze_target (expensive_callables, additional_dependencies, partial_callables) callable =
       let timer = Timer.start () in
       let result =
         analyze_callable
@@ -767,38 +760,47 @@ module Make (Analysis : ANALYSIS) = struct
       let additional_dependencies =
         DependencyGraph.merge result.State.additional_dependencies additional_dependencies
       in
+      let partial_callables =
+        if result.State.is_partial then
+          callable :: partial_callables
+        else
+          partial_callables
+      in
       (* Log outliers. *)
       if Logger.is_expensive_callable ~callable ~timer then
         ( { time_to_analyze_in_ms = Timer.stop_in_ms timer; callable } :: expensive_callables,
-          additional_dependencies )
+          additional_dependencies,
+          partial_callables )
       else
-        expensive_callables, additional_dependencies
+        expensive_callables, additional_dependencies, partial_callables
     in
-    let expensive_callables, additional_dependencies =
-      List.fold callables ~f:analyze_target ~init:([], DependencyGraph.empty)
+    let expensive_callables, additional_dependencies, partial_callables =
+      List.fold callables ~f:analyze_target ~init:([], DependencyGraph.empty, [])
     in
-    { callables_processed = List.length callables; expensive_callables; additional_dependencies }
+    {
+      callables_processed = List.length callables;
+      expensive_callables;
+      additional_dependencies;
+      partial_callables;
+    }
 
 
   let compute_callables_to_reanalyze
       ~shared_fixpoint
       ~dependency_graph
       ~all_callables
-      ~analyzed_callables
+      ~partial_callables
       ~step
     =
     let might_change_if_reanalyzed =
-      List.fold analyzed_callables ~init:Target.Set.empty ~f:(fun accumulator callable ->
-          if not (State.SharedFixpoint.get_is_partial shared_fixpoint callable) then
-            accumulator
-          else
-            (* callable must be re-analyzed next iteration because its result has changed, and
-               therefore its callers must also be reanalyzed. *)
-            let callers = DependencyGraph.dependencies dependency_graph callable in
-            List.fold
-              callers
-              ~init:(Target.Set.add callable accumulator)
-              ~f:(fun accumulator caller -> Target.Set.add caller accumulator))
+      List.fold partial_callables ~init:Target.Set.empty ~f:(fun accumulator callable ->
+          (* callable must be re-analyzed next iteration because its result has changed, and
+             therefore its callers must also be reanalyzed. *)
+          let callers = DependencyGraph.dependencies dependency_graph callable in
+          List.fold
+            callers
+            ~init:(Target.Set.add callable accumulator)
+            ~f:(fun accumulator caller -> Target.Set.add caller accumulator))
     in
     (* Filter the original list in order to preserve topological sort order. *)
     let callables_to_reanalyze =
@@ -910,9 +912,10 @@ module Make (Analysis : ANALYSIS) = struct
             expensive_callables = List.rev_append left.expensive_callables right.expensive_callables;
             additional_dependencies =
               DependencyGraph.merge left.additional_dependencies right.additional_dependencies;
+            partial_callables = List.rev_append left.partial_callables right.partial_callables;
           }
         in
-        let { expensive_callables; additional_dependencies; _ } =
+        let { expensive_callables; additional_dependencies; partial_callables; _ } =
           Scheduler.map_reduce
             scheduler
             ~policy:scheduler_policy
@@ -921,6 +924,7 @@ module Make (Analysis : ANALYSIS) = struct
                 callables_processed = 0;
                 expensive_callables = [];
                 additional_dependencies = DependencyGraph.empty;
+                partial_callables = [];
               }
             ~map
             ~reduce
@@ -933,7 +937,7 @@ module Make (Analysis : ANALYSIS) = struct
             ~shared_fixpoint
             ~dependency_graph
             ~all_callables
-            ~analyzed_callables:callables_to_analyze
+            ~partial_callables
             ~step
         in
         (* Additional dependencies may imply new callables that need to be analyzed. *)
