@@ -158,7 +158,11 @@ let should_keep_decorator_pyrefly ~pyrefly_api ~callable decorator =
       let is_ignored_hardcoded_decorator () =
         List.exists decorator_callees ~f:(fun decorator_callee ->
             SerializableStringSet.mem
-              (decorator_callee |> drop_suffix ~suffix:"__call__" |> Reference.show)
+              (decorator_callee
+              |> drop_suffix ~suffix:"__call__"
+              |> drop_suffix ~suffix:"__init__"
+              |> drop_suffix ~suffix:"__new__"
+              |> Reference.show)
               ignored_decorators_for_higher_order)
       in
       let is_decorator_skipped_by_model () =
