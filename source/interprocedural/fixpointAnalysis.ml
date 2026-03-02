@@ -429,28 +429,42 @@ module Make (Analysis : ANALYSIS) = struct
       { state with shared_models }
   end
 
-  let initialize_models_for_new_dependencies ~shared_models = function
+  let initialize_new_dependencies ~scheduler ~shared_models ~shared_fixpoint ~step = function
     | [] -> shared_models
     | targets ->
-        let existing_targets = shared_models |> SharedModels.keys |> Target.Set.of_list in
-        targets
-        |> List.filter ~f:(fun target -> not (Target.Set.mem target existing_targets))
-        |> List.map ~f:(fun target ->
-               ( target,
-                 Model.for_new_dependency
-                   ~get_model:
-                     (SharedModels.ReadOnly.get (SharedModels.read_only shared_models) ~cache:false)
-                   target ))
-        |> List.fold
-             ~init:(SharedModels.add_only shared_models)
-             ~f:(fun shared_models (callable, model) ->
-               SharedModels.AddOnly.add shared_models callable model)
+        let read_only_models = SharedModels.read_only shared_models in
+        let get_model = SharedModels.ReadOnly.get read_only_models ~cache:false in
+        let add_only_handle = SharedModels.add_only shared_models in
+        let empty_handle = SharedModels.AddOnly.create_empty add_only_handle in
+        let policy =
+          Scheduler.Policy.fixed_chunk_size
+            ~minimum_chunks_per_worker:1
+            ~minimum_chunk_size:1
+            ~preferred_chunk_size:500
+            ()
+        in
+        let map targets =
+          List.fold targets ~init:empty_handle ~f:(fun handle target ->
+              State.SharedFixpoint.add shared_fixpoint target { is_partial = false; step };
+              let model = Model.for_new_dependency ~get_model target in
+              SharedModels.AddOnly.add handle target model)
+        in
+        let reduce left right =
+          SharedModels.AddOnly.merge_same_handle_disjoint_keys ~smaller:left ~larger:right
+        in
+        let new_targets =
+          let existing_targets = shared_models |> SharedModels.keys |> Target.HashSet.of_list in
+          List.filter ~f:(fun target -> not (Core.Hash_set.mem existing_targets target)) targets
+        in
+        Scheduler.map_reduce
+          scheduler
+          ~policy
+          ~initial:add_only_handle
+          ~map
+          ~reduce
+          ~inputs:new_targets
+          ()
         |> SharedModels.from_add_only
-
-
-  let initialize_meta_data_for_new_dependencies ~shared_fixpoint ~step =
-    List.iter ~f:(fun callable ->
-        State.SharedFixpoint.add shared_fixpoint callable { is_partial = false; step })
 
 
   (* Save initial models in the shared memory. *)
@@ -951,8 +965,9 @@ module Make (Analysis : ANALYSIS) = struct
           else
             []
         in
-        let shared_models = initialize_models_for_new_dependencies ~shared_models new_callables in
-        initialize_meta_data_for_new_dependencies ~shared_fixpoint ~step new_callables;
+        let shared_models =
+          initialize_new_dependencies ~scheduler ~shared_models ~shared_fixpoint ~step new_callables
+        in
         let () = Logger.iteration_end ~iteration ~expensive_callables ~number_of_callables ~timer in
         let state = { state with State.shared_models } in
         iterate
