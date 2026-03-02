@@ -1,6 +1,7 @@
 ---
 name: pysa-integration-tests
 description: Use when running, debugging, updating, or creating Pysa end-to-end integration tests. Use when taint analysis tests fail, when expected output files need updating, or when working with .models, .cg, .hofcg, .overrides files under `source/interprocedural_analyses/taint/test/integration`.
+oncalls: [pysa]
 ---
 
 # Pysa Integration Tests
@@ -23,16 +24,13 @@ OUNIT_SHARDS=16 dune exec interprocedural_analyses/taint/test/integrationTest.ex
 PYSA_INTEGRATION_TEST=format.py dune exec interprocedural_analyses/taint/test/integrationTest.exe
 ```
 
-### With Pyrefly Frontend
+### With Pyrefly Frontend (Meta Internal Only)
 
-By default, tests use Pyre as the type-checking frontend. To use Pyrefly instead:
+See the "Pyrefly Integration" section in `AGENTS.md` for how to build the Pyrefly binary.
+
+To run integration tests with Pyrefly:
 
 ```bash
-# 1. Build pyrefly
-buck2 build --show-full-simple-output @fbcode//mode/opt fbcode//pyrefly/pyrefly:pyrefly
-# This prints a path like: /data/users/<user>/.../__pyrefly__/pyrefly on stdout.
-
-# 2. Run tests with PYREFLY_BINARY set
 PYREFLY_BINARY=<path-to-binary> PYSA_INTEGRATION_TEST=format.py dune exec interprocedural_analyses/taint/test/integrationTest.exe
 ```
 
