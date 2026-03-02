@@ -2,75 +2,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "builtins.eval",
-    "filename": "builtins.pyi",
-    "callable_line": 4297,
-    "sinks": [
-      {
-        "port": "formal(source, position=0, positional_only)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "RemoteCodeExecution" } ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "builtins.getattr",
-    "filename": "builtins.pyi",
-    "callable_line": 4447,
-    "sinks": [
-      {
-        "port": "formal(name, position=1, positional_only)",
-        "taint": [
-          { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(default, position=2, positional_only)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "default" } ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(o, position=0, positional_only)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "object" } ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "SkipObscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "higher_order_functions.apply",
     "filename": "higher_order_functions.py",
     "callable_line": 60,
@@ -97,6 +28,38 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "higher_order_functions.apply_skip_inlining",
+    "filename": "higher_order_functions.py",
+    "callable_line": 205,
+    "tito": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito_positions": [ { "line": 206, "start": 13, "end": 14 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(f, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "SkipInliningHigherOrderFunctions" ]
   }
 }
 {
@@ -1489,55 +1452,104 @@
   }
 }
 {
-  "kind": "model",
+  "kind": "issue",
   "data": {
-    "callable": "pysa._cookies",
-    "filename": "pysa/__init__.pyi",
-    "callable_line": 8,
-    "sources": [
+    "callable": "higher_order_functions.test_skip_inlining_higher_order_function",
+    "callable_line": 209,
+    "code": 5002,
+    "line": 210,
+    "start": 24,
+    "end": 36,
+    "filename": "higher_order_functions.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
       {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "Cookies" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "pysa._rce",
-    "filename": "pysa/__init__.pyi",
-    "callable_line": 9,
-    "sinks": [
-      {
-        "port": "formal(argument, position=0)",
-        "taint": [
+        "name": "forward",
+        "roots": [
           {
-            "kinds": [ { "kind": "RemoteCodeExecution" } ],
-            "declaration": null
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "higher-order-parameter" } ],
+            "origin": { "line": 210, "start": 38, "end": 52 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 210, "start": 24, "end": 36 },
+              "resolves_to": [ "higher_order_functions.goes_to_sink" ],
+              "port": "formal(arg, position=0)"
+            }
           }
         ]
       }
     ],
-    "modes": [ "Obscure" ]
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "higher-order-parameter" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "higher_order_functions.goes_to_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "higher_order_functions.test_skip_inlining_higher_order_function:5002:0:Call|higher_order_functions.goes_to_sink|0|formal(arg):8cd944de915f67759cb52cf07cd9b2f5"
   }
 }
 {
   "kind": "model",
   "data": {
-    "callable": "pysa._sql",
-    "filename": "pysa/__init__.pyi",
-    "callable_line": 10,
-    "sinks": [
+    "callable": "higher_order_functions.test_skip_inlining_tito",
+    "filename": "higher_order_functions.py",
+    "callable_line": 213,
+    "tito": [
       {
-        "port": "formal(argument, position=0)",
-        "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "higher-order-parameter" },
+              { "always-via": "tito" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 214, "start": 31, "end": 39 },
+              { "line": 214, "start": 41, "end": 42 }
+            ],
+            "tito": {}
+          }
+        ]
       }
-    ],
-    "modes": [ "Obscure" ]
+    ]
   }
 }
 {
@@ -1583,78 +1595,6 @@
               }
             ],
             "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "pysa._tito",
-    "filename": "pysa/__init__.pyi",
-    "callable_line": 6,
-    "tito": [
-      {
-        "port": "formal(**kwargs)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(*args, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "pysa._user_controlled",
-    "filename": "pysa/__init__.pyi",
-    "callable_line": 7,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "pysa.copy",
-    "filename": "pysa/__init__.pyi",
-    "callable_line": 12,
-    "tito": [
-      {
-        "port": "formal(obj, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "copy" } ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": {}
           }
         ]
       }
@@ -2017,30 +1957,6 @@
             "tito": {}
           }
         ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{pysa.ClassWithSinkAttribute.attribute}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{pysa._global_sink}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }

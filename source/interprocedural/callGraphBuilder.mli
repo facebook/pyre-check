@@ -139,6 +139,7 @@ val higher_order_call_graph_of_define
   type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
   skip_analysis_targets:Target.HashSet.t ->
   called_when_parameter:Target.HashSet.t ->
+  skip_inlining_higher_order_functions:Target.HashSet.t ->
   qualifier:Reference.t ->
   callable:Target.t ->
   define:Ast.Statement.Define.t Node.t ->

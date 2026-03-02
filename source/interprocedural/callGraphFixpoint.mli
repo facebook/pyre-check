@@ -27,6 +27,7 @@ val compute
   override_graph_shared_memory:OverrideGraph.SharedMemory.t ->
   skip_analysis_targets:Target.HashSet.t ->
   called_when_parameter:Target.HashSet.t ->
+  skip_inlining_higher_order_functions:Target.HashSet.t ->
   t
 
 val analyzed_callables : fixpoint -> Target.t list

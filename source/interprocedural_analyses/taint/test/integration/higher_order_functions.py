@@ -200,3 +200,15 @@ test_duplicate_issues_in_different_parameterized_callables(print, _test_source()
 
 def test_callable_default_value(f=_test_source) -> None:
     _test_sink(f())
+
+
+def apply_skip_inlining(f, x):
+    return f(x)
+
+
+def test_skip_inlining_higher_order_function():
+    apply_skip_inlining(goes_to_sink, _test_source())
+
+
+def test_skip_inlining_tito(x):
+    return apply_skip_inlining(has_tito, x)

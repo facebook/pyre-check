@@ -821,6 +821,48 @@ def main():
 ```
 This is useful for reducing false negatives. By default, the higher order call graph building would always create a parameterized callable `bar[f=foo]` (i.e., a version of `bar` where `f` is instantiated as `foo`) at the call site in `main`. Hence, `foo` would no longer get called if the higher order call graph building is limited in knowing that `foo` is eventually called in `bar`. This may lead to false negatives.
 
+## Skip inlining higher order functions with `@SkipInliningHigherOrderFunctions`
+
+By default, when Pysa detects a higher order function (i.e., a function that
+takes another function as a parameter and calls it), it creates **parameterized
+targets** — specialized versions of the function for each concrete callable
+passed as an argument. This allows Pysa to inline the callee and track taint
+through the higher order call precisely.
+
+For example, given:
+```python
+def apply(f, x):
+    return f(x)
+
+def goes_to_sink(arg):
+    sink(arg)
+
+apply(goes_to_sink, source())  # Pysa creates apply[f=goes_to_sink] and finds the issue.
+```
+
+In some cases, this specialization is undesirable — for instance, if a function
+is called with many different callables, creating parameterized targets for each
+one can increase analysis time without providing useful results.
+
+The `@SkipInliningHigherOrderFunctions` annotation prevents Pysa from creating
+parameterized targets for a given function:
+
+```python
+@SkipInliningHigherOrderFunctions
+def module.apply(f, x): ...
+```
+
+With this annotation, Pysa will not inline the higher order parameter `f` at
+call sites of `module.apply`. Instead, at a call site such as
+`apply(goes_to_sink, source())`, Pysa will treat `goes_to_sink` as being called
+directly at that call site (i.e., as if `goes_to_sink(source())` was called),
+rather than creating a specialized version `apply[f=goes_to_sink]`. See
+[Force to treat a callable as being called when passed as parameters](#force-to-treat-a-callable-as-being-called-when-passed-as-parameters)
+for more details on this behavior.
+
+This is useful for reducing analysis cost on functions that are called with many
+different callables, when the resulting precision is not needed.
+
 ## Limit the trace length for better signal and performance
 
 By default, Pysa will find all flows from sources to sinks matching a rule.

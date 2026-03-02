@@ -3092,6 +3092,8 @@ module HigherOrderCallGraph = struct
 
     val called_when_parameter : Target.HashSet.t
 
+    val skip_inlining_higher_order_functions : Target.HashSet.t
+
     val profiler : CallGraphProfiler.t
 
     val maximum_target_depth : int
@@ -3390,60 +3392,73 @@ module HigherOrderCallGraph = struct
               | Target.Regular regular -> regular, Target.ParameterMap.empty
               | Target.Parameterized { regular; parameters } -> regular, parameters
             in
-            let formal_arguments =
-              callee_regular |> Target.from_regular |> formal_arguments_if_non_stub
-            in
-            let parameter_targets, arguments =
-              match ImplicitArgument.implicit_argument ~is_implicit_new:false callee_target with
-              | ImplicitArgument.Callee ->
-                  ( None :: parameter_targets,
-                    { Call.Argument.name = None; value = call.Call.callee } :: arguments )
-              | ImplicitArgument.CalleeBase ->
-                  let { Node.value = call_expression; location } = call.Call.callee in
-                  let self =
-                    match call_expression with
-                    | Expression.Name (Name.Attribute { base; _ }) -> base
-                    | _ ->
-                        (* Default to a placeholder self if we don't understand/retain information
-                           of what self is. *)
-                        Expression.Constant Constant.NoneLiteral |> Node.create ~location
-                  in
-                  ( None :: parameter_targets,
-                    { Call.Argument.name = None; value = self } :: arguments )
-              | ImplicitArgument.None -> parameter_targets, arguments
-            in
-            log
-              "Formal arguments of callee regular `%a`: `%a`"
-              Target.Regular.pp
-              callee_regular
-              TaintAccessPath.Root.List.pp
-              (Option.value ~default:[] formal_arguments);
-            let parameters =
-              formal_arguments
-              >>| TaintAccessPath.match_actuals_to_formals arguments
-              >>| List.zip_exn parameter_targets
-              >>| List.filter_map ~f:create_parameter_target_excluding_args_kwargs
-              >>| Target.ParameterMap.of_alist_exn
-              |> Option.value ~default:Target.ParameterMap.empty
-              |> Target.ParameterMap.union
-                   (fun _ _ right ->
-                     (* The formal argument should shadow variables from the closure that share the
-                        same name. *)
-                     Some right)
-                   closure
-            in
-            log "Parameter targets: %a" (Target.ParameterMap.pp Target.pp_pretty) parameters;
-            if Target.ParameterMap.is_empty parameters then
+            if
+              Core.Hash_set.mem
+                Context.skip_inlining_higher_order_functions
+                (Target.from_regular callee_regular)
+            then
+              let () =
+                log
+                  "Callable `%a` is marked as @SkipInliningHigherOrderFunctions"
+                  Target.pp_pretty_with_kind
+                  (Target.from_regular callee_regular)
+              in
               None
             else
-              Target.Parameterized { regular = callee_regular; parameters }
-              |> validate_target
-              >>| fun target ->
-              {
-                callee_target with
-                CallTarget.target;
-                implicit_receiver = recompute_implicit_receiver callee_target;
-              }
+              let formal_arguments =
+                callee_regular |> Target.from_regular |> formal_arguments_if_non_stub
+              in
+              let parameter_targets, arguments =
+                match ImplicitArgument.implicit_argument ~is_implicit_new:false callee_target with
+                | ImplicitArgument.Callee ->
+                    ( None :: parameter_targets,
+                      { Call.Argument.name = None; value = call.Call.callee } :: arguments )
+                | ImplicitArgument.CalleeBase ->
+                    let { Node.value = call_expression; location } = call.Call.callee in
+                    let self =
+                      match call_expression with
+                      | Expression.Name (Name.Attribute { base; _ }) -> base
+                      | _ ->
+                          (* Default to a placeholder self if we don't understand/retain information
+                             of what self is. *)
+                          Expression.Constant Constant.NoneLiteral |> Node.create ~location
+                    in
+                    ( None :: parameter_targets,
+                      { Call.Argument.name = None; value = self } :: arguments )
+                | ImplicitArgument.None -> parameter_targets, arguments
+              in
+              log
+                "Formal arguments of callee regular `%a`: `%a`"
+                Target.Regular.pp
+                callee_regular
+                TaintAccessPath.Root.List.pp
+                (Option.value ~default:[] formal_arguments);
+              let parameters =
+                formal_arguments
+                >>| TaintAccessPath.match_actuals_to_formals arguments
+                >>| List.zip_exn parameter_targets
+                >>| List.filter_map ~f:create_parameter_target_excluding_args_kwargs
+                >>| Target.ParameterMap.of_alist_exn
+                |> Option.value ~default:Target.ParameterMap.empty
+                |> Target.ParameterMap.union
+                     (fun _ _ right ->
+                       (* The formal argument should shadow variables from the closure that share
+                          the same name. *)
+                       Some right)
+                     closure
+              in
+              log "Parameter targets: %a" (Target.ParameterMap.pp Target.pp_pretty) parameters;
+              if Target.ParameterMap.is_empty parameters then
+                None
+              else
+                Target.Parameterized { regular = callee_regular; parameters }
+                |> validate_target
+                >>| fun target ->
+                {
+                  callee_target with
+                  CallTarget.target;
+                  implicit_receiver = recompute_implicit_receiver callee_target;
+                }
         | _ -> None
       in
       (* Treat an empty list as a single element list so that in each result of the cartesian
@@ -4368,6 +4383,7 @@ let higher_order_call_graph_of_define
     ~type_of_expression_shared_memory
     ~skip_analysis_targets
     ~called_when_parameter
+    ~skip_inlining_higher_order_functions
     ~qualifier
     ~callable
     ~define
@@ -4403,6 +4419,8 @@ let higher_order_call_graph_of_define
     let skip_analysis_targets = skip_analysis_targets
 
     let called_when_parameter = called_when_parameter
+
+    let skip_inlining_higher_order_functions = skip_inlining_higher_order_functions
 
     let profiler = profiler
 

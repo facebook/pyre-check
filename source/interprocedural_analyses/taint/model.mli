@@ -74,6 +74,8 @@ module Mode : sig
     | InferArgumentTito (* Infer taint propagation between arguments. *)
     | CalledWhenParameter
       (* When a callable is passed as parameters at any call site, always treat as being called. *)
+    | SkipInliningHigherOrderFunctions
+      (* Skip inlining this function in the higher order call graph fixpoint. *)
   [@@deriving show, compare, equal]
 
   val from_string : string -> t option

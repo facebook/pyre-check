@@ -38,6 +38,19 @@ Higher order call graphs
   }
 }
 {
+  "callable": "higher_order_functions.apply_skip_inlining",
+  "returned_callables": [],
+  "calls": {
+    "206:11-206:15": {
+      "call": {
+        "unresolved": [
+          "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "higher_order_functions.apply_without_return",
   "returned_callables": [],
   "calls": {
@@ -1216,6 +1229,99 @@ Higher order call graphs
         "if_called": {
           "calls": [
             { "target": "pysa._test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_skip_inlining_higher_order_function",
+  "returned_callables": [],
+  "calls": {
+    "210:4-210:53": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.apply_skip_inlining",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "higher_order_functions.goes_to_sink",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "210:24-210:36|artificial-attribute-access|qualification:higher_order_functions.goes_to_sink": {
+      "attribute_access": {
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.goes_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "210:38-210:52": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_skip_inlining_tito",
+  "returned_callables": [],
+  "calls": {
+    "214:11-214:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.apply_skip_inlining",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "higher_order_functions.has_tito",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "214:31-214:39|artificial-attribute-access|qualification:higher_order_functions.has_tito": {
+      "attribute_access": {
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.has_tito",
+              "index": 0,
+              "return_type": []
+            }
           ]
         }
       }

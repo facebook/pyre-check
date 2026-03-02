@@ -227,6 +227,7 @@ let assert_higher_order_call_graph_of_define
       ~type_of_expression_shared_memory
       ~skip_analysis_targets:(Target.HashSet.create ())
       ~called_when_parameter
+      ~skip_inlining_higher_order_functions:(Target.HashSet.create ())
       ~callable
       ~qualifier:module_name
       ~define

@@ -16,6 +16,7 @@ module CallGraphAnalysis = struct
       type_of_expression_shared_memory: TypeOfExpressionSharedMemory.t;
       skip_analysis_targets: Target.HashSet.t;
       called_when_parameter: Target.HashSet.t;
+      skip_inlining_higher_order_functions: Target.HashSet.t;
       maximum_target_depth: int;
       maximum_parameterized_targets_at_call_site: int option;
     }
@@ -100,6 +101,7 @@ module CallGraphAnalysis = struct
           type_of_expression_shared_memory;
           skip_analysis_targets;
           called_when_parameter;
+          skip_inlining_higher_order_functions;
           maximum_target_depth;
           maximum_parameterized_targets_at_call_site;
         }
@@ -152,6 +154,7 @@ module CallGraphAnalysis = struct
               ~type_of_expression_shared_memory
               ~skip_analysis_targets
               ~called_when_parameter
+              ~skip_inlining_higher_order_functions
               ~qualifier
               ~callable
               ~define
@@ -351,6 +354,7 @@ let compute
     ~override_graph_shared_memory
     ~skip_analysis_targets
     ~called_when_parameter
+    ~skip_inlining_higher_order_functions
   =
   let callables_to_definitions_map =
     CallableToDecoratorsMap.SharedMemory.register_decorator_defines
@@ -430,6 +434,7 @@ let compute
           type_of_expression_shared_memory;
           skip_analysis_targets;
           called_when_parameter;
+          skip_inlining_higher_order_functions;
           maximum_target_depth;
           maximum_parameterized_targets_at_call_site;
         }

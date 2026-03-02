@@ -836,6 +836,8 @@ let initialize
       ~type_of_expression_shared_memory
       ~skip_analysis_targets
       ~called_when_parameter:(SharedModels.called_when_parameter ~scheduler initial_models)
+      ~skip_inlining_higher_order_functions:
+        (SharedModels.skip_inlining_higher_order_functions ~scheduler initial_models)
   in
   let initial_models =
     MissingFlow.add_unknown_callee_models

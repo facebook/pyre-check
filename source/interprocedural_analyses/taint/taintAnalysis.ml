@@ -939,6 +939,8 @@ let run_taint_analysis
         ~type_of_expression_shared_memory
         ~skip_analysis_targets:skip_analysis_targets_hashset
         ~called_when_parameter:(SharedModels.called_when_parameter ~scheduler initial_models)
+        ~skip_inlining_higher_order_functions:
+          (SharedModels.skip_inlining_higher_order_functions ~scheduler initial_models)
     in
     let () = StepLogger.finish step_logger in
 
