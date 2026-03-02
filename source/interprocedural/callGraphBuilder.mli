@@ -23,6 +23,7 @@ val call_graph_of_define
   pyre_api:PyrePysaApi.ReadOnly.t ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   attribute_targets:Target.HashSet.t ->
+  skip_call_higher_order_functions:Target.HashSet.t ->
   callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
   callables_to_decorators_map:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
   type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
@@ -60,6 +61,7 @@ val call_graph_of_callable
   pyre_api:PyrePysaApi.ReadOnly.t ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   attribute_targets:Target.HashSet.t ->
+  skip_call_higher_order_functions:Target.HashSet.t ->
   callables_to_definitions_map:CallablesSharedMemory.ReadOnly.t ->
   callables_to_decorators_map:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
   type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
@@ -168,6 +170,7 @@ val build_whole_program_call_graph
   store_shared_memory:bool ->
   attribute_targets:Target.Set.t ->
   skip_analysis_targets:Target.HashSet.t ->
+  skip_call_higher_order_functions:Target.HashSet.t ->
   check_invariants:bool ->
   definitions:Target.t list ->
   create_dependency_for:CallGraph.AllTargetsUseCase.t ->

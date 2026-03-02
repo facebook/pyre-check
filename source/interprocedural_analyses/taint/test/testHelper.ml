@@ -795,6 +795,8 @@ let initialize
         ~store_shared_memory:true
         ~attribute_targets:(SharedModels.object_targets initial_models)
         ~skip_analysis_targets
+        ~skip_call_higher_order_functions:
+          (SharedModels.skip_call_higher_order_functions ~scheduler initial_models)
         ~check_invariants:true
         ~definitions
         ~callables_to_definitions_map:
@@ -910,6 +912,7 @@ let call_graph_of_callable
         ~callables_to_definitions_map
         ~callables_to_decorators_map
         ~type_of_expression_shared_memory
+        ~skip_call_higher_order_functions:(Target.HashSet.create ())
         ~check_invariants
         ~qualifier:module_name
         ~callable
@@ -930,6 +933,7 @@ let call_graph_of_callable
             ~store_shared_memory:true
             ~attribute_targets:(Target.Set.of_list object_targets)
             ~skip_analysis_targets:(Target.HashSet.create ())
+            ~skip_call_higher_order_functions:(Target.HashSet.create ())
             ~check_invariants:true
             ~definitions:[callable]
             ~create_dependency_for:CallGraph.AllTargetsUseCase.Everything

@@ -863,6 +863,40 @@ for more details on this behavior.
 This is useful for reducing analysis cost on functions that are called with many
 different callables, when the resulting precision is not needed.
 
+## Skip calling higher order parameters with `@SkipCallHigherOrderFunctions`
+
+The `@SkipCallHigherOrderFunctions` annotation prevents Pysa from recording the
+implicit call to higher order parameters at the call site. Unlike
+`@SkipInliningHigherOrderFunctions`, it does **not** prevent the creation of
+parameterized targets — the higher order call graph fixpoint still inlines the
+function normally when it can.
+
+For example, given:
+```python
+@SkipCallHigherOrderFunctions
+def module.apply(f, x): ...
+```
+
+At a call site such as `apply(goes_to_sink, source())`, Pysa will:
+- Still create a specialized version `apply[f=goes_to_sink]` and analyze it,
+  if the function has an available body (i.e, not a stub).
+- **Not** treat `goes_to_sink` as being called directly at the call site
+  (i.e., the implicit call from the `higher_order_parameters` is removed).
+
+This is useful when the implicit call recording causes false positives — for
+instance, when the implicit call is redundant because the parameterized target
+analysis already provides the correct result.
+
+In most cases, you will want to use both annotations together:
+```python
+@SkipInliningHigherOrderFunctions
+@SkipCallHigherOrderFunctions
+def module.apply(f, x): ...
+```
+
+This both prevents parameterized target creation and removes the implicit call,
+effectively disabling all higher order function handling for this function.
+
 ## Limit the trace length for better signal and performance
 
 By default, Pysa will find all flows from sources to sinks matching a rule.

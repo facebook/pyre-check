@@ -655,6 +655,9 @@ module DefineCallGraph : sig
     t ->
     t
 
+  (* Strip higher order parameters from call callees where all call target matches the predicate. *)
+  val strip_higher_order_parameters : should_strip:(Target.t -> bool) -> t -> t
+
   (* Ensure the taint analysis does not use these targets. *)
   val drop_decorated_targets : t -> t
 

@@ -26,6 +26,12 @@ Call dependencies
   "higher_order_functions.apply (fun)[formal(f, position=0)=pysa._test_source (fun)]": [
     "pysa._test_source (fun)"
   ],
+  "higher_order_functions.apply_skip_call (fun)[formal(f, position=0)=higher_order_functions.goes_to_sink (fun)]": [
+    "higher_order_functions.goes_to_sink (fun)"
+  ],
+  "higher_order_functions.apply_skip_call (fun)[formal(f, position=0)=higher_order_functions.has_tito (fun)]": [
+    "higher_order_functions.has_tito (fun)"
+  ],
   "higher_order_functions.apply_without_return (fun)[formal(f, position=0)=pysa._test_sink (fun)]": [
     "pysa._test_sink (fun)"
   ],
@@ -169,6 +175,19 @@ Call dependencies
   ],
   "higher_order_functions.test_parameterized_target_in_issue_handle (fun)": [
     "higher_order_functions.sink_after_apply (fun)[formal(f, position=0)=pysa._test_source (fun)]"
+  ],
+  "higher_order_functions.test_skip_both_higher_order_function (fun)": [
+    "higher_order_functions.apply_skip_both (fun)", "pysa._test_source (fun)"
+  ],
+  "higher_order_functions.test_skip_both_tito (fun)": [
+    "higher_order_functions.apply_skip_both (fun)"
+  ],
+  "higher_order_functions.test_skip_call_higher_order_function (fun)": [
+    "higher_order_functions.apply_skip_call (fun)[formal(f, position=0)=higher_order_functions.goes_to_sink (fun)]",
+    "pysa._test_source (fun)"
+  ],
+  "higher_order_functions.test_skip_call_tito (fun)": [
+    "higher_order_functions.apply_skip_call (fun)[formal(f, position=0)=higher_order_functions.has_tito (fun)]"
   ],
   "higher_order_functions.test_skip_inlining_higher_order_function (fun)": [
     "higher_order_functions.apply_skip_inlining (fun)",

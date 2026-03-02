@@ -38,6 +38,32 @@ Higher order call graphs
   }
 }
 {
+  "callable": "higher_order_functions.apply_skip_both",
+  "returned_callables": [],
+  "calls": {
+    "230:11-230:15": {
+      "call": {
+        "unresolved": [
+          "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.apply_skip_call",
+  "returned_callables": [],
+  "calls": {
+    "218:11-218:15": {
+      "call": {
+        "unresolved": [
+          "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "higher_order_functions.apply_skip_inlining",
   "returned_callables": [],
   "calls": {
@@ -1236,6 +1262,144 @@ Higher order call graphs
   }
 }
 {
+  "callable": "higher_order_functions.test_skip_both_higher_order_function",
+  "returned_callables": [],
+  "calls": {
+    "234:4-234:49": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.apply_skip_both",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "234:20-234:32|artificial-attribute-access|qualification:higher_order_functions.goes_to_sink": {
+      "attribute_access": {
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.goes_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "234:34-234:48": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_skip_both_tito",
+  "returned_callables": [],
+  "calls": {
+    "238:11-238:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.apply_skip_both",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "238:27-238:35|artificial-attribute-access|qualification:higher_order_functions.has_tito": {
+      "attribute_access": {
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.has_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_skip_call_higher_order_function",
+  "returned_callables": [],
+  "calls": {
+    "222:4-222:49": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.apply_skip_call[formal(f, position=0)=higher_order_functions.goes_to_sink]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "222:20-222:32|artificial-attribute-access|qualification:higher_order_functions.goes_to_sink": {
+      "attribute_access": {
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.goes_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "222:34-222:48": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.test_skip_call_tito",
+  "returned_callables": [],
+  "calls": {
+    "226:11-226:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.apply_skip_call[formal(f, position=0)=higher_order_functions.has_tito]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "226:27-226:35|artificial-attribute-access|qualification:higher_order_functions.has_tito": {
+      "attribute_access": {
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "higher_order_functions.has_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "higher_order_functions.test_skip_inlining_higher_order_function",
   "returned_callables": [],
   "calls": {
@@ -1422,6 +1586,40 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.apply_skip_call[formal(f, position=0)=higher_order_functions.goes_to_sink]",
+  "returned_callables": [],
+  "calls": {
+    "218:11-218:15": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.goes_to_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "higher_order_functions.apply_skip_call[formal(f, position=0)=higher_order_functions.has_tito]",
+  "returned_callables": [],
+  "calls": {
+    "218:11-218:15": {
+      "call": {
+        "calls": [
+          {
+            "target": "higher_order_functions.has_tito",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     }

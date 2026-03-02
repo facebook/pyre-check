@@ -8932,6 +8932,7 @@ let assert_resolve_decorator_callees
             ~store_shared_memory:true
             ~attribute_targets:Target.Set.empty
             ~skip_analysis_targets:(Target.HashSet.create ())
+            ~skip_call_higher_order_functions:(Target.HashSet.create ())
             ~check_invariants:true
             ~definitions
             ~create_dependency_for:CallGraph.AllTargetsUseCase.Everything

@@ -2044,6 +2044,20 @@ module DefineCallGraph = struct
 
   let map_receiver_class ~f = map_call_target ~f:(CallTarget.map_receiver_class ~f)
 
+  (* Strip higher order parameters from call callees where all call targets match the predicate. *)
+  let strip_higher_order_parameters ~should_strip =
+    update_expression_callees ~f:(function
+        | ExpressionCallees.Call
+            ({ CallCallees.call_targets; higher_order_parameters; _ } as callees)
+          when (not (HigherOrderParameterMap.is_empty higher_order_parameters))
+               && (not (List.is_empty call_targets))
+               && List.for_all call_targets ~f:(fun { CallTarget.target; _ } ->
+                      should_strip (Target.strip_parameters target)) ->
+            ExpressionCallees.Call
+              { callees with CallCallees.higher_order_parameters = HigherOrderParameterMap.empty }
+        | callees -> callees)
+
+
   (* Ensure the taint analysis does not use these targets. *)
   let drop_decorated_targets = update_expression_callees ~f:ExpressionCallees.drop_decorated_targets
 

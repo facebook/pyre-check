@@ -1932,6 +1932,7 @@ let resolve_callees
     ~pyre_in_context
     ~callables_to_definitions_map
     ~override_graph
+    ~skip_call_higher_order_functions
     ~caller
     ~location
     ~call:({ Call.callee; arguments; origin = _ } as call)
@@ -2069,7 +2070,13 @@ let resolve_callees
             }
       | _ -> None
     in
-    if Option.is_none shim_target then
+    if
+      (not (List.is_empty regular_callees.call_targets))
+      && List.for_all regular_callees.call_targets ~f:(fun { CallTarget.target; _ } ->
+             Core.Hash_set.mem skip_call_higher_order_functions target)
+    then
+      HigherOrderParameterMap.empty
+    else if Option.is_none shim_target then
       List.filter_mapi arguments ~f:get_higher_order_function_targets
       |> HigherOrderParameterMap.from_list
     else (* disable higher order parameters if call is shimmed *)
@@ -2233,6 +2240,7 @@ module CallGraphBuilder = struct
       override_graph: OverrideGraph.SharedMemory.ReadOnly.t option;
       missing_flow_type_analysis: MissingFlowTypeAnalysis.t option;
       attribute_targets: Target.HashSet.t;
+      skip_call_higher_order_functions: Target.HashSet.t;
       callables_to_definitions_map: CallablesSharedMemory.ReadOnly.t;
       callables_to_decorators_map: CallableToDecoratorsMap.SharedMemory.ReadOnly.t;
       type_of_expression_shared_memory: TypeOfExpressionSharedMemory.t;
@@ -2262,6 +2270,7 @@ module CallGraphBuilder = struct
               callable;
               callables_to_definitions_map;
               override_graph;
+              skip_call_higher_order_functions;
               missing_flow_type_analysis;
               _;
             };
@@ -2276,6 +2285,7 @@ module CallGraphBuilder = struct
       ~pyre_in_context
       ~callables_to_definitions_map
       ~override_graph
+      ~skip_call_higher_order_functions
       ~caller:callable
       ~location
       ~call
@@ -4499,6 +4509,7 @@ let call_graph_of_define
     ~pyre_api
     ~override_graph
     ~attribute_targets
+    ~skip_call_higher_order_functions
     ~callables_to_definitions_map
     ~callables_to_decorators_map
     ~type_of_expression_shared_memory
@@ -4531,6 +4542,7 @@ let call_graph_of_define
         || Ast.Statement.Define.dump_call_graph (Node.value define);
       override_graph;
       attribute_targets;
+      skip_call_higher_order_functions;
       callables_to_definitions_map;
       callables_to_decorators_map;
       type_of_expression_shared_memory;
@@ -4616,6 +4628,7 @@ let call_graph_of_callable
     ~pyre_api
     ~override_graph
     ~attribute_targets
+    ~skip_call_higher_order_functions
     ~callables_to_definitions_map
     ~callables_to_decorators_map
     ~type_of_expression_shared_memory
@@ -4629,6 +4642,7 @@ let call_graph_of_callable
         ~pyre_api
         ~override_graph
         ~attribute_targets
+        ~skip_call_higher_order_functions
         ~callables_to_decorators_map
         ~callables_to_definitions_map
         ~type_of_expression_shared_memory
@@ -4681,6 +4695,7 @@ let call_graph_of_decorated_callable
         debug;
         override_graph;
         attribute_targets = Target.HashSet.create ();
+        skip_call_higher_order_functions = Target.HashSet.create ();
         callables_to_definitions_map;
         callables_to_decorators_map;
         type_of_expression_shared_memory;
@@ -4796,6 +4811,7 @@ let build_whole_program_call_graph_for_pyre1
     ~store_shared_memory
     ~attribute_targets
     ~skip_analysis_targets
+    ~skip_call_higher_order_functions
     ~check_invariants
     ~definitions
     ~create_dependency_for
@@ -4834,6 +4850,7 @@ let build_whole_program_call_graph_for_pyre1
                 ~pyre_api
                 ~override_graph
                 ~attribute_targets
+                ~skip_call_higher_order_functions
                 ~callables_to_decorators_map
                 ~callables_to_definitions_map
                 ~type_of_expression_shared_memory
@@ -4966,6 +4983,7 @@ let build_whole_program_call_graph_for_pyrefly
     ~store_shared_memory
     ~attribute_targets
     ~skip_analysis_targets
+    ~skip_call_higher_order_functions
     ~definitions
     ~create_dependency_for
   =
@@ -5546,6 +5564,8 @@ let build_whole_program_call_graph_for_pyrefly
     in
     call_graph
     |> DefineCallGraph.dedup_and_sort
+    |> DefineCallGraph.strip_higher_order_parameters
+         ~should_strip:(Core.Hash_set.mem skip_call_higher_order_functions)
     |> DefineCallGraph.filter_empty_attribute_access
     |> DefineCallGraph.filter_empty_identifier
     |> DefineCallGraph.filter_empty_format_string_stringify
@@ -5592,6 +5612,7 @@ let build_whole_program_call_graph
     ~store_shared_memory
     ~attribute_targets
     ~skip_analysis_targets
+    ~skip_call_higher_order_functions
     ~check_invariants
     ~definitions
     ~create_dependency_for
@@ -5610,6 +5631,7 @@ let build_whole_program_call_graph
           ~store_shared_memory
           ~attribute_targets
           ~skip_analysis_targets
+          ~skip_call_higher_order_functions
           ~check_invariants
           ~definitions
           ~create_dependency_for
@@ -5625,6 +5647,7 @@ let build_whole_program_call_graph
           ~attribute_targets
           ~store_shared_memory
           ~skip_analysis_targets
+          ~skip_call_higher_order_functions
           ~definitions
           ~create_dependency_for
   in

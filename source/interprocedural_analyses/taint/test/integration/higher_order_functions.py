@@ -212,3 +212,27 @@ def test_skip_inlining_higher_order_function():
 
 def test_skip_inlining_tito(x):
     return apply_skip_inlining(has_tito, x)
+
+
+def apply_skip_call(f, x):
+    return f(x)
+
+
+def test_skip_call_higher_order_function():
+    apply_skip_call(goes_to_sink, _test_source())
+
+
+def test_skip_call_tito(x):
+    return apply_skip_call(has_tito, x)
+
+
+def apply_skip_both(f, x):
+    return f(x)
+
+
+def test_skip_both_higher_order_function():
+    apply_skip_both(goes_to_sink, _test_source())
+
+
+def test_skip_both_tito(x):
+    return apply_skip_both(has_tito, x)

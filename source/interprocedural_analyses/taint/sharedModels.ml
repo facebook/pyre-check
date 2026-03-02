@@ -67,6 +67,12 @@ let skip_inlining_higher_order_functions ~scheduler models =
   |> Target.HashSet.of_list
 
 
+let skip_call_higher_order_functions ~scheduler models =
+  models
+  |> targets_with_mode ~scheduler ~mode:Model.Mode.SkipCallHigherOrderFunctions
+  |> Target.HashSet.of_list
+
+
 let entrypoints ~scheduler models = targets_with_mode ~scheduler ~mode:Model.Mode.Entrypoint models
 
 let object_targets models =
