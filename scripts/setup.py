@@ -27,13 +27,13 @@ from typing import Dict, List, Mapping, Optional, Tuple
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-COMPILER_VERSION = "4.14.0"
+COMPILER_VERSION = "4.14.2"
 DEPENDENCIES = [
     "base64.3.5.1",
-    "cmdliner.1.1.1",
+    "cmdliner.1.3.0",
     "core.v0.16.2",
     "re2.v0.16.0",
-    "dune.3.7.1",
+    "dune.3.10.0",
     "yojson.2.0.2",
     "jsonm.1.0.2",
     "ppx_deriving_yojson.3.7.0",
@@ -111,7 +111,7 @@ def _run_command(
         }
     else:
         environment_variables = None
-    LOG.info(command)
+    LOG.info(f"Running command: {command}")
     try:
         output = subprocess.check_output(
             command,
