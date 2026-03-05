@@ -73,9 +73,13 @@ enum Command {
         #[arg(long, default_value_t = false)]
         show_class_intervals: bool,
 
-        /// Show leaf names
-        #[arg(long, default_value_t = false)]
+        /// Always show leaf names
+        #[arg(long)]
         show_leaf_names: bool,
+
+        /// Always hide leaf names
+        #[arg(long, conflicts_with = "show_leaf_names")]
+        hide_leaf_names: bool,
     },
 
     /// Get the call graph for a callable
@@ -129,9 +133,13 @@ enum Command {
         #[arg(long, default_value_t = false)]
         show_class_intervals: bool,
 
-        /// Show leaf names
-        #[arg(long, default_value_t = false)]
+        /// Always show leaf names
+        #[arg(long)]
         show_leaf_names: bool,
+
+        /// Always hide leaf names
+        #[arg(long, conflicts_with = "show_leaf_names")]
+        hide_leaf_names: bool,
     },
 
     /// Count issues for a callable
@@ -172,6 +180,7 @@ fn main() -> anyhow::Result<()> {
             show_tito_positions,
             show_class_intervals,
             show_leaf_names,
+            hide_leaf_names,
         } => {
             let db = pysa_model_explorer::index::open_or_build_index(&cli.result_dir)?;
             let position = db
@@ -189,6 +198,13 @@ fn main() -> anyhow::Result<()> {
                     show.contains(&ShowSection::Tito),
                 )
             };
+            let leaf_names = if *show_leaf_names {
+                pysa_model_explorer::types::ShowLeafNames::Always
+            } else if *hide_leaf_names {
+                pysa_model_explorer::types::ShowLeafNames::Never
+            } else {
+                pysa_model_explorer::types::ShowLeafNames::Default
+            };
             let options = pysa_model_explorer::model::ModelOptions {
                 show_sources,
                 show_sinks,
@@ -198,7 +214,7 @@ fn main() -> anyhow::Result<()> {
                 show_features: *show_features,
                 show_tito_positions: *show_tito_positions,
                 show_class_intervals: *show_class_intervals,
-                show_leaf_names: *show_leaf_names,
+                show_leaf_names: leaf_names,
             };
             pysa_model_explorer::model::filter_and_strip_model(&mut model, &options);
 
@@ -248,6 +264,7 @@ fn main() -> anyhow::Result<()> {
             show_tito_positions,
             show_class_intervals,
             show_leaf_names,
+            hide_leaf_names,
         } => {
             let db = pysa_model_explorer::index::open_or_build_index(&cli.result_dir)?;
             let positions = db.get_issue_positions(callable)?;
@@ -263,13 +280,20 @@ fn main() -> anyhow::Result<()> {
                 issues.push(issue);
             }
 
+            let leaf_names = if *show_leaf_names {
+                pysa_model_explorer::types::ShowLeafNames::Always
+            } else if *hide_leaf_names {
+                pysa_model_explorer::types::ShowLeafNames::Never
+            } else {
+                pysa_model_explorer::types::ShowLeafNames::Default
+            };
             let options = pysa_model_explorer::issue::IssueOptions {
                 code: *code,
                 handle: handle.clone(),
                 show_features: *show_features,
                 show_tito_positions: *show_tito_positions,
                 show_class_intervals: *show_class_intervals,
-                show_leaf_names: *show_leaf_names,
+                show_leaf_names: leaf_names,
             };
             pysa_model_explorer::issue::filter_issues(&mut issues, &options);
 

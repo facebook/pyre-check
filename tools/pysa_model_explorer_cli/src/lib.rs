@@ -112,7 +112,7 @@ mod integration_tests {
             show_features: false,
             show_tito_positions: false,
             show_class_intervals: false,
-            show_leaf_names: false,
+            show_leaf_names: crate::types::ShowLeafNames::Never,
             ..Default::default()
         };
         crate::model::filter_and_strip_model(&mut model, &options);
@@ -162,7 +162,7 @@ mod integration_tests {
             show_features: true,
             show_tito_positions: true,
             show_class_intervals: true,
-            show_leaf_names: true,
+            show_leaf_names: crate::types::ShowLeafNames::Always,
             ..Default::default()
         };
         crate::issue::filter_issues(&mut issues, &options);

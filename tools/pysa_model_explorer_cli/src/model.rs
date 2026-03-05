@@ -6,6 +6,7 @@
  */
 
 use crate::types::Model;
+use crate::types::ShowLeafNames;
 
 /// Options controlling which parts of a taint model to include.
 #[derive(Debug, Clone, Default)]
@@ -26,8 +27,8 @@ pub struct ModelOptions {
     pub show_tito_positions: bool,
     /// Include class interval information in output.
     pub show_class_intervals: bool,
-    /// Include leaf name information in output.
-    pub show_leaf_names: bool,
+    /// Controls whether leaf names are shown.
+    pub show_leaf_names: ShowLeafNames,
 }
 
 /// Filter and strip a taint model according to the given options.
@@ -116,19 +117,26 @@ fn strip_local_taint(local_taint: &mut crate::types::LocalTaint, options: &Model
         local_taint.is_self_call = None;
     }
 
+    // Resolve the leaf names setting for this local_taint entry.
+    let show_leaves = match options.show_leaf_names {
+        ShowLeafNames::Always => true,
+        ShowLeafNames::Never => false,
+        ShowLeafNames::Default => local_taint.origin.is_some(),
+    };
+
     // Strip fields from each frame in the kinds array.
     for frame in local_taint.kinds.iter_mut() {
-        strip_frame(frame, options);
+        strip_frame(frame, options, show_leaves);
     }
 }
 
 /// Strip metadata fields from a single frame (element of a `kinds` array).
-fn strip_frame(frame: &mut crate::types::Frame, options: &ModelOptions) {
+fn strip_frame(frame: &mut crate::types::Frame, options: &ModelOptions, show_leaves: bool) {
     if !options.show_features {
         frame.features = None;
     }
 
-    if !options.show_leaf_names {
+    if !show_leaves {
         frame.leaves = None;
     }
 }
@@ -369,7 +377,7 @@ mod tests {
             show_sources: true,
             show_sinks: false,
             show_tito: false,
-            show_leaf_names: false,
+            show_leaf_names: ShowLeafNames::Never,
             ..Default::default()
         };
         filter_and_strip_model(&mut model, &options);
@@ -389,7 +397,7 @@ mod tests {
             show_features: true,
             show_tito_positions: true,
             show_class_intervals: true,
-            show_leaf_names: true,
+            show_leaf_names: ShowLeafNames::Always,
             ..Default::default()
         };
         filter_and_strip_model(&mut model, &options);
@@ -426,5 +434,89 @@ mod tests {
         let kinds = &sources[0].taint[0].kinds;
         assert_eq!(kinds.len(), 1);
         assert_eq!(kinds[0].kind, "Header");
+    }
+
+    /// A model where one local_taint entry has an `origin` and the other does not.
+    fn sample_model_with_origin() -> Model {
+        serde_json::from_value(json!({
+            "callable": "test.callable",
+            "sources": [
+                {
+                    "port": "formal(x)",
+                    "taint": [
+                        {
+                            "kinds": [
+                                {
+                                    "kind": "UserControlled",
+                                    "leaves": [{"name": "leaf_with_origin"}]
+                                }
+                            ],
+                            "origin": {"line": 10, "start": 5, "end": 15}
+                        },
+                        {
+                            "kinds": [
+                                {
+                                    "kind": "Header",
+                                    "leaves": [{"name": "leaf_without_origin"}]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }))
+        .unwrap()
+    }
+
+    #[test]
+    fn test_default_leaf_names_strips_without_origin() {
+        let mut model = sample_model_with_origin();
+        let options = ModelOptions {
+            show_sources: true,
+            show_leaf_names: ShowLeafNames::Default,
+            ..Default::default()
+        };
+        filter_and_strip_model(&mut model, &options);
+
+        let sources = model.sources.as_ref().unwrap();
+        // First local_taint has origin — leaves should be kept.
+        let with_origin = &sources[0].taint[0];
+        assert!(with_origin.kinds[0].leaves.is_some());
+
+        // Second local_taint has no origin — leaves should be stripped.
+        let without_origin = &sources[0].taint[1];
+        assert!(without_origin.kinds[0].leaves.is_none());
+    }
+
+    #[test]
+    fn test_always_leaf_names_keeps_all() {
+        let mut model = sample_model_with_origin();
+        let options = ModelOptions {
+            show_sources: true,
+            show_leaf_names: ShowLeafNames::Always,
+            ..Default::default()
+        };
+        filter_and_strip_model(&mut model, &options);
+
+        let sources = model.sources.as_ref().unwrap();
+        // Both should keep leaves.
+        assert!(sources[0].taint[0].kinds[0].leaves.is_some());
+        assert!(sources[0].taint[1].kinds[0].leaves.is_some());
+    }
+
+    #[test]
+    fn test_never_leaf_names_strips_all() {
+        let mut model = sample_model_with_origin();
+        let options = ModelOptions {
+            show_sources: true,
+            show_leaf_names: ShowLeafNames::Never,
+            ..Default::default()
+        };
+        filter_and_strip_model(&mut model, &options);
+
+        let sources = model.sources.as_ref().unwrap();
+        // Both should have leaves stripped.
+        assert!(sources[0].taint[0].kinds[0].leaves.is_none());
+        assert!(sources[0].taint[1].kinds[0].leaves.is_none());
     }
 }

@@ -6,6 +6,7 @@
  */
 
 use crate::types::Issue;
+use crate::types::ShowLeafNames;
 
 /// Options controlling which issues to include and what metadata to show.
 #[derive(Debug, Clone, Default)]
@@ -20,8 +21,8 @@ pub struct IssueOptions {
     pub show_tito_positions: bool,
     /// Include class interval information in output.
     pub show_class_intervals: bool,
-    /// Include leaf name information in output.
-    pub show_leaf_names: bool,
+    /// Controls whether leaf names are shown.
+    pub show_leaf_names: ShowLeafNames,
 }
 
 /// Strip metadata fields from a single issue's traces based on the given options.
@@ -46,11 +47,18 @@ fn strip_issue(issue: &mut Issue, options: &IssueOptions) {
                 root.local_features = None;
             }
 
+            // Resolve the leaf names setting for this root (LocalTaint).
+            let show_leaves = match options.show_leaf_names {
+                ShowLeafNames::Always => true,
+                ShowLeafNames::Never => false,
+                ShowLeafNames::Default => root.origin.is_some(),
+            };
+
             for frame in root.kinds.iter_mut() {
                 if !options.show_features {
                     frame.features = None;
                 }
-                if !options.show_leaf_names {
+                if !show_leaves {
                     frame.leaves = None;
                 }
             }
@@ -174,7 +182,7 @@ mod tests {
             show_features: true,
             show_tito_positions: true,
             show_class_intervals: true,
-            show_leaf_names: true,
+            show_leaf_names: ShowLeafNames::Always,
             ..Default::default()
         };
         filter_issues(&mut issues, &options);
@@ -190,7 +198,7 @@ mod tests {
             show_features: true,
             show_tito_positions: true,
             show_class_intervals: true,
-            show_leaf_names: true,
+            show_leaf_names: ShowLeafNames::Always,
             ..Default::default()
         };
         filter_issues(&mut issues, &options);
@@ -205,7 +213,7 @@ mod tests {
             show_features: true,
             show_tito_positions: true,
             show_class_intervals: true,
-            show_leaf_names: true,
+            show_leaf_names: ShowLeafNames::Always,
             ..Default::default()
         };
         filter_issues(&mut issues, &options);
@@ -221,7 +229,7 @@ mod tests {
             show_features: true,
             show_tito_positions: true,
             show_class_intervals: true,
-            show_leaf_names: true,
+            show_leaf_names: ShowLeafNames::Always,
             ..Default::default()
         };
         filter_issues(&mut issues, &options);
@@ -235,7 +243,7 @@ mod tests {
             show_features: false,
             show_tito_positions: true,
             show_class_intervals: true,
-            show_leaf_names: true,
+            show_leaf_names: ShowLeafNames::Always,
             ..Default::default()
         };
         filter_issues(&mut issues, &options);
@@ -263,7 +271,7 @@ mod tests {
             show_features: true,
             show_tito_positions: false,
             show_class_intervals: true,
-            show_leaf_names: true,
+            show_leaf_names: ShowLeafNames::Always,
             ..Default::default()
         };
         filter_issues(&mut issues, &options);
@@ -280,7 +288,7 @@ mod tests {
             show_features: true,
             show_tito_positions: true,
             show_class_intervals: false,
-            show_leaf_names: true,
+            show_leaf_names: ShowLeafNames::Always,
             ..Default::default()
         };
         filter_issues(&mut issues, &options);
@@ -299,7 +307,7 @@ mod tests {
             show_features: true,
             show_tito_positions: true,
             show_class_intervals: true,
-            show_leaf_names: false,
+            show_leaf_names: ShowLeafNames::Never,
             ..Default::default()
         };
         filter_issues(&mut issues, &options);
@@ -316,7 +324,7 @@ mod tests {
             show_features: false,
             show_tito_positions: false,
             show_class_intervals: false,
-            show_leaf_names: false,
+            show_leaf_names: ShowLeafNames::Never,
             ..Default::default()
         };
         filter_issues(&mut issues, &options);
@@ -350,7 +358,7 @@ mod tests {
             show_features: true,
             show_tito_positions: true,
             show_class_intervals: true,
-            show_leaf_names: true,
+            show_leaf_names: ShowLeafNames::Always,
         };
         filter_issues(&mut issues, &options);
         assert_eq!(issues.len(), 1);
@@ -365,7 +373,7 @@ mod tests {
             show_features: true,
             show_tito_positions: true,
             show_class_intervals: true,
-            show_leaf_names: true,
+            show_leaf_names: ShowLeafNames::Always,
             ..Default::default()
         };
         filter_issues(&mut issues, &options);
@@ -385,5 +393,67 @@ mod tests {
         };
         filter_issues(&mut issues, &options);
         assert!(issues.is_empty());
+    }
+
+    #[test]
+    fn test_default_leaf_names_strips_without_origin() {
+        // The sample issue has two traces:
+        // - "forward" root has NO origin → leaves should be stripped.
+        // - "backward" root HAS origin → leaves should be kept.
+        let mut issues = vec![sample_issue()];
+        let options = IssueOptions {
+            show_features: true,
+            show_tito_positions: true,
+            show_class_intervals: true,
+            show_leaf_names: ShowLeafNames::Default,
+            ..Default::default()
+        };
+        filter_issues(&mut issues, &options);
+
+        let forward_root = &issues[0].traces[0].roots[0];
+        assert!(forward_root.origin.is_none());
+        assert!(forward_root.kinds[0].leaves.is_none());
+
+        let backward_root = &issues[0].traces[1].roots[0];
+        assert!(backward_root.origin.is_some());
+        assert!(backward_root.kinds[0].leaves.is_some());
+    }
+
+    #[test]
+    fn test_always_leaf_names_keeps_all() {
+        let mut issues = vec![sample_issue()];
+        let options = IssueOptions {
+            show_features: true,
+            show_tito_positions: true,
+            show_class_intervals: true,
+            show_leaf_names: ShowLeafNames::Always,
+            ..Default::default()
+        };
+        filter_issues(&mut issues, &options);
+
+        // Both roots should keep leaves.
+        let forward_frame = &issues[0].traces[0].roots[0].kinds[0];
+        assert!(forward_frame.leaves.is_some());
+        let backward_frame = &issues[0].traces[1].roots[0].kinds[0];
+        assert!(backward_frame.leaves.is_some());
+    }
+
+    #[test]
+    fn test_never_leaf_names_strips_all() {
+        let mut issues = vec![sample_issue()];
+        let options = IssueOptions {
+            show_features: true,
+            show_tito_positions: true,
+            show_class_intervals: true,
+            show_leaf_names: ShowLeafNames::Never,
+            ..Default::default()
+        };
+        filter_issues(&mut issues, &options);
+
+        // Both roots should have leaves stripped.
+        let forward_frame = &issues[0].traces[0].roots[0].kinds[0];
+        assert!(forward_frame.leaves.is_none());
+        let backward_frame = &issues[0].traces[1].roots[0].kinds[0];
+        assert!(backward_frame.leaves.is_none());
     }
 }

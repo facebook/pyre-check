@@ -8,6 +8,18 @@
 use serde::Deserialize;
 use serde::Serialize;
 
+/// Controls whether leaf names are shown in taint output.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub enum ShowLeafNames {
+    /// Always show leaf names.
+    Always,
+    /// Never show leaf names.
+    Never,
+    /// Show leaf names only when the parent `LocalTaint` has a non-empty `origin` field.
+    #[default]
+    Default,
+}
+
 fn deserialize_null_as_some_null<'de, D>(
     deserializer: D,
 ) -> Result<Option<serde_json::Value>, D::Error>
