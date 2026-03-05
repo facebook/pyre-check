@@ -780,6 +780,7 @@ class SuppressionCollectorTest(testslide.TestCase):
             source.replace("PYRE_FIXME", "pyre-fixme")
             .replace("PYRE_IGNORE", "pyre-ignore")
             .replace("TYPE_IGNORE", "type: ignore")
+            .replace("PYREFLY_IGNORE", "pyrefly: ignore")
         )
         actual = coverage_data.collect_suppressions(source_module)
         self.assertEqual(actual, expected)
@@ -947,6 +948,58 @@ class SuppressionCollectorTest(testslide.TestCase):
                         end_column=42,
                     ),
                     error_codes=None,
+                ),
+            ],
+        )
+
+    def test_find_pyrefly_ignores(self) -> None:
+        self._assert_suppressions(
+            """
+            # PYREFLY_IGNORE
+            # PYREFLY_IGNORE with message
+            # PYREFLY_IGNORE[bad-return]
+            # PYREFLY_IGNORE[bad-return, not-async]
+            """,
+            [
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYREFLY_IGNORE,
+                    location=Location(
+                        start_line=2,
+                        start_column=0,
+                        end_line=2,
+                        end_column=17,
+                    ),
+                    error_codes=None,
+                ),
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYREFLY_IGNORE,
+                    location=Location(
+                        start_line=3,
+                        start_column=0,
+                        end_line=3,
+                        end_column=30,
+                    ),
+                    error_codes=None,
+                ),
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYREFLY_IGNORE,
+                    location=Location(
+                        start_line=4,
+                        start_column=0,
+                        end_line=4,
+                        end_column=29,
+                    ),
+                    error_codes=["bad-return"],
+                ),
+                TypeErrorSuppression(
+                    kind=SuppressionKind.PYREFLY_IGNORE,
+                    location=Location(
+                        start_line=5,
+                        start_column=0,
+                        end_line=5,
+                        end_column=40,
+                    ),
+                    error_codes=["bad-return", "not-async"],
                 ),
             ],
         )

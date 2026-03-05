@@ -23,7 +23,7 @@ import re
 from enum import Enum
 from pathlib import Path
 from re import compile
-from typing import Dict, Iterable, List, Optional, Pattern, Sequence
+from typing import Dict, Iterable, List, Optional, Pattern, Sequence, Union
 
 import libcst
 import libcst.matchers as matchers
@@ -34,7 +34,7 @@ from . import dataclasses_json_extensions as json_mixins
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
-ErrorCode: TypeAlias = int
+ErrorCode: TypeAlias = Union[int, str]
 LineNumber: TypeAlias = int
 
 
@@ -400,6 +400,7 @@ class SuppressionKind(str, Enum):
     PYRE_FIXME = "PYRE_FIXME"
     PYRE_IGNORE = "PYRE_IGNORE"
     TYPE_IGNORE = "TYPE_IGNORE"
+    PYREFLY_IGNORE = "PYREFLY_IGNORE"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -414,6 +415,7 @@ class SuppressionCollector(VisitorWithPositionData):
         SuppressionKind.PYRE_FIXME: r".*# *pyre-fixme(\[(\d* *,? *)*\])?",
         SuppressionKind.PYRE_IGNORE: r".*# *pyre-ignore(\[(\d* *,? *)*\])?",
         SuppressionKind.TYPE_IGNORE: r".*# *type: ignore",
+        SuppressionKind.PYREFLY_IGNORE: r".*# *pyrefly: *ignore(\[[^\]]*\])?",
     }
 
     def __init__(self) -> None:
@@ -423,7 +425,8 @@ class SuppressionCollector(VisitorWithPositionData):
     def _error_codes_from_re_group(
         match: re.Match[str],
         line: int,
-    ) -> Optional[List[int]]:
+        string_codes: bool = False,
+    ) -> Optional[List[ErrorCode]]:
         if len(match.groups()) < 1:
             code_group = None
         else:
@@ -431,8 +434,10 @@ class SuppressionCollector(VisitorWithPositionData):
         if code_group is None:
             return None
         code_strings = code_group.strip("[] ").split(",")
+        if string_codes:
+            return [code.strip() for code in code_strings if code.strip()]
         try:
-            codes = [int(code) for code in code_strings]
+            codes: List[ErrorCode] = [int(code) for code in code_strings]
             return codes
         except ValueError:
             LOG.warning("Invalid error suppression code: %s", line)
@@ -452,6 +457,7 @@ class SuppressionCollector(VisitorWithPositionData):
                     error_codes=self._error_codes_from_re_group(
                         match=match,
                         line=location.start_line,
+                        string_codes=suppression_kind == SuppressionKind.PYREFLY_IGNORE,
                     ),
                 )
 

@@ -150,6 +150,57 @@ class IgnoreCountCollectorTest(testslide.TestCase):
         )
 
 
+class PyreflyIgnoreCountCollectorTest(testslide.TestCase):
+    def assert_counts(
+        self,
+        source: str,
+        expected_codes: Dict[str, List[int]],
+        expected_no_codes: List[int],
+    ) -> None:
+        source_module = parse_code(source)
+        result = statistics.PyreflyIgnoreCountCollector().collect(source_module)
+        self.assertEqual(expected_codes, result.code)
+        self.assertEqual(expected_no_codes, result.no_code)
+
+    def test_count_pyrefly_ignores(self) -> None:
+        self.assert_counts(
+            """
+            # pyrefly: ignore
+            """,
+            {},
+            [2],
+        )
+        self.assert_counts(
+            """
+            # pyrefly: ignore[bad-return]
+            """,
+            {"bad-return": [2]},
+            [],
+        )
+        self.assert_counts(
+            """
+            # pyrefly: ignore[bad-return, not-async]
+            """,
+            {"bad-return": [2], "not-async": [2]},
+            [],
+        )
+        self.assert_counts(
+            """
+            x = 1  # pyrefly: ignore
+            """,
+            {},
+            [2],
+        )
+        self.assert_counts(
+            """
+            # pyrefly: ignore
+            # pyrefly: ignore[missing-attribute]
+            """,
+            {"missing-attribute": [3]},
+            [2],
+        )
+
+
 class AnnotationCountCollectorTest(testslide.TestCase):
     def assert_counts(self, source: str, expected: Dict[str, int]) -> None:
         source_module = parse_code(source)

@@ -239,6 +239,7 @@ def add_local_mode(
             )
             or re.match("^[ \t]*# *pyre-fixme.*$", line)
             or re.match("^[ \t]*# *type: ignore.*$", line)
+            or re.match("^[ \t]*# *pyrefly: *ignore.*$", line)
         )
         is_autodeps_header = re.match("[ \t]*# *@manual.*$", line)
         return is_comment and not is_pyre_ignore and not is_autodeps_header

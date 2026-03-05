@@ -64,7 +64,7 @@ class ModuleSuppressionData:
 class SuppressionCountCollector(coverage_data.VisitorWithPositionData):
     def __init__(self, regex: str) -> None:
         self.no_code: List[int] = []
-        self.codes: Dict[int, List[int]] = {}
+        self.codes: Dict[coverage_data.ErrorCode, List[int]] = {}
         self.regex: re.Pattern[str] = re.compile(regex)
 
     def error_codes(self, line: str) -> Optional[List[coverage_data.ErrorCode]]:
@@ -78,7 +78,7 @@ class SuppressionCountCollector(coverage_data.VisitorWithPositionData):
             return []
         code_strings = code_group.strip("[] ").split(",")
         try:
-            codes = [int(code) for code in code_strings]
+            codes: List[coverage_data.ErrorCode] = [int(code) for code in code_strings]
             return codes
         except ValueError:
             LOG.warning("Invalid error suppression code: %s", line)
@@ -119,6 +119,23 @@ class IgnoreCountCollector(SuppressionCountCollector):
 class TypeIgnoreCountCollector(SuppressionCountCollector):
     def __init__(self) -> None:
         super().__init__(r".*# *type: ignore")
+
+
+class PyreflyIgnoreCountCollector(SuppressionCountCollector):
+    def __init__(self) -> None:
+        super().__init__(r".*# *pyrefly: *ignore(\[[^\]]*\])?")
+
+    def error_codes(self, line: str) -> Optional[List[coverage_data.ErrorCode]]:
+        match = self.regex.match(line)
+        if match is None:
+            # No suppression on line
+            return None
+        code_group = match.group(1)
+        if code_group is None:
+            # Code-less error suppression
+            return []
+        code_strings = code_group.strip("[] ").split(",")
+        return [code.strip() for code in code_strings if code.strip()]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -229,6 +246,7 @@ class StatisticsData:
     annotations: ModuleAnnotationData
     fixmes: ModuleSuppressionData
     ignores: ModuleSuppressionData
+    pyrefly_ignores: ModuleSuppressionData
     strict: coverage_data.ModuleModeInfo
 
 
@@ -244,11 +262,13 @@ def collect_statistics(
             annotations = AnnotationCountCollector().collect(module)
             fixmes = FixmeCountCollector().collect(module)
             ignores = IgnoreCountCollector().collect(module)
+            pyrefly_ignores = PyreflyIgnoreCountCollector().collect(module)
             modes = coverage_data.collect_mode(module, strict_default, path)
             statistics_data = StatisticsData(
                 annotations,
                 fixmes,
                 ignores,
+                pyrefly_ignores,
                 modes,
             )
             data[str(path)] = statistics_data
@@ -279,6 +299,7 @@ class AggregatedStatisticsData:
     annotations: Dict[str, int] = dataclasses.field(default_factory=dict)
     fixmes: int = 0
     ignores: int = 0
+    pyrefly_ignores: int = 0
     strict: int = 0
     unsafe: int = 0
 
@@ -318,6 +339,12 @@ def aggregate_statistics(
                 statistics_data.ignores for statistics_data in data.values()
             ]
         ),
+        pyrefly_ignores=sum(
+            len(pyrefly_ignores.no_code) + len(pyrefly_ignores.code)
+            for pyrefly_ignores in [
+                statistics_data.pyrefly_ignores for statistics_data in data.values()
+            ]
+        ),
         strict=sum(
             1 if strictness.mode == coverage_data.ModuleMode.STRICT else 0
             for strictness in [
@@ -351,7 +378,11 @@ def get_overall_annotation_percentage(data: AggregatedStatisticsData) -> float:
 
 def get_summary(aggregated_data: AggregatedStatisticsData) -> str:
     annotation_rate = round(get_overall_annotation_percentage(aggregated_data), 2)
-    total_suppressions = aggregated_data.fixmes + aggregated_data.ignores
+    total_suppressions = (
+        aggregated_data.fixmes
+        + aggregated_data.ignores
+        + aggregated_data.pyrefly_ignores
+    )
     total_modules = aggregated_data.strict + aggregated_data.unsafe
     if total_modules > 0:
         strict_module_rate = round(aggregated_data.strict * 100.0 / total_modules, 2)
