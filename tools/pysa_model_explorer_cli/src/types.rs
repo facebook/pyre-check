@@ -220,6 +220,151 @@ pub struct Issue {
     pub master_handle: String,
 }
 
+/// A call target in the higher-order call graph.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CallTarget {
+    pub target: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub index: Option<i64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub implicit_receiver: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub implicit_dunder_call: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub return_type: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub receiver_class: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub is_class_method: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub is_static_method: Option<bool>,
+}
+
+/// A higher-order parameter entry.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HigherOrderParameter {
+    pub parameter_index: i64,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub calls: Option<Vec<CallTarget>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub unresolved: Option<serde_json::Value>,
+}
+
+/// Call callees in the higher-order call graph.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CallCallees {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub calls: Option<Vec<CallTarget>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub new_calls: Option<Vec<CallTarget>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub init_calls: Option<Vec<CallTarget>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub decorated_targets: Option<Vec<CallTarget>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub higher_order_parameters: Option<Vec<HigherOrderParameter>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub unresolved: Option<serde_json::Value>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub recognized_call: Option<serde_json::Value>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub shim: Option<serde_json::Value>,
+}
+
+/// Attribute access callees in the higher-order call graph.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AttributeAccessCallees {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub properties: Option<Vec<CallTarget>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub globals: Option<Vec<CallTarget>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub is_attribute: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub if_called: Option<CallCallees>,
+}
+
+/// Identifier callees in the higher-order call graph.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IdentifierCallees {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub globals: Option<Vec<CallTarget>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub captured_variables: Option<Vec<serde_json::Value>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub if_called: Option<CallCallees>,
+}
+
+/// Define callees in the higher-order call graph.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DefineCallees {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub define_targets: Option<Vec<CallTarget>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub decorated_targets: Option<Vec<CallTarget>>,
+}
+
+/// The different types of callees at a call site.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ExpressionCallees {
+    Call(CallCallees),
+    AttributeAccess(AttributeAccessCallees),
+    Identifier(IdentifierCallees),
+    Define(DefineCallees),
+    FormatStringArtificial(Vec<CallTarget>),
+    FormatStringStringify(Vec<CallTarget>),
+    Return(serde_json::Value),
+}
+
 /// A higher-order call graph entry for a callable.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CallGraph {
@@ -231,9 +376,9 @@ pub struct CallGraph {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub returned_callables: Option<Vec<serde_json::Value>>,
+    pub returned_callables: Option<Vec<CallTarget>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub calls: Option<serde_json::Map<String, serde_json::Value>>,
+    pub calls: Option<std::collections::BTreeMap<String, ExpressionCallees>>,
 }

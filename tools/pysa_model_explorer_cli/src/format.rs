@@ -8,7 +8,9 @@
 use anyhow::Result;
 
 use crate::types::CallGraph;
+use crate::types::CallTarget;
 use crate::types::Condition;
+use crate::types::ExpressionCallees;
 use crate::types::Frame;
 use crate::types::Issue;
 use crate::types::Leaf;
@@ -265,41 +267,141 @@ pub fn print_call_graph_json(call_graph: &CallGraph) -> Result<()> {
     Ok(())
 }
 
+/// Format a call target as a human-readable string.
+fn format_call_target(target: &CallTarget) -> String {
+    let mut parts = Vec::new();
+    if let Some(index) = target.index {
+        parts.push(format!("index={index}"));
+    }
+    if let Some(return_type) = &target.return_type {
+        if !return_type.is_empty() {
+            parts.push(format!("return_type=[{}]", return_type.join(", ")));
+        }
+    }
+    if let Some(receiver_class) = &target.receiver_class {
+        parts.push(format!("receiver_class={receiver_class}"));
+    }
+    if target.implicit_receiver == Some(true) {
+        parts.push("implicit_receiver".to_string());
+    }
+    if target.implicit_dunder_call == Some(true) {
+        parts.push("implicit_dunder_call".to_string());
+    }
+    if target.is_class_method == Some(true) {
+        parts.push("is_class_method".to_string());
+    }
+    if target.is_static_method == Some(true) {
+        parts.push("is_static_method".to_string());
+    }
+    if parts.is_empty() {
+        target.target.clone()
+    } else {
+        let attrs = parts.join(", ");
+        format!("{} ({attrs})", target.target)
+    }
+}
+
+/// Print call targets with a label and indent.
+fn print_labeled_call_targets(targets: &[CallTarget], label: &str, indent: &str) {
+    println!("{indent}{label}:");
+    for target in targets {
+        println!("{indent}  {}", format_call_target(target));
+    }
+}
+
+/// Print expression callees in human-readable text format.
+fn print_expression_callees(callees: &ExpressionCallees, indent: &str) {
+    match callees {
+        ExpressionCallees::Call(call) => {
+            if let Some(targets) = &call.calls {
+                for target in targets {
+                    println!("{indent}{}", format_call_target(target));
+                }
+            }
+            if let Some(targets) = &call.new_calls {
+                print_labeled_call_targets(targets, "New", indent);
+            }
+            if let Some(targets) = &call.init_calls {
+                print_labeled_call_targets(targets, "Init", indent);
+            }
+            if let Some(targets) = &call.decorated_targets {
+                print_labeled_call_targets(targets, "Decorated", indent);
+            }
+            if let Some(params) = &call.higher_order_parameters {
+                for param in params {
+                    println!(
+                        "{indent}HigherOrderParameter(index={}):",
+                        param.parameter_index
+                    );
+                    if let Some(targets) = &param.calls {
+                        for target in targets {
+                            println!("{indent}  {}", format_call_target(target));
+                        }
+                    }
+                    if let Some(unresolved) = &param.unresolved {
+                        println!("{indent}  Unresolved: {unresolved}");
+                    }
+                }
+            }
+            if let Some(unresolved) = &call.unresolved {
+                println!("{indent}Unresolved: {unresolved}");
+            }
+        }
+        ExpressionCallees::AttributeAccess(aa) => {
+            if let Some(targets) = &aa.properties {
+                print_labeled_call_targets(targets, "Properties", indent);
+            }
+            if let Some(targets) = &aa.globals {
+                print_labeled_call_targets(targets, "Globals", indent);
+            }
+        }
+        ExpressionCallees::Identifier(id) => {
+            if let Some(targets) = &id.globals {
+                print_labeled_call_targets(targets, "Globals", indent);
+            }
+            if let Some(vars) = &id.captured_variables {
+                println!("{indent}CapturedVariables:");
+                for var in vars {
+                    println!("{indent}  {var}");
+                }
+            }
+        }
+        ExpressionCallees::Define(def) => {
+            if let Some(targets) = &def.define_targets {
+                for target in targets {
+                    println!("{indent}{}", format_call_target(target));
+                }
+            }
+            if let Some(targets) = &def.decorated_targets {
+                print_labeled_call_targets(targets, "Decorated", indent);
+            }
+        }
+        ExpressionCallees::FormatStringArtificial(targets)
+        | ExpressionCallees::FormatStringStringify(targets) => {
+            for target in targets {
+                println!("{indent}{}", format_call_target(target));
+            }
+        }
+        ExpressionCallees::Return(value) => {
+            println!("{indent}{value}");
+        }
+    }
+}
+
 /// Print a call graph entry as human-readable text.
 pub fn print_call_graph_text(call_graph: &CallGraph) -> Result<()> {
     println!("Call graph for {}", call_graph.callable);
 
     if let Some(returned) = &call_graph.returned_callables {
-        let returned_strs: Vec<String> = returned
-            .iter()
-            .map(|v| {
-                v.as_str()
-                    .map(|s| s.to_string())
-                    .unwrap_or_else(|| format!("{v}"))
-            })
-            .collect();
+        let returned_strs: Vec<String> = returned.iter().map(format_call_target).collect();
         println!("Returned callables: {}", returned_strs.join(", "));
     }
 
     println!("Calls:");
     if let Some(calls) = &call_graph.calls {
-        for (location, details) in calls {
+        for (location, callees) in calls {
             println!("  {location}:");
-
-            if let Some(targets) = details.get("targets").and_then(|v| v.as_array()) {
-                for target in targets {
-                    if let Some(s) = target.as_str() {
-                        println!("    {s}");
-                    } else {
-                        println!("    {target}");
-                    }
-                }
-            }
-            // The call graph format uses nested objects (call/define/attribute_access),
-            // so just print the JSON for each entry if it doesn't have simple targets.
-            if details.get("targets").is_none() {
-                println!("    {details}");
-            }
+            print_expression_callees(callees, "    ");
         }
     }
 

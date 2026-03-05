@@ -86,6 +86,18 @@ enum Command {
         /// Output format
         #[arg(long, value_enum, default_value_t = OutputFormat::Json)]
         format: OutputFormat,
+
+        /// Show the index field in call graph entries
+        #[arg(long, default_value_t = false)]
+        show_index: bool,
+
+        /// Show the return_type field in call graph entries
+        #[arg(long, default_value_t = false)]
+        show_return_type: bool,
+
+        /// Show the receiver_type (receiver_class) field in call graph entries
+        #[arg(long, default_value_t = false)]
+        show_receiver_type: bool,
     },
 
     /// Get issues for a callable
@@ -195,14 +207,28 @@ fn main() -> anyhow::Result<()> {
                 OutputFormat::Text => pysa_model_explorer::format::print_model_text(&model)?,
             }
         }
-        Command::GetCallGraph { callable, format } => {
+        Command::GetCallGraph {
+            callable,
+            format,
+            show_index,
+            show_return_type,
+            show_receiver_type,
+        } => {
             let db = pysa_model_explorer::index::open_or_build_index(&cli.result_dir)?;
             let position = db.get_call_graph_position(callable)?.context(format!(
                 "no higher order call graph for callable `{}`",
                 callable
             ))?;
             let data = db.read_entry(&position)?;
-            let call_graph: pysa_model_explorer::types::CallGraph = serde_json::from_value(data)?;
+            let mut call_graph: pysa_model_explorer::types::CallGraph =
+                serde_json::from_value(data)?;
+
+            let options = pysa_model_explorer::call_graph::CallGraphOptions {
+                show_index: *show_index,
+                show_return_type: *show_return_type,
+                show_receiver_type: *show_receiver_type,
+            };
+            pysa_model_explorer::call_graph::strip_call_graph(&mut call_graph, &options);
 
             match format {
                 OutputFormat::Json => {
