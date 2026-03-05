@@ -385,12 +385,34 @@ pub fn open_or_build_index(result_dir: &Path) -> Result<IndexDatabase> {
 }
 
 impl IndexDatabase {
+    /// Get the callable_index for a callable, or error if not found.
+    pub fn get_callable_index(&self, callable: &str) -> Result<i64> {
+        let mut stmt = self
+            .connection
+            .prepare_cached("SELECT callable_index FROM callables WHERE callable = ?1")?;
+        let mut rows = stmt.query(rusqlite::params![callable])?;
+        match rows.next()? {
+            Some(row) => Ok(row.get(0)?),
+            None => anyhow::bail!("callable `{}` not found", callable),
+        }
+    }
+
+    /// Check if a callable exists in the index.
+    pub fn callable_exists(&self, callable: &str) -> Result<bool> {
+        let mut stmt = self
+            .connection
+            .prepare_cached("SELECT 1 FROM callables WHERE callable = ?1")?;
+        let mut rows = stmt.query(rusqlite::params![callable])?;
+        Ok(rows.next()?.is_some())
+    }
+
     /// Get the model position for a callable.
     pub fn get_model_position(&self, callable: &str) -> Result<Option<FilePosition>> {
+        let callable_index = self.get_callable_index(callable)?;
         let mut stmt = self.connection.prepare_cached(
-            "SELECT file_index, offset, length FROM entries WHERE callable_index = (SELECT callable_index FROM callables WHERE callable = ?1) AND kind = ?2",
+            "SELECT file_index, offset, length FROM entries WHERE callable_index = ?1 AND kind = ?2",
         )?;
-        let mut rows = stmt.query(rusqlite::params![callable, KIND_MODEL])?;
+        let mut rows = stmt.query(rusqlite::params![callable_index, KIND_MODEL])?;
         match rows.next()? {
             Some(row) => {
                 let file_index: i64 = row.get(0)?;
@@ -408,10 +430,11 @@ impl IndexDatabase {
 
     /// Get all issue positions for a callable.
     pub fn get_issue_positions(&self, callable: &str) -> Result<Vec<FilePosition>> {
+        let callable_index = self.get_callable_index(callable)?;
         let mut stmt = self.connection.prepare_cached(
-            "SELECT file_index, offset, length FROM entries WHERE callable_index = (SELECT callable_index FROM callables WHERE callable = ?1) AND kind = ?2",
+            "SELECT file_index, offset, length FROM entries WHERE callable_index = ?1 AND kind = ?2",
         )?;
-        let rows = stmt.query_map(rusqlite::params![callable, KIND_ISSUE], |row| {
+        let rows = stmt.query_map(rusqlite::params![callable_index, KIND_ISSUE], |row| {
             let file_index: i64 = row.get(0)?;
             let offset: i64 = row.get(1)?;
             let length: i64 = row.get(2)?;
@@ -430,10 +453,14 @@ impl IndexDatabase {
 
     /// Get the higher-order call graph position for a callable.
     pub fn get_call_graph_position(&self, callable: &str) -> Result<Option<FilePosition>> {
+        let callable_index = self.get_callable_index(callable)?;
         let mut stmt = self.connection.prepare_cached(
-            "SELECT file_index, offset, length FROM entries WHERE callable_index = (SELECT callable_index FROM callables WHERE callable = ?1) AND kind = ?2",
+            "SELECT file_index, offset, length FROM entries WHERE callable_index = ?1 AND kind = ?2",
         )?;
-        let mut rows = stmt.query(rusqlite::params![callable, KIND_HIGHER_ORDER_CALL_GRAPH])?;
+        let mut rows = stmt.query(rusqlite::params![
+            callable_index,
+            KIND_HIGHER_ORDER_CALL_GRAPH
+        ])?;
         match rows.next()? {
             Some(row) => {
                 let file_index: i64 = row.get(0)?;
@@ -447,15 +474,6 @@ impl IndexDatabase {
             }
             None => Ok(None),
         }
-    }
-
-    /// Check if a callable exists in the index.
-    pub fn callable_exists(&self, callable: &str) -> Result<bool> {
-        let mut stmt = self
-            .connection
-            .prepare_cached("SELECT 1 FROM callables WHERE callable = ?1 LIMIT 1")?;
-        let mut rows = stmt.query(rusqlite::params![callable])?;
-        Ok(rows.next()?.is_some())
     }
 
     /// Search for callables matching a regex pattern.

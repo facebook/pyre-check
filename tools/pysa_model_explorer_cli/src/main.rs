@@ -251,7 +251,10 @@ fn main() -> anyhow::Result<()> {
         } => {
             let db = pysa_model_explorer::index::open_or_build_index(&cli.result_dir)?;
             let positions = db.get_issue_positions(callable)?;
-            anyhow::ensure!(!positions.is_empty(), "no data for callable `{}`", callable);
+            if positions.is_empty() {
+                println!("no issues for callable `{}`", callable);
+                return Ok(());
+            }
 
             let mut issues = Vec::new();
             for position in &positions {
@@ -282,7 +285,6 @@ fn main() -> anyhow::Result<()> {
         } => {
             let db = pysa_model_explorer::index::open_or_build_index(&cli.result_dir)?;
             let positions = db.get_issue_positions(callable)?;
-            anyhow::ensure!(!positions.is_empty(), "no data for callable `{}`", callable);
 
             let mut issues = Vec::new();
             for position in &positions {
