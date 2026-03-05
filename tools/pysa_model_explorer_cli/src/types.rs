@@ -8,6 +8,17 @@
 use serde::Deserialize;
 use serde::Serialize;
 
+fn deserialize_null_as_some_null<'de, D>(
+    deserializer: D,
+) -> Result<Option<serde_json::Value>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    // This is only called when the field is present in JSON.
+    // When absent, #[serde(default)] produces None.
+    Ok(Some(serde_json::Value::deserialize(deserializer)?))
+}
+
 /// A position within source code: line, start column, and optional end column.
 ///
 /// Also used for locations that may include a filename or path (e.g., call positions,
@@ -113,6 +124,7 @@ pub struct LocalTaint {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
+    #[serde(deserialize_with = "deserialize_null_as_some_null")]
     pub declaration: Option<serde_json::Value>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
