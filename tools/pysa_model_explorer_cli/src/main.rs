@@ -102,6 +102,14 @@ enum Command {
         /// Show the receiver_type (receiver_class) field in call graph entries
         #[arg(long, default_value_t = false)]
         show_receiver_type: bool,
+
+        /// Only show call graph edges starting at or after this line
+        #[arg(long)]
+        start_line: Option<i64>,
+
+        /// Only show call graph edges starting at or before this line
+        #[arg(long)]
+        end_line: Option<i64>,
     },
 
     /// Get issues for a callable
@@ -229,6 +237,8 @@ fn main() -> anyhow::Result<()> {
             show_index,
             show_return_type,
             show_receiver_type,
+            start_line,
+            end_line,
         } => {
             let db = pysa_model_explorer::index::open_or_build_index(&cli.result_dir)?;
             let position = db.get_call_graph_position(callable)?.context(format!(
@@ -243,6 +253,8 @@ fn main() -> anyhow::Result<()> {
                 show_index: *show_index,
                 show_return_type: *show_return_type,
                 show_receiver_type: *show_receiver_type,
+                start_line: *start_line,
+                end_line: *end_line,
             };
             pysa_model_explorer::call_graph::strip_call_graph(&mut call_graph, &options);
 

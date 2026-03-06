@@ -148,6 +148,12 @@ If both forward and backward traces are correct, taint is lost within the root c
 ```bash
 <explorer> /tmp/NOT-FOUND get-call-graph <root-callable>
 ```
+If you know the relevant line numbers (e.g., from the issue location or source code), use `--start-line` and `--end-line` to filter to that range:
+```bash
+<explorer> /tmp/NOT-FOUND get-call-graph <root-callable> --start-line <line> --end-line <line>
+```
+This avoids noise from irrelevant call graph edges in large functions.
+
 Verify calls to source and sink are present at the right locations.
 
 3. **Check intermediate calls**. For flows like:
@@ -182,7 +188,7 @@ Your output must include:
 | `<explorer> <dir> get-model <callable> --show sources --kind <kind>` | Check source taint |
 | `<explorer> <dir> get-model <callable> --show sinks --kind <kind>` | Check sink taint |
 | `<explorer> <dir> get-model <callable> --show tito` | Check TITO propagation |
-| `<explorer> <dir> get-call-graph <callable>` | Check call resolution |
+| `<explorer> <dir> get-call-graph <callable>` | Check call resolution (`--start-line`, `--end-line` to filter by line range) |
 | `<explorer> <dir> search <regex>` | Search for callables |
 
 `<explorer>` is shorthand for `buck run fbcode//tools/pyre/tools/pysa_model_explorer_cli:pysa_model_explorer --`.
