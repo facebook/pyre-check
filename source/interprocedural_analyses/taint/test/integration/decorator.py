@@ -418,3 +418,14 @@ def return_source_via_decorator() -> str:
 
 def test_parameter_default_value(x: str = return_source_via_decorator()) -> None:
     _test_sink(x)
+
+
+def stub_callee(f) -> None: ...
+
+
+def test_decorated_higher_order_parameter():
+    @with_logging_args_kwargs_no_sink
+    def inner():
+        return _test_source()
+
+    stub_callee(inner)

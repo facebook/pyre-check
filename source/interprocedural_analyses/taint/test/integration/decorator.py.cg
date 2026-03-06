@@ -195,6 +195,16 @@ Call dependencies
   "decorator.sink_via_trivial_decorator@decorated (fun)": [
     "decorator.trivial_decorator (fun)[formal(f, position=0)=decorator.sink_via_trivial_decorator (fun)]"
   ],
+  "decorator.test_decorated_higher_order_parameter (fun)": [
+    "decorator.stub_callee (fun)",
+    "decorator.with_logging_args_kwargs_no_sink.inner (fun)[captured_variable(f, parameter)=decorator.test_decorated_higher_order_parameter.inner (fun)]"
+  ],
+  "decorator.test_decorated_higher_order_parameter.inner (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "decorator.test_decorated_higher_order_parameter.inner@decorated (fun)": [
+    "decorator.with_logging_args_kwargs_no_sink (fun)[formal(f, position=0)=decorator.test_decorated_higher_order_parameter.inner (fun)]"
+  ],
   "decorator.test_parameter_default_value (fun)": [
     "decorator.add_return_source.inner (fun)[captured_variable(callable, parameter)=decorator.return_source_via_decorator (fun)]",
     "pysa._test_sink (fun)"
@@ -229,6 +239,9 @@ Call dependencies
   ],
   "decorator.with_logging_args_kwargs_no_sink.inner (fun)[captured_variable(f, parameter)=decorator.foo_args_kwargs_with_sink (fun)]": [
     "decorator.foo_args_kwargs_with_sink (fun)"
+  ],
+  "decorator.with_logging_args_kwargs_no_sink.inner (fun)[captured_variable(f, parameter)=decorator.test_decorated_higher_order_parameter.inner (fun)]": [
+    "decorator.test_decorated_higher_order_parameter.inner (fun)"
   ],
   "decorator.with_logging_args_kwargs_no_sink.inner (fun)[captured_variable(f, parameter)=decorator.with_logging_args_kwargs.inner (fun)[captured_variable(f, parameter)=decorator.Foo.bar (method)]]": [
     "decorator.with_logging_args_kwargs.inner (fun)[captured_variable(f, parameter)=decorator.Foo.bar (method)]"

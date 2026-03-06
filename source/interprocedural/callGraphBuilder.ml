@@ -3726,8 +3726,20 @@ module HigherOrderCallGraph = struct
         then
           additional_higher_order_parameters
         else
-          HigherOrderParameterMap.join
+          (* Resolve decorated targets in the original higher order parameters before joining, to
+             avoid keeping unresolved `@decorated` targets. *)
+          let resolved_original_higher_order_parameters =
             original_higher_order_parameters
+            |> HigherOrderParameterMap.to_list
+            |> List.map ~f:(fun ({ HigherOrderParameter.call_targets; _ } as hop) ->
+                   let { AnalyzeDecoratedTargetsResult.result_targets; _ } =
+                     resolve_decorated_targets call_targets
+                   in
+                   { hop with HigherOrderParameter.call_targets = result_targets })
+            |> HigherOrderParameterMap.from_list
+          in
+          HigherOrderParameterMap.join
+            resolved_original_higher_order_parameters
             additional_higher_order_parameters
       in
       let new_shim_target =
