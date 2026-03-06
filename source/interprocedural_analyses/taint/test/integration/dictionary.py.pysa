@@ -5,10 +5,18 @@ dictionary.tainted_dictionary: TaintSink[Test] = ...
 
 # The following models should be in sync with stubs/taint/common/collection_propagation.pysa
 
-@SkipObscure
-def typing.MutableMapping.update(self, __m: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], Collapse]): ...
-def typing.MutableMapping.update(self, __m: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.keys()], NoCollapse]): ...
-def typing.MutableMapping.update(self, **kwargs: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]): ...
+# Unfortunately, we need to collapse for dict.update since it accepts iterables, not just other dictionaries.
+if USING_PYRE1:
+    @SkipObscure
+    def typing.MutableMapping.update(self, __m: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], Collapse]): ...
+    def typing.MutableMapping.update(self, __m: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.keys()], NoCollapse]): ...
+    def typing.MutableMapping.update(self, **kwargs: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]): ...
+if USING_PYREFLY:
+    # Pyrefly uses a newer typeshed where 'self' is considered an unnamed positional argument.
+    @SkipObscure
+    def typing.MutableMapping.update(self, __m: TaintInTaintOut[Updates[self], ParameterPath[_.all()], UpdatePath[_.all()], Collapse], /): ...
+    def typing.MutableMapping.update(self, __m: TaintInTaintOut[Updates[self], ParameterPath[_.keys()], UpdatePath[_.keys()], NoCollapse], /): ...
+    def typing.MutableMapping.update(self, /, **kwargs: TaintInTaintOut[Updates[self], UpdatePath[_.all()], NoCollapse]): ...
 
 @SkipObscure
 def dict.get(
@@ -18,13 +26,23 @@ def dict.get(
     /
 ): ...
 
-@SkipObscure
-def typing.Mapping.get(
-    self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse],
-    __key: Sanitize[TaintInTaintOut],
-    /,
-    default: TaintInTaintOut[LocalReturn, NoCollapse],
-): ...
+if USING_PYRE1:
+    @SkipObscure
+    def typing.Mapping.get(
+        self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse],
+        __key: Sanitize[TaintInTaintOut],
+        /,
+        default: TaintInTaintOut[LocalReturn, NoCollapse],
+    ): ...
+if USING_PYREFLY:
+    # pyrefly has a newer typeshed that considers 'default' an unnamed positional argument.
+    @SkipObscure
+    def typing.Mapping.get(
+        self: TaintInTaintOut[LocalReturn, ParameterPath[_.all()], NoCollapse],
+        __key: Sanitize[TaintInTaintOut],
+        default: TaintInTaintOut[LocalReturn, NoCollapse],
+        /,
+    ): ...
 
 @SkipObscure
 def dict.__getitem__(

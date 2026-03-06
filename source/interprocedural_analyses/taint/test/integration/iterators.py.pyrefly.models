@@ -4,7 +4,7 @@
   "data": {
     "callable": "builtins.next",
     "filename": "builtins.pyi",
-    "callable_line": 4871,
+    "callable_line": 4885,
     "tito": [
       {
         "port": "formal(__default, position=1, positional_only)",

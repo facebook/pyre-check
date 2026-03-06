@@ -295,7 +295,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "builtins.len",
+            "target": "features.len",
             "index": 0,
             "return_type": [ "float", "integer" ]
           }
@@ -311,7 +311,11 @@ Higher order call graphs
     "28:11-28:21": {
       "call": {
         "calls": [
-          { "target": "builtins.min", "index": 0, "return_type": [] }
+          {
+            "target": "features.min",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
         ]
       }
     }
@@ -324,7 +328,11 @@ Higher order call graphs
     "41:15-41:28": {
       "call": {
         "calls": [
-          { "target": "builtins.min", "index": 0, "return_type": [] }
+          {
+            "target": "features.min",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
         ]
       }
     }
@@ -338,7 +346,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "builtins.min",
+            "target": "features.min",
             "index": 0,
             "return_type": [ "float", "integer" ]
           }
@@ -384,14 +392,14 @@ Higher order call graphs
     "85:15-85:28": {
       "call": {
         "calls": [
-          { "target": "builtins.min", "index": 0, "return_type": [] }
+          { "target": "features.min", "index": 0, "return_type": [] }
         ]
       }
     },
     "85:30-85:43": {
       "call": {
         "calls": [
-          { "target": "builtins.min", "index": 1, "return_type": [] }
+          { "target": "features.min", "index": 1, "return_type": [] }
         ]
       }
     }

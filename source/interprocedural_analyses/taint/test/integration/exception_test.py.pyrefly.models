@@ -634,7 +634,7 @@
   "data": {
     "callable": "builtins.BaseException.__init__",
     "filename": "builtins.pyi",
-    "callable_line": 6315,
+    "callable_line": 6329,
     "sources": [
       {
         "port": "formal(self, position=0)",
@@ -649,7 +649,7 @@
   "data": {
     "callable": "builtins.BaseException.__new__",
     "filename": "builtins.pyi",
-    "callable_line": 6316,
+    "callable_line": 6330,
     "sources": [
       {
         "port": "result",
@@ -664,7 +664,7 @@
   "data": {
     "callable": "builtins.BaseException.__repr__",
     "filename": "builtins.pyi",
-    "callable_line": 6329,
+    "callable_line": 6343,
     "sources": [
       {
         "port": "result",
@@ -679,7 +679,7 @@
   "data": {
     "callable": "builtins.BaseException.__setstate__",
     "filename": "builtins.pyi",
-    "callable_line": 6317,
+    "callable_line": 6331,
     "sources": [
       {
         "port": "result",
@@ -694,7 +694,7 @@
   "data": {
     "callable": "builtins.BaseException.__str__",
     "filename": "builtins.pyi",
-    "callable_line": 6326,
+    "callable_line": 6340,
     "sources": [
       {
         "port": "result",
@@ -709,7 +709,7 @@
   "data": {
     "callable": "builtins.BaseException.with_traceback",
     "filename": "builtins.pyi",
-    "callable_line": 6318,
+    "callable_line": 6332,
     "sources": [
       {
         "port": "result",
