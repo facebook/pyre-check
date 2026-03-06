@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make:*)",
+      "Bash(dune exec:*)",
+      "Bash(db xdb.pysa*)",
+      "Bash(PYSA_INTEGRATION_TEST=*.py dune exec:*)",
+      "Bash(PYREFLY_BINARY=*/pyrefly dune exec:*)",
+      "Bash(PYREFLY_BINARY=*/pyrefly PYSA_INTEGRATION_TEST=*.py dune exec:*)",
+      "Bash(facebook/scripts/in_path/pysa-update-expected)",
+      "Bash(buck run fbcode//tools/pyre/*)",
+      "Bash(buck test fbcode//tools/pyre/*)"
+    ]
+  }
+}
