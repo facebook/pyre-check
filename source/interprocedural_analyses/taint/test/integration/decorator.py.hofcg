@@ -2015,6 +2015,37 @@ Higher order call graphs
   }
 }
 {
+  "callable": "decorator.test_decorated_call_in_lambda_default",
+  "returned_callables": [],
+  "calls": {
+    "443:17-443:59": {
+      "call": {
+        "calls": [
+          {
+            "target": "decorator.trivial_decorator.inner[captured_variable(f, parameter)=decorator.sink_via_trivial_decorator]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "443:44-443:58": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "444:4-444:7": {
+      "call": {
+        "unresolved": [
+          "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "decorator.test_decorated_call_in_tuple_assignment",
   "returned_callables": [],
   "calls": {

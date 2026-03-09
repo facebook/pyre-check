@@ -437,3 +437,8 @@ def test_decorated_call_in_assign_target():
 
 def test_decorated_call_in_tuple_assignment():
     x, y = sink_via_trivial_decorator(_test_source()), 0
+
+
+def test_decorated_call_in_lambda_default():
+    f = lambda x=sink_via_trivial_decorator(_test_source()): x
+    f()
