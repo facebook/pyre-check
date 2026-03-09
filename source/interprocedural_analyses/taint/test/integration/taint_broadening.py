@@ -125,7 +125,7 @@ def model_broadening_source_no_collapse_depth(condition):
 
 
 def source_taint_widening_collapse_depth():
-    result = {}
+    result: Dict[str, Any] = {}
     for _ in range(1000000):
         result = {"a": result, "b": _test_source()}
         # collapsed into a source on result[a][a][a][a] during widening.

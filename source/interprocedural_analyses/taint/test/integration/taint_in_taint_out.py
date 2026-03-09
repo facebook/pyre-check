@@ -39,7 +39,7 @@ def get_data(x):
     return {"name": x, "id": x}
 
 
-def product_data(x):
+def product_data(x) -> Dict[str, Any]:
     data = get_data(x)
 
     if x:
@@ -48,7 +48,7 @@ def product_data(x):
         parent = None
 
     is_blocked = some_service(data["id"])
-    report_tuple = DataRecord(
+    report_tuple = DataRecord(  # pyre-ignore[28]
         id=data["id"],  # pyrefly: ignore
         username=data["name"],  # pyrefly: ignore
         isBlocked=is_blocked,  # pyrefly: ignore
@@ -191,7 +191,7 @@ class ComplexEvaluator:
         else:
             return field
 
-    def evaluate_lazy_payload(self, payload):
+    def evaluate_lazy_payload(self, payload) -> Dict[Any, Any]:
         def _evaluate(field):
             if isinstance(field, dict):
                 return self.evaluate_lazy_payload(field)
