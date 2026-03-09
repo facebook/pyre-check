@@ -3,6 +3,7 @@
     "allow": [
       "Bash(make:*)",
       "Bash(dune exec:*)",
+      "Bash(OUNIT_SHARDS=* dune exec:*)",
       "Bash(db xdb.pysa*)",
       "Bash(PYSA_INTEGRATION_TEST=*.py dune exec:*)",
       "Bash(PYREFLY_BINARY=*/pyrefly dune exec:*)",

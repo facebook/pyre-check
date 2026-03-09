@@ -199,10 +199,10 @@ Call dependencies
     "decorator.trivial_decorator (fun)[formal(f, position=0)=decorator.sink_via_trivial_decorator (fun)]"
   ],
   "decorator.test_decorated_call_in_assign_target (fun)": [
-    "decorator.sink_via_trivial_decorator@decorated (fun)"
+    "decorator.trivial_decorator.inner (fun)[captured_variable(f, decorator.trivial_decorator)=decorator.sink_via_trivial_decorator (fun)]"
   ],
   "decorator.test_decorated_call_in_tuple_assignment (fun)": [
-    "decorator.sink_via_trivial_decorator@decorated (fun)",
+    "decorator.trivial_decorator.inner (fun)[captured_variable(f, decorator.trivial_decorator)=decorator.sink_via_trivial_decorator (fun)]",
     "pysa._test_source (fun)"
   ],
   "decorator.test_decorated_higher_order_parameter (fun)": [

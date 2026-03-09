@@ -1957,6 +1957,73 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "decorator.test_decorated_call_in_tuple_assignment",
+    "callable_line": 438,
+    "code": 5002,
+    "line": 439,
+    "start": 38,
+    "end": 52,
+    "filename": "decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 439, "start": 38, "end": 52 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 439, "start": 38, "end": 52 },
+              "resolves_to": [
+                "decorator.trivial_decorator.inner[captured_variable(f, decorator.trivial_decorator)=decorator.sink_via_trivial_decorator]"
+              ],
+              "port": "formal(*args, position=0)[0]",
+              "call_site": "439:11-439:53"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator.sink_via_trivial_decorator",
+      "index": 0,
+      "parameter": "formal(*rest0)"
+    },
+    "master_handle": "decorator.test_decorated_call_in_tuple_assignment:5002:0:Call|decorator.sink_via_trivial_decorator|0|formal(*rest0):8c15b118044d982f687e7dec1dd8fa43"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "decorator.test_decorated_higher_order_parameter.inner",

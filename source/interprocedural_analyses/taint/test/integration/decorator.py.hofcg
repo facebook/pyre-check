@@ -2005,7 +2005,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.sink_via_trivial_decorator@decorated",
+            "target": "decorator.trivial_decorator.inner[captured_variable(f, parameter)=decorator.sink_via_trivial_decorator]",
             "index": 0,
             "return_type": []
           }
@@ -2022,7 +2022,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.sink_via_trivial_decorator@decorated",
+            "target": "decorator.trivial_decorator.inner[captured_variable(f, parameter)=decorator.sink_via_trivial_decorator]",
             "index": 0,
             "return_type": []
           }
