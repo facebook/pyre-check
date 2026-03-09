@@ -1998,6 +1998,47 @@ Higher order call graphs
   }
 }
 {
+  "callable": "decorator.test_decorated_call_in_assign_target",
+  "returned_callables": [],
+  "calls": {
+    "435:4-435:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "decorator.sink_via_trivial_decorator@decorated",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.test_decorated_call_in_tuple_assignment",
+  "returned_callables": [],
+  "calls": {
+    "439:11-439:53": {
+      "call": {
+        "calls": [
+          {
+            "target": "decorator.sink_via_trivial_decorator@decorated",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "439:38-439:52": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "decorator.test_decorated_higher_order_parameter",
   "returned_callables": [],
   "calls": {

@@ -429,3 +429,11 @@ def test_decorated_higher_order_parameter():
         return _test_source()
 
     stub_callee(inner)
+
+
+def test_decorated_call_in_assign_target():
+    sink_via_trivial_decorator("").foo = 0  # pyrefly: ignore[missing-attribute]
+
+
+def test_decorated_call_in_tuple_assignment():
+    x, y = sink_via_trivial_decorator(_test_source()), 0
