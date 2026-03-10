@@ -150,12 +150,6 @@ module Heap = struct
     in
     let overrides = Target.Map.Tree.filteri overrides ~f:keep_override_edge in
     { overrides; skipped_overrides = !skipped_overrides }
-
-
-  let dump ~path overrides =
-    (* We represent the override graph as a target graph, by representing class names as function targets.
-     * This is technically wrong but works fine in this context. *)
-    Target.Map.Tree.map ~f:(List.map ~f:Target.create_function) overrides |> TargetGraph.dump ~path
 end
 
 (** Override graph in the shared memory, a mapping from a method to classes directly overriding it. *)
@@ -281,10 +275,48 @@ let build_whole_program_overrides
   let override_graph_shared_memory = SharedMemory.from_heap override_graph_heap in
   let () =
     match static_analysis_configuration.Configuration.StaticAnalysis.save_results_to with
-    | Some path ->
-        let path = PyrePath.append path ~element:"override-graph.json" in
-        Log.info "Writing the override graph to `%s`" (PyrePath.absolute path);
-        Heap.dump ~path override_graph_heap
+    | Some directory ->
+        Log.info "Writing the override graph to `%s`" (PyrePath.absolute directory);
+        let to_json_lines (member, subtypes) =
+          [
+            {
+              NewlineDelimitedJson.Line.kind = NewlineDelimitedJson.Kind.OverrideGraph;
+              data =
+                `Assoc
+                  [
+                    "callable", `String (Target.external_name member);
+                    ( "overrides",
+                      `List (List.map subtypes ~f:(fun subtype -> `String (Reference.show subtype)))
+                    );
+                  ];
+            };
+          ]
+        in
+        let local_root =
+          static_analysis_configuration.Configuration.StaticAnalysis.configuration.local_root
+        in
+        let configuration = `Assoc ["repo", `String (PyrePath.absolute local_root)] in
+        let elements = Target.Map.Tree.to_alist override_graph_heap in
+        let () =
+          match static_analysis_configuration.Configuration.StaticAnalysis.output_format with
+          | Configuration.TaintOutputFormat.Json ->
+              NewlineDelimitedJson.write_file
+                ~path:(PyrePath.append directory ~element:"override-graph.json")
+                ~configuration
+                ~to_json_lines
+                elements
+          | Configuration.TaintOutputFormat.ShardedJson ->
+              let filename_prefix = "override-graph" in
+              NewlineDelimitedJson.remove_sharded_files ~directory ~filename_prefix;
+              NewlineDelimitedJson.write_sharded_files
+                ~scheduler
+                ~directory
+                ~filename_prefix
+                ~configuration
+                ~to_json_lines
+                elements
+        in
+        ()
     | None -> ()
   in
   { override_graph_heap; override_graph_shared_memory; skipped_overrides }

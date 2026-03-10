@@ -32,6 +32,7 @@ module Kind = struct
     | Module
     | Function
     | DecoratorCount
+    | OverrideGraph
 
   let show = function
     | Model -> "model"
@@ -41,6 +42,7 @@ module Kind = struct
     | Module -> "module"
     | Function -> "function"
     | DecoratorCount -> "decorator_count"
+    | OverrideGraph -> "override_graph"
 end
 
 module Line = struct

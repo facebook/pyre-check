@@ -14,6 +14,7 @@ module Kind : sig
     | Module
     | Function
     | DecoratorCount
+    | OverrideGraph
 
   val show : t -> string
 end
