@@ -30,6 +30,54 @@ Higher order call graphs
           ]
         }
       }
+    },
+    "101:37-101:58|identifier|NamedTupleWithDefault": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "named_tuples.NamedTupleWithDefault.__new__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "named_tuples.NamedTupleWithDefault.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "named_tuples.NamedTupleWithDefault"
+            }
+          ]
+        }
+      }
+    },
+    "119:41-119:66|identifier|NamedTupleWithAllDefaults": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "named_tuples.NamedTupleWithAllDefaults.__new__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "named_tuples.NamedTupleWithAllDefaults.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "named_tuples.NamedTupleWithAllDefaults"
+            }
+          ]
+        }
+      }
     }
   }
 }
@@ -235,6 +283,76 @@ Higher order call graphs
   }
 }
 {
+  "callable": "named_tuples.inherited_tuple_with_all_defaults",
+  "returned_callables": [],
+  "calls": {
+    "124:11-124:75": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "named_tuples.InheritedNamedTupleWithAllDefaults.__new__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "named_tuples.InheritedNamedTupleWithAllDefaults.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "named_tuples.InheritedNamedTupleWithAllDefaults"
+          }
+        ]
+      }
+    },
+    "124:50-124:64": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "named_tuples.inherited_tuple_with_default",
+  "returned_callables": [],
+  "calls": {
+    "106:11-106:71": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "named_tuples.InheritedNamedTupleWithDefault.__new__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "named_tuples.InheritedNamedTupleWithDefault.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "named_tuples.InheritedNamedTupleWithDefault"
+          }
+        ]
+      }
+    },
+    "106:46-106:60": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "named_tuples.issue_with_bad",
   "returned_callables": [],
   "calls": {
@@ -274,6 +392,54 @@ Higher order call graphs
       }
     },
     "58:4-58:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "named_tuples.issue_with_inherited_named_tuple_with_all_defaults",
+  "returned_callables": [],
+  "calls": {
+    "128:8-128:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "named_tuples.inherited_tuple_with_all_defaults",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "129:4-129:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "named_tuples.issue_with_inherited_named_tuple_with_default",
+  "returned_callables": [],
+  "calls": {
+    "110:8-110:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "named_tuples.inherited_tuple_with_default",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "111:4-111:21": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }

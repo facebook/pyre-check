@@ -415,7 +415,7 @@
               }
             ],
             "origin": { "line": 93, "start": 39, "end": 53 },
-            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "receiver_interval": [ { "lower": 14, "upper": 15 } ],
             "is_self_call": false,
             "call_site": "93:4-93:64"
           }
@@ -901,6 +901,66 @@
 {
   "kind": "model",
   "data": {
+    "callable": "named_tuples.InheritedNamedTupleWithAllDefaults.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(_fields, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[_fields]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(_field_defaults, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[_field_defaults]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "named_tuples.InheritedNamedTupleWithDefault.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(benign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[benign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "named_tuples.MyNamedTuple.__init__",
     "filename": "*",
     "tito": [
@@ -918,6 +978,66 @@
           }
         ]
       },
+      {
+        "port": "formal(benign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[benign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "named_tuples.NamedTupleWithAllDefaults.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(_fields, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[_fields]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(_field_defaults, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[_field_defaults]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "named_tuples.NamedTupleWithDefault.__init__",
+    "filename": "*",
+    "tito": [
       {
         "port": "formal(benign, position=1)",
         "taint": [

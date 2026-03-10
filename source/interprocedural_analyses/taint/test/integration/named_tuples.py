@@ -91,3 +91,39 @@ class NamedTupleWithTaintedAttribute(NamedTuple):
 
 def issue_with_named_tuple_with_tainted_attribute():
     NamedTupleWithTaintedAttribute(bad=_test_source(), benign=1)
+
+
+class NamedTupleWithDefault(NamedTuple):
+    benign: int
+    bad: str = "default"
+
+
+class InheritedNamedTupleWithDefault(NamedTupleWithDefault):
+    pass
+
+
+def inherited_tuple_with_default():
+    return InheritedNamedTupleWithDefault(bad=_test_source(), benign=1)
+
+
+def issue_with_inherited_named_tuple_with_default():
+    a = inherited_tuple_with_default()
+    _test_sink(a.bad)
+
+
+class NamedTupleWithAllDefaults(NamedTuple):
+    benign: int = 0
+    bad: str = "default"
+
+
+class InheritedNamedTupleWithAllDefaults(NamedTupleWithAllDefaults):
+    pass
+
+
+def inherited_tuple_with_all_defaults():
+    return InheritedNamedTupleWithAllDefaults(bad=_test_source(), benign=1)
+
+
+def issue_with_inherited_named_tuple_with_all_defaults():
+    a = inherited_tuple_with_all_defaults()
+    _test_sink(a.bad)

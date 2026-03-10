@@ -19,11 +19,29 @@ Call dependencies
     "named_tuples.InheritedNamedTuple.__new__ (method)",
     "pysa._test_source (fun)"
   ],
+  "named_tuples.inherited_tuple_with_all_defaults (fun)": [
+    "named_tuples.InheritedNamedTupleWithAllDefaults.__init__ (method)",
+    "named_tuples.InheritedNamedTupleWithAllDefaults.__new__ (method)",
+    "pysa._test_source (fun)"
+  ],
+  "named_tuples.inherited_tuple_with_default (fun)": [
+    "named_tuples.InheritedNamedTupleWithDefault.__init__ (method)",
+    "named_tuples.InheritedNamedTupleWithDefault.__new__ (method)",
+    "pysa._test_source (fun)"
+  ],
   "named_tuples.issue_with_bad (fun)": [
     "named_tuples.tainted_tuple (fun)", "pysa._test_sink (fun)"
   ],
   "named_tuples.issue_with_inherited_named_tuple (fun)": [
     "named_tuples.inherited_tuple (fun)", "pysa._test_sink (fun)"
+  ],
+  "named_tuples.issue_with_inherited_named_tuple_with_all_defaults (fun)": [
+    "named_tuples.inherited_tuple_with_all_defaults (fun)",
+    "pysa._test_sink (fun)"
+  ],
+  "named_tuples.issue_with_inherited_named_tuple_with_default (fun)": [
+    "named_tuples.inherited_tuple_with_default (fun)",
+    "pysa._test_sink (fun)"
   ],
   "named_tuples.issue_with_named_tuple_with_tainted_attribute (fun)": [
     "named_tuples.NamedTupleWithTaintedAttribute.__init__ (method)",
