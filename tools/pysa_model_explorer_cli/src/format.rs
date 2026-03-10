@@ -16,6 +16,7 @@ use crate::types::Issue;
 use crate::types::Leaf;
 use crate::types::LocalTaint;
 use crate::types::Model;
+use crate::types::OverrideGraph;
 use crate::types::Position;
 
 /// Format a feature value as a string.
@@ -405,6 +406,23 @@ pub fn print_call_graph_text(call_graph: &CallGraph) -> Result<()> {
         }
     }
 
+    Ok(())
+}
+
+/// Print the overrides for a callable as pretty-printed JSON.
+pub fn print_override_graph_json(override_graph: &OverrideGraph) -> Result<()> {
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&override_graph.overrides)?
+    );
+    Ok(())
+}
+
+/// Print the overrides for a callable as human-readable text.
+pub fn print_override_graph_text(override_graph: &OverrideGraph) -> Result<()> {
+    for override_class in &override_graph.overrides {
+        println!("{override_class}");
+    }
     Ok(())
 }
 

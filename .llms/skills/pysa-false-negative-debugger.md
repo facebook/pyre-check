@@ -189,6 +189,7 @@ Your output must include:
 | `<explorer> <dir> get-model <callable> --show sinks --kind <kind>` | Check sink taint |
 | `<explorer> <dir> get-model <callable> --show tito` | Check TITO propagation |
 | `<explorer> <dir> get-call-graph <callable>` | Check call resolution (`--start-line`, `--end-line` to filter by line range) |
+| `<explorer> <dir> get-overrides <callable>` | List all overrides for a method |
 | `<explorer> <dir> search <regex>` | Search for callables |
 
 `<explorer>` is shorthand for `buck run fbcode//tools/pyre/tools/pysa_model_explorer_cli:pysa_model_explorer --`.
@@ -205,6 +206,7 @@ Additional flags: `--show-features`, `--show-tito-positions`, `--show-class-inte
 | Skipping call graph check | Unresolved calls are a common root cause for lost taint |
 | Stopping at first missing model | The missing model might itself be caused by a deeper missing propagation — keep diving |
 | Checking only one `resolves_to` entry | When there are multiple entries (overrides), check ALL of them — taint flows if any has the model |
+| Using `get-model` on `Overrides{module.Class.foo}` | Override targets don't have models. Use `get-overrides module.Class.foo` to list all overrides, then `get-model` on each override |
 | Using grep/jq on raw JSON files | Always use `pysa_model_explorer` — it handles indexing and filtering efficiently |
 | Forgetting `--show-leaf-names` on origins | Without this flag, you can't see which callables originated the taint |
 | Forgetting `2>/dev/null` on explorer commands | Buck build output clutters results — always append `2>/dev/null` and only remove it to diagnose errors |

@@ -170,6 +170,16 @@ enum Command {
         pattern: String,
     },
 
+    /// Get the override graph for a callable
+    GetOverrides {
+        /// Fully qualified callable name
+        callable: String,
+
+        /// Output format
+        #[arg(long, value_enum, default_value_t = OutputFormat::Json)]
+        format: OutputFormat,
+    },
+
     /// Build (or load cached) the index for a result directory
     BuildIndex,
 }
@@ -347,6 +357,24 @@ fn main() -> anyhow::Result<()> {
 
             for name in matches {
                 println!("{}", name);
+            }
+        }
+        Command::GetOverrides { callable, format } => {
+            let db = pysa_model_explorer::index::open_or_build_index(&cli.result_dir)?;
+            let position = db
+                .get_override_graph_position(callable)?
+                .context(format!("no override graph for callable `{}`", callable))?;
+            let data = db.read_entry(&position)?;
+            let override_graph: pysa_model_explorer::types::OverrideGraph =
+                serde_json::from_value(data)?;
+
+            match format {
+                OutputFormat::Json => {
+                    pysa_model_explorer::format::print_override_graph_json(&override_graph)?
+                }
+                OutputFormat::Text => {
+                    pysa_model_explorer::format::print_override_graph_text(&override_graph)?
+                }
             }
         }
         Command::BuildIndex => {

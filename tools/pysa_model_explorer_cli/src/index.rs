@@ -40,6 +40,8 @@ pub struct CallableIndex {
     pub issues: Vec<FilePosition>,
     /// Position of the higher-order call graph entry, if present.
     pub higher_order_call_graph: Option<FilePosition>,
+    /// Position of the override graph entry, if present.
+    pub override_graph: Option<FilePosition>,
 }
 
 /// Top-level index mapping callable names to their data positions.
@@ -69,6 +71,7 @@ const INDEX_FILE_NAME: &str = "model-explorer-index.db";
 const KIND_MODEL: i64 = 0;
 const KIND_ISSUE: i64 = 1;
 const KIND_HIGHER_ORDER_CALL_GRAPH: i64 = 2;
+const KIND_OVERRIDE_GRAPH: i64 = 3;
 
 /// SQLite-backed index for efficient lookups.
 pub struct IndexDatabase {
@@ -88,6 +91,7 @@ pub fn build_index(result_dir: &Path) -> Result<Index> {
         let name = file_name.to_string_lossy();
         if (name.starts_with("taint-output") && name.ends_with(".json"))
             || (name.starts_with("higher-order-call-graph") && name.ends_with(".json"))
+            || (name.starts_with("override-graph") && name.ends_with(".json"))
         {
             files.push(
                 entry
@@ -132,6 +136,9 @@ pub fn build_index(result_dir: &Path) -> Result<Index> {
             if file_callable_index.higher_order_call_graph.is_some() {
                 entry.higher_order_call_graph = file_callable_index.higher_order_call_graph;
             }
+            if file_callable_index.override_graph.is_some() {
+                entry.override_graph = file_callable_index.override_graph;
+            }
         }
     }
 
@@ -142,11 +149,16 @@ pub fn build_index(result_dir: &Path) -> Result<Index> {
         .values()
         .filter(|c| c.higher_order_call_graph.is_some())
         .count();
+    let override_graph_count = callables
+        .values()
+        .filter(|c| c.override_graph.is_some())
+        .count();
     eprintln!(
-        "Indexed {} models, {} issues, {} call graphs in {:.1}s",
+        "Indexed {} models, {} issues, {} call graphs, {} override graphs in {:.1}s",
         model_count,
         issue_count,
         call_graph_count,
+        override_graph_count,
         start.elapsed().as_secs_f64()
     );
 
@@ -196,6 +208,9 @@ fn index_single_file(file_index: usize, file_path: &str) -> Result<HashMap<Strin
             }
             "higher_order_call_graph" => {
                 entry.higher_order_call_graph = Some(position);
+            }
+            "override_graph" => {
+                entry.override_graph = Some(position);
             }
             other => {
                 anyhow::bail!("unknown entry kind {:?} at byte offset {}", other, offset);
@@ -308,6 +323,15 @@ fn write_index_to_db(connection: &rusqlite::Connection, index: &Index) -> Result
                     position.length as i64,
                 ])?;
             }
+            if let Some(ref position) = callable_data.override_graph {
+                entry_stmt.execute(rusqlite::params![
+                    callable_index as i64,
+                    KIND_OVERRIDE_GRAPH,
+                    position.file_index as i64,
+                    position.offset as i64,
+                    position.length as i64,
+                ])?;
+            }
         }
     }
 
@@ -342,6 +366,7 @@ pub fn open_or_build_index(result_dir: &Path) -> Result<IndexDatabase> {
             let name = name.to_string_lossy();
             if (name.starts_with("taint-output") && name.ends_with(".json"))
                 || (name.starts_with("higher-order-call-graph") && name.ends_with(".json"))
+                || (name.starts_with("override-graph") && name.ends_with(".json"))
             {
                 let file_mtime = entry.metadata()?.modified()?;
                 if file_mtime > index_mtime {
@@ -461,6 +486,28 @@ impl IndexDatabase {
             callable_index,
             KIND_HIGHER_ORDER_CALL_GRAPH
         ])?;
+        match rows.next()? {
+            Some(row) => {
+                let file_index: i64 = row.get(0)?;
+                let offset: i64 = row.get(1)?;
+                let length: i64 = row.get(2)?;
+                Ok(Some(FilePosition {
+                    file_index: file_index as usize,
+                    offset: offset as u64,
+                    length: length as u64,
+                }))
+            }
+            None => Ok(None),
+        }
+    }
+
+    /// Get the override graph position for a callable.
+    pub fn get_override_graph_position(&self, callable: &str) -> Result<Option<FilePosition>> {
+        let callable_index = self.get_callable_index(callable)?;
+        let mut stmt = self.connection.prepare_cached(
+            "SELECT file_index, offset, length FROM entries WHERE callable_index = ?1 AND kind = ?2",
+        )?;
+        let mut rows = stmt.query(rusqlite::params![callable_index, KIND_OVERRIDE_GRAPH])?;
         match rows.next()? {
             Some(row) => {
                 let file_index: i64 = row.get(0)?;

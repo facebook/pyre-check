@@ -394,3 +394,10 @@ pub struct CallGraph {
     #[serde(default)]
     pub calls: Option<std::collections::BTreeMap<String, ExpressionCallees>>,
 }
+
+/// An override graph entry for a callable.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OverrideGraph {
+    pub callable: String,
+    pub overrides: Vec<String>,
+}
