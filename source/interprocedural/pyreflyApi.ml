@@ -5165,14 +5165,18 @@ module ReadOnly = struct
       in
       fields
       |> SerializableStringMap.to_alist
-      |> List.filter ~f:(fun (_, { ClassField.declaration_kind; _ }) -> predicate declaration_kind)
+      |> List.filter ~f:(fun (_, field) -> predicate field)
       |> List.filter ~f:(fun (_, { ClassField.location; _ }) -> Option.is_some location)
       |> List.sort ~compare:compare_by_location
       |> List.map ~f:fst
 
 
     let dataclass_ordered_attributes api class_summary =
-      get_ordered_fields_with_predicate api class_summary ~predicate:(function
+      get_ordered_fields_with_predicate
+        api
+        class_summary
+        ~predicate:(fun { ClassField.declaration_kind; _ } ->
+          match declaration_kind with
           | Some ClassFieldDeclarationKind.DeclaredByAnnotation
           | Some ClassFieldDeclarationKind.AssignedInBody ->
               (* Fields may be initialized via assignments. *)
@@ -5181,15 +5185,27 @@ module ReadOnly = struct
 
 
     let typed_dictionary_attributes api class_summary =
-      get_ordered_fields_with_predicate api class_summary ~predicate:(function
+      get_ordered_fields_with_predicate
+        api
+        class_summary
+        ~predicate:(fun { ClassField.declaration_kind; _ } ->
+          match declaration_kind with
           | Some ClassFieldDeclarationKind.DeclaredByAnnotation -> true
           | _ -> false)
 
 
     let named_tuple_attributes api class_summary =
-      get_ordered_fields_with_predicate api class_summary ~predicate:(function
+      get_ordered_fields_with_predicate
+        api
+        class_summary
+        ~predicate:(fun { ClassField.declaration_kind; explicit_annotation; _ } ->
+          match declaration_kind with
           | Some ClassFieldDeclarationKind.DeclaredByAnnotation -> true
           | Some ClassFieldDeclarationKind.DeclaredWithoutAnnotation -> true
+          | Some ClassFieldDeclarationKind.AssignedInBody ->
+              (* Fields with default values are classified as AssignedInBody. Only include them if
+                 they have an explicit annotation, to distinguish from enum members. *)
+              Option.is_some explicit_annotation
           | _ -> false)
   end
 

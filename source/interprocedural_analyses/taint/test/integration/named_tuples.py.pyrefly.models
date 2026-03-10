@@ -221,6 +221,64 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "named_tuples.inherited_tuple_with_all_defaults",
+    "filename": "named_tuples.py",
+    "callable_line": 123,
+    "sources": [
+      {
+        "port": "result[bad]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 124, "start": 50, "end": 64 } ],
+            "origin": { "line": 124, "start": 50, "end": 64 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "named_tuples.inherited_tuple_with_default",
+    "filename": "named_tuples.py",
+    "callable_line": 105,
+    "sources": [
+      {
+        "port": "result[bad]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 106, "start": 46, "end": 60 } ],
+            "origin": { "line": 106, "start": 46, "end": 60 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "named_tuples.issue_with_bad",
@@ -368,6 +426,158 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "named_tuples.issue_with_inherited_named_tuple:5002:0:Call|pysa._test_sink|0|formal(arg):44fe75a39644786440a81381896d7b15"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "named_tuples.issue_with_inherited_named_tuple_with_all_defaults",
+    "callable_line": 127,
+    "code": 5002,
+    "line": 129,
+    "start": 15,
+    "end": 20,
+    "filename": "named_tuples.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "tito" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" }, { "first-field": "bad" }
+            ],
+            "call": {
+              "position": { "line": 128, "start": 8, "end": 43 },
+              "resolves_to": [
+                "named_tuples.inherited_tuple_with_all_defaults"
+              ],
+              "port": "result[bad]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 129, "start": 15, "end": 20 },
+            "call_site": "129:4-129:21"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "bad" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "named_tuples.issue_with_inherited_named_tuple_with_all_defaults:5002:0:Call|pysa._test_sink|0|formal(arg):cc8e69e797e2f89b810f3e53e9a8f8c8"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "named_tuples.issue_with_inherited_named_tuple_with_default",
+    "callable_line": 109,
+    "code": 5002,
+    "line": 111,
+    "start": 15,
+    "end": 20,
+    "filename": "named_tuples.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "tito" }
+                ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" }, { "first-field": "bad" }
+            ],
+            "call": {
+              "position": { "line": 110, "start": 8, "end": 38 },
+              "resolves_to": [ "named_tuples.inherited_tuple_with_default" ],
+              "port": "result[bad]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 111, "start": 15, "end": 20 },
+            "call_site": "111:4-111:21"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "bad" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "named_tuples.issue_with_inherited_named_tuple_with_default:5002:0:Call|pysa._test_sink|0|formal(arg):008c4320e53f5d6453ec0b5a340e500b"
   }
 }
 {
@@ -905,12 +1115,12 @@
     "filename": "*",
     "tito": [
       {
-        "port": "formal(_fields, position=2)",
+        "port": "formal(bad, position=2)",
         "taint": [
           {
             "kinds": [
               {
-                "return_paths": { "[_fields]": 999999 },
+                "return_paths": { "[bad]": 999999 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
@@ -919,12 +1129,12 @@
         ]
       },
       {
-        "port": "formal(_field_defaults, position=1)",
+        "port": "formal(benign, position=1)",
         "taint": [
           {
             "kinds": [
               {
-                "return_paths": { "[_field_defaults]": 999999 },
+                "return_paths": { "[benign]": 999999 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
@@ -941,6 +1151,20 @@
     "callable": "named_tuples.InheritedNamedTupleWithDefault.__init__",
     "filename": "*",
     "tito": [
+      {
+        "port": "formal(bad, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[bad]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
       {
         "port": "formal(benign, position=1)",
         "taint": [
@@ -1002,12 +1226,12 @@
     "filename": "*",
     "tito": [
       {
-        "port": "formal(_fields, position=2)",
+        "port": "formal(bad, position=2)",
         "taint": [
           {
             "kinds": [
               {
-                "return_paths": { "[_fields]": 999999 },
+                "return_paths": { "[bad]": 999999 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
@@ -1016,12 +1240,12 @@
         ]
       },
       {
-        "port": "formal(_field_defaults, position=1)",
+        "port": "formal(benign, position=1)",
         "taint": [
           {
             "kinds": [
               {
-                "return_paths": { "[_field_defaults]": 999999 },
+                "return_paths": { "[benign]": 999999 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
@@ -1038,6 +1262,20 @@
     "callable": "named_tuples.NamedTupleWithDefault.__init__",
     "filename": "*",
     "tito": [
+      {
+        "port": "formal(bad, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[bad]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
       {
         "port": "formal(benign, position=1)",
         "taint": [
