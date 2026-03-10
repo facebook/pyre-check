@@ -550,13 +550,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           |> Option.value ~default:Interprocedural.ClassIntervalSet.top;
       }
     in
-    let convert_tito_path_to_taint
-        ~sink_trees
-        ~tito_roots
-        ~kind
-        (tito_path, tito_taint)
-        argument_taint
-      =
+    let convert_tito_path_to_taint ~sink_trees ~tito_roots ~kind (tito_path, tito_taint) =
       (* TODO(T201555212): Distinguish `LocalTaint` (e.g., breadcrumbs) from different tito
          intervals. One example false positive is function `issue_precise_tito_intervals` in
          `class_interval.py`. *)
@@ -624,8 +618,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | _ -> frame
       in
       CallModel.return_paths_and_collapse_depths ~kind ~tito_taint
-      |> List.fold
-           ~f:(fun taint (return_path, collapse_depth) ->
+      |> List.map ~f:(fun (return_path, collapse_depth) ->
              let taint_to_propagate = read_tree return_path taint_to_propagate in
              (if Features.CollapseDepth.should_collapse collapse_depth then
                 BackwardState.Tree.collapse_to
@@ -639,25 +632,20 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   Frame.Self
                   (Context (BackwardTaint.kind, Map))
                   ~f:(transform_existing_tito ~callee_collapse_depth:collapse_depth)
-             |> BackwardState.Tree.prepend tito_path
-             |> BackwardState.Tree.join taint)
-           ~init:argument_taint
+             |> BackwardState.Tree.prepend tito_path)
+      |> Algorithms.fold_balanced ~f:BackwardState.Tree.join ~init:BackwardState.Tree.bottom
     in
     let convert_tito_tree_to_taint
         ~argument_location
         ~sink_trees
         ~kind
         ~pair:{ CallModel.TaintInTaintOutMap.TreeRootsPair.tree = tito_tree; roots = tito_roots }
-        taint_tree
       =
-      BackwardState.Tree.fold
-        BackwardState.Tree.Path
-        tito_tree
-        ~init:BackwardState.Tree.bottom
-        ~f:(convert_tito_path_to_taint ~sink_trees ~tito_roots ~kind)
+      BackwardState.Tree.fold BackwardState.Tree.Path tito_tree ~init:[] ~f:(fun path_taint trees ->
+          convert_tito_path_to_taint ~sink_trees ~tito_roots ~kind path_taint :: trees)
+      |> Algorithms.fold_balanced ~f:BackwardState.Tree.join ~init:BackwardState.Tree.bottom
       |> BackwardState.Tree.transform Features.TitoPositionSet.Element Add ~f:argument_location
       |> BackwardState.Tree.add_local_breadcrumb (Features.tito ())
-      |> BackwardState.Tree.join taint_tree
     in
     let call_site = CallSite.create call_location in
     let analyze_argument
@@ -728,9 +716,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         track_apply_call_step ApplyTitoForArgument (fun () ->
             CallModel.TaintInTaintOutMap.fold
-              ~init:BackwardState.Tree.empty
-              ~f:(convert_tito_tree_to_taint ~argument_location ~sink_trees)
-              taint_in_taint_out_map)
+              ~init:[]
+              ~f:(fun ~kind ~pair trees ->
+                convert_tito_tree_to_taint ~argument_location ~sink_trees ~kind ~pair :: trees)
+              taint_in_taint_out_map
+            |> Algorithms.fold_balanced ~f:BackwardState.Tree.join ~init:BackwardState.Tree.empty)
       in
       let sink_taint = SinkTreeWithHandle.join sink_trees in
       let taint = BackwardState.Tree.join sink_taint taint_in_taint_out in

@@ -503,7 +503,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~sink_trees
         ~kind
         (argument_access_path, tito_taint)
-        accumulated_tito
       =
       let breadcrumbs =
         BackwardTaint.joined_breadcrumbs tito_taint
@@ -554,8 +553,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | _ -> taint_to_propagate
       in
       CallModel.return_paths_and_collapse_depths ~kind ~tito_taint
-      |> List.fold
-           ~f:(fun taint (return_path, collapse_depth) ->
+      |> List.map ~f:(fun (return_path, collapse_depth) ->
              (if Features.CollapseDepth.should_collapse collapse_depth then
                 ForwardState.Tree.collapse_to
                   ~breadcrumbs:(Features.tito_broadening_set ())
@@ -563,9 +561,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   taint_to_propagate
              else
                taint_to_propagate)
-             |> ForwardState.Tree.prepend return_path
-             |> ForwardState.Tree.join taint)
-           ~init:accumulated_tito
+             |> ForwardState.Tree.prepend return_path)
+      |> Algorithms.fold_balanced ~f:ForwardState.Tree.join ~init:ForwardState.Tree.empty
     in
     let convert_tito_tree_to_taint
         ~argument_location
@@ -573,22 +570,24 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~sink_trees
         ~kind
         ~pair:{ CallModel.TaintInTaintOutMap.TreeRootsPair.tree = tito_tree; roots = tito_roots }
-        call_effects
       =
       let tito_tree =
         BackwardState.Tree.fold
           BackwardState.Tree.Path
           tito_tree
-          ~init:ForwardState.Tree.empty
-          ~f:
-            (convert_tito_path_to_taint
-               ~argument_location
-               ~argument_taint
-               ~tito_roots
-               ~sink_trees
-               ~kind)
+          ~init:[]
+          ~f:(fun path_taint trees ->
+            convert_tito_path_to_taint
+              ~argument_location
+              ~argument_taint
+              ~tito_roots
+              ~sink_trees
+              ~kind
+              path_taint
+            :: trees)
+        |> Algorithms.fold_balanced ~f:ForwardState.Tree.join ~init:ForwardState.Tree.empty
       in
-      CallEffects.add call_effects ~kind:(Sinks.discard_transforms kind) ~taint:tito_tree
+      Sinks.discard_transforms kind, tito_tree
     in
     let call_site = CallSite.create call_location in
     let analyze_argument_effect
@@ -647,9 +646,25 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         track_apply_call_step ApplyTitoForArgument (fun () ->
             CallModel.TaintInTaintOutMap.fold
-              ~init:call_effects
-              ~f:(convert_tito_tree_to_taint ~argument_location ~argument_taint ~sink_trees)
-              taint_in_taint_out_map)
+              ~init:[]
+              ~f:(fun ~kind ~pair pairs ->
+                convert_tito_tree_to_taint
+                  ~argument_location
+                  ~argument_taint
+                  ~sink_trees
+                  ~kind
+                  ~pair
+                :: pairs)
+              taint_in_taint_out_map
+            |> Map.Poly.of_alist_multi
+            |> Map.Poly.fold ~init:call_effects ~f:(fun ~key:kind ~data:trees call_effects ->
+                   let taint =
+                     Algorithms.fold_balanced
+                       trees
+                       ~f:ForwardState.Tree.join
+                       ~init:ForwardState.Tree.empty
+                   in
+                   CallEffects.add call_effects ~kind ~taint))
       in
 
       (* Add features to arguments. *)
