@@ -274,14 +274,19 @@ def run_pysa(
                     cwd=working_directory,
                 )
             except subprocess.CalledProcessError as exception:
-                LOG.error(
-                    f"`pyrefly check` failed with return code {exception.returncode}"
-                )
-                sys.stdout.write(exception.stdout)
-                if error_help is not None:
-                    sys.stdout.write("\n")
-                    sys.stdout.write(error_help)
-                sys.exit(exception.returncode)
+                if exception.returncode == 1:
+                    LOG.info(
+                        f"`pyrefly check` found type errors (return code {exception.returncode}). Continuing"
+                    )
+                else:
+                    LOG.error(
+                        f"`pyrefly check` failed with return code {exception.returncode}"
+                    )
+                    sys.stdout.write(exception.stdout)
+                    if error_help is not None:
+                        sys.stdout.write("\n")
+                        sys.stdout.write(error_help)
+                    sys.exit(exception.returncode)
 
             pyrefly_results = temporary_directory
 
