@@ -3,14 +3,19 @@
     "allow": [
       "Bash(make:*)",
       "Bash(dune exec:*)",
-      "Bash(OUNIT_SHARDS=* dune exec:*)",
-      "Bash(db xdb.pysa*)",
-      "Bash(PYSA_INTEGRATION_TEST=*.py dune exec:*)",
-      "Bash(PYREFLY_BINARY=*/pyrefly dune exec:*)",
-      "Bash(PYREFLY_BINARY=*/pyrefly PYSA_INTEGRATION_TEST=*.py dune exec:*)",
+      "Bash(OUNIT_SHARDS=* dune exec *)",
+      "Bash(PYSA_INTEGRATION_TEST=*.py dune exec *)",
+      "Bash(PYREFLY_BINARY=*/pyrefly dune exec *)",
+      "Bash(PYREFLY_BINARY=*/pyrefly OUNIT_SHARDS=* dune exec *)",
+      "Bash(PYREFLY_BINARY=*/pyrefly PYSA_INTEGRATION_TEST=*.py dune exec *)",
       "Bash(facebook/scripts/in_path/pysa-update-expected)",
+      "Bash(buck build fbcode//tools/pyre/*)",
       "Bash(buck run fbcode//tools/pyre/*)",
-      "Bash(buck test fbcode//tools/pyre/*)"
+      "Bash(buck test fbcode//tools/pyre/*)",
+      "Bash(db xdb.pysa*)",
+      "Bash(perf report:*)",
+      "Bash(perf script:*)",
+      "Bash(jq:*)"
     ]
   }
 }
