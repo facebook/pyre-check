@@ -23,6 +23,7 @@ let commands () =
     Infer.command ~name:"newinfer" ();
     Server.command ~name:"newserver" ();
     NoDaemonQuery.command ();
+    PyreflyQuery.command ();
   ]
 
 

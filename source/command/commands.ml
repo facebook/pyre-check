@@ -13,4 +13,5 @@ module Check = CheckCommand
 module CodeNavigation = CodeNavigationCommand
 module Infer = InferCommand
 module NoDaemonQuery = NoDaemonQueryCommand
+module PyreflyQuery = PyreflyQueryCommand
 module Server = ServerCommand
