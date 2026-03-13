@@ -228,139 +228,104 @@ module AnalyzeConfiguration = struct
     | Undefined (message, _) ->
         Result.Error message
     | other_exception -> Result.Error (Exception.exn_to_string other_exception)
+end
 
-
-  let analysis_configuration_of
-      {
-        base =
-          {
-            CommandStartup.BaseConfiguration.source_paths;
-            search_paths;
-            excludes;
-            checked_directory_allowlist;
-            checked_directory_blocklist;
-            extensions;
-            log_path;
-            global_root;
-            local_root;
-            debug;
-            python_version;
-            system_platform;
-            parallel;
-            number_of_workers;
-            long_lived_workers;
-            enable_readonly_analysis;
-            enable_strict_override_check;
-            enable_strict_any_check;
-            enable_unawaited_awaitable_analysis;
-            include_suppressed_errors;
-            shared_memory =
-              { Configuration.SharedMemory.heap_size; dependency_table_power; hash_table_power };
-            enable_type_comments;
-            remote_logging = _;
-            profiling_output = _;
-            memory_profiling_output = _;
-          };
-        dump_call_graph;
-        dump_model_query_results;
-        find_missing_flows;
-        maximum_model_source_tree_width;
-        maximum_model_sink_tree_width;
-        maximum_model_tito_tree_width;
-        maximum_tree_depth_after_widening;
-        maximum_return_access_path_width;
-        maximum_return_access_path_depth_after_widening;
-        maximum_tito_collapse_depth;
-        maximum_tito_positions;
-        maximum_overrides_to_analyze;
-        maximum_trace_length;
-        maximum_tito_depth;
-        maximum_capture_trace_length;
-        no_verify;
-        verify_dsl;
-        verify_taint_config_only;
-        rule_filter;
-        source_filter;
-        sink_filter;
-        transform_filter;
-        save_results_to;
-        output_format;
-        pyrefly_results;
-        strict;
-        taint_model_paths;
-        use_cache;
-        build_cache_only;
-        disable_model_shaping;
-        infer_self_tito;
-        infer_argument_tito;
-        repository_root;
-        check_invariants;
-        limit_entrypoints;
-        compact_ocaml_heap;
-        saved_state;
-        compute_coverage;
-        scheduler_policies;
-        higher_order_call_graph_max_iterations;
-        maximum_target_depth;
-        maximum_parameterized_targets_at_call_site;
-      }
-    =
-    let configuration =
-      Configuration.Analysis.create
-        ~parallel
-        ~analyze_external_sources:false
-        ~filter_directories:checked_directory_allowlist
-        ~ignore_all_errors:checked_directory_blocklist
-        ~number_of_workers
-        ?long_lived_workers
-        ~local_root:(Option.value local_root ~default:global_root)
-        ~project_root:global_root
-        ~search_paths
-        ~taint_model_paths
-        ~strict
-        ~debug
-        ~show_error_traces:false
-        ~excludes
-        ~extensions
-        ~store_type_errors:false
-        ~track_dependencies:false
-        ~log_directory:(PyrePath.absolute log_path)
-        ~python_version
-        ~system_platform
-        ~shared_memory_heap_size:heap_size
-        ~shared_memory_dependency_table_power_from_configuration:dependency_table_power
-        ~shared_memory_hash_table_power:hash_table_power
-        ~enable_type_comments
-        ~source_paths:(Configuration.SourcePaths.to_search_paths source_paths)
-        ~enable_readonly_analysis
-        ~enable_strict_override_check
-        ~enable_strict_any_check
-        ~enable_unawaited_awaitable_analysis
-        ~include_suppressed_errors
-        ~use_pyrefly_results:(Option.is_some pyrefly_results)
-        ()
-    in
+let analysis_configuration_of
+    ~taint_model_paths
+    ~strict
+    ~use_pyrefly_results
     {
-      Configuration.StaticAnalysis.configuration;
-      repository_root;
-      save_results_to;
-      output_format;
-      pyrefly_results;
+      CommandStartup.BaseConfiguration.source_paths;
+      search_paths;
+      excludes;
+      checked_directory_allowlist;
+      checked_directory_blocklist;
+      extensions;
+      log_path;
+      global_root;
+      local_root;
+      debug;
+      python_version;
+      system_platform;
+      parallel;
+      number_of_workers;
+      long_lived_workers;
+      enable_readonly_analysis;
+      enable_strict_override_check;
+      enable_strict_any_check;
+      enable_unawaited_awaitable_analysis;
+      include_suppressed_errors;
+      shared_memory =
+        { Configuration.SharedMemory.heap_size; dependency_table_power; hash_table_power };
+      enable_type_comments;
+      remote_logging = _;
+      profiling_output = _;
+      memory_profiling_output = _;
+    }
+  =
+  Configuration.Analysis.create
+    ~parallel
+    ~analyze_external_sources:false
+    ~filter_directories:checked_directory_allowlist
+    ~ignore_all_errors:checked_directory_blocklist
+    ~number_of_workers
+    ?long_lived_workers
+    ~local_root:(Option.value local_root ~default:global_root)
+    ~project_root:global_root
+    ~search_paths
+    ~taint_model_paths
+    ~strict
+    ~debug
+    ~show_error_traces:false
+    ~excludes
+    ~extensions
+    ~store_type_errors:false
+    ~track_dependencies:false
+    ~log_directory:(PyrePath.absolute log_path)
+    ~python_version
+    ~system_platform
+    ~shared_memory_heap_size:heap_size
+    ~shared_memory_dependency_table_power_from_configuration:dependency_table_power
+    ~shared_memory_hash_table_power:hash_table_power
+    ~enable_type_comments
+    ~source_paths:(Configuration.SourcePaths.to_search_paths source_paths)
+    ~enable_readonly_analysis
+    ~enable_strict_override_check
+    ~enable_strict_any_check
+    ~enable_unawaited_awaitable_analysis
+    ~include_suppressed_errors
+    ~use_pyrefly_results
+    ()
+
+
+let setup_global_states
+    {
+      CommandStartup.BaseConfiguration.global_root;
+      local_root;
+      debug;
+      remote_logging;
+      profiling_output;
+      memory_profiling_output;
+      _;
+    }
+  =
+  CommandStartup.setup_global_states
+    ~global_root
+    ~local_root
+    ~debug
+    ~additional_logging_sections:[]
+    ~remote_logging
+    ~profiling_output
+    ~memory_profiling_output
+    ()
+
+
+let static_analysis_configuration_of
+    {
+      AnalyzeConfiguration.base;
       dump_call_graph;
-      verify_models = not no_verify;
-      verify_dsl;
-      verify_taint_config_only;
-      rule_filter;
-      source_filter;
-      sink_filter;
-      transform_filter;
-      find_missing_flows;
       dump_model_query_results;
-      use_cache;
-      build_cache_only;
-      disable_model_shaping;
-      infer_self_tito;
-      infer_argument_tito;
+      find_missing_flows;
       maximum_model_source_tree_width;
       maximum_model_sink_tree_width;
       maximum_model_tito_tree_width;
@@ -373,23 +338,92 @@ module AnalyzeConfiguration = struct
       maximum_trace_length;
       maximum_tito_depth;
       maximum_capture_trace_length;
+      no_verify;
+      verify_dsl;
+      verify_taint_config_only;
+      rule_filter;
+      source_filter;
+      sink_filter;
+      transform_filter;
+      save_results_to;
+      output_format;
+      pyrefly_results;
+      strict;
+      taint_model_paths;
+      use_cache;
+      build_cache_only;
+      disable_model_shaping;
+      infer_self_tito;
+      infer_argument_tito;
+      repository_root;
       check_invariants;
       limit_entrypoints;
       compact_ocaml_heap;
       saved_state;
       compute_coverage;
       scheduler_policies;
-      higher_order_call_graph_max_iterations =
-        Option.value
-          higher_order_call_graph_max_iterations
-          ~default:Configuration.StaticAnalysis.default_higher_order_call_graph_max_iterations;
-      maximum_target_depth =
-        Option.value
-          maximum_target_depth
-          ~default:Configuration.StaticAnalysis.default_maximum_target_depth;
+      higher_order_call_graph_max_iterations;
+      maximum_target_depth;
       maximum_parameterized_targets_at_call_site;
     }
-end
+  =
+  let configuration =
+    analysis_configuration_of
+      ~taint_model_paths
+      ~strict
+      ~use_pyrefly_results:(Option.is_some pyrefly_results)
+      base
+  in
+  {
+    Configuration.StaticAnalysis.configuration;
+    repository_root;
+    save_results_to;
+    output_format;
+    pyrefly_results;
+    dump_call_graph;
+    verify_models = not no_verify;
+    verify_dsl;
+    verify_taint_config_only;
+    rule_filter;
+    source_filter;
+    sink_filter;
+    transform_filter;
+    find_missing_flows;
+    dump_model_query_results;
+    use_cache;
+    build_cache_only;
+    disable_model_shaping;
+    infer_self_tito;
+    infer_argument_tito;
+    maximum_model_source_tree_width;
+    maximum_model_sink_tree_width;
+    maximum_model_tito_tree_width;
+    maximum_tree_depth_after_widening;
+    maximum_return_access_path_width;
+    maximum_return_access_path_depth_after_widening;
+    maximum_tito_collapse_depth;
+    maximum_tito_positions;
+    maximum_overrides_to_analyze;
+    maximum_trace_length;
+    maximum_tito_depth;
+    maximum_capture_trace_length;
+    check_invariants;
+    limit_entrypoints;
+    compact_ocaml_heap;
+    saved_state;
+    compute_coverage;
+    scheduler_policies;
+    higher_order_call_graph_max_iterations =
+      Option.value
+        higher_order_call_graph_max_iterations
+        ~default:Configuration.StaticAnalysis.default_higher_order_call_graph_max_iterations;
+    maximum_target_depth =
+      Option.value
+        maximum_target_depth
+        ~default:Configuration.StaticAnalysis.default_maximum_target_depth;
+    maximum_parameterized_targets_at_call_site;
+  }
+
 
 let with_performance_tracking ~debug ~f =
   let timer = Timer.start () in
@@ -429,7 +463,7 @@ let run_analyze analyze_configuration =
   let ({ Configuration.StaticAnalysis.configuration = analysis_configuration; _ } as
       static_analysis_configuration)
     =
-    AnalyzeConfiguration.analysis_configuration_of analyze_configuration
+    static_analysis_configuration_of analyze_configuration
   in
   Server.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
       Scheduler.with_scheduler
@@ -479,29 +513,8 @@ let run_analyze configuration_file =
     | Result.Error message ->
         Log.error "%s" message;
         ExitStatus.CheckStatus CheckCommand.ExitStatus.PyreError
-    | Result.Ok
-        ({
-           AnalyzeConfiguration.base =
-             {
-               CommandStartup.BaseConfiguration.global_root;
-               local_root;
-               debug;
-               remote_logging;
-               profiling_output;
-               memory_profiling_output;
-               _;
-             };
-           _;
-         } as analyze_configuration) ->
-        CommandStartup.setup_global_states
-          ~global_root
-          ~local_root
-          ~debug
-          ~additional_logging_sections:[]
-          ~remote_logging
-          ~profiling_output
-          ~memory_profiling_output
-          ();
+    | Result.Ok analyze_configuration ->
+        setup_global_states analyze_configuration.base;
         Lwt_main.run
           (Lwt.catch
              (fun () -> run_analyze analyze_configuration)

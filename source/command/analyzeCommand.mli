@@ -68,4 +68,13 @@ module AnalyzeConfiguration : sig
   val of_yojson : Yojson.Safe.t -> (t, string) Result.t
 end
 
+val setup_global_states : CommandStartup.BaseConfiguration.t -> unit
+
+val analysis_configuration_of
+  :  taint_model_paths:PyrePath.t list ->
+  strict:bool ->
+  use_pyrefly_results:bool ->
+  CommandStartup.BaseConfiguration.t ->
+  Configuration.Analysis.t
+
 val command : ?name:string -> unit -> unit Cmdliner.Cmd.t

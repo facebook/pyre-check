@@ -205,6 +205,14 @@ end
 
 val parse_request : string -> (Request.t, string) Core.Result.t
 
+val process_model_query
+  :  pyre_api:Interprocedural.PyrePysaApi.ReadOnly.t ->
+  scheduler:Scheduler.t ->
+  configuration:Configuration.Analysis.t ->
+  path:PyrePath.t ->
+  query_name:string ->
+  Response.t
+
 val process_request
   :  type_environment:Analysis.TypeEnvironment.TypeEnvironmentReadOnly.t ->
   global_module_paths_api:Analysis.GlobalModulePathsApi.t ->

@@ -534,6 +534,254 @@ let parse_request query =
   | InvalidQuery reason -> Result.Error reason
 
 
+let parse_model_queries
+    ~pyre_api
+    ~scheduler
+    ~taint_configuration
+    ~python_version
+    ~filter_query
+    ~model_paths
+  =
+  let step_logger =
+    Taint.StepLogger.start
+      ~start_message:"Parsing taint models"
+      ~end_message:"Parsed taint models"
+      ()
+  in
+  let sources = Taint.ModelParser.get_model_sources ~paths:model_paths in
+  let parse_model_source (path, source) =
+    Taint.ModelParser.parse
+      ~pyre_api
+      ~path
+      ~source
+      ~taint_configuration
+      ~source_sink_filter:None
+      ~callables_to_definitions_map:None
+      ~python_version
+      ()
+    |> fun { Taint.ModelParseResult.queries; errors; _ } ->
+    {
+      Taint.ModelParseResult.queries = List.filter queries ~f:filter_query;
+      models = Taint.Registry.empty;
+      errors;
+    }
+  in
+  let map sources =
+    List.fold
+      ~init:Taint.ModelParseResult.empty
+      ~f:(fun sofar source -> parse_model_source source |> Taint.ModelParseResult.join sofar)
+      sources
+  in
+  let result =
+    Scheduler.map_reduce
+      scheduler
+      ~policy:
+        (Scheduler.Policy.fixed_chunk_count
+           ~minimum_chunks_per_worker:1
+           ~minimum_chunk_size:1
+           ~preferred_chunks_per_worker:1
+           ())
+      ~initial:Taint.ModelParseResult.empty
+      ~map
+      ~reduce:Taint.ModelParseResult.join
+      ~inputs:sources
+      ()
+  in
+  Taint.StepLogger.finish step_logger;
+  result
+
+
+let setup_and_execute_model_queries ~pyre_api ~scheduler ~configuration model_queries =
+  let qualifiers = Interprocedural.PyrePysaApi.ReadOnly.explicit_qualifiers pyre_api in
+  let initial_callables =
+    let step_logger =
+      Taint.StepLogger.start
+        ~start_message:"Fetching initial callables to analyze"
+        ~end_message:"Fetched initial callables to analyze"
+        ()
+    in
+    let initial_callables =
+      Interprocedural.FetchCallables.from_qualifiers
+        ~scheduler
+        ~scheduler_policy:
+          (Scheduler.Policy.fixed_chunk_count
+             ~minimum_chunks_per_worker:1
+             ~minimum_chunk_size:1
+             ~preferred_chunks_per_worker:1
+             ())
+        ~configuration
+        ~pyre_api
+        ~qualifiers
+    in
+    Taint.StepLogger.finish step_logger;
+    initial_callables
+  in
+  let class_hierarchy_graph =
+    let step_logger =
+      Taint.StepLogger.start
+        ~start_message:"Computing class hierarchy graph"
+        ~end_message:"Computed class hierarchy graph"
+        ()
+    in
+    let class_hierarchy_graph =
+      Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
+        ~scheduler
+        ~scheduler_policies:Configuration.SchedulerPolicies.empty
+        ~pyre_api
+        ~qualifiers
+    in
+    Taint.StepLogger.finish step_logger;
+    class_hierarchy_graph
+  in
+  let definitions_and_stubs =
+    Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
+  in
+  let callables_to_definitions_map =
+    let step_logger =
+      Taint.StepLogger.start
+        ~start_message:"Building a map from callable names to definitions"
+        ~end_message:"Map from callable names to definitions built"
+        ()
+    in
+    let callables_to_definitions_map =
+      Interprocedural.CallablesSharedMemory.ReadWrite.from_callables
+        ~scheduler
+        ~scheduler_policy:
+          (Scheduler.Policy.fixed_chunk_count
+             ~minimum_chunks_per_worker:1
+             ~minimum_chunk_size:1
+             ~preferred_chunks_per_worker:1
+             ())
+        ~pyre_api
+        definitions_and_stubs
+    in
+    Taint.StepLogger.finish step_logger;
+    callables_to_definitions_map
+  in
+  Taint.ModelQueryExecution.generate_models_from_queries
+    ~pyre_api
+    ~scheduler
+    ~scheduler_policies:Configuration.SchedulerPolicies.empty
+    ~class_hierarchy_graph
+    ~callables_to_definitions_map:
+      (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
+    ~source_sink_filter:None
+    ~verbose:false
+    ~error_on_unexpected_models:true
+    ~error_on_empty_result:true
+    ~definitions_and_stubs:
+      (Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true)
+    model_queries
+
+
+let process_model_query ~pyre_api ~scheduler ~configuration ~path ~query_name =
+  let results =
+    if not (PyrePath.file_exists path) then
+      Result.Error (Format.sprintf "File path `%s` does not exist" (PyrePath.show path))
+    else
+      let taint_configuration_result =
+        let step_logger =
+          Taint.StepLogger.start
+            ~start_message:"Initializing and verifying taint configuration"
+            ~end_message:"Initialized and verified taint configuration"
+            ()
+        in
+        let taint_configuration_result = Taint.TaintConfiguration.from_taint_model_paths [path] in
+        Taint.StepLogger.finish step_logger;
+        taint_configuration_result
+      in
+      match taint_configuration_result with
+      | Error (error :: _) -> Result.Error (Taint.TaintConfiguration.Error.show error)
+      | Error _ -> failwith "Taint.TaintConfiguration.create returned empty errors list"
+      | Ok taint_configuration -> (
+          let python_version = Taint.ModelParser.PythonVersion.from_configuration configuration in
+          let parse_result =
+            let filter_query { Taint.ModelParseResult.ModelQuery.name; _ } =
+              String.equal name query_name
+            in
+            parse_model_queries
+              ~pyre_api
+              ~scheduler
+              ~taint_configuration
+              ~python_version
+              ~filter_query
+              ~model_paths:[path]
+          in
+          match parse_result with
+          | { Taint.ModelParseResult.queries = []; errors; _ } ->
+              let pp_errors formatter = function
+                | [] -> ()
+                | errors ->
+                    Format.fprintf
+                      formatter
+                      " This might be because of the following parse errors:\n%s"
+                      (List.map ~f:Taint.ModelVerificationError.display errors
+                      |> String.concat ~sep:"\n")
+              in
+              Result.Error
+                (Format.asprintf
+                   "No model query with name `%s` was found in path `%s`.%a"
+                   query_name
+                   (PyrePath.show path)
+                   pp_errors
+                   errors)
+          | { Taint.ModelParseResult.queries = _ :: _ :: _ as queries; _ } ->
+              let show_query_location { Taint.ModelParseResult.ModelQuery.location; path; _ } =
+                Format.sprintf
+                  "%s:%d:%d"
+                  (path >>| PyrePath.absolute |> Option.value ~default:"?")
+                  location.start.line
+                  location.start.column
+              in
+              Result.Error
+                (Format.sprintf
+                   "Found multiple model queries with name `%s` in path `%s`:\n%s"
+                   query_name
+                   (PyrePath.show path)
+                   (List.map ~f:show_query_location queries |> String.concat ~sep:"\n"))
+          | { Taint.ModelParseResult.queries = [query]; _ } ->
+              let model_query_results =
+                setup_and_execute_model_queries ~pyre_api ~scheduler ~configuration [query]
+              in
+              let models =
+                Taint.ModelQueryExecution.ExecutionResult.get_models model_query_results
+              in
+              let errors =
+                Taint.ModelQueryExecution.ExecutionResult.get_errors model_query_results
+              in
+              let to_taint_model (callable, model) =
+                {
+                  Response.Base.callable = Target.external_name callable;
+                  model =
+                    Taint.Model.to_json
+                      ~expand_overrides:None
+                      ~is_valid_callee:(fun ~trace_kind:_ ~port:_ ~path:_ ~callee:_ -> true)
+                      ~resolve_module_path:None
+                      ~resolve_callable_location:None
+                      ~export_leaf_names:Taint.Domains.ExportLeafNames.Always
+                      callable
+                      model;
+                }
+              in
+              let models = Taint.SharedModels.to_alist models |> List.map ~f:to_taint_model in
+              if List.is_empty models then
+                Result.Error
+                  (Format.sprintf
+                     "No models found for model query `%s` in path `%s`"
+                     query_name
+                     (PyrePath.show path))
+              else if not (List.is_empty errors) then
+                Result.Error
+                  (List.fold errors ~init:"" ~f:(fun accum error ->
+                       accum ^ Taint.ModelVerificationError.display error))
+              else
+                Result.Ok models)
+  in
+  match results with
+  | Result.Ok models -> Response.Single (Response.Base.FoundModels models)
+  | Result.Error message -> Response.Error message
+
+
 let rec process_request_exn
     ~type_environment
     ~global_module_paths_api
@@ -622,143 +870,6 @@ let rec process_request_exn
             path
             (print_reason error_reason))
         errors
-    in
-    let parse_model_queries
-        ~pyre_api
-        ~taint_configuration
-        ~python_version
-        ~filter_query
-        ~model_paths
-      =
-      let step_logger =
-        Taint.StepLogger.start
-          ~start_message:"Parsing taint models"
-          ~end_message:"Parsed taint models"
-          ()
-      in
-      let sources = Taint.ModelParser.get_model_sources ~paths:model_paths in
-      let parse_model_source (path, source) =
-        Taint.ModelParser.parse
-          ~pyre_api
-          ~path
-          ~source
-          ~taint_configuration
-          ~source_sink_filter:None
-          ~callables_to_definitions_map:None
-          ~python_version
-          ()
-        |> fun { Taint.ModelParseResult.queries; errors; _ } ->
-        {
-          Taint.ModelParseResult.queries = List.filter queries ~f:filter_query;
-          models = Taint.Registry.empty;
-          errors;
-        }
-      in
-      let map sources =
-        List.fold
-          ~init:Taint.ModelParseResult.empty
-          ~f:(fun sofar source -> parse_model_source source |> Taint.ModelParseResult.join sofar)
-          sources
-      in
-      let result =
-        Scheduler.map_reduce
-          scheduler
-          ~policy:
-            (Scheduler.Policy.fixed_chunk_count
-               ~minimum_chunks_per_worker:1
-               ~minimum_chunk_size:1
-               ~preferred_chunks_per_worker:1
-               ())
-          ~initial:Taint.ModelParseResult.empty
-          ~map
-          ~reduce:Taint.ModelParseResult.join
-          ~inputs:sources
-          ()
-      in
-      Taint.StepLogger.finish step_logger;
-      result
-    in
-    let setup_and_execute_model_queries ~pyre_api model_queries =
-      let qualifiers = GlobalModulePathsApi.explicit_qualifiers global_module_paths_api in
-      let initial_callables =
-        let step_logger =
-          Taint.StepLogger.start
-            ~start_message:"Fetching initial callables to analyze"
-            ~end_message:"Fetched initial callables to analyze"
-            ()
-        in
-        let initial_callables =
-          Interprocedural.FetchCallables.from_qualifiers
-            ~scheduler
-            ~scheduler_policy:
-              (Scheduler.Policy.fixed_chunk_count
-                 ~minimum_chunks_per_worker:1
-                 ~minimum_chunk_size:1
-                 ~preferred_chunks_per_worker:1
-                 ())
-            ~configuration
-            ~pyre_api
-            ~qualifiers
-        in
-        Taint.StepLogger.finish step_logger;
-        initial_callables
-      in
-      let class_hierarchy_graph =
-        let step_logger =
-          Taint.StepLogger.start
-            ~start_message:"Computing class hierarchy graph"
-            ~end_message:"Computed class hierarchy graph"
-            ()
-        in
-        let class_hierarchy_graph =
-          Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
-            ~scheduler
-            ~scheduler_policies:Configuration.SchedulerPolicies.empty
-            ~pyre_api
-            ~qualifiers
-        in
-        Taint.StepLogger.finish step_logger;
-        class_hierarchy_graph
-      in
-      let definitions_and_stubs =
-        Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
-      in
-      let callables_to_definitions_map =
-        let step_logger =
-          Taint.StepLogger.start
-            ~start_message:"Building a map from callable names to definitions"
-            ~end_message:"Map from callable names to definitions built"
-            ()
-        in
-        let callables_to_definitions_map =
-          Interprocedural.CallablesSharedMemory.ReadWrite.from_callables
-            ~scheduler
-            ~scheduler_policy:
-              (Scheduler.Policy.fixed_chunk_count
-                 ~minimum_chunks_per_worker:1
-                 ~minimum_chunk_size:1
-                 ~preferred_chunks_per_worker:1
-                 ())
-            ~pyre_api
-            definitions_and_stubs
-        in
-        Taint.StepLogger.finish step_logger;
-        callables_to_definitions_map
-      in
-      Taint.ModelQueryExecution.generate_models_from_queries
-        ~pyre_api
-        ~scheduler
-        ~scheduler_policies:Configuration.SchedulerPolicies.empty
-        ~class_hierarchy_graph
-        ~callables_to_definitions_map:
-          (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map)
-        ~source_sink_filter:None
-        ~verbose:false
-        ~error_on_unexpected_models:true
-        ~error_on_empty_result:true
-        ~definitions_and_stubs:
-          (Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true)
-        model_queries
     in
     let open Response in
     let get_program_call_graph () =
@@ -1052,113 +1163,13 @@ let rec process_request_exn
         >>| (fun maybe_type -> Single (Base.TypeAtLocation maybe_type))
         |> Option.value
              ~default:(Error (Format.sprintf "No module found for path `%s`" (PyrePath.show path)))
-    | ModelQuery { path; query_name } -> (
+    | ModelQuery { path; query_name } ->
         let pyre_api =
           Interprocedural.PyrePysaApi.ReadOnly.from_pyre1_environment
             ~type_environment
             ~global_module_paths_api
         in
-        if not (PyrePath.file_exists path) then
-          Error (Format.sprintf "File path `%s` does not exist" (PyrePath.show path))
-        else
-          let taint_configuration_result =
-            let step_logger =
-              Taint.StepLogger.start
-                ~start_message:"Initializing and verifying taint configuration"
-                ~end_message:"Initialized and verified taint configuration"
-                ()
-            in
-            let taint_configuration_result =
-              Taint.TaintConfiguration.from_taint_model_paths [path]
-            in
-            Taint.StepLogger.finish step_logger;
-            taint_configuration_result
-          in
-          match taint_configuration_result with
-          | Error (error :: _) -> Error (Taint.TaintConfiguration.Error.show error)
-          | Error _ -> failwith "Taint.TaintConfiguration.create returned empty errors list"
-          | Ok taint_configuration -> (
-              let python_version =
-                Taint.ModelParser.PythonVersion.from_configuration configuration
-              in
-              let parse_result =
-                let filter_query { Taint.ModelParseResult.ModelQuery.name; _ } =
-                  String.equal name query_name
-                in
-                parse_model_queries
-                  ~pyre_api
-                  ~taint_configuration
-                  ~python_version
-                  ~filter_query
-                  ~model_paths:[path]
-              in
-              match parse_result with
-              | { Taint.ModelParseResult.queries = []; errors; _ } ->
-                  let pp_errors formatter = function
-                    | [] -> ()
-                    | errors ->
-                        Format.fprintf
-                          formatter
-                          " This might be because of the following parse errors:\n%s"
-                          (List.map ~f:Taint.ModelVerificationError.display errors
-                          |> String.concat ~sep:"\n")
-                  in
-                  Error
-                    (Format.asprintf
-                       "No model query with name `%s` was found in path `%s`.%a"
-                       query_name
-                       (PyrePath.show path)
-                       pp_errors
-                       errors)
-              | { Taint.ModelParseResult.queries = _ :: _ :: _ as queries; _ } ->
-                  let show_query_location { Taint.ModelParseResult.ModelQuery.location; path; _ } =
-                    Format.sprintf
-                      "%s:%d:%d"
-                      (path >>| PyrePath.absolute |> Option.value ~default:"?")
-                      location.start.line
-                      location.start.column
-                  in
-                  Error
-                    (Format.sprintf
-                       "Found multiple model queries with name `%s` in path `%s`:\n%s"
-                       query_name
-                       (PyrePath.show path)
-                       (List.map ~f:show_query_location queries |> String.concat ~sep:"\n"))
-              | { Taint.ModelParseResult.queries = [query]; _ } ->
-                  let model_query_results = setup_and_execute_model_queries ~pyre_api [query] in
-                  let models =
-                    Taint.ModelQueryExecution.ExecutionResult.get_models model_query_results
-                  in
-                  let errors =
-                    Taint.ModelQueryExecution.ExecutionResult.get_errors model_query_results
-                  in
-                  let to_taint_model (callable, model) =
-                    {
-                      Base.callable = Target.external_name callable;
-                      model =
-                        Taint.Model.to_json
-                          ~expand_overrides:None
-                          ~is_valid_callee:(fun ~trace_kind:_ ~port:_ ~path:_ ~callee:_ -> true)
-                          ~resolve_module_path:None
-                          ~resolve_callable_location:None
-                          ~export_leaf_names:Taint.Domains.ExportLeafNames.Always
-                          callable
-                          model;
-                    }
-                  in
-                  let models = Taint.SharedModels.to_alist models |> List.map ~f:to_taint_model in
-                  if List.is_empty models then
-                    Error
-                      (Format.sprintf
-                         "No models found for model query `%s` in path `%s`"
-                         query_name
-                         (PyrePath.show path))
-                  else if not (List.is_empty errors) then
-                    Error
-                      (List.fold errors ~init:"" ~f:(fun accum error ->
-                           accum ^ Taint.ModelVerificationError.display error))
-                  else
-                    Single (Base.FoundModels models)))
+        process_model_query ~pyre_api ~scheduler ~configuration ~path ~query_name
     | ModulesOfPath path ->
         Single
           (Base.FoundModules
@@ -1332,6 +1343,7 @@ let rec process_request_exn
           let python_version = Taint.ModelParser.PythonVersion.from_configuration configuration in
           parse_model_queries
             ~pyre_api
+            ~scheduler
             ~taint_configuration
             ~python_version
             ~filter_query:(fun _ -> true)
@@ -1339,7 +1351,7 @@ let rec process_request_exn
         in
         let model_query_errors =
           if verify_dsl then
-            setup_and_execute_model_queries ~pyre_api model_queries
+            setup_and_execute_model_queries ~pyre_api ~scheduler ~configuration model_queries
             |> Taint.ModelQueryExecution.ExecutionResult.get_errors
           else
             []
