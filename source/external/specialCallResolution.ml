@@ -7,12 +7,45 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
+module CallTarget = struct
+  type t =
+    | Regular of {
+        target: Target.t;
+        receiver_class: string option;
+      }
+    | Init of {
+        target: Target.t;
+        receiver_class: string option;
+      }
+    | New of {
+        target: Target.t;
+        receiver_class: string option;
+      }
+    | Property of {
+        target: Target.t;
+        receiver_class: string option;
+      }
+
+  let target = function
+    | Regular { target; _ } -> target
+    | Init { target; _ } -> target
+    | New { target; _ } -> target
+    | Property { target; _ } -> target
+
+
+  let receiver_class = function
+    | Regular { receiver_class; _ } -> receiver_class
+    | Init { receiver_class; _ } -> receiver_class
+    | New { receiver_class; _ } -> receiver_class
+    | Property { receiver_class; _ } -> receiver_class
+end
+
 module NestedCallees = struct
   type t =
     (* Given call `x(1)(...)`, this is the callees on `x(1)` *)
-    | NestedCall of Target.t list
+    | NestedCall of CallTarget.t list
     (* Given call `x.y.z(...)`, this is the callees on `x.y` *)
-    | NestedAttributeAccess of Target.t list
+    | NestedAttributeAccess of CallTarget.t list
     | None
 end
 

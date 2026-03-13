@@ -818,8 +818,9 @@ let shim_special_calls_for_pyre1 { Call.callee; arguments; origin = _ } =
 
 
 let shim_special_calls_for_pyrefly ~callees ~arguments =
-  let define_name_equals ~name target =
-    Target.get_regular target
+  let define_name_equals ~name call_target =
+    SpecialCallResolution.CallTarget.target call_target
+    |> Target.get_regular
     |> Target.Regular.define_name
     >>| Reference.show
     >>| String.equal name
@@ -5146,11 +5147,27 @@ let build_whole_program_call_graph_for_pyrefly
             call_graph
         in
         let add_shim_target ~debug ~expression_location ~call ~arguments call_graph =
-          let fetch_regular_targets call_callees =
-            call_callees.CallCallees.call_targets
-            |> List.rev_append call_callees.CallCallees.init_targets
-            |> List.rev_append call_callees.CallCallees.new_targets
-            |> List.map ~f:CallTarget.target
+          let to_special_call_target ~kind call_target =
+            let target = CallTarget.target call_target in
+            let receiver_class = call_target.CallTarget.receiver_class in
+            match kind with
+            | `Regular -> SpecialCallResolution.CallTarget.Regular { target; receiver_class }
+            | `Init -> SpecialCallResolution.CallTarget.Init { target; receiver_class }
+            | `New -> SpecialCallResolution.CallTarget.New { target; receiver_class }
+            | `Property -> SpecialCallResolution.CallTarget.Property { target; receiver_class }
+          in
+          let fetch_special_call_targets call_callees =
+            List.map
+              ~f:(to_special_call_target ~kind:`Regular)
+              call_callees.CallCallees.call_targets
+            |> List.rev_append
+                 (List.map
+                    ~f:(to_special_call_target ~kind:`Init)
+                    call_callees.CallCallees.init_targets)
+            |> List.rev_append
+                 (List.map
+                    ~f:(to_special_call_target ~kind:`New)
+                    call_callees.CallCallees.new_targets)
           in
           DefineCallGraph.resolve_call ~location:expression_location ~call call_graph
           >>= fun original_call_callees ->
@@ -5163,7 +5180,7 @@ let build_whole_program_call_graph_for_pyrefly
                     ~location:callee_location
                     ~call:nested_call
                     call_graph
-                  >>| fetch_regular_targets
+                  >>| fetch_special_call_targets
                 in
                 SpecialCallResolution.NestedCallees.NestedCall (Option.value ~default:[] callees)
             | Expression.Name
@@ -5176,8 +5193,9 @@ let build_whole_program_call_graph_for_pyrefly
                 let callees =
                   DefineCallGraph.resolve_attribute_access ~attribute_access ~location call_graph
                   >>| fun { AttributeAccessCallees.if_called; property_targets; _ } ->
-                  fetch_regular_targets if_called
-                  |> List.rev_append (List.map ~f:CallTarget.target property_targets)
+                  fetch_special_call_targets if_called
+                  |> List.rev_append
+                       (List.map ~f:(to_special_call_target ~kind:`Property) property_targets)
                 in
                 SpecialCallResolution.NestedCallees.NestedAttributeAccess
                   (Option.value ~default:[] callees)
@@ -5193,7 +5211,7 @@ let build_whole_program_call_graph_for_pyrefly
               original_call_callees
           in
           shim_for_call_for_pyrefly
-            ~callees:(fetch_regular_targets original_call_callees)
+            ~callees:(fetch_special_call_targets original_call_callees)
             ~nested_callees
             ~arguments
           >>= fun ({
@@ -5270,7 +5288,8 @@ let build_whole_program_call_graph_for_pyrefly
               (* This case is for `PromoteQueue`. *)
               let call_targets =
                 nested_callees
-                |> List.filter_map ~f:(function
+                |> List.filter_map ~f:(fun call_target ->
+                       match SpecialCallResolution.CallTarget.target call_target with
                        | Target.Regular (Method { class_name; _ }) ->
                            (* Given call `x.y.original_attribute(...)`, we want to resolve callees
                               on the made-up call `x.new_attribute(...)`. Here we fetch callees on
