@@ -173,6 +173,8 @@ val less_or_equal : left:t -> right:t -> bool
 
 val for_override_model : callable:Target.t -> t -> t
 
+val postprocess_override_model : taint_configuration:TaintConfiguration.Heap.t -> t -> t
+
 val apply_sanitizers : taint_configuration:TaintConfiguration.Heap.t -> t -> t
 
 val should_externalize : t -> bool

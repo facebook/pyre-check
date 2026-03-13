@@ -141,6 +141,10 @@ module type ANALYSIS = sig
     previous_model:Model.t ->
     get_callee_model:(Target.t -> Model.t option) ->
     AnalyzeDefineResult.t
+
+  (** Post-process the override model after joining all overrides. This can be used to apply
+      heuristics to overapproximate. *)
+  val postprocess_override_model : context:context -> Model.t -> Model.t
 end
 
 module Make (Analysis : ANALYSIS) = struct
@@ -566,7 +570,7 @@ module Make (Analysis : ANALYSIS) = struct
       State.{ is_partial = true; model; result; additional_dependencies }
 
 
-  let analyze_define ~shared_models ~context ~step:({ iteration; _ } as step) ~callable =
+  let analyze_define ~context ~shared_models ~step:({ iteration; _ } as step) ~callable =
     let previous_model =
       match State.get_old_model shared_models callable with
       | Some model -> model
@@ -600,6 +604,7 @@ module Make (Analysis : ANALYSIS) = struct
 
 
   let analyze_overrides
+      ~context
       ~max_iterations
       ~shared_models
       ~override_graph
@@ -658,6 +663,7 @@ module Make (Analysis : ANALYSIS) = struct
       overrides
       |> List.map ~f:lookup
       |> Algorithms.fold_balanced ~f:(Model.join ~iteration) ~init:direct_model
+      |> Analysis.postprocess_override_model ~context
     in
     let previous_model =
       match State.get_old_model shared_models callable with
@@ -705,7 +711,7 @@ module Make (Analysis : ANALYSIS) = struct
       | _ -> ()
     in
     if Target.is_function_or_method callable then
-      analyze_define ~shared_models ~context ~step ~callable
+      analyze_define ~context ~shared_models ~step ~callable
     else if Target.is_object callable then
       Format.asprintf "Found object `%a` in fixpoint analysis" Target.pp_pretty callable |> failwith
     else if Target.is_override callable then
@@ -713,7 +719,8 @@ module Make (Analysis : ANALYSIS) = struct
         ~max_time_in_seconds:60
         ~event_name:"override analysis"
         ~callable:(Target.show_pretty callable)
-        (fun () -> analyze_overrides ~shared_models ~max_iterations ~override_graph ~step ~callable)
+        (fun () ->
+          analyze_overrides ~context ~shared_models ~max_iterations ~override_graph ~step ~callable)
         ()
     else
       Format.asprintf "Unknown type target `%a` in fixpoint analysis" Target.pp_pretty callable

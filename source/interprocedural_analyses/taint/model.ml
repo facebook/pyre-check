@@ -709,6 +709,100 @@ let for_override_model
   }
 
 
+let postprocess_override_model
+    ~taint_configuration:
+      {
+        TaintConfiguration.Heap.analysis_model_constraints =
+          {
+            maximum_model_source_tree_width;
+            maximum_model_sink_tree_width;
+            maximum_model_tito_tree_width;
+            _;
+          };
+        disable_model_shaping;
+        _;
+      }
+    ({ forward = { generations }; backward = { taint_in_taint_out; sink_taint }; modes; _ } as
+    model)
+  =
+  if ModeSet.contains Mode.SkipModelBroadening modes then
+    model
+  else
+    let simplify_forward_state ~breadcrumbs_for_shaping ~breadcrumbs_for_broadening ~width state =
+      let state =
+        if not disable_model_shaping then
+          ForwardState.transform
+            ForwardState.Tree.Self
+            Map
+            ~f:
+              (ForwardState.Tree.shape
+                 ~mold_with_return_access_paths:false
+                 ~breadcrumbs:breadcrumbs_for_shaping)
+            state
+        else
+          state
+      in
+      ForwardState.transform
+        ForwardState.Tree.Self
+        Map
+        ~f:(ForwardState.Tree.limit_to ~breadcrumbs:breadcrumbs_for_broadening ~width)
+        state
+    in
+    let simplify_backward_state ~breadcrumbs_for_shaping ~breadcrumbs_for_broadening ~width state =
+      let state =
+        if not disable_model_shaping then
+          BackwardState.transform
+            BackwardState.Tree.Self
+            Map
+            ~f:
+              (BackwardState.Tree.shape
+                 ~mold_with_return_access_paths:false
+                 ~breadcrumbs:breadcrumbs_for_shaping)
+            state
+        else
+          state
+      in
+      BackwardState.transform
+        BackwardState.Tree.Self
+        Map
+        ~f:(BackwardState.Tree.limit_to ~breadcrumbs:breadcrumbs_for_broadening ~width)
+        state
+    in
+    let generations =
+      simplify_forward_state
+        ~breadcrumbs_for_shaping:(Features.model_source_shaping_set ())
+        ~breadcrumbs_for_broadening:(Features.model_source_broadening_set ())
+        ~width:maximum_model_source_tree_width
+        generations
+    in
+    let sink_taint =
+      simplify_backward_state
+        ~breadcrumbs_for_shaping:(Features.model_sink_shaping_set ())
+        ~breadcrumbs_for_broadening:(Features.model_sink_broadening_set ())
+        ~width:maximum_model_sink_tree_width
+        sink_taint
+    in
+    let taint_in_taint_out =
+      let taint_in_taint_out =
+        simplify_backward_state
+          ~breadcrumbs_for_shaping:(Features.model_tito_shaping_set ())
+          ~breadcrumbs_for_broadening:(Features.model_tito_broadening_set ())
+          ~width:maximum_model_tito_tree_width
+          taint_in_taint_out
+      in
+      BackwardState.transform
+        BackwardState.Tree.Self
+        Map
+        ~f:
+          (BackwardState.Tree.transform_tito
+             Features.ReturnAccessPathTree.Self
+             Map
+             ~f:Features.ReturnAccessPathTree.limit_width)
+        taint_in_taint_out
+    in
+    { model with forward = { generations }; backward = { sink_taint; taint_in_taint_out } }
+
+
 let apply_sanitizers
     ~taint_configuration
     {

@@ -208,6 +208,9 @@ module CallGraphAnalysis = struct
         model;
         additional_dependencies = Target.Set.elements additional_dependencies;
       }
+
+
+  let postprocess_override_model ~context:_ model = model
 end
 
 module Fixpoint = FixpointAnalysis.Make (CallGraphAnalysis)

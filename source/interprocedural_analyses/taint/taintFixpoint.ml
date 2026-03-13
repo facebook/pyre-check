@@ -256,6 +256,10 @@ module Analysis = struct
 
 
   let skip_additional_dependency _ = false
+
+  let postprocess_override_model ~context:{ Context.taint_configuration; _ } model =
+    let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
+    Model.postprocess_override_model ~taint_configuration model
 end
 
 let get_scheduler_policy policies =

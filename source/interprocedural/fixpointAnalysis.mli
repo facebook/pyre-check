@@ -126,6 +126,10 @@ module type ANALYSIS = sig
     previous_model:Model.t ->
     get_callee_model:(Target.t -> Model.t option) ->
     AnalyzeDefineResult.t
+
+  (** Post-process the override model after joining all overrides. This can be used to apply
+      heuristics to overapproximate. *)
+  val postprocess_override_model : context:context -> Model.t -> Model.t
 end
 
 module Make (Analysis : ANALYSIS) : sig
