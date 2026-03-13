@@ -25,6 +25,7 @@ from . import (  # noqa F401
     persistent,
     profile,
     pyre_language_server,
+    pyrefly_query,
     pysa_server,
     query,
     rage,

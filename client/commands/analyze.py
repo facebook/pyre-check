@@ -493,6 +493,36 @@ def _run_analyze_command(
                 return commands.ExitCode.FAILURE
 
 
+def _download_pyrefly_binary(
+    configuration: frontend_configuration.Base,
+    download_path: Path,
+    user_provided_pyrefly_binary: Optional[str] = None,
+) -> Path:
+    pyrefly_binary_path = configuration.get_pysa_pyrefly_binary_location(
+        user_provided_pyrefly_binary=user_provided_pyrefly_binary,
+        download_path=download_path,
+    )
+    if pyrefly_binary_path is None:
+        raise commands.ClientException(
+            "Cannot locate a Pyrefly binary to run.",
+            exit_code=commands.ExitCode.MISSING_PYREFLY_BINARY,
+        )
+    LOG.info(f"Pyrefly binary is located at `{pyrefly_binary_path}`")
+    return pyrefly_binary_path
+
+
+def _get_server_start_command(
+    configuration: frontend_configuration.Base,
+) -> frontend_configuration.ServerStartCommand:
+    start_command = configuration.get_server_start_command(download_if_needed=True)
+    if start_command is None:
+        raise configuration_module.InvalidConfiguration(
+            "Cannot locate a Pyre binary to run."
+        )
+    LOG.info(f"Pyre binary is located at `{start_command.get_pyre_binary_location()}`")
+    return start_command
+
+
 def _run_pyrefly(
     pyrefly_binary_path: Path, pyrefly_results: str, forward_stdout: bool
 ) -> commands.ExitCode:
@@ -564,12 +594,7 @@ def run(
     configuration: frontend_configuration.Base,
     analyze_arguments: command_arguments.AnalyzeArguments,
 ) -> commands.ExitCode:
-    start_command = configuration.get_server_start_command(download_if_needed=True)
-    if start_command is None:
-        raise configuration_module.InvalidConfiguration(
-            "Cannot locate a Pyre binary to run."
-        )
-    LOG.info(f"Pyre binary is located at `{start_command.get_pyre_binary_location()}`")
+    start_command = _get_server_start_command(configuration)
 
     save_results_to = analyze_arguments.save_results_to
     if save_results_to is not None:
@@ -592,13 +617,11 @@ def run(
             ) as temporary_file,
             tempfile.TemporaryDirectory() as pyrefly_results,
         ):
-            pyrefly_binary_path = configuration.get_pysa_pyrefly_binary_location(
+            pyrefly_binary_path = _download_pyrefly_binary(
+                configuration,
+                Path(temporary_file.name),
                 user_provided_pyrefly_binary=analyze_arguments.pyrefly_binary,
-                download_path=Path(temporary_file.name),
             )
-            if pyrefly_binary_path is None:
-                return commands.ExitCode.MISSING_PYREFLY_BINARY
-            LOG.info(f"Pyrefly binary is located at `{pyrefly_binary_path}`")
             temporary_file.close()
 
             return_code = _run_pyrefly(
