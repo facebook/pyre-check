@@ -599,7 +599,14 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "Overrides{overrides.B.methodB}",
+            "target": "overrides.B.methodB",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.C"
+          },
+          {
+            "target": "overrides.D.methodB",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -878,7 +885,14 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "Overrides{overrides.B.methodB}",
+            "target": "overrides.B.methodB",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.C"
+          },
+          {
+            "target": "overrides.D.methodB",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -1105,7 +1119,14 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "Overrides{overrides.B.methodB}",
+            "target": "overrides.B.methodB",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overrides.C"
+          },
+          {
+            "target": "overrides.D.methodB",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],

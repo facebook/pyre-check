@@ -128,6 +128,8 @@ module ReadOnly : sig
 
   val class_mro : t -> string -> string list
 
+  val is_subclass : t -> parent:string -> child:string -> bool
+
   val get_callable_metadata : t -> Ast.Reference.t -> CallableMetadata.t
 
   val is_stub_like_callable : t -> Ast.Reference.t -> bool
@@ -210,7 +212,8 @@ module ReadOnly : sig
     :  t ->
     scheduler:Scheduler.t ->
     scheduler_policies:Configuration.SchedulerPolicies.t ->
-    method_has_overrides:(Target.Method.t -> bool) ->
+    overrides_exist:(Target.t -> bool) ->
+    get_overriding_types:(Target.t -> Ast.Reference.t list option) ->
     global_is_string_literal:(Ast.Reference.t -> bool) ->
     store_shared_memory:bool ->
     attribute_targets:Target.Set.t ->

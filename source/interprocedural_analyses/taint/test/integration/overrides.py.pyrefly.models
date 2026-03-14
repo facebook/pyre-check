@@ -354,7 +354,26 @@
             ],
             "call": {
               "position": { "line": 127, "start": 8, "end": 19 },
-              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
+              "resolves_to": [ "overrides.B.methodB" ],
+              "port": "result"
+            },
+            "receiver_interval": [ { "lower": 14, "upper": 19 } ],
+            "is_self_call": false
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 127, "start": 8, "end": 19 },
+              "resolves_to": [ "overrides.D.methodB" ],
               "port": "result"
             },
             "receiver_interval": [ { "lower": 14, "upper": 19 } ],

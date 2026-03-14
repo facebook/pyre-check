@@ -413,36 +413,19 @@ end
 module PyreflyTarget = struct
   type t =
     | Function of GlobalCallableId.t
-    | AllOverrides of GlobalCallableId.t
-    | OverrideSubset of {
-        base_method: GlobalCallableId.t;
-        subset: t list;
-      }
-    | OverrideSubsetThreshold of { base_method: GlobalCallableId.t }
+    | Overrides of GlobalCallableId.t
     | FormatString
   [@@deriving compare, equal, show]
 
-  let rec from_json json =
+  let from_json json =
     let open Core.Result.Monad_infix in
     match json with
     | `Assoc [("Function", global_callable_id)] ->
         GlobalCallableId.from_json global_callable_id
         >>| fun global_callable_id -> Function global_callable_id
-    | `Assoc [("AllOverrides", global_callable_id)] ->
+    | `Assoc [("Overrides", global_callable_id)] ->
         GlobalCallableId.from_json global_callable_id
-        >>| fun global_callable_id -> AllOverrides global_callable_id
-    | `Assoc [("OverrideSubset", override_subset)] ->
-        JsonUtil.get_object_member override_subset "base_method"
-        >>= (fun base_method -> GlobalCallableId.from_json (`Assoc base_method))
-        >>= fun base_method ->
-        JsonUtil.get_list_member override_subset "subset"
-        >>| List.map ~f:from_json
-        >>= Result.all
-        >>| fun subset -> OverrideSubset { base_method; subset }
-    | `Assoc [("OverrideSubsetThreshold", override_subset_threshold)] ->
-        JsonUtil.get_object_member override_subset_threshold "base_method"
-        >>= (fun base_method -> GlobalCallableId.from_json (`Assoc base_method))
-        >>| fun base_method -> OverrideSubsetThreshold { base_method }
+        >>| fun global_callable_id -> Overrides global_callable_id
     | `String "FormatString" -> Ok FormatString
     | _ -> Error (FormatError.UnexpectedJsonType { json; message = "Unknown type of target" })
 end
@@ -924,7 +907,9 @@ module ModuleDefinitionsFile = struct
 
   let parse_decorator_callees bindings =
     let extract_global_callable_id_from_target_exn = function
-      | PyreflyTarget.Function global_callable_id -> global_callable_id
+      | PyreflyTarget.Function global_callable_id
+      | PyreflyTarget.Overrides global_callable_id ->
+          global_callable_id
       | target ->
           Format.asprintf "Unexpected type of decorator callee: `%a`" PyreflyTarget.pp target
           |> failwith
@@ -4263,6 +4248,31 @@ module ReadOnly = struct
     |> List.map ~f:Reference.show
 
 
+  let is_subclass
+      { class_metadata_shared_memory; class_id_to_qualified_name_shared_memory; object_class; _ }
+      ~parent
+      ~child
+    =
+    let parent = FullyQualifiedName.from_reference_unchecked (Reference.create parent) in
+    let child = FullyQualifiedName.from_reference_unchecked (Reference.create child) in
+    if FullyQualifiedName.equal parent child || FullyQualifiedName.equal parent object_class then
+      true
+    else
+      let { ClassMetadataSharedMemory.Metadata.mro; _ } =
+        ClassMetadataSharedMemory.get class_metadata_shared_memory child
+        |> assert_shared_memory_key_exists (fun () -> "missing class metadata for class")
+      in
+      match mro with
+      | ModuleDefinitionsFile.ClassMro.Cyclic -> false
+      | ModuleDefinitionsFile.ClassMro.Resolved mro ->
+          List.exists mro ~f:(fun class_id ->
+              FullyQualifiedName.equal
+                parent
+                (ClassIdToQualifiedNameSharedMemory.get_class_name
+                   class_id_to_qualified_name_shared_memory
+                   class_id))
+
+
   let get_callable_metadata { callable_metadata_shared_memory; _ } define_name =
     CallableMetadataSharedMemory.get
       callable_metadata_shared_memory
@@ -4551,7 +4561,8 @@ module ReadOnly = struct
          class_id_to_qualified_name_shared_memory;
          _;
        } as api)
-      ~method_has_overrides
+      ~overrides_exist
+      ~get_overriding_types
       ~global_is_string_literal
       ~attribute_targets
       ~callable
@@ -4559,7 +4570,7 @@ module ReadOnly = struct
     =
     let open ModuleCallGraphs in
     let open CallGraph in
-    let rec instantiate_target = function
+    let instantiate_target ~receiver_class = function
       | PyreflyTarget.Function callable_id ->
           let fully_qualified_name =
             CallableIdToQualifiedNameSharedMemory.get
@@ -4573,7 +4584,7 @@ module ReadOnly = struct
               (FullyQualifiedName.to_reference fully_qualified_name)
           in
           [target]
-      | PyreflyTarget.AllOverrides callable_id ->
+      | PyreflyTarget.Overrides callable_id -> (
           let fully_qualified_name =
             CallableIdToQualifiedNameSharedMemory.get
               callable_id_to_qualified_name_shared_memory
@@ -4582,64 +4593,46 @@ module ReadOnly = struct
           let target =
             target_from_define_name
               api
-              ~override:true
-              (FullyQualifiedName.to_reference fully_qualified_name)
-          in
-          let target_method =
-            match target with
-            | Target.Regular (Target.Regular.Override target_method) -> target_method
-            | _ -> failwith "unreachable"
-          in
-          if not (method_has_overrides target_method) then
-            (* Pyrefly believes this method has overrides, but the override graph disagrees. This
-               must mean we have a model with `@SkipOverrides`. *)
-            [Target.Regular (Target.Regular.Method target_method)]
-          else
-            [target]
-      | PyreflyTarget.OverrideSubset { base_method = base_method_id; subset } ->
-          let fully_qualified_base_method =
-            CallableIdToQualifiedNameSharedMemory.get
-              callable_id_to_qualified_name_shared_memory
-              base_method_id
-          in
-          let target =
-            target_from_define_name
-              api
               ~override:false
-              (FullyQualifiedName.to_reference fully_qualified_base_method)
+              (FullyQualifiedName.to_reference fully_qualified_name)
           in
           let target_method =
             match target with
             | Target.Regular (Target.Regular.Method target_method) -> target_method
             | _ -> failwith "unreachable"
           in
-          if not (method_has_overrides target_method) then
-            (* Pyrefly believes this method has overrides, but the override graph disagrees. This
-               must mean we have a model with `@SkipOverrides`. *)
-            [target]
-          else
-            subset |> List.map ~f:instantiate_target |> List.concat |> List.cons target
-      | PyreflyTarget.OverrideSubsetThreshold { base_method = base_method_id } ->
-          let fully_qualified_base_method =
-            CallableIdToQualifiedNameSharedMemory.get
-              callable_id_to_qualified_name_shared_memory
-              base_method_id
+          let declaring_class = target_method.class_name in
+          let get_actual_target t =
+            if overrides_exist t then
+              t
+              |> Target.as_regular_exn
+              |> Target.Regular.get_corresponding_override_exn
+              |> Target.from_regular
+            else
+              t
           in
-          let target =
-            target_from_define_name
-              api
-              ~override:true
-              (FullyQualifiedName.to_reference fully_qualified_base_method)
-          in
-          let target_method =
-            match target with
-            | Target.Regular (Target.Regular.Override target_method) -> target_method
-            | _ -> failwith "unreachable"
-          in
-          if not (method_has_overrides target_method) then
-            [Target.Regular (Target.Regular.Method target_method)]
-          else
-            [target]
+          match receiver_class with
+          | None -> [target]
+          | Some receiver_class when String.equal receiver_class declaring_class ->
+              (* Receiver type matches declaring type *)
+              [get_actual_target target]
+          | Some receiver_class -> (
+              let overriding_types = get_overriding_types target in
+              match overriding_types with
+              | None -> [target]
+              | Some overriding_types ->
+                  let override_targets =
+                    overriding_types
+                    |> List.filter ~f:(fun class_name ->
+                           is_subclass api ~parent:receiver_class ~child:(Reference.show class_name))
+                    |> List.map ~f:(fun class_name ->
+                           get_actual_target
+                             (Target.create_method
+                                ~kind:target_method.kind
+                                class_name
+                                target_method.method_name))
+                  in
+                  target :: override_targets))
       | PyreflyTarget.FormatString -> [Target.ArtificialTargets.format_string]
     in
     let instantiate_call_target
@@ -4653,7 +4646,14 @@ module ReadOnly = struct
           return_type;
         }
       =
-      let targets = instantiate_target target in
+      let receiver_class =
+        receiver_class
+        >>| ClassIdToQualifiedNameSharedMemory.get_class_name
+              class_id_to_qualified_name_shared_memory
+        >>| FullyQualifiedName.to_reference
+        >>| Ast.Reference.show
+      in
+      let targets = instantiate_target ~receiver_class target in
       List.map
         ~f:(fun target ->
           {
@@ -4661,12 +4661,7 @@ module ReadOnly = struct
             implicit_receiver = JsonImplicitReceiver.is_true implicit_receiver;
             implicit_dunder_call;
             index = 0;
-            receiver_class =
-              receiver_class
-              >>| ClassIdToQualifiedNameSharedMemory.get_class_name
-                    class_id_to_qualified_name_shared_memory
-              >>| FullyQualifiedName.to_reference
-              >>| Ast.Reference.show;
+            receiver_class;
             is_class_method;
             is_static_method;
             return_type = Some return_type;
@@ -4828,7 +4823,8 @@ module ReadOnly = struct
       ({ pyrefly_directory; callable_metadata_shared_memory; module_infos_shared_memory; _ } as api)
       ~scheduler
       ~scheduler_policies
-      ~method_has_overrides
+      ~overrides_exist
+      ~get_overriding_types
       ~global_is_string_literal
       ~store_shared_memory
       ~attribute_targets
@@ -4946,7 +4942,8 @@ module ReadOnly = struct
               let call_graph =
                 instantiate_call_graph
                   api
-                  ~method_has_overrides
+                  ~overrides_exist
+                  ~get_overriding_types
                   ~global_is_string_literal
                   ~attribute_targets
                   ~callable
