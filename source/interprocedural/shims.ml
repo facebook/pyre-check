@@ -20,7 +20,7 @@ module IdentifiedCallee = struct
     | MultiprocessingProcess
     | PromoteQueue
     | ApiClient
-    | WeatherDatatype of string
+    | MemcacheDatatype of string
   [@@deriving show]
 end
 

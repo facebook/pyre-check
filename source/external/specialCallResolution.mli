@@ -42,11 +42,15 @@ end
 
 val shim_calls_for_pyre1
   :  resolve_expression_to_type:(Expression.t -> Type.t) ->
+  class_mro:(string -> string list) ->
+  callable_exists:(Reference.t -> bool) ->
   Expression.Call.t ->
   Shims.ShimArgumentMapping.t option
 
 val shim_calls_for_pyrefly
-  :  callees:CallTarget.t list ->
+  :  class_mro:(string -> string list) ->
+  callable_exists:(Reference.t -> bool) ->
+  callees:CallTarget.t list ->
   nested_callees:NestedCallees.t ->
   arguments:Expression.Call.Argument.t list ->
   Shims.ShimArgumentMapping.t option

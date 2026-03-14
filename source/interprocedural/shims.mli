@@ -14,7 +14,7 @@ module IdentifiedCallee : sig
     | MultiprocessingProcess
     | PromoteQueue
     | ApiClient
-    | WeatherDatatype of string
+    | MemcacheDatatype of string
   [@@deriving show]
 end
 
