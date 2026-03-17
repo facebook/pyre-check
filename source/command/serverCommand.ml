@@ -298,7 +298,7 @@ let run_server configuration_file =
   match CommandStartup.read_and_parse_json configuration_file ~f:ServerConfiguration.of_yojson with
   | Result.Error message ->
       Log.error "%s" message;
-      exit 1
+      ExitStatus.Error |> ExitStatus.exit_code |> exit
   | Result.Ok
       ({
          ServerConfiguration.base =

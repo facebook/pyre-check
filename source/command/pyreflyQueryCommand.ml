@@ -36,30 +36,34 @@ let run_pyrefly_query ~pyrefly_results ~query ~configuration ~scheduler =
 
 
 let run_command pyrefly_results query output_file configuration_file =
-  let query_response =
-    match
-      CommandStartup.read_and_parse_json
-        configuration_file
-        ~f:CommandStartup.BaseConfiguration.of_yojson
-    with
-    | Result.Error message -> Server.Query.Response.Error message
-    | Result.Ok base_configuration ->
-        AnalyzeCommand.setup_global_states base_configuration;
-        let configuration =
-          AnalyzeCommand.analysis_configuration_of
-            ~taint_model_paths:[]
-            ~strict:false
-            ~use_pyrefly_results:true
-            base_configuration
-        in
+  match
+    CommandStartup.read_and_parse_json
+      configuration_file
+      ~f:CommandStartup.BaseConfiguration.of_yojson
+  with
+  | Result.Error message ->
+      Log.error "%s" message;
+      (* Be consistent with the exit code of pyre server when running `pyre query` *)
+      ServerCommand.ExitStatus.Error |> ServerCommand.ExitStatus.exit_code |> exit
+  | Result.Ok base_configuration ->
+      AnalyzeCommand.setup_global_states base_configuration;
+      let configuration =
+        AnalyzeCommand.analysis_configuration_of
+          ~taint_model_paths:[]
+          ~strict:false
+          ~use_pyrefly_results:true
+          base_configuration
+      in
+      let query_response =
         Scheduler.with_scheduler
           ~configuration
           ~should_log_exception:(fun _ -> false)
           ~f:(fun scheduler -> run_pyrefly_query ~pyrefly_results ~query ~configuration ~scheduler)
-  in
-  let json = Server.Query.Response.to_yojson query_response in
-  output_query_response ~output_file ~content:(Yojson.Safe.pretty_to_string json);
-  exit 0
+      in
+      let json = Server.Query.Response.to_yojson query_response in
+      output_query_response ~output_file ~content:(Yojson.Safe.pretty_to_string json);
+      (* Be consistent with the exit code of pyre server when running `pyre query` *)
+      ServerCommand.ExitStatus.Ok |> ServerCommand.ExitStatus.exit_code |> exit
 
 
 let doc = "Run a query using Pyrefly results"
