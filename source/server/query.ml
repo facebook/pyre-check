@@ -782,6 +782,60 @@ let process_model_query ~pyre_api ~scheduler ~configuration ~path ~query_name =
   | Result.Error message -> Response.Error message
 
 
+let process_validate_taint_models ~pyre_api ~scheduler ~configuration ~path ~verify_dsl =
+  let open Response in
+  let paths =
+    match path with
+    | Some path ->
+        if String.is_prefix ~prefix:"/" path then
+          [PyrePath.create_absolute ~follow_symbolic_links:true path]
+        else
+          let { Configuration.Analysis.local_root = root; _ } = configuration in
+          [PyrePath.create_relative ~root ~relative:path]
+    | None -> configuration.Configuration.Analysis.taint_model_paths
+  in
+  let taint_configuration =
+    let step_logger =
+      Taint.StepLogger.start
+        ~start_message:"Initializing and verifying taint configuration"
+        ~end_message:"Initialized and verified taint configuration"
+        ()
+    in
+    let taint_configuration =
+      Taint.TaintConfiguration.from_taint_model_paths paths
+      |> Taint.TaintConfiguration.exception_on_error
+    in
+    Taint.StepLogger.finish step_logger;
+    taint_configuration
+  in
+  let { Taint.ModelParseResult.queries = model_queries; errors = model_parse_errors; _ } =
+    let python_version = Taint.ModelParser.PythonVersion.from_configuration configuration in
+    parse_model_queries
+      ~pyre_api
+      ~scheduler
+      ~taint_configuration
+      ~python_version
+      ~filter_query:(fun _ -> true)
+      ~model_paths:paths
+  in
+  let model_query_errors =
+    if verify_dsl then
+      setup_and_execute_model_queries ~pyre_api ~scheduler ~configuration model_queries
+      |> Taint.ModelQueryExecution.ExecutionResult.get_errors
+    else
+      []
+  in
+  let errors = List.append model_parse_errors model_query_errors in
+  if List.is_empty errors then
+    Single
+      (Base.Success
+         (Format.asprintf
+            "Models in `%s` are valid."
+            (paths |> List.map ~f:PyrePath.show |> String.concat ~sep:", ")))
+  else
+    Single (Base.ModelVerificationErrors errors)
+
+
 let rec process_request_exn
     ~type_environment
     ~global_module_paths_api
@@ -1315,56 +1369,7 @@ let rec process_request_exn
             ~type_environment
             ~global_module_paths_api
         in
-        let paths =
-          match path with
-          | Some path ->
-              if String.is_prefix ~prefix:"/" path then
-                [PyrePath.create_absolute ~follow_symbolic_links:true path]
-              else
-                let { Configuration.Analysis.local_root = root; _ } = configuration in
-                [PyrePath.create_relative ~root ~relative:path]
-          | None -> configuration.Configuration.Analysis.taint_model_paths
-        in
-        let taint_configuration =
-          let step_logger =
-            Taint.StepLogger.start
-              ~start_message:"Initializing and verifying taint configuration"
-              ~end_message:"Initialized and verified taint configuration"
-              ()
-          in
-          let taint_configuration =
-            Taint.TaintConfiguration.from_taint_model_paths paths
-            |> Taint.TaintConfiguration.exception_on_error
-          in
-          Taint.StepLogger.finish step_logger;
-          taint_configuration
-        in
-        let { Taint.ModelParseResult.queries = model_queries; errors = model_parse_errors; _ } =
-          let python_version = Taint.ModelParser.PythonVersion.from_configuration configuration in
-          parse_model_queries
-            ~pyre_api
-            ~scheduler
-            ~taint_configuration
-            ~python_version
-            ~filter_query:(fun _ -> true)
-            ~model_paths:paths
-        in
-        let model_query_errors =
-          if verify_dsl then
-            setup_and_execute_model_queries ~pyre_api ~scheduler ~configuration model_queries
-            |> Taint.ModelQueryExecution.ExecutionResult.get_errors
-          else
-            []
-        in
-        let errors = List.append model_parse_errors model_query_errors in
-        if List.is_empty errors then
-          Single
-            (Base.Success
-               (Format.asprintf
-                  "Models in `%s` are valid."
-                  (paths |> List.map ~f:PyrePath.show |> String.concat ~sep:", ")))
-        else
-          Single (Base.ModelVerificationErrors errors)
+        process_validate_taint_models ~pyre_api ~scheduler ~configuration ~path ~verify_dsl
   in
   try process_request_exn () with
   | ClassHierarchy.Untracked untracked ->

@@ -13,6 +13,7 @@ from typing import Optional
 
 from .. import (
     backend_arguments,
+    command_arguments,
     frontend_configuration,
     log,
 )
@@ -22,7 +23,7 @@ from .analyze import (
     _flush_log_file,
     _get_server_start_command,
     _run_pyrefly,
-    create_base_arguments_for_pyrefly,
+    create_analyze_arguments,
 )
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -35,7 +36,11 @@ def _run_pyrefly_query_command(
     configuration: frontend_configuration.Base,
     output_file: Optional[str],
 ) -> commands.ExitCode:
-    configuration_arguments = create_base_arguments_for_pyrefly(configuration)
+    configuration_arguments = create_analyze_arguments(
+        configuration,
+        analyze_arguments=command_arguments.AnalyzeArguments(),
+        pyrefly_results=pyrefly_results,
+    )
     with (
         backend_arguments.temporary_argument_file(
             configuration_arguments
@@ -46,8 +51,6 @@ def _run_pyrefly_query_command(
         pyrefly_query_command = [
             pyre_binary,
             "pyrefly-query",
-            "--pyrefly-results",
-            pyrefly_results,
             "--query",
             query,
             "--configuration-file",

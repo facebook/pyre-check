@@ -213,6 +213,14 @@ val process_model_query
   query_name:string ->
   Response.t
 
+val process_validate_taint_models
+  :  pyre_api:Interprocedural.PyrePysaApi.ReadOnly.t ->
+  scheduler:Scheduler.t ->
+  configuration:Configuration.Analysis.t ->
+  path:string option ->
+  verify_dsl:bool ->
+  Response.t
+
 val process_request
   :  type_environment:Analysis.TypeEnvironment.TypeEnvironmentReadOnly.t ->
   global_module_paths_api:Analysis.GlobalModulePathsApi.t ->

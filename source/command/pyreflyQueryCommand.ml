@@ -18,41 +18,58 @@ let output_query_response ~output_file ~content =
 
 
 let run_pyrefly_query ~pyrefly_results ~query ~configuration ~scheduler =
+  let create_pyre_api () =
+    pyrefly_results
+    |> PyrePath.create_absolute
+    |> Interprocedural.PyreflyApi.ReadWrite.create_from_directory
+         ~scheduler
+         ~scheduler_policies:Configuration.SchedulerPolicies.empty
+         ~configuration
+    |> Interprocedural.PyreflyApi.ReadOnly.of_read_write_api
+    |> Interprocedural.PyrePysaApi.ReadOnly.from_pyrefly_api
+  in
   match Server.Query.parse_request query with
   | Result.Error message -> Server.Query.Response.Error message
   | Result.Ok (ModelQuery { path; query_name }) ->
-      let pyre_api =
-        pyrefly_results
-        |> PyrePath.create_absolute
-        |> Interprocedural.PyreflyApi.ReadWrite.create_from_directory
-             ~scheduler
-             ~scheduler_policies:Configuration.SchedulerPolicies.empty
-             ~configuration
-        |> Interprocedural.PyreflyApi.ReadOnly.of_read_write_api
-        |> Interprocedural.PyrePysaApi.ReadOnly.from_pyrefly_api
-      in
-      Server.Query.process_model_query ~pyre_api ~scheduler ~configuration ~path ~query_name
+      Server.Query.process_model_query
+        ~pyre_api:(create_pyre_api ())
+        ~scheduler
+        ~configuration
+        ~path
+        ~query_name
+  | Result.Ok (ValidateTaintModels { path; verify_dsl }) ->
+      Server.Query.process_validate_taint_models
+        ~pyre_api:(create_pyre_api ())
+        ~scheduler
+        ~configuration
+        ~path
+        ~verify_dsl
   | Result.Ok _ -> Server.Query.Response.Error (Format.asprintf "Unsupported query: `%s`" query)
 
 
-let run_command pyrefly_results query output_file configuration_file =
+let run_command query output_file configuration_file =
   match
     CommandStartup.read_and_parse_json
       configuration_file
-      ~f:CommandStartup.BaseConfiguration.of_yojson
+      ~f:AnalyzeCommand.AnalyzeConfiguration.of_yojson
   with
   | Result.Error message ->
       Log.error "%s" message;
       (* Be consistent with the exit code of pyre server when running `pyre query` *)
       ServerCommand.ExitStatus.Error |> ServerCommand.ExitStatus.exit_code |> exit
-  | Result.Ok base_configuration ->
-      AnalyzeCommand.setup_global_states base_configuration;
+  | Result.Ok { base; taint_model_paths; strict; pyrefly_results; _ } ->
+      AnalyzeCommand.setup_global_states base;
       let configuration =
         AnalyzeCommand.analysis_configuration_of
-          ~taint_model_paths:[]
-          ~strict:false
+          ~taint_model_paths
+          ~strict
           ~use_pyrefly_results:true
-          base_configuration
+          base
+      in
+      let pyrefly_results =
+        match pyrefly_results with
+        | Some path -> PyrePath.absolute path
+        | None -> failwith "`pyrefly_results` must be set in the configuration file"
       in
       let query_response =
         Scheduler.with_scheduler
@@ -70,10 +87,6 @@ let doc = "Run a query using Pyrefly results"
 
 let command () =
   let open Cmdliner in
-  let pyrefly_results =
-    Arg.(
-      required & opt (some string) None & info ["pyrefly-results"] ~doc:"Path to Pyrefly results")
-  in
   let query = Arg.(required & opt (some string) None & info ["query"] ~doc:"Query to run") in
   let configuration_file =
     Arg.(
@@ -85,8 +98,6 @@ let command () =
     Arg.(
       value & opt (some string) None & info ["output-file"] ~doc:"Optional path to write output to")
   in
-  let term =
-    Term.(const run_command $ pyrefly_results $ query $ output_file $ configuration_file)
-  in
+  let term = Term.(const run_command $ query $ output_file $ configuration_file) in
   let info = Cmd.info "pyrefly-query" ~doc in
   Cmd.v info term

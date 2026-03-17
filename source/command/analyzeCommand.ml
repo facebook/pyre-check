@@ -455,11 +455,10 @@ let verify_configuration ~static_analysis_configuration () =
   ()
 
 
-let run_analyze analyze_configuration =
-  let { AnalyzeConfiguration.base = { CommandStartup.BaseConfiguration.source_paths; debug; _ }; _ }
-    =
-    analyze_configuration
-  in
+let run_analyze
+    ({ AnalyzeConfiguration.base = { CommandStartup.BaseConfiguration.source_paths; debug; _ }; _ }
+    as analyze_configuration)
+  =
   let ({ Configuration.StaticAnalysis.configuration = analysis_configuration; _ } as
       static_analysis_configuration)
     =
