@@ -25,7 +25,7 @@ from ...tests import setup
 from ..daemon_querier import DaemonQueryFailure, PersistentDaemonQuerier
 from ..tests import server_setup
 
-_DaemonQuerier_Failure_Message = "Some kind of failure has occured"
+_DaemonQuerier_Failure_Message = "Some kind of failure has occurred"
 
 
 @contextmanager
