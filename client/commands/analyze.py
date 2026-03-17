@@ -251,6 +251,34 @@ class Arguments:
         }
 
 
+def create_base_arguments_for_pyrefly(
+    configuration: frontend_configuration.Base,
+) -> backend_arguments.BaseArguments:
+    """
+    When using pyrefly results, ignore most configuration options.
+    """
+    log_directory = configuration.get_log_directory()
+    return backend_arguments.BaseArguments(
+        log_path=str(log_directory),
+        global_root=str(configuration.get_global_root()),
+        checked_directory_allowlist=[],
+        checked_directory_blocklist=[],
+        debug=False,
+        excludes=[],
+        extensions=[],
+        relative_local_root=None,
+        memory_profiling_output=None,
+        number_of_workers=configuration.get_number_of_workers(),
+        parallel=True,
+        profiling_output=None,
+        python_version=configuration.get_python_version(),
+        shared_memory=configuration.get_shared_memory(),
+        remote_logging=None,
+        search_paths=[],
+        source_paths=backend_arguments.SimpleSourcePath(elements=[]),
+    )
+
+
 def create_analyze_arguments(
     configuration: frontend_configuration.Base,
     analyze_arguments: command_arguments.AnalyzeArguments,
@@ -326,25 +354,13 @@ def create_analyze_arguments(
             source_paths=source_paths,
         )
     else:
-        # When a pyrefly result directory is provided, ignore most configuration options.
-        base_arguments = backend_arguments.BaseArguments(
-            log_path=str(log_directory),
-            global_root=str(configuration.get_global_root()),
-            checked_directory_allowlist=[],
-            checked_directory_blocklist=[],
+        base_arguments = dataclasses.replace(
+            create_base_arguments_for_pyrefly(configuration),
             debug=analyze_arguments.debug,
-            excludes=[],
-            extensions=[],
-            relative_local_root=None,
             memory_profiling_output=memory_profiling_output,
-            number_of_workers=configuration.get_number_of_workers(),
             parallel=not analyze_arguments.sequential,
             profiling_output=profiling_output,
-            python_version=configuration.get_python_version(),
-            shared_memory=configuration.get_shared_memory(),
             remote_logging=remote_logging,
-            search_paths=[],
-            source_paths=backend_arguments.SimpleSourcePath(elements=[]),
         )
 
     return Arguments(
