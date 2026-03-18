@@ -1,10 +1,13 @@
 # General sanitzers
 
 @Sanitize
+@SkipObscure
 def len(): ...
 
 @Sanitize
+@SkipObscure
 def type.__init__(): ...
 
 @Sanitize
+@SkipObscure
 def type.__new__(): ...
