@@ -36,7 +36,7 @@
     "react-trend": "^1.2.5",
     "react-youtube": "^7.14.0",
     "socket.io-client": "^4.3.2",
-    "socket.io-parser": "4.2.3"
+    "socket.io-parser": "4.2.6"
   },
   "resolutions": {
     "shelljs": "^0.8.5",
