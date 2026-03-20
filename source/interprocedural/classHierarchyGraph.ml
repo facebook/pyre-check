@@ -89,15 +89,17 @@ module Heap = struct
 
   let roots { roots; _ } = roots
 
-  let from_qualifier ~pyre_api ~qualifier =
-    let register_immediate_subclasses accumulator class_name =
-      let class_name = Reference.show class_name in
-      let parents = PyrePysaApi.ReadOnly.class_immediate_parents pyre_api class_name in
-      List.fold ~init:accumulator parents ~f:(fun accumulator parent ->
-          add accumulator ~parent ~child:class_name)
-    in
+  let edges_from_qualifier ~pyre_api ~qualifier =
     PyrePysaApi.ReadOnly.get_class_names_for_qualifier pyre_api ~exclude_test_modules:true qualifier
-    |> List.fold ~init:empty ~f:register_immediate_subclasses
+    |> List.concat_map ~f:(fun class_name ->
+           let class_name = Reference.show class_name in
+           let parents = PyrePysaApi.ReadOnly.class_immediate_parents pyre_api class_name in
+           List.map parents ~f:(fun parent -> parent, class_name))
+
+
+  let from_qualifier ~pyre_api ~qualifier =
+    edges_from_qualifier ~pyre_api ~qualifier
+    |> List.fold ~init:empty ~f:(fun accumulator (parent, child) -> add accumulator ~parent ~child)
 
 
   let create ~roots ~edges =
@@ -136,10 +138,12 @@ module Heap = struct
 
 
   let from_qualifiers ~scheduler ~scheduler_policies ~pyre_api ~qualifiers =
-    let build_class_hierarchy_graph qualifiers =
-      List.fold qualifiers ~init:empty ~f:(fun accumulator qualifier ->
-          let graph = from_qualifier ~pyre_api ~qualifier in
-          join accumulator graph)
+    (* We collect (parent, child) string pairs in parallel workers, then build the graph
+       sequentially. This is much faster than building Heap.t graphs in workers and reducing with
+       `join`, because serializing large ClassNameMap/ClassNameSet structures across process
+       boundaries is very expensive. *)
+    let collect_edges qualifiers =
+      List.concat_map qualifiers ~f:(fun qualifier -> edges_from_qualifier ~pyre_api ~qualifier)
     in
     let scheduler_policy =
       Scheduler.Policy.from_configuration_or_default
@@ -149,17 +153,21 @@ module Heap = struct
           (Scheduler.Policy.fixed_chunk_count
              ~minimum_chunks_per_worker:1
              ~minimum_chunk_size:1
-             ~preferred_chunks_per_worker:1
+             ~preferred_chunks_per_worker:4
              ())
     in
-    Scheduler.map_reduce
-      scheduler
-      ~policy:scheduler_policy
-      ~initial:empty
-      ~map:build_class_hierarchy_graph
-      ~reduce:join
-      ~inputs:qualifiers
-      ()
+    let edges =
+      Scheduler.map_reduce
+        scheduler
+        ~policy:scheduler_policy
+        ~initial:[]
+        ~map:collect_edges
+        ~reduce:List.rev_append
+        ~inputs:qualifiers
+        ()
+    in
+    List.fold edges ~init:empty ~f:(fun accumulator (parent, child) ->
+        add accumulator ~parent ~child)
 end
 
 (** Mapping from a class name to the set of its direct children, stored in shared memory. *)
