@@ -3349,8 +3349,12 @@ module ReadWrite = struct
     let callable_id_to_qualified_name_shared_memory =
       CallableIdToQualifiedNameSharedMemory.create ()
     in
+    let callable_undecorated_signatures_shared_memory =
+      CallableUndecoratedSignaturesSharedMemory.create ()
+    in
     let () = Log.info "Collecting classes and definitions..." in
-    (* First step: collect classes and definitions, and assign them fully qualified names. *)
+    (* Collect classes and definitions, assign them fully qualified names, and record undecorated
+       signatures. *)
     let collect_definitions_and_assign_names (module_qualifier, pyrefly_info_filename) =
       let {
         ModuleDefinitionsFile.function_definitions;
@@ -3504,58 +3508,7 @@ module ReadWrite = struct
         module_globals_shared_memory
         module_qualifier
         global_variables;
-      {
-        DefinitionCount.number_callables = List.length callables;
-        number_classes = List.length classes;
-      }
-    in
-    let scheduler_policy =
-      Scheduler.Policy.from_configuration_or_default
-        scheduler_policies
-        Configuration.ScheduleIdentifier.PyreflyCollectDefinitions
-        ~default:
-          (Scheduler.Policy.fixed_chunk_count
-             ~minimum_chunks_per_worker:1
-             ~minimum_chunk_size:1
-             ~preferred_chunks_per_worker:1
-             ())
-    in
-    let inputs =
-      qualifier_to_module_map
-      |> Map.to_alist
-      |> List.filter_map ~f:(fun (qualifier, { Module.pyrefly_info_filename; _ }) ->
-             match pyrefly_info_filename with
-             | Some pyrefly_info_filename -> Some (qualifier, pyrefly_info_filename)
-             | None -> None)
-    in
-    let map modules =
-      List.map ~f:collect_definitions_and_assign_names modules
-      |> List.fold ~init:DefinitionCount.empty ~f:DefinitionCount.add
-    in
-    let { DefinitionCount.number_callables; number_classes } =
-      Scheduler.map_reduce
-        scheduler
-        ~policy:scheduler_policy
-        ~initial:DefinitionCount.empty
-        ~map
-        ~reduce:DefinitionCount.add
-        ~inputs
-        ()
-    in
-    (* Second step: record undecorated signatures. This currently requires parsing module info files
-       again, which is wasteful. *)
-    let callable_undecorated_signatures_shared_memory =
-      CallableUndecoratedSignaturesSharedMemory.create ()
-    in
-    let parse_class_parents_and_undecorated_signatures (module_qualifier, pyrefly_info_filename) =
-      let { ModuleDefinitionsFile.function_definitions; class_definitions; module_id; _ } =
-        ModuleDefinitionsFile.from_path_exn ~pyrefly_directory pyrefly_info_filename
-      in
-      let get_function_name local_function_id =
-        CallableIdToQualifiedNameSharedMemory.get
-          callable_id_to_qualified_name_shared_memory
-          { GlobalCallableId.module_id; local_function_id }
-      in
+      (* Record undecorated signatures. *)
       let fold_function_parameters (position, excluded, sofar) = function
         | ModuleDefinitionsFile.FunctionParameter.PosOnly { name; annotation; required } ->
             ( position + 1,
@@ -3622,6 +3575,11 @@ module ReadWrite = struct
           return_annotation = JsonType.pysa_type_none;
         }
       in
+      let get_function_name local_function_id =
+        CallableIdToQualifiedNameSharedMemory.get
+          callable_id_to_qualified_name_shared_memory
+          { GlobalCallableId.module_id; local_function_id }
+      in
       let add_function
           ~key:local_function_id
           ~data:{ ModuleDefinitionsFile.FunctionDefinition.undecorated_signatures; _ }
@@ -3658,26 +3616,41 @@ module ReadWrite = struct
           (FullyQualifiedName.create_module_toplevel ~module_qualifier)
           [toplevel_undecorated_signature]
       in
-      ()
+      {
+        DefinitionCount.number_callables = List.length callables;
+        number_classes = List.length classes;
+      }
     in
     let scheduler_policy =
       Scheduler.Policy.from_configuration_or_default
         scheduler_policies
-        Configuration.ScheduleIdentifier.PyreflyParseClassParents
+        Configuration.ScheduleIdentifier.PyreflyCollectDefinitions
         ~default:
           (Scheduler.Policy.fixed_chunk_count
              ~minimum_chunks_per_worker:1
              ~minimum_chunk_size:1
-             ~preferred_chunks_per_worker:1
+             ~preferred_chunks_per_worker:4
              ())
     in
-    let () =
+    let inputs =
+      qualifier_to_module_map
+      |> Map.to_alist
+      |> List.filter_map ~f:(fun (qualifier, { Module.pyrefly_info_filename; _ }) ->
+             match pyrefly_info_filename with
+             | Some pyrefly_info_filename -> Some (qualifier, pyrefly_info_filename)
+             | None -> None)
+    in
+    let map modules =
+      List.map ~f:collect_definitions_and_assign_names modules
+      |> List.fold ~init:DefinitionCount.empty ~f:DefinitionCount.add
+    in
+    let { DefinitionCount.number_callables; number_classes } =
       Scheduler.map_reduce
         scheduler
         ~policy:scheduler_policy
-        ~initial:()
-        ~map:(List.iter ~f:parse_class_parents_and_undecorated_signatures)
-        ~reduce:(fun () () -> ())
+        ~initial:DefinitionCount.empty
+        ~map
+        ~reduce:DefinitionCount.add
         ~inputs
         ()
     in
