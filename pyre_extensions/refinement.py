@@ -29,7 +29,6 @@ def assert_is_instance(obj: object, cls: Type[_TClass]) -> _TClass:
     return obj
 
 
-# pyre-ignore[2]: Intentional `Any` input type.
 def safe_cast(new_type: Type[_T], value: Any) -> _T:
     """safe_cast will change the type checker's inference of x if it was
     already a subtype of what we are casting to, and error otherwise."""

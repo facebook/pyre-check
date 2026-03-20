@@ -1042,7 +1042,6 @@ def print_issues(callable: str, **kwargs: Union[str, bool]) -> None:
         for issue in issues:
             print("Issue:")
             print(f"  Code: {issue['code']}")
-            # pyre-ignore: issue contains a location
             print_json_location(issue, "Location: ", indent=" " * 2)
             print(f"  Message: {blue(issue['message'])}")
             print(f"  Handle: {green(issue['master_handle'])}")

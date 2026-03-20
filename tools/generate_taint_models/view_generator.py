@@ -13,7 +13,6 @@ from typing import Any, Callable, Iterable, List, NamedTuple, Type
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
-# pyre-ignore: We do dynamic magic here that Pyre doesn't handle well.
 DynamicURLType = Type[Any]
 
 

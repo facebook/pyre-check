@@ -42,7 +42,6 @@ class PyreCheckResult(NamedTuple):
     errors: Optional[List[str]]
 
 
-# pyre-ignore[33]: We don't have GADT's yet.
 class PyreQueryResult(TypedDict):
     response: Any
 

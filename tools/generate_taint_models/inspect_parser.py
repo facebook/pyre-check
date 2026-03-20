@@ -156,7 +156,6 @@ def _get_annotations_as_types(
     return resolved_annotations
 
 
-# pyre-ignore annotations are types as Any in typeshed
 def _strip_optional_annotation_from_type(annotation: Any) -> Any:
     # Optional is defined as Union[type, NoneType]
     if (
@@ -168,7 +167,6 @@ def _strip_optional_annotation_from_type(annotation: Any) -> Any:
     return annotation
 
 
-# pyre-ignore annotations are types as Any in typeshed
 def _strip_annotated_annotation_from_type(annotation: Any) -> Any:
     # Annotated is defined as Annoted[type, annotation_details]
     # doing this to identify if type is annotated because Annotated has type `typing_extensions._AnnotatedAlias`

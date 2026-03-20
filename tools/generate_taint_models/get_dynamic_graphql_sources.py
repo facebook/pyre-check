@@ -18,7 +18,6 @@ from .model import CallableModel, UnsupportedCallable
 from .model_generator import ModelGenerator, ModelGenerationException
 
 
-# pyre-ignore: Too dynamic.
 GraphQLObjectType = Type[Any]
 
 class DynamicGraphQLFormattableSpecification():

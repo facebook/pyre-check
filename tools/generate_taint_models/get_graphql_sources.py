@@ -14,7 +14,6 @@ from .model import CallableModel
 from .model_generator import ModelGenerator
 
 
-# pyre-ignore: Too dynamic.
 GraphQLObjectType = Type[Any]
 
 
