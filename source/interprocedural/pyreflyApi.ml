@@ -21,6 +21,7 @@ module FunctionParameter = Pyre1Api.ModelQueries.FunctionParameter
 module FunctionParameters = Pyre1Api.ModelQueries.FunctionParameters
 module FunctionSignature = Pyre1Api.ModelQueries.FunctionSignature
 module AccessPath = Analysis.TaintAccessPath
+module SysInfo = Analysis.PyrePysaEnvironment.SysInfo
 
 module FormatError = struct
   type t =
@@ -83,6 +84,11 @@ module JsonUtil = struct
   let as_list = function
     | `List elements -> Ok elements
     | json -> Error (FormatError.UnexpectedJsonType { json; message = "expected a list" })
+
+
+  let as_int = function
+    | `Int value -> Ok value
+    | json -> Error (FormatError.UnexpectedJsonType { json; message = "expected an integer" })
 
 
   let as_string = function
@@ -527,6 +533,8 @@ module ProjectFile = struct
           (* Filesystem path to the source file for the module, as seen by the analyzer *)
       relative_source_path: string option; (* Relative path from a root or search path *)
       info_filename: ModuleInfoFilename.t option;
+      python_version: Configuration.PythonVersion.t;
+      platform: string;
       is_test: bool;
       is_interface: bool;
       is_init: bool;
@@ -548,6 +556,13 @@ module ProjectFile = struct
       >>= fun absolute_source_path ->
       JsonUtil.get_optional_string_member json "relative_source_path"
       >>= fun relative_source_path ->
+      JsonUtil.get_string_member json "python_version"
+      >>= fun python_version_string ->
+      Configuration.PythonVersion.from_string python_version_string
+      |> Result.map_error ~f:(fun error -> FormatError.UnparsableString error)
+      >>= fun python_version ->
+      JsonUtil.get_string_member json "platform"
+      >>= fun platform ->
       JsonUtil.get_optional_bool_member ~default:false json "is_test"
       >>= fun is_test ->
       JsonUtil.get_optional_bool_member ~default:false json "is_interface"
@@ -562,6 +577,8 @@ module ProjectFile = struct
         absolute_source_path;
         relative_source_path;
         info_filename = Option.map ~f:ModuleInfoFilename.create info_filename;
+        python_version;
+        platform;
         is_test;
         is_interface;
         is_init;
@@ -573,11 +590,11 @@ module ProjectFile = struct
 
   type t = {
     modules: Module.t ModuleMap.t;
-    builtin_module_id: ModuleId.t;
-    object_class_id: LocalClassId.t;
-    dict_class_id: LocalClassId.t;
-    typing_module_id: ModuleId.t;
-    typing_mapping_class_id: LocalClassId.t;
+    builtin_module_ids: ModuleId.t list;
+    object_class_refs: GlobalClassId.t list;
+    dict_class_refs: GlobalClassId.t list;
+    typing_module_ids: ModuleId.t list;
+    typing_mapping_class_refs: GlobalClassId.t list;
   }
 
   let from_json json =
@@ -597,23 +614,38 @@ module ProjectFile = struct
     JsonUtil.get_object_member json "modules"
     >>= parse_modules
     >>= fun modules ->
-    JsonUtil.get_int_member json "builtin_module_id"
-    >>= fun builtin_module_id ->
-    JsonUtil.get_int_member json "object_class_id"
-    >>= fun object_class_id ->
-    JsonUtil.get_int_member json "dict_class_id"
-    >>= fun dict_class_id ->
-    JsonUtil.get_int_member json "typing_module_id"
-    >>= fun typing_module_id ->
-    JsonUtil.get_int_member json "typing_mapping_class_id"
-    >>| fun typing_mapping_class_id ->
+    JsonUtil.get_list_member json "builtin_module_ids"
+    >>= fun builtin_module_ids_json ->
+    List.map builtin_module_ids_json ~f:(fun j -> JsonUtil.as_int j >>| ModuleId.from_int)
+    |> Result.all
+    >>= fun builtin_module_ids ->
+    JsonUtil.get_list_member json "object_class_refs"
+    >>= fun object_class_refs_json ->
+    List.map ~f:GlobalClassId.from_json object_class_refs_json
+    |> Result.all
+    >>= fun object_class_refs ->
+    JsonUtil.get_list_member json "dict_class_refs"
+    >>= fun dict_class_refs_json ->
+    List.map ~f:GlobalClassId.from_json dict_class_refs_json
+    |> Result.all
+    >>= fun dict_class_refs ->
+    JsonUtil.get_list_member json "typing_module_ids"
+    >>= fun typing_module_ids_json ->
+    List.map typing_module_ids_json ~f:(fun j -> JsonUtil.as_int j >>| ModuleId.from_int)
+    |> Result.all
+    >>= fun typing_module_ids ->
+    JsonUtil.get_list_member json "typing_mapping_class_refs"
+    >>= fun typing_mapping_class_refs_json ->
+    List.map ~f:GlobalClassId.from_json typing_mapping_class_refs_json
+    |> Result.all
+    >>| fun typing_mapping_class_refs ->
     {
       modules;
-      builtin_module_id = ModuleId.from_int builtin_module_id;
-      object_class_id = LocalClassId.from_int object_class_id;
-      dict_class_id = LocalClassId.from_int dict_class_id;
-      typing_module_id = ModuleId.from_int typing_module_id;
-      typing_mapping_class_id = LocalClassId.from_int typing_mapping_class_id;
+      builtin_module_ids;
+      object_class_refs;
+      dict_class_refs;
+      typing_module_ids;
+      typing_mapping_class_refs;
     }
 
 
@@ -1725,7 +1757,8 @@ end
 module TypeErrors = struct
   module JsonError = struct
     type t = {
-      module_id: ModuleId.t;
+      module_name: string;
+      module_path: ModulePath.t;
       location: Location.t;
       kind: string;
       message: string;
@@ -1733,15 +1766,19 @@ module TypeErrors = struct
 
     let from_json json =
       let open Core.Result.Monad_infix in
-      JsonUtil.get_int_member json "module_id"
-      >>= fun module_id ->
+      JsonUtil.get_string_member json "module_name"
+      >>= fun module_name ->
+      JsonUtil.get_object_member json "module_path"
+      >>= fun module_path ->
+      ModulePath.from_json (`Assoc module_path)
+      >>= fun module_path ->
       JsonUtil.get_string_member json "location"
       >>= parse_location
       >>= fun location ->
       JsonUtil.get_string_member json "kind"
       >>= fun kind ->
       JsonUtil.get_string_member json "message"
-      >>| fun message -> { module_id = ModuleId.from_int module_id; location; kind; message }
+      >>| fun message -> { module_name; module_path; location; kind; message }
   end
 
   type t = { errors: JsonError.t list }
@@ -1774,6 +1811,7 @@ module ModuleInfosSharedMemory = struct
           (* Filesystem path to the source file for the module, as seen by the analyzer *)
       relative_source_path: string option; (* Relative path from a root or search path *)
       pyrefly_info_filename: ModuleInfoFilename.t option;
+      sys_info: SysInfo.t;
       is_test: bool; (* Is this a test file? *)
       is_stub: bool; (* Is this a stub file (e.g, `a.pyi`)? *)
       is_internal: bool; (* Is this an internal module (within the project's source directories)? *)
@@ -1921,6 +1959,14 @@ end = struct
   let prefix = Reference.prefix
 
   module Map = Map.Make (T)
+end
+
+module TypeshedClass = struct
+  type t = {
+    sys_info: SysInfo.t;
+    global_class_id: GlobalClassId.t;
+    fully_qualified_name: FullyQualifiedName.t;
+  }
 end
 
 module FullyQualifiedNameSharedMemoryKey = struct
@@ -2228,6 +2274,7 @@ module ReadWrite = struct
           (* Filesystem path to the source file for the module, as seen by the analyzer *)
       relative_source_path: string option; (* Relative path from a root or search path *)
       pyrefly_info_filename: ModuleInfoFilename.t option;
+      sys_info: SysInfo.t;
       is_test: bool;
       is_stub: bool;
       is_internal: bool;
@@ -2242,6 +2289,8 @@ module ReadWrite = struct
           absolute_source_path;
           relative_source_path;
           info_filename;
+          python_version;
+          platform;
           is_test;
           is_interface;
           is_internal;
@@ -2254,6 +2303,7 @@ module ReadWrite = struct
         absolute_source_path = ModulePath.artifact_file_path ~pyrefly_directory absolute_source_path;
         relative_source_path;
         pyrefly_info_filename = info_filename;
+        sys_info = { SysInfo.python_version; platform = Some platform };
         is_test;
         is_stub = is_interface;
         is_internal;
@@ -2280,9 +2330,10 @@ module ReadWrite = struct
     callable_define_signature_shared_memory: CallableDefineSignatureSharedMemory.t;
     callable_parse_result_shared_memory: CallableParseResultSharedMemory.t;
     callable_undecorated_signatures_shared_memory: CallableUndecoratedSignaturesSharedMemory.t;
-    object_class: FullyQualifiedName.t;
-    dict_class_id: GlobalClassId.t;
-    typing_mapping_class_id: GlobalClassId.t;
+    all_sys_infos: SysInfo.t list;
+    object_classes: TypeshedClass.t list;
+    dict_classes: TypeshedClass.t list;
+    typing_mapping_classes: TypeshedClass.t list;
   }
 
   (* Build a mapping from unique module qualifiers (module name + path prefix) to module. *)
@@ -2348,6 +2399,11 @@ module ReadWrite = struct
         |> List.fold ~init:(ModuleId.from_int 0) ~f:(fun sofar (_, { Module.module_id; _ }) ->
                ModuleId.max sofar module_id)
       in
+      let default_sys_info =
+        let _, modules = Map.min_elt_exn qualifier_to_module_map in
+        let _, { Module.sys_info; _ } = List.hd_exn modules in
+        sys_info
+      in
       let add_implicit_module ((qualifier_to_module_map, last_module_id) as sofar) module_name =
         if Reference.length module_name >= 2 then
           let module_head = Option.value_exn (Reference.head module_name) in
@@ -2366,6 +2422,7 @@ module ReadWrite = struct
                         absolute_source_path = None;
                         relative_source_path = None;
                         pyrefly_info_filename = None;
+                        sys_info = default_sys_info;
                         is_test = false;
                         is_stub = false;
                         is_internal = false;
@@ -2398,26 +2455,17 @@ module ReadWrite = struct
     let () = Log.info "Parsing module list from pyrefly..." in
     let {
       ProjectFile.modules;
-      builtin_module_id;
-      object_class_id;
-      dict_class_id;
-      typing_module_id;
-      typing_mapping_class_id;
+      builtin_module_ids = _;
+      object_class_refs;
+      dict_class_refs;
+      typing_module_ids = _;
+      typing_mapping_class_refs;
     }
       =
       ProjectFile.from_path_exn (PyrePath.append pyrefly_directory ~element:"pyrefly.pysa.json")
     in
     let qualifier_to_module_map =
       create_module_qualifiers ~pyrefly_directory ~add_toplevel_modules:true (Map.data modules)
-    in
-    let object_class_id =
-      { GlobalClassId.module_id = builtin_module_id; local_class_id = object_class_id }
-    in
-    let dict_class_id =
-      { GlobalClassId.module_id = builtin_module_id; local_class_id = dict_class_id }
-    in
-    let typing_mapping_class_id =
-      { GlobalClassId.module_id = typing_module_id; local_class_id = typing_mapping_class_id }
     in
     Log.info "Parsed module list from pyrefly: %.3fs" (Timer.stop_in_sec timer);
     Statistics.performance
@@ -2426,7 +2474,7 @@ module ReadWrite = struct
       ~timer
       ~integers:["modules", Map.length qualifier_to_module_map]
       ();
-    qualifier_to_module_map, object_class_id, dict_class_id, typing_mapping_class_id
+    qualifier_to_module_map, object_class_refs, dict_class_refs, typing_mapping_class_refs
 
 
   let write_module_infos_to_shared_memory ~qualifier_to_module_map =
@@ -2444,6 +2492,7 @@ module ReadWrite = struct
                     absolute_source_path;
                     relative_source_path;
                     pyrefly_info_filename;
+                    sys_info;
                     is_test;
                     is_stub;
                     is_internal;
@@ -2458,6 +2507,7 @@ module ReadWrite = struct
                  absolute_source_path;
                  relative_source_path;
                  pyrefly_info_filename;
+                 sys_info;
                  is_test;
                  is_stub;
                  is_internal;
@@ -2886,13 +2936,11 @@ module ReadWrite = struct
           in
           let open Result.Monad_infix in
           let {
-            Configuration.Analysis.python_version =
-              { Configuration.PythonVersion.major; minor; micro };
-            system_platform;
-            _;
+            SysInfo.python_version = { Configuration.PythonVersion.major; minor; micro };
+            platform = system_platform;
           }
             =
-            configuration
+            module_info.sys_info
           in
           let sys_platform = Option.value system_platform ~default:"linux" in
           let parse_result =
@@ -3672,8 +3720,31 @@ module ReadWrite = struct
       callable_undecorated_signatures_shared_memory )
 
 
+  let make_typeshed_class
+      ~class_id_to_qualified_name_shared_memory
+      ~module_id_to_qualifier_shared_memory
+      ~module_infos_shared_memory
+      global_class_id
+    =
+    let fully_qualified_name =
+      ClassIdToQualifiedNameSharedMemory.get_class_name
+        class_id_to_qualified_name_shared_memory
+        global_class_id
+    in
+    let module_qualifier =
+      ModuleIdToQualifierSharedMemory.get_module_qualifier
+        module_id_to_qualifier_shared_memory
+        global_class_id.GlobalClassId.module_id
+    in
+    let { ModuleInfosSharedMemory.Module.sys_info; _ } =
+      ModuleInfosSharedMemory.get module_infos_shared_memory module_qualifier
+      |> assert_shared_memory_key_exists (fun () -> "unknown module qualifier")
+    in
+    { TypeshedClass.sys_info; global_class_id; fully_qualified_name }
+
+
   let create_from_directory ~scheduler ~scheduler_policies ~configuration pyrefly_directory =
-    let qualifier_to_module_map, object_class_id, dict_class_id, typing_mapping_class_id =
+    let qualifier_to_module_map, object_class_refs, dict_class_refs, typing_mapping_class_refs =
       parse_modules ~pyrefly_directory
     in
 
@@ -3734,11 +3805,23 @@ module ReadWrite = struct
         ~class_metadata_shared_memory
     in
 
-    let object_class =
-      ClassIdToQualifiedNameSharedMemory.get_class_name
-        class_id_to_qualified_name_shared_memory
-        object_class_id
+    let all_sys_infos =
+      qualifier_to_module_map
+      |> Map.data
+      |> List.fold ~init:SysInfo.Set.empty ~f:(fun set { Module.sys_info; _ } ->
+             SysInfo.Set.add sys_info set)
+      |> SysInfo.Set.elements
     in
+
+    let make_typeshed_class =
+      make_typeshed_class
+        ~class_id_to_qualified_name_shared_memory
+        ~module_id_to_qualifier_shared_memory
+        ~module_infos_shared_memory
+    in
+    let object_classes = List.map object_class_refs ~f:make_typeshed_class in
+    let dict_classes = List.map dict_class_refs ~f:make_typeshed_class in
+    let typing_mapping_classes = List.map typing_mapping_class_refs ~f:make_typeshed_class in
 
     {
       pyrefly_directory;
@@ -3760,9 +3843,10 @@ module ReadWrite = struct
       callable_define_signature_shared_memory;
       callable_parse_result_shared_memory;
       callable_undecorated_signatures_shared_memory;
-      object_class;
-      dict_class_id;
-      typing_mapping_class_id;
+      all_sys_infos;
+      object_classes;
+      dict_classes;
+      typing_mapping_classes;
     }
 
 
@@ -3850,9 +3934,10 @@ module ReadWrite = struct
         callable_define_signature_shared_memory;
         callable_parse_result_shared_memory;
         callable_undecorated_signatures_shared_memory;
-        object_class = _;
-        dict_class_id = _;
-        typing_mapping_class_id = _;
+        all_sys_infos = _;
+        object_classes = _;
+        dict_classes = _;
+        typing_mapping_classes = _;
       }
       ~scheduler
     =
@@ -3956,9 +4041,10 @@ module ReadOnly = struct
     module_id_to_qualifier_shared_memory: ModuleIdToQualifierSharedMemory.t;
     class_id_to_qualified_name_shared_memory: ClassIdToQualifiedNameSharedMemory.t;
     callable_id_to_qualified_name_shared_memory: CallableIdToQualifiedNameSharedMemory.t;
-    object_class: FullyQualifiedName.t;
-    dict_class_id: GlobalClassId.t;
-    typing_mapping_class_id: GlobalClassId.t;
+    all_sys_infos: SysInfo.t list;
+    object_classes: TypeshedClass.t list;
+    dict_classes: TypeshedClass.t list;
+    typing_mapping_classes: TypeshedClass.t list;
   }
 
   let of_read_write_api
@@ -3981,9 +4067,10 @@ module ReadOnly = struct
         module_id_to_qualifier_shared_memory;
         class_id_to_qualified_name_shared_memory;
         callable_id_to_qualified_name_shared_memory;
-        object_class;
-        dict_class_id;
-        typing_mapping_class_id;
+        all_sys_infos;
+        object_classes;
+        dict_classes;
+        typing_mapping_classes;
         _;
       }
     =
@@ -4006,11 +4093,14 @@ module ReadOnly = struct
       module_id_to_qualifier_shared_memory;
       class_id_to_qualified_name_shared_memory;
       callable_id_to_qualified_name_shared_memory;
-      object_class;
-      dict_class_id;
-      typing_mapping_class_id;
+      all_sys_infos;
+      object_classes;
+      dict_classes;
+      typing_mapping_classes;
     }
 
+
+  let all_sys_infos { all_sys_infos; _ } = all_sys_infos
 
   let artifact_path_of_qualifier { module_infos_shared_memory; _ } qualifier =
     if Reference.equal qualifier Analysis.PyrePysaEnvironment.artificial_decorator_define_module
@@ -4167,15 +4257,55 @@ module ReadOnly = struct
     FullyQualifiedName.create_module_toplevel ~module_qualifier |> FullyQualifiedName.to_reference
 
 
+  (* Check if a class name is any variant of "object" *)
+  let is_object_class ~object_classes class_name =
+    List.exists object_classes ~f:(fun { TypeshedClass.fully_qualified_name; _ } ->
+        FullyQualifiedName.equal class_name fully_qualified_name)
+
+
+  (* Get the SysInfo for a class by looking up its module *)
+  let get_sys_info_for_class
+      { class_metadata_shared_memory; module_infos_shared_memory; _ }
+      class_name
+    =
+    let { ClassMetadataSharedMemory.Metadata.module_qualifier; _ } =
+      ClassMetadataSharedMemory.get class_metadata_shared_memory class_name
+      |> assert_shared_memory_key_exists (fun () -> "missing class metadata")
+    in
+    let { ModuleInfosSharedMemory.Module.sys_info; _ } =
+      ModuleInfosSharedMemory.get module_infos_shared_memory module_qualifier
+      |> assert_shared_memory_key_exists (fun () -> "missing module info")
+    in
+    sys_info
+
+
+  (* Find the TypeshedClass matching a given SysInfo *)
+  let find_typeshed_class_by_sys_info typeshed_classes sys_info =
+    List.find_exn typeshed_classes ~f:(fun { TypeshedClass.sys_info = s; _ } ->
+        SysInfo.equal s sys_info)
+
+
+  (* Get the object_class FullyQualifiedName for a class with the same SysInfo *)
+  let get_object_class_for ({ object_classes; _ } as api) class_name =
+    let sys_info = get_sys_info_for_class api class_name in
+    let { TypeshedClass.fully_qualified_name; _ } =
+      find_typeshed_class_by_sys_info object_classes sys_info
+    in
+    fully_qualified_name
+
+
   let class_immediate_parents
-      { class_metadata_shared_memory; class_id_to_qualified_name_shared_memory; object_class; _ }
+      ({ class_metadata_shared_memory; class_id_to_qualified_name_shared_memory; object_classes; _ }
+      as api)
       class_name
     =
     (* TOOD(T225700656): Update the API to take a reference and return a reference. *)
     let class_name = FullyQualifiedName.from_reference_unchecked (Reference.create class_name) in
     let get_parents_from_class_metadata { ClassMetadataSharedMemory.Metadata.parents; _ } =
       match parents with
-      | [] when not (FullyQualifiedName.equal class_name object_class) -> [object_class]
+      | [] when not (is_object_class ~object_classes class_name) ->
+          let object_class = get_object_class_for api class_name in
+          [object_class]
       | parents ->
           List.map
             ~f:
@@ -4191,18 +4321,19 @@ module ReadOnly = struct
 
 
   let class_mro
-      { class_metadata_shared_memory; class_id_to_qualified_name_shared_memory; object_class; _ }
+      ({ class_metadata_shared_memory; class_id_to_qualified_name_shared_memory; object_classes; _ }
+      as api)
       class_name
     =
     (* TOOD(T225700656): Update the API to take a reference and return a reference. *)
     let class_name = FullyQualifiedName.from_reference_unchecked (Reference.create class_name) in
     let get_mro_from_class_metadata { ClassMetadataSharedMemory.Metadata.mro; _ } =
       match mro with
-      | _ when FullyQualifiedName.equal class_name object_class -> []
+      | _ when is_object_class ~object_classes class_name -> []
       | ModuleDefinitionsFile.ClassMro.Cyclic ->
           (* Failed to resolve the mro because the class hierarchy is cyclic. Fallback to
              [object]. *)
-          [object_class]
+          [get_object_class_for api class_name]
       | ModuleDefinitionsFile.ClassMro.Resolved mro ->
           let mro =
             List.map
@@ -4212,6 +4343,7 @@ module ReadOnly = struct
               mro
           in
           (* Pyrefly does not include 'object' in the mro. *)
+          let object_class = get_object_class_for api class_name in
           mro @ [object_class]
     in
     ClassMetadataSharedMemory.get class_metadata_shared_memory class_name
@@ -4222,13 +4354,13 @@ module ReadOnly = struct
 
 
   let is_subclass
-      { class_metadata_shared_memory; class_id_to_qualified_name_shared_memory; object_class; _ }
+      { class_metadata_shared_memory; class_id_to_qualified_name_shared_memory; object_classes; _ }
       ~parent
       ~child
     =
     let parent = FullyQualifiedName.from_reference_unchecked (Reference.create parent) in
     let child = FullyQualifiedName.from_reference_unchecked (Reference.create child) in
-    if FullyQualifiedName.equal parent child || FullyQualifiedName.equal parent object_class then
+    if FullyQualifiedName.equal parent child || is_object_class ~object_classes parent then
       true
     else
       let { ClassMetadataSharedMemory.Metadata.mro; _ } =
@@ -4978,12 +5110,19 @@ module ReadOnly = struct
     { CallGraph.SharedMemory.whole_program_call_graph; define_call_graphs }
 
 
-  let parse_type_errors
-      { pyrefly_directory; module_id_to_qualifier_shared_memory; module_infos_shared_memory; _ }
-    =
+  let parse_type_errors { pyrefly_directory; _ } =
+    let path_of_module_path = function
+      | ModulePath.Filesystem path -> ArtifactPath.raw path |> PyrePath.absolute
+      | Namespace path
+      | Memory path
+      | BundledTypeshed path
+      | BundledTypeshedThirdParty path ->
+          PyrePath.absolute path
+    in
     let instantiate_error
         {
-          TypeErrors.JsonError.module_id;
+          TypeErrors.JsonError.module_name = _;
+          module_path;
           location =
             {
               start = { line = start_line; column = start_column };
@@ -4993,21 +5132,12 @@ module ReadOnly = struct
           message;
         }
       =
-      let module_qualifier =
-        ModuleIdToQualifierSharedMemory.get_module_qualifier
-          module_id_to_qualifier_shared_memory
-          module_id
-      in
-      let { ModuleInfosSharedMemory.Module.relative_source_path; _ } =
-        ModuleInfosSharedMemory.get module_infos_shared_memory module_qualifier
-        |> assert_shared_memory_key_exists (fun () -> "invalid module id")
-      in
       {
         Analysis.AnalysisError.Instantiated.line = start_line;
         column = start_column;
         stop_line;
         stop_column;
-        path = Option.value ~default:"?" relative_source_path;
+        path = path_of_module_path module_path;
         code = 0;
         name = kind;
         description = message;
@@ -5073,7 +5203,7 @@ module ReadOnly = struct
           }
 
 
-    let is_dictionary_or_mapping { dict_class_id; typing_mapping_class_id; _ } pysa_type =
+    let is_dictionary_or_mapping { dict_classes; typing_mapping_classes; _ } pysa_type =
       match PysaType.as_pyrefly_type pysa_type with
       | None ->
           failwith
@@ -5090,8 +5220,12 @@ module ReadOnly = struct
                 }
               in
               List.for_all modifiers ~f:(Pyre1Api.TypeModifier.equal Pyre1Api.TypeModifier.Optional)
-              && (GlobalClassId.equal global_class_id dict_class_id
-                 || GlobalClassId.equal global_class_id typing_mapping_class_id))
+              && (List.exists dict_classes ~f:(fun { TypeshedClass.global_class_id = id; _ } ->
+                      GlobalClassId.equal global_class_id id)
+                 || List.exists
+                      typing_mapping_classes
+                      ~f:(fun { TypeshedClass.global_class_id = id; _ } ->
+                        GlobalClassId.equal global_class_id id)))
   end
 
   module ClassSummary = struct

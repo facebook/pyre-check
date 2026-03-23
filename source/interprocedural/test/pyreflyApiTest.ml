@@ -50,6 +50,8 @@ let test_module_qualifiers _ =
         absolute_source_path = path;
         relative_source_path = None;
         info_filename = None;
+        python_version = { Configuration.PythonVersion.major = 3; minor = 12; micro = 0 };
+        platform = "linux";
         is_test = false;
         is_interface = false;
         is_init = false;
@@ -63,6 +65,12 @@ let test_module_qualifiers _ =
         absolute_source_path = source_path >>| PyrePath.create_absolute >>| ArtifactPath.create;
         relative_source_path = None;
         pyrefly_info_filename = None;
+        sys_info =
+          {
+            Analysis.PyrePysaEnvironment.SysInfo.python_version =
+              { Configuration.PythonVersion.major = 3; minor = 12; micro = 0 };
+            platform = Some "linux";
+          };
         is_test = false;
         is_stub = false;
         is_internal = false;

@@ -65,7 +65,7 @@ let set_up_environment ?source ~context ~model_source ~validate () =
       ~callables_to_definitions_map:
         (Some
            (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map))
-      ~python_version:(ModelParser.PythonVersion.create ())
+      ~python_versions:[ModelParser.PythonVersion.create ()]
       ()
   in
   if validate then

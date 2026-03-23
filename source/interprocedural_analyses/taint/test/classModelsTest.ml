@@ -28,7 +28,7 @@ let assert_class_models ~context ?user_models ~source ~expected () =
             ~taint_configuration:TaintConfiguration.Heap.default
             ~source_sink_filter:None
             ~callables_to_definitions_map:None
-            ~python_version:(ModelParser.PythonVersion.create ())
+            ~python_versions:[ModelParser.PythonVersion.create ()]
             ()
         in
         assert_bool

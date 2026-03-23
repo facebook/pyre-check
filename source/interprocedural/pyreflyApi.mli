@@ -100,6 +100,8 @@ module ReadOnly : sig
   (* Return all qualifiers with source code *)
   val explicit_qualifiers : t -> Ast.Reference.t list
 
+  val all_sys_infos : t -> Analysis.PyrePysaEnvironment.SysInfo.t list
+
   val artifact_path_of_qualifier : t -> Ast.Reference.t -> ArtifactPath.t option
 
   val absolute_source_path_of_qualifier : t -> Ast.Reference.t -> string option
@@ -388,6 +390,8 @@ module ProjectFile : sig
       absolute_source_path: ModulePath.t;
       relative_source_path: string option;
       info_filename: ModuleInfoFilename.t option;
+      python_version: Configuration.PythonVersion.t;
+      platform: string;
       is_test: bool;
       is_interface: bool;
       is_init: bool;
@@ -602,6 +606,7 @@ module Testing : sig
       absolute_source_path: ArtifactPath.t option;
       relative_source_path: string option;
       pyrefly_info_filename: ModuleInfoFilename.t option;
+      sys_info: Analysis.PyrePysaEnvironment.SysInfo.t;
       is_test: bool;
       is_stub: bool;
       is_internal: bool;

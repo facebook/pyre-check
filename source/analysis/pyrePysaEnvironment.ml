@@ -16,6 +16,35 @@ module PyreType = Type
    decorators. *)
 let artificial_decorator_define_module = Ast.Reference.create "artificial_decorator_defines"
 
+module SysInfo = struct
+  type t = {
+    python_version: Configuration.PythonVersion.t;
+    platform: string option;
+  }
+  [@@deriving compare, equal, sexp, hash]
+
+  let pp
+      formatter
+      { python_version = { Configuration.PythonVersion.major; minor; micro }; platform }
+    =
+    Format.fprintf
+      formatter
+      "{ python_version = %d.%d.%d; platform = %s }"
+      major
+      minor
+      micro
+      (Option.value platform ~default:"<none>")
+
+
+  let show = Format.asprintf "%a" pp
+
+  module Set = Stdlib.Set.Make (struct
+    type nonrec t = t
+
+    let compare = compare
+  end)
+end
+
 (* Scalar properties of a type (it is a bool/int/float/etc.) *)
 module ScalarTypeProperties = struct
   type t = int [@@deriving compare, equal, sexp, hash]
@@ -518,6 +547,13 @@ module ReadOnly = struct
 
   let explicit_qualifiers api =
     global_module_paths_api api |> GlobalModulePathsApi.explicit_qualifiers
+
+
+  let all_sys_infos api =
+    let { Configuration.Analysis.python_version; system_platform; _ } =
+      type_environment api |> TypeEnvironment.ReadOnly.controls |> EnvironmentControls.configuration
+    in
+    [{ SysInfo.python_version; platform = system_platform }]
 
 
   let parse_annotation api = global_resolution api |> GlobalResolution.parse_annotation

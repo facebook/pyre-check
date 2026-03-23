@@ -75,9 +75,11 @@ module PythonVersion : sig
     minor: int;
     micro: int;
   }
-  [@@deriving sexp, compare, hash, yojson, equal]
+  [@@deriving sexp, compare, hash, yojson, equal, show]
 
   val create : ?major:int -> ?minor:int -> ?micro:int -> unit -> t
+
+  val from_string : string -> (t, string) result
 end
 
 module SharedMemory : sig

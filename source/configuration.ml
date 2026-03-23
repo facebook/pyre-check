@@ -282,7 +282,7 @@ module PythonVersion = struct
     minor: int;
     micro: int;
   }
-  [@@deriving sexp, compare, hash, yojson, equal]
+  [@@deriving sexp, compare, hash, yojson, equal, show]
 
   let create
       ?(major = default_python_major_version)
@@ -291,6 +291,16 @@ module PythonVersion = struct
       ()
     =
     { major; minor; micro }
+
+
+  let from_string version_string =
+    match String.split version_string ~on:'.' |> List.map ~f:Int.of_string_opt with
+    | [Some major; Some minor; Some micro] -> Ok { major; minor; micro }
+    | _ ->
+        Error
+          (Format.sprintf
+             "invalid python_version format: expected \"major.minor.micro\", got %S"
+             version_string)
 end
 
 module SharedMemory = struct

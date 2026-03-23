@@ -44,6 +44,8 @@ module PythonVersion = struct
     >>| fun micro -> { major; minor; micro }
 
 
+  let from_configuration_version = Fn.id
+
   let from_configuration { Configuration.Analysis.python_version; _ } = python_version
 
   let compare_with left operator right =
@@ -4136,7 +4138,7 @@ let rec parse_statement
     ~taint_configuration
     ~source_sink_filter
     ~callables_to_definitions_map
-    ~python_version
+    ~python_versions
     statement
   =
   let open Core.Result in
@@ -4382,7 +4384,7 @@ let rec parse_statement
                        ~taint_configuration
                        ~source_sink_filter
                        ~callables_to_definitions_map
-                       ~python_version)
+                       ~python_versions)
             >>| List.concat
             >>| List.partition_result
             >>| (fun (results, errors) ->
@@ -4519,8 +4521,11 @@ let rec parse_statement
    location;
   } -> (
       let perform_comparison test_version =
-        PythonVersion.compare_with python_version operator test_version
-        |> function
+        match
+          List.map python_versions ~f:(fun python_version ->
+              PythonVersion.compare_with python_version operator test_version)
+          |> Result.all
+        with
         | Error unsupported_operator ->
             [
               Error
@@ -4529,19 +4534,25 @@ let rec parse_statement
                    ~location
                    (UnsupportedComparisonOperator unsupported_operator));
             ]
-        | Ok comparison_result ->
-            let statements = if comparison_result then body else orelse in
-            statements
-            |> List.map
-                 ~f:
-                   (parse_statement
-                      ~pyre_api
-                      ~path
-                      ~taint_configuration
-                      ~source_sink_filter
-                      ~callables_to_definitions_map
-                      ~python_version)
-            |> List.concat
+        | Ok results ->
+            let any_true = List.exists results ~f:Fn.id in
+            let any_false = List.exists results ~f:not in
+            let parse_branch statements =
+              statements
+              |> List.map
+                   ~f:
+                     (parse_statement
+                        ~pyre_api
+                        ~path
+                        ~taint_configuration
+                        ~source_sink_filter
+                        ~callables_to_definitions_map
+                        ~python_versions)
+              |> List.concat
+            in
+            let if_results = if any_true then parse_branch body else [] in
+            let else_results = if any_false then parse_branch orelse else [] in
+            if_results @ else_results
       in
       PythonVersion.parse_from_tuple tuple
       |> function
@@ -4568,7 +4579,7 @@ let rec parse_statement
                 ~taint_configuration
                 ~source_sink_filter
                 ~callables_to_definitions_map
-                ~python_version)
+                ~python_versions)
       |> List.concat
   | {
    Node.value =
@@ -4590,7 +4601,7 @@ let rec parse_statement
                 ~taint_configuration
                 ~source_sink_filter
                 ~callables_to_definitions_map
-                ~python_version)
+                ~python_versions)
       |> List.concat
   | { Node.value = If { If.test; _ }; location } ->
       [Error (model_verification_error ~path ~location (UnsupportedIfCondition test))]
@@ -4620,7 +4631,7 @@ let create
     ~taint_configuration
     ~source_sink_filter
     ~callables_to_definitions_map
-    ~python_version
+    ~python_versions
     source
   =
   let open Core.Result in
@@ -4637,7 +4648,7 @@ let create
                     ~taint_configuration
                     ~source_sink_filter
                     ~callables_to_definitions_map
-                    ~python_version)
+                    ~python_versions)
           |> List.concat
           |> List.partition_result
         in
@@ -4761,7 +4772,7 @@ let parse
     ~taint_configuration
     ~source_sink_filter
     ~callables_to_definitions_map
-    ~python_version
+    ~python_versions
     ()
   =
   let new_models_and_queries, errors =
@@ -4771,7 +4782,7 @@ let parse
       ~taint_configuration
       ~source_sink_filter
       ~callables_to_definitions_map
-      ~python_version
+      ~python_versions
       source
     |> List.partition_result
   in

@@ -9,6 +9,7 @@
    information about the code to analyze. Right now, this wraps either the old Pyre 1 API provided
    by `Analysis.PyrePysaEnvironment` or the Pyrefly API provided by `Interprocedural.Pyrefly`. *)
 
+open Core
 module Pyre1Api = Analysis.PyrePysaEnvironment
 module TypeModifier = Analysis.PyrePysaEnvironment.TypeModifier
 module ClassWithModifiers = Analysis.PyrePysaEnvironment.ClassWithModifiers
@@ -144,6 +145,18 @@ module ReadOnly = struct
   let explicit_qualifiers = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.explicit_qualifiers pyre_api
     | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.explicit_qualifiers pyrefly_api
+
+
+  let all_sys_infos = function
+    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.all_sys_infos pyre_api
+    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.all_sys_infos pyrefly_api
+
+
+  let all_python_versions api =
+    all_sys_infos api
+    |> List.map ~f:(fun { Analysis.PyrePysaEnvironment.SysInfo.python_version; _ } ->
+           python_version)
+    |> List.dedup_and_sort ~compare:Configuration.PythonVersion.compare
 
 
   let absolute_source_path_of_qualifier ~lookup_source = function

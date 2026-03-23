@@ -149,7 +149,7 @@ let set_up_environment
       ~callables_to_definitions_map:
         (Some
            (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map))
-      ~python_version:(ModelParser.PythonVersion.create ())
+      ~python_versions:[ModelParser.PythonVersion.create ()]
       ()
   in
   assert_bool
@@ -273,7 +273,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
       ?path
       ~source:(Test.trim_extra_indentation model_source)
       ~callables_to_definitions_map:None
-      ~python_version:(ModelParser.PythonVersion.create ())
+      ~python_versions:[ModelParser.PythonVersion.create ()]
       ()
     |> fun { ModelParseResult.errors; _ } ->
     if List.is_empty errors then

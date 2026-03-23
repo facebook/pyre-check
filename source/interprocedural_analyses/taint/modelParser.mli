@@ -12,6 +12,8 @@ module PythonVersion : sig
 
   val parse_from_tuple : Ast.Expression.Expression.t list -> (t, string) result
 
+  val from_configuration_version : Configuration.PythonVersion.t -> t
+
   val from_configuration : Configuration.Analysis.t -> t
 
   val compare_with
@@ -30,7 +32,7 @@ val parse
   taint_configuration:TaintConfiguration.Heap.t ->
   source_sink_filter:SourceSinkFilter.t option ->
   callables_to_definitions_map:Interprocedural.CallablesSharedMemory.ReadOnly.t option ->
-  python_version:PythonVersion.t ->
+  python_versions:PythonVersion.t list ->
   unit ->
   ModelParseResult.t
 

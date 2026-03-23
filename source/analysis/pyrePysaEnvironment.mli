@@ -11,6 +11,16 @@ open Core
    decorators. *)
 val artificial_decorator_define_module : Ast.Reference.t
 
+module SysInfo : sig
+  type t = {
+    python_version: Configuration.PythonVersion.t;
+    platform: string option;
+  }
+  [@@deriving compare, equal, show, sexp, hash]
+
+  module Set : Stdlib.Set.S with type elt = t
+end
+
 (* Scalar properties of a type (it is a bool/int/float/etc.) *)
 module ScalarTypeProperties : sig
   type t [@@deriving compare, equal, sexp, hash, show]
@@ -221,6 +231,8 @@ module ReadOnly : sig
     string option
 
   val explicit_qualifiers : t -> Ast.Reference.t list
+
+  val all_sys_infos : t -> SysInfo.t list
 
   val parse_annotation
     :  t ->
