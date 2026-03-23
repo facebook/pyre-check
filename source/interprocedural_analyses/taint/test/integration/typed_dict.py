@@ -35,13 +35,13 @@ def test_typed_dict_constructor():
     _test_sink(d["bar"])  # This is an issue.
     _test_sink(d["foo"])  # This is an issue (false positive).
 
-    d = SimpleTypedDict({_test_source(): 0})  # pyrefly: ignore[no-matching-overload]
+    d = SimpleTypedDict({_test_source(): 0})  # pyrefly: ignore[bad-typed-dict-key]
     _test_sink(d.keys())  # This is an issue.
     _test_sink(d["foo"])  # This is NOT an issue.
     _test_sink(d["bar"])  # This is NOT an issue.
 
-    d = SimpleTypedDict(  # pyrefly: ignore[no-matching-overload]
-        [("foo", 0), ("bar", _test_source())]
+    d = SimpleTypedDict(
+        [("foo", 0), ("bar", _test_source())]  # pyrefly: ignore[bad-argument-type]
     )
     _test_sink(d["bar"])  # This is an issue.
     _test_sink(d["foo"])  # This is an issue (false positive).
