@@ -14,7 +14,17 @@ import logging
 from dataclasses import dataclass
 from functools import lru_cache
 from itertools import islice
-from typing import Any, Dict, Generator, Iterable, List, NamedTuple, Optional, TypeVar
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    TypeVar,
+)
 
 from .connection import PyreConnection, PyreQueryResult
 
@@ -312,20 +322,12 @@ def _parse_position(position_json: Dict[str, Any]) -> Position:
     return Position(line=position_json["line"], column=position_json["column"])
 
 
-def get_invalid_taint_models(
-    pyre_connection: PyreConnection,
-    verify_dsl: bool = False,
+def parse_validate_taint_models_response(
+    response: Mapping[str, Any],
 ) -> List[InvalidModel]:
     errors: List[InvalidModel] = []
-    # TODO(T143503449): Combine into one f-string after fbcode pyre version upgrade
-    response = pyre_connection.query_server(
-        "validate_taint_models(verify_dsl=True)"
-        if verify_dsl
-        else "validate_taint_models()"
-    )
     if "response" in response and "errors" in response["response"]:
-        found_errors = response["response"]["errors"]
-        for error in found_errors:
+        for error in response["response"]["errors"]:
             errors.append(
                 InvalidModel(
                     full_error_message=error["description"],
@@ -338,3 +340,16 @@ def get_invalid_taint_models(
                 )
             )
     return errors
+
+
+def get_invalid_taint_models(
+    pyre_connection: PyreConnection,
+    verify_dsl: bool = False,
+) -> List[InvalidModel]:
+    # TODO(T143503449): Combine into one f-string after fbcode pyre version upgrade
+    response = pyre_connection.query_server(
+        "validate_taint_models(verify_dsl=True)"
+        if verify_dsl
+        else "validate_taint_models()"
+    )
+    return parse_validate_taint_models_response(response)
