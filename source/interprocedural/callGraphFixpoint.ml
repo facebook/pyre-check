@@ -80,7 +80,7 @@ module CallGraphAnalysis = struct
 
     let iteration_end ~iteration ~expensive_callables ~number_of_callables ~timer =
       (* Explicitly collect the shared memory to reduce heap size. *)
-      let () = Memory.SharedMemory.collect `aggressive in
+      let () = Memory.SharedMemory.collect `gentle in
       iteration_end ~iteration ~expensive_callables ~number_of_callables ~timer
   end
 
