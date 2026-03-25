@@ -496,7 +496,7 @@ def _run_analyze_command(
 def _download_pyrefly_binary(
     configuration: frontend_configuration.Base,
     download_path: Path,
-    user_provided_pyrefly_binary: Optional[str] = None,
+    user_provided_pyrefly_binary: Optional[str],
 ) -> Path:
     pyrefly_binary_path = configuration.get_pysa_pyrefly_binary_location(
         user_provided_pyrefly_binary=user_provided_pyrefly_binary,

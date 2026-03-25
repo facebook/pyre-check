@@ -85,6 +85,7 @@ def run(
     query: str,
     pyrefly_results: Optional[str],
     output_file: Optional[str],
+    user_provided_pyrefly_binary: Optional[str],
 ) -> commands.ExitCode:
     start_command = _get_server_start_command(configuration)
 
@@ -106,6 +107,7 @@ def run(
         pyrefly_binary_path = _download_pyrefly_binary(
             configuration,
             Path(temporary_file.name),
+            user_provided_pyrefly_binary=user_provided_pyrefly_binary,
         )
         temporary_file.close()
 
