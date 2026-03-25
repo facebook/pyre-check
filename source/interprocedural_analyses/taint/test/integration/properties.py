@@ -311,6 +311,20 @@ def test_property_augmented_assign(p: PropertySetterTitoModel):
     p.my_property |= 0
 
 
+class PropertyDefinedByAssignment:
+    def __init__(self):
+        self.tainted = ""
+
+    def _get_my_property(self) -> str:
+        return self.tainted
+
+    my_property = property(_get_my_property)  # pyre-ignore[19]
+
+    def uses_property(self):
+        self.tainted = _test_source()
+        return self.my_property
+
+
 def string_source() -> str:
     return _test_source()
 

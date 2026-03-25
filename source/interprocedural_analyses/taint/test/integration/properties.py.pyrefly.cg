@@ -42,6 +42,15 @@ Call dependencies
   "properties.PropertyCallableReturn.__call__ (method)": [
     "pysa._test_sink (fun)"
   ],
+  "properties.PropertyDefinedByAssignment.$class_toplevel (fun)": [
+    "builtins.object.__new__ (method)",
+    "builtins.property.__init__ (method)",
+    "properties.PropertyDefinedByAssignment._get_my_property (method)"
+  ],
+  "properties.PropertyDefinedByAssignment.uses_property (method)": [
+    "properties.PropertyDefinedByAssignment._get_my_property (method)",
+    "pysa._test_source (fun)"
+  ],
   "properties.PropertySetterInConstructor.__init__ (method)": [
     "properties.PropertySetterInConstructor.x@setter (method)"
   ],

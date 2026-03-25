@@ -341,7 +341,7 @@
   "data": {
     "callable": "properties.string_source",
     "filename": "properties.py",
-    "callable_line": 314,
+    "callable_line": 328,
     "sources": [
       {
         "port": "result",
@@ -356,7 +356,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 315, "start": 11, "end": 25 }
+            "origin": { "line": 329, "start": 11, "end": 25 }
           }
         ]
       }
@@ -1265,7 +1265,7 @@
               }
             ],
             "origin": { "line": 83, "start": 19, "end": 24 },
-            "caller_interval": [ { "lower": 31, "upper": 34 } ],
+            "caller_interval": [ { "lower": 33, "upper": 36 } ],
             "is_self_call": false,
             "call_site": "83:8-83:25"
           }
@@ -1518,6 +1518,65 @@
 {
   "kind": "model",
   "data": {
+    "callable": "properties.PropertyDefinedByAssignment._get_my_property",
+    "filename": "properties.py",
+    "callable_line": 318,
+    "tito": [
+      {
+        "port": "formal(self, position=0)[tainted]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.PropertyDefinedByAssignment.uses_property",
+    "filename": "properties.py",
+    "callable_line": 323,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[tainted]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 324, "start": 23, "end": 37 },
+            "caller_interval": [ { "lower": 22, "upper": 23 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self, position=0)[my_property]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "properties.PropertySetterInConstructor.__init__",
     "filename": "properties.py",
     "callable_line": 147,
@@ -1536,7 +1595,7 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 149, "start": 17, "end": 18 } ],
             "tito": {
-              "caller_interval": [ { "lower": 22, "upper": 23 } ],
+              "caller_interval": [ { "lower": 24, "upper": 25 } ],
               "is_self_call": false
             }
           }
@@ -1680,7 +1739,7 @@
             ],
             "tito_positions": [ { "line": 284, "start": 32, "end": 46 } ],
             "origin": { "line": 284, "start": 32, "end": 46 },
-            "caller_interval": [ { "lower": 24, "upper": 25 } ],
+            "caller_interval": [ { "lower": 26, "upper": 27 } ],
             "is_self_call": false
           }
         ]
@@ -1705,7 +1764,7 @@
             ],
             "tito_positions": [ { "line": 284, "start": 8, "end": 12 } ],
             "origin": { "line": 285, "start": 19, "end": 23 },
-            "caller_interval": [ { "lower": 24, "upper": 25 } ],
+            "caller_interval": [ { "lower": 26, "upper": 27 } ],
             "is_self_call": false,
             "call_site": "285:8-285:24"
           }
@@ -1738,7 +1797,7 @@
             ],
             "tito_positions": [ { "line": 284, "start": 8, "end": 12 } ],
             "tito": {
-              "caller_interval": [ { "lower": 24, "upper": 25 } ],
+              "caller_interval": [ { "lower": 26, "upper": 27 } ],
               "is_self_call": false
             }
           }
@@ -1777,7 +1836,7 @@
             ],
             "tito_positions": [ { "line": 284, "start": 32, "end": 46 } ],
             "origin": { "line": 284, "start": 32, "end": 46 },
-            "caller_interval": [ { "lower": 24, "upper": 25 } ],
+            "caller_interval": [ { "lower": 26, "upper": 27 } ],
             "is_self_call": false
           }
         ]
@@ -1796,7 +1855,7 @@
               }
             ],
             "origin": { "line": 285, "start": 19, "end": 23 },
-            "caller_interval": [ { "lower": 24, "upper": 25 } ],
+            "caller_interval": [ { "lower": 26, "upper": 27 } ],
             "is_self_call": false,
             "call_site": "285:8-285:24"
           }
@@ -1841,7 +1900,7 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 274, "start": 27, "end": 41 } ],
             "origin": { "line": 274, "start": 27, "end": 41 },
-            "caller_interval": [ { "lower": 24, "upper": 25 } ],
+            "caller_interval": [ { "lower": 26, "upper": 27 } ],
             "is_self_call": false
           }
         ]
@@ -1864,7 +1923,7 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 275, "start": 19, "end": 23 } ],
             "origin": { "line": 275, "start": 19, "end": 35 },
-            "caller_interval": [ { "lower": 24, "upper": 25 } ],
+            "caller_interval": [ { "lower": 26, "upper": 27 } ],
             "is_self_call": false,
             "call_site": "275:8-275:36"
           }
@@ -1904,7 +1963,7 @@
               { "line": 275, "start": 19, "end": 23 }
             ],
             "origin": { "line": 274, "start": 27, "end": 41 },
-            "caller_interval": [ { "lower": 24, "upper": 25 } ],
+            "caller_interval": [ { "lower": 26, "upper": 27 } ],
             "is_self_call": false
           }
         ]
@@ -1923,7 +1982,7 @@
               }
             ],
             "origin": { "line": 275, "start": 19, "end": 35 },
-            "caller_interval": [ { "lower": 24, "upper": 25 } ],
+            "caller_interval": [ { "lower": 26, "upper": 27 } ],
             "is_self_call": false,
             "call_site": "275:8-275:36"
           }
@@ -2038,7 +2097,7 @@
               }
             ],
             "origin": { "line": 62, "start": 19, "end": 23 },
-            "caller_interval": [ { "lower": 30, "upper": 35 } ],
+            "caller_interval": [ { "lower": 32, "upper": 37 } ],
             "is_self_call": false,
             "call_site": "62:8-62:24"
           }
@@ -2070,7 +2129,7 @@
               }
             ],
             "origin": { "line": 66, "start": 20, "end": 24 },
-            "caller_interval": [ { "lower": 30, "upper": 35 } ],
+            "caller_interval": [ { "lower": 32, "upper": 37 } ],
             "is_self_call": false,
             "call_site": "66:4-67:12"
           }
@@ -2125,7 +2184,7 @@
               }
             ],
             "origin": { "line": 70, "start": 15, "end": 31 },
-            "caller_interval": [ { "lower": 30, "upper": 35 } ],
+            "caller_interval": [ { "lower": 32, "upper": 37 } ],
             "is_self_call": true
           }
         ]
@@ -2151,7 +2210,7 @@
               "port": "formal(self, position=0)",
               "call_site": "70:15-70:31"
             },
-            "caller_interval": [ { "lower": 30, "upper": 35 } ],
+            "caller_interval": [ { "lower": 32, "upper": 37 } ],
             "is_self_call": true
           }
         ]
@@ -2184,7 +2243,7 @@
             ],
             "tito_positions": [ { "line": 73, "start": 27, "end": 41 } ],
             "origin": { "line": 73, "start": 27, "end": 41 },
-            "caller_interval": [ { "lower": 30, "upper": 35 } ],
+            "caller_interval": [ { "lower": 32, "upper": 37 } ],
             "is_self_call": false
           },
           {
@@ -2197,7 +2256,7 @@
               "port": "formal(self, position=0)",
               "call_site": "73:8-73:24"
             },
-            "caller_interval": [ { "lower": 30, "upper": 35 } ],
+            "caller_interval": [ { "lower": 32, "upper": 37 } ],
             "is_self_call": true
           }
         ]
@@ -2231,7 +2290,7 @@
               }
             ],
             "origin": { "line": 73, "start": 27, "end": 41 },
-            "caller_interval": [ { "lower": 30, "upper": 35 } ],
+            "caller_interval": [ { "lower": 32, "upper": 37 } ],
             "is_self_call": false
           }
         ]
@@ -2258,7 +2317,7 @@
               "port": "formal(value, position=1)",
               "call_site": "73:8-73:24"
             },
-            "caller_interval": [ { "lower": 31, "upper": 34 } ],
+            "caller_interval": [ { "lower": 33, "upper": 36 } ],
             "is_self_call": true
           }
         ]
@@ -2333,7 +2392,7 @@
               }
             ],
             "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 31, "upper": 34 } ],
+            "caller_interval": [ { "lower": 33, "upper": 36 } ],
             "is_self_call": false
           }
         ]
@@ -2408,7 +2467,7 @@
               }
             ],
             "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 30, "upper": 35 } ],
+            "caller_interval": [ { "lower": 32, "upper": 37 } ],
             "is_self_call": false
           }
         ]
@@ -2437,7 +2496,7 @@
               }
             ],
             "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 30, "upper": 35 } ],
+            "caller_interval": [ { "lower": 32, "upper": 37 } ],
             "is_self_call": false
           }
         ]
@@ -2458,7 +2517,7 @@
               }
             ],
             "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 31, "upper": 34 } ],
+            "caller_interval": [ { "lower": 33, "upper": 36 } ],
             "is_self_call": false
           }
         ]

@@ -1,6 +1,6 @@
 @generated
 Overrides
-builtins.object.__init__ (override) -> [builtins.object.__init__ (method) properties.Class.__init__ (override) properties.PropertyCallable.__init__ (override) properties.PropertyCallableReturn.__init__ (override) properties.PropertySetterInConstructor.__init__ (override) properties.PropertySetterTitoModel.__init__ (override) properties.RegularAttribute.__init__ (override) properties.SetterMutatesValue.__init__ (override)]
+builtins.object.__init__ (override) -> [builtins.object.__init__ (method) properties.Class.__init__ (override) properties.PropertyCallable.__init__ (override) properties.PropertyCallableReturn.__init__ (override) properties.PropertyDefinedByAssignment.__init__ (override) properties.PropertySetterInConstructor.__init__ (override) properties.PropertySetterTitoModel.__init__ (override) properties.RegularAttribute.__init__ (override) properties.SetterMutatesValue.__init__ (override)]
 properties.A.foo (override) -> [properties.A.foo (method)]
 properties.Base.foo (override) -> [properties.A.foo (override) properties.Base.foo (method)]
 properties.Class.__init__ (override) -> [properties.Class.__init__ (method)]
@@ -17,6 +17,7 @@ properties.OtherDerived.my_property (override) -> [properties.OtherDerived.my_pr
 properties.OtherDerived.uses_property_but_no_tito_taint (override) -> [properties.OtherDerived.uses_property_but_no_tito_taint (method)]
 properties.PropertyCallable.__init__ (override) -> [properties.PropertyCallable.__init__ (method)]
 properties.PropertyCallableReturn.__init__ (override) -> [properties.PropertyCallableReturn.__init__ (method)]
+properties.PropertyDefinedByAssignment.__init__ (override) -> [properties.PropertyDefinedByAssignment.__init__ (method)]
 properties.PropertySetterInConstructor.__init__ (override) -> [properties.PropertySetterInConstructor.__init__ (method)]
 properties.PropertySetterTitoModel.__init__ (override) -> [properties.PropertySetterTitoModel.__init__ (method)]
 properties.RegularAttribute.__init__ (override) -> [properties.RegularAttribute.__init__ (method)]

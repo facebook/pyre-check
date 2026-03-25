@@ -200,6 +200,60 @@ Higher order call graphs
   }
 }
 {
+  "callable": "properties.PropertyDefinedByAssignment.$class_toplevel",
+  "returned_callables": [],
+  "calls": {
+    "321:18-321:44": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.property.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.property"
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "properties.PropertyDefinedByAssignment._get_my_property",
+                "index": 0,
+                "implicit_receiver": true,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "321:27-321:43|identifier|_get_my_property": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "properties.PropertyDefinedByAssignment._get_my_property",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "properties.function_with_nested_properties",
   "returned_callables": [],
   "calls": {
@@ -445,7 +499,7 @@ Higher order call graphs
   "callable": "properties.string_source",
   "returned_callables": [],
   "calls": {
-    "315:11-315:25": {
+    "329:11-329:25": {
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
@@ -553,7 +607,7 @@ Higher order call graphs
   "callable": "properties.test_object_class",
   "returned_callables": [],
   "calls": {
-    "319:8-319:23": {
+    "333:8-333:23": {
       "call": {
         "calls": [
           {
@@ -564,14 +618,14 @@ Higher order call graphs
         ]
       }
     },
-    "320:4-320:27": {
+    "334:4-334:27": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "320:15-320:26": {
+    "334:15-334:26": {
       "attribute_access": {
         "if_called": {
           "new_calls": [
@@ -1192,6 +1246,32 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "properties.PropertyDefinedByAssignment.uses_property",
+  "returned_callables": [],
+  "calls": {
+    "324:23-324:37": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "325:15-325:31": {
+      "attribute_access": {
+        "properties": [
+          {
+            "target": "properties.PropertyDefinedByAssignment._get_my_property",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "properties.PropertyDefinedByAssignment"
+          }
         ]
       }
     }
