@@ -806,6 +806,33 @@ module Make (Analysis : ANALYSIS) = struct
     }
 
 
+  module TopologicalOrder = struct
+    type t = {
+      hash_map: int Target.HashMap.t;
+      mutable next_index: int;
+    }
+
+    let create topological_order =
+      let hash_map = Target.HashMap.create ~size:(List.length topological_order) () in
+      List.iteri topological_order ~f:(fun i callable -> Hashtbl.set hash_map ~key:callable ~data:i);
+      { hash_map; next_index = List.length topological_order }
+
+
+    let mem topological_order target = Hashtbl.mem topological_order.hash_map target
+
+    let register topological_order targets =
+      List.iter targets ~f:(fun target ->
+          Hashtbl.set topological_order.hash_map ~key:target ~data:topological_order.next_index;
+          topological_order.next_index <- topological_order.next_index + 1)
+
+
+    let sort topological_order targets =
+      List.sort targets ~compare:(fun a b ->
+          Int.compare
+            (Hashtbl.find_exn topological_order.hash_map a)
+            (Hashtbl.find_exn topological_order.hash_map b))
+  end
+
   let compute_callables_to_reanalyze
       ~shared_fixpoint
       ~dependency_graph
@@ -823,16 +850,21 @@ module Make (Analysis : ANALYSIS) = struct
             ~init:(Target.Set.add callable accumulator)
             ~f:(fun accumulator caller -> Target.Set.add caller accumulator))
     in
-    (* Filter the original list in order to preserve topological sort order. *)
+    (* Use topological index for O(k log k) instead of O(n) where n is all callables. *)
+    let callables_to_reanalyze_set =
+      Target.Set.filter
+        (fun callable -> TopologicalOrder.mem all_callables callable)
+        might_change_if_reanalyzed
+    in
     let callables_to_reanalyze =
-      List.filter all_callables ~f:(fun callable ->
-          Target.Set.mem callable might_change_if_reanalyzed)
+      callables_to_reanalyze_set |> Target.Set.elements |> TopologicalOrder.sort all_callables
     in
     let () =
-      if List.length callables_to_reanalyze <> Target.Set.cardinal might_change_if_reanalyzed then
-        let missing =
-          Target.Set.diff might_change_if_reanalyzed (Target.Set.of_list callables_to_reanalyze)
-        in
+      if
+        Target.Set.cardinal callables_to_reanalyze_set
+        <> Target.Set.cardinal might_change_if_reanalyzed
+      then
+        let missing = Target.Set.diff might_change_if_reanalyzed callables_to_reanalyze_set in
         let check_missing callable =
           match State.SharedFixpoint.get_meta_data shared_fixpoint callable with
           | None -> () (* okay, caller is in a later epoch *)
@@ -964,10 +996,9 @@ module Make (Analysis : ANALYSIS) = struct
         (* Additional dependencies may imply new callables that need to be analyzed. *)
         let new_callables =
           if not (DependencyGraph.is_empty additional_dependencies) then
-            Target.Set.diff
-              (additional_dependencies |> DependencyGraph.keys |> Target.Set.of_list)
-              (Target.Set.of_list all_callables)
-            |> Target.Set.elements
+            additional_dependencies
+            |> DependencyGraph.keys
+            |> List.filter ~f:(fun target -> not (TopologicalOrder.mem all_callables target))
             |> filter_skip_analysis_targets ~skip_analysis_targets
           else
             []
@@ -975,25 +1006,22 @@ module Make (Analysis : ANALYSIS) = struct
         let shared_models =
           initialize_new_dependencies ~scheduler ~shared_models ~shared_fixpoint ~step new_callables
         in
+        let () = TopologicalOrder.register all_callables new_callables in
         let () = Logger.iteration_end ~iteration ~expensive_callables ~number_of_callables ~timer in
         let state = { state with State.shared_models } in
         iterate
           ~iteration:(iteration + 1)
           ~dependency_graph:(DependencyGraph.merge dependency_graph additional_dependencies)
-          ~all_callables:(List.rev_append new_callables all_callables)
+          ~all_callables
           ~state
           (List.rev_append new_callables callables_to_analyze)
     in
     let initial_callables_to_analyze =
       filter_skip_analysis_targets ~skip_analysis_targets initial_callables_to_analyze
     in
+    let all_callables = TopologicalOrder.create initial_callables_to_analyze in
     let state, iterations =
-      iterate
-        ~iteration:0
-        ~dependency_graph
-        ~all_callables:initial_callables_to_analyze
-        ~state
-        initial_callables_to_analyze
+      iterate ~iteration:0 ~dependency_graph ~all_callables ~state initial_callables_to_analyze
     in
     { fixpoint_reached_iterations = iterations; state }
 end
