@@ -381,8 +381,12 @@ def build_pyrefly(current_working_directory: Path) -> str:
         current_working_directory=current_working_directory,
     )
 
-    LOG.info("Stripping Pyrefly binary...")
-    _run_command(["/opt/llvm/bin/llvm-strip", "--strip-all", pyrefly_binary])
+    llvm_strip = "/opt/llvm/bin/llvm-strip"
+    if sys.platform == "darwin" and not Path(llvm_strip).exists():
+        LOG.warning(f"Skipping stripping: {llvm_strip} does not exist")
+    else:
+        LOG.info("Stripping Pyrefly binary...")
+        _run_command([llvm_strip, "--strip-all", pyrefly_binary])
 
     return pyrefly_binary
 
