@@ -77,7 +77,7 @@ class SectionFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         formatted = super(SectionFormatter, self).format(record)
-        return re.sub(r"DEBUG \[(.*)\]", r"\1", formatted)
+        return re.sub(r"DEBUG \[(.*?)\]", r"\1", formatted)
 
 
 # pyre-fixme[24]: Generic type `logging.StreamHandler` expects 1 type parameter.
@@ -328,7 +328,7 @@ class StreamLogger:
     _current_section: Optional[str]
 
     _server_log_pattern: Pattern[str] = re.compile(
-        r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (\w+)(.*)"
+        r"\s*(?:\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\S* )?(ERROR|WARNING|WARN|INFO|DEBUG|DUMP|PROGRESS|PARSER|TRACE|PERFORMANCE)(.*)"
     )
     # Exclude syntax warnings from the CPython parser.
     _server_log_exclude_pattern: Pattern[str] = re.compile(
@@ -361,9 +361,11 @@ class StreamLogger:
             LOG.error(message)
         elif section == "INFO":
             LOG.info(message)
+        elif section == "DEBUG":
+            LOG.debug(message)
         elif section == "DUMP":
             LOG.warning(message)
-        elif section == "WARNING":
+        elif section == "WARNING" or section == "WARN":
             LOG.warning(message)
         elif section == "PROGRESS":
             LOG.info(message)
