@@ -137,7 +137,7 @@ let assert_higher_order_call_graph_fixpoint
   List.iter expected ~f:(fun { Expected.callable; call_graph; returned_callables } ->
       let actual_call_graph =
         callable
-        |> CallGraphFixpoint.get_model fixpoint_state
+        |> CallGraphFixpoint.get_model ~drop_decorated_targets:true fixpoint_state
         |> Option.value ~default:HigherOrderCallGraph.empty
         |> HigherOrderCallGraphForTest.from_actual
       in

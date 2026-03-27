@@ -1092,7 +1092,12 @@ let end_to_end_integration_test path context =
         |> CallGraphFixpoint.analyzed_callables
         |> List.dedup_and_sort ~compare:Target.compare
         |> List.filter_map ~f:(fun callable ->
-               match CallGraphFixpoint.get_model call_graph_fixpoint_state callable with
+               match
+                 CallGraphFixpoint.get_model
+                   ~drop_decorated_targets:true
+                   call_graph_fixpoint_state
+                   callable
+               with
                | Some call_graph
                  when not (CallGraphBuilder.HigherOrderCallGraph.is_empty call_graph) ->
                    let json =

@@ -32,6 +32,10 @@ val compute
 
 val analyzed_callables : fixpoint -> Target.t list
 
-val get_model : t -> Target.t -> CallGraphBuilder.HigherOrderCallGraph.t option
+val get_model
+  :  t ->
+  drop_decorated_targets:bool ->
+  Target.t ->
+  CallGraphBuilder.HigherOrderCallGraph.t option
 
 val cleanup : keep_models:bool -> fixpoint -> unit
