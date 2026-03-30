@@ -550,8 +550,8 @@ def _run_pyrefly(
         return_code = result.returncode
         # Keep in sync with `CommandExitStatus` in Pyrefly.
         if return_code == 0 or return_code == 1:
-            if forward_stdout:
-                log.stdout.write(result.stdout)
+            if forward_stdout and result.stdout:
+                LOG.info("Pyrefly output:\n%s", result.stdout)
             return commands.ExitCode.SUCCESS
         else:
             LOG.error(f"Pyrefly exited with error return code: {return_code}.")
