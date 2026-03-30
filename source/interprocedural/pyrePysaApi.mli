@@ -96,10 +96,6 @@ module ReadOnly : sig
 
   val all_sys_infos : t -> Analysis.PyrePysaEnvironment.SysInfo.t list
 
-  val all_python_versions : t -> Configuration.PythonVersion.t list
-
-  val all_platforms : t -> string list
-
   val absolute_source_path_of_qualifier
     :  lookup_source:(ArtifactPath.t -> SourcePath.t option) ->
     t ->

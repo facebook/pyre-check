@@ -65,8 +65,14 @@ let set_up_environment ?source ~context ~model_source ~validate () =
       ~callables_to_definitions_map:
         (Some
            (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map))
-      ~python_versions:[ModelParser.PythonVersion.create ()]
-      ~platforms:["linux"]
+      ~all_sys_infos:
+        [
+          {
+            Analysis.PyrePysaEnvironment.SysInfo.python_version =
+              Configuration.PythonVersion.create ();
+            platform = Some "linux";
+          };
+        ]
       ()
   in
   if validate then

@@ -32,8 +32,7 @@ val parse
   taint_configuration:TaintConfiguration.Heap.t ->
   source_sink_filter:SourceSinkFilter.t option ->
   callables_to_definitions_map:Interprocedural.CallablesSharedMemory.ReadOnly.t option ->
-  python_versions:PythonVersion.t list ->
-  platforms:string list ->
+  all_sys_infos:Analysis.PyrePysaEnvironment.SysInfo.t list ->
   unit ->
   ModelParseResult.t
 

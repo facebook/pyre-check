@@ -156,6 +156,7 @@ type kind =
   | UnsupportedIfCondition of Expression.t
   | UnsupportedVersionConstant of string
   | UnsupportedComparisonOperator of Expression.ComparisonOperator.operator
+  | UnsupportedPlatformComparison of Expression.ComparisonOperator.operator
   | DeprecatedConstraint of {
       deprecated: string;
       suggested: string;
@@ -500,15 +501,20 @@ let description error =
       "Unsupported `fully_qualified_callee` constraint within a class constraint"
   | UnsupportedIfCondition condition ->
       Format.sprintf
-        "Unsupported if condition: `%s`. If conditions need to be of the form: `sys.version \
-         operator version_tuple` or `sys.platform operator platform_string`. All models inside the \
-         if-block (along with those in else-if and else block, if present) will be ignored."
+        "Unsupported if condition: `%s`. All models inside the if-block (along with those in \
+         else-if and else block, if present) will be ignored."
         (Expression.show condition)
   | UnsupportedVersionConstant error ->
       Format.sprintf "Unsupported element type in version tuple in if condition: %s" error
   | UnsupportedComparisonOperator operator ->
       Format.asprintf
         "The operator `%a` in the if condition is not supported"
+        Expression.ComparisonOperator.pp_comparison_operator
+        operator
+  | UnsupportedPlatformComparison operator ->
+      Format.asprintf
+        "The operator `%a` is not supported for platform comparisons. Only `==` and `!=` are \
+         supported."
         Expression.ComparisonOperator.pp_comparison_operator
         operator
   | DeprecatedConstraint { deprecated; suggested } ->
@@ -711,6 +717,7 @@ let code { kind; _ } =
   | UnsupportedOriginalTypeAnnotation _ -> 78
   | DeprecatedAnnotationEquals _ -> 79
   | DeprecatedAnnotationMatches _ -> 80
+  | UnsupportedPlatformComparison _ -> 81
 
 
 let display { kind = error; path; location } =

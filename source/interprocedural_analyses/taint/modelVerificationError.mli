@@ -141,6 +141,7 @@ type kind =
   | UnsupportedIfCondition of Expression.t
   | UnsupportedVersionConstant of string
   | UnsupportedComparisonOperator of Expression.ComparisonOperator.operator
+  | UnsupportedPlatformComparison of Expression.ComparisonOperator.operator
   | DeprecatedConstraint of {
       deprecated: string;
       suggested: string;

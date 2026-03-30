@@ -259,8 +259,7 @@ let parse_models_and_queries_from_sources
     ~taint_configuration
     ~source_sink_filter
     ~callables_to_definitions_map
-    ~python_versions
-    ~platforms
+    ~all_sys_infos
     sources
   =
   let map sources =
@@ -273,8 +272,7 @@ let parse_models_and_queries_from_sources
           ~taint_configuration
           ~source_sink_filter:(Some source_sink_filter)
           ~callables_to_definitions_map
-          ~python_versions
-          ~platforms
+          ~all_sys_infos
           ()
         |> ModelParseResult.join state)
   in
@@ -301,11 +299,7 @@ let parse_models_and_queries_from_configuration
     ~source_sink_filter
     ~callables_to_definitions_map
   =
-  let python_versions =
-    PyrePysaApi.ReadOnly.all_python_versions pyre_api
-    |> List.map ~f:ModelParser.PythonVersion.from_configuration_version
-  in
-  let platforms = PyrePysaApi.ReadOnly.all_platforms pyre_api in
+  let all_sys_infos = PyrePysaApi.ReadOnly.all_sys_infos pyre_api in
   let ({ ModelParseResult.errors; _ } as parse_result) =
     ModelParser.get_model_sources ~paths:configuration.taint_model_paths
     |> parse_models_and_queries_from_sources
@@ -314,8 +308,7 @@ let parse_models_and_queries_from_configuration
          ~taint_configuration
          ~source_sink_filter
          ~callables_to_definitions_map
-         ~python_versions
-         ~platforms
+         ~all_sys_infos
   in
   let errors = ModelVerifier.filter_unused_stdlib_modules_errors errors in
   let () = ModelVerificationError.verify_models_and_dsl ~raise_exception:verify_models errors in

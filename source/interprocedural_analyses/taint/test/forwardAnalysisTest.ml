@@ -47,8 +47,14 @@ let assert_taint ?models ?models_source ?(skip_for_pyrefly = false) ~context sou
         ~taint_configuration:TaintConfiguration.Heap.default
         ~source_sink_filter:None
         ~callables_to_definitions_map:None
-        ~python_versions:[ModelParser.PythonVersion.create ()]
-        ~platforms:["linux"]
+        ~all_sys_infos:
+          [
+            {
+              Analysis.PyrePysaEnvironment.SysInfo.python_version =
+                Configuration.PythonVersion.create ();
+              platform = Some "linux";
+            };
+          ]
         ()
     in
     let errors = TestHelper.filter_unused_test_modules_errors errors in

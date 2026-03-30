@@ -95,8 +95,14 @@ let assert_invalid_model
       ?path
       ~source:(Test.trim_extra_indentation model_source)
       ~callables_to_definitions_map:None
-      ~python_versions:[ModelParser.PythonVersion.create ()]
-      ~platforms:["linux"]
+      ~all_sys_infos:
+        [
+          {
+            Analysis.PyrePysaEnvironment.SysInfo.python_version =
+              Configuration.PythonVersion.create ();
+            platform = Some "linux";
+          };
+        ]
       ()
     |> fun { ModelParseResult.errors; _ } ->
     if List.is_empty errors then

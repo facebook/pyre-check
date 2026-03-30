@@ -149,8 +149,14 @@ let set_up_environment
       ~callables_to_definitions_map:
         (Some
            (Interprocedural.CallablesSharedMemory.ReadOnly.read_only callables_to_definitions_map))
-      ~python_versions:[ModelParser.PythonVersion.create ()]
-      ~platforms:["linux"]
+      ~all_sys_infos:
+        [
+          {
+            Analysis.PyrePysaEnvironment.SysInfo.python_version =
+              Configuration.PythonVersion.create ();
+            platform = Some "linux";
+          };
+        ]
       ()
   in
   assert_bool
@@ -274,8 +280,14 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
       ?path
       ~source:(Test.trim_extra_indentation model_source)
       ~callables_to_definitions_map:None
-      ~python_versions:[ModelParser.PythonVersion.create ()]
-      ~platforms:["linux"]
+      ~all_sys_infos:
+        [
+          {
+            Analysis.PyrePysaEnvironment.SysInfo.python_version =
+              Configuration.PythonVersion.create ();
+            platform = Some "linux";
+          };
+        ]
       ()
     |> fun { ModelParseResult.errors; _ } ->
     if List.is_empty errors then
@@ -571,9 +583,8 @@ let test_models_with_if context =
         pass
     |}
     ~expect:
-      "Unsupported if condition: `True`. If conditions need to be of the form: `sys.version \
-       operator version_tuple` or `sys.platform operator platform_string`. All models inside the \
-       if-block (along with those in else-if and else block, if present) will be ignored."
+      "Unsupported if condition: `True`. All models inside the if-block (along with those in \
+       else-if and else block, if present) will be ignored."
     ();
   assert_invalid_model
     ~model_source:{|
@@ -581,10 +592,8 @@ let test_models_with_if context =
         pass
     |}
     ~expect:
-      "Unsupported if condition: `foo.version == (0, 0, 0)`. If conditions need to be of the form: \
-       `sys.version operator version_tuple` or `sys.platform operator platform_string`. All models \
-       inside the if-block (along with those in else-if and else block, if present) will be \
-       ignored."
+      "Unsupported if condition: `foo.version == (0, 0, 0)`. All models inside the if-block (along \
+       with those in else-if and else block, if present) will be ignored."
     ();
   assert_invalid_model
     ~model_source:{|
@@ -592,10 +601,8 @@ let test_models_with_if context =
         pass
     |}
     ~expect:
-      "Unsupported if condition: `sys.version == \"foo\"`. If conditions need to be of the form: \
-       `sys.version operator version_tuple` or `sys.platform operator platform_string`. All models \
-       inside the if-block (along with those in else-if and else block, if present) will be \
-       ignored."
+      "Unsupported if condition: `sys.version == \"foo\"`. All models inside the if-block (along \
+       with those in else-if and else block, if present) will be ignored."
     ();
   (* sys.platform == matching platform -> body taken *)
   assert_model
@@ -709,7 +716,145 @@ let test_models_with_if context =
       if sys.platform > "linux":
         pass
     |}
-    ~expect:"The operator `>` in the if condition is not supported"
+    ~expect:
+      "The operator `>` is not supported for platform comparisons. Only `==` and `!=` are \
+       supported."
+    ();
+  (* Compound: and - both conditions true -> body taken *)
+  assert_model
+    ~source:{|
+      def foo(x, y): ...
+    |}
+    ~model_source:
+      {|
+      if sys.version >= (3, 10) and sys.platform == "linux":
+        def test.foo(x: TaintSource[Test]): ...
+      else:
+        def test.foo(y: TaintSource[Test]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sources:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.foo";
+      ]
+    ();
+  (* Compound: and - version true, platform false -> else taken *)
+  assert_model
+    ~source:{|
+      def foo(x, y): ...
+    |}
+    ~model_source:
+      {|
+      if sys.version >= (3, 10) and sys.platform == "win32":
+        def test.foo(x: TaintSource[Test]): ...
+      else:
+        def test.foo(y: TaintSource[Test]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sources:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.foo";
+      ]
+    ();
+  (* Compound: or - version false, platform true -> body taken *)
+  assert_model
+    ~source:{|
+      def foo(x, y): ...
+    |}
+    ~model_source:
+      {|
+      if sys.version >= (100, 0) or sys.platform == "linux":
+        def test.foo(x: TaintSource[Test]): ...
+      else:
+        def test.foo(y: TaintSource[Test]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sources:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.foo";
+      ]
+    ();
+  (* Compound: or - both false -> else taken *)
+  assert_model
+    ~source:{|
+      def foo(x, y): ...
+    |}
+    ~model_source:
+      {|
+      if sys.version >= (100, 0) or sys.platform == "win32":
+        def test.foo(x: TaintSource[Test]): ...
+      else:
+        def test.foo(y: TaintSource[Test]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sources:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.foo";
+      ]
+    ();
+  (* Compound: not - negating false condition -> body taken *)
+  assert_model
+    ~source:{|
+      def foo(x, y): ...
+    |}
+    ~model_source:
+      {|
+      if not sys.platform == "win32":
+        def test.foo(x: TaintSource[Test]): ...
+      else:
+        def test.foo(y: TaintSource[Test]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sources:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.foo";
+      ]
+    ();
+  (* Compound: not - negating true condition -> else taken *)
+  assert_model
+    ~source:{|
+      def foo(x, y): ...
+    |}
+    ~model_source:
+      {|
+      if not sys.platform == "linux":
+        def test.foo(x: TaintSource[Test]): ...
+      else:
+        def test.foo(y: TaintSource[Test]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sources:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.foo";
+      ]
+    ();
+  (* Invalid: and with unsupported sub-expression *)
+  assert_invalid_model
+    ~model_source:{|
+      if sys.version >= (3, 10) and True:
+        pass
+    |}
+    ~expect:
+      "Unsupported if condition: `True`. All models inside the if-block (along with those in \
+       else-if and else block, if present) will be ignored."
     ();
   ()
 

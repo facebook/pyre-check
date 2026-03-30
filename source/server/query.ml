@@ -538,8 +538,7 @@ let parse_model_queries
     ~pyre_api
     ~scheduler
     ~taint_configuration
-    ~python_versions
-    ~platforms
+    ~all_sys_infos
     ~filter_query
     ~model_paths
   =
@@ -558,8 +557,7 @@ let parse_model_queries
       ~taint_configuration
       ~source_sink_filter:None
       ~callables_to_definitions_map:None
-      ~python_versions
-      ~platforms
+      ~all_sys_infos
       ()
     |> fun { Taint.ModelParseResult.queries; errors; _ } ->
     {
@@ -696,11 +694,7 @@ let process_model_query ~pyre_api ~scheduler ~configuration ~path ~query_name =
       | Error (error :: _) -> Result.Error (Taint.TaintConfiguration.Error.show error)
       | Error _ -> failwith "Taint.TaintConfiguration.create returned empty errors list"
       | Ok taint_configuration -> (
-          let python_versions =
-            Interprocedural.PyrePysaApi.ReadOnly.all_python_versions pyre_api
-            |> List.map ~f:Taint.ModelParser.PythonVersion.from_configuration_version
-          in
-          let platforms = Interprocedural.PyrePysaApi.ReadOnly.all_platforms pyre_api in
+          let all_sys_infos = Interprocedural.PyrePysaApi.ReadOnly.all_sys_infos pyre_api in
           let parse_result =
             let filter_query { Taint.ModelParseResult.ModelQuery.name; _ } =
               String.equal name query_name
@@ -709,8 +703,7 @@ let process_model_query ~pyre_api ~scheduler ~configuration ~path ~query_name =
               ~pyre_api
               ~scheduler
               ~taint_configuration
-              ~python_versions
-              ~platforms
+              ~all_sys_infos
               ~filter_query
               ~model_paths:[path]
           in
@@ -816,17 +809,12 @@ let process_validate_taint_models ~pyre_api ~scheduler ~configuration ~path ~ver
     taint_configuration
   in
   let { Taint.ModelParseResult.queries = model_queries; errors = model_parse_errors; _ } =
-    let python_versions =
-      Interprocedural.PyrePysaApi.ReadOnly.all_python_versions pyre_api
-      |> List.map ~f:Taint.ModelParser.PythonVersion.from_configuration_version
-    in
-    let platforms = Interprocedural.PyrePysaApi.ReadOnly.all_platforms pyre_api in
+    let all_sys_infos = Interprocedural.PyrePysaApi.ReadOnly.all_sys_infos pyre_api in
     parse_model_queries
       ~pyre_api
       ~scheduler
       ~taint_configuration
-      ~python_versions
-      ~platforms
+      ~all_sys_infos
       ~filter_query:(fun _ -> true)
       ~model_paths:paths
   in

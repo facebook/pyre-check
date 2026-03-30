@@ -64,6 +64,19 @@ if sys.version >= (3, 10):
         def module.foo(): ...
 ```
 
+You can also combine conditions using `and`, `or`, and `not`:
+
+```python
+if sys.version >= (3, 10) and sys.platform == "linux":
+    def module.foo(): ...
+
+if sys.version < (3, 9) or sys.platform == "win32":
+    def module.bar(): ...
+
+if not sys.platform == "darwin":
+    def module.baz(): ...
+```
+
 ## Obscure models
 
 When Pysa does not have enough information about a function or method, it will
