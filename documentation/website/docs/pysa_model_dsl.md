@@ -77,7 +77,7 @@ You can also test DSL queries using
 Example
 
 ```bash
-pyre query "model_query('/data/sandcastle/boxes/instagram-server/distillery/stubs/taint/core_privacy_security/','model_query_name')" > /tmp/model_query_output
+buck run fbcode//tools/pyre/facebook/client:pysa -- pyrefly-query "model_query('/data/sandcastle/boxes/instagram-server/distillery/stubs/taint/core_privacy_security/','model_query_name')" > /tmp/model_query_output
 cat /tmp/model_query_output | jq .
 ```
 
