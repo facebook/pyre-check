@@ -21,9 +21,21 @@ open Domains
 open ModelParseResult
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
-module PythonVersion = struct
-  (* Not putting the functions there to prevent circular dependency errors *)
-  include Configuration.PythonVersion
+module SystemCondition = struct
+  type t =
+    | PythonVersionCondition of {
+        operator: ComparisonOperator.operator;
+        version: Configuration.PythonVersion.t;
+      }
+    | PlatformCondition of {
+        operator: ComparisonOperator.operator;
+        platform: string;
+      }
+    | UsingPyrefly
+    | UsingPyre1
+    | And of t * t
+    | Or of t * t
+    | Not of t
 
   let parse_from_tuple tuple =
     let parse_element = function
@@ -35,48 +47,13 @@ module PythonVersion = struct
       | None -> None
     in
     let open Core.Result in
-    (* we need at least a single value to emulate python tuple comparison *)
     Option.value ~default:(Error "The tuple must not be empty") (parse_element (List.nth tuple 0))
     >>= fun major ->
     Option.value ~default:(Ok 0) (parse_element (List.nth tuple 1))
     >>= fun minor ->
     Option.value ~default:(Ok 0) (parse_element (List.nth tuple 2))
-    >>| fun micro -> { major; minor; micro }
+    >>| fun micro -> { Configuration.PythonVersion.major; minor; micro }
 
-
-  let from_configuration_version = Fn.id
-
-  let from_configuration { Configuration.Analysis.python_version; _ } = python_version
-
-  let compare_with left operator right =
-    match operator with
-    | ComparisonOperator.Equals -> Ok (equal left right)
-    | NotEquals -> Ok (not (equal left right))
-    | GreaterThan -> Ok (compare left right > 0)
-    | GreaterThanOrEquals -> Ok (compare left right >= 0)
-    | LessThan -> Ok (compare left right < 0)
-    | LessThanOrEquals -> Ok (compare left right <= 0)
-    | In -> Error ComparisonOperator.In
-    | NotIn -> Error ComparisonOperator.NotIn
-    | Is -> Error ComparisonOperator.Is
-    | IsNot -> Error ComparisonOperator.IsNot
-end
-
-module SystemCondition = struct
-  type t =
-    | PythonVersionCondition of {
-        operator: ComparisonOperator.operator;
-        version: PythonVersion.t;
-      }
-    | PlatformCondition of {
-        operator: ComparisonOperator.operator;
-        platform: string;
-      }
-    | UsingPyrefly
-    | UsingPyre1
-    | And of t * t
-    | Or of t * t
-    | Not of t
 
   let rec parse expression =
     match Node.value expression with
@@ -98,7 +75,7 @@ module SystemCondition = struct
           right = { Node.value = Tuple tuple; _ };
           origin = _;
         } -> (
-        match PythonVersion.parse_from_tuple tuple with
+        match parse_from_tuple tuple with
         | Error error -> Error (ModelVerificationError.UnsupportedVersionConstant error)
         | Ok version -> Ok (PythonVersionCondition { operator; version }))
     | Expression.ComparisonOperator
@@ -141,16 +118,25 @@ module SystemCondition = struct
     | _ -> Error (ModelVerificationError.UnsupportedIfCondition expression)
 
 
+  let compare_with left operator right =
+    match operator with
+    | ComparisonOperator.Equals -> Ok (Configuration.PythonVersion.equal left right)
+    | NotEquals -> Ok (not (Configuration.PythonVersion.equal left right))
+    | GreaterThan -> Ok (Configuration.PythonVersion.compare left right > 0)
+    | GreaterThanOrEquals -> Ok (Configuration.PythonVersion.compare left right >= 0)
+    | LessThan -> Ok (Configuration.PythonVersion.compare left right < 0)
+    | LessThanOrEquals -> Ok (Configuration.PythonVersion.compare left right <= 0)
+    | In -> Error ComparisonOperator.In
+    | NotIn -> Error ComparisonOperator.NotIn
+    | Is -> Error ComparisonOperator.Is
+    | IsNot -> Error ComparisonOperator.IsNot
+
+
   let rec evaluate ~pyre_api sys_info condition =
     let open Analysis.PyrePysaEnvironment.SysInfo in
     match condition with
     | PythonVersionCondition { operator; version = test_version } -> (
-        match
-          PythonVersion.compare_with
-            (PythonVersion.from_configuration_version sys_info.python_version)
-            operator
-            test_version
-        with
+        match compare_with sys_info.python_version operator test_version with
         | Ok result -> Ok result
         | Error unsupported ->
             Error (ModelVerificationError.UnsupportedComparisonOperator unsupported))
