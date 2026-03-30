@@ -6,11 +6,13 @@ sidebar_label: Advanced Topics
 
 This page documents more advanced bits of Pysa.
 
-## Conditional models based on Python version
+## Conditional models
 
-Pysa models support if conditions but only for version comparisons for the python
-version used to run pysa. This allows for conditional parsing of models and allows
-different models to be used for different versions of python.
+Pysa models support if conditions for version and platform checks. This allows
+for conditional parsing of models based on the Python version or the target
+platform.
+
+### Conditional models based on Python version
 
 ```python
 if sys.version == (3,9,0):
@@ -32,6 +34,48 @@ The comparison operators supported include `==` (equal to), `!=` (not equal to),
 
 If conditions can also be nested inside one another and follow the same behavior
 as python if conditions.
+
+### Conditional models based on platform
+
+Models can also be conditionally enabled based on the target platform using
+`sys.platform`:
+
+```python
+if sys.platform == "linux":
+    def module.foo(): ...
+else:
+    def module.bar(): ...
+```
+
+In this example, the first model will only be parsed if the target platform is
+`"linux"`. Otherwise, the second model will be used.
+
+The supported platform strings include `"linux"`, `"win32"`, and `"darwin"`,
+matching Python's `sys.platform` values.
+
+Only `==` (equal to) and `!=` (not equal to) comparison operators are supported
+for platform checks.
+
+Platform and version conditions can be nested:
+
+```python
+if sys.version >= (3, 10):
+    if sys.platform == "linux":
+        def module.foo(): ...
+```
+
+You can also combine conditions using `and`, `or`, and `not`:
+
+```python
+if sys.version >= (3, 10) and sys.platform == "linux":
+    def module.foo(): ...
+
+if sys.version < (3, 9) or sys.platform == "win32":
+    def module.bar(): ...
+
+if not sys.platform == "darwin":
+    def module.baz(): ...
+```
 
 ## Obscure models
 
