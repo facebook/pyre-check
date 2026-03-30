@@ -462,6 +462,7 @@ let get_initial_models ~pyre_api =
       ~source_sink_filter:None
       ~callables_to_definitions_map:None
       ~python_versions:[ModelParser.PythonVersion.create ()]
+      ~platforms:["linux"]
       ()
   in
   let errors = filter_unused_test_modules_errors errors in
@@ -681,6 +682,7 @@ let initialize
                  (Interprocedural.CallablesSharedMemory.ReadOnly.read_only
                     callables_to_definitions_map))
             ~python_versions:[ModelParser.PythonVersion.create ()]
+            ~platforms:["linux"]
             ()
         in
         let errors = filter_unused_test_modules_errors errors in

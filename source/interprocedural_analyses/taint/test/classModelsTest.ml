@@ -29,6 +29,7 @@ let assert_class_models ~context ?user_models ~source ~expected () =
             ~source_sink_filter:None
             ~callables_to_definitions_map:None
             ~python_versions:[ModelParser.PythonVersion.create ()]
+            ~platforms:["linux"]
             ()
         in
         assert_bool

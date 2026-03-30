@@ -96,6 +96,7 @@ let assert_invalid_model
       ~source:(Test.trim_extra_indentation model_source)
       ~callables_to_definitions_map:None
       ~python_versions:[ModelParser.PythonVersion.create ()]
+      ~platforms:["linux"]
       ()
     |> fun { ModelParseResult.errors; _ } ->
     if List.is_empty errors then

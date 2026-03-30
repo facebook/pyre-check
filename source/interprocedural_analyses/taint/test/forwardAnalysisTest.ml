@@ -48,6 +48,7 @@ let assert_taint ?models ?models_source ?(skip_for_pyrefly = false) ~context sou
         ~source_sink_filter:None
         ~callables_to_definitions_map:None
         ~python_versions:[ModelParser.PythonVersion.create ()]
+        ~platforms:["linux"]
         ()
     in
     let errors = TestHelper.filter_unused_test_modules_errors errors in

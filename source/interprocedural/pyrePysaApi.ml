@@ -159,6 +159,13 @@ module ReadOnly = struct
     |> List.dedup_and_sort ~compare:Configuration.PythonVersion.compare
 
 
+  let all_platforms api =
+    all_sys_infos api
+    |> List.map ~f:(fun { Analysis.PyrePysaEnvironment.SysInfo.platform; _ } ->
+           Option.value platform ~default:"linux")
+    |> List.dedup_and_sort ~compare:String.compare
+
+
   let absolute_source_path_of_qualifier ~lookup_source = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.absolute_source_path_of_qualifier ~lookup_source pyre_api
     | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.absolute_source_path_of_qualifier pyrefly_api

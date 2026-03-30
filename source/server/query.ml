@@ -539,6 +539,7 @@ let parse_model_queries
     ~scheduler
     ~taint_configuration
     ~python_versions
+    ~platforms
     ~filter_query
     ~model_paths
   =
@@ -558,6 +559,7 @@ let parse_model_queries
       ~source_sink_filter:None
       ~callables_to_definitions_map:None
       ~python_versions
+      ~platforms
       ()
     |> fun { Taint.ModelParseResult.queries; errors; _ } ->
     {
@@ -698,6 +700,7 @@ let process_model_query ~pyre_api ~scheduler ~configuration ~path ~query_name =
             Interprocedural.PyrePysaApi.ReadOnly.all_python_versions pyre_api
             |> List.map ~f:Taint.ModelParser.PythonVersion.from_configuration_version
           in
+          let platforms = Interprocedural.PyrePysaApi.ReadOnly.all_platforms pyre_api in
           let parse_result =
             let filter_query { Taint.ModelParseResult.ModelQuery.name; _ } =
               String.equal name query_name
@@ -707,6 +710,7 @@ let process_model_query ~pyre_api ~scheduler ~configuration ~path ~query_name =
               ~scheduler
               ~taint_configuration
               ~python_versions
+              ~platforms
               ~filter_query
               ~model_paths:[path]
           in
@@ -816,11 +820,13 @@ let process_validate_taint_models ~pyre_api ~scheduler ~configuration ~path ~ver
       Interprocedural.PyrePysaApi.ReadOnly.all_python_versions pyre_api
       |> List.map ~f:Taint.ModelParser.PythonVersion.from_configuration_version
     in
+    let platforms = Interprocedural.PyrePysaApi.ReadOnly.all_platforms pyre_api in
     parse_model_queries
       ~pyre_api
       ~scheduler
       ~taint_configuration
       ~python_versions
+      ~platforms
       ~filter_query:(fun _ -> true)
       ~model_paths:paths
   in

@@ -501,8 +501,8 @@ let description error =
   | UnsupportedIfCondition condition ->
       Format.sprintf
         "Unsupported if condition: `%s`. If conditions need to be of the form: `sys.version \
-         operator version_tuple`. All models inside the if-block (along with those in else-if and \
-         else block, if present) will be ignored."
+         operator version_tuple` or `sys.platform operator platform_string`. All models inside the \
+         if-block (along with those in else-if and else block, if present) will be ignored."
         (Expression.show condition)
   | UnsupportedVersionConstant error ->
       Format.sprintf "Unsupported element type in version tuple in if condition: %s" error

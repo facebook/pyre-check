@@ -4139,6 +4139,7 @@ let rec parse_statement
     ~source_sink_filter
     ~callables_to_definitions_map
     ~python_versions
+    ~platforms
     statement
   =
   let open Core.Result in
@@ -4384,7 +4385,8 @@ let rec parse_statement
                        ~taint_configuration
                        ~source_sink_filter
                        ~callables_to_definitions_map
-                       ~python_versions)
+                       ~python_versions
+                       ~platforms)
             >>| List.concat
             >>| List.partition_result
             >>| (fun (results, errors) ->
@@ -4547,7 +4549,8 @@ let rec parse_statement
                         ~taint_configuration
                         ~source_sink_filter
                         ~callables_to_definitions_map
-                        ~python_versions)
+                        ~python_versions
+                        ~platforms)
               |> List.concat
             in
             let if_results = if any_true then parse_branch body else [] in
@@ -4559,6 +4562,80 @@ let rec parse_statement
       | Error error ->
           [Error (model_verification_error ~path ~location (UnsupportedVersionConstant error))]
       | Ok test_version -> perform_comparison test_version)
+  | {
+   Node.value =
+     If
+       {
+         If.body;
+         If.test =
+           {
+             Node.value =
+               ComparisonOperator
+                 {
+                   left =
+                     {
+                       Node.value =
+                         Name
+                           (Name.Attribute
+                             {
+                               base = { Node.value = Name (Name.Identifier "sys"); _ };
+                               attribute = "platform";
+                               _;
+                             });
+                       _;
+                     };
+                   operator;
+                   right =
+                     {
+                       Node.value =
+                         Constant (Constant.String { StringLiteral.value = test_platform; _ });
+                       _;
+                     };
+                   origin = _;
+                 };
+             _;
+           };
+         If.orelse;
+       };
+   location;
+  } -> (
+      let compare_result =
+        match operator with
+        | ComparisonOperator.Equals ->
+            Ok (List.map platforms ~f:(fun platform -> String.equal platform test_platform))
+        | ComparisonOperator.NotEquals ->
+            Ok (List.map platforms ~f:(fun platform -> not (String.equal platform test_platform)))
+        | unsupported_operator -> Error unsupported_operator
+      in
+      match compare_result with
+      | Error unsupported_operator ->
+          [
+            Error
+              (model_verification_error
+                 ~path
+                 ~location
+                 (UnsupportedComparisonOperator unsupported_operator));
+          ]
+      | Ok results ->
+          let any_true = List.exists results ~f:Fn.id in
+          let any_false = List.exists results ~f:not in
+          let parse_branch statements =
+            statements
+            |> List.map
+                 ~f:
+                   (parse_statement
+                      ~pyre_api
+                      ~path
+                      ~taint_configuration
+                      ~source_sink_filter
+                      ~callables_to_definitions_map
+                      ~python_versions
+                      ~platforms)
+            |> List.concat
+          in
+          let if_results = if any_true then parse_branch body else [] in
+          let else_results = if any_false then parse_branch orelse else [] in
+          if_results @ else_results)
   | {
    Node.value =
      If { If.test = { Node.value = Name (Name.Identifier "USING_PYREFLY"); _ }; If.body; If.orelse };
@@ -4579,7 +4656,8 @@ let rec parse_statement
                 ~taint_configuration
                 ~source_sink_filter
                 ~callables_to_definitions_map
-                ~python_versions)
+                ~python_versions
+                ~platforms)
       |> List.concat
   | {
    Node.value =
@@ -4601,7 +4679,8 @@ let rec parse_statement
                 ~taint_configuration
                 ~source_sink_filter
                 ~callables_to_definitions_map
-                ~python_versions)
+                ~python_versions
+                ~platforms)
       |> List.concat
   | { Node.value = If { If.test; _ }; location } ->
       [Error (model_verification_error ~path ~location (UnsupportedIfCondition test))]
@@ -4632,6 +4711,7 @@ let create
     ~source_sink_filter
     ~callables_to_definitions_map
     ~python_versions
+    ~platforms
     source
   =
   let open Core.Result in
@@ -4648,7 +4728,8 @@ let create
                     ~taint_configuration
                     ~source_sink_filter
                     ~callables_to_definitions_map
-                    ~python_versions)
+                    ~python_versions
+                    ~platforms)
           |> List.concat
           |> List.partition_result
         in
@@ -4773,6 +4854,7 @@ let parse
     ~source_sink_filter
     ~callables_to_definitions_map
     ~python_versions
+    ~platforms
     ()
   =
   let new_models_and_queries, errors =
@@ -4783,6 +4865,7 @@ let parse
       ~source_sink_filter
       ~callables_to_definitions_map
       ~python_versions
+      ~platforms
       source
     |> List.partition_result
   in
