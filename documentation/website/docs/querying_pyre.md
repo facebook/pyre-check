@@ -396,6 +396,15 @@ $ pyre --pysa query "model_query(path='/absolute/path/to/test_pysa/directory', q
 
 :::
 
+<FbInternalOnly>
+
+With Pysa's migrating to using Pyrefly as the type checker, this command now can also be run with
+
+```bash
+buck2 run //tools/pyre/facebook/client:pysa -- pyrefly-query "model_query(path='/absolute/path/to/test_pysa/directory', query_name='get_foo_sources')"
+```
+</FbInternalOnly>
+
 ### Path of module
 
 The command `path_of_module` returns the full absolute path for a given module.
@@ -555,6 +564,16 @@ $ pyre query "validate_taint_models()"
     }
 }
 ```
+
+<FbInternalOnly>
+
+With Pysa's migrating to using Pyrefly as the type checker, this command now can also be run with
+
+```bash
+buck2 run //tools/pyre/facebook/client:pysa -- pyrefly-query "validate_taint_models()"
+```
+
+</FbInternalOnly>
 
 ## API Details
 
