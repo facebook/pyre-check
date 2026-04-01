@@ -29,6 +29,7 @@ def main(
     working_directory: Path,
     filter_issues: bool,
     skip_model_verification: bool,
+    skip_model_verification_with_pyrefly: bool,
     run_from_source: bool,
     passthrough_args: Optional[List[str]],
     save_results_to: Optional[Path],
@@ -56,6 +57,10 @@ def main(
             "automatically set `PYRE_BINARY`"
         )
         sys.exit(1)
+
+    skip_model_verification = skip_model_verification or (
+        skip_model_verification_with_pyrefly and use_pyrefly
+    )
 
     LOG.info("Running in `%s`", working_directory)
     pysa_results = test_runner_lib.run_pysa(
@@ -95,6 +100,11 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--skip-model-verification", action="store_true", help="Skip model verification"
+    )
+    parser.add_argument(
+        "--skip-model-verification-with-pyrefly",
+        action="store_true",
+        help="Skip model verification when using pyrefly",
     )
     parser.add_argument(
         "--run-from-source",
@@ -156,6 +166,7 @@ if __name__ == "__main__":
         working_directory=parsed.working_directory or Path(os.getcwd()),
         filter_issues=parsed.filter_issues,
         skip_model_verification=parsed.skip_model_verification,
+        skip_model_verification_with_pyrefly=parsed.skip_model_verification_with_pyrefly,
         run_from_source=parsed.run_from_source,
         passthrough_args=parsed.passthrough_args,
         save_results_to=parsed.save_results_to,

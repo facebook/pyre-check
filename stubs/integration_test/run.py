@@ -20,6 +20,7 @@ os.execv(
         "../../tools/pysa_integration_tests/run.py",
         "--require-pyre-env",
         "--check-invariants",
+        "--skip-model-verification-with-pyrefly",
         "--typeshed", "../typeshed/typeshed",
     ]
     + sys.argv[1:],

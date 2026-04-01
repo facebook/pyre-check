@@ -255,7 +255,7 @@ def run_pysa(
     if use_pyrefly:
         command.append("--use-pyrefly")
 
-    if use_pyrefly or skip_model_verification:
+    if skip_model_verification:
         command.append("--no-verify")
 
     if repository_root is not None:
