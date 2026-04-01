@@ -45,6 +45,7 @@ DEPENDENCIES = [
     "ounit2-lwt.2.2.7",
     "pyre-ast.0.1.11",
     "mtime.1.4.0",
+    "capnp.3.6.0",
 ]
 
 
