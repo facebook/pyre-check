@@ -13,1794 +13,41 @@ open Pyre
 open Data_structures
 open Ast
 module Pyre1Api = Analysis.PyrePysaEnvironment
-module PyreflyType = Pyre1Api.PyreflyType
 module PysaType = Pyre1Api.PysaType
 module AstResult = Pyre1Api.AstResult
-module ScalarTypeProperties = Pyre1Api.ScalarTypeProperties
 module FunctionParameter = Pyre1Api.ModelQueries.FunctionParameter
 module FunctionParameters = Pyre1Api.ModelQueries.FunctionParameters
 module FunctionSignature = Pyre1Api.ModelQueries.FunctionSignature
 module AccessPath = Analysis.TaintAccessPath
 module SysInfo = Analysis.PyrePysaEnvironment.SysInfo
 
-module FormatError = struct
-  type t =
-    | UnexpectedJsonType of {
-        json: Yojson.Safe.t;
-        message: string;
-      }
-    | UnsupportedVersion of { version: int }
-    | UnparsableString of string
-  [@@deriving show]
-end
-
-module Error = struct
-  type t =
-    | InvalidJsonError of string
-    | IOError of string
-    | FormatError of FormatError.t
-  [@@deriving show]
-end
-
-let fixup_location { Location.start; stop } =
-  (* WARNING: Pysa uses 0-indexed column numbers while Pyrefly uses 1-indexed column numbers. *)
-  let decrement_column { Location.line; column } = { Location.line; column = column - 1 } in
-  { Location.start = decrement_column start; stop = decrement_column stop }
-
-
-let parse_location location =
-  match Location.from_string location with
-  | Ok location -> Ok (fixup_location location)
-  | Error error ->
-      Error (FormatError.UnexpectedJsonType { json = `String location; message = error })
-
-
-exception
-  PyreflyFileFormatError of {
-    path: PyrePath.t;
-    error: Error.t;
-  }
-
-module JsonUtil = struct
-  let read_json_file_exn path =
-    try Yojson.Safe.from_file (PyrePath.absolute path) with
-    | Yojson.Json_error message ->
-        raise (PyreflyFileFormatError { path; error = Error.InvalidJsonError message })
-    | Sys_error message -> raise (PyreflyFileFormatError { path; error = Error.IOError message })
-
-
-  let get_string_member json key =
-    match Yojson.Safe.Util.member key json with
-    | `String value -> Ok value
-    | _ ->
-        Error
-          (FormatError.UnexpectedJsonType
-             {
-               json;
-               message = Format.sprintf "expected an object with key `%s` containing a string" key;
-             })
-
-
-  let as_list = function
-    | `List elements -> Ok elements
-    | json -> Error (FormatError.UnexpectedJsonType { json; message = "expected a list" })
-
-
-  let as_int = function
-    | `Int value -> Ok value
-    | json -> Error (FormatError.UnexpectedJsonType { json; message = "expected an integer" })
-
-
-  let as_string = function
-    | `String string -> Ok string
-    | json -> Error (FormatError.UnexpectedJsonType { json; message = "expected a string" })
-
-
-  let get_optional_string_member json key =
-    match Yojson.Safe.Util.member key json with
-    | `String value -> Ok (Some value)
-    | `Null -> Ok None
-    | _ ->
-        Error
-          (FormatError.UnexpectedJsonType
-             { json; message = Format.sprintf "expected the key `%s` to contain a string" key })
-
-
-  let get_optional_bool_member ~default json key =
-    match Yojson.Safe.Util.member key json with
-    | `Bool value -> Ok value
-    | `Null -> Ok default
-    | _ ->
-        Error
-          (FormatError.UnexpectedJsonType
-             { json; message = Format.sprintf "expected the key `%s` to contain a boolean" key })
-
-
-  let get_optional_list_member json key =
-    match Yojson.Safe.Util.member key json with
-    | `List elements -> Ok elements
-    | `Null -> Ok []
-    | _ ->
-        Error
-          (FormatError.UnexpectedJsonType
-             { json; message = Format.sprintf "expected the key `%s` to contain a list" key })
-
-
-  let get_int_member json key =
-    match Yojson.Safe.Util.member key json with
-    | `Int value -> Ok value
-    | _ ->
-        Error
-          (FormatError.UnexpectedJsonType
-             {
-               json;
-               message = Format.sprintf "expected an object with key `%s` containing an integer" key;
-             })
-
-
-  let get_optional_member json key =
-    match Yojson.Safe.Util.member key json with
-    | `Null -> None
-    | json -> Some json
-
-
-  let check_format_version ~expected json =
-    let open Core.Result.Monad_infix in
-    get_int_member json "format_version"
-    >>= function
-    | version when Int.equal version expected -> Ok ()
-    | version -> Error (FormatError.UnsupportedVersion { version })
-
-
-  let get_member json key =
-    match Yojson.Safe.Util.member key json with
-    | `Null ->
-        Error
-          (FormatError.UnexpectedJsonType
-             { json; message = Format.sprintf "expected an object with key `%s`" key })
-    | value -> Ok value
-
-
-  let get_object_member json key =
-    match Yojson.Safe.Util.member key json with
-    | `Assoc bindings -> Ok bindings
-    | _ ->
-        Error
-          (FormatError.UnexpectedJsonType
-             {
-               json;
-               message = Format.sprintf "expected an object with key `%s` containing an object" key;
-             })
-
-
-  let get_optional_object_member json key =
-    match Yojson.Safe.Util.member key json with
-    | `Assoc bindings -> Ok bindings
-    | `Null -> Ok []
-    | _ ->
-        Error
-          (FormatError.UnexpectedJsonType
-             {
-               json;
-               message = Format.sprintf "expected an object with key `%s` containing an object" key;
-             })
-
-
-  let get_list_member json key =
-    match Yojson.Safe.Util.member key json with
-    | `List elements -> Ok elements
-    | _ ->
-        Error
-          (FormatError.UnexpectedJsonType
-             {
-               json;
-               message = Format.sprintf "expected an object with key `%s` containing a list" key;
-             })
-
-
-  let check_object = function
-    | `Assoc bindings -> Ok bindings
-    | json ->
-        Error (FormatError.UnexpectedJsonType { json; message = "expected root to be an object" })
-end
-
-(* Path of a module, equivalent of the `pyrefly_python::module_path::ModulePathDetails` rust
-   type. *)
-module ModulePath = struct
-  type t =
-    | Filesystem of ArtifactPath.t
-    | Namespace of PyrePath.t
-    | Memory of PyrePath.t
-    | BundledTypeshed of PyrePath.t
-    | BundledTypeshedThirdParty of PyrePath.t
-  [@@deriving compare, equal, show]
-
-  let from_json = function
-    | `Assoc [("FileSystem", `String path)] ->
-        Ok (Filesystem (path |> PyrePath.create_absolute |> ArtifactPath.create))
-    | `Assoc [("Namespace", `String path)] -> Ok (Namespace (PyrePath.create_absolute path))
-    | `Assoc [("Memory", `String path)] -> Ok (Memory (PyrePath.create_absolute path))
-    | `Assoc [("BundledTypeshed", `String path)] ->
-        Ok (BundledTypeshed (PyrePath.create_absolute path))
-    | `Assoc [("BundledTypeshedThirdParty", `String path)] ->
-        Ok (BundledTypeshedThirdParty (PyrePath.create_absolute path))
-    | json -> Error (FormatError.UnexpectedJsonType { json; message = "expected a module path" })
-
-
-  let artifact_file_path ~pyrefly_directory = function
-    | Filesystem path -> Some path
-    | Namespace _ -> None (* directory *)
-    | Memory _ -> None (* not handled *)
-    | BundledTypeshed path ->
-        Some
-          (pyrefly_directory
-          |> PyrePath.append ~element:"typeshed"
-          |> PyrePath.append ~element:(PyrePath.absolute path)
-          |> ArtifactPath.create)
-    | BundledTypeshedThirdParty path ->
-        Some
-          (pyrefly_directory
-          |> PyrePath.append ~element:"typeshed_third_party"
-          |> PyrePath.append ~element:(PyrePath.absolute path)
-          |> ArtifactPath.create)
-end
-
-(* Unique identifier for a module, assigned by pyrefly. This maps to a source file. *)
-module ModuleId : sig
-  type t [@@deriving compare, equal, sexp, hash, show]
-
-  val from_int : int -> t
-
-  val to_int : t -> int
-
-  val max : t -> t -> t
-
-  val increment : t -> t
-end = struct
-  type t = int [@@deriving compare, equal, sexp, hash, show]
-
-  let from_int = Fn.id
-
-  let to_int = Fn.id
-
-  let max = Int.max
-
-  let increment id = id + 1
-end
-
-(* Unique identifier for a class within a module, assigned by pyrefly. *)
-module LocalClassId : sig
-  type t [@@deriving compare, equal, sexp, hash, show]
-
-  val from_int : int -> t
-
-  val to_int : t -> int
-
-  val of_string : string -> t
-end = struct
-  type t = int [@@deriving compare, equal, sexp, hash, show]
-
-  let from_int = Fn.id
-
-  let to_int = Fn.id
-
-  let of_string = Int.of_string
-end
-
-(* Unique identifier for a class, assigned by pyrefly. *)
-module GlobalClassId = struct
-  (* TODO(T225700656): Potentially encode this in a single integer to save space. *)
-  type t = {
-    module_id: ModuleId.t;
-    local_class_id: LocalClassId.t;
-  }
-  [@@deriving compare, equal, show]
-
-  let from_json json =
-    let open Core.Result.Monad_infix in
-    JsonUtil.get_int_member json "module_id"
-    >>= fun module_id ->
-    JsonUtil.get_int_member json "class_id"
-    >>| fun class_id ->
-    { module_id = ModuleId.from_int module_id; local_class_id = LocalClassId.from_int class_id }
-
-
-  let from_optional_json = function
-    | Some json ->
-        let open Core.Result.Monad_infix in
-        json |> from_json >>| Option.some
-    | None -> Ok None
-end
-
-module GlobalClassIdSharedMemoryKey = struct
-  type t = GlobalClassId.t [@@deriving compare]
-
-  let to_string { GlobalClassId.module_id; local_class_id } =
-    Format.sprintf "%d|%d" (ModuleId.to_int module_id) (LocalClassId.to_int local_class_id)
-end
-
-(* Unique identifier for a function within a module, which needs to be consistent between here and
-   the outputs of Pyrefly because the outputs often use this as the key to associate information
-   with (e.g., call graphs). *)
-module LocalFunctionId : sig
-  type t =
-    (* Function declared with a `def` statement. *)
-    | Function of Location.t
-    (* Implicit function containing all top level statement. *)
-    | ModuleTopLevel
-    (* Implicit function containing the class body. *)
-    | ClassTopLevel of LocalClassId.t
-    (* Function-like class field that is not a `def` statement. *)
-    | ClassField of {
-        class_id: LocalClassId.t;
-        name: string;
-      }
-    (* Decorated target, which represents an artificial function containing all decorators of a
-       function, inlined as an expression. For e.g, `@foo` on `def bar()` -> `return foo(bar)` *)
-    | FunctionDecoratedTarget of Location.t
-  [@@deriving compare, equal, show, sexp]
-
-  val from_string : string -> (t, FormatError.t) result
-
-  val create_function : Location.t -> t
-
-  val is_class_field : t -> bool
-
-  module Map : Map.S with type Key.t = t
-end = struct
-  module T = struct
-    (* TODO(T225700656): Potentially use a TextRange (2 ints) instead of Location.t (4 ints) *)
-    type t =
-      | Function of Location.t
-      | ModuleTopLevel
-      | ClassTopLevel of LocalClassId.t
-      | ClassField of {
-          class_id: LocalClassId.t;
-          name: string;
-        }
-      | FunctionDecoratedTarget of Location.t
-    [@@deriving compare, equal, show, sexp]
-  end
-
-  include T
-
-  let from_string string =
-    let open Core.Result.Monad_infix in
-    match String.lsplit2 string ~on:':' with
-    | None when String.equal string "MTL" -> Ok ModuleTopLevel
-    | Some ("F", location) -> parse_location location >>| fun location -> Function location
-    | Some ("CTL", class_id) -> Ok (ClassTopLevel (LocalClassId.of_string class_id))
-    | Some ("CF", class_field) -> (
-        match String.lsplit2 class_field ~on:':' with
-        | Some (class_id, name) ->
-            Ok (ClassField { class_id = LocalClassId.of_string class_id; name })
-        | None -> Error (FormatError.UnparsableString string))
-    | Some ("FDT", location) ->
-        parse_location location >>| fun location -> FunctionDecoratedTarget location
-    | _ -> Error (FormatError.UnparsableString string)
-
-
-  let create_function location = Function location
-
-  let is_class_field = function
-    | ClassField _ -> true
-    | _ -> false
-
-
-  module Map = Map.Make (T)
-end
-
-(* Unique identifier for a callable (function or method) *)
-module GlobalCallableId = struct
-  type t = {
-    module_id: ModuleId.t;
-    local_function_id: LocalFunctionId.t;
-  }
-  [@@deriving compare, equal, show]
-
-  let _ = pp, LocalFunctionId.show
-
-  let from_json json =
-    let open Core.Result.Monad_infix in
-    JsonUtil.get_int_member json "module_id"
-    >>= fun module_id ->
-    JsonUtil.get_string_member json "function_id"
-    >>= LocalFunctionId.from_string
-    >>| fun local_function_id -> { module_id = ModuleId.from_int module_id; local_function_id }
-
-
-  let from_optional_json = function
-    | Some json ->
-        let open Core.Result.Monad_infix in
-        from_json json >>| Option.some
-    | None -> Ok None
-end
-
-module PyreflyTarget = struct
-  type t =
-    | Function of GlobalCallableId.t
-    | Overrides of GlobalCallableId.t
-    | FormatString
-  [@@deriving compare, equal, show]
-
-  let from_json json =
-    let open Core.Result.Monad_infix in
-    match json with
-    | `Assoc [("Function", global_callable_id)] ->
-        GlobalCallableId.from_json global_callable_id
-        >>| fun global_callable_id -> Function global_callable_id
-    | `Assoc [("Overrides", global_callable_id)] ->
-        GlobalCallableId.from_json global_callable_id
-        >>| fun global_callable_id -> Overrides global_callable_id
-    | `String "FormatString" -> Ok FormatString
-    | _ -> Error (FormatError.UnexpectedJsonType { json; message = "Unknown type of target" })
-end
-
-module ModuleIdSharedMemoryKey = struct
-  type t = ModuleId.t [@@deriving compare]
-
-  let to_string module_id = string_of_int (ModuleId.to_int module_id)
-end
-
-module GlobalCallableIdSharedMemoryKey = struct
-  type t = GlobalCallableId.t [@@deriving compare]
-
-  let to_string { GlobalCallableId.module_id; local_function_id } =
-    Format.asprintf "%d|%a" (ModuleId.to_int module_id) LocalFunctionId.pp local_function_id
-end
-
-(* Unique identifier for a module, assigned by pysa. This maps to a specific source file. Note that
-   this is converted into `Reference.t` during the taint analysis for backward compatibility with
-   the old Pyre1 API, which assumes a module name can only map to one source file. *)
-module ModuleQualifier : sig
-  type t [@@deriving compare, equal, sexp, hash, show]
-
-  val create : path:string option -> Reference.t -> t
-
-  (* The taint analysis uses Reference.t to uniquely represent modules, so we use
-     to_reference/from_reference to convert to that type *)
-  val to_reference : t -> Reference.t
-
-  (* This is marked `unchecked` because it doesn't actually validate that the reference is a valid
-     module qualifier. *)
-  val from_reference_unchecked : Reference.t -> t
-
-  module Map : Map.S with type Key.t = t
-end = struct
-  module T = struct
-    (* For now, this is stored as a reference internally, because Pyre1 uses references everywhere.
-       It doesn't really make a lot of sense though, because the path might have dots. For instance:
-       'a/b.py:a.b' will be stored as ['a/b', 'py:a', 'b']. *)
-    type t = Reference.t [@@deriving compare, equal, sexp, hash, show]
-  end
-
-  include T
-
-  let create ~path module_name =
-    let () =
-      (* Sanity check our naming scheme *)
-      if
-        List.exists (Reference.as_list module_name) ~f:(fun s ->
-            String.contains s ':'
-            || String.contains s '#'
-            || String.contains s '$'
-            || String.contains s '@')
-      then
-        failwith "unexpected: module name contains an invalid character (`:#$@`)"
-    in
-    match path with
-    | None -> module_name
-    | Some path -> Format.sprintf "%s:%s" path (Reference.show module_name) |> Reference.create
-
-
-  let to_reference = Fn.id
-
-  let from_reference_unchecked = Fn.id
-
-  module Map = Map.Make (T)
-end
-
-module ModuleQualifierSharedMemoryKey = struct
-  type t = ModuleQualifier.t [@@deriving compare]
-
-  let to_string key =
-    key |> ModuleQualifier.to_reference |> Analysis.SharedMemoryKeys.ReferenceKey.to_string
-end
-
-(* Filename for a pyrefly module information file. *)
-module ModuleInfoFilename : sig
-  type t [@@deriving compare, equal, sexp, hash, show]
-
-  val create : string -> t
-
-  val raw : t -> string
-end = struct
-  type t = string [@@deriving compare, equal, sexp, hash, show]
-
-  let create = Fn.id
-
-  let raw = Fn.id
-end
-
-(* Content of the `pyrefly.pysa.json` file exported by pyrefly. This matches the
-   `pyrefly::report::pysa::PysaProjectFile` rust type. *)
-module ProjectFile = struct
-  module Module = struct
-    type t = {
-      module_id: ModuleId.t;
-      module_name: Reference.t;
-      absolute_source_path: ModulePath.t;
-          (* Filesystem path to the source file for the module, as seen by the analyzer *)
-      relative_source_path: string option; (* Relative path from a root or search path *)
-      info_filename: ModuleInfoFilename.t option;
-      python_version: Configuration.PythonVersion.t;
-      platform: string;
-      is_test: bool;
-      is_interface: bool;
-      is_init: bool;
-      is_internal: bool;
-    }
-    [@@deriving equal, show]
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      JsonUtil.get_int_member json "module_id"
-      >>= fun module_id ->
-      JsonUtil.get_string_member json "module_name"
-      >>= fun module_name ->
-      JsonUtil.get_optional_string_member json "info_filename"
-      >>= fun info_filename ->
-      JsonUtil.get_object_member json "source_path"
-      >>= fun source_path ->
-      ModulePath.from_json (`Assoc source_path)
-      >>= fun absolute_source_path ->
-      JsonUtil.get_optional_string_member json "relative_source_path"
-      >>= fun relative_source_path ->
-      JsonUtil.get_string_member json "python_version"
-      >>= fun python_version_string ->
-      Configuration.PythonVersion.from_string python_version_string
-      |> Result.map_error ~f:(fun error -> FormatError.UnparsableString error)
-      >>= fun python_version ->
-      JsonUtil.get_string_member json "platform"
-      >>= fun platform ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_test"
-      >>= fun is_test ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_interface"
-      >>= fun is_interface ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_init"
-      >>= fun is_init ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_internal"
-      >>| fun is_internal ->
-      {
-        module_id = ModuleId.from_int module_id;
-        module_name = Reference.create module_name;
-        absolute_source_path;
-        relative_source_path;
-        info_filename = Option.map ~f:ModuleInfoFilename.create info_filename;
-        python_version;
-        platform;
-        is_test;
-        is_interface;
-        is_init;
-        is_internal;
-      }
-  end
-
-  module ModuleMap = Map.Make (ModuleId)
-
-  type t = {
-    modules: Module.t ModuleMap.t;
-    builtin_module_ids: ModuleId.t list;
-    object_class_refs: GlobalClassId.t list;
-    dict_class_refs: GlobalClassId.t list;
-    typing_module_ids: ModuleId.t list;
-    typing_mapping_class_refs: GlobalClassId.t list;
-  }
-
-  let from_json json =
-    let open Core.Result.Monad_infix in
-    let parse_modules modules =
-      modules
-      |> List.map ~f:snd
-      |> List.map ~f:Module.from_json
-      |> Result.all
-      >>| List.map ~f:(fun ({ Module.module_id; _ } as module_) -> module_id, module_)
-      >>| ModuleMap.of_alist_exn
-    in
-    JsonUtil.check_object json
-    >>= fun _ ->
-    JsonUtil.check_format_version ~expected:1 json
-    >>= fun () ->
-    JsonUtil.get_object_member json "modules"
-    >>= parse_modules
-    >>= fun modules ->
-    JsonUtil.get_list_member json "builtin_module_ids"
-    >>= fun builtin_module_ids_json ->
-    List.map builtin_module_ids_json ~f:(fun j -> JsonUtil.as_int j >>| ModuleId.from_int)
-    |> Result.all
-    >>= fun builtin_module_ids ->
-    JsonUtil.get_list_member json "object_class_refs"
-    >>= fun object_class_refs_json ->
-    List.map ~f:GlobalClassId.from_json object_class_refs_json
-    |> Result.all
-    >>= fun object_class_refs ->
-    JsonUtil.get_list_member json "dict_class_refs"
-    >>= fun dict_class_refs_json ->
-    List.map ~f:GlobalClassId.from_json dict_class_refs_json
-    |> Result.all
-    >>= fun dict_class_refs ->
-    JsonUtil.get_list_member json "typing_module_ids"
-    >>= fun typing_module_ids_json ->
-    List.map typing_module_ids_json ~f:(fun j -> JsonUtil.as_int j >>| ModuleId.from_int)
-    |> Result.all
-    >>= fun typing_module_ids ->
-    JsonUtil.get_list_member json "typing_mapping_class_refs"
-    >>= fun typing_mapping_class_refs_json ->
-    List.map ~f:GlobalClassId.from_json typing_mapping_class_refs_json
-    |> Result.all
-    >>| fun typing_mapping_class_refs ->
-    {
-      modules;
-      builtin_module_ids;
-      object_class_refs;
-      dict_class_refs;
-      typing_module_ids;
-      typing_mapping_class_refs;
-    }
-
-
-  let from_path_exn path =
-    let () = Log.debug "Parsing pyrefly project file `%a`" PyrePath.pp path in
-    let json = JsonUtil.read_json_file_exn path in
-    match from_json json with
-    | Ok project -> project
-    | Error error -> raise (PyreflyFileFormatError { path; error = Error.FormatError error })
-end
-
-module ClassWithModifiers = struct
-  type t = {
-    class_name: GlobalClassId.t;
-    modifiers: Pyre1Api.TypeModifier.t list;
-  }
-  [@@deriving equal, show]
-
-  let from_json json =
-    let open Core.Result.Monad_infix in
-    JsonUtil.get_object_member json "class"
-    >>= fun class_name ->
-    GlobalClassId.from_json (`Assoc class_name)
-    >>= fun class_name ->
-    JsonUtil.get_optional_list_member json "modifiers"
-    >>| List.map ~f:JsonUtil.as_string
-    >>= Result.all
-    >>| List.map ~f:(fun modifier ->
-            match Pyre1Api.TypeModifier.from_string modifier with
-            | Some modifier -> Ok modifier
-            | None ->
-                Error
-                  (FormatError.UnexpectedJsonType
-                     { json = `String modifier; message = "expected a modifier" }))
-    >>= Result.all
-    >>| fun modifiers -> { class_name; modifiers }
-end
-
-module ClassNamesResult = struct
-  type t = {
-    classes: ClassWithModifiers.t list;
-    is_exhaustive: bool;
-  }
-  [@@deriving equal, show]
-
-  let from_json json =
-    let open Core.Result.Monad_infix in
-    JsonUtil.get_list_member json "classes"
-    >>| List.map ~f:ClassWithModifiers.from_json
-    >>= Result.all
-    >>= fun classes ->
-    JsonUtil.get_optional_bool_member ~default:false json "is_exhaustive"
-    >>| fun is_exhaustive -> { classes; is_exhaustive }
-
-
-  let from_optional_json = function
-    | None -> Ok None
-    | Some json -> from_json json |> Result.map ~f:Option.some
-end
-
-let parse_scalar_type_properties json =
-  let open Core.Result.Monad_infix in
-  JsonUtil.get_optional_bool_member ~default:false json "is_bool"
-  >>= fun is_boolean ->
-  JsonUtil.get_optional_bool_member ~default:false json "is_int"
-  >>= fun is_integer ->
-  JsonUtil.get_optional_bool_member ~default:false json "is_float"
-  >>= fun is_float ->
-  JsonUtil.get_optional_bool_member ~default:false json "is_enum"
-  >>| fun is_enumeration ->
-  ScalarTypeProperties.create
-    ~is_boolean
-    ~is_integer
-      (* TODO(T225700656): pyre1 considers integers to be valid floats. We preserve that behavior
-         for now. *)
-    ~is_float:(is_float || is_integer)
-    ~is_enumeration
-
-
-module JsonType = struct
-  type t = {
-    string: string;
-    scalar_properties: ScalarTypeProperties.t;
-    class_names: ClassNamesResult.t option;
-  }
-  [@@deriving equal, show]
-
-  let from_json json =
-    let open Core.Result.Monad_infix in
-    JsonUtil.get_string_member json "string"
-    >>= fun string ->
-    parse_scalar_type_properties json
-    >>= fun scalar_properties ->
-    JsonUtil.get_optional_member json "class_names"
-    |> ClassNamesResult.from_optional_json
-    >>| fun class_names -> { string; scalar_properties; class_names }
-
-
-  let to_pysa_type { string; scalar_properties; class_names } =
-    let class_names =
-      match class_names with
-      | Some { ClassNamesResult.classes; is_exhaustive } ->
-          Some
-            {
-              PyreflyType.ClassNamesFromType.classes =
-                List.map
-                  ~f:
-                    (fun {
-                           ClassWithModifiers.class_name =
-                             { GlobalClassId.module_id; local_class_id };
-                           modifiers;
-                         } ->
-                    {
-                      PyreflyType.ClassWithModifiers.module_id = ModuleId.to_int module_id;
-                      class_id = LocalClassId.to_int local_class_id;
-                      modifiers;
-                    })
-                  classes;
-              is_exhaustive;
-            }
-      | None -> None
-    in
-    PysaType.from_pyrefly_type { PyreflyType.string; scalar_properties; class_names }
-
-
-  let pysa_type_none =
-    PysaType.from_pyrefly_type
-      {
-        PyreflyType.string = "None";
-        scalar_properties = ScalarTypeProperties.none;
-        class_names = None;
-      }
-end
-
-module ClassFieldDeclarationKind = struct
-  type t =
-    | DeclaredByAnnotation
-    | DeclaredWithoutAnnotation
-    | AssignedInBody
-    | DefinedWithoutAssign
-    | DefinedInMethod
-  [@@deriving equal, compare, show]
-
-  let from_string = function
-    | "DeclaredByAnnotation" -> Ok DeclaredByAnnotation
-    | "DeclaredWithoutAnnotation" -> Ok DeclaredWithoutAnnotation
-    | "AssignedInBody" -> Ok AssignedInBody
-    | "DefinedWithoutAssign" -> Ok DefinedWithoutAssign
-    | "DefinedInMethod" -> Ok DefinedInMethod
-    | s ->
-        Error
-          (FormatError.UnexpectedJsonType
-             { json = `String s; message = "expected declaration kind" })
-end
-
-module CapturedVariable = struct
-  type t = {
-    name: string;
-    outer_function: GlobalCallableId.t;
-  }
-  [@@deriving equal, show]
-
-  let from_json json =
-    let open Core.Result.Monad_infix in
-    JsonUtil.get_string_member json "name"
-    >>= fun name ->
-    JsonUtil.get_object_member json "outer_function"
-    >>= fun outer_function ->
-    GlobalCallableId.from_json (`Assoc outer_function)
-    >>| fun outer_function -> { name; outer_function }
-end
-
-(* Information from pyrefly about all definitions in a given module, stored as a
-   `<root>/definitions/<module>:<id>.json` file. This matches the
-   `pyrefly::report::pysa::PysaModuleDefinitions` rust type. *)
-module ModuleDefinitionsFile = struct
-  module ParentScope = struct
-    type t =
-      | TopLevel
-      | Class of Location.t
-      | Function of Location.t
-    [@@deriving equal, show]
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      match json with
-      | `String "TopLevel" -> Ok TopLevel
-      | `Assoc [("Class", `Assoc [("location", `String location_string)])] ->
-          parse_location location_string >>| fun location -> Class location
-      | `Assoc [("Function", `Assoc [("location", `String location_string)])] ->
-          parse_location location_string >>| fun location -> Function location
-      | _ -> Error (FormatError.UnexpectedJsonType { json; message = "expected parent_scope" })
-  end
-
-  module FunctionParameter = struct
-    type t =
-      | PosOnly of {
-          name: string option;
-          annotation: JsonType.t;
-          required: bool;
-        }
-      | Pos of {
-          name: string;
-          annotation: JsonType.t;
-          required: bool;
-        }
-      | VarArg of {
-          name: string option;
-          annotation: JsonType.t;
-        }
-      | KwOnly of {
-          name: string;
-          annotation: JsonType.t;
-          required: bool;
-        }
-      | Kwargs of {
-          name: string option;
-          annotation: JsonType.t;
-        }
-    [@@deriving equal, show]
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      (match json with
-      | `Assoc [(kind, json)] -> Ok (kind, json)
-      | _ ->
-          Error (FormatError.UnexpectedJsonType { json; message = "expected function parameter" }))
-      >>= fun (kind, json) ->
-      JsonUtil.get_object_member json "annotation"
-      >>| (fun bindings -> `Assoc bindings)
-      >>= JsonType.from_json
-      >>= fun annotation ->
-      JsonUtil.get_optional_bool_member ~default:false json "required"
-      >>= fun required ->
-      match kind with
-      | "PosOnly" ->
-          JsonUtil.get_optional_string_member json "name"
-          >>| fun name -> PosOnly { name; annotation; required }
-      | "Pos" ->
-          JsonUtil.get_string_member json "name" >>| fun name -> Pos { name; annotation; required }
-      | "VarArg" ->
-          JsonUtil.get_optional_string_member json "name"
-          >>| fun name -> VarArg { name; annotation }
-      | "KwOnly" ->
-          JsonUtil.get_string_member json "name"
-          >>| fun name -> KwOnly { name; annotation; required }
-      | "Kwargs" ->
-          JsonUtil.get_optional_string_member json "name"
-          >>| fun name -> Kwargs { name; annotation }
-      | _ ->
-          Error (FormatError.UnexpectedJsonType { json; message = "expected function parameter" })
-  end
-
-  module FunctionParameters = struct
-    type t =
-      | List of FunctionParameter.t list
-      | Ellipsis
-      | ParamSpec
-    [@@deriving equal, show]
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      match json with
-      | `Assoc [("List", `List parameters)] ->
-          List.map ~f:FunctionParameter.from_json parameters
-          |> Result.all
-          >>| fun parameters -> List parameters
-      | `String "Ellipsis" -> Ok Ellipsis
-      | `String "ParamSpec" -> Ok ParamSpec
-      | _ ->
-          Error (FormatError.UnexpectedJsonType { json; message = "expected function parameters" })
-  end
-
-  module FunctionSignature = struct
-    type t = {
-      parameters: FunctionParameters.t;
-      return_annotation: JsonType.t;
-    }
-    [@@deriving equal, show]
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      JsonUtil.get_member json "parameters"
-      >>= FunctionParameters.from_json
-      >>= fun parameters ->
-      JsonUtil.get_object_member json "return_annotation"
-      >>| (fun bindings -> `Assoc bindings)
-      >>= JsonType.from_json
-      >>| fun return_annotation -> { parameters; return_annotation }
-  end
-
-  let parse_decorator_callees bindings =
-    let extract_global_callable_id_from_target_exn = function
-      | PyreflyTarget.Function global_callable_id
-      | PyreflyTarget.Overrides global_callable_id ->
-          global_callable_id
-      | target ->
-          Format.asprintf "Unexpected type of decorator callee: `%a`" PyreflyTarget.pp target
-          |> failwith
-    in
-    let open Core.Result.Monad_infix in
-    let parse_binding (key, value) =
-      parse_location key
-      >>= fun location ->
-      JsonUtil.as_list value
-      >>| List.map ~f:(fun json ->
-              json
-              |> PyreflyTarget.from_json
-              |> Result.map ~f:extract_global_callable_id_from_target_exn)
-      >>= Result.all
-      >>| fun callables -> location, callables
-    in
-    List.map ~f:parse_binding bindings |> Result.all >>| Location.SerializableMap.of_alist_exn
-
-
-  module FunctionDefinition = struct
-    type t = {
-      name: string;
-      local_function_id: LocalFunctionId.t;
-      parent: ParentScope.t;
-      undecorated_signatures: FunctionSignature.t list;
-      captured_variables: CapturedVariable.t list;
-      is_overload: bool;
-      is_staticmethod: bool;
-      is_classmethod: bool;
-      is_property_getter: bool;
-      is_property_setter: bool;
-      is_stub: bool;
-      is_def_statement: bool;
-      is_toplevel: bool;
-      is_class_toplevel: bool;
-      overridden_base_method: GlobalCallableId.t option;
-      defining_class: GlobalClassId.t option;
-      decorator_callees: GlobalCallableId.t list Location.SerializableMap.t;
-    }
-    [@@deriving equal, show]
-
-    let from_json ~local_function_id json =
-      let open Core.Result.Monad_infix in
-      JsonUtil.get_string_member json "name"
-      >>= fun name ->
-      ParentScope.from_json (Yojson.Safe.Util.member "parent" json)
-      >>= fun parent ->
-      JsonUtil.get_list_member json "undecorated_signatures"
-      >>| List.map ~f:FunctionSignature.from_json
-      >>= Result.all
-      >>= fun undecorated_signatures ->
-      JsonUtil.get_optional_list_member json "captured_variables"
-      >>| List.map ~f:CapturedVariable.from_json
-      >>= Result.all
-      >>= fun captured_variables ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_overload"
-      >>= fun is_overload ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_staticmethod"
-      >>= fun is_staticmethod ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_classmethod"
-      >>= fun is_classmethod ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_property_getter"
-      >>= fun is_property_getter ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_property_setter"
-      >>= fun is_property_setter ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_stub"
-      >>= fun is_stub ->
-      JsonUtil.get_optional_bool_member ~default:true json "is_def_statement"
-      >>= fun is_def_statement ->
-      JsonUtil.get_optional_member json "overridden_base_method"
-      |> GlobalCallableId.from_optional_json
-      >>= fun overridden_base_method ->
-      JsonUtil.get_optional_member json "defining_class"
-      |> GlobalClassId.from_optional_json
-      >>= fun defining_class ->
-      JsonUtil.get_optional_object_member json "decorator_callees"
-      >>= parse_decorator_callees
-      >>| fun decorator_callees ->
-      {
-        name;
-        local_function_id;
-        parent;
-        undecorated_signatures;
-        captured_variables;
-        is_overload;
-        is_staticmethod;
-        is_classmethod;
-        is_property_getter;
-        is_property_setter;
-        is_stub;
-        is_def_statement;
-        is_toplevel = false;
-        is_class_toplevel = false;
-        overridden_base_method;
-        defining_class;
-        decorator_callees;
-      }
-
-
-    let create_module_toplevel () =
-      {
-        name = Ast.Statement.toplevel_define_name;
-        local_function_id = LocalFunctionId.ModuleTopLevel;
-        parent = ParentScope.TopLevel;
-        undecorated_signatures =
-          [
-            {
-              FunctionSignature.parameters = FunctionParameters.List [];
-              return_annotation =
-                {
-                  JsonType.string = "None";
-                  scalar_properties = ScalarTypeProperties.none;
-                  class_names = None;
-                };
-            };
-          ];
-        captured_variables = [];
-        is_overload = false;
-        is_staticmethod = false;
-        is_classmethod = false;
-        is_property_getter = false;
-        is_property_setter = false;
-        is_stub = false;
-        is_def_statement = false;
-        is_toplevel = true;
-        is_class_toplevel = false;
-        overridden_base_method = None;
-        defining_class = None;
-        decorator_callees = Location.SerializableMap.empty;
-      }
-
-
-    let create_class_toplevel ~name_location ~local_class_id =
-      {
-        name = Ast.Statement.class_toplevel_define_name;
-        local_function_id = LocalFunctionId.ClassTopLevel local_class_id;
-        parent = ParentScope.Class name_location;
-        undecorated_signatures =
-          [
-            {
-              FunctionSignature.parameters = FunctionParameters.List [];
-              return_annotation =
-                {
-                  JsonType.string = "None";
-                  scalar_properties = ScalarTypeProperties.none;
-                  class_names = None;
-                };
-            };
-          ];
-        captured_variables = [];
-        is_overload = false;
-        is_staticmethod = false;
-        is_classmethod = false;
-        is_property_getter = false;
-        is_property_setter = false;
-        is_stub = false;
-        is_def_statement = false;
-        is_toplevel = false;
-        is_class_toplevel = true;
-        overridden_base_method = None;
-        defining_class = None;
-        decorator_callees = Location.SerializableMap.empty;
-      }
-  end
-
-  module ClassMro = struct
-    type t =
-      | Resolved of GlobalClassId.t list
-      | Cyclic
-    [@@deriving equal, show]
-
-    let from_json = function
-      | `Assoc [("Resolved", `List classes)] ->
-          let open Core.Result.Monad_infix in
-          classes
-          |> List.map ~f:GlobalClassId.from_json
-          |> Result.all
-          >>| fun classes -> Resolved classes
-      | `String "Cyclic" -> Ok Cyclic
-      | json -> Error (FormatError.UnexpectedJsonType { json; message = "expected a class mro" })
-  end
-
-  module JsonClassField = struct
-    type t = {
-      name: string;
-      type_: JsonType.t;
-      explicit_annotation: string option;
-      location: Location.t option;
-      declaration_kind: ClassFieldDeclarationKind.t option;
-    }
-    [@@deriving equal, show]
-
-    let from_json ~name json =
-      let open Core.Result.Monad_infix in
-      JsonUtil.get_member json "type"
-      >>= JsonType.from_json
-      >>= fun type_ ->
-      JsonUtil.get_optional_string_member json "explicit_annotation"
-      >>= fun explicit_annotation ->
-      JsonUtil.get_optional_string_member json "location"
-      >>= (function
-            | Some location -> parse_location location >>| Option.some
-            | None -> Ok None)
-      >>= fun location ->
-      JsonUtil.get_optional_string_member json "declaration_kind"
-      >>= (function
-            | Some declaration_kind ->
-                ClassFieldDeclarationKind.from_string declaration_kind >>| Option.some
-            | None -> Ok None)
-      >>| fun declaration_kind -> { name; type_; explicit_annotation; location; declaration_kind }
-  end
-
-  module ClassDefinition = struct
-    type t = {
-      name: string;
-      local_class_id: LocalClassId.t;
-      name_location: Location.t;
-      parent: ParentScope.t;
-      bases: GlobalClassId.t list;
-      mro: ClassMro.t;
-      is_synthesized: bool;
-      is_dataclass: bool;
-      is_named_tuple: bool;
-      is_typed_dict: bool;
-      fields: JsonClassField.t list;
-      decorator_callees: GlobalCallableId.t list Location.SerializableMap.t;
-    }
-    [@@deriving equal, show]
-
-    let from_json ~name_location json =
-      let open Core.Result.Monad_infix in
-      JsonUtil.get_string_member json "name"
-      >>= fun name ->
-      ParentScope.from_json (Yojson.Safe.Util.member "parent" json)
-      >>= fun parent ->
-      JsonUtil.get_int_member json "class_id"
-      >>= fun class_id ->
-      JsonUtil.get_optional_list_member json "bases"
-      >>| List.map ~f:GlobalClassId.from_json
-      >>= Result.all
-      >>= fun bases ->
-      JsonUtil.get_member json "mro"
-      >>= ClassMro.from_json
-      >>= fun mro ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_synthesized"
-      >>= fun is_synthesized ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_dataclass"
-      >>= fun is_dataclass ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_named_tuple"
-      >>= fun is_named_tuple ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_typed_dict"
-      >>= fun is_typed_dict ->
-      JsonUtil.get_optional_object_member json "fields"
-      >>| List.map ~f:(fun (name, json) -> JsonClassField.from_json ~name json)
-      >>= Result.all
-      >>= fun fields ->
-      JsonUtil.get_optional_object_member json "decorator_callees"
-      >>= parse_decorator_callees
-      >>| fun decorator_callees ->
-      {
-        name;
-        local_class_id = LocalClassId.from_int class_id;
-        name_location;
-        parent;
-        bases;
-        mro;
-        is_synthesized;
-        is_dataclass;
-        is_named_tuple;
-        is_typed_dict;
-        fields;
-        decorator_callees;
-      }
-  end
-
-  module JsonGlobalVariable = struct
-    type t = {
-      name: string;
-      type_: JsonType.t option;
-      location: Location.t;
-    }
-
-    let from_json ~name json =
-      let open Core.Result.Monad_infix in
-      JsonUtil.get_optional_member json "type"
-      |> Option.map ~f:JsonType.from_json
-      |> (function
-           | Some result -> Result.map ~f:Option.some result
-           | None -> Ok None)
-      >>= fun type_ ->
-      JsonUtil.get_string_member json "location"
-      >>= parse_location
-      >>| fun location -> { name; type_; location }
-  end
-
-  type t = {
-    (* TODO(T225700656): module_name and source_path are already specified in the Project module. We
-       should probably remove those from the file format. *)
-    module_id: ModuleId.t;
-    function_definitions: FunctionDefinition.t LocalFunctionId.Map.t;
-    class_definitions: ClassDefinition.t Location.Map.t;
-    global_variables: JsonGlobalVariable.t list;
-  }
-
-  let from_json json =
-    let open Core.Result.Monad_infix in
-    let parse_function_definitions function_definitions =
-      function_definitions
-      |> List.map ~f:(fun (local_function_id, function_definition) ->
-             LocalFunctionId.from_string local_function_id
-             >>= fun local_function_id ->
-             FunctionDefinition.from_json ~local_function_id function_definition
-             >>| fun function_definition -> local_function_id, function_definition)
-      |> Result.all
-      >>| LocalFunctionId.Map.of_alist_exn
-    in
-    let parse_class_definitions class_definitions =
-      class_definitions
-      |> List.map ~f:(fun (location, class_definition) ->
-             parse_location location
-             >>= fun location ->
-             ClassDefinition.from_json ~name_location:location class_definition
-             >>| fun class_definition -> location, class_definition)
-      |> Result.all
-      >>| Location.Map.of_alist_exn
-    in
-    let parse_global_variables global_variables =
-      global_variables
-      |> List.map ~f:(fun (name, json) -> JsonGlobalVariable.from_json ~name json)
-      |> Result.all
-    in
-    JsonUtil.check_object json
-    >>= fun _ ->
-    JsonUtil.check_format_version ~expected:1 json
-    >>= fun () ->
-    JsonUtil.get_int_member json "module_id"
-    >>= fun module_id ->
-    JsonUtil.get_object_member json "function_definitions"
-    >>= parse_function_definitions
-    >>= fun function_definitions ->
-    JsonUtil.get_object_member json "class_definitions"
-    >>= parse_class_definitions
-    >>= fun class_definitions ->
-    JsonUtil.get_object_member json "global_variables"
-    >>= parse_global_variables
-    >>| fun global_variables ->
-    {
-      module_id = ModuleId.from_int module_id;
-      function_definitions;
-      class_definitions;
-      global_variables;
-    }
-
-
-  let from_path_exn ~pyrefly_directory path =
-    let path =
-      pyrefly_directory
-      |> PyrePath.append ~element:"definitions"
-      |> PyrePath.append ~element:(ModuleInfoFilename.raw path)
-    in
-    let () = Log.debug "Parsing pyrefly module definitions file %a" PyrePath.pp path in
-    let json = JsonUtil.read_json_file_exn path in
-    match from_json json with
-    | Ok module_info -> module_info
-    | Error error -> raise (PyreflyFileFormatError { path; error = Error.FormatError error })
-end
-
-(* Information from pyrefly about type of expressions in a given module, stored as a
-   `<root>/type_of_expressions/<module>:<id>.json` file. This matches the
-   `pyrefly::report::pysa::PysaModuleTypeOfExpressions` rust type. *)
-module ModuleTypeOfExpressions = struct
-  type t = {
-    (* TODO(T225700656): module_name and source_path are already specified in the Project module. We
-       should probably remove those from the file format. *)
-    module_id: ModuleId.t;
-    type_of_expression: JsonType.t Location.Map.t;
-  }
-
-  let from_json json =
-    let open Core.Result.Monad_infix in
-    let parse_type_of_expression type_of_expression =
-      type_of_expression
-      |> List.map ~f:(fun (location, type_) ->
-             parse_location location
-             >>= fun location -> JsonType.from_json type_ >>| fun type_ -> location, type_)
-      |> Result.all
-      >>| Location.Map.of_alist_exn
-    in
-    JsonUtil.check_object json
-    >>= fun _ ->
-    JsonUtil.check_format_version ~expected:1 json
-    >>= fun () ->
-    JsonUtil.get_int_member json "module_id"
-    >>= fun module_id ->
-    JsonUtil.get_object_member json "type_of_expression"
-    >>= parse_type_of_expression
-    >>| fun type_of_expression -> { module_id = ModuleId.from_int module_id; type_of_expression }
-
-
-  let from_path_exn ~pyrefly_directory path =
-    let path =
-      pyrefly_directory
-      |> PyrePath.append ~element:"type_of_expressions"
-      |> PyrePath.append ~element:(ModuleInfoFilename.raw path)
-    in
-    let () = Log.debug "Parsing pyrefly module type-of-expressions file %a" PyrePath.pp path in
-    let json = JsonUtil.read_json_file_exn path in
-    match from_json json with
-    | Ok module_info -> module_info
-    | Error error -> raise (PyreflyFileFormatError { path; error = Error.FormatError error })
-end
-
-(* Mapping from function id to to call graph information. This represents the
-   `pyrefly::report::pysa::PysaModuleCallGraphs` rust type. *)
-module ModuleCallGraphs = struct
-  module JsonImplicitReceiver = struct
-    type t =
-      | TrueWithClassReceiver
-      | TrueWithObjectReceiver
-      | False
-
-    let from_json = function
-      | `String "TrueWithClassReceiver" -> Ok TrueWithClassReceiver
-      | `String "TrueWithObjectReceiver" -> Ok TrueWithObjectReceiver
-      | `String "False" -> Ok False
-      | json ->
-          Error (FormatError.UnexpectedJsonType { json; message = "expected implicit receiver" })
-
-
-    let is_true = function
-      | TrueWithClassReceiver -> true
-      | TrueWithObjectReceiver -> true
-      | False -> false
-  end
-
-  module JsonCallTarget = struct
-    type t = {
-      target: PyreflyTarget.t;
-      implicit_receiver: JsonImplicitReceiver.t;
-      implicit_dunder_call: bool;
-      receiver_class: GlobalClassId.t option;
-      is_class_method: bool;
-      is_static_method: bool;
-      return_type: ScalarTypeProperties.t;
-    }
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      JsonUtil.get_member json "target"
-      >>= PyreflyTarget.from_json
-      >>= fun target ->
-      (match JsonUtil.get_optional_member json "implicit_receiver" with
-      | Some implicit_receiver_json -> JsonImplicitReceiver.from_json implicit_receiver_json
-      | None -> Ok JsonImplicitReceiver.False)
-      >>= fun implicit_receiver ->
-      JsonUtil.get_optional_bool_member ~default:false json "implicit_dunder_call"
-      >>= fun implicit_dunder_call ->
-      (match JsonUtil.get_optional_member json "receiver_class" with
-      | Some receiver_class -> GlobalClassId.from_json receiver_class >>| Option.some
-      | None -> Ok None)
-      >>= fun receiver_class ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_class_method"
-      >>= fun is_class_method ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_static_method"
-      >>= fun is_static_method ->
-      (match JsonUtil.get_optional_member json "return_type" with
-      | Some return_type -> parse_scalar_type_properties return_type
-      | None -> Ok ScalarTypeProperties.none)
-      >>| fun return_type ->
-      {
-        target;
-        implicit_receiver;
-        implicit_dunder_call;
-        receiver_class;
-        is_class_method;
-        is_static_method;
-        return_type;
-      }
-  end
-
-  module JsonUnresolved = struct
-    let from_json = function
-      | `String "False" -> Ok CallGraph.Unresolved.False
-      | `Assoc [("True", `String reason)] as json -> (
-          match CallGraph.Unresolved.reason_from_string reason with
-          | Some reason -> Ok (CallGraph.Unresolved.True reason)
-          | None ->
-              Error (FormatError.UnexpectedJsonType { json; message = "unknown unresolved reason" })
-          )
-      | json -> Error (FormatError.UnexpectedJsonType { json; message = "expected unresolved" })
-  end
-
-  module JsonHigherOrderParameter = struct
-    type t = {
-      index: int;
-      call_targets: JsonCallTarget.t list;
-      unresolved: CallGraph.Unresolved.t;
-    }
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      let parse_call_target_list targets =
-        targets |> List.map ~f:JsonCallTarget.from_json |> Result.all
-      in
-      JsonUtil.get_optional_list_member json "call_targets"
-      >>= parse_call_target_list
-      >>= fun call_targets ->
-      JsonUtil.get_int_member json "index"
-      >>= fun index ->
-      JsonUtil.get_optional_member json "unresolved"
-      |> (function
-           | Some json -> JsonUnresolved.from_json json
-           | None -> Ok CallGraph.Unresolved.False)
-      >>| fun unresolved -> { index; call_targets; unresolved }
-  end
-
-  module JsonHigherOrderParameterMap = struct
-    module Map = SerializableMap.Make (Int)
-
-    type t = JsonHigherOrderParameter.t Map.t
-
-    let empty = Map.empty
-
-    let data = Map.data
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      json
-      |> JsonUtil.check_object
-      >>| List.map ~f:(fun (index, higher_order_parameter) ->
-              let index = int_of_string index in
-              JsonHigherOrderParameter.from_json higher_order_parameter
-              >>| fun higher_order_parameter -> index, higher_order_parameter)
-      >>= Result.all
-      >>| Map.of_alist_exn
-  end
-
-  module JsonGlobalVariable = struct
-    type t = {
-      module_id: ModuleId.t;
-      name: string;
-    }
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      JsonUtil.get_int_member json "module_id"
-      >>= fun module_id ->
-      JsonUtil.get_string_member json "name"
-      >>| fun name -> { module_id = ModuleId.from_int module_id; name }
-  end
-
-  module JsonCallCallees = struct
-    type t = {
-      call_targets: JsonCallTarget.t list;
-      init_targets: JsonCallTarget.t list;
-      new_targets: JsonCallTarget.t list;
-      higher_order_parameters: JsonHigherOrderParameterMap.t;
-      unresolved: CallGraph.Unresolved.t;
-    }
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      let parse_call_target_list targets =
-        targets |> List.map ~f:JsonCallTarget.from_json |> Result.all
-      in
-      JsonUtil.get_optional_list_member json "call_targets"
-      >>= parse_call_target_list
-      >>= fun call_targets ->
-      JsonUtil.get_optional_list_member json "init_targets"
-      >>= parse_call_target_list
-      >>= fun init_targets ->
-      JsonUtil.get_optional_list_member json "new_targets"
-      >>= parse_call_target_list
-      >>= fun new_targets ->
-      JsonUtil.get_optional_member json "higher_order_parameters"
-      |> (function
-           | Some json -> JsonHigherOrderParameterMap.from_json json
-           | None -> Ok JsonHigherOrderParameterMap.empty)
-      >>= fun higher_order_parameters ->
-      JsonUtil.get_optional_member json "unresolved"
-      |> (function
-           | Some json -> JsonUnresolved.from_json json
-           | None -> Ok CallGraph.Unresolved.False)
-      >>| fun unresolved ->
-      { call_targets; init_targets; new_targets; higher_order_parameters; unresolved }
-  end
-
-  module JsonAttributeAccessCallees = struct
-    type t = {
-      if_called: JsonCallCallees.t;
-      property_setters: JsonCallTarget.t list;
-      property_getters: JsonCallTarget.t list;
-      global_targets: JsonGlobalVariable.t list;
-      is_attribute: bool;
-    }
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      let parse_call_target_list targets =
-        targets |> List.map ~f:JsonCallTarget.from_json |> Result.all
-      in
-      JsonUtil.get_member json "if_called"
-      >>= JsonCallCallees.from_json
-      >>= fun if_called ->
-      JsonUtil.get_optional_list_member json "property_setters"
-      >>= parse_call_target_list
-      >>= fun property_setters ->
-      JsonUtil.get_optional_list_member json "property_getters"
-      >>= parse_call_target_list
-      >>= fun property_getters ->
-      JsonUtil.get_optional_list_member json "global_targets"
-      >>| List.map ~f:JsonGlobalVariable.from_json
-      >>= Result.all
-      >>= fun global_targets ->
-      JsonUtil.get_optional_bool_member ~default:false json "is_attribute"
-      >>| fun is_attribute ->
-      { if_called; property_setters; property_getters; global_targets; is_attribute }
-  end
-
-  module JsonIdentifierCallees = struct
-    type t = {
-      if_called: JsonCallCallees.t;
-      global_targets: JsonGlobalVariable.t list;
-      captured_variables: CapturedVariable.t list;
-    }
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      JsonUtil.get_member json "if_called"
-      >>= JsonCallCallees.from_json
-      >>= fun if_called ->
-      JsonUtil.get_optional_list_member json "global_targets"
-      >>| List.map ~f:JsonGlobalVariable.from_json
-      >>= Result.all
-      >>= fun global_targets ->
-      JsonUtil.get_optional_list_member json "captured_variables"
-      >>| List.map ~f:CapturedVariable.from_json
-      >>= Result.all
-      >>| fun captured_variables -> { if_called; global_targets; captured_variables }
-  end
-
-  module JsonDefineCallees = struct
-    type t = { define_targets: JsonCallTarget.t list }
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      let parse_call_target_list targets =
-        targets |> List.map ~f:JsonCallTarget.from_json |> Result.all
-      in
-      JsonUtil.get_list_member json "define_targets"
-      >>= parse_call_target_list
-      >>| fun define_targets -> { define_targets }
-  end
-
-  module JsonFormatStringArtificialCallees = struct
-    type t = { targets: JsonCallTarget.t list }
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      let parse_call_target_list targets =
-        targets |> List.map ~f:JsonCallTarget.from_json |> Result.all
-      in
-      JsonUtil.get_list_member json "targets"
-      >>= parse_call_target_list
-      >>| fun targets -> { targets }
-  end
-
-  module JsonFormatStringStringifyCallees = struct
-    type t = {
-      targets: JsonCallTarget.t list;
-      unresolved: CallGraph.Unresolved.t;
-    }
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      let parse_call_target_list targets =
-        targets |> List.map ~f:JsonCallTarget.from_json |> Result.all
-      in
-      JsonUtil.get_optional_list_member json "targets"
-      >>= parse_call_target_list
-      >>= fun targets ->
-      JsonUtil.get_optional_member json "unresolved"
-      |> (function
-           | Some json -> JsonUnresolved.from_json json
-           | None -> Ok CallGraph.Unresolved.False)
-      >>| fun unresolved -> { targets; unresolved }
-  end
-
-  module JsonReturnShimCallees = struct
-    type t = {
-      targets: JsonCallTarget.t list;
-      arguments: CallGraph.ReturnShimCallees.argument_mapping list;
-    }
-
-    let parse_argument_mapping = function
-      | `String "ReturnExpression" -> Ok CallGraph.ReturnShimCallees.ReturnExpression
-      | `String "ReturnExpressionElement" -> Ok CallGraph.ReturnShimCallees.ReturnExpressionElement
-      | argument_mapping ->
-          Error
-            (FormatError.UnexpectedJsonType
-               { json = argument_mapping; message = "Unknown argument mapping" })
-
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      let parse_list ~parse_element list = list |> List.map ~f:parse_element |> Result.all in
-      JsonUtil.get_optional_list_member json "targets"
-      >>= parse_list ~parse_element:JsonCallTarget.from_json
-      >>= fun targets ->
-      JsonUtil.get_optional_list_member json "arguments"
-      >>= parse_list ~parse_element:parse_argument_mapping
-      >>| fun arguments -> { targets; arguments }
-  end
-
-  module JsonExpressionCallees = struct
-    type t =
-      | Call of JsonCallCallees.t
-      | Identifier of JsonIdentifierCallees.t
-      | AttributeAccess of JsonAttributeAccessCallees.t
-      | Define of JsonDefineCallees.t
-      | FormatStringArtificial of JsonFormatStringArtificialCallees.t
-      | FormatStringStringify of JsonFormatStringStringifyCallees.t
-      | Return of JsonReturnShimCallees.t
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      match json with
-      | `Assoc [("Call", call_callees)] ->
-          JsonCallCallees.from_json call_callees >>| fun call_callees -> Call call_callees
-      | `Assoc [("Identifier", identifier_callees)] ->
-          JsonIdentifierCallees.from_json identifier_callees
-          >>| fun identifier_callees -> Identifier identifier_callees
-      | `Assoc [("AttributeAccess", attribute_access_callees)] ->
-          JsonAttributeAccessCallees.from_json attribute_access_callees
-          >>| fun attribute_access_callees -> AttributeAccess attribute_access_callees
-      | `Assoc [("Define", define_callees)] ->
-          JsonDefineCallees.from_json define_callees >>| fun define_callees -> Define define_callees
-      | `Assoc [("FormatStringArtificial", format_string_callees)] ->
-          JsonFormatStringArtificialCallees.from_json format_string_callees
-          >>| fun format_string_callees -> FormatStringArtificial format_string_callees
-      | `Assoc [("FormatStringStringify", format_string_callees)] ->
-          JsonFormatStringStringifyCallees.from_json format_string_callees
-          >>| fun format_string_callees -> FormatStringStringify format_string_callees
-      | `Assoc [("Return", return_callees)] ->
-          JsonReturnShimCallees.from_json return_callees
-          >>| fun return_shim_callees -> Return return_shim_callees
-      | _ ->
-          Error (FormatError.UnexpectedJsonType { json; message = "expected expression callees" })
-  end
-
-  module JsonCallGraph = struct
-    type t = JsonExpressionCallees.t ExpressionIdentifier.Map.t
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      json
-      |> JsonUtil.check_object
-      >>| List.map ~f:(fun (expression_identifier, expression_callees) ->
-              ExpressionIdentifier.from_json_key expression_identifier
-              |> Result.map_error ~f:(fun error ->
-                     FormatError.UnexpectedJsonType
-                       { json = `String expression_identifier; message = error })
-              >>| ExpressionIdentifier.map_location ~f:fixup_location
-              >>= fun expression_identifier ->
-              JsonExpressionCallees.from_json expression_callees
-              >>| fun expression_callees -> expression_identifier, expression_callees)
-      >>= Result.all
-      >>| ExpressionIdentifier.Map.of_alist_exn
-  end
-
-  type t = {
-    module_id: ModuleId.t;
-    call_graphs: JsonCallGraph.t LocalFunctionId.Map.t;
-  }
-
-  let from_json json =
-    let open Core.Result.Monad_infix in
-    let parse_call_graphs call_graphs =
-      call_graphs
-      |> List.map ~f:(fun (function_id, call_graph) ->
-             LocalFunctionId.from_string function_id
-             >>= fun function_id ->
-             JsonCallGraph.from_json call_graph >>| fun call_graph -> function_id, call_graph)
-      |> Result.all
-      >>| LocalFunctionId.Map.of_alist_exn
-    in
-    JsonUtil.check_object json
-    >>= fun _ ->
-    JsonUtil.check_format_version ~expected:1 json
-    >>= fun () ->
-    JsonUtil.get_int_member json "module_id"
-    >>= fun module_id ->
-    JsonUtil.get_object_member json "call_graphs"
-    >>= parse_call_graphs
-    >>| fun call_graphs -> { module_id = ModuleId.from_int module_id; call_graphs }
-
-
-  let from_path_exn ~pyrefly_directory path =
-    let path =
-      pyrefly_directory
-      |> PyrePath.append ~element:"call_graphs"
-      |> PyrePath.append ~element:(ModuleInfoFilename.raw path)
-    in
-    let () = Log.debug "Parsing pyrefly module call-graphs file %a" PyrePath.pp path in
-    let json = JsonUtil.read_json_file_exn path in
-    match from_json json with
-    | Ok module_info -> module_info
-    | Error error -> raise (PyreflyFileFormatError { path; error = Error.FormatError error })
-end
-
-(* Set of type errors parsed from pyrefly. This represents the
-   `pyrefly::report::pysa::PysaTypeErrorsFile` rust type. *)
-module TypeErrors = struct
-  module JsonError = struct
-    type t = {
-      module_name: string;
-      module_path: ModulePath.t;
-      location: Location.t;
-      kind: string;
-      message: string;
-    }
-
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      JsonUtil.get_string_member json "module_name"
-      >>= fun module_name ->
-      JsonUtil.get_object_member json "module_path"
-      >>= fun module_path ->
-      ModulePath.from_json (`Assoc module_path)
-      >>= fun module_path ->
-      JsonUtil.get_string_member json "location"
-      >>= parse_location
-      >>= fun location ->
-      JsonUtil.get_string_member json "kind"
-      >>= fun kind ->
-      JsonUtil.get_string_member json "message"
-      >>| fun message -> { module_name; module_path; location; kind; message }
-  end
-
-  type t = { errors: JsonError.t list }
-
-  let from_json json =
-    let open Core.Result.Monad_infix in
-    JsonUtil.check_object json
-    >>= fun _ ->
-    JsonUtil.check_format_version ~expected:1 json
-    >>= fun () ->
-    JsonUtil.get_list_member json "errors"
-    >>= fun errors -> List.map ~f:JsonError.from_json errors |> Result.all
-
-
-  let from_path_exn ~pyrefly_directory =
-    let path = pyrefly_directory |> PyrePath.append ~element:"errors.json" in
-    let () = Log.debug "Parsing pyrefly type errors file %a" PyrePath.pp path in
-    let json = JsonUtil.read_json_file_exn path in
-    match from_json json with
-    | Ok errors -> { errors }
-    | Error error -> raise (PyreflyFileFormatError { path; error = Error.FormatError error })
-end
+(* Types re-exported from PyreflyReport *)
+module FormatError = PyreflyReport.FormatError
+module Error = PyreflyReport.Error
+
+exception PyreflyFileFormatError = PyreflyReport.PyreflyFileFormatError
+
+module ModulePath = PyreflyReport.ModulePath
+module ModuleId = PyreflyReport.ModuleId
+module LocalClassId = PyreflyReport.LocalClassId
+module GlobalClassId = PyreflyReport.GlobalClassId
+module GlobalClassIdSharedMemoryKey = PyreflyReport.GlobalClassIdSharedMemoryKey
+module LocalFunctionId = PyreflyReport.LocalFunctionId
+module GlobalCallableId = PyreflyReport.GlobalCallableId
+module PyreflyTarget = PyreflyReport.PyreflyTarget
+module ModuleIdSharedMemoryKey = PyreflyReport.ModuleIdSharedMemoryKey
+module GlobalCallableIdSharedMemoryKey = PyreflyReport.GlobalCallableIdSharedMemoryKey
+module ModuleQualifier = PyreflyReport.ModuleQualifier
+module ModuleQualifierSharedMemoryKey = PyreflyReport.ModuleQualifierSharedMemoryKey
+module ModuleInfoFilename = PyreflyReport.ModuleInfoFilename
+module ProjectFile = PyreflyReport.ProjectFile
+module PyreflyType = PyreflyReport.PyreflyType
+module ClassFieldDeclarationKind = PyreflyReport.ClassFieldDeclarationKind
+module CapturedVariable = PyreflyReport.CapturedVariable
+module ModuleDefinitionsFile = PyreflyReport.ModuleDefinitionsFile
+module ModuleTypeOfExpressions = PyreflyReport.ModuleTypeOfExpressions
+module ModuleCallGraphs = PyreflyReport.ModuleCallGraphs
+module TypeErrors = PyreflyReport.TypeErrors
 
 (* Information about a module, stored in shared memory. *)
 module ModuleInfosSharedMemory = struct
@@ -2518,7 +765,8 @@ module ReadWrite = struct
       typing_mapping_class_refs;
     }
       =
-      ProjectFile.from_path_exn (PyrePath.append pyrefly_directory ~element:"pyrefly.pysa.json")
+      PyreflyReportJson.ProjectFile.from_path_exn
+        (PyrePath.append pyrefly_directory ~element:"pyrefly.pysa.json")
     in
     let qualifier_to_module_map =
       create_module_qualifiers ~pyrefly_directory ~add_toplevel_modules:true (Map.data modules)
@@ -3468,7 +1716,9 @@ module ReadWrite = struct
         _;
       }
         =
-        ModuleDefinitionsFile.from_path_exn ~pyrefly_directory pyrefly_info_filename
+        PyreflyReportJson.ModuleDefinitionsFile.from_path_exn
+          ~pyrefly_directory
+          pyrefly_info_filename
       in
       let definitions =
         DefinitionCollector.Tree.from_definitions ~function_definitions ~class_definitions
@@ -3570,7 +1820,7 @@ module ReadWrite = struct
               |> List.map
                    ~f:(fun
                         {
-                          ModuleDefinitionsFile.JsonClassField.name;
+                          ModuleDefinitionsFile.PyreflyClassField.name;
                           type_;
                           explicit_annotation;
                           location;
@@ -3585,7 +1835,7 @@ module ReadWrite = struct
                      in
                      ( name,
                        {
-                         ClassField.type_ = JsonType.to_pysa_type type_;
+                         ClassField.type_ = PysaType.from_pyrefly_type type_;
                          explicit_annotation;
                          location;
                          declaration_kind;
@@ -3604,8 +1854,8 @@ module ReadWrite = struct
       ModuleClassesSharedMemory.add module_classes_shared_memory module_qualifier classes;
       let global_variables =
         global_variables
-        |> List.map ~f:(fun { ModuleDefinitionsFile.JsonGlobalVariable.name; type_; location } ->
-               name, { GlobalVariable.type_ = type_ >>| JsonType.to_pysa_type; location })
+        |> List.map ~f:(fun { ModuleDefinitionsFile.PyreflyGlobalVariable.name; type_; location } ->
+               name, { GlobalVariable.type_ = type_ >>| PysaType.from_pyrefly_type; location })
         |> SerializableStringMap.of_alist_exn
       in
       ModuleGlobalsSharedMemory.write_around
@@ -3623,7 +1873,7 @@ module ReadWrite = struct
                 {
                   name;
                   position;
-                  annotation = JsonType.to_pysa_type annotation;
+                  annotation = PysaType.from_pyrefly_type annotation;
                   has_default = not required;
                 }
               :: sofar )
@@ -3634,7 +1884,7 @@ module ReadWrite = struct
                 {
                   name;
                   position;
-                  annotation = JsonType.to_pysa_type annotation;
+                  annotation = PysaType.from_pyrefly_type annotation;
                   has_default = not required;
                 }
               :: sofar )
@@ -3644,13 +1894,17 @@ module ReadWrite = struct
             ( position + 1,
               name :: excluded,
               FunctionParameter.KeywordOnly
-                { name; annotation = JsonType.to_pysa_type annotation; has_default = not required }
+                {
+                  name;
+                  annotation = PysaType.from_pyrefly_type annotation;
+                  has_default = not required;
+                }
               :: sofar )
         | Kwargs { name; annotation } ->
             ( position + 1,
               [],
               FunctionParameter.Keywords
-                { name; annotation = JsonType.to_pysa_type annotation; excluded }
+                { name; annotation = PysaType.from_pyrefly_type annotation; excluded }
               :: sofar )
       in
       let convert_function_signature
@@ -3670,13 +1924,19 @@ module ReadWrite = struct
         in
         {
           FunctionSignature.parameters;
-          return_annotation = JsonType.to_pysa_type return_annotation;
+          return_annotation = PysaType.from_pyrefly_type return_annotation;
         }
       in
       let toplevel_undecorated_signature =
         {
           FunctionSignature.parameters = FunctionParameters.List [];
-          return_annotation = JsonType.pysa_type_none;
+          return_annotation =
+            PysaType.from_pyrefly_type
+              {
+                PyreflyType.string = "None";
+                scalar_properties = Pyre1Api.ScalarTypeProperties.none;
+                class_names = None;
+              };
         }
       in
       let get_function_name local_function_id =
@@ -3927,10 +2187,12 @@ module ReadWrite = struct
     in
     let parse_module_info (module_qualifier, pyrefly_info_filename) =
       let { ModuleTypeOfExpressions.type_of_expression; module_id = _ } =
-        ModuleTypeOfExpressions.from_path_exn ~pyrefly_directory pyrefly_info_filename
+        PyreflyReportJson.ModuleTypeOfExpressions.from_path_exn
+          ~pyrefly_directory
+          pyrefly_info_filename
       in
       Map.iteri type_of_expression ~f:(fun ~key:location ~data:type_ ->
-          let type_ = JsonType.to_pysa_type type_ in
+          let type_ = PysaType.from_pyrefly_type type_ in
           TypeOfExpressionsSharedMemory.write_around
             type_of_expressions_shared_memory
             { TypeOfExpressionsSharedMemory.Key.module_qualifier; location }
@@ -4843,7 +3105,7 @@ module ReadOnly = struct
     in
     let instantiate_call_target
         {
-          JsonCallTarget.target;
+          PyreflyCallTarget.target;
           implicit_receiver;
           implicit_dunder_call;
           receiver_class;
@@ -4864,7 +3126,7 @@ module ReadOnly = struct
         ~f:(fun target ->
           {
             CallTarget.target;
-            implicit_receiver = JsonImplicitReceiver.is_true implicit_receiver;
+            implicit_receiver = PyreflyImplicitReceiver.is_true implicit_receiver;
             implicit_dunder_call;
             index = 0;
             receiver_class;
@@ -4874,7 +3136,7 @@ module ReadOnly = struct
           })
         targets
     in
-    let instantiate_global_target { JsonGlobalVariable.module_id; name } =
+    let instantiate_global_target { PyreflyGlobalVariable.module_id; name } =
       let module_qualifier =
         ModuleIdToQualifierSharedMemory.get_module_qualifier
           module_id_to_qualifier_shared_memory
@@ -4902,7 +3164,7 @@ module ReadOnly = struct
         }
     in
     let instantiate_higher_order_parameter
-        { JsonHigherOrderParameter.index; call_targets; unresolved }
+        { PyreflyHigherOrderParameter.index; call_targets; unresolved }
       =
       {
         CallGraph.HigherOrderParameter.index;
@@ -4912,7 +3174,7 @@ module ReadOnly = struct
     in
     let instantiate_call_callees
         {
-          JsonCallCallees.call_targets;
+          PyreflyCallCallees.call_targets;
           init_targets;
           new_targets;
           higher_order_parameters;
@@ -4928,7 +3190,7 @@ module ReadOnly = struct
         decorated_targets = [];
         higher_order_parameters =
           higher_order_parameters
-          |> JsonHigherOrderParameterMap.data
+          |> PyreflyHigherOrderParameterMap.data
           |> List.map ~f:instantiate_higher_order_parameter
           |> CallGraph.HigherOrderParameterMap.from_list;
         shim_target = None;
@@ -4937,7 +3199,7 @@ module ReadOnly = struct
       }
     in
     let instantiate_identifier_callees
-        { JsonIdentifierCallees.if_called; global_targets; captured_variables }
+        { PyreflyIdentifierCallees.if_called; global_targets; captured_variables }
       =
       let if_called = instantiate_call_callees if_called in
       let global_targets = List.filter_map ~f:instantiate_global_target global_targets in
@@ -4946,7 +3208,7 @@ module ReadOnly = struct
     in
     let instantiate_attribute_access_callees
         {
-          JsonAttributeAccessCallees.if_called;
+          PyreflyAttributeAccessCallees.if_called;
           property_setters;
           property_getters;
           global_targets;
@@ -4965,28 +3227,30 @@ module ReadOnly = struct
         if_called;
       }
     in
-    let instantiate_define_callees { JsonDefineCallees.define_targets } =
+    let instantiate_define_callees { PyreflyDefineCallees.define_targets } =
       {
         CallGraph.DefineCallees.define_targets =
           define_targets |> List.map ~f:instantiate_call_target |> List.concat;
         decorated_targets = [];
       }
     in
-    let instantiate_format_string_artificial_callees { JsonFormatStringArtificialCallees.targets } =
+    let instantiate_format_string_artificial_callees
+        { PyreflyFormatStringArtificialCallees.targets }
+      =
       {
         CallGraph.FormatStringArtificialCallees.targets =
           targets |> List.map ~f:instantiate_call_target |> List.concat;
       }
     in
     let instantiate_format_string_stringify_callees
-        { JsonFormatStringStringifyCallees.targets; unresolved = _ }
+        { PyreflyFormatStringStringifyCallees.targets; unresolved = _ }
       =
       {
         CallGraph.FormatStringStringifyCallees.targets =
           targets |> List.map ~f:instantiate_call_target |> List.concat;
       }
     in
-    let instantiate_return_shim_callees { JsonReturnShimCallees.targets; arguments } =
+    let instantiate_return_shim_callees { PyreflyReturnShimCallees.targets; arguments } =
       {
         CallGraph.ReturnShimCallees.call_targets =
           targets |> List.map ~f:instantiate_call_target |> List.concat;
@@ -4994,21 +3258,21 @@ module ReadOnly = struct
       }
     in
     let instantiate_expression_callees = function
-      | JsonExpressionCallees.Call callees ->
+      | PyreflyExpressionCallees.Call callees ->
           ExpressionCallees.Call (instantiate_call_callees callees)
-      | JsonExpressionCallees.Identifier callees ->
+      | PyreflyExpressionCallees.Identifier callees ->
           ExpressionCallees.Identifier (instantiate_identifier_callees callees)
-      | JsonExpressionCallees.AttributeAccess callees ->
+      | PyreflyExpressionCallees.AttributeAccess callees ->
           ExpressionCallees.AttributeAccess (instantiate_attribute_access_callees callees)
-      | JsonExpressionCallees.Define callees ->
+      | PyreflyExpressionCallees.Define callees ->
           ExpressionCallees.Define (instantiate_define_callees callees)
-      | JsonExpressionCallees.FormatStringArtificial callees ->
+      | PyreflyExpressionCallees.FormatStringArtificial callees ->
           ExpressionCallees.FormatStringArtificial
             (instantiate_format_string_artificial_callees callees)
-      | JsonExpressionCallees.FormatStringStringify callees ->
+      | PyreflyExpressionCallees.FormatStringStringify callees ->
           ExpressionCallees.FormatStringStringify
             (instantiate_format_string_stringify_callees callees)
-      | JsonExpressionCallees.Return callees ->
+      | PyreflyExpressionCallees.Return callees ->
           ExpressionCallees.Return (instantiate_return_shim_callees callees)
     in
     let instantiate_call_edge expression_identifier callees call_graph =
@@ -5134,7 +3398,7 @@ module ReadOnly = struct
         | Some pyrefly_info_filename -> pyrefly_info_filename
       in
       let { ModuleCallGraphs.call_graphs = function_id_to_call_graph_map; module_id = _ } =
-        ModuleCallGraphs.from_path_exn ~pyrefly_directory pyrefly_info_filename
+        PyreflyReportJson.ModuleCallGraphs.from_path_exn ~pyrefly_directory pyrefly_info_filename
       in
       List.fold
         ~init:sofar
@@ -5222,7 +3486,7 @@ module ReadOnly = struct
     in
     let instantiate_error
         {
-          TypeErrors.JsonError.module_name = _;
+          TypeErrors.PyreflyError.module_name = _;
           module_path;
           location =
             {
@@ -5246,7 +3510,7 @@ module ReadOnly = struct
         define = "";
       }
     in
-    let { TypeErrors.errors } = TypeErrors.from_path_exn ~pyrefly_directory in
+    let { TypeErrors.errors } = PyreflyReportJson.TypeErrors.from_path_exn ~pyrefly_directory in
     List.map ~f:instantiate_error errors
 
 
@@ -5271,16 +3535,16 @@ module ReadOnly = struct
       match PysaType.as_pyrefly_type pysa_type with
       | None ->
           failwith "ReadOnly.Type.type_properties: trying to use a pyre1 type with a pyrefly API."
-      | Some { PyreflyType.scalar_properties; _ } -> scalar_properties
+      | Some { Pyre1Api.PyreflyType.scalar_properties; _ } -> scalar_properties
 
 
     let get_class_names { class_id_to_qualified_name_shared_memory; _ } pysa_type =
       match PysaType.as_pyrefly_type pysa_type with
       | None ->
           failwith "ReadOnly.Type.get_class_names: trying to use a pyre1 type with a pyrefly API."
-      | Some { PyreflyType.class_names = None; _ } ->
+      | Some { Pyre1Api.PyreflyType.class_names = None; _ } ->
           Analysis.PyrePysaEnvironment.ClassNamesFromType.not_a_class
-      | Some { PyreflyType.class_names = Some { classes; is_exhaustive }; _ } ->
+      | Some { Pyre1Api.PyreflyType.class_names = Some { classes; is_exhaustive }; _ } ->
           let get_class_with_modifiers
               { Pyre1Api.PyreflyType.ClassWithModifiers.module_id; class_id; modifiers }
             =
@@ -5309,11 +3573,11 @@ module ReadOnly = struct
       | None ->
           failwith
             "ReadOnly.Type.is_dictionary_or_mapping: trying to use a pyre1 type with a pyrefly API."
-      | Some { PyreflyType.class_names = None; _ } -> false
-      | Some { PyreflyType.class_names = Some { classes; _ }; _ } ->
+      | Some { Pyre1Api.PyreflyType.class_names = None; _ } -> false
+      | Some { Pyre1Api.PyreflyType.class_names = Some { classes; _ }; _ } ->
           List.exists
             classes
-            ~f:(fun { PyreflyType.ClassWithModifiers.module_id; class_id; modifiers } ->
+            ~f:(fun { Pyre1Api.PyreflyType.ClassWithModifiers.module_id; class_id; modifiers } ->
               let global_class_id =
                 {
                   GlobalClassId.module_id = ModuleId.from_int module_id;
