@@ -488,7 +488,7 @@ module SharedMemory = struct
            let signature =
              match pyre_api with
              | PyrePysaApi.ReadOnly.Pyre1 pyre1_api ->
-                 CallablesSharedMemory.CallableSignature.from_define_for_pyre1
+                 CallablesSharedMemory.callable_signature_from_define_for_pyre1
                    ~pyre1_api
                    ~target:callable
                    ~qualifier:Analysis.PyrePysaEnvironment.artificial_decorator_define_module

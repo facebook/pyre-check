@@ -653,12 +653,7 @@ module SharedMemoryKey = struct
 end
 
 (** Whether a method is an instance method, or a class method, or a static method. *)
-module MethodKind = struct
-  type t =
-    | Static
-    | Class
-    | Instance
-end
+module MethodKind = Analysis.PyrePysaEnvironment.MethodKind
 
 (* Represent a hashset of targets inside the shared memory *)
 module HashsetSharedMemory = struct

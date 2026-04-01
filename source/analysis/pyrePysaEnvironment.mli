@@ -165,6 +165,28 @@ module AstResult : sig
   val map_node : f:('a -> 'b) -> 'a Ast.Node.t t -> 'b Ast.Node.t t
 end
 
+(** Whether a method is an instance method, or a class method, or a static method. *)
+module MethodKind : sig
+  type t =
+    | Static
+    | Class
+    | Instance
+end
+
+module CallableSignature : sig
+  type t = {
+    qualifier: Ast.Reference.t;
+    define_name: Ast.Reference.t;
+    location: Ast.Location.t AstResult.t;
+    parameters: Ast.Expression.Parameter.t list AstResult.t;
+    return_annotation: Ast.Expression.t option AstResult.t;
+    decorators: Ast.Expression.t list AstResult.t;
+    captures: TaintAccessPath.CapturedVariable.t list;
+    method_kind: MethodKind.t option;
+    is_stub_like: bool;
+  }
+end
+
 module ReadWrite : sig
   type t
 

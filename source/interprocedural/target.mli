@@ -265,10 +265,4 @@ module HashsetSharedMemory : sig
   val read_only : t -> ReadOnly.t
 end
 
-(** Whether a method is an instance method, or a class method, or a static method. *)
-module MethodKind : sig
-  type t =
-    | Static
-    | Class
-    | Instance
-end
+module MethodKind = Analysis.PyrePysaEnvironment.MethodKind

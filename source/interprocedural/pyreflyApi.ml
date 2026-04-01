@@ -2005,6 +2005,17 @@ module CallableMetadata = struct
     parent_is_class: bool;
   }
   [@@deriving show]
+
+  let get_method_kind { is_staticmethod; is_classmethod; parent_is_class; _ } =
+    let open Analysis.PyrePysaEnvironment in
+    if is_staticmethod then
+      Some MethodKind.Static
+    else if is_classmethod then
+      Some MethodKind.Class
+    else if parent_is_class then
+      Some MethodKind.Instance
+    else
+      None
 end
 
 let assert_shared_memory_key_exists message = function
@@ -2239,6 +2250,51 @@ module CallableParseResultSharedMemory =
 
       let description = "pyrefly callable parse result"
     end)
+
+(* Considered as stub:
+ * - Stub functions, i.e when the body is an ellipsis `def foo(): ...`
+ * - Functions in a module considered a unit test module
+ * - Synthesized functions that we don't have the code for (for instance,
+ *   generated `__init__` of a dataclass)
+ *)
+let is_stub_like_from_metadata
+    ~metadata:{ CallableMetadata.is_stub_define; _ }
+    ~callable_parse_result_shared_memory
+    fully_qualified_name
+  =
+  is_stub_define
+  ||
+  let parse_result =
+    CallableParseResultSharedMemory.get callable_parse_result_shared_memory fully_qualified_name
+    |> assert_shared_memory_key_exists (fun () ->
+           Format.asprintf
+             "missing callable parse result: `%a`"
+             FullyQualifiedName.pp
+             fully_qualified_name)
+  in
+  match parse_result with
+  | AstResult.Some () -> false
+  | AstResult.ParseError -> true
+  | AstResult.TestFile -> true
+  | AstResult.Synthesized -> true
+  | AstResult.Pyre1NotFound -> failwith "unreachable"
+
+
+let captures_from_metadata
+    ~callable_id_to_qualified_name_shared_memory
+    { CallableMetadataSharedMemory.Value.captured_variables; _ }
+  =
+  List.map captured_variables ~f:(fun { CapturedVariable.name; outer_function } ->
+      AccessPath.CapturedVariable.FromFunction
+        {
+          name;
+          defining_function =
+            CallableIdToQualifiedNameSharedMemory.get
+              callable_id_to_qualified_name_shared_memory
+              outer_function
+            |> FullyQualifiedName.to_reference;
+        })
+
 
 (* Undecorated signatures of each callable, provided by pyrefly. *)
 module CallableUndecoratedSignaturesSharedMemory =
@@ -4378,38 +4434,42 @@ module ReadOnly = struct
                    class_id))
 
 
-  let get_callable_metadata { callable_metadata_shared_memory; _ } define_name =
+  let get_callable_metadata_value_opt { callable_metadata_shared_memory; _ } define_name =
     CallableMetadataSharedMemory.get
       callable_metadata_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
+
+
+  let get_callable_metadata api define_name =
+    get_callable_metadata_value_opt api define_name
     |> assert_shared_memory_key_exists (fun () ->
            Format.asprintf "missing callable metadata: `%a`" Reference.pp define_name)
     |> fun { CallableMetadataSharedMemory.Value.metadata; _ } -> metadata
 
 
+  let get_callable_metadata_opt api define_name =
+    get_callable_metadata_value_opt api define_name
+    >>| fun { CallableMetadataSharedMemory.Value.metadata; _ } -> metadata
+
+
+  let is_stub_like_callable_opt ({ callable_parse_result_shared_memory; _ } as api) define_name =
+    get_callable_metadata_opt api define_name
+    >>| fun metadata ->
+    is_stub_like_from_metadata
+      ~metadata
+      ~callable_parse_result_shared_memory
+      (FullyQualifiedName.from_reference_unchecked define_name)
+
+
   let is_stub_like_callable ({ callable_parse_result_shared_memory; _ } as api) define_name =
-    (* Considered as stub:
-     * - Stub functions, i.e when the body is an ellipsis `def foo(): ...`
-     * - Functions in a module considered a unit test module
-     * - Synthesized functions that we don't have the code for (for instance,
-     *   generated `__init__` of a dataclass)
-     *)
-    let { CallableMetadata.is_stub_define; _ } = get_callable_metadata api define_name in
-    is_stub_define
-    ||
-    let parse_result =
-      CallableParseResultSharedMemory.get
-        callable_parse_result_shared_memory
-        (FullyQualifiedName.from_reference_unchecked define_name)
-      |> assert_shared_memory_key_exists (fun () ->
-             Format.asprintf "missing callable parse result: `%a`" Reference.pp define_name)
-    in
-    match parse_result with
-    | AstResult.Some () -> false
-    | AstResult.ParseError -> true
-    | AstResult.TestFile -> true
-    | AstResult.Synthesized -> true
-    | AstResult.Pyre1NotFound -> failwith "unreachable"
+    get_callable_metadata_opt api define_name
+    |> assert_shared_memory_key_exists (fun () ->
+           Format.asprintf "missing callable metadata: `%a`" Reference.pp define_name)
+    |> fun metadata ->
+    is_stub_like_from_metadata
+      ~metadata
+      ~callable_parse_result_shared_memory
+      (FullyQualifiedName.from_reference_unchecked define_name)
 
 
   let get_overriden_base_method
@@ -4432,28 +4492,19 @@ module ReadOnly = struct
           { define_name = FullyQualifiedName.to_reference define_name; is_property_setter }
 
 
-  let get_callable_captures
-      { callable_metadata_shared_memory; callable_id_to_qualified_name_shared_memory; _ }
+  let get_callable_captures_opt
+      ({ callable_id_to_qualified_name_shared_memory; _ } as api)
       define_name
     =
-    CallableMetadataSharedMemory.get
-      callable_metadata_shared_memory
-      (FullyQualifiedName.from_reference_unchecked define_name)
+    get_callable_metadata_value_opt api define_name
+    >>| captures_from_metadata ~callable_id_to_qualified_name_shared_memory
+
+
+  let get_callable_captures ({ callable_id_to_qualified_name_shared_memory; _ } as api) define_name =
+    get_callable_metadata_value_opt api define_name
     |> assert_shared_memory_key_exists (fun () ->
            Format.asprintf "missing callable metadata: `%a`" Reference.pp define_name)
-    |> fun { CallableMetadataSharedMemory.Value.captured_variables; _ } ->
-    List.map
-      ~f:(fun { CapturedVariable.name; outer_function } ->
-        AccessPath.CapturedVariable.FromFunction
-          {
-            name;
-            defining_function =
-              CallableIdToQualifiedNameSharedMemory.get
-                callable_id_to_qualified_name_shared_memory
-                outer_function
-              |> FullyQualifiedName.to_reference;
-          })
-      captured_variables
+    |> captures_from_metadata ~callable_id_to_qualified_name_shared_memory
 
 
   let get_callable_return_annotations
@@ -4567,6 +4618,56 @@ module ReadOnly = struct
       callable_ast_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
     |> assert_shared_memory_key_exists (fun () -> "missing callable ast")
+
+
+  let get_callable_signature_opt
+      ({
+         callable_metadata_shared_memory;
+         callable_define_signature_shared_memory;
+         callable_parse_result_shared_memory;
+         callable_id_to_qualified_name_shared_memory;
+         _;
+       } as _api)
+      define_name
+    =
+    let fully_qualified_name = FullyQualifiedName.from_reference_unchecked define_name in
+    CallableMetadataSharedMemory.get callable_metadata_shared_memory fully_qualified_name
+    >>| fun ({ CallableMetadataSharedMemory.Value.metadata; _ } as metadata_value) ->
+    let define_signature_result =
+      CallableDefineSignatureSharedMemory.get
+        callable_define_signature_shared_memory
+        fully_qualified_name
+      |> assert_shared_memory_key_exists (fun () ->
+             Format.asprintf "missing callable define signature: `%a`" Reference.pp define_name)
+    in
+    let method_kind = CallableMetadata.get_method_kind metadata in
+    let captures =
+      captures_from_metadata ~callable_id_to_qualified_name_shared_memory metadata_value
+    in
+    let is_stub_like =
+      is_stub_like_from_metadata ~metadata ~callable_parse_result_shared_memory fully_qualified_name
+    in
+    let define_signature = AstResult.map ~f:Node.value define_signature_result in
+    {
+      Pyre1Api.CallableSignature.qualifier = metadata.CallableMetadata.module_qualifier;
+      location = AstResult.map ~f:Node.location define_signature_result;
+      define_name;
+      parameters =
+        AstResult.map
+          ~f:(fun { Statement.Define.Signature.parameters; _ } -> parameters)
+          define_signature;
+      return_annotation =
+        AstResult.map
+          ~f:(fun { Statement.Define.Signature.return_annotation; _ } -> return_annotation)
+          define_signature;
+      decorators =
+        AstResult.map
+          ~f:(fun { Statement.Define.Signature.decorators; _ } -> decorators)
+          define_signature;
+      captures;
+      method_kind;
+      is_stub_like;
+    }
 
 
   let get_undecorated_signatures { callable_undecorated_signatures_shared_memory; _ } define_name =

@@ -8,27 +8,14 @@
 open Ast
 open Statement
 module AstResult = PyrePysaApi.AstResult
+module CallableSignature = Analysis.PyrePysaEnvironment.CallableSignature
 
-module CallableSignature : sig
-  type t = {
-    qualifier: Reference.t;
-    define_name: Reference.t;
-    location: Location.t AstResult.t;
-    parameters: Expression.Parameter.t list AstResult.t;
-    return_annotation: Expression.t option AstResult.t;
-    decorators: Expression.t list AstResult.t;
-    captures: Analysis.TaintAccessPath.CapturedVariable.t list;
-    method_kind: Target.MethodKind.t option;
-    is_stub_like: bool;
-  }
-
-  val from_define_for_pyre1
-    :  pyre1_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
-    target:Target.t ->
-    qualifier:Reference.t ->
-    Define.t Node.t ->
-    t
-end
+val callable_signature_from_define_for_pyre1
+  :  pyre1_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
+  target:Target.t ->
+  qualifier:Reference.t ->
+  Define.t Node.t ->
+  CallableSignature.t
 
 (* Exposed for testing purposes only. *)
 val get_signature_and_definition_for_test

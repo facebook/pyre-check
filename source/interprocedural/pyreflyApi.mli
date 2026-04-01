@@ -64,6 +64,8 @@ module CallableMetadata : sig
     parent_is_class: bool;
   }
   [@@deriving show]
+
+  val get_method_kind : t -> Analysis.PyrePysaEnvironment.MethodKind.t option
 end
 
 module PysaClassSummary : sig
@@ -134,7 +136,11 @@ module ReadOnly : sig
 
   val get_callable_metadata : t -> Ast.Reference.t -> CallableMetadata.t
 
+  val get_callable_metadata_opt : t -> Ast.Reference.t -> CallableMetadata.t option
+
   val is_stub_like_callable : t -> Ast.Reference.t -> bool
+
+  val is_stub_like_callable_opt : t -> Ast.Reference.t -> bool option
 
   val get_callable_return_annotations
     :  t ->
@@ -157,6 +163,11 @@ module ReadOnly : sig
     :  t ->
     Ast.Reference.t ->
     Analysis.TaintAccessPath.CapturedVariable.t list
+
+  val get_callable_captures_opt
+    :  t ->
+    Ast.Reference.t ->
+    Analysis.TaintAccessPath.CapturedVariable.t list option
 
   val get_callable_decorator_callees
     :  t ->
@@ -181,6 +192,11 @@ module ReadOnly : sig
 
   (* Return the AST for the given function *)
   val get_define_opt : t -> Ast.Reference.t -> Ast.Statement.Define.t Ast.Node.t AstResult.t
+
+  val get_callable_signature_opt
+    :  t ->
+    Ast.Reference.t ->
+    Analysis.PyrePysaEnvironment.CallableSignature.t option
 
   val get_undecorated_signatures
     :  t ->
