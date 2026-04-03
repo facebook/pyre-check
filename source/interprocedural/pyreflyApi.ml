@@ -99,23 +99,13 @@ module QualifiersSharedMemory = struct
       end)
 end
 
-(* Type of expression at a given module qualifier and location, stored in shared memory. *)
+(* Type of expressions for a given callable, stored in shared memory. *)
 module TypeOfExpressionsSharedMemory = struct
-  module Key = struct
-    type t = {
-      module_qualifier: ModuleQualifier.t;
-      location: Location.t;
-    }
-    [@@deriving compare, sexp]
-
-    let to_string key = key |> sexp_of_t |> Core.Sexp.to_string
-  end
-
   include
     Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
-      (Key)
+      (GlobalCallableIdSharedMemoryKey)
       (struct
-        type t = PysaType.t
+        type t = PysaType.t Location.SerializableMap.t
 
         let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -278,6 +268,7 @@ module CallableMetadataSharedMemory = struct
   module Value = struct
     type t = {
       metadata: CallableMetadata.t;
+      module_id: ModuleId.t;
       local_function_id: LocalFunctionId.t;
       (* This is the original name, without the fully qualified suffixes like `$2` or `@setter`. *)
       name: string;
@@ -288,7 +279,7 @@ module CallableMetadataSharedMemory = struct
       captured_variables: CapturedVariable.t list;
     }
 
-    let _unused_fields { name = _; defining_class = _; _ } = ()
+    let _unused_fields { name = _; defining_class = _; module_id = _; _ } = ()
   end
 
   include
@@ -1788,6 +1779,7 @@ module ReadWrite = struct
                     is_def_statement;
                     parent_is_class = Option.is_some defining_class;
                   };
+                module_id;
                 name;
                 local_function_id;
                 overridden_base_method;
@@ -2200,8 +2192,8 @@ module ReadWrite = struct
              ~preferred_chunks_per_worker:1
              ())
     in
-    let parse_module_info (module_qualifier, pyrefly_info_filename) =
-      let { ModuleTypeOfExpressions.type_of_expression; module_id = _ } =
+    let parse_module_info pyrefly_info_filename =
+      let { ModuleTypeOfExpressions.functions; module_id } =
         if
           String.is_suffix
             (PyreflyReport.ModuleInfoFilename.raw pyrefly_info_filename)
@@ -2216,21 +2208,34 @@ module ReadWrite = struct
             pyrefly_info_filename
       in
       List.iter
-        type_of_expression
-        ~f:(fun { ModuleTypeOfExpressions.TypeAtLocation.location; type_ } ->
-          let type_ = PysaType.from_pyrefly_type type_ in
+        functions
+        ~f:(fun
+             {
+               ModuleTypeOfExpressions.FunctionTypeOfExpressions.function_id = local_function_id;
+               types;
+               locations;
+             }
+           ->
+          let location_to_type_map =
+            (* Build a map from location to type. Types are deduplicated, multiple entries can
+               reference the same type. *)
+            List.map
+              locations
+              ~f:(fun { ModuleTypeOfExpressions.TypeAtLocation.location; type_ = type_id } ->
+                let pyrefly_type = types.(ModuleTypeOfExpressions.LocalTypeId.to_index type_id) in
+                let pysa_type = PysaType.from_pyrefly_type pyrefly_type in
+                location, pysa_type)
+            |> Location.SerializableMap.of_alist_exn
+          in
           TypeOfExpressionsSharedMemory.write_around
             type_of_expressions_shared_memory
-            { TypeOfExpressionsSharedMemory.Key.module_qualifier; location }
-            type_)
+            { GlobalCallableId.module_id; local_function_id }
+            location_to_type_map)
     in
     let inputs =
       qualifier_to_module_map
-      |> Map.to_alist
-      |> List.filter_map ~f:(fun (qualifier, { Module.pyrefly_info_filename; _ }) ->
-             match pyrefly_info_filename with
-             | Some pyrefly_info_filename -> Some (qualifier, pyrefly_info_filename)
-             | None -> None)
+      |> Map.data
+      |> List.filter_map ~f:(fun { Module.pyrefly_info_filename; _ } -> pyrefly_info_filename)
     in
     let () =
       Scheduler.map_reduce
@@ -3557,20 +3562,30 @@ module ReadOnly = struct
     List.map ~f:instantiate_error errors
 
 
-  let get_type_of_expression { type_of_expressions_shared_memory; _ } ~qualifier ~location =
+  let get_type_of_expression
+      { type_of_expressions_shared_memory; callable_metadata_shared_memory; _ }
+      ~define_name
+      ~location
+    =
     match type_of_expressions_shared_memory with
     | None ->
         failwith
           "Using `PyreflyApi.ReadOnly.get_type_of_expression` before calling \
            `parse_type_of_expressions`."
     | Some type_of_expressions_shared_memory ->
+        CallableMetadataSharedMemory.get
+          callable_metadata_shared_memory
+          (FullyQualifiedName.from_reference_unchecked define_name)
+        |> assert_shared_memory_key_exists (fun () ->
+               Format.asprintf "missing callable metadata: `%a`" Reference.pp define_name)
+        |> fun { CallableMetadataSharedMemory.Value.module_id; local_function_id; _ } ->
         TypeOfExpressionsSharedMemory.get
           type_of_expressions_shared_memory
-          {
-            TypeOfExpressionsSharedMemory.Key.module_qualifier =
-              ModuleQualifier.from_reference_unchecked qualifier;
-            location;
-          }
+          { GlobalCallableId.module_id; local_function_id }
+        |> assert_shared_memory_key_exists (fun () ->
+               Format.asprintf "missing type of expressions: `%a`" Reference.pp define_name)
+        |> fun location_to_type_map ->
+        Location.SerializableMap.find_opt location location_to_type_map
 
 
   module Type = struct

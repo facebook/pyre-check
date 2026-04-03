@@ -579,10 +579,26 @@ end
    `<root>/type_of_expressions/<module>:<id>.json` file. This matches the
    `pyrefly::report::pysa::PysaModuleTypeOfExpressions` rust type. *)
 module ModuleTypeOfExpressions = struct
+  module LocalTypeId = struct
+    type t = int [@@deriving equal]
+
+    let of_int x = x
+
+    let to_index x = x
+  end
+
   module TypeAtLocation = struct
     type t = {
       location: Location.t;
-      type_: PyreflyType.t;
+      type_: LocalTypeId.t;
+    }
+  end
+
+  module FunctionTypeOfExpressions = struct
+    type t = {
+      function_id: LocalFunctionId.t;
+      types: PyreflyType.t array;
+      locations: TypeAtLocation.t list;
     }
   end
 
@@ -590,7 +606,7 @@ module ModuleTypeOfExpressions = struct
     (* TODO(T225700656): module_name and source_path are already specified in the Project module. We
        should probably remove those from the file format. *)
     module_id: ModuleId.t;
-    type_of_expression: TypeAtLocation.t list;
+    functions: FunctionTypeOfExpressions.t list;
   }
 end
 

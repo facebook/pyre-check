@@ -783,15 +783,30 @@ module type S = sig
       val of_message : 'cap message_t -> t
       val of_builder : struct_t builder_t -> t
     end
-    module TypeOfExpressionEntry : sig
-      type struct_t = [`TypeOfExpressionEntry_938a8e5a900dbacc]
+    module LocationTypeIdEntry : sig
+      type struct_t = [`LocationTypeIdEntry_ec97908cde450b07]
       type t = struct_t reader_t
       val has_location : t -> bool
       val location_get : t -> PysaLocation.t
       val location_get_pipelined : struct_t MessageWrapper.StructRef.t -> PysaLocation.struct_t MessageWrapper.StructRef.t
-      val has_type : t -> bool
-      val type_get : t -> PysaType.t
-      val type_get_pipelined : struct_t MessageWrapper.StructRef.t -> PysaType.struct_t MessageWrapper.StructRef.t
+      val type_id_get : t -> Stdint.Uint32.t
+      val type_id_get_int_exn : t -> int
+      val of_message : 'cap message_t -> t
+      val of_builder : struct_t builder_t -> t
+    end
+    module FunctionTypeOfExpressions : sig
+      type struct_t = [`FunctionTypeOfExpressions_e454c787c4578ae9]
+      type t = struct_t reader_t
+      val has_function_id : t -> bool
+      val function_id_get : t -> string
+      val has_types : t -> bool
+      val types_get : t -> (ro, PysaType.t, array_t) Capnp.Array.t
+      val types_get_list : t -> PysaType.t list
+      val types_get_array : t -> PysaType.t array
+      val has_locations : t -> bool
+      val locations_get : t -> (ro, LocationTypeIdEntry.t, array_t) Capnp.Array.t
+      val locations_get_list : t -> LocationTypeIdEntry.t list
+      val locations_get_array : t -> LocationTypeIdEntry.t array
       val of_message : 'cap message_t -> t
       val of_builder : struct_t builder_t -> t
     end
@@ -805,10 +820,10 @@ module type S = sig
       val has_source_path : t -> bool
       val source_path_get : t -> SourcePath.t
       val source_path_get_pipelined : struct_t MessageWrapper.StructRef.t -> SourcePath.struct_t MessageWrapper.StructRef.t
-      val has_type_of_expression : t -> bool
-      val type_of_expression_get : t -> (ro, TypeOfExpressionEntry.t, array_t) Capnp.Array.t
-      val type_of_expression_get_list : t -> TypeOfExpressionEntry.t list
-      val type_of_expression_get_array : t -> TypeOfExpressionEntry.t array
+      val has_functions : t -> bool
+      val functions_get : t -> (ro, FunctionTypeOfExpressions.t, array_t) Capnp.Array.t
+      val functions_get_list : t -> FunctionTypeOfExpressions.t list
+      val functions_get_array : t -> FunctionTypeOfExpressions.t array
       val of_message : 'cap message_t -> t
       val of_builder : struct_t builder_t -> t
     end
@@ -2067,19 +2082,46 @@ module type S = sig
       val init_root : ?message_size:int -> unit -> t
       val init_pointer : pointer_t -> t
     end
-    module TypeOfExpressionEntry : sig
-      type struct_t = [`TypeOfExpressionEntry_938a8e5a900dbacc]
+    module LocationTypeIdEntry : sig
+      type struct_t = [`LocationTypeIdEntry_ec97908cde450b07]
       type t = struct_t builder_t
       val has_location : t -> bool
       val location_get : t -> PysaLocation.t
       val location_set_reader : t -> PysaLocation.struct_t reader_t -> PysaLocation.t
       val location_set_builder : t -> PysaLocation.t -> PysaLocation.t
       val location_init : t -> PysaLocation.t
-      val has_type : t -> bool
-      val type_get : t -> PysaType.t
-      val type_set_reader : t -> PysaType.struct_t reader_t -> PysaType.t
-      val type_set_builder : t -> PysaType.t -> PysaType.t
-      val type_init : t -> PysaType.t
+      val type_id_get : t -> Stdint.Uint32.t
+      val type_id_get_int_exn : t -> int
+      val type_id_set : t -> Stdint.Uint32.t -> unit
+      val type_id_set_int_exn : t -> int -> unit
+      val of_message : rw message_t -> t
+      val to_message : t -> rw message_t
+      val to_reader : t -> struct_t reader_t
+      val init_root : ?message_size:int -> unit -> t
+      val init_pointer : pointer_t -> t
+    end
+    module FunctionTypeOfExpressions : sig
+      type struct_t = [`FunctionTypeOfExpressions_e454c787c4578ae9]
+      type t = struct_t builder_t
+      val has_function_id : t -> bool
+      val function_id_get : t -> string
+      val function_id_set : t -> string -> unit
+      val has_types : t -> bool
+      val types_get : t -> (rw, PysaType.t, array_t) Capnp.Array.t
+      val types_get_list : t -> PysaType.t list
+      val types_get_array : t -> PysaType.t array
+      val types_set : t -> (rw, PysaType.t, array_t) Capnp.Array.t -> (rw, PysaType.t, array_t) Capnp.Array.t
+      val types_set_list : t -> PysaType.t list -> (rw, PysaType.t, array_t) Capnp.Array.t
+      val types_set_array : t -> PysaType.t array -> (rw, PysaType.t, array_t) Capnp.Array.t
+      val types_init : t -> int -> (rw, PysaType.t, array_t) Capnp.Array.t
+      val has_locations : t -> bool
+      val locations_get : t -> (rw, LocationTypeIdEntry.t, array_t) Capnp.Array.t
+      val locations_get_list : t -> LocationTypeIdEntry.t list
+      val locations_get_array : t -> LocationTypeIdEntry.t array
+      val locations_set : t -> (rw, LocationTypeIdEntry.t, array_t) Capnp.Array.t -> (rw, LocationTypeIdEntry.t, array_t) Capnp.Array.t
+      val locations_set_list : t -> LocationTypeIdEntry.t list -> (rw, LocationTypeIdEntry.t, array_t) Capnp.Array.t
+      val locations_set_array : t -> LocationTypeIdEntry.t array -> (rw, LocationTypeIdEntry.t, array_t) Capnp.Array.t
+      val locations_init : t -> int -> (rw, LocationTypeIdEntry.t, array_t) Capnp.Array.t
       val of_message : rw message_t -> t
       val to_message : t -> rw message_t
       val to_reader : t -> struct_t reader_t
@@ -2101,14 +2143,14 @@ module type S = sig
       val source_path_set_reader : t -> SourcePath.struct_t reader_t -> SourcePath.t
       val source_path_set_builder : t -> SourcePath.t -> SourcePath.t
       val source_path_init : t -> SourcePath.t
-      val has_type_of_expression : t -> bool
-      val type_of_expression_get : t -> (rw, TypeOfExpressionEntry.t, array_t) Capnp.Array.t
-      val type_of_expression_get_list : t -> TypeOfExpressionEntry.t list
-      val type_of_expression_get_array : t -> TypeOfExpressionEntry.t array
-      val type_of_expression_set : t -> (rw, TypeOfExpressionEntry.t, array_t) Capnp.Array.t -> (rw, TypeOfExpressionEntry.t, array_t) Capnp.Array.t
-      val type_of_expression_set_list : t -> TypeOfExpressionEntry.t list -> (rw, TypeOfExpressionEntry.t, array_t) Capnp.Array.t
-      val type_of_expression_set_array : t -> TypeOfExpressionEntry.t array -> (rw, TypeOfExpressionEntry.t, array_t) Capnp.Array.t
-      val type_of_expression_init : t -> int -> (rw, TypeOfExpressionEntry.t, array_t) Capnp.Array.t
+      val has_functions : t -> bool
+      val functions_get : t -> (rw, FunctionTypeOfExpressions.t, array_t) Capnp.Array.t
+      val functions_get_list : t -> FunctionTypeOfExpressions.t list
+      val functions_get_array : t -> FunctionTypeOfExpressions.t array
+      val functions_set : t -> (rw, FunctionTypeOfExpressions.t, array_t) Capnp.Array.t -> (rw, FunctionTypeOfExpressions.t, array_t) Capnp.Array.t
+      val functions_set_list : t -> FunctionTypeOfExpressions.t list -> (rw, FunctionTypeOfExpressions.t, array_t) Capnp.Array.t
+      val functions_set_array : t -> FunctionTypeOfExpressions.t array -> (rw, FunctionTypeOfExpressions.t, array_t) Capnp.Array.t
+      val functions_init : t -> int -> (rw, FunctionTypeOfExpressions.t, array_t) Capnp.Array.t
       val of_message : rw message_t -> t
       val to_message : t -> rw message_t
       val to_reader : t -> struct_t reader_t
@@ -3662,8 +3704,8 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
       let of_message x = RA_.get_root_struct (RA_.Message.readonly x)
       let of_builder x = Some (RA_.StructStorage.readonly x)
     end
-    module TypeOfExpressionEntry = struct
-      type struct_t = [`TypeOfExpressionEntry_938a8e5a900dbacc]
+    module LocationTypeIdEntry = struct
+      type struct_t = [`LocationTypeIdEntry_ec97908cde450b07]
       type t = struct_t reader_t
       let has_location x =
         RA_.has_field x 0
@@ -3671,12 +3713,36 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
         RA_.get_struct x 0
       let location_get_pipelined x =
         MessageWrapper.Untyped.struct_field x 0
-      let has_type x =
+      let type_id_get x =
+        RA_.get_uint32 ~default:Stdint.Uint32.zero x 0
+      let type_id_get_int_exn x =
+        Capnp.Runtime.Util.int_of_uint32_exn (type_id_get x)
+      let of_message x = RA_.get_root_struct (RA_.Message.readonly x)
+      let of_builder x = Some (RA_.StructStorage.readonly x)
+    end
+    module FunctionTypeOfExpressions = struct
+      type struct_t = [`FunctionTypeOfExpressions_e454c787c4578ae9]
+      type t = struct_t reader_t
+      let has_function_id x =
+        RA_.has_field x 0
+      let function_id_get x =
+        RA_.get_text ~default:"" x 0
+      let has_types x =
         RA_.has_field x 1
-      let type_get x =
-        RA_.get_struct x 1
-      let type_get_pipelined x =
-        MessageWrapper.Untyped.struct_field x 1
+      let types_get x = 
+        RA_.get_struct_list x 1
+      let types_get_list x =
+        Capnp.Array.to_list (types_get x)
+      let types_get_array x =
+        Capnp.Array.to_array (types_get x)
+      let has_locations x =
+        RA_.has_field x 2
+      let locations_get x = 
+        RA_.get_struct_list x 2
+      let locations_get_list x =
+        Capnp.Array.to_list (locations_get x)
+      let locations_get_array x =
+        Capnp.Array.to_array (locations_get x)
       let of_message x = RA_.get_root_struct (RA_.Message.readonly x)
       let of_builder x = Some (RA_.StructStorage.readonly x)
     end
@@ -3697,14 +3763,14 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
         RA_.get_struct x 1
       let source_path_get_pipelined x =
         MessageWrapper.Untyped.struct_field x 1
-      let has_type_of_expression x =
+      let has_functions x =
         RA_.has_field x 2
-      let type_of_expression_get x = 
+      let functions_get x = 
         RA_.get_struct_list x 2
-      let type_of_expression_get_list x =
-        Capnp.Array.to_list (type_of_expression_get x)
-      let type_of_expression_get_array x =
-        Capnp.Array.to_array (type_of_expression_get x)
+      let functions_get_list x =
+        Capnp.Array.to_list (functions_get x)
+      let functions_get_array x =
+        Capnp.Array.to_array (functions_get x)
       let of_message x = RA_.get_root_struct (RA_.Message.readonly x)
       let of_builder x = Some (RA_.StructStorage.readonly x)
     end
@@ -6132,8 +6198,8 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
       let init_pointer ptr =
         BA_.init_struct_pointer ptr ~data_words:1 ~pointer_words:5
     end
-    module TypeOfExpressionEntry = struct
-      type struct_t = [`TypeOfExpressionEntry_938a8e5a900dbacc]
+    module LocationTypeIdEntry = struct
+      type struct_t = [`LocationTypeIdEntry_ec97908cde450b07]
       type t = struct_t builder_t
       let has_location x =
         BA_.has_field x 0
@@ -6145,23 +6211,77 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
         BA_.set_struct ~data_words:2 ~pointer_words:0 x 0 (Some v)
       let location_init x =
         BA_.init_struct ~data_words:2 ~pointer_words:0 x 0
-      let has_type x =
-        BA_.has_field x 1
-      let type_get x =
-        BA_.get_struct ~data_words:0 ~pointer_words:3 x 1
-      let type_set_reader x v =
-        BA_.set_struct ~data_words:0 ~pointer_words:3 x 1 v
-      let type_set_builder x v =
-        BA_.set_struct ~data_words:0 ~pointer_words:3 x 1 (Some v)
-      let type_init x =
-        BA_.init_struct ~data_words:0 ~pointer_words:3 x 1
-      let of_message x = BA_.get_root_struct ~data_words:0 ~pointer_words:2 x
+      let type_id_get x =
+        BA_.get_uint32 ~default:Stdint.Uint32.zero x 0
+      let type_id_get_int_exn x =
+        Capnp.Runtime.Util.int_of_uint32_exn (type_id_get x)
+      let type_id_set x v =
+        BA_.set_uint32 ~default:Stdint.Uint32.zero x 0 v
+      let type_id_set_int_exn x v = type_id_set x (Capnp.Runtime.Util.uint32_of_int_exn v)
+      let of_message x = BA_.get_root_struct ~data_words:1 ~pointer_words:1 x
       let to_message x = x.BA_.NM.StructStorage.data.MessageWrapper.Slice.msg
       let to_reader x = Some (RA_.StructStorage.readonly x)
       let init_root ?message_size () =
-        BA_.alloc_root_struct ?message_size ~data_words:0 ~pointer_words:2 ()
+        BA_.alloc_root_struct ?message_size ~data_words:1 ~pointer_words:1 ()
       let init_pointer ptr =
-        BA_.init_struct_pointer ptr ~data_words:0 ~pointer_words:2
+        BA_.init_struct_pointer ptr ~data_words:1 ~pointer_words:1
+    end
+    module FunctionTypeOfExpressions = struct
+      type struct_t = [`FunctionTypeOfExpressions_e454c787c4578ae9]
+      type t = struct_t builder_t
+      let has_function_id x =
+        BA_.has_field x 0
+      let function_id_get x =
+        BA_.get_text ~default:"" x 0
+      let function_id_set x v =
+        BA_.set_text x 0 v
+      let has_types x =
+        BA_.has_field x 1
+      let types_get x = 
+        BA_.get_struct_list ~data_words:0 ~pointer_words:3 x 1
+      let types_get_list x =
+        Capnp.Array.to_list (types_get x)
+      let types_get_array x =
+        Capnp.Array.to_array (types_get x)
+      let types_set x v =
+        BA_.set_struct_list ~data_words:0 ~pointer_words:3 x 1 v
+      let types_init x n =
+        BA_.init_struct_list ~data_words:0 ~pointer_words:3 x 1 n
+      let types_set_list x v =
+        let builder = types_init x (List.length v) in
+        let () = List.iteri (fun i a -> Capnp.Array.set builder i a) v in
+        builder
+      let types_set_array x v =
+        let builder = types_init x (Array.length v) in
+        let () = Array.iteri (fun i a -> Capnp.Array.set builder i a) v in
+        builder
+      let has_locations x =
+        BA_.has_field x 2
+      let locations_get x = 
+        BA_.get_struct_list ~data_words:1 ~pointer_words:1 x 2
+      let locations_get_list x =
+        Capnp.Array.to_list (locations_get x)
+      let locations_get_array x =
+        Capnp.Array.to_array (locations_get x)
+      let locations_set x v =
+        BA_.set_struct_list ~data_words:1 ~pointer_words:1 x 2 v
+      let locations_init x n =
+        BA_.init_struct_list ~data_words:1 ~pointer_words:1 x 2 n
+      let locations_set_list x v =
+        let builder = locations_init x (List.length v) in
+        let () = List.iteri (fun i a -> Capnp.Array.set builder i a) v in
+        builder
+      let locations_set_array x v =
+        let builder = locations_init x (Array.length v) in
+        let () = Array.iteri (fun i a -> Capnp.Array.set builder i a) v in
+        builder
+      let of_message x = BA_.get_root_struct ~data_words:0 ~pointer_words:3 x
+      let to_message x = x.BA_.NM.StructStorage.data.MessageWrapper.Slice.msg
+      let to_reader x = Some (RA_.StructStorage.readonly x)
+      let init_root ?message_size () =
+        BA_.alloc_root_struct ?message_size ~data_words:0 ~pointer_words:3 ()
+      let init_pointer ptr =
+        BA_.init_struct_pointer ptr ~data_words:0 ~pointer_words:3
     end
     module ModuleTypeOfExpressions = struct
       type struct_t = [`ModuleTypeOfExpressions_cfca7d3ae9f723a7]
@@ -6189,24 +6309,24 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
         BA_.set_struct ~data_words:1 ~pointer_words:1 x 1 (Some v)
       let source_path_init x =
         BA_.init_struct ~data_words:1 ~pointer_words:1 x 1
-      let has_type_of_expression x =
+      let has_functions x =
         BA_.has_field x 2
-      let type_of_expression_get x = 
-        BA_.get_struct_list ~data_words:0 ~pointer_words:2 x 2
-      let type_of_expression_get_list x =
-        Capnp.Array.to_list (type_of_expression_get x)
-      let type_of_expression_get_array x =
-        Capnp.Array.to_array (type_of_expression_get x)
-      let type_of_expression_set x v =
-        BA_.set_struct_list ~data_words:0 ~pointer_words:2 x 2 v
-      let type_of_expression_init x n =
-        BA_.init_struct_list ~data_words:0 ~pointer_words:2 x 2 n
-      let type_of_expression_set_list x v =
-        let builder = type_of_expression_init x (List.length v) in
+      let functions_get x = 
+        BA_.get_struct_list ~data_words:0 ~pointer_words:3 x 2
+      let functions_get_list x =
+        Capnp.Array.to_list (functions_get x)
+      let functions_get_array x =
+        Capnp.Array.to_array (functions_get x)
+      let functions_set x v =
+        BA_.set_struct_list ~data_words:0 ~pointer_words:3 x 2 v
+      let functions_init x n =
+        BA_.init_struct_list ~data_words:0 ~pointer_words:3 x 2 n
+      let functions_set_list x v =
+        let builder = functions_init x (List.length v) in
         let () = List.iteri (fun i a -> Capnp.Array.set builder i a) v in
         builder
-      let type_of_expression_set_array x v =
-        let builder = type_of_expression_init x (Array.length v) in
+      let functions_set_array x v =
+        let builder = functions_init x (Array.length v) in
         let () = Array.iteri (fun i a -> Capnp.Array.set builder i a) v in
         builder
       let of_message x = BA_.get_root_struct ~data_words:1 ~pointer_words:3 x

@@ -5105,7 +5105,7 @@ let build_whole_program_call_graph_for_pyrefly
         {
           CallablesSharedMemory.DefineAndQualifier.define =
             { Node.location = define_location; value = define };
-          qualifier;
+          qualifier = _;
         } ->
         let allow_modifier = function
           | PyrePysaApi.TypeModifier.Optional
@@ -5132,7 +5132,7 @@ let build_whole_program_call_graph_for_pyrefly
           let targets =
             PyreflyApi.ReadOnly.get_type_of_expression
               pyrefly_api
-              ~qualifier
+              ~define_name:(Target.define_name_exn callable)
               ~location:(Ast.Node.location base)
             >>| PyreflyApi.ReadOnly.Type.get_class_names pyrefly_api
             >>| (fun { PyrePysaApi.ClassNamesFromType.classes; _ } -> classes)

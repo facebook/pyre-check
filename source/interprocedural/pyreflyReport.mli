@@ -346,16 +346,32 @@ module ModuleDefinitionsFile : sig
 end
 
 module ModuleTypeOfExpressions : sig
+  module LocalTypeId : sig
+    type t [@@deriving equal]
+
+    val of_int : int -> t
+
+    val to_index : t -> int
+  end
+
   module TypeAtLocation : sig
     type t = {
       location: Ast.Location.t;
-      type_: PyreflyType.t;
+      type_: LocalTypeId.t;
+    }
+  end
+
+  module FunctionTypeOfExpressions : sig
+    type t = {
+      function_id: LocalFunctionId.t;
+      types: PyreflyType.t array;
+      locations: TypeAtLocation.t list;
     }
   end
 
   type t = {
     module_id: ModuleId.t;
-    type_of_expression: TypeAtLocation.t list;
+    functions: FunctionTypeOfExpressions.t list;
   }
 end
 

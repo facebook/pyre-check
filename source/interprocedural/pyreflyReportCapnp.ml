@@ -834,6 +834,36 @@ module ModuleDefinitionsFile = struct
 end
 
 module ModuleTypeOfExpressions = struct
+  let read_function_type_of_expressions reader =
+    let function_id_string = CapnpReader.FunctionTypeOfExpressions.function_id_get reader in
+    let function_id =
+      match PyreflyReport.LocalFunctionId.from_string function_id_string with
+      | Ok id -> id
+      | Error error ->
+          Format.asprintf "Invalid function id: %a" PyreflyReport.FormatError.pp error |> failwith
+    in
+    let types =
+      CapnpReader.FunctionTypeOfExpressions.types_get_list reader
+      |> List.map ~f:read_pysa_type
+      |> Array.of_list
+    in
+    let locations =
+      CapnpReader.FunctionTypeOfExpressions.locations_get_list reader
+      |> List.map ~f:(fun entry ->
+             let location = read_location (CapnpReader.LocationTypeIdEntry.location_get entry) in
+             let type_id = CapnpReader.LocationTypeIdEntry.type_id_get_int_exn entry in
+             {
+               PyreflyReport.ModuleTypeOfExpressions.TypeAtLocation.location;
+               type_ = PyreflyReport.ModuleTypeOfExpressions.LocalTypeId.of_int type_id;
+             })
+    in
+    {
+      PyreflyReport.ModuleTypeOfExpressions.FunctionTypeOfExpressions.function_id;
+      types;
+      locations;
+    }
+
+
   let from_path_exn ~pyrefly_directory path =
     let path =
       pyrefly_directory
@@ -849,14 +879,11 @@ module ModuleTypeOfExpressions = struct
       PyreflyReport.ModuleId.from_int
         (CapnpReader.ModuleTypeOfExpressions.module_id_get_int_exn reader)
     in
-    let type_of_expression =
-      CapnpReader.ModuleTypeOfExpressions.type_of_expression_get_list reader
-      |> List.map ~f:(fun entry ->
-             let location = read_location (CapnpReader.TypeOfExpressionEntry.location_get entry) in
-             let type_ = read_pysa_type (CapnpReader.TypeOfExpressionEntry.type_get entry) in
-             { PyreflyReport.ModuleTypeOfExpressions.TypeAtLocation.location; type_ })
+    let functions =
+      CapnpReader.ModuleTypeOfExpressions.functions_get_list reader
+      |> List.map ~f:read_function_type_of_expressions
     in
-    { PyreflyReport.ModuleTypeOfExpressions.module_id; type_of_expression }
+    { PyreflyReport.ModuleTypeOfExpressions.module_id; functions }
 end
 
 module ModuleCallGraphs = struct

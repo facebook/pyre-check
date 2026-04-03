@@ -785,15 +785,37 @@ end
 module ModuleTypeOfExpressions = struct
   let from_json json =
     let open Core.Result.Monad_infix in
-    let parse_type_of_expression type_of_expression =
-      type_of_expression
-      |> List.map ~f:(fun (location, type_) ->
-             PyreflyReport.parse_location location
-             >>= fun location ->
-             PyreflyType.from_json type_
-             >>| fun type_ ->
-             { PyreflyReport.ModuleTypeOfExpressions.TypeAtLocation.location; type_ })
+    let parse_function_type_of_expressions (function_id_string, function_json) =
+      PyreflyReport.LocalFunctionId.from_string function_id_string
+      >>= fun function_id ->
+      JsonUtil.check_object function_json
+      >>= fun _ ->
+      JsonUtil.get_list_member function_json "type_table"
+      >>= fun type_table_json ->
+      type_table_json
+      |> List.map ~f:PyreflyType.from_json
       |> Result.all
+      >>= fun type_table ->
+      let types = Array.of_list type_table in
+      JsonUtil.get_object_member function_json "locations"
+      >>= fun locations_entries ->
+      locations_entries
+      |> List.map ~f:(fun (location_str, type_id_json) ->
+             PyreflyReport.parse_location location_str
+             >>= fun location ->
+             JsonUtil.as_int type_id_json
+             >>| fun type_id ->
+             {
+               PyreflyReport.ModuleTypeOfExpressions.TypeAtLocation.location;
+               type_ = PyreflyReport.ModuleTypeOfExpressions.LocalTypeId.of_int type_id;
+             })
+      |> Result.all
+      >>| fun locations ->
+      {
+        PyreflyReport.ModuleTypeOfExpressions.FunctionTypeOfExpressions.function_id;
+        types;
+        locations;
+      }
     in
     JsonUtil.check_object json
     >>= fun _ ->
@@ -801,12 +823,15 @@ module ModuleTypeOfExpressions = struct
     >>= fun () ->
     JsonUtil.get_int_member json "module_id"
     >>= fun module_id ->
-    JsonUtil.get_object_member json "type_of_expression"
-    >>= parse_type_of_expression
-    >>| fun type_of_expression ->
+    JsonUtil.get_object_member json "functions"
+    >>= fun functions_entries ->
+    functions_entries
+    |> List.map ~f:parse_function_type_of_expressions
+    |> Result.all
+    >>| fun functions_list ->
     {
       PyreflyReport.ModuleTypeOfExpressions.module_id = PyreflyReport.ModuleId.from_int module_id;
-      type_of_expression;
+      functions = functions_list;
     }
 
 

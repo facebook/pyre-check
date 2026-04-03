@@ -248,7 +248,7 @@ module ReadOnly : sig
 
   val get_type_of_expression
     :  t ->
-    qualifier:Ast.Reference.t ->
+    define_name:Ast.Reference.t ->
     location:Ast.Location.t ->
     PysaType.t option
 

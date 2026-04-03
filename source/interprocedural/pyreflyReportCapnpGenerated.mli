@@ -783,15 +783,30 @@ module type S = sig
       val of_message : 'cap message_t -> t
       val of_builder : struct_t builder_t -> t
     end
-    module TypeOfExpressionEntry : sig
-      type struct_t = [`TypeOfExpressionEntry_938a8e5a900dbacc]
+    module LocationTypeIdEntry : sig
+      type struct_t = [`LocationTypeIdEntry_ec97908cde450b07]
       type t = struct_t reader_t
       val has_location : t -> bool
       val location_get : t -> PysaLocation.t
       val location_get_pipelined : struct_t MessageWrapper.StructRef.t -> PysaLocation.struct_t MessageWrapper.StructRef.t
-      val has_type : t -> bool
-      val type_get : t -> PysaType.t
-      val type_get_pipelined : struct_t MessageWrapper.StructRef.t -> PysaType.struct_t MessageWrapper.StructRef.t
+      val type_id_get : t -> Stdint.Uint32.t
+      val type_id_get_int_exn : t -> int
+      val of_message : 'cap message_t -> t
+      val of_builder : struct_t builder_t -> t
+    end
+    module FunctionTypeOfExpressions : sig
+      type struct_t = [`FunctionTypeOfExpressions_e454c787c4578ae9]
+      type t = struct_t reader_t
+      val has_function_id : t -> bool
+      val function_id_get : t -> string
+      val has_types : t -> bool
+      val types_get : t -> (ro, PysaType.t, array_t) Capnp.Array.t
+      val types_get_list : t -> PysaType.t list
+      val types_get_array : t -> PysaType.t array
+      val has_locations : t -> bool
+      val locations_get : t -> (ro, LocationTypeIdEntry.t, array_t) Capnp.Array.t
+      val locations_get_list : t -> LocationTypeIdEntry.t list
+      val locations_get_array : t -> LocationTypeIdEntry.t array
       val of_message : 'cap message_t -> t
       val of_builder : struct_t builder_t -> t
     end
@@ -805,10 +820,10 @@ module type S = sig
       val has_source_path : t -> bool
       val source_path_get : t -> SourcePath.t
       val source_path_get_pipelined : struct_t MessageWrapper.StructRef.t -> SourcePath.struct_t MessageWrapper.StructRef.t
-      val has_type_of_expression : t -> bool
-      val type_of_expression_get : t -> (ro, TypeOfExpressionEntry.t, array_t) Capnp.Array.t
-      val type_of_expression_get_list : t -> TypeOfExpressionEntry.t list
-      val type_of_expression_get_array : t -> TypeOfExpressionEntry.t array
+      val has_functions : t -> bool
+      val functions_get : t -> (ro, FunctionTypeOfExpressions.t, array_t) Capnp.Array.t
+      val functions_get_list : t -> FunctionTypeOfExpressions.t list
+      val functions_get_array : t -> FunctionTypeOfExpressions.t array
       val of_message : 'cap message_t -> t
       val of_builder : struct_t builder_t -> t
     end
@@ -2067,19 +2082,46 @@ module type S = sig
       val init_root : ?message_size:int -> unit -> t
       val init_pointer : pointer_t -> t
     end
-    module TypeOfExpressionEntry : sig
-      type struct_t = [`TypeOfExpressionEntry_938a8e5a900dbacc]
+    module LocationTypeIdEntry : sig
+      type struct_t = [`LocationTypeIdEntry_ec97908cde450b07]
       type t = struct_t builder_t
       val has_location : t -> bool
       val location_get : t -> PysaLocation.t
       val location_set_reader : t -> PysaLocation.struct_t reader_t -> PysaLocation.t
       val location_set_builder : t -> PysaLocation.t -> PysaLocation.t
       val location_init : t -> PysaLocation.t
-      val has_type : t -> bool
-      val type_get : t -> PysaType.t
-      val type_set_reader : t -> PysaType.struct_t reader_t -> PysaType.t
-      val type_set_builder : t -> PysaType.t -> PysaType.t
-      val type_init : t -> PysaType.t
+      val type_id_get : t -> Stdint.Uint32.t
+      val type_id_get_int_exn : t -> int
+      val type_id_set : t -> Stdint.Uint32.t -> unit
+      val type_id_set_int_exn : t -> int -> unit
+      val of_message : rw message_t -> t
+      val to_message : t -> rw message_t
+      val to_reader : t -> struct_t reader_t
+      val init_root : ?message_size:int -> unit -> t
+      val init_pointer : pointer_t -> t
+    end
+    module FunctionTypeOfExpressions : sig
+      type struct_t = [`FunctionTypeOfExpressions_e454c787c4578ae9]
+      type t = struct_t builder_t
+      val has_function_id : t -> bool
+      val function_id_get : t -> string
+      val function_id_set : t -> string -> unit
+      val has_types : t -> bool
+      val types_get : t -> (rw, PysaType.t, array_t) Capnp.Array.t
+      val types_get_list : t -> PysaType.t list
+      val types_get_array : t -> PysaType.t array
+      val types_set : t -> (rw, PysaType.t, array_t) Capnp.Array.t -> (rw, PysaType.t, array_t) Capnp.Array.t
+      val types_set_list : t -> PysaType.t list -> (rw, PysaType.t, array_t) Capnp.Array.t
+      val types_set_array : t -> PysaType.t array -> (rw, PysaType.t, array_t) Capnp.Array.t
+      val types_init : t -> int -> (rw, PysaType.t, array_t) Capnp.Array.t
+      val has_locations : t -> bool
+      val locations_get : t -> (rw, LocationTypeIdEntry.t, array_t) Capnp.Array.t
+      val locations_get_list : t -> LocationTypeIdEntry.t list
+      val locations_get_array : t -> LocationTypeIdEntry.t array
+      val locations_set : t -> (rw, LocationTypeIdEntry.t, array_t) Capnp.Array.t -> (rw, LocationTypeIdEntry.t, array_t) Capnp.Array.t
+      val locations_set_list : t -> LocationTypeIdEntry.t list -> (rw, LocationTypeIdEntry.t, array_t) Capnp.Array.t
+      val locations_set_array : t -> LocationTypeIdEntry.t array -> (rw, LocationTypeIdEntry.t, array_t) Capnp.Array.t
+      val locations_init : t -> int -> (rw, LocationTypeIdEntry.t, array_t) Capnp.Array.t
       val of_message : rw message_t -> t
       val to_message : t -> rw message_t
       val to_reader : t -> struct_t reader_t
@@ -2101,14 +2143,14 @@ module type S = sig
       val source_path_set_reader : t -> SourcePath.struct_t reader_t -> SourcePath.t
       val source_path_set_builder : t -> SourcePath.t -> SourcePath.t
       val source_path_init : t -> SourcePath.t
-      val has_type_of_expression : t -> bool
-      val type_of_expression_get : t -> (rw, TypeOfExpressionEntry.t, array_t) Capnp.Array.t
-      val type_of_expression_get_list : t -> TypeOfExpressionEntry.t list
-      val type_of_expression_get_array : t -> TypeOfExpressionEntry.t array
-      val type_of_expression_set : t -> (rw, TypeOfExpressionEntry.t, array_t) Capnp.Array.t -> (rw, TypeOfExpressionEntry.t, array_t) Capnp.Array.t
-      val type_of_expression_set_list : t -> TypeOfExpressionEntry.t list -> (rw, TypeOfExpressionEntry.t, array_t) Capnp.Array.t
-      val type_of_expression_set_array : t -> TypeOfExpressionEntry.t array -> (rw, TypeOfExpressionEntry.t, array_t) Capnp.Array.t
-      val type_of_expression_init : t -> int -> (rw, TypeOfExpressionEntry.t, array_t) Capnp.Array.t
+      val has_functions : t -> bool
+      val functions_get : t -> (rw, FunctionTypeOfExpressions.t, array_t) Capnp.Array.t
+      val functions_get_list : t -> FunctionTypeOfExpressions.t list
+      val functions_get_array : t -> FunctionTypeOfExpressions.t array
+      val functions_set : t -> (rw, FunctionTypeOfExpressions.t, array_t) Capnp.Array.t -> (rw, FunctionTypeOfExpressions.t, array_t) Capnp.Array.t
+      val functions_set_list : t -> FunctionTypeOfExpressions.t list -> (rw, FunctionTypeOfExpressions.t, array_t) Capnp.Array.t
+      val functions_set_array : t -> FunctionTypeOfExpressions.t array -> (rw, FunctionTypeOfExpressions.t, array_t) Capnp.Array.t
+      val functions_init : t -> int -> (rw, FunctionTypeOfExpressions.t, array_t) Capnp.Array.t
       val of_message : rw message_t -> t
       val to_message : t -> rw message_t
       val to_reader : t -> struct_t reader_t

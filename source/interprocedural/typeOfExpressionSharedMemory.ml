@@ -82,10 +82,10 @@ let compute_or_retrieve_pysa_type type_of_expression_shared_memory ~pyre_in_cont
           (* This is an artificial expression that pyrefly doesn't know about. *)
           PyrePysaApi.PysaType.from_pyrefly_type Analysis.PyrePysaEnvironment.PyreflyType.top
       | None ->
-          let module_qualifier = PyrePysaApi.InContext.module_qualifier pyre_in_context in
+          let define_name = PyrePysaApi.InContext.define_name pyre_in_context in
           PyreflyApi.ReadOnly.get_type_of_expression
             pyrefly_api
-            ~qualifier:module_qualifier
+            ~define_name
             ~location:(Ast.Node.location expression)
           |> Option.value
                ~default:
