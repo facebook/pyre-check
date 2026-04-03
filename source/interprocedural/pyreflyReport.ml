@@ -8,7 +8,6 @@
 (* Shared types and format-agnostic utilities for pyrefly report files. *)
 
 open Core
-open Data_structures
 open Ast
 module Pyre1Api = Analysis.PyrePysaEnvironment
 module PyreflyType = Pyre1Api.PyreflyType
@@ -339,10 +338,8 @@ module ProjectFile = struct
     [@@deriving equal, show]
   end
 
-  module ModuleMap = Map.Make (ModuleId)
-
   type t = {
-    modules: Module.t ModuleMap.t;
+    modules: Module.t list;
     builtin_module_ids: ModuleId.t list;
     object_class_refs: GlobalClassId.t list;
     dict_class_refs: GlobalClassId.t list;
@@ -582,11 +579,18 @@ end
    `<root>/type_of_expressions/<module>:<id>.json` file. This matches the
    `pyrefly::report::pysa::PysaModuleTypeOfExpressions` rust type. *)
 module ModuleTypeOfExpressions = struct
+  module TypeAtLocation = struct
+    type t = {
+      location: Location.t;
+      type_: PyreflyType.t;
+    }
+  end
+
   type t = {
     (* TODO(T225700656): module_name and source_path are already specified in the Project module. We
        should probably remove those from the file format. *)
     module_id: ModuleId.t;
-    type_of_expression: PyreflyType.t Location.Map.t;
+    type_of_expression: TypeAtLocation.t list;
   }
 end
 
@@ -626,13 +630,11 @@ module ModuleCallGraphs = struct
   end
 
   module PyreflyHigherOrderParameterMap = struct
-    module Map = SerializableMap.Make (Int)
+    type t = PyreflyHigherOrderParameter.t list
 
-    type t = PyreflyHigherOrderParameter.t Map.t
+    let empty = []
 
-    let empty = Map.empty
-
-    let data = Map.data
+    let data = Fun.id
   end
 
   module PyreflyGlobalVariable = struct
@@ -703,8 +705,15 @@ module ModuleCallGraphs = struct
       | Return of PyreflyReturnShimCallees.t
   end
 
+  module CallGraphEdge = struct
+    type t = {
+      expression_identifier: ExpressionIdentifier.t;
+      callees: PyreflyExpressionCallees.t;
+    }
+  end
+
   module PyreflyCallGraph = struct
-    type t = PyreflyExpressionCallees.t ExpressionIdentifier.Map.t
+    type t = CallGraphEdge.t list
   end
 
   type t = {

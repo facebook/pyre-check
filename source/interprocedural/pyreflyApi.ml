@@ -775,7 +775,7 @@ module ReadWrite = struct
           (PyrePath.append pyrefly_directory ~element:"pyrefly.pysa.json")
     in
     let qualifier_to_module_map =
-      create_module_qualifiers ~pyrefly_directory ~add_toplevel_modules:true (Map.data modules)
+      create_module_qualifiers ~pyrefly_directory ~add_toplevel_modules:true modules
     in
     Log.info "Parsed module list from pyrefly: %.3fs" (Timer.stop_in_sec timer);
     Statistics.performance
@@ -2215,7 +2215,9 @@ module ReadWrite = struct
             ~pyrefly_directory
             pyrefly_info_filename
       in
-      Map.iteri type_of_expression ~f:(fun ~key:location ~data:type_ ->
+      List.iter
+        type_of_expression
+        ~f:(fun { ModuleTypeOfExpressions.TypeAtLocation.location; type_ } ->
           let type_ = PysaType.from_pyrefly_type type_ in
           TypeOfExpressionsSharedMemory.write_around
             type_of_expressions_shared_memory
@@ -3310,7 +3312,11 @@ module ReadOnly = struct
         ~expression_for_logging:None
         call_graph
     in
-    ExpressionIdentifier.Map.fold instantiate_call_edge json_call_graph DefineCallGraph.empty
+    List.fold
+      json_call_graph
+      ~init:DefineCallGraph.empty
+      ~f:(fun call_graph { CallGraphEdge.expression_identifier; callees } ->
+        instantiate_call_edge expression_identifier callees call_graph)
 
 
   let parse_call_graphs

@@ -535,8 +535,7 @@ let read_higher_order_parameter reader =
     else
       CallGraph.Unresolved.False
   in
-  ( index,
-    { PyreflyReport.ModuleCallGraphs.PyreflyHigherOrderParameter.index; call_targets; unresolved } )
+  { PyreflyReport.ModuleCallGraphs.PyreflyHigherOrderParameter.index; call_targets; unresolved }
 
 
 let read_call_callees reader =
@@ -552,7 +551,6 @@ let read_call_callees reader =
   let higher_order_parameters =
     CapnpReader.CallCallees.higher_order_parameters_get_list reader
     |> List.map ~f:read_higher_order_parameter
-    |> PyreflyReport.ModuleCallGraphs.PyreflyHigherOrderParameterMap.Map.of_alist_exn
   in
   let unresolved =
     if CapnpReader.CallCallees.has_unresolved reader then
@@ -699,10 +697,8 @@ let read_call_graph_entry reader =
     | Ok id -> ExpressionIdentifier.map_location ~f:PyreflyReport.fixup_location id
     | Error error -> failwith error
   in
-  let expression_callees =
-    read_expression_callees (CapnpReader.CallGraphEntry.callees_get reader)
-  in
-  expression_identifier, expression_callees
+  let callees = read_expression_callees (CapnpReader.CallGraphEntry.callees_get reader) in
+  { PyreflyReport.ModuleCallGraphs.CallGraphEdge.expression_identifier; callees }
 
 
 let read_function_call_graph reader =
@@ -714,9 +710,7 @@ let read_function_call_graph reader =
         Format.asprintf "Invalid function id: %a" PyreflyReport.FormatError.pp error |> failwith
   in
   let call_graph =
-    CapnpReader.FunctionCallGraph.entries_get_list reader
-    |> List.map ~f:read_call_graph_entry
-    |> ExpressionIdentifier.Map.of_alist_exn
+    CapnpReader.FunctionCallGraph.entries_get_list reader |> List.map ~f:read_call_graph_entry
   in
   function_id, call_graph
 
@@ -756,31 +750,26 @@ module ProjectFile = struct
     let is_interface = CapnpReader.PysaProjectModule.is_interface_get reader in
     let is_init = CapnpReader.PysaProjectModule.is_init_get reader in
     let is_internal = CapnpReader.PysaProjectModule.is_internal_get reader in
-    ( module_id,
-      {
-        PyreflyReport.ProjectFile.Module.module_id;
-        module_name;
-        absolute_source_path;
-        relative_source_path;
-        info_filename;
-        python_version;
-        platform;
-        is_test;
-        is_interface;
-        is_init;
-        is_internal;
-      } )
+    {
+      PyreflyReport.ProjectFile.Module.module_id;
+      module_name;
+      absolute_source_path;
+      relative_source_path;
+      info_filename;
+      python_version;
+      platform;
+      is_test;
+      is_interface;
+      is_init;
+      is_internal;
+    }
 
 
   let from_path_exn path =
     let () = Log.debug "Parsing pyrefly project file `%a` (capnp)" PyrePath.pp path in
     let message = read_message_from_file_exn path in
     let reader = CapnpReader.ProjectFile.of_message message in
-    let modules =
-      CapnpReader.ProjectFile.modules_get_list reader
-      |> List.map ~f:read_module
-      |> PyreflyReport.ProjectFile.ModuleMap.of_alist_exn
-    in
+    let modules = CapnpReader.ProjectFile.modules_get_list reader |> List.map ~f:read_module in
     let builtin_module_ids =
       CapnpReader.ProjectFile.builtin_module_ids_get_list reader
       |> List.map ~f:(fun id -> PyreflyReport.ModuleId.from_int (Stdint.Uint32.to_int id))
@@ -865,8 +854,7 @@ module ModuleTypeOfExpressions = struct
       |> List.map ~f:(fun entry ->
              let location = read_location (CapnpReader.TypeOfExpressionEntry.location_get entry) in
              let type_ = read_pysa_type (CapnpReader.TypeOfExpressionEntry.type_get entry) in
-             location, type_)
-      |> Location.Map.of_alist_exn
+             { PyreflyReport.ModuleTypeOfExpressions.TypeAtLocation.location; type_ })
     in
     { PyreflyReport.ModuleTypeOfExpressions.module_id; type_of_expression }
 end
