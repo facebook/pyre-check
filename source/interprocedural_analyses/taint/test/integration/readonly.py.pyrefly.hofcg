@@ -131,6 +131,35 @@ Higher order call graphs
   }
 }
 {
+  "callable": "pyre_extensions.generic.Generic.__class_getitem__",
+  "returned_callables": [],
+  "calls": {
+    "5:15-5:18|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "pyre_extensions.generic.Generic"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "readonly.A.__init__",
   "returned_callables": [],
   "calls": {

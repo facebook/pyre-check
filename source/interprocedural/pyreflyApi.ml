@@ -84,6 +84,7 @@ module QualifiersSharedMemory = struct
       module_qualifier: ModuleQualifier.t;
       has_source: bool;
       has_info: bool;
+      is_test: bool;
     }
   end
 
@@ -253,6 +254,22 @@ module CallableMetadata = struct
       Some MethodKind.Instance
     else
       None
+
+
+  let create_target { is_property_setter; parent_is_class; _ } ~override define_name =
+    let kind =
+      if is_property_setter then
+        Target.PyreflyPropertySetter
+      else
+        Target.Normal
+    in
+    if parent_is_class then
+      if override then
+        Target.create_override_from_reference ~kind define_name
+      else
+        Target.create_method_from_reference ~kind define_name
+    else
+      Target.create_function ~kind define_name
 end
 
 let assert_shared_memory_key_exists message = function
@@ -2081,12 +2098,15 @@ module ReadWrite = struct
         qualifier_to_module_map
         |> Map.to_alist
         |> List.map
-             ~f:(fun (module_qualifier, { Module.absolute_source_path; pyrefly_info_filename; _ })
+             ~f:(fun
+                  ( module_qualifier,
+                    { Module.absolute_source_path; pyrefly_info_filename; is_test; _ } )
                 ->
                {
                  QualifiersSharedMemory.Value.module_qualifier;
                  has_source = Option.is_some absolute_source_path;
                  has_info = Option.is_some pyrefly_info_filename;
+                 is_test;
                })
       in
       let () = QualifiersSharedMemory.add handle Memory.SingletonKey.key qualifiers in
@@ -3035,22 +3055,8 @@ module ReadOnly = struct
 
 
   let target_from_define_name api ~override define_name =
-    let { CallableMetadata.is_property_setter; parent_is_class; _ } =
-      get_callable_metadata api define_name
-    in
-    let kind =
-      if is_property_setter then
-        Target.PyreflyPropertySetter
-      else
-        Target.Normal
-    in
-    if parent_is_class then
-      if override then
-        Target.create_override_from_reference ~kind define_name
-      else
-        Target.create_method_from_reference ~kind define_name
-    else
-      Target.create_function ~kind define_name
+    let metadata = get_callable_metadata api define_name in
+    CallableMetadata.create_target metadata ~override define_name
 
 
   let instantiate_call_graph
@@ -3325,7 +3331,15 @@ module ReadOnly = struct
 
 
   let parse_call_graphs
-      ({ pyrefly_directory; callable_metadata_shared_memory; module_infos_shared_memory; _ } as api)
+      ({
+         pyrefly_directory;
+         callable_metadata_shared_memory;
+         callable_parse_result_shared_memory;
+         module_infos_shared_memory;
+         module_callables_shared_memory;
+         qualifiers_shared_memory;
+         _;
+       } as api)
       ~scheduler
       ~scheduler_policies
       ~overrides_exist
@@ -3334,50 +3348,142 @@ module ReadOnly = struct
       ~store_shared_memory
       ~attribute_targets
       ~skip_analysis_targets
-      ~definitions
+      ~definitions:
+        (* we don't actually use the provided definitions, and just load call graphs for all
+           non-stub callables. This is better for performance. *)
+        _
       ~create_dependency_for
       ~redirect_to_decorated
       ~transform_call_graph
     =
     let timer = Timer.start () in
     let () = Log.info "Parsing call graphs from pyrefly..." in
-    let module CallableWithId = struct
-      type t = {
-        callable: Target.t;
-        local_function_id: LocalFunctionId.t;
-      }
-    end
+    (* Get all qualifiers with pyrefly info *)
+    let qualifiers =
+      QualifiersSharedMemory.get qualifiers_shared_memory Memory.SingletonKey.key
+      |> assert_shared_memory_key_exists (fun () -> "missing qualifiers in shared memory")
+      |> List.filter_map
+           ~f:(fun { QualifiersSharedMemory.Value.module_qualifier; has_info; is_test; _ } ->
+             Option.some_if (has_info && not is_test) module_qualifier)
     in
-    (* Partition functions per module *)
-    let module_definitions_map =
-      let fold_definition module_definitions_map callable =
-        if Target.should_skip_analysis ~skip_analysis_targets callable then
-          module_definitions_map
-        else
-          let {
-            CallableMetadataSharedMemory.Value.metadata = { module_qualifier; _ };
-            local_function_id;
-            _;
-          }
-            =
-            Target.define_name_exn callable
-            |> FullyQualifiedName.from_reference_unchecked
-            |> CallableMetadataSharedMemory.get callable_metadata_shared_memory
-            |> assert_shared_memory_key_exists (fun () ->
-                   Format.asprintf
-                     "missing callable metadata: `%a`"
-                     Target.pp_pretty_with_kind
-                     callable)
+    let scheduler_policy =
+      Scheduler.Policy.from_configuration_or_default
+        scheduler_policies
+        Configuration.ScheduleIdentifier.PyreflyParseCallGraphs
+        ~default:
+          (Scheduler.Policy.fixed_chunk_count
+             ~minimum_chunks_per_worker:1
+             ~minimum_chunk_size:1
+             ~preferred_chunks_per_worker:4
+             ())
+    in
+    let parse_module_call_graphs sofar module_qualifier =
+      let { ModuleInfosSharedMemory.Module.pyrefly_info_filename; is_stub; _ } =
+        ModuleInfosSharedMemory.get module_infos_shared_memory module_qualifier
+        |> assert_shared_memory_key_exists (fun () -> "missing module info")
+      in
+      let pyrefly_info_filename =
+        match pyrefly_info_filename with
+        | Some pyrefly_info_filename -> pyrefly_info_filename
+        | None -> failwith "unreachable"
+      in
+      let module_callables =
+        ModuleCallablesSharedMemory.get module_callables_shared_memory module_qualifier
+        |> assert_shared_memory_key_exists (fun () ->
+               Format.asprintf "missing module callables: `%a`" ModuleQualifier.pp module_qualifier)
+      in
+      (* Filter to only callables that would be in `definitions`, replicating the logic from
+         `FetchCallables.from_qualifier_with_pyrefly`. *)
+      let relevant_callables =
+        List.filter_map module_callables ~f:(fun qualified_name ->
+            let ({
+                   CallableMetadataSharedMemory.Value.metadata =
+                     { CallableMetadata.is_toplevel; is_class_toplevel; _ } as metadata;
+                   _;
+                 } as callable_metadata)
+              =
+              CallableMetadataSharedMemory.get callable_metadata_shared_memory qualified_name
+              |> assert_shared_memory_key_exists (fun () ->
+                     Format.asprintf
+                       "missing callable metadata: `%a`"
+                       FullyQualifiedName.pp
+                       qualified_name)
+            in
+            if is_stub && (is_toplevel || is_class_toplevel) then
+              None
+            else if
+              is_stub_like_from_metadata
+                ~metadata
+                ~callable_parse_result_shared_memory
+                qualified_name
+            then
+              None
+            else
+              let define_name = FullyQualifiedName.to_reference qualified_name in
+              let callable = CallableMetadata.create_target metadata ~override:false define_name in
+              if Target.should_skip_analysis ~skip_analysis_targets callable then
+                None
+              else
+                Some (callable, callable_metadata.local_function_id))
+      in
+      if List.is_empty relevant_callables then
+        sofar
+      else
+        let { ModuleCallGraphs.call_graphs = function_id_to_call_graph_map; module_id = _ } =
+          if
+            String.is_suffix
+              (PyreflyReport.ModuleInfoFilename.raw pyrefly_info_filename)
+              ~suffix:".capnp.bin"
+          then
+            PyreflyReportCapnp.ModuleCallGraphs.from_path_exn
+              ~pyrefly_directory
+              pyrefly_info_filename
+          else
+            PyreflyReportJson.ModuleCallGraphs.from_path_exn
+              ~pyrefly_directory
+              pyrefly_info_filename
+        in
+        let parse_callable_call_graph
+            (define_call_graphs, whole_program_call_graph)
+            callable
+            local_function_id
+          =
+          let call_graph =
+            match Map.find function_id_to_call_graph_map local_function_id with
+            | None ->
+                Format.asprintf "Could not find call graph for `%a`" Target.pp callable |> failwith
+            | Some call_graph -> call_graph
           in
-          let module_definitions_map =
-            Map.update
-              module_definitions_map
-              (ModuleQualifier.from_reference_unchecked module_qualifier)
-              ~f:(fun sofar ->
-                { CallableWithId.callable; local_function_id } :: Option.value ~default:[] sofar)
+          let call_graph =
+            instantiate_call_graph
+              api
+              ~overrides_exist
+              ~get_overriding_types
+              ~global_is_string_literal
+              ~attribute_targets
+              ~callable
+              call_graph
+            |> transform_call_graph api callable
           in
-          let module_definitions_map =
+          let define_call_graphs =
+            if store_shared_memory then
+              CallGraph.SharedMemory.AddOnly.add define_call_graphs callable call_graph
+            else
+              define_call_graphs
+          in
+          let whole_program_call_graph =
+            CallGraph.WholeProgramCallGraph.add_or_exn
+              whole_program_call_graph
+              ~callable
+              ~callees:
+                (CallGraph.DefineCallGraph.all_targets ~use_case:create_dependency_for call_graph)
+          in
+          define_call_graphs, whole_program_call_graph
+        in
+        List.fold relevant_callables ~init:sofar ~f:(fun sofar (callable, local_function_id) ->
+            let sofar = parse_callable_call_graph sofar callable local_function_id in
             match redirect_to_decorated callable with
+            | None -> sofar
             | Some decorated_target ->
                 let decorated_function_id =
                   match local_function_id with
@@ -3390,95 +3496,7 @@ module ReadOnly = struct
                         local_function_id
                       |> failwith
                 in
-                Map.update
-                  module_definitions_map
-                  (ModuleQualifier.from_reference_unchecked module_qualifier)
-                  ~f:(fun sofar ->
-                    {
-                      CallableWithId.callable = decorated_target;
-                      local_function_id = decorated_function_id;
-                    }
-                    :: Option.value ~default:[] sofar)
-            | None -> module_definitions_map
-          in
-          module_definitions_map
-      in
-      List.fold ~init:ModuleQualifier.Map.empty ~f:fold_definition definitions
-    in
-    (* Map-reduce over all modules *)
-    let scheduler_policy =
-      Scheduler.Policy.from_configuration_or_default
-        scheduler_policies
-        Configuration.ScheduleIdentifier.PyreflyParseCallGraphs
-        ~default:
-          (Scheduler.Policy.fixed_chunk_count
-             ~minimum_chunks_per_worker:1
-             ~minimum_chunk_size:1
-             ~preferred_chunks_per_worker:1
-             ())
-    in
-    let parse_module_call_graphs sofar (module_qualifier, callables) =
-      let { ModuleInfosSharedMemory.Module.pyrefly_info_filename; _ } =
-        ModuleInfosSharedMemory.get module_infos_shared_memory module_qualifier
-        |> assert_shared_memory_key_exists (fun () -> "missing module info")
-      in
-      let pyrefly_info_filename =
-        match pyrefly_info_filename with
-        | None ->
-            Format.asprintf
-              "Could not find call graphs for module `%a`: missing pyrefly info file"
-              ModuleQualifier.pp
-              module_qualifier
-            |> failwith
-        | Some pyrefly_info_filename -> pyrefly_info_filename
-      in
-      let { ModuleCallGraphs.call_graphs = function_id_to_call_graph_map; module_id = _ } =
-        if
-          String.is_suffix
-            (PyreflyReport.ModuleInfoFilename.raw pyrefly_info_filename)
-            ~suffix:".capnp.bin"
-        then
-          PyreflyReportCapnp.ModuleCallGraphs.from_path_exn ~pyrefly_directory pyrefly_info_filename
-        else
-          PyreflyReportJson.ModuleCallGraphs.from_path_exn ~pyrefly_directory pyrefly_info_filename
-      in
-      List.fold
-        ~init:sofar
-        ~f:
-          (fun (define_call_graphs, whole_program_call_graph)
-               { CallableWithId.callable; local_function_id } ->
-          match Map.find function_id_to_call_graph_map local_function_id with
-          | None ->
-              Format.asprintf "Could not find call graph for `%a`" Target.pp callable |> failwith
-          | Some call_graph ->
-              let call_graph =
-                instantiate_call_graph
-                  api
-                  ~overrides_exist
-                  ~get_overriding_types
-                  ~global_is_string_literal
-                  ~attribute_targets
-                  ~callable
-                  call_graph
-                |> transform_call_graph api callable
-              in
-              let define_call_graphs =
-                if store_shared_memory then
-                  CallGraph.SharedMemory.AddOnly.add define_call_graphs callable call_graph
-                else
-                  define_call_graphs
-              in
-              let whole_program_call_graph =
-                CallGraph.WholeProgramCallGraph.add_or_exn
-                  whole_program_call_graph
-                  ~callable
-                  ~callees:
-                    (CallGraph.DefineCallGraph.all_targets
-                       ~use_case:create_dependency_for
-                       call_graph)
-              in
-              define_call_graphs, whole_program_call_graph)
-        callables
+                parse_callable_call_graph sofar decorated_target decorated_function_id)
     in
     let reduce
         (left_define_call_graphs, left_whole_program_call_graph)
@@ -3498,13 +3516,13 @@ module ReadOnly = struct
         scheduler
         ~policy:scheduler_policy
         ~initial:(empty_define_call_graphs, CallGraph.WholeProgramCallGraph.empty)
-        ~map:(fun modules_and_callables ->
+        ~map:(fun module_qualifiers ->
           List.fold
-            modules_and_callables
+            module_qualifiers
             ~init:(empty_define_call_graphs, CallGraph.WholeProgramCallGraph.empty)
             ~f:parse_module_call_graphs)
         ~reduce
-        ~inputs:(Map.to_alist module_definitions_map)
+        ~inputs:qualifiers
         ()
     in
     Log.info "Parsed call graphs from pyrefly: %.3fs" (Timer.stop_in_sec timer);

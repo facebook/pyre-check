@@ -159,6 +159,7 @@ let from_qualifier_with_pyrefly ~pyrefly_api ~qualifier =
       PyreflyApi.ReadOnly.get_callable_metadata pyrefly_api define_name
     in
     let is_stub_like = PyreflyApi.ReadOnly.is_stub_like_callable pyrefly_api define_name in
+    (* Note: when changing this, also change `PyreflyApi.ReadOnly.parse_call_graphs` *)
     if is_stub_module && (is_toplevel || is_class_toplevel) then
       (* Ignore top level define for stub modules (i.e, `.pyi`) *)
       result
