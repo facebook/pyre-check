@@ -46,6 +46,8 @@
   core
   sexplib
   yojson
+  capnp
+  stdint
   ppxlib
   ppx_deriving_yojson
   ppx_deriving

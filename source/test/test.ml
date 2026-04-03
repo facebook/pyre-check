@@ -3583,6 +3583,7 @@ module ScratchPyreflyProject = struct
         PyrePath.absolute external_root;
         "--report-pysa";
         PyrePath.absolute result_directory;
+        "--report-pysa-format=capnp";
         PyrePath.absolute local_root;
       ]
     in

@@ -29,6 +29,7 @@ end
 module Error = struct
   type t =
     | InvalidJsonError of string
+    | InvalidCapnpError of string
     | IOError of string
     | FormatError of FormatError.t
   [@@deriving show]

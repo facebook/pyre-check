@@ -765,8 +765,14 @@ module ReadWrite = struct
       typing_mapping_class_refs;
     }
       =
-      PyreflyReportJson.ProjectFile.from_path_exn
-        (PyrePath.append pyrefly_directory ~element:"pyrefly.pysa.json")
+      let project_file_path_capnp =
+        PyrePath.append pyrefly_directory ~element:"pyrefly.pysa.capnp.bin"
+      in
+      if PyrePath.file_exists project_file_path_capnp then
+        PyreflyReportCapnp.ProjectFile.from_path_exn project_file_path_capnp
+      else
+        PyreflyReportJson.ProjectFile.from_path_exn
+          (PyrePath.append pyrefly_directory ~element:"pyrefly.pysa.json")
     in
     let qualifier_to_module_map =
       create_module_qualifiers ~pyrefly_directory ~add_toplevel_modules:true (Map.data modules)
@@ -1716,9 +1722,18 @@ module ReadWrite = struct
         _;
       }
         =
-        PyreflyReportJson.ModuleDefinitionsFile.from_path_exn
-          ~pyrefly_directory
-          pyrefly_info_filename
+        if
+          String.is_suffix
+            (PyreflyReport.ModuleInfoFilename.raw pyrefly_info_filename)
+            ~suffix:".capnp.bin"
+        then
+          PyreflyReportCapnp.ModuleDefinitionsFile.from_path_exn
+            ~pyrefly_directory
+            pyrefly_info_filename
+        else
+          PyreflyReportJson.ModuleDefinitionsFile.from_path_exn
+            ~pyrefly_directory
+            pyrefly_info_filename
       in
       let definitions =
         DefinitionCollector.Tree.from_definitions ~function_definitions ~class_definitions
@@ -2187,9 +2202,18 @@ module ReadWrite = struct
     in
     let parse_module_info (module_qualifier, pyrefly_info_filename) =
       let { ModuleTypeOfExpressions.type_of_expression; module_id = _ } =
-        PyreflyReportJson.ModuleTypeOfExpressions.from_path_exn
-          ~pyrefly_directory
-          pyrefly_info_filename
+        if
+          String.is_suffix
+            (PyreflyReport.ModuleInfoFilename.raw pyrefly_info_filename)
+            ~suffix:".capnp.bin"
+        then
+          PyreflyReportCapnp.ModuleTypeOfExpressions.from_path_exn
+            ~pyrefly_directory
+            pyrefly_info_filename
+        else
+          PyreflyReportJson.ModuleTypeOfExpressions.from_path_exn
+            ~pyrefly_directory
+            pyrefly_info_filename
       in
       Map.iteri type_of_expression ~f:(fun ~key:location ~data:type_ ->
           let type_ = PysaType.from_pyrefly_type type_ in
@@ -3398,7 +3422,14 @@ module ReadOnly = struct
         | Some pyrefly_info_filename -> pyrefly_info_filename
       in
       let { ModuleCallGraphs.call_graphs = function_id_to_call_graph_map; module_id = _ } =
-        PyreflyReportJson.ModuleCallGraphs.from_path_exn ~pyrefly_directory pyrefly_info_filename
+        if
+          String.is_suffix
+            (PyreflyReport.ModuleInfoFilename.raw pyrefly_info_filename)
+            ~suffix:".capnp.bin"
+        then
+          PyreflyReportCapnp.ModuleCallGraphs.from_path_exn ~pyrefly_directory pyrefly_info_filename
+        else
+          PyreflyReportJson.ModuleCallGraphs.from_path_exn ~pyrefly_directory pyrefly_info_filename
       in
       List.fold
         ~init:sofar
@@ -3510,7 +3541,13 @@ module ReadOnly = struct
         define = "";
       }
     in
-    let { TypeErrors.errors } = PyreflyReportJson.TypeErrors.from_path_exn ~pyrefly_directory in
+    let { TypeErrors.errors } =
+      let errors_capnp_path = PyrePath.append pyrefly_directory ~element:"errors.capnp.bin" in
+      if PyrePath.file_exists errors_capnp_path then
+        PyreflyReportCapnp.TypeErrors.from_path_exn ~pyrefly_directory
+      else
+        PyreflyReportJson.TypeErrors.from_path_exn ~pyrefly_directory
+    in
     List.map ~f:instantiate_error errors
 
 
