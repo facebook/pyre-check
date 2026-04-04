@@ -392,14 +392,22 @@ Higher order call graphs
     "85:15-85:28": {
       "call": {
         "calls": [
-          { "target": "features.min", "index": 0, "return_type": [] }
+          {
+            "target": "features.min",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
         ]
       }
     },
     "85:30-85:43": {
       "call": {
         "calls": [
-          { "target": "features.min", "index": 1, "return_type": [] }
+          {
+            "target": "features.min",
+            "index": 1,
+            "return_type": [ "float", "integer" ]
+          }
         ]
       }
     }
