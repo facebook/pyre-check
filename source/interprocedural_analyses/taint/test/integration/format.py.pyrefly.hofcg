@@ -55,8 +55,20 @@ Higher order call graphs
         }
       ]
     },
-    "46:14-46:40": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } },
-    "46:25-46:39": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } }
+    "46:14-46:40": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "46:25-46:39": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
   }
 }
 {
@@ -97,7 +109,13 @@ Higher order call graphs
         { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
-    "41:14-41:34": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } }
+    "41:14-41:34": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
   }
 }
 {
@@ -155,7 +173,13 @@ Higher order call graphs
         }
       ]
     },
-    "37:21-37:35": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } }
+    "37:21-37:35": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
   }
 }
 {

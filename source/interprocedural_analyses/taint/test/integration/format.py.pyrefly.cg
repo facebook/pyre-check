@@ -6,15 +6,17 @@ Call dependencies
     "pysa._test_source (fun)"
   ],
   "format.issue_in_format_specifier (fun)": [
-    "builtins.str.__format__ (method)"
+    "builtins.str.__format__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
   ],
   "format.sink_in_format (fun)": [
     "builtins.object.__repr__ (method)", "pysa._test_sink (fun)"
   ],
+  "format.sink_in_format_specifier (fun)": [ "pysa._test_sink (fun)" ],
   "format.sink_via_format (fun)": [ "pysa._test_sink (fun)" ],
   "format.source_in_format (fun)": [ "pysa._test_source (fun)" ],
   "format.source_in_format_specifier (fun)": [
-    "builtins.str.__format__ (method)"
+    "builtins.str.__format__ (method)", "pysa._test_source (fun)"
   ],
   "format.source_via_format (fun)": [ "pysa._test_source (fun)" ]
 }

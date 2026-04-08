@@ -165,6 +165,66 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "format.issue_in_format_specifier",
+    "callable_line": 44,
+    "code": 5002,
+    "line": 46,
+    "start": 25,
+    "end": 39,
+    "filename": "format.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 46, "start": 25, "end": 39 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 46, "start": 25, "end": 39 },
+            "call_site": "46:14-46:40"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "format.issue_in_format_specifier:5002:0:Call|pysa._test_sink|0|formal(arg):680060f7bd745fcb24e8de39f25ed4f6"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "format.sink_in_format",
@@ -186,6 +246,34 @@
             ],
             "origin": { "line": 27, "start": 18, "end": 21 },
             "call_site": "27:7-27:22"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "format.sink_in_format_specifier",
+    "filename": "format.py",
+    "callable_line": 40,
+    "sinks": [
+      {
+        "port": "formal(argument, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 41, "start": 25, "end": 33 },
+            "call_site": "41:14-41:34"
           }
         ]
       }
@@ -249,6 +337,40 @@
             ],
             "tito_positions": [ { "line": 15, "start": 14, "end": 28 } ],
             "origin": { "line": 15, "start": 14, "end": 28 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "format.source_in_format_specifier",
+    "filename": "format.py",
+    "callable_line": 35,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 37, "start": 19, "end": 36 },
+              { "line": 37, "start": 21, "end": 35 }
+            ],
+            "origin": { "line": 37, "start": 21, "end": 35 }
           }
         ]
       }
