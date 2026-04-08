@@ -367,6 +367,26 @@ let taint_in_taint_out_mapping_for_argument
     |> TaintInTaintOutMap.join sofar
   in
   let mapping = List.fold tito_matches ~f:combine_tito ~init:TaintInTaintOutMap.empty in
+  (* Limit the width of each tree in the TITO mapping to prevent explosion when **kwargs matches
+     thousands of parameters (e.g., dataclasses with many fields). *)
+  let mapping =
+    let maximum_tito_tree_width =
+      max
+        taint_configuration.TaintConfiguration.Heap.analysis_model_constraints
+          .maximum_model_tito_tree_width
+        taint_configuration.TaintConfiguration.Heap.analysis_model_constraints
+          .maximum_return_access_path_width
+    in
+    TaintInTaintOutMap.map mapping ~f:(fun { TaintInTaintOutMap.TreeRootsPair.tree; roots } ->
+        {
+          TaintInTaintOutMap.TreeRootsPair.tree =
+            BackwardState.Tree.limit_to
+              ~breadcrumbs:(Features.tito_broadening_set ())
+              ~width:maximum_tito_tree_width
+              tree;
+          roots;
+        })
+  in
   let treat_obscure_as_self_update = treat_tito_return_as_self_update callable in
   let mapping =
     if

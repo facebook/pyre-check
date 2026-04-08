@@ -80,7 +80,7 @@
               { "line": 198, "start": 44, "end": 49 }
             ],
             "tito": {
-              "caller_interval": [ { "lower": 2, "upper": 3 } ],
+              "caller_interval": [ { "lower": 4, "upper": 5 } ],
               "is_self_call": false
             }
           }
@@ -544,6 +544,154 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "taint_in_taint_out.forward_taint_kwargs_into_parameters",
+    "callable_line": 650,
+    "code": 5002,
+    "line": 672,
+    "start": 15,
+    "end": 29,
+    "filename": "taint_in_taint_out.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "field_a" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 670, "start": 29, "end": 37 } ],
+            "origin": { "line": 657, "start": 19, "end": 33 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 672, "start": 15, "end": 29 },
+            "call_site": "672:4-672:30"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "field_a" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "taint_in_taint_out.forward_taint_kwargs_into_parameters:5002:0:Call|pysa._test_sink|0|formal(arg):ce75aad2b7c4d98cbc9d88906cdc5bd3"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "taint_in_taint_out.forward_taint_kwargs_into_parameters",
+    "callable_line": 650,
+    "code": 5002,
+    "line": 675,
+    "start": 15,
+    "end": 29,
+    "filename": "taint_in_taint_out.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "field_b" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 670, "start": 29, "end": 37 } ],
+            "origin": { "line": 657, "start": 19, "end": 33 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 675, "start": 15, "end": 29 },
+            "call_site": "675:4-675:30"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "field_b" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "taint_in_taint_out.forward_taint_kwargs_into_parameters:5002:0:Call|pysa._test_sink|1|formal(arg):5b09f20f9fed46603ba64d1d4aa0a8eb"
   }
 }
 {
@@ -3509,6 +3657,268 @@
 {
   "kind": "model",
   "data": {
+    "callable": "taint_in_taint_out.tito_via_kwargs_into_parameters",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 678,
+    "tito": [
+      {
+        "port": "formal(field_l, position=11)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 711, "start": 27, "end": 35 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_k, position=10)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 711, "start": 27, "end": 35 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_j, position=9)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 711, "start": 27, "end": 35 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_i, position=8)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 711, "start": 27, "end": 35 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_h, position=7)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 711, "start": 27, "end": 35 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_g, position=6)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 711, "start": 27, "end": 35 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_f, position=5)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 711, "start": 27, "end": 35 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_e, position=4)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 711, "start": 27, "end": 35 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_d, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 711, "start": 27, "end": 35 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_c, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 711, "start": 27, "end": 35 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_b, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 711, "start": 27, "end": 35 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_a, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 711, "start": 27, "end": 35 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "taint_in_taint_out.tito_with_feature",
     "filename": "taint_in_taint_out.py",
     "callable_line": 150,
@@ -3900,6 +4310,184 @@
 {
   "kind": "model",
   "data": {
+    "callable": "taint_in_taint_out.ClassManyFields.__init__",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 621,
+    "tito": [
+      {
+        "port": "formal(field_l, position=12)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[field_l]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_k, position=11)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[field_k]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_j, position=10)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[field_j]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_i, position=9)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[field_i]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_h, position=8)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[field_h]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_g, position=7)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[field_g]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_f, position=6)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[field_f]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_e, position=5)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[field_e]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_d, position=4)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[field_d]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_c, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[field_c]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_b, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[field_b]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(field_a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[field_a]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_field",
     "filename": "taint_in_taint_out.py",
     "callable_line": 188,
@@ -3956,7 +4544,7 @@
             ],
             "tito_positions": [ { "line": 200, "start": 31, "end": 36 } ],
             "tito": {
-              "caller_interval": [ { "lower": 2, "upper": 3 } ],
+              "caller_interval": [ { "lower": 4, "upper": 5 } ],
               "is_self_call": false
             }
           }
@@ -4048,7 +4636,7 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 171, "start": 32, "end": 35 } ],
             "tito": {
-              "caller_interval": [ { "lower": 13, "upper": 14 } ],
+              "caller_interval": [ { "lower": 15, "upper": 16 } ],
               "is_self_call": false
             }
           }
@@ -4102,7 +4690,7 @@
             ],
             "tito_positions": [ { "line": 81, "start": 35, "end": 41 } ],
             "tito": {
-              "caller_interval": [ { "lower": 18, "upper": 19 } ],
+              "caller_interval": [ { "lower": 20, "upper": 21 } ],
               "is_self_call": false
             }
           }
@@ -4285,7 +4873,7 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 505, "start": 32, "end": 33 } ],
             "tito": {
-              "caller_interval": [ { "lower": 22, "upper": 23 } ],
+              "caller_interval": [ { "lower": 24, "upper": 25 } ],
               "is_self_call": false
             }
           }

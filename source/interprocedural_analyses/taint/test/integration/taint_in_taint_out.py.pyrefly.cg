@@ -64,6 +64,11 @@ Call dependencies
     "builtins.dict.items (method)", "typing.ItemsView.__iter__ (method)",
     "typing.Iterator.__next__ (method)"
   ],
+  "taint_in_taint_out.forward_taint_kwargs_into_parameters (fun)": [
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)",
+    "taint_in_taint_out.ClassManyFields.__init__ (method)"
+  ],
   "taint_in_taint_out.get_related (fun)": [
     "builtins.object.__new__ (method)",
     "taint_in_taint_out.Recursive.__init__ (method)"
@@ -270,6 +275,10 @@ Call dependencies
   "taint_in_taint_out.tito_from_0_to_1 (fun)": [
     "builtins.dict.__setitem__ (method)",
     "taint_in_taint_out.random_integer (fun)"
+  ],
+  "taint_in_taint_out.tito_via_kwargs_into_parameters (fun)": [
+    "builtins.object.__new__ (method)",
+    "taint_in_taint_out.ClassManyFields.__init__ (method)"
   ],
   "taint_in_taint_out.tito_with_feature (fun)": [
     "taint_in_taint_out.add_feature (fun)"

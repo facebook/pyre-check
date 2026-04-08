@@ -606,3 +606,106 @@ def test_complex_argument_tito():
     _test_sink(x.bar)  # No issue.
     _test_sink(x.baz.foo)  # Issue.
     _test_sink(x.baz.bar)  # No issue.
+
+
+# Test TITO tree width limiting with **kwargs.
+#
+# When **kwargs matches more parameters than `maximum_model_tito_tree_width`
+# (default: 5), the TITO tree is collapsed, causing taint to be propagated
+# with less precision (taint on one field is broadened to all fields).
+
+
+class ClassManyFields:
+    """A class with more fields than the effective TITO tree width limit (max(5, 10) = 10)."""
+
+    def __init__(
+        self,
+        field_a: str,
+        field_b: str,
+        field_c: str,
+        field_d: str,
+        field_e: str,
+        field_f: str,
+        field_g: str,
+        field_h: str,
+        field_i: str,
+        field_j: str,
+        field_k: str,
+        field_l: str,
+    ) -> None:
+        self.field_a = field_a
+        self.field_b = field_b
+        self.field_c = field_c
+        self.field_d = field_d
+        self.field_e = field_e
+        self.field_f = field_f
+        self.field_g = field_g
+        self.field_h = field_h
+        self.field_i = field_i
+        self.field_j = field_j
+        self.field_k = field_k
+        self.field_l = field_l
+
+
+def forward_taint_kwargs_into_parameters():
+    """Taint flows forward through **kwargs into specific fields.
+
+    With TITO tree width limiting, taint from field_a is broadened to all
+    fields due to the collapse of the TITO mapping tree.
+    """
+    kwargs = {
+        "field_a": _test_source(),
+        "field_b": "safe",
+        "field_c": "safe",
+        "field_d": "safe",
+        "field_e": "safe",
+        "field_f": "safe",
+        "field_g": "safe",
+        "field_h": "safe",
+        "field_i": "safe",
+        "field_j": "safe",
+        "field_k": "safe",
+        "field_l": "safe",
+    }
+    config = ClassManyFields(**kwargs)
+    # True positive: field_a is tainted.
+    _test_sink(config.field_a)
+    # False positive due to TITO tree collapsing: field_b is NOT tainted, but
+    # the collapsed tree considers all fields as potentially tainted.
+    _test_sink(config.field_b)
+
+
+def tito_via_kwargs_into_parameters(
+    field_a: str,
+    field_b: str,
+    field_c: str,
+    field_d: str,
+    field_e: str,
+    field_f: str,
+    field_g: str,
+    field_h: str,
+    field_i: str,
+    field_j: str,
+    field_k: str,
+    field_l: str,
+) -> ClassManyFields:
+    """TITO through **kwargs into a constructor with many fields.
+
+    With TITO tree width limiting, the field-level TITO (field_a -> result.field_a)
+    is collapsed to approximate TITO (field_x -> result[*]).
+    """
+    kwargs = {
+        "field_a": field_a,
+        "field_b": field_b,
+        "field_c": field_c,
+        "field_d": field_d,
+        "field_e": field_e,
+        "field_f": field_f,
+        "field_g": field_g,
+        "field_h": field_h,
+        "field_i": field_i,
+        "field_j": field_j,
+        "field_k": field_k,
+        "field_l": field_l,
+    }
+    return ClassManyFields(**kwargs)
