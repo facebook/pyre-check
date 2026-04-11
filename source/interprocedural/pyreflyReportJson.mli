@@ -174,8 +174,7 @@ module ModuleDefinitionsFile : sig
 
   module ClassDefinition : sig
     val from_json
-      :  name_location:Ast.Location.t ->
-      Yojson.Safe.t ->
+      :  Yojson.Safe.t ->
       (PyreflyReport.ModuleDefinitionsFile.ClassDefinition.t, PyreflyReport.FormatError.t) result
   end
 

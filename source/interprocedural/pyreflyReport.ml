@@ -114,6 +114,33 @@ module LocalClassId : sig
   val to_int : t -> int
 
   val of_string : string -> t
+
+  module Map : Map.S with type Key.t = t
+end = struct
+  module T = struct
+    type t = int [@@deriving compare, equal, sexp, hash, show]
+  end
+
+  include T
+
+  let from_int = Fn.id
+
+  let to_int = Fn.id
+
+  let of_string = Int.of_string
+
+  module Map = Map.Make (T)
+end
+
+(* Index of a function definition within a module, assigned by pyrefly. *)
+module FuncDefIndex : sig
+  type t [@@deriving compare, equal, sexp, hash, show]
+
+  val from_int : int -> t
+
+  val to_int : t -> int
+
+  val of_string : string -> t
 end = struct
   type t = int [@@deriving compare, equal, sexp, hash, show]
 
@@ -147,7 +174,7 @@ end
 module LocalFunctionId : sig
   type t =
     (* Function declared with a `def` statement. *)
-    | Function of Location.t
+    | Function of FuncDefIndex.t
     (* Implicit function containing all top level statement. *)
     | ModuleTopLevel
     (* Implicit function containing the class body. *)
@@ -159,50 +186,48 @@ module LocalFunctionId : sig
       }
     (* Decorated target, which represents an artificial function containing all decorators of a
        function, inlined as an expression. For e.g, `@foo` on `def bar()` -> `return foo(bar)` *)
-    | FunctionDecoratedTarget of Location.t
+    | FunctionDecoratedTarget of FuncDefIndex.t
   [@@deriving compare, equal, show, sexp]
 
   val from_string : string -> (t, FormatError.t) result
 
-  val create_function : Location.t -> t
+  val create_function : FuncDefIndex.t -> t
 
   val is_class_field : t -> bool
 
   module Map : Map.S with type Key.t = t
 end = struct
   module T = struct
-    (* TODO(T225700656): Potentially use a TextRange (2 ints) instead of Location.t (4 ints) *)
     type t =
-      | Function of Location.t
+      | Function of FuncDefIndex.t
       | ModuleTopLevel
       | ClassTopLevel of LocalClassId.t
       | ClassField of {
           class_id: LocalClassId.t;
           name: string;
         }
-      | FunctionDecoratedTarget of Location.t
+      | FunctionDecoratedTarget of FuncDefIndex.t
     [@@deriving compare, equal, show, sexp]
   end
 
   include T
 
   let from_string string =
-    let open Core.Result.Monad_infix in
     match String.lsplit2 string ~on:':' with
     | None when String.equal string "MTL" -> Ok ModuleTopLevel
-    | Some ("F", location) -> parse_location location >>| fun location -> Function location
+    | Some ("F", func_def_index) -> Ok (Function (FuncDefIndex.of_string func_def_index))
     | Some ("CTL", class_id) -> Ok (ClassTopLevel (LocalClassId.of_string class_id))
     | Some ("CF", class_field) -> (
         match String.lsplit2 class_field ~on:':' with
         | Some (class_id, name) ->
             Ok (ClassField { class_id = LocalClassId.of_string class_id; name })
         | None -> Error (FormatError.UnparsableString string))
-    | Some ("FDT", location) ->
-        parse_location location >>| fun location -> FunctionDecoratedTarget location
+    | Some ("FDT", func_def_index) ->
+        Ok (FunctionDecoratedTarget (FuncDefIndex.of_string func_def_index))
     | _ -> Error (FormatError.UnparsableString string)
 
 
-  let create_function location = Function location
+  let create_function func_def_index = Function func_def_index
 
   let is_class_field = function
     | ClassField _ -> true
@@ -384,8 +409,8 @@ module ModuleDefinitionsFile = struct
   module ParentScope = struct
     type t =
       | TopLevel
-      | Class of Location.t
-      | Function of Location.t
+      | Class of LocalClassId.t
+      | Function of FuncDefIndex.t
     [@@deriving equal, show]
   end
 
@@ -436,6 +461,7 @@ module ModuleDefinitionsFile = struct
   module FunctionDefinition = struct
     type t = {
       name: string;
+      name_location: Location.t option;
       local_function_id: LocalFunctionId.t;
       parent: ParentScope.t;
       undecorated_signatures: FunctionSignature.t list;
@@ -458,6 +484,7 @@ module ModuleDefinitionsFile = struct
     let create_module_toplevel () =
       {
         name = Ast.Statement.toplevel_define_name;
+        name_location = None;
         local_function_id = LocalFunctionId.ModuleTopLevel;
         parent = ParentScope.TopLevel;
         undecorated_signatures =
@@ -488,11 +515,12 @@ module ModuleDefinitionsFile = struct
       }
 
 
-    let create_class_toplevel ~name_location ~local_class_id =
+    let create_class_toplevel ~local_class_id =
       {
         name = Ast.Statement.class_toplevel_define_name;
+        name_location = None;
         local_function_id = LocalFunctionId.ClassTopLevel local_class_id;
-        parent = ParentScope.Class name_location;
+        parent = ParentScope.Class local_class_id;
         undecorated_signatures =
           [
             {
@@ -570,7 +598,7 @@ module ModuleDefinitionsFile = struct
        should probably remove those from the file format. *)
     module_id: ModuleId.t;
     function_definitions: FunctionDefinition.t LocalFunctionId.Map.t;
-    class_definitions: ClassDefinition.t Location.Map.t;
+    class_definitions: ClassDefinition.t LocalClassId.Map.t;
     global_variables: PyreflyGlobalVariable.t list;
   }
 end

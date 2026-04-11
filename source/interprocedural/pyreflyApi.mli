@@ -38,6 +38,17 @@ exception
     error: Error.t;
   }
 
+(* Exposed for testing purposes *)
+module FuncDefIndex : sig
+  type t [@@deriving compare, equal, sexp, hash, show]
+
+  val from_int : int -> t
+
+  val to_int : t -> int
+
+  val of_string : string -> t
+end
+
 module NameLocation : sig
   type t =
     | DefineName of
@@ -373,6 +384,8 @@ module LocalClassId : sig
   type t [@@deriving compare, equal, show]
 
   val from_int : int -> t
+
+  module Map : Map.S with type Key.t = t
 end
 
 (* Exposed for testing purposes *)
@@ -427,7 +440,7 @@ end
 module LocalFunctionId : sig
   type t [@@deriving show]
 
-  val create_function : Ast.Location.t -> t
+  val create_function : FuncDefIndex.t -> t
 
   module Map : Map.S with type Key.t = t
 end
@@ -460,8 +473,8 @@ module ModuleDefinitionsFile : sig
   module ParentScope : sig
     type t =
       | TopLevel
-      | Class of Ast.Location.t
-      | Function of Ast.Location.t
+      | Class of LocalClassId.t
+      | Function of FuncDefIndex.t
     [@@deriving equal, show]
   end
 
@@ -512,6 +525,7 @@ module ModuleDefinitionsFile : sig
   module FunctionDefinition : sig
     type t = {
       name: string;
+      name_location: Ast.Location.t option;
       local_function_id: LocalFunctionId.t;
       parent: ParentScope.t;
       undecorated_signatures: FunctionSignature.t list;
@@ -632,7 +646,7 @@ module Testing : sig
   val create_fully_qualified_names
     :  module_qualifier:ModuleQualifier.t ->
     module_exists:(ModuleQualifier.t -> bool) ->
-    class_definitions:ModuleDefinitionsFile.ClassDefinition.t Ast.Location.Map.t ->
+    class_definitions:ModuleDefinitionsFile.ClassDefinition.t LocalClassId.Map.t ->
     function_definitions:ModuleDefinitionsFile.FunctionDefinition.t LocalFunctionId.Map.t ->
     QualifiedDefinition.t list
 end

@@ -30,6 +30,7 @@ exception PyreflyFileFormatError = PyreflyReport.PyreflyFileFormatError
 module ModulePath = PyreflyReport.ModulePath
 module ModuleId = PyreflyReport.ModuleId
 module LocalClassId = PyreflyReport.LocalClassId
+module FuncDefIndex = PyreflyReport.FuncDefIndex
 module GlobalClassId = PyreflyReport.GlobalClassId
 module GlobalClassIdSharedMemoryKey = PyreflyReport.GlobalClassIdSharedMemoryKey
 module LocalFunctionId = PyreflyReport.LocalFunctionId
@@ -1341,24 +1342,17 @@ module ReadWrite = struct
     module ScopeId = struct
       module T = struct
         type t =
-          | Location of Location.t
-          | Synthesized of LocalFunctionId.t
+          | Class of LocalClassId.t
+          | Function of LocalFunctionId.t
         [@@deriving compare, equal, show, sexp]
 
         let _ = pp
 
         let of_definition = function
-          | Definition.Function
-              {
-                ModuleDefinitionsFile.FunctionDefinition.local_function_id =
-                  LocalFunctionId.Function location;
-                _;
-              } ->
-              Location location
           | Definition.Function { ModuleDefinitionsFile.FunctionDefinition.local_function_id; _ } ->
-              Synthesized local_function_id
-          | Definition.Class { ModuleDefinitionsFile.ClassDefinition.name_location; _ } ->
-              Location name_location
+              Function local_function_id
+          | Definition.Class { ModuleDefinitionsFile.ClassDefinition.local_class_id; _ } ->
+              Class local_class_id
       end
 
       include T
@@ -1379,15 +1373,15 @@ module ReadWrite = struct
     let rec create_local_path ~function_definitions ~class_definitions sofar parent =
       match parent with
       | ModuleDefinitionsFile.ParentScope.TopLevel -> sofar
-      | ModuleDefinitionsFile.ParentScope.Class parent_location ->
+      | ModuleDefinitionsFile.ParentScope.Class parent_class_id ->
           let ({ ModuleDefinitionsFile.ClassDefinition.parent; _ } as class_definition) =
-            Map.find_exn class_definitions parent_location
+            Map.find_exn class_definitions parent_class_id
           in
           let sofar = Definition.Class class_definition :: sofar in
           create_local_path ~function_definitions ~class_definitions sofar parent
-      | ModuleDefinitionsFile.ParentScope.Function parent_location ->
+      | ModuleDefinitionsFile.ParentScope.Function func_def_index ->
           let ({ ModuleDefinitionsFile.FunctionDefinition.parent; _ } as function_definition) =
-            Map.find_exn function_definitions (LocalFunctionId.create_function parent_location)
+            Map.find_exn function_definitions (LocalFunctionId.Function func_def_index)
           in
           let sofar = Definition.Function function_definition :: sofar in
           create_local_path ~function_definitions ~class_definitions sofar parent
@@ -1584,16 +1578,26 @@ module ReadWrite = struct
 
       let collect_definitions ~module_qualifier { children } =
         let get_name_location = function
-          | Definition.Function { local_function_id = LocalFunctionId.Function location; _ } ->
+          | Definition.Function { name_location = Some location; _ } ->
               NameLocation.DefineName location
-          | Definition.Function { local_function_id = LocalFunctionId.ModuleTopLevel; _ } ->
+          | Definition.Function
+              { name_location = None; local_function_id = LocalFunctionId.ModuleTopLevel; _ } ->
               NameLocation.ModuleTopLevel
-          | Definition.Function { local_function_id = LocalFunctionId.ClassTopLevel _; _ } ->
-              failwith "unreachable"
-          | Definition.Function { local_function_id = LocalFunctionId.ClassField _; _ } ->
+          | Definition.Function
+              { name_location = None; local_function_id = LocalFunctionId.ClassField _; _ } ->
               NameLocation.UnknonwnForClassField
-          | Definition.Function { local_function_id = LocalFunctionId.FunctionDecoratedTarget _; _ }
-            ->
+          | Definition.Function
+              { name_location = None; local_function_id = LocalFunctionId.Function _; _ } ->
+              failwith "expected name_location for Function"
+          | Definition.Function
+              { name_location = None; local_function_id = LocalFunctionId.ClassTopLevel _; _ } ->
+              failwith "unreachable"
+          | Definition.Function
+              {
+                name_location = None;
+                local_function_id = LocalFunctionId.FunctionDecoratedTarget _;
+                _;
+              } ->
               failwith "unexpected decorated target in function definitions"
           | Definition.Class { name_location; _ } -> NameLocation.ClassName name_location
         in
@@ -1654,9 +1658,7 @@ module ReadWrite = struct
             {
               QualifiedDefinition.definition =
                 Definition.Function
-                  (ModuleDefinitionsFile.FunctionDefinition.create_class_toplevel
-                     ~name_location
-                     ~local_class_id);
+                  (ModuleDefinitionsFile.FunctionDefinition.create_class_toplevel ~local_class_id);
               qualified_name = FullyQualifiedName.create_class_toplevel qualified_name;
               local_name =
                 Reference.combine

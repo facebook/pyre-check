@@ -435,17 +435,17 @@ end
 
 module ModuleDefinitionsFile = struct
   module ParentScope = struct
-    let from_json json =
-      let open Core.Result.Monad_infix in
-      match json with
+    let from_json = function
       | `String "TopLevel" -> Ok PyreflyReport.ModuleDefinitionsFile.ParentScope.TopLevel
-      | `Assoc [("Class", `Assoc [("location", `String location_string)])] ->
-          PyreflyReport.parse_location location_string
-          >>| fun location -> PyreflyReport.ModuleDefinitionsFile.ParentScope.Class location
-      | `Assoc [("Function", `Assoc [("location", `String location_string)])] ->
-          PyreflyReport.parse_location location_string
-          >>| fun location -> PyreflyReport.ModuleDefinitionsFile.ParentScope.Function location
-      | _ ->
+      | `Assoc [("Class", `Assoc [("class_id", `Int class_id)])] ->
+          Ok
+            (PyreflyReport.ModuleDefinitionsFile.ParentScope.Class
+               (PyreflyReport.LocalClassId.from_int class_id))
+      | `Assoc [("Function", `Assoc [("func_def_index", `Int func_def_index)])] ->
+          Ok
+            (PyreflyReport.ModuleDefinitionsFile.ParentScope.Function
+               (PyreflyReport.FuncDefIndex.from_int func_def_index))
+      | json ->
           Error
             (PyreflyReport.FormatError.UnexpectedJsonType
                { json; message = "expected parent_scope" })
@@ -588,11 +588,17 @@ module ModuleDefinitionsFile = struct
       JsonUtil.get_optional_member json "defining_class"
       |> GlobalClassId.from_optional_json
       >>= fun defining_class ->
+      (match JsonUtil.get_optional_string_member json "name_location" with
+      | Ok (Some location_str) -> PyreflyReport.parse_location location_str >>| Option.some
+      | Ok None -> Ok None
+      | Error e -> Error e)
+      >>= fun name_location ->
       JsonUtil.get_optional_object_member json "decorator_callees"
       >>= parse_decorator_callees
       >>| fun decorator_callees ->
       {
         PyreflyReport.ModuleDefinitionsFile.FunctionDefinition.name;
+        name_location;
         local_function_id;
         parent;
         undecorated_signatures;
@@ -655,8 +661,11 @@ module ModuleDefinitionsFile = struct
   end
 
   module ClassDefinition = struct
-    let from_json ~name_location json =
+    let from_json json =
       let open Core.Result.Monad_infix in
+      JsonUtil.get_string_member json "name_location"
+      >>= PyreflyReport.parse_location
+      >>= fun name_location ->
       JsonUtil.get_string_member json "name"
       >>= fun name ->
       ParentScope.from_json (Yojson.Safe.Util.member "parent" json)
@@ -730,13 +739,12 @@ module ModuleDefinitionsFile = struct
     in
     let parse_class_definitions class_definitions =
       class_definitions
-      |> List.map ~f:(fun (location, class_definition) ->
-             PyreflyReport.parse_location location
-             >>= fun location ->
-             ClassDefinition.from_json ~name_location:location class_definition
-             >>| fun class_definition -> location, class_definition)
+      |> List.map ~f:(fun (class_id_str, class_definition) ->
+             let class_id = PyreflyReport.LocalClassId.of_string class_id_str in
+             ClassDefinition.from_json class_definition
+             >>| fun class_definition -> class_id, class_definition)
       |> Result.all
-      >>| Location.Map.of_alist_exn
+      >>| PyreflyReport.LocalClassId.Map.of_alist_exn
     in
     let parse_global_variables global_variables =
       global_variables

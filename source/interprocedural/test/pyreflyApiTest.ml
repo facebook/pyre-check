@@ -13,6 +13,7 @@ module ModulePath = PyreflyApi.ModulePath
 module ModuleId = PyreflyApi.ModuleId
 module ModuleQualifier = PyreflyApi.ModuleQualifier
 module ModuleDefinitionsFile = PyreflyApi.ModuleDefinitionsFile
+module FuncDefIndex = PyreflyApi.FuncDefIndex
 module FullyQualifiedName = PyreflyApi.FullyQualifiedName
 
 module ModuleQualifierInput = struct
@@ -500,10 +501,11 @@ let test_fully_qualified_names _ =
       |> List.filter_map ~f:(fun definition ->
              match definition with
              | PyreflyApi.Testing.Definition.Class
-                 ({ ModuleDefinitionsFile.ClassDefinition.name_location; _ } as class_definition) ->
-                 Some (name_location, class_definition)
+                 ({ ModuleDefinitionsFile.ClassDefinition.local_class_id; _ } as class_definition)
+               ->
+                 Some (local_class_id, class_definition)
              | _ -> None)
-      |> Ast.Location.Map.of_alist_exn
+      |> PyreflyApi.LocalClassId.Map.of_alist_exn
     in
     let function_definitions =
       definitions
@@ -539,7 +541,8 @@ let test_fully_qualified_names _ =
     PyreflyApi.Testing.Definition.Function
       {
         ModuleDefinitionsFile.FunctionDefinition.name;
-        local_function_id = PyreflyApi.LocalFunctionId.create_function (location_at_line line);
+        name_location = Some (location_at_line line);
+        local_function_id = PyreflyApi.LocalFunctionId.create_function (FuncDefIndex.from_int line);
         parent;
         is_overload;
         undecorated_signatures = [];
@@ -563,7 +566,7 @@ let test_fully_qualified_names _ =
         ModuleDefinitionsFile.ClassDefinition.name;
         name_location = location_at_line line;
         parent;
-        local_class_id = PyreflyApi.LocalClassId.from_int 0;
+        local_class_id = PyreflyApi.LocalClassId.from_int line;
         bases = [];
         mro = ModuleDefinitionsFile.ClassMro.Resolved [];
         is_synthesized = false;
@@ -574,8 +577,12 @@ let test_fully_qualified_names _ =
         decorator_callees = Location.SerializableMap.empty;
       }
   in
-  let class_parent ~line = ModuleDefinitionsFile.ParentScope.Class (location_at_line line) in
-  let function_parent ~line = ModuleDefinitionsFile.ParentScope.Function (location_at_line line) in
+  let class_parent ~line =
+    ModuleDefinitionsFile.ParentScope.Class (PyreflyApi.LocalClassId.from_int line)
+  in
+  let function_parent ~line =
+    ModuleDefinitionsFile.ParentScope.Function (FuncDefIndex.from_int line)
+  in
   assert_fully_qualified_names
     ~definitions:
       [
@@ -588,12 +595,12 @@ let test_fully_qualified_names _ =
     ~expected:
       [
         "test.$toplevel";
-        "test.foo";
-        "test.bar";
         "test.MyClass";
         "test.MyClass.$class_toplevel";
         "test.MyClass.__init__";
         "test.MyClass.method";
+        "test.foo";
+        "test.bar";
       ]
     ();
   (* Multiple definitions with the same name *)

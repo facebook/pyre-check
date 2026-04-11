@@ -191,8 +191,8 @@ module type S = sig
       type struct_t = [`ScopeParent_de2463e0e757468e]
       type t = struct_t reader_t
       type unnamed_union_t =
-        | Function of PysaLocation.t
-        | Class of PysaLocation.t
+        | Function of Stdint.Uint32.t
+        | Class of Stdint.Uint32.t
         | TopLevel
         | Undefined of int
       val get : t -> unnamed_union_t
@@ -383,6 +383,9 @@ module type S = sig
       type t = struct_t reader_t
       val has_name : t -> bool
       val name_get : t -> string
+      val has_define_name_location : t -> bool
+      val define_name_location_get : t -> PysaLocation.t
+      val define_name_location_get_pipelined : struct_t MessageWrapper.StructRef.t -> PysaLocation.struct_t MessageWrapper.StructRef.t
       val has_parent : t -> bool
       val parent_get : t -> ScopeParent.t
       val parent_get_pipelined : struct_t MessageWrapper.StructRef.t -> ScopeParent.struct_t MessageWrapper.StructRef.t
@@ -457,13 +460,13 @@ module type S = sig
     module ClassDefinition : sig
       type struct_t = [`ClassDefinition_f802b9f88052bf19]
       type t = struct_t reader_t
-      val has_location : t -> bool
-      val location_get : t -> PysaLocation.t
-      val location_get_pipelined : struct_t MessageWrapper.StructRef.t -> PysaLocation.struct_t MessageWrapper.StructRef.t
       val class_id_get : t -> Stdint.Uint32.t
       val class_id_get_int_exn : t -> int
       val has_name : t -> bool
       val name_get : t -> string
+      val has_name_location : t -> bool
+      val name_location_get : t -> PysaLocation.t
+      val name_location_get_pipelined : struct_t MessageWrapper.StructRef.t -> PysaLocation.struct_t MessageWrapper.StructRef.t
       val has_bases : t -> bool
       val bases_get : t -> (ro, ClassRef.t, array_t) Capnp.Array.t
       val bases_get_list : t -> ClassRef.t list
@@ -1070,17 +1073,15 @@ module type S = sig
       type struct_t = [`ScopeParent_de2463e0e757468e]
       type t = struct_t builder_t
       type unnamed_union_t =
-        | Function of PysaLocation.t
-        | Class of PysaLocation.t
+        | Function of Stdint.Uint32.t
+        | Class of Stdint.Uint32.t
         | TopLevel
         | Undefined of int
       val get : t -> unnamed_union_t
-      val function_set_reader : t -> PysaLocation.struct_t reader_t -> PysaLocation.t
-      val function_set_builder : t -> PysaLocation.t -> PysaLocation.t
-      val function_init : t -> PysaLocation.t
-      val class_set_reader : t -> PysaLocation.struct_t reader_t -> PysaLocation.t
-      val class_set_builder : t -> PysaLocation.t -> PysaLocation.t
-      val class_init : t -> PysaLocation.t
+      val function_set : t -> Stdint.Uint32.t -> unit
+      val function_set_int_exn : t -> int -> unit
+      val class_set : t -> Stdint.Uint32.t -> unit
+      val class_set_int_exn : t -> int -> unit
       val top_level_set : t -> unit
       val of_message : rw message_t -> t
       val to_message : t -> rw message_t
@@ -1394,6 +1395,11 @@ module type S = sig
       val has_name : t -> bool
       val name_get : t -> string
       val name_set : t -> string -> unit
+      val has_define_name_location : t -> bool
+      val define_name_location_get : t -> PysaLocation.t
+      val define_name_location_set_reader : t -> PysaLocation.struct_t reader_t -> PysaLocation.t
+      val define_name_location_set_builder : t -> PysaLocation.t -> PysaLocation.t
+      val define_name_location_init : t -> PysaLocation.t
       val has_parent : t -> bool
       val parent_get : t -> ScopeParent.t
       val parent_set_reader : t -> ScopeParent.struct_t reader_t -> ScopeParent.t
@@ -1516,11 +1522,6 @@ module type S = sig
     module ClassDefinition : sig
       type struct_t = [`ClassDefinition_f802b9f88052bf19]
       type t = struct_t builder_t
-      val has_location : t -> bool
-      val location_get : t -> PysaLocation.t
-      val location_set_reader : t -> PysaLocation.struct_t reader_t -> PysaLocation.t
-      val location_set_builder : t -> PysaLocation.t -> PysaLocation.t
-      val location_init : t -> PysaLocation.t
       val class_id_get : t -> Stdint.Uint32.t
       val class_id_get_int_exn : t -> int
       val class_id_set : t -> Stdint.Uint32.t -> unit
@@ -1528,6 +1529,11 @@ module type S = sig
       val has_name : t -> bool
       val name_get : t -> string
       val name_set : t -> string -> unit
+      val has_name_location : t -> bool
+      val name_location_get : t -> PysaLocation.t
+      val name_location_set_reader : t -> PysaLocation.struct_t reader_t -> PysaLocation.t
+      val name_location_set_builder : t -> PysaLocation.t -> PysaLocation.t
+      val name_location_init : t -> PysaLocation.t
       val has_bases : t -> bool
       val bases_get : t -> (rw, ClassRef.t, array_t) Capnp.Array.t
       val bases_get_list : t -> ClassRef.t list

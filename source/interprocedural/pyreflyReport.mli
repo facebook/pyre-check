@@ -74,6 +74,18 @@ module LocalClassId : sig
   val to_int : t -> int
 
   val of_string : string -> t
+
+  module Map : Map.S with type Key.t = t
+end
+
+module FuncDefIndex : sig
+  type t [@@deriving compare, equal, sexp, hash, show]
+
+  val from_int : int -> t
+
+  val to_int : t -> int
+
+  val of_string : string -> t
 end
 
 module GlobalClassId : sig
@@ -92,19 +104,19 @@ end
 
 module LocalFunctionId : sig
   type t =
-    | Function of Ast.Location.t
+    | Function of FuncDefIndex.t
     | ModuleTopLevel
     | ClassTopLevel of LocalClassId.t
     | ClassField of {
         class_id: LocalClassId.t;
         name: string;
       }
-    | FunctionDecoratedTarget of Ast.Location.t
+    | FunctionDecoratedTarget of FuncDefIndex.t
   [@@deriving compare, equal, show, sexp]
 
   val from_string : string -> (t, FormatError.t) result
 
-  val create_function : Ast.Location.t -> t
+  val create_function : FuncDefIndex.t -> t
 
   val is_class_field : t -> bool
 
@@ -217,8 +229,8 @@ module ModuleDefinitionsFile : sig
   module ParentScope : sig
     type t =
       | TopLevel
-      | Class of Ast.Location.t
-      | Function of Ast.Location.t
+      | Class of LocalClassId.t
+      | Function of FuncDefIndex.t
     [@@deriving equal, show]
   end
 
@@ -269,6 +281,7 @@ module ModuleDefinitionsFile : sig
   module FunctionDefinition : sig
     type t = {
       name: string;
+      name_location: Ast.Location.t option;
       local_function_id: LocalFunctionId.t;
       parent: ParentScope.t;
       undecorated_signatures: FunctionSignature.t list;
@@ -290,7 +303,7 @@ module ModuleDefinitionsFile : sig
 
     val create_module_toplevel : unit -> t
 
-    val create_class_toplevel : name_location:Ast.Location.t -> local_class_id:LocalClassId.t -> t
+    val create_class_toplevel : local_class_id:LocalClassId.t -> t
   end
 
   module ClassMro : sig
@@ -340,7 +353,7 @@ module ModuleDefinitionsFile : sig
   type t = {
     module_id: ModuleId.t;
     function_definitions: FunctionDefinition.t LocalFunctionId.Map.t;
-    class_definitions: ClassDefinition.t Ast.Location.Map.t;
+    class_definitions: ClassDefinition.t LocalClassId.Map.t;
     global_variables: PyreflyGlobalVariable.t list;
   }
 end

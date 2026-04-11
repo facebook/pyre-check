@@ -191,8 +191,8 @@ module type S = sig
       type struct_t = [`ScopeParent_de2463e0e757468e]
       type t = struct_t reader_t
       type unnamed_union_t =
-        | Function of PysaLocation.t
-        | Class of PysaLocation.t
+        | Function of Stdint.Uint32.t
+        | Class of Stdint.Uint32.t
         | TopLevel
         | Undefined of int
       val get : t -> unnamed_union_t
@@ -383,6 +383,9 @@ module type S = sig
       type t = struct_t reader_t
       val has_name : t -> bool
       val name_get : t -> string
+      val has_define_name_location : t -> bool
+      val define_name_location_get : t -> PysaLocation.t
+      val define_name_location_get_pipelined : struct_t MessageWrapper.StructRef.t -> PysaLocation.struct_t MessageWrapper.StructRef.t
       val has_parent : t -> bool
       val parent_get : t -> ScopeParent.t
       val parent_get_pipelined : struct_t MessageWrapper.StructRef.t -> ScopeParent.struct_t MessageWrapper.StructRef.t
@@ -457,13 +460,13 @@ module type S = sig
     module ClassDefinition : sig
       type struct_t = [`ClassDefinition_f802b9f88052bf19]
       type t = struct_t reader_t
-      val has_location : t -> bool
-      val location_get : t -> PysaLocation.t
-      val location_get_pipelined : struct_t MessageWrapper.StructRef.t -> PysaLocation.struct_t MessageWrapper.StructRef.t
       val class_id_get : t -> Stdint.Uint32.t
       val class_id_get_int_exn : t -> int
       val has_name : t -> bool
       val name_get : t -> string
+      val has_name_location : t -> bool
+      val name_location_get : t -> PysaLocation.t
+      val name_location_get_pipelined : struct_t MessageWrapper.StructRef.t -> PysaLocation.struct_t MessageWrapper.StructRef.t
       val has_bases : t -> bool
       val bases_get : t -> (ro, ClassRef.t, array_t) Capnp.Array.t
       val bases_get_list : t -> ClassRef.t list
@@ -1070,17 +1073,15 @@ module type S = sig
       type struct_t = [`ScopeParent_de2463e0e757468e]
       type t = struct_t builder_t
       type unnamed_union_t =
-        | Function of PysaLocation.t
-        | Class of PysaLocation.t
+        | Function of Stdint.Uint32.t
+        | Class of Stdint.Uint32.t
         | TopLevel
         | Undefined of int
       val get : t -> unnamed_union_t
-      val function_set_reader : t -> PysaLocation.struct_t reader_t -> PysaLocation.t
-      val function_set_builder : t -> PysaLocation.t -> PysaLocation.t
-      val function_init : t -> PysaLocation.t
-      val class_set_reader : t -> PysaLocation.struct_t reader_t -> PysaLocation.t
-      val class_set_builder : t -> PysaLocation.t -> PysaLocation.t
-      val class_init : t -> PysaLocation.t
+      val function_set : t -> Stdint.Uint32.t -> unit
+      val function_set_int_exn : t -> int -> unit
+      val class_set : t -> Stdint.Uint32.t -> unit
+      val class_set_int_exn : t -> int -> unit
       val top_level_set : t -> unit
       val of_message : rw message_t -> t
       val to_message : t -> rw message_t
@@ -1394,6 +1395,11 @@ module type S = sig
       val has_name : t -> bool
       val name_get : t -> string
       val name_set : t -> string -> unit
+      val has_define_name_location : t -> bool
+      val define_name_location_get : t -> PysaLocation.t
+      val define_name_location_set_reader : t -> PysaLocation.struct_t reader_t -> PysaLocation.t
+      val define_name_location_set_builder : t -> PysaLocation.t -> PysaLocation.t
+      val define_name_location_init : t -> PysaLocation.t
       val has_parent : t -> bool
       val parent_get : t -> ScopeParent.t
       val parent_set_reader : t -> ScopeParent.struct_t reader_t -> ScopeParent.t
@@ -1516,11 +1522,6 @@ module type S = sig
     module ClassDefinition : sig
       type struct_t = [`ClassDefinition_f802b9f88052bf19]
       type t = struct_t builder_t
-      val has_location : t -> bool
-      val location_get : t -> PysaLocation.t
-      val location_set_reader : t -> PysaLocation.struct_t reader_t -> PysaLocation.t
-      val location_set_builder : t -> PysaLocation.t -> PysaLocation.t
-      val location_init : t -> PysaLocation.t
       val class_id_get : t -> Stdint.Uint32.t
       val class_id_get_int_exn : t -> int
       val class_id_set : t -> Stdint.Uint32.t -> unit
@@ -1528,6 +1529,11 @@ module type S = sig
       val has_name : t -> bool
       val name_get : t -> string
       val name_set : t -> string -> unit
+      val has_name_location : t -> bool
+      val name_location_get : t -> PysaLocation.t
+      val name_location_set_reader : t -> PysaLocation.struct_t reader_t -> PysaLocation.t
+      val name_location_set_builder : t -> PysaLocation.t -> PysaLocation.t
+      val name_location_init : t -> PysaLocation.t
       val has_bases : t -> bool
       val bases_get : t -> (rw, ClassRef.t, array_t) Capnp.Array.t
       val bases_get_list : t -> ClassRef.t list
@@ -2641,26 +2647,22 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
     module ScopeParent = struct
       type struct_t = [`ScopeParent_de2463e0e757468e]
       type t = struct_t reader_t
-      let has_function x =
-        RA_.has_field x 0
       let function_get x =
-        RA_.get_struct x 0
-      let function_get_pipelined x =
-        MessageWrapper.Untyped.struct_field x 0
-      let has_class x =
-        RA_.has_field x 0
+        RA_.get_uint32 ~default:Stdint.Uint32.zero x 0
+      let function_get_int_exn x =
+        Capnp.Runtime.Util.int_of_uint32_exn (function_get x)
       let class_get x =
-        RA_.get_struct x 0
-      let class_get_pipelined x =
-        MessageWrapper.Untyped.struct_field x 0
+        RA_.get_uint32 ~default:Stdint.Uint32.zero x 0
+      let class_get_int_exn x =
+        Capnp.Runtime.Util.int_of_uint32_exn (class_get x)
       let top_level_get x = ()
       type unnamed_union_t =
-        | Function of PysaLocation.t
-        | Class of PysaLocation.t
+        | Function of Stdint.Uint32.t
+        | Class of Stdint.Uint32.t
         | TopLevel
         | Undefined of int
       let get x =
-        match RA_.get_uint16 ~default:0 x 0 with
+        match RA_.get_uint16 ~default:0 x 4 with
         | 0 -> Function (function_get x)
         | 1 -> Class (class_get x)
         | 2 -> TopLevel
@@ -2999,6 +3001,12 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
         RA_.has_field x 0
       let name_get x =
         RA_.get_text ~default:"" x 0
+      let has_define_name_location x =
+        RA_.has_field x 8
+      let define_name_location_get x =
+        RA_.get_struct x 8
+      let define_name_location_get_pipelined x =
+        MessageWrapper.Untyped.struct_field x 8
       let has_parent x =
         RA_.has_field x 1
       let parent_get x =
@@ -3128,12 +3136,6 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
     module ClassDefinition = struct
       type struct_t = [`ClassDefinition_f802b9f88052bf19]
       type t = struct_t reader_t
-      let has_location x =
-        RA_.has_field x 0
-      let location_get x =
-        RA_.get_struct x 0
-      let location_get_pipelined x =
-        MessageWrapper.Untyped.struct_field x 0
       let class_id_get x =
         RA_.get_uint32 ~default:Stdint.Uint32.zero x 0
       let class_id_get_int_exn x =
@@ -3142,6 +3144,12 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
         RA_.has_field x 1
       let name_get x =
         RA_.get_text ~default:"" x 1
+      let has_name_location x =
+        RA_.has_field x 0
+      let name_location_get x =
+        RA_.get_struct x 0
+      let name_location_get_pipelined x =
+        MessageWrapper.Untyped.struct_field x 0
       let has_bases x =
         RA_.has_field x 2
       let bases_get x = 
@@ -4207,47 +4215,41 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
     module ScopeParent = struct
       type struct_t = [`ScopeParent_de2463e0e757468e]
       type t = struct_t builder_t
-      let has_function x =
-        BA_.has_field x 0
       let function_get x =
-        BA_.get_struct ~data_words:2 ~pointer_words:0 x 0
-      let function_set_reader x v =
-        BA_.set_struct ~data_words:2 ~pointer_words:0 ~discr:{BA_.Discr.value=0; BA_.Discr.byte_ofs=0} x 0 v
-      let function_set_builder x v =
-        BA_.set_struct ~data_words:2 ~pointer_words:0 ~discr:{BA_.Discr.value=0; BA_.Discr.byte_ofs=0} x 0 (Some v)
-      let function_init x =
-        BA_.init_struct ~data_words:2 ~pointer_words:0 ~discr:{BA_.Discr.value=0; BA_.Discr.byte_ofs=0} x 0
-      let has_class x =
-        BA_.has_field x 0
+        BA_.get_uint32 ~default:Stdint.Uint32.zero x 0
+      let function_get_int_exn x =
+        Capnp.Runtime.Util.int_of_uint32_exn (function_get x)
+      let function_set x v =
+        BA_.set_uint32 ~discr:{BA_.Discr.value=0; BA_.Discr.byte_ofs=4} ~default:Stdint.Uint32.zero x 0 v
+      let function_set_int_exn x v = function_set x (Capnp.Runtime.Util.uint32_of_int_exn v)
       let class_get x =
-        BA_.get_struct ~data_words:2 ~pointer_words:0 x 0
-      let class_set_reader x v =
-        BA_.set_struct ~data_words:2 ~pointer_words:0 ~discr:{BA_.Discr.value=1; BA_.Discr.byte_ofs=0} x 0 v
-      let class_set_builder x v =
-        BA_.set_struct ~data_words:2 ~pointer_words:0 ~discr:{BA_.Discr.value=1; BA_.Discr.byte_ofs=0} x 0 (Some v)
-      let class_init x =
-        BA_.init_struct ~data_words:2 ~pointer_words:0 ~discr:{BA_.Discr.value=1; BA_.Discr.byte_ofs=0} x 0
+        BA_.get_uint32 ~default:Stdint.Uint32.zero x 0
+      let class_get_int_exn x =
+        Capnp.Runtime.Util.int_of_uint32_exn (class_get x)
+      let class_set x v =
+        BA_.set_uint32 ~discr:{BA_.Discr.value=1; BA_.Discr.byte_ofs=4} ~default:Stdint.Uint32.zero x 0 v
+      let class_set_int_exn x v = class_set x (Capnp.Runtime.Util.uint32_of_int_exn v)
       let top_level_get x = ()
       let top_level_set x =
-        BA_.set_void ~discr:{BA_.Discr.value=2; BA_.Discr.byte_ofs=0} x
+        BA_.set_void ~discr:{BA_.Discr.value=2; BA_.Discr.byte_ofs=4} x
       type unnamed_union_t =
-        | Function of PysaLocation.t
-        | Class of PysaLocation.t
+        | Function of Stdint.Uint32.t
+        | Class of Stdint.Uint32.t
         | TopLevel
         | Undefined of int
       let get x =
-        match BA_.get_uint16 ~default:0 x 0 with
+        match BA_.get_uint16 ~default:0 x 4 with
         | 0 -> Function (function_get x)
         | 1 -> Class (class_get x)
         | 2 -> TopLevel
         | v -> Undefined v
-      let of_message x = BA_.get_root_struct ~data_words:1 ~pointer_words:1 x
+      let of_message x = BA_.get_root_struct ~data_words:1 ~pointer_words:0 x
       let to_message x = x.BA_.NM.StructStorage.data.MessageWrapper.Slice.msg
       let to_reader x = Some (RA_.StructStorage.readonly x)
       let init_root ?message_size () =
-        BA_.alloc_root_struct ?message_size ~data_words:1 ~pointer_words:1 ()
+        BA_.alloc_root_struct ?message_size ~data_words:1 ~pointer_words:0 ()
       let init_pointer ptr =
-        BA_.init_struct_pointer ptr ~data_words:1 ~pointer_words:1
+        BA_.init_struct_pointer ptr ~data_words:1 ~pointer_words:0
     end
     module FunctionParameter = struct
       type struct_t = [`FunctionParameter_a1b2fce98392735b]
@@ -4563,13 +4565,13 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
       let has_parent x =
         BA_.has_field x 1
       let parent_get x =
-        BA_.get_struct ~data_words:1 ~pointer_words:1 x 1
+        BA_.get_struct ~data_words:1 ~pointer_words:0 x 1
       let parent_set_reader x v =
-        BA_.set_struct ~data_words:1 ~pointer_words:1 x 1 v
+        BA_.set_struct ~data_words:1 ~pointer_words:0 x 1 v
       let parent_set_builder x v =
-        BA_.set_struct ~data_words:1 ~pointer_words:1 x 1 (Some v)
+        BA_.set_struct ~data_words:1 ~pointer_words:0 x 1 (Some v)
       let parent_init x =
-        BA_.init_struct ~data_words:1 ~pointer_words:1 x 1
+        BA_.init_struct ~data_words:1 ~pointer_words:0 x 1
       let is_overload_get x =
         BA_.get_bit ~default:false x ~byte_ofs:0 ~bit_ofs:0
       let is_overload_set x v =
@@ -4805,16 +4807,26 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
         BA_.get_text ~default:"" x 0
       let name_set x v =
         BA_.set_text x 0 v
+      let has_define_name_location x =
+        BA_.has_field x 8
+      let define_name_location_get x =
+        BA_.get_struct ~data_words:2 ~pointer_words:0 x 8
+      let define_name_location_set_reader x v =
+        BA_.set_struct ~data_words:2 ~pointer_words:0 x 8 v
+      let define_name_location_set_builder x v =
+        BA_.set_struct ~data_words:2 ~pointer_words:0 x 8 (Some v)
+      let define_name_location_init x =
+        BA_.init_struct ~data_words:2 ~pointer_words:0 x 8
       let has_parent x =
         BA_.has_field x 1
       let parent_get x =
-        BA_.get_struct ~data_words:1 ~pointer_words:1 x 1
+        BA_.get_struct ~data_words:1 ~pointer_words:0 x 1
       let parent_set_reader x v =
-        BA_.set_struct ~data_words:1 ~pointer_words:1 x 1 v
+        BA_.set_struct ~data_words:1 ~pointer_words:0 x 1 v
       let parent_set_builder x v =
-        BA_.set_struct ~data_words:1 ~pointer_words:1 x 1 (Some v)
+        BA_.set_struct ~data_words:1 ~pointer_words:0 x 1 (Some v)
       let parent_init x =
-        BA_.init_struct ~data_words:1 ~pointer_words:1 x 1
+        BA_.init_struct ~data_words:1 ~pointer_words:0 x 1
       let is_overload_get x =
         BA_.get_bit ~default:false x ~byte_ofs:0 ~bit_ofs:0
       let is_overload_set x v =
@@ -4929,13 +4941,13 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
         BA_.set_struct ~data_words:1 ~pointer_words:1 x 7 (Some v)
       let overridden_base_method_init x =
         BA_.init_struct ~data_words:1 ~pointer_words:1 x 7
-      let of_message x = BA_.get_root_struct ~data_words:1 ~pointer_words:8 x
+      let of_message x = BA_.get_root_struct ~data_words:1 ~pointer_words:9 x
       let to_message x = x.BA_.NM.StructStorage.data.MessageWrapper.Slice.msg
       let to_reader x = Some (RA_.StructStorage.readonly x)
       let init_root ?message_size () =
-        BA_.alloc_root_struct ?message_size ~data_words:1 ~pointer_words:8 ()
+        BA_.alloc_root_struct ?message_size ~data_words:1 ~pointer_words:9 ()
       let init_pointer ptr =
-        BA_.init_struct_pointer ptr ~data_words:1 ~pointer_words:8
+        BA_.init_struct_pointer ptr ~data_words:1 ~pointer_words:9
     end
     module PysaClassFieldDeclaration = struct
       type t = PysaClassFieldDeclaration_17132881886155188463.t =
@@ -5043,16 +5055,6 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
     module ClassDefinition = struct
       type struct_t = [`ClassDefinition_f802b9f88052bf19]
       type t = struct_t builder_t
-      let has_location x =
-        BA_.has_field x 0
-      let location_get x =
-        BA_.get_struct ~data_words:2 ~pointer_words:0 x 0
-      let location_set_reader x v =
-        BA_.set_struct ~data_words:2 ~pointer_words:0 x 0 v
-      let location_set_builder x v =
-        BA_.set_struct ~data_words:2 ~pointer_words:0 x 0 (Some v)
-      let location_init x =
-        BA_.init_struct ~data_words:2 ~pointer_words:0 x 0
       let class_id_get x =
         BA_.get_uint32 ~default:Stdint.Uint32.zero x 0
       let class_id_get_int_exn x =
@@ -5066,6 +5068,16 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
         BA_.get_text ~default:"" x 1
       let name_set x v =
         BA_.set_text x 1 v
+      let has_name_location x =
+        BA_.has_field x 0
+      let name_location_get x =
+        BA_.get_struct ~data_words:2 ~pointer_words:0 x 0
+      let name_location_set_reader x v =
+        BA_.set_struct ~data_words:2 ~pointer_words:0 x 0 v
+      let name_location_set_builder x v =
+        BA_.set_struct ~data_words:2 ~pointer_words:0 x 0 (Some v)
+      let name_location_init x =
+        BA_.init_struct ~data_words:2 ~pointer_words:0 x 0
       let has_bases x =
         BA_.has_field x 2
       let bases_get x = 
@@ -5099,13 +5111,13 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
       let has_parent x =
         BA_.has_field x 4
       let parent_get x =
-        BA_.get_struct ~data_words:1 ~pointer_words:1 x 4
+        BA_.get_struct ~data_words:1 ~pointer_words:0 x 4
       let parent_set_reader x v =
-        BA_.set_struct ~data_words:1 ~pointer_words:1 x 4 v
+        BA_.set_struct ~data_words:1 ~pointer_words:0 x 4 v
       let parent_set_builder x v =
-        BA_.set_struct ~data_words:1 ~pointer_words:1 x 4 (Some v)
+        BA_.set_struct ~data_words:1 ~pointer_words:0 x 4 (Some v)
       let parent_init x =
-        BA_.init_struct ~data_words:1 ~pointer_words:1 x 4
+        BA_.init_struct ~data_words:1 ~pointer_words:0 x 4
       let is_synthesized_get x =
         BA_.get_bit ~default:false x ~byte_ofs:4 ~bit_ofs:0
       let is_synthesized_set x v =
@@ -6133,15 +6145,15 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
       let has_function_definitions x =
         BA_.has_field x 2
       let function_definitions_get x = 
-        BA_.get_struct_list ~data_words:1 ~pointer_words:8 x 2
+        BA_.get_struct_list ~data_words:1 ~pointer_words:9 x 2
       let function_definitions_get_list x =
         Capnp.Array.to_list (function_definitions_get x)
       let function_definitions_get_array x =
         Capnp.Array.to_array (function_definitions_get x)
       let function_definitions_set x v =
-        BA_.set_struct_list ~data_words:1 ~pointer_words:8 x 2 v
+        BA_.set_struct_list ~data_words:1 ~pointer_words:9 x 2 v
       let function_definitions_init x n =
-        BA_.init_struct_list ~data_words:1 ~pointer_words:8 x 2 n
+        BA_.init_struct_list ~data_words:1 ~pointer_words:9 x 2 n
       let function_definitions_set_list x v =
         let builder = function_definitions_init x (List.length v) in
         let () = List.iteri (fun i a -> Capnp.Array.set builder i a) v in

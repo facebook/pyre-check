@@ -168,10 +168,12 @@ let read_pysa_type reader =
 let read_scope_parent reader =
   match CapnpReader.ScopeParent.get reader with
   | CapnpReader.ScopeParent.TopLevel -> PyreflyReport.ModuleDefinitionsFile.ParentScope.TopLevel
-  | CapnpReader.ScopeParent.Function location ->
-      PyreflyReport.ModuleDefinitionsFile.ParentScope.Function (read_location location)
-  | CapnpReader.ScopeParent.Class location ->
-      PyreflyReport.ModuleDefinitionsFile.ParentScope.Class (read_location location)
+  | CapnpReader.ScopeParent.Function func_def_index ->
+      PyreflyReport.ModuleDefinitionsFile.ParentScope.Function
+        (PyreflyReport.FuncDefIndex.from_int (Stdint.Uint32.to_int func_def_index))
+  | CapnpReader.ScopeParent.Class class_id ->
+      PyreflyReport.ModuleDefinitionsFile.ParentScope.Class
+        (PyreflyReport.LocalClassId.from_int (Stdint.Uint32.to_int class_id))
   | CapnpReader.ScopeParent.Undefined _ -> failwith "Unknown ScopeParent variant in capnp"
 
 
@@ -417,8 +419,9 @@ let read_class_mro reader =
 
 
 let read_class_definition reader =
-  let name_location = read_location (CapnpReader.ClassDefinition.location_get reader) in
+  let name_location = read_location (CapnpReader.ClassDefinition.name_location_get reader) in
   let class_id = CapnpReader.ClassDefinition.class_id_get_int_exn reader in
+  let local_class_id = PyreflyReport.LocalClassId.from_int class_id in
   let name = CapnpReader.ClassDefinition.name_get reader in
   let parent = read_scope_parent (CapnpReader.ClassDefinition.parent_get reader) in
   let bases = CapnpReader.ClassDefinition.bases_get_list reader |> List.map ~f:read_class_ref in
@@ -431,10 +434,10 @@ let read_class_definition reader =
   let decorator_callees =
     read_decorator_callees (CapnpReader.ClassDefinition.decorator_callees_get_list reader)
   in
-  ( name_location,
+  ( local_class_id,
     {
       PyreflyReport.ModuleDefinitionsFile.ClassDefinition.name;
-      local_class_id = PyreflyReport.LocalClassId.from_int class_id;
+      local_class_id;
       name_location;
       parent;
       bases;
@@ -485,12 +488,20 @@ let read_function_definition reader =
       CapnpReader.FunctionDefinition.has_defining_class
       CapnpReader.FunctionDefinition.defining_class_get
   in
+  let name_location =
+    read_optional_field
+      reader
+      CapnpReader.FunctionDefinition.has_define_name_location
+      CapnpReader.FunctionDefinition.define_name_location_get
+      read_location
+  in
   let decorator_callees =
     read_decorator_callees (CapnpReader.FunctionDefinition.decorator_callees_get_list reader)
   in
   ( local_function_id,
     {
       PyreflyReport.ModuleDefinitionsFile.FunctionDefinition.name;
+      name_location;
       local_function_id;
       parent;
       undecorated_signatures;
@@ -819,7 +830,7 @@ module ModuleDefinitionsFile = struct
     let class_definitions =
       CapnpReader.ModuleDefinitions.class_definitions_get_list reader
       |> List.map ~f:read_class_definition
-      |> Location.Map.of_alist_exn
+      |> PyreflyReport.LocalClassId.Map.of_alist_exn
     in
     let global_variables =
       CapnpReader.ModuleDefinitions.global_variables_get_list reader
