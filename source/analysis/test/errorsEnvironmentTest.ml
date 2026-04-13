@@ -281,12 +281,8 @@ let test_overlay context =
       "code_changes.py 3: Incompatible attribute type [8]: Attribute has type `int`; used as \
        `float`.";
     ];
-  assert_overlay_errors
-    ~context
-    ~project
-    ~overlay
-    !&"unsafe_to_strict"
-    ["unsafe_to_strict.py 3: Missing global annotation [5]: Global expression must be annotated."];
+  (* resolve_literal now resolves 1 + 2 to int, so no missing annotation error *)
+  assert_overlay_errors ~context ~project ~overlay !&"unsafe_to_strict" [];
   ()
 
 

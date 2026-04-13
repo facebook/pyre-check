@@ -3533,6 +3533,42 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
           Type.tuple
             (List.map elements ~f:(self#resolve_literal ~cycle_detections ~scoped_type_variables))
       | Expression.Yield _ -> Type.yield Type.Any
+      | Expression.BinaryOperator { BinaryOperator.left; operator; right; _ } -> (
+          let left_type = self#resolve_literal ~cycle_detections ~scoped_type_variables left in
+          let right_type = self#resolve_literal ~cycle_detections ~scoped_type_variables right in
+          let is_int_preserving_operator =
+            match operator with
+            | BinaryOperator.Add
+            | Sub
+            | Mult
+            | Mod
+            | FloorDiv
+            | LShift
+            | RShift
+            | BitOr
+            | BitXor
+            | BitAnd ->
+                true
+            | Div
+            | Pow
+            | MatMult ->
+                false
+          in
+          match left_type, right_type with
+          | t1, t2 when Type.equal t1 Type.integer && Type.equal t2 Type.integer ->
+              if is_int_preserving_operator then
+                Type.integer
+              else if BinaryOperator.equal_operator operator BinaryOperator.Div then
+                Type.float
+              else
+                Type.Any
+          | t1, t2 when Type.equal t1 Type.float && Type.equal t2 Type.float -> Type.float
+          | t1, t2
+            when Type.equal t1 Type.string
+                 && Type.equal t2 Type.string
+                 && BinaryOperator.equal_operator operator BinaryOperator.Add ->
+              Type.string
+          | _ -> Type.Any)
       | _ -> Type.Any
 
     (* Given a Type.Callable.t representing the type of a bare function signature,

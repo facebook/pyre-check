@@ -1239,22 +1239,14 @@ let test_inferred_globals =
                     }
                 ]
               |};
+      (* resolve_literal now resolves 1 + 1 to int, so no inference is needed *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ check_inference_results
            {|
               x = 1 + 1
             |}
            ~target:"test.$toplevel"
-           ~expected:
-             {|
-                [
-                  {
-                    "name": "x",
-                    "location": { "qualifier": "test", "path": "test.py", "line": 2 },
-                    "annotation": "int"
-                  }
-                ]
-              |};
+           ~expected:{| [] |};
       (* Local usage *)
       (* TODO(T84365830): Implement support for global inference due to local usage. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -1333,6 +1325,7 @@ let test_inferred_attributes =
                   }
                 ]
               |};
+      (* resolve_literal now resolves 1 + 1 to int, so no inference is needed *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ check_inference_results
            {|
@@ -1340,18 +1333,8 @@ let test_inferred_attributes =
                   x = 1 + 1
             |}
            ~target:"test.Foo.$class_toplevel"
-           ~expected:
-             {|
-                [
-                  {
-                    "parent": "test.Foo",
-                    "name": "x",
-                    "location": { "qualifier": "test", "path": "test.py", "line": 3 },
-                    "annotation": "int"
-                  }
-                ]
-              |};
-      (* Constructor *)
+           ~expected:{| [] |};
+      (* Constructor — resolve_literal now resolves 1 + 1 to int, so no inference is needed *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ check_inference_results
            {|
@@ -1360,17 +1343,7 @@ let test_inferred_attributes =
                       self.x = 1 + 1
             |}
            ~target:"test.Foo.__init__"
-           ~expected:
-             {|
-                [
-                  {
-                    "parent": "test.Foo",
-                    "name": "x",
-                    "location": { "qualifier": "test", "path": "test.py", "line": 4 },
-                    "annotation": "int"
-                  }
-                ]
-              |};
+           ~expected:{| [] |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ check_inference_results
            {|

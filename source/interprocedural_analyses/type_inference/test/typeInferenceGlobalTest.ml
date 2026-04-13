@@ -76,21 +76,8 @@ let serialization_test context =
     ~expected:
       {|
         {
-          "globals": [
-            {
-              "name": "x",
-              "location": { "qualifier": "test", "path": "*", "line": 5 },
-              "annotation": "int"
-            }
-          ],
-          "attributes": [
-            {
-              "parent": "test.C",
-              "name": "x",
-              "location": { "qualifier": "test", "path": "*", "line": 8 },
-              "annotation": "int"
-            }
-          ],
+          "globals": [],
+          "attributes": [],
           "defines": [
             {
               "name": "test.needs_return",
