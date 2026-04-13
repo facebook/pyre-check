@@ -3563,6 +3563,11 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
               else
                 Type.Any
           | t1, t2 when Type.equal t1 Type.float && Type.equal t2 Type.float -> Type.float
+          (* mixed int/float → float, standard Python numeric tower *)
+          | t1, t2
+            when (Type.equal t1 Type.integer || Type.equal t1 Type.float)
+                 && (Type.equal t2 Type.integer || Type.equal t2 Type.float) ->
+              Type.float
           | t1, t2
             when Type.equal t1 Type.string
                  && Type.equal t2 Type.string

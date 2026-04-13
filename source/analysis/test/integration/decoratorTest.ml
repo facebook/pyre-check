@@ -1085,6 +1085,36 @@ let test_decorator_factories =
              reveal_type(foo)
             |}
            ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[], str]`."];
+      (* int + float → float, standard Python numeric tower *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+             from typing import Callable
+
+             def decorator_factory(x: float) -> Callable[[Callable[[str], int]], Callable[[], str]]: ...
+
+             @decorator_factory(1 + 2.5)
+             def foo(name: str) -> int:
+                 return len(name)
+
+             reveal_type(foo)
+            |}
+           ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[], str]`."];
+      (* float * int → float *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+             from typing import Callable
+
+             def decorator_factory(x: float) -> Callable[[Callable[[str], int]], Callable[[], str]]: ...
+
+             @decorator_factory(2.5 * 3)
+             def foo(name: str) -> int:
+                 return len(name)
+
+             reveal_type(foo)
+            |}
+           ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[], str]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
