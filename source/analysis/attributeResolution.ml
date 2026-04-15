@@ -3585,6 +3585,25 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
                  && BinaryOperator.equal_operator operator BinaryOperator.Mult ->
               Type.string
           | _ -> Type.Any)
+      | Expression.UnaryOperator { UnaryOperator.operator; operand; _ } -> (
+          let operand_type =
+            self#resolve_literal ~cycle_detections ~scoped_type_variables operand
+          in
+          match operator with
+          | UnaryOperator.Not -> Type.bool
+          | UnaryOperator.Negative
+          | UnaryOperator.Positive ->
+              if Type.equal operand_type Type.integer then
+                Type.integer
+              else if Type.equal operand_type Type.float then
+                Type.float
+              else
+                Type.Any
+          | UnaryOperator.Invert ->
+              if Type.equal operand_type Type.integer then
+                Type.integer
+              else
+                Type.Any)
       | _ -> Type.Any
 
     (* Given a Type.Callable.t representing the type of a bare function signature,
