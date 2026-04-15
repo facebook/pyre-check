@@ -4,7 +4,7 @@
   "data": {
     "callable": "eval",
     "filename": "builtins.pyi",
-    "callable_line": 474,
+    "callable_line": 476,
     "sinks": [
       {
         "port": "formal(source, position=0, positional_only)",
@@ -24,7 +24,7 @@
   "data": {
     "callable": "getattr",
     "filename": "builtins.pyi",
-    "callable_line": 476,
+    "callable_line": 478,
     "sinks": [
       {
         "port": "formal(name, position=1, positional_only)",

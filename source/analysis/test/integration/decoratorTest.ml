@@ -1115,6 +1115,37 @@ let test_decorator_factories =
              reveal_type(foo)
             |}
            ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[], str]`."];
+      (* str * int → str, Python string repetition. str.__mul__(SupportsIndex) -> str is modeled in
+         typeshed builtins, so this resolves cleanly with no errors. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+             from typing import Callable
+
+             def decorator_factory(x: str) -> Callable[[Callable[[str], int]], Callable[[], str]]: ...
+
+             @decorator_factory("abc" * 3)
+             def foo(name: str) -> int:
+                 return len(name)
+
+             reveal_type(foo)
+            |}
+           ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[], str]`."];
+      (* int * str → str, Python string repetition (reversed operands) *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+             from typing import Callable
+
+             def decorator_factory(x: str) -> Callable[[Callable[[str], int]], Callable[[], str]]: ...
+
+             @decorator_factory(3 * "abc")
+             def foo(name: str) -> int:
+                 return len(name)
+
+             reveal_type(foo)
+            |}
+           ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[], str]`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|

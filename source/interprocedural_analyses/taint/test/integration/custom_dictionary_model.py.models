@@ -322,7 +322,7 @@
   "data": {
     "callable": "dict.__setitem__",
     "filename": "builtins.pyi",
-    "callable_line": 399,
+    "callable_line": 401,
     "sinks": [
       {
         "port": "formal(__value, position=2, positional_only)",

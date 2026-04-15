@@ -574,7 +574,7 @@
   "data": {
     "callable": "next",
     "filename": "builtins.pyi",
-    "callable_line": 572,
+    "callable_line": 574,
     "tito": [
       {
         "port": "formal(__default, position=1, positional_only)",

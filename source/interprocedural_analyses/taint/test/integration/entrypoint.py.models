@@ -476,7 +476,7 @@
   "data": {
     "callable": "list.append",
     "filename": "builtins.pyi",
-    "callable_line": 422,
+    "callable_line": 424,
     "sinks": [
       {
         "port": "formal(self, position=0, positional_only)",

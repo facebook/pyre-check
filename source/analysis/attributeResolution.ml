@@ -3573,6 +3573,17 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
                  && Type.equal t2 Type.string
                  && BinaryOperator.equal_operator operator BinaryOperator.Add ->
               Type.string
+          (* str * int or int * str → str (string repetition) *)
+          | t1, t2
+            when Type.equal t1 Type.string
+                 && Type.equal t2 Type.integer
+                 && BinaryOperator.equal_operator operator BinaryOperator.Mult ->
+              Type.string
+          | t1, t2
+            when Type.equal t1 Type.integer
+                 && Type.equal t2 Type.string
+                 && BinaryOperator.equal_operator operator BinaryOperator.Mult ->
+              Type.string
           | _ -> Type.Any)
       | _ -> Type.Any
 
