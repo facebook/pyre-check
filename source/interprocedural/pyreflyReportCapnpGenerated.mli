@@ -1,4 +1,9 @@
-(* @generated
+(*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ * @generated
  * @codegen-command: cd ~/fbsource/fbcode/tools/pyre && python3 facebook/scripts/generate_pyrefly_report_capnp.py
  * @codegen-source: fbcode/pyrefly/pyrefly/lib/report/pysa/pysa_report.capnp
  * DO NOT EDIT. *)
