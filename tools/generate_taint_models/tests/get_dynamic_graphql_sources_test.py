@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 import unittest
 from dataclasses import dataclass
@@ -26,23 +26,23 @@ from tools.pyre.tools.generate_taint_models.generator_specifications import (
 )
 from tools.pyre.tools.generate_taint_models.model_generator import  ModelGenerationException
 
-def function1(foo) -> bool:
+def function1(foo: object) -> bool:
     return True
 
 
-def function2(foo, *bar) -> bool:
+def function2(foo: object, *bar: object) -> bool:
     return True
 
 
-def excluded_function(foo) -> bool:
+def excluded_function(foo: object) -> bool:
     return True
 
 
 class TestClass:
-    def method1(self, foo) -> bool:
+    def method1(self, foo: object) -> bool:
         return True
 
-    def method2(self, foo, *bar) -> bool:
+    def method2(self, foo: object, *bar: object) -> bool:
         return True
 
 
@@ -56,7 +56,7 @@ class DirectObject:
     lambda_resolver: bool
 
 
-queryType = GraphQLObjectType(
+queryType: GraphQLObjectType = GraphQLObjectType(
     name="queryType",
     description="GraphQLObject directly created at top level",
     fields={
@@ -70,7 +70,7 @@ queryType = GraphQLObjectType(
     },
 )
 
-SCHEMA = GraphQLSchema(query=queryType)
+SCHEMA: GraphQLSchema = GraphQLSchema(query=queryType)
 
 
 class GetDynamicGraphQLSourcesTest(unittest.TestCase):
