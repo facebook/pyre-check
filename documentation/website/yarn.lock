@@ -3615,10 +3615,10 @@ available-typed-arrays@^1.0.5:
   resolved "https://registry.yarnpkg.com/available-typed-arrays/-/available-typed-arrays-1.0.5.tgz#92f95616501069d07d10edb2fc37d3e1c65123b7"
   integrity sha512-DMD0KiN46eipeziST1LPP/STfDU0sufISXmjSgvVsoU2tqxctQeASejWcfNtxYKqETM1UxQ8sp2OrSBWpHY6sw==
 
-axios@0.30.3:
-  version "0.30.3"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-0.30.3.tgz#ab1be887a2d37dd9ebc219657704180faf2c4920"
-  integrity sha512-5/tmEb6TmE/ax3mdXBc/Mi6YdPGxQsv+0p5YlciXWt3PHIn0VamqCXhRMtScnwY3lbgSXLneOuXAKUhgmSRpwg==
+axios@0.31.0:
+  version "0.31.0"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-0.31.0.tgz#cd2c9a365d12e4324398834b06abc0d8af767ba6"
+  integrity sha512-HGIUj/P74co3rSLBV9SHz9LMgCmrXFEtkfMcC5r6bS5j3dBHUcAje2tS4fmU6WM20kuhvUX04XE58594dpgi1g==
   dependencies:
     follow-redirects "^1.15.4"
     form-data "^4.0.4"
