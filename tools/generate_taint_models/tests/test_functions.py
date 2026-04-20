@@ -3,13 +3,16 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
+
+from typing import Callable, List
 
 
 def testA() -> None:
     pass
 
 
+# pyre-fixme[2]: Parameter must be annotated.
 def testB(x) -> None:
     pass
 
@@ -51,7 +54,7 @@ class TestChildClassB(TestClass):
         ...
 
 
-all_functions = [
+all_functions: List[Callable[..., None]] = [
     testA,
     testB,
     testC,
