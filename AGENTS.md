@@ -86,8 +86,8 @@ By default, Pysa uses Pyre as its type provider. It can also use [Pyrefly](https
 Building the Pyrefly binary requires `buck2` (Meta internal only):
 
 ```bash
-buck2 build --show-full-simple-output @fbcode//mode/opt fbcode//pyrefly/pyrefly:pyrefly
-# This prints a path like: /data/users/<user>/.../__pyrefly__/pyrefly on stdout.
+buck2 build --show-full-simple-output @fbcode//mode/opt fbcode//pyrefly/pyrefly:fbpyrefly
+# This prints a path like: /data/users/<user>/.../__pyrefly__/fbpyrefly on stdout.
 ```
 
 To run OCaml tests with Pyrefly, set the `PYREFLY_BINARY` environment variable:
