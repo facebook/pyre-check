@@ -14,7 +14,7 @@ let output_query_response ~output_file ~content =
       Out_channel.output_string out_channel content;
       Out_channel.output_string out_channel "\n";
       Out_channel.close out_channel
-  | None -> Log.info "%s\n%!" content
+  | None -> Log.print "%s\n%!" content
 
 
 let run_pyrefly_query ~pyrefly_results ~query ~configuration ~scheduler =
