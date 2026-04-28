@@ -63,7 +63,7 @@ let read_source_path reader =
   | CapnpReader.SourcePath.BundledTypeshedThirdParty path ->
       PyreflyReport.ModulePath.BundledTypeshedThirdParty (PyrePath.create_absolute path)
   | CapnpReader.SourcePath.BundledThirdParty path ->
-      PyreflyReport.ModulePath.BundledTypeshed (PyrePath.create_absolute path)
+      PyreflyReport.ModulePath.BundledThirdParty (PyrePath.create_absolute path)
   | CapnpReader.SourcePath.Undefined _ -> failwith "Unknown SourcePath variant in capnp"
 
 

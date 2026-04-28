@@ -62,6 +62,7 @@ module ModulePath = struct
     | Memory of PyrePath.t
     | BundledTypeshed of PyrePath.t
     | BundledTypeshedThirdParty of PyrePath.t
+    | BundledThirdParty of PyrePath.t
   [@@deriving compare, equal, show]
 
   let artifact_file_path ~pyrefly_directory = function
@@ -78,6 +79,12 @@ module ModulePath = struct
         Some
           (pyrefly_directory
           |> PyrePath.append ~element:"typeshed_third_party"
+          |> PyrePath.append ~element:(PyrePath.absolute path)
+          |> ArtifactPath.create)
+    | BundledThirdParty path ->
+        Some
+          (pyrefly_directory
+          |> PyrePath.append ~element:"third_party"
           |> PyrePath.append ~element:(PyrePath.absolute path)
           |> ArtifactPath.create)
 end

@@ -49,6 +49,7 @@ module ModulePath : sig
     | Memory of PyrePath.t
     | BundledTypeshed of PyrePath.t
     | BundledTypeshedThirdParty of PyrePath.t
+    | BundledThirdParty of PyrePath.t
   [@@deriving compare, equal, show]
 
   val artifact_file_path : pyrefly_directory:PyrePath.t -> t -> ArtifactPath.t option

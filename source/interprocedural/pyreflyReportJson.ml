@@ -181,6 +181,8 @@ module ModulePath = struct
         Ok (PyreflyReport.ModulePath.BundledTypeshed (PyrePath.create_absolute path))
     | `Assoc [("BundledTypeshedThirdParty", `String path)] ->
         Ok (PyreflyReport.ModulePath.BundledTypeshedThirdParty (PyrePath.create_absolute path))
+    | `Assoc [("BundledThirdParty", `String path)] ->
+        Ok (PyreflyReport.ModulePath.BundledThirdParty (PyrePath.create_absolute path))
     | json ->
         Error
           (PyreflyReport.FormatError.UnexpectedJsonType { json; message = "expected a module path" })

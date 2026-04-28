@@ -669,6 +669,7 @@ module ReadWrite = struct
             | ModulePath.BundledTypeshed path -> "typeshed:/" :: pyre_path_elements path
             | ModulePath.BundledTypeshedThirdParty path ->
                 "typeshed-third-party:/" :: pyre_path_elements path
+            | ModulePath.BundledThirdParty path -> "third-party:/" :: pyre_path_elements path
           in
           let rec find_shortest_unique_prefix ~prefix_length modules_with_path =
             let map =
@@ -3543,7 +3544,8 @@ module ReadOnly = struct
       | Namespace path
       | Memory path
       | BundledTypeshed path
-      | BundledTypeshedThirdParty path ->
+      | BundledTypeshedThirdParty path
+      | BundledThirdParty path ->
           PyrePath.absolute path
     in
     let instantiate_error
