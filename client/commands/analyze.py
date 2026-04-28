@@ -738,7 +738,7 @@ def run(
                 configuration,
                 pyrefly_binary_path,
                 pyrefly_results,
-                show_type_errors=False,
+                show_type_errors=analyze_arguments.show_type_errors,
             )
             if return_code != commands.ExitCode.SUCCESS:
                 return return_code

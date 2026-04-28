@@ -458,6 +458,12 @@ def pyre(
     help="Override location of the Pyrefly binary.",
 )
 @click.option(
+    "--show-type-errors",
+    is_flag=True,
+    default=False,
+    help="Show type errors from Pyrefly.",
+)
+@click.option(
     "--dump-call-graph",
     type=str,
     help="Dump the call graph in the given file.",
@@ -651,6 +657,7 @@ def analyze(
     output_format: Optional[str],
     use_pyrefly: bool,
     pyrefly_binary: Optional[str],
+    show_type_errors: bool,
     pyrefly_results: Optional[str],
     dump_call_graph: Optional[str],
     repository_root: Optional[str],
@@ -742,6 +749,7 @@ def analyze(
             ),
             use_pyrefly=use_pyrefly,
             pyrefly_binary=pyrefly_binary,
+            show_type_errors=show_type_errors,
             pyrefly_results=pyrefly_results,
             sequential=command_argument.sequential,
             taint_models_path=list(taint_models_path),
@@ -1036,7 +1044,7 @@ def kill(context: click.Context, with_fire: bool) -> int:
         [kind.value for kind in language_server_features.TypeCoverageAvailability]
     ),
     default=language_server_features.LanguageServerFeatures.type_coverage.value,
-    help="Availability of the type coverage langauge server feature",
+    help="Availability of the type coverage language server feature",
     hidden=True,
 )
 @click.option(
@@ -1045,7 +1053,7 @@ def kill(context: click.Context, with_fire: bool) -> int:
         [kind.value for kind in language_server_features.TypeErrorsAvailability]
     ),
     default=language_server_features.LanguageServerFeatures.type_errors.value,
-    help="Availability of the type errors langauge server feature",
+    help="Availability of the type errors language server feature",
     hidden=True,
 )
 @click.option(
