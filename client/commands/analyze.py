@@ -18,13 +18,14 @@ import subprocess
 import tempfile
 import time
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Sequence
+from typing import Any, Dict, IO, Iterator, List, Optional, Sequence
 
 from .. import (
     backend_arguments,
     command_arguments,
     configuration as configuration_module,
     error as error_module,
+    find_directories,
     frontend_configuration,
     log,
 )
@@ -523,25 +524,130 @@ def _get_server_start_command(
     return start_command
 
 
+def _log_pyrefly_type_errors(output: str) -> None:
+    try:
+        data = json.loads(output)
+    except json.JSONDecodeError:
+        LOG.warning("Failed to parse Pyrefly type errors")
+        return
+    errors = data.get("errors", [])
+    for error in errors:
+        path = error.get("path", "<unknown>")
+        line = error.get("line", 0)
+        column = error.get("column", 0)
+        description = error.get("description", "")
+        name = error.get("name", "")
+        LOG.error(
+            "%s:%d:%d %s [%s]",
+            path,
+            line,
+            column,
+            description,
+            name,
+        )
+
+
+def _build_buck_source_db(
+    configuration: frontend_configuration.Base,
+    buck_targets: Sequence[str],
+    source_db_path: str,
+    stderr: IO[str],
+) -> commands.ExitCode:
+    bxl_command = ["buck2"]
+    buck_isolation_prefix = configuration.get_buck_isolation_prefix()
+    if buck_isolation_prefix is not None and buck_isolation_prefix != "":
+        bxl_command.extend(["--isolation-dir", buck_isolation_prefix])
+    bxl_command.append("bxl")
+    buck_mode = configuration.get_buck_mode()
+    if buck_mode is not None:
+        bxl_command.append(buck_mode)
+    bxl_command.extend(
+        [
+            "prelude//python/sourcedb/pysa_merged_source_db.bxl:run",
+            "--client-metadata=id=pysa",
+            "--",
+        ]
+    )
+    for target in buck_targets:
+        bxl_command.extend(["--target", target])
+
+    LOG.debug("Running command: %s", log.format_command(bxl_command))
+    with open(source_db_path, "w") as source_db_file:
+        # lint-ignore: NoUnsafeExecRule
+        bxl_result = subprocess.run(
+            bxl_command,
+            stdout=source_db_file,
+            stderr=stderr,
+        )
+    _flush_log_file()
+
+    if bxl_result.returncode != 0:
+        LOG.error(
+            "Buck BXL exited with return code: %d.",
+            bxl_result.returncode,
+        )
+        if bxl_result.returncode in (1, 3):
+            return commands.ExitCode.BUCK_USER_ERROR
+        return commands.ExitCode.BUCK_INTERNAL_ERROR
+
+    return commands.ExitCode.SUCCESS
+
+
 def _run_pyrefly(
-    pyrefly_binary_path: Path, pyrefly_results: str, forward_stdout: bool
+    configuration: frontend_configuration.Base,
+    pyrefly_binary_path: Path,
+    pyrefly_results: str,
+    show_type_errors: bool = True,
 ) -> commands.ExitCode:
     with (
         backend_arguments.backend_log_file(prefix="pyrefly_check") as log_file,
         start.background_logging(Path(log_file.name)),
     ):
-        pyrefly_check_command = [
-            str(pyrefly_binary_path),
-            "check",
-            "--verbose",
-            "--report-pysa",
-            pyrefly_results,
-        ]
+        buck_targets = configuration.get_buck_targets()
+        if buck_targets is not None:
+            source_db_path = os.path.join(pyrefly_results, "buck_source_db.json")
+            exit_code = _build_buck_source_db(
+                configuration,
+                buck_targets,
+                source_db_path,
+                stderr=log_file.file,
+            )
+            if exit_code != commands.ExitCode.SUCCESS:
+                return exit_code
+
+            pyrefly_working_directory = find_directories.find_repository_root()
+            type_errors_path = None  # Type errors are written to stdout
+            pyrefly_check_command = [
+                str(pyrefly_binary_path),
+                "buck-check",
+                "--verbose",
+                "--show-progress-bar",
+                source_db_path,
+                "--report-pysa",
+                pyrefly_results,
+            ]
+        else:
+            pyrefly_working_directory = None
+            type_errors_path = os.path.join(pyrefly_results, "type_errors.json")
+            pyrefly_check_command = [
+                str(pyrefly_binary_path),
+                "check",
+                "--verbose",
+                "--report-pysa",
+                pyrefly_results,
+                "--output-format",
+                "json",
+                "--output",
+                type_errors_path,
+            ]
+
+        LOG.debug("Running command: %s", log.format_command(pyrefly_check_command))
         # lint-ignore: NoUnsafeExecRule
         result = subprocess.run(
             pyrefly_check_command,
             stdout=subprocess.PIPE,
             stderr=log_file.file,
+            cwd=pyrefly_working_directory,
             universal_newlines=True,
             errors="replace",
         )
@@ -550,8 +656,12 @@ def _run_pyrefly(
         return_code = result.returncode
         # Keep in sync with `CommandExitStatus` in Pyrefly.
         if return_code == 0 or return_code == 1:
-            if forward_stdout and result.stdout:
-                LOG.info("Pyrefly output:\n%s", result.stdout)
+            if show_type_errors:
+                if type_errors_path is not None and os.path.exists(type_errors_path):
+                    with open(type_errors_path) as type_errors_file:
+                        _log_pyrefly_type_errors(type_errors_file.read())
+                elif result.stdout:
+                    _log_pyrefly_type_errors(result.stdout)
             return commands.ExitCode.SUCCESS
         else:
             LOG.error(f"Pyrefly exited with error return code: {return_code}.")
@@ -625,9 +735,10 @@ def run(
             temporary_file.close()
 
             return_code = _run_pyrefly(
+                configuration,
                 pyrefly_binary_path,
                 pyrefly_results,
-                forward_stdout=(save_results_to is None),
+                show_type_errors=False,
             )
             if return_code != commands.ExitCode.SUCCESS:
                 return return_code

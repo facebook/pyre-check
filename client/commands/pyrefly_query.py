@@ -112,9 +112,10 @@ def run(
         temporary_file.close()
 
         return_code = _run_pyrefly(
+            configuration,
             pyrefly_binary_path,
             temporary_pyrefly_results,
-            forward_stdout=False,
+            show_type_errors=False,
         )
         if return_code != commands.ExitCode.SUCCESS:
             return return_code

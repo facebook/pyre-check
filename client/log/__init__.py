@@ -13,6 +13,7 @@ from .log import (  # noqa: F401
     enable_file_logging,
     file_tailer,
     Format,
+    format_command,
     get_input,
     get_optional_input,
     get_yes_no_input,

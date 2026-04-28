@@ -17,6 +17,7 @@ import io
 import logging
 import logging.handlers
 import re
+import shlex
 import sys
 import threading
 import time
@@ -414,6 +415,10 @@ def get_optional_input(prompt: str, default: str) -> str:
 def get_input(prompt: str, suffix: str = "") -> str:
     LOG.log(PROMPT, prompt + suffix)
     return input().strip()
+
+
+def format_command(command: Sequence[str]) -> str:
+    return " ".join(shlex.quote(argument) for argument in command)
 
 
 def truncate(message: str, size: int) -> str:
