@@ -1,7 +1,7 @@
 ---
 name: architecture
 description: Use when you need to understand the Pyre or Pysa codebase architecture, find where specific functionality is implemented, or navigate the source directory structure. Use when working on OCaml code, debugging type checking or taint analysis issues, or exploring the codebase.
-oncalls: pysa
+oncalls: ['pysa']
 ---
 
 # Pyre Architecture
