@@ -27,6 +27,8 @@ module Error = PyreflyReport.Error
 
 exception PyreflyFileFormatError = PyreflyReport.PyreflyFileFormatError
 
+exception NoSourceFilesToAnalyze
+
 module ModulePath = PyreflyReport.ModulePath
 module ModuleId = PyreflyReport.ModuleId
 module LocalClassId = PyreflyReport.LocalClassId
@@ -705,6 +707,8 @@ module ReadWrite = struct
     (* For every module `a.b.c`, make sure that the module `a` exists. If not, then create an
        implicit empty module `a`. *)
     let add_implicit_top_level_modules qualifier_to_module_map =
+      if Map.is_empty qualifier_to_module_map then
+        raise NoSourceFilesToAnalyze;
       let last_module_id =
         qualifier_to_module_map
         |> Map.data

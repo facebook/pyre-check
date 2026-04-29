@@ -16,6 +16,7 @@ module ExitStatus = struct
     | TaintConfigurationError
     | ModelVerificationError
     | PyreflyFileFormatError
+    | NoSourceFilesToAnalyze
 
   let exit_code = function
     (* 1-9 are reserved for CheckCommand.ExitStatus *)
@@ -23,6 +24,7 @@ module ExitStatus = struct
     | TaintConfigurationError -> 10
     | ModelVerificationError -> 11
     | PyreflyFileFormatError -> 12
+    | NoSourceFilesToAnalyze -> 13
 end
 
 module AnalyzeConfiguration = struct
@@ -472,6 +474,7 @@ let run_analyze
           | Taint.ModelVerificationError.ModelVerificationErrors _ -> false
           | Taint.Cache.BuildCacheOnly -> false
           | Interprocedural.PyreflyApi.PyreflyFileFormatError _ -> false
+          | Interprocedural.PyreflyApi.NoSourceFilesToAnalyze -> false
           | _ -> true)
         ~f:(fun scheduler ->
           with_performance_tracking ~debug ~f:(fun () ->
@@ -501,6 +504,9 @@ let on_exception = function
   | Interprocedural.PyreflyApi.PyreflyFileFormatError { path; error } ->
       Log.error "%a: %a" PyrePath.pp path Interprocedural.PyreflyApi.Error.pp error;
       ExitStatus.PyreflyFileFormatError
+  | Interprocedural.PyreflyApi.NoSourceFilesToAnalyze ->
+      Log.error "No source files to analyze. Check your configuration.";
+      ExitStatus.NoSourceFilesToAnalyze
   | exn -> ExitStatus.CheckStatus (CheckCommand.on_exception exn)
 
 

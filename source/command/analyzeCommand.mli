@@ -13,6 +13,7 @@ module ExitStatus : sig
     | TaintConfigurationError
     | ModelVerificationError
     | PyreflyFileFormatError
+    | NoSourceFilesToAnalyze
 
   val exit_code : t -> int
 end

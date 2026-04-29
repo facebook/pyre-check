@@ -33,6 +33,7 @@ class ExitCode(enum.IntEnum):
     PYREFLY_FILE_FORMAT_ERROR = 14
     PYREFLY_INTERNAL_ERROR = 15
     MISSING_PYREFLY_BINARY = 16
+    NO_SOURCE_FILES_TO_ANALYZE = 17
     # If the process exited due to a signal, this will be the negative signal number.
     SIGSEGV = -signal.SIGSEGV
 

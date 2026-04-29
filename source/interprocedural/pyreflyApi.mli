@@ -38,6 +38,8 @@ exception
     error: Error.t;
   }
 
+exception NoSourceFilesToAnalyze
+
 (* Exposed for testing purposes *)
 module FuncDefIndex : sig
   type t [@@deriving compare, equal, sexp, hash, show]
