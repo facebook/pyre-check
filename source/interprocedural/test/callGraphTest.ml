@@ -7008,6 +7008,66 @@ let test_call_graph_of_define =
                    } );
              ]
            ();
+      (* `for x[0] in y` is desugared into `x[0] = y.__iter__().__next__()`, then `x.__setitem__(0,
+         y.__iter__().__next__())`. This exercises the combination of SubscriptSetItem nested inside
+         ForAssign origins. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~_migrated_to_pyrefly:true
+           ~skip_for_pyrefly:false
+           ~source:
+             {|
+       import typing
+       def foo(x: typing.List[int], y: typing.List[int]):
+         for x[0] in y:
+           pass
+      |}
+           ~define_name:"test.foo"
+           ~expected:
+             [
+               ( "4:14-4:15|artificial-call|for-iter",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~receiver_class:"list"
+                            (Target.Regular.Method
+                               { class_name = "list"; method_name = "__iter__"; kind = Normal });
+                        ]
+                      ()) );
+               ( "4:14-4:15|artificial-call|for-next",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~receiver_class:"typing.Iterator"
+                            ~return_type:(Some ReturnType.integer)
+                            (Target.Regular.Method
+                               {
+                                 class_name = "typing.Iterator";
+                                 method_name = "__next__";
+                                 kind = Normal;
+                               });
+                        ]
+                      ()) );
+               ( "4:6-4:15|artificial-call|for-assign>subscript-set-item",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~call_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            ~receiver_class:"list"
+                            (Target.Regular.Method
+                               { class_name = "list"; method_name = "__setitem__"; kind = Normal });
+                        ]
+                      ()) );
+             ]
+           ();
     ]
 
 
