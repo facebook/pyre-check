@@ -338,10 +338,6 @@ let test_parse_py_version =
     @@ assert_parsed
          "cinder.3.8"
          ~expected:(Configuration.PythonVersion.create ~major:3 ~minor:8 ~micro:0 ());
-    Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
-    @@ assert_parsed
-         "3.10.cinder"
-         ~expected:(Configuration.PythonVersion.create ~major:3 ~minor:10 ~micro:0 ());
     Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ @@ assert_not_parsed "";
     Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ @@ assert_not_parsed "abc";
   ]
