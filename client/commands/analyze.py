@@ -600,7 +600,8 @@ def _run_pyrefly(
     configuration: frontend_configuration.Base,
     pyrefly_binary_path: Path,
     pyrefly_results: str,
-    show_type_errors: bool = True,
+    show_type_errors: bool = False,
+    skip_buck_dependencies: bool = False,
 ) -> commands.ExitCode:
     with (
         backend_arguments.backend_log_file(prefix="pyrefly_check") as log_file,
@@ -625,6 +626,7 @@ def _run_pyrefly(
                 "buck-check",
                 "--verbose",
                 "--progress-bar=simple",
+                *(["--check-dependencies"] if not skip_buck_dependencies else []),
                 source_db_path,
                 "--report-pysa",
                 pyrefly_results,
@@ -743,6 +745,7 @@ def run(
                 pyrefly_binary_path,
                 pyrefly_results,
                 show_type_errors=analyze_arguments.show_type_errors,
+                skip_buck_dependencies=analyze_arguments.skip_buck_dependencies,
             )
             if return_code != commands.ExitCode.SUCCESS:
                 return return_code

@@ -464,6 +464,12 @@ def pyre(
     help="Show type errors from Pyrefly.",
 )
 @click.option(
+    "--skip-buck-dependencies",
+    is_flag=True,
+    default=False,
+    help="Skip checking dependencies in Pyrefly buck-check mode.",
+)
+@click.option(
     "--dump-call-graph",
     type=str,
     help="Dump the call graph in the given file.",
@@ -658,6 +664,7 @@ def analyze(
     use_pyrefly: bool,
     pyrefly_binary: Optional[str],
     show_type_errors: bool,
+    skip_buck_dependencies: bool,
     pyrefly_results: Optional[str],
     dump_call_graph: Optional[str],
     repository_root: Optional[str],
@@ -750,6 +757,7 @@ def analyze(
             use_pyrefly=use_pyrefly,
             pyrefly_binary=pyrefly_binary,
             show_type_errors=show_type_errors,
+            skip_buck_dependencies=skip_buck_dependencies,
             pyrefly_results=pyrefly_results,
             sequential=command_argument.sequential,
             taint_models_path=list(taint_models_path),

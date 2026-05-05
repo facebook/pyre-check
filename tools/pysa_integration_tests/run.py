@@ -31,6 +31,7 @@ def main(
     skip_model_verification: bool,
     skip_model_verification_with_pyrefly: bool,
     run_from_source: bool,
+    run_from_buck: bool,
     passthrough_args: Optional[List[str]],
     save_results_to: Optional[Path],
     typeshed: Optional[Path],
@@ -67,6 +68,7 @@ def main(
         passthrough_args=passthrough_args,
         skip_model_verification=skip_model_verification,
         run_from_source=run_from_source,
+        run_from_buck=run_from_buck,
         save_results_to=save_results_to,
         typeshed=typeshed,
         compact_ocaml_heap=compact_ocaml_heap,
@@ -110,6 +112,11 @@ if __name__ == "__main__":
         "--run-from-source",
         action="store_true",
         help="Run pysa from source with the open source setup",
+    )
+    parser.add_argument(
+        "--run-from-buck",
+        action="store_true",
+        help="Run pysa from buck with `buck run fbcode//tools/pyre/facebook/client:pysa`",
     )
     parser.add_argument(
         "--require-pyre-env",
@@ -168,6 +175,7 @@ if __name__ == "__main__":
         skip_model_verification=parsed.skip_model_verification,
         skip_model_verification_with_pyrefly=parsed.skip_model_verification_with_pyrefly,
         run_from_source=parsed.run_from_source,
+        run_from_buck=parsed.run_from_buck,
         passthrough_args=parsed.passthrough_args,
         save_results_to=parsed.save_results_to,
         typeshed=parsed.typeshed,

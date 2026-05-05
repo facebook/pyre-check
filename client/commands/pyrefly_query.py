@@ -86,6 +86,7 @@ def run(
     pyrefly_results: Optional[str],
     output_file: Optional[str],
     user_provided_pyrefly_binary: Optional[str],
+    skip_buck_dependencies: bool = False,
 ) -> commands.ExitCode:
     start_command = _get_server_start_command(configuration)
 
@@ -116,6 +117,7 @@ def run(
             pyrefly_binary_path,
             temporary_pyrefly_results,
             show_type_errors=False,
+            skip_buck_dependencies=skip_buck_dependencies,
         )
         if return_code != commands.ExitCode.SUCCESS:
             return return_code

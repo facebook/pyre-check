@@ -210,6 +210,7 @@ def run_pysa(
     repository_root: Optional[Path] = None,
     excludes: Optional[Sequence[str]] = None,
     run_from_source: bool = False,
+    run_from_buck: bool = False,
     typeshed: Optional[Path] = None,
     compact_ocaml_heap: bool = False,
     check_invariants: bool = False,
@@ -221,6 +222,7 @@ def run_pysa(
     shard_taint_output: bool = False,
     error_help: Optional[str] = None,
     use_pyrefly: bool = False,
+    skip_buck_dependencies: bool = False,
 ) -> str:
     """Run pysa for the given test and produce a list of errors in JSON."""
     if run_from_source:
@@ -228,13 +230,20 @@ def run_pysa(
             "python",
             "-mpyre-check.client.pyre",
         ]
+    elif run_from_buck:
+        command = [
+            "buck",
+            "run",
+            "fbcode//tools/pyre/facebook/client:pysa",
+            "--",
+        ]
     else:
         command = ["pyre"]
 
     command.append("--noninteractive")
 
     if isolation_prefix is not None:
-        command.extend(["--isolation-prefix", isolation_prefix])
+        command.append(f"--isolation-prefix={isolation_prefix}")
 
     if number_of_workers is not None:
         command.append(f"--number-of-workers={number_of_workers}")
@@ -254,6 +263,9 @@ def run_pysa(
 
     if use_pyrefly:
         command.append("--use-pyrefly")
+
+    if skip_buck_dependencies:
+        command.append("--skip-buck-dependencies")
 
     if skip_model_verification:
         command.append("--no-verify")
