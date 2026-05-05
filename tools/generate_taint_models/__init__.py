@@ -19,7 +19,7 @@ from typing import Dict, List, Mapping, Optional, Sequence
 
 from typing_extensions import Final
 
-from ...api.connection import Error as PyreQueryError, PyreConnection, PyreStartError
+from ...api.connection import Error as PyreQueryError, PyreStartError
 from ...client import remote_logger
 from .annotated_function_generator import (  # noqa
     AnnotatedFunctionGenerator as AnnotatedFunctionGenerator,
@@ -98,11 +98,6 @@ class GenerationArguments:
     verbose: bool
     output_directory: Final[Optional[str]]
 
-    # Pyre arguments.
-    no_saved_state: bool = False
-    isolation_prefix: Optional[str] = None
-    stop_pyre_server: bool = False
-
 
 def _file_exists(path: str) -> str:
     if not os.path.exists(path):
@@ -117,13 +112,17 @@ def _parse_arguments(
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
     parser.add_argument("--mode", action="append", choices=generator_options.keys())
     parser.add_argument(
-        "--no-saved-state", action="store_true", help="Disable pyre saved state"
+        "--no-saved-state",
+        action="store_true",
+        default=False,
+        help="Deprecated and unused.",
     )
+    parser.add_argument("--isolation-prefix", type=str, help="Deprecated and unused.")
     parser.add_argument(
-        "--isolation-prefix", type=str, help="Buck isolation prefix when running pyre"
-    )
-    parser.add_argument(
-        "--stop-pyre-server", action="store_true", help="Stop the pyre server once done"
+        "--stop-pyre-server",
+        action="store_true",
+        default=False,
+        help="Deprecated and unused.",
     )
     parser.add_argument(
         "--output-directory", type=_file_exists, help="Directory to write models to"
@@ -133,9 +132,6 @@ def _parse_arguments(
         mode=arguments.mode,
         verbose=arguments.verbose,
         output_directory=arguments.output_directory,
-        no_saved_state=arguments.no_saved_state,
-        isolation_prefix=arguments.isolation_prefix,
-        stop_pyre_server=arguments.stop_pyre_server,
     )
 
 
@@ -174,7 +170,6 @@ def run_from_parsed_arguments(
     default_modes: List[str],
     logger_executable: Optional[str] = None,
     include_default_modes: bool = False,
-    pyre_connection: Optional[PyreConnection] = None,
 ) -> int:
     try:
         argument_modes = arguments.mode or []
@@ -182,12 +177,6 @@ def run_from_parsed_arguments(
             modes = list(set(argument_modes + default_modes))
         else:
             modes = argument_modes
-
-        if pyre_connection is not None and arguments.no_saved_state:
-            pyre_connection.add_arguments("--no-saved-state")
-        isolation_prefix = arguments.isolation_prefix
-        if pyre_connection is not None and isolation_prefix is not None:
-            pyre_connection.add_arguments("--isolation-prefix", isolation_prefix)
 
         generated_models: Dict[str, Sequence[Model]] = {}
         for mode in modes:
@@ -220,10 +209,6 @@ def run_from_parsed_arguments(
                 )
 
         _report_results(generated_models, arguments.output_directory)
-
-        if pyre_connection is not None and arguments.stop_pyre_server:
-            LOG.info("Stopping the pyre server.")
-            pyre_connection.stop_server(ignore_errors=True)
 
         return ExitCode.SUCCESS
     except PyreStartError as error:
@@ -259,7 +244,6 @@ def run_generators(
     verbose: bool = False,
     logger_executable: Optional[str] = None,
     include_default_modes: bool = False,
-    pyre_connection: Optional[PyreConnection] = None,
 ) -> int:
     arguments = _parse_arguments(generator_options)
     logging.basicConfig(
@@ -274,5 +258,4 @@ def run_generators(
         default_modes,
         logger_executable,
         include_default_modes=include_default_modes,
-        pyre_connection=pyre_connection,
     )
