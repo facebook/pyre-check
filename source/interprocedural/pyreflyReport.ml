@@ -276,9 +276,46 @@ module GlobalCallableIdSharedMemoryKey = struct
     Format.asprintf "%d|%a" (ModuleId.to_int module_id) LocalFunctionId.pp local_function_id
 end
 
-(* Unique identifier for a module, assigned by pysa. This maps to a specific source file. Note that
-   this is converted into `Reference.t` during the taint analysis for backward compatibility with
-   the old Pyre1 API, which assumes a module name can only map to one source file. *)
+(* The name of a module (e.g., `django.http.request`). This is a plain dotted name without any path
+   prefix. Compare with `ModuleQualifier` which may include a path prefix for disambiguation. *)
+module ModuleName : sig
+  type t [@@deriving compare, equal, sexp, hash, show]
+
+  val create : Reference.t -> t
+
+  val to_reference : t -> Reference.t
+
+  val from_reference_unchecked : Reference.t -> t
+
+  module Map : Map.S with type Key.t = t
+end = struct
+  module T = struct
+    type t = Reference.t [@@deriving compare, equal, sexp, hash, show]
+  end
+
+  include T
+
+  let create = Fn.id
+
+  let to_reference = Fn.id
+
+  let from_reference_unchecked = Fn.id
+
+  module Map = Map.Make (T)
+end
+
+(* A unique qualifier for a module and source path.
+ *
+ * When multiple modules share the same name (e.g., a `.pyi` stub and a `.py` source
+ * for `django.http.request`), the qualifier includes a path prefix to disambiguate
+ * (e.g., `request.py:django.http.request`).
+ *
+ * For modules with a unique name, the qualifier is the same as the module name (no prefix).
+ * Each module qualifier maps to a unique source file.
+ *
+ * Note that this is converted into `Reference.t` during the taint analysis for
+ * backward compatibility with the old Pyre1 API, which assumes a module name can only map to one
+ * source file. *)
 module ModuleQualifier : sig
   type t [@@deriving compare, equal, sexp, hash, show]
 
@@ -291,6 +328,9 @@ module ModuleQualifier : sig
   (* This is marked `unchecked` because it doesn't actually validate that the reference is a valid
      module qualifier. *)
   val from_reference_unchecked : Reference.t -> t
+
+  (* Return the module name without the path prefix. *)
+  val bare_module_name : t -> ModuleName.t
 
   module Map : Map.S with type Key.t = t
 end = struct
@@ -324,6 +364,22 @@ end = struct
 
   let from_reference_unchecked = Fn.id
 
+  let bare_module_name qualifier =
+    let parts = Reference.as_list qualifier in
+    let reference =
+      if List.exists parts ~f:(fun s -> String.contains s ':') then
+        parts
+        |> String.concat ~sep:"."
+        |> String.rsplit2_exn ~on:':'
+        |> snd
+        |> String.split ~on:'.'
+        |> Reference.create_from_list
+      else
+        qualifier
+    in
+    ModuleName.from_reference_unchecked reference
+
+
   module Map = Map.Make (T)
 end
 
@@ -332,6 +388,13 @@ module ModuleQualifierSharedMemoryKey = struct
 
   let to_string key =
     key |> ModuleQualifier.to_reference |> Analysis.SharedMemoryKeys.ReferenceKey.to_string
+end
+
+module ModuleNameSharedMemoryKey = struct
+  type t = ModuleName.t [@@deriving compare]
+
+  let to_string key =
+    key |> ModuleName.to_reference |> Analysis.SharedMemoryKeys.ReferenceKey.to_string
 end
 
 (* Filename for a pyrefly module information file. *)

@@ -591,12 +591,25 @@ module ModelQueries : sig
       (* module global exists, but type is unknown. *)
       | UnknownModuleGlobal of { name: Ast.Reference.t }
     [@@deriving show]
+
+    val is_module : t -> bool
+
+    val is_class : t -> bool
   end
 
-  val resolve_qualified_name_to_global
+  val mangle_top_level_name : Ast.Reference.t -> Ast.Reference.t
+
+  val demangle_class_attribute : Ast.Reference.t -> Ast.Reference.t
+
+  val has_class_attribute_form : Ast.Reference.t -> bool
+
+  val mangle_class_attribute : Ast.Reference.t -> Ast.Reference.t
+
+  val resolve_user_qualified_name
     :  ReadOnly.t ->
     is_property_getter:bool ->
     is_property_setter:bool ->
+    verify_class_attributes:bool ->
     Ast.Reference.t ->
     Global.t option
 

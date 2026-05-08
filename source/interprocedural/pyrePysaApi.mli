@@ -378,18 +378,27 @@ end
 module ModelQueries : sig
   val property_decorators : String.Set.t
 
+  val mangle_top_level_name : Ast.Reference.t -> Ast.Reference.t
+
+  val demangle_class_attribute : Ast.Reference.t -> Ast.Reference.t
+
+  val has_class_attribute_form : Ast.Reference.t -> bool
+
+  val mangle_class_attribute : Ast.Reference.t -> Ast.Reference.t
+
   module FunctionParameter = Analysis.PyrePysaEnvironment.ModelQueries.FunctionParameter
   module FunctionParameters = Analysis.PyrePysaEnvironment.ModelQueries.FunctionParameters
   module FunctionSignature = Analysis.PyrePysaEnvironment.ModelQueries.FunctionSignature
   module Function = Analysis.PyrePysaEnvironment.ModelQueries.Function
   module Global = Analysis.PyrePysaEnvironment.ModelQueries.Global
 
-  val resolve_qualified_name_to_global
+  val resolve_user_qualified_name
     :  ReadOnly.t ->
     is_property_getter:bool ->
     is_property_setter:bool ->
+    verify_class_attributes:bool ->
     Ast.Reference.t ->
-    Global.t option
+    Global.t list
 
   val class_method_signatures
     :  ReadOnly.t ->

@@ -40,6 +40,8 @@ module GlobalCallableId = PyreflyReport.GlobalCallableId
 module PyreflyTarget = PyreflyReport.PyreflyTarget
 module ModuleIdSharedMemoryKey = PyreflyReport.ModuleIdSharedMemoryKey
 module GlobalCallableIdSharedMemoryKey = PyreflyReport.GlobalCallableIdSharedMemoryKey
+module ModuleName = PyreflyReport.ModuleName
+module ModuleNameSharedMemoryKey = PyreflyReport.ModuleNameSharedMemoryKey
 module ModuleQualifier = PyreflyReport.ModuleQualifier
 module ModuleQualifierSharedMemoryKey = PyreflyReport.ModuleQualifierSharedMemoryKey
 module ModuleInfoFilename = PyreflyReport.ModuleInfoFilename
@@ -395,6 +397,17 @@ module ModuleGlobalsSharedMemory =
       let description = "pyrefly global variables in module"
     end)
 
+module ModuleNameToQualifiersSharedMemory =
+  Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
+    (ModuleNameSharedMemoryKey)
+    (struct
+      type t = ModuleQualifier.t list
+
+      let prefix = Hack_parallel.Std.Prefix.make ()
+
+      let description = "pyrefly bare module name to list of qualifiers"
+    end)
+
 module ModuleIdToQualifierSharedMemory = struct
   include
     Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
@@ -637,6 +650,7 @@ module ReadWrite = struct
     module_callables_shared_memory: ModuleCallablesSharedMemory.t;
     module_classes_shared_memory: ModuleClassesSharedMemory.t;
     module_globals_shared_memory: ModuleGlobalsSharedMemory.t;
+    module_name_to_qualifiers_shared_memory: ModuleNameToQualifiersSharedMemory.t;
     module_id_to_qualifier_shared_memory: ModuleIdToQualifierSharedMemory.t;
     class_id_to_qualified_name_shared_memory: ClassIdToQualifiedNameSharedMemory.t;
     callable_id_to_qualified_name_shared_memory: CallableIdToQualifiedNameSharedMemory.t;
@@ -843,6 +857,44 @@ module ReadWrite = struct
     in
     Log.info "Wrote modules to shared memory: %.3fs" (Timer.stop_in_sec timer);
     module_infos_shared_memory, module_id_to_qualifier_shared_memory
+
+
+  (* Build a reverse map from bare module name to list of qualifiers. This is used for resolving
+     unprefixed module names (from .pysa files) to their prefixed qualifiers. *)
+  let write_module_name_to_qualifiers_to_shared_memory ~qualifier_to_module_map =
+    let handle = ModuleNameToQualifiersSharedMemory.create () in
+    let bare_name_to_qualifiers =
+      Map.keys qualifier_to_module_map
+      |> List.map ~f:(fun qualifier ->
+             let bare_name = ModuleQualifier.bare_module_name qualifier in
+             bare_name, qualifier)
+      |> ModuleName.Map.of_alist_multi
+    in
+    Map.iteri bare_name_to_qualifiers ~f:(fun ~key:bare_name ~data:qualifiers ->
+        ModuleNameToQualifiersSharedMemory.write_around handle bare_name qualifiers);
+    handle
+
+
+  (* Write all module qualifiers into a single shared memory entry, for fast iteration. *)
+  let write_qualifiers_to_shared_memory ~qualifier_to_module_map =
+    let handle = QualifiersSharedMemory.create () in
+    let qualifiers =
+      qualifier_to_module_map
+      |> Map.to_alist
+      |> List.map
+           ~f:(fun
+                ( module_qualifier,
+                  { Module.absolute_source_path; pyrefly_info_filename; is_test; _ } )
+              ->
+             {
+               QualifiersSharedMemory.Value.module_qualifier;
+               has_source = Option.is_some absolute_source_path;
+               has_info = Option.is_some pyrefly_info_filename;
+               is_test;
+             })
+    in
+    let () = QualifiersSharedMemory.add handle Memory.SingletonKey.key qualifiers in
+    handle
 
 
   let parse_source_files
@@ -2099,26 +2151,11 @@ module ReadWrite = struct
       write_module_infos_to_shared_memory ~qualifier_to_module_map
     in
 
-    let qualifiers_shared_memory =
-      let handle = QualifiersSharedMemory.create () in
-      let qualifiers =
-        qualifier_to_module_map
-        |> Map.to_alist
-        |> List.map
-             ~f:(fun
-                  ( module_qualifier,
-                    { Module.absolute_source_path; pyrefly_info_filename; is_test; _ } )
-                ->
-               {
-                 QualifiersSharedMemory.Value.module_qualifier;
-                 has_source = Option.is_some absolute_source_path;
-                 has_info = Option.is_some pyrefly_info_filename;
-                 is_test;
-               })
-      in
-      let () = QualifiersSharedMemory.add handle Memory.SingletonKey.key qualifiers in
-      handle
+    let module_name_to_qualifiers_shared_memory =
+      write_module_name_to_qualifiers_to_shared_memory ~qualifier_to_module_map
     in
+
+    let qualifiers_shared_memory = write_qualifiers_to_shared_memory ~qualifier_to_module_map in
 
     let ( callable_metadata_shared_memory,
           class_metadata_shared_memory,
@@ -2186,6 +2223,7 @@ module ReadWrite = struct
       module_callables_shared_memory;
       module_classes_shared_memory;
       module_globals_shared_memory;
+      module_name_to_qualifiers_shared_memory;
       module_id_to_qualifier_shared_memory;
       class_id_to_qualified_name_shared_memory;
       callable_id_to_qualified_name_shared_memory;
@@ -2303,6 +2341,7 @@ module ReadWrite = struct
         module_callables_shared_memory;
         module_classes_shared_memory;
         module_globals_shared_memory;
+        module_name_to_qualifiers_shared_memory;
         module_id_to_qualifier_shared_memory;
         class_id_to_qualified_name_shared_memory;
         callable_id_to_qualified_name_shared_memory;
@@ -2390,6 +2429,11 @@ module ReadWrite = struct
       ~inputs:(Map.keys qualifier_to_module_map)
       ();
     QualifiersSharedMemory.remove qualifiers_shared_memory Memory.SingletonKey.key;
+    Map.keys qualifier_to_module_map
+    |> List.map ~f:ModuleQualifier.bare_module_name
+    |> List.dedup_and_sort ~compare:ModuleName.compare
+    |> List.iter
+         ~f:(ModuleNameToQualifiersSharedMemory.remove module_name_to_qualifiers_shared_memory);
     (* TODO(T225700656): Clean up TypeOfExpressionsSharedMemory (this requires storing all locations
        with a type) *)
     Memory.SharedMemory.collect `aggressive;
@@ -2409,6 +2453,7 @@ module ReadOnly = struct
     module_callables_shared_memory: ModuleCallablesSharedMemory.t;
     module_classes_shared_memory: ModuleClassesSharedMemory.t;
     module_globals_shared_memory: ModuleGlobalsSharedMemory.t;
+    module_name_to_qualifiers_shared_memory: ModuleNameToQualifiersSharedMemory.t;
     callable_ast_shared_memory: CallableAstSharedMemory.t;
     callable_define_signature_shared_memory: CallableDefineSignatureSharedMemory.t;
     callable_parse_result_shared_memory: CallableParseResultSharedMemory.t;
@@ -2435,6 +2480,7 @@ module ReadOnly = struct
         module_callables_shared_memory;
         module_classes_shared_memory;
         module_globals_shared_memory;
+        module_name_to_qualifiers_shared_memory;
         callable_ast_shared_memory;
         callable_define_signature_shared_memory;
         callable_parse_result_shared_memory;
@@ -2461,6 +2507,7 @@ module ReadOnly = struct
       module_callables_shared_memory;
       module_classes_shared_memory;
       module_globals_shared_memory;
+      module_name_to_qualifiers_shared_memory;
       callable_ast_shared_memory;
       callable_define_signature_shared_memory;
       callable_parse_result_shared_memory;
@@ -2995,6 +3042,35 @@ module ReadOnly = struct
       callable_undecorated_signatures_shared_memory
       (FullyQualifiedName.from_reference_unchecked define_name)
     |> assert_shared_memory_key_exists (fun () -> "missing callable undecorated signature")
+
+
+  let get_model_parser_function_info
+      { callable_metadata_shared_memory; callable_undecorated_signatures_shared_memory; _ }
+      define_name
+    =
+    let fully_qualified_name = FullyQualifiedName.from_reference_unchecked define_name in
+    let {
+      CallableMetadataSharedMemory.Value.metadata =
+        { is_property_getter; is_property_setter; parent_is_class; _ };
+      _;
+    }
+      =
+      CallableMetadataSharedMemory.get callable_metadata_shared_memory fully_qualified_name
+      |> assert_shared_memory_key_exists (fun () -> "missing callable metadata")
+    in
+    let undecorated_signatures =
+      CallableUndecoratedSignaturesSharedMemory.get
+        callable_undecorated_signatures_shared_memory
+        fully_qualified_name
+    in
+    {
+      Pyre1Api.ModelQueries.Function.define_name;
+      imported_name = None;
+      undecorated_signatures;
+      is_property_getter;
+      is_property_setter;
+      is_method = parent_is_class;
+    }
 
 
   let get_class_summary { class_metadata_shared_memory; _ } class_name =
@@ -3929,98 +4005,199 @@ module ModelQueries = struct
   module Function = Pyre1Api.ModelQueries.Function
   module Global = Pyre1Api.ModelQueries.Global
 
-  let resolve_qualified_name_to_global
+  let resolve_user_qualified_name
       {
-        ReadOnly.module_infos_shared_memory;
-        callable_metadata_shared_memory;
-        class_metadata_shared_memory;
+        ReadOnly.callable_metadata_shared_memory;
         callable_undecorated_signatures_shared_memory;
         class_fields_shared_memory;
         module_globals_shared_memory;
+        module_name_to_qualifiers_shared_memory;
+        module_callables_shared_memory;
+        module_classes_shared_memory;
         _;
       }
       ~is_property_getter:_
       ~is_property_setter
+      ~verify_class_attributes:_
       name
     =
-    (* TODO(T225700656): For now, we only support looking up symbols in module names that are unique
-       (i.e, the module qualifier is not prefixed by the path) *)
     let name =
-      if is_property_setter then
-        Reference.create (Format.asprintf "%a@setter" Reference.pp name)
-      else
-        name
+      name
+      |> Pyre1Api.ModelQueries.mangle_top_level_name
+      |> Pyre1Api.ModelQueries.demangle_class_attribute
+      |> add_builtins_prefix
     in
-    let is_module_qualifier name =
-      ModuleInfosSharedMemory.get
-        module_infos_shared_memory
-        (ModuleQualifier.from_reference_unchecked name)
-      |> Option.is_some
-    in
-    let is_class_name name =
-      ClassMetadataSharedMemory.get
-        class_metadata_shared_memory
-        (FullyQualifiedName.from_reference_unchecked name)
-      |> Option.is_some
-    in
-    let is_class_attribute name =
-      let last_name = Reference.last name in
-      Reference.prefix name
-      >>| FullyQualifiedName.from_reference_unchecked
-      >>= ClassFieldsSharedMemory.get class_fields_shared_memory
-      >>| (fun fields -> SerializableStringMap.mem last_name fields)
-      |> Option.value ~default:false
-    in
-    let is_module_global_variable name =
-      let last_name = Reference.last name in
-      Reference.prefix name
-      >>| ModuleQualifier.from_reference_unchecked
-      >>= ModuleGlobalsSharedMemory.get module_globals_shared_memory
-      >>| (fun globals -> SerializableStringMap.mem last_name globals)
-      |> Option.value ~default:false
-    in
-    (* Check if this is a valid function first. *)
-    match
-      CallableMetadataSharedMemory.get
-        callable_metadata_shared_memory
-        (FullyQualifiedName.from_reference_unchecked name)
-    with
-    | Some
-        {
-          CallableMetadataSharedMemory.Value.metadata =
-            { is_property_getter; is_property_setter; parent_is_class; _ };
-          _;
-        } ->
-        let undecorated_signatures =
-          CallableUndecoratedSignaturesSharedMemory.get
-            callable_undecorated_signatures_shared_memory
-            (FullyQualifiedName.from_reference_unchecked name)
-          |> assert_shared_memory_key_exists (fun () ->
-                 "missing undecorated signatures for callable")
-        in
-        Some
-          (Global.Function
-             {
-               Function.define_name = name;
-               imported_name = None;
-               undecorated_signatures = Some undecorated_signatures;
-               is_property_getter;
-               is_property_setter;
-               is_method = parent_is_class;
-             })
-    | None ->
-        if is_module_qualifier name then
-          Some Global.Module
-        else if is_class_name name then
-          Some (Global.Class { class_name = Reference.show name })
-        else if is_class_attribute name then
-          (* Functions might also be considered class attributes by pyrefly, so this should be
-             checked last. *)
-          Some (Global.ClassAttribute { name })
-        else if is_module_global_variable name then
-          Some (Global.ModuleGlobal { name })
-        else
+    (* Find the module qualifier(s) for a given name by trying progressively shorter prefixes. For
+       each candidate prefix, first try a direct (unprefixed) lookup in ModuleInfosSharedMemory,
+       then fall back to the reverse map for prefixed qualifiers. *)
+    let find_module_qualifiers name =
+      let rec try_candidate candidate suffix =
+        if Reference.is_empty candidate then
           None
+        else
+          let matching_qualifiers =
+            ModuleNameToQualifiersSharedMemory.get
+              module_name_to_qualifiers_shared_memory
+              (ModuleName.from_reference_unchecked candidate)
+            |> Option.value ~default:[]
+          in
+          if not (List.is_empty matching_qualifiers) then
+            Some (matching_qualifiers, suffix)
+          else
+            match Reference.prefix candidate with
+            | Some prefix_candidate ->
+                let last = Reference.last candidate in
+                try_candidate prefix_candidate (Reference.combine (Reference.create last) suffix)
+            | None -> None
+      in
+      try_candidate name Reference.empty
+    in
+    match find_module_qualifiers name with
+    | None -> []
+    | Some (_, suffix) when Reference.is_empty suffix -> [Global.Module]
+    | Some (qualifiers, suffix) ->
+        let local_name_of_fully_qualified_name ~bare_module_name fully_qualified_name =
+          let symbolic_name =
+            target_symbolic_name (FullyQualifiedName.to_reference fully_qualified_name)
+          in
+          Reference.drop_prefix ~prefix:bare_module_name symbolic_name
+        in
+        (* For each qualifier, try to find a callable/class/class attribute/global matching the
+           suffix. *)
+        let find_matching_callables ~bare_module_name qualifier =
+          ModuleCallablesSharedMemory.get module_callables_shared_memory qualifier
+          |> Option.value ~default:[]
+          |> List.filter_map ~f:(fun fully_qualified_name ->
+                 let local_part =
+                   local_name_of_fully_qualified_name ~bare_module_name fully_qualified_name
+                 in
+                 if Reference.equal local_part suffix then
+                   match
+                     CallableMetadataSharedMemory.get
+                       callable_metadata_shared_memory
+                       fully_qualified_name
+                   with
+                   | Some
+                       {
+                         CallableMetadataSharedMemory.Value.metadata =
+                           {
+                             is_property_getter = callable_is_property_getter;
+                             is_property_setter = callable_is_property_setter;
+                             parent_is_class;
+                             _;
+                           };
+                         _;
+                       }
+                     when Bool.equal is_property_setter callable_is_property_setter ->
+                       let undecorated_signatures =
+                         CallableUndecoratedSignaturesSharedMemory.get
+                           callable_undecorated_signatures_shared_memory
+                           fully_qualified_name
+                         |> assert_shared_memory_key_exists (fun () ->
+                                "missing undecorated signatures for callable")
+                       in
+                       Some
+                         (Global.Function
+                            {
+                              Function.define_name =
+                                FullyQualifiedName.to_reference fully_qualified_name;
+                              imported_name = None;
+                              undecorated_signatures = Some undecorated_signatures;
+                              is_property_getter = callable_is_property_getter;
+                              is_property_setter = callable_is_property_setter;
+                              is_method = parent_is_class;
+                            })
+                   | _ -> None
+                 else
+                   None)
+        in
+        let find_matching_classes ~bare_module_name qualifier =
+          ModuleClassesSharedMemory.get module_classes_shared_memory qualifier
+          |> Option.value ~default:[]
+          |> List.filter_map ~f:(fun fully_qualified_name ->
+                 let local_part =
+                   local_name_of_fully_qualified_name ~bare_module_name fully_qualified_name
+                 in
+                 if Reference.equal local_part suffix then
+                   Some
+                     (Global.Class
+                        {
+                          class_name =
+                            fully_qualified_name
+                            |> FullyQualifiedName.to_reference
+                            |> Reference.show;
+                        })
+                 else
+                   None)
+        in
+        let find_matching_class_attributes ~bare_module_name qualifier =
+          if Reference.length suffix < 2 then
+            []
+          else
+            let attribute_name = Reference.last suffix in
+            let class_suffix = Reference.prefix suffix |> Option.value ~default:Reference.empty in
+            ModuleClassesSharedMemory.get module_classes_shared_memory qualifier
+            |> Option.value ~default:[]
+            |> List.filter_map ~f:(fun fully_qualified_name ->
+                   let local_part =
+                     local_name_of_fully_qualified_name ~bare_module_name fully_qualified_name
+                   in
+                   if Reference.equal local_part class_suffix then
+                     ClassFieldsSharedMemory.get class_fields_shared_memory fully_qualified_name
+                     >>= fun fields ->
+                     if SerializableStringMap.mem attribute_name fields then
+                       Some
+                         (Global.ClassAttribute
+                            {
+                              name =
+                                Reference.combine
+                                  (FullyQualifiedName.to_reference fully_qualified_name)
+                                  (Reference.create attribute_name);
+                            })
+                     else
+                       None
+                   else
+                     None)
+        in
+        let find_matching_module_globals qualifier =
+          if Reference.length suffix <> 1 then
+            []
+          else
+            let global_name = Reference.last suffix in
+            ModuleGlobalsSharedMemory.get module_globals_shared_memory qualifier
+            |> Option.value_map ~default:[] ~f:(fun globals ->
+                   if SerializableStringMap.mem global_name globals then
+                     [
+                       Global.ModuleGlobal
+                         {
+                           name =
+                             Reference.combine
+                               (ModuleQualifier.to_reference qualifier)
+                               (Reference.create global_name);
+                         };
+                     ]
+                   else
+                     [])
+        in
+        let resolve_in_qualifier qualifier =
+          let bare_module_name =
+            ModuleQualifier.bare_module_name qualifier |> ModuleName.to_reference
+          in
+          let results = find_matching_callables ~bare_module_name qualifier in
+          if not (List.is_empty results) then
+            results
+          else
+            let results = find_matching_classes ~bare_module_name qualifier in
+            if not (List.is_empty results) then
+              results
+            else
+              let results = find_matching_class_attributes ~bare_module_name qualifier in
+              if not (List.is_empty results) then
+                results
+              else
+                find_matching_module_globals qualifier
+        in
+        List.concat_map qualifiers ~f:resolve_in_qualifier
 
 
   let class_method_signatures

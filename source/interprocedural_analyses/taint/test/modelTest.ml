@@ -3464,7 +3464,7 @@ let test_demangle_class_attributes _ =
   let assert_demangle ~expected name =
     assert_equal
       (Ast.Reference.create expected)
-      (ModelParser.demangle_class_attribute (Ast.Reference.create name))
+      (PyrePysaApi.ModelQueries.demangle_class_attribute (Ast.Reference.create name))
   in
   assert_demangle ~expected:"a.B" "a.B";
   assert_demangle ~expected:"a.B" "a.__class__.B";

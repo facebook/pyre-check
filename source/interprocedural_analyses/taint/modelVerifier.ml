@@ -54,7 +54,7 @@ let create_parameters_requirements parameters =
 
 let model_verification_error ~path ~location kind = { ModelVerificationError.kind; path; location }
 
-let verify_model_syntax ~path ~location ~callable_name ~normalized_model_parameters =
+let verify_model_syntax ~path ~location ~friendly_name ~normalized_model_parameters =
   (* Ensure that the parameter's default value is either not present or `...` to catch common errors
      when declaring models. *)
   let check_default_value { AccessPath.NormalizedParameter.original; _ } =
@@ -67,7 +67,7 @@ let verify_model_syntax ~path ~location ~callable_name ~normalized_model_paramet
           (model_verification_error
              ~path
              ~location
-             (InvalidDefaultValue { callable_name = Reference.show callable_name; name; expression }))
+             (InvalidDefaultValue { callable_name = Reference.show friendly_name; name; expression }))
   in
   List.find_map normalized_model_parameters ~f:check_default_value
   |> function
@@ -75,14 +75,14 @@ let verify_model_syntax ~path ~location ~callable_name ~normalized_model_paramet
   | None -> Ok ()
 
 
-let verify_imported_model ~path ~location ~callable_name ~imported_name =
+let verify_imported_model ~path ~location ~friendly_name ~imported_name =
   match imported_name with
-  | Some imported_name when not (Reference.equal callable_name imported_name) ->
+  | Some imported_name when not (Reference.equal friendly_name imported_name) ->
       Error
         (model_verification_error
            ~path
            ~location
-           (ImportedFunctionModel { name = callable_name; actual_name = imported_name }))
+           (ImportedFunctionModel { name = friendly_name; actual_name = imported_name }))
   | _ -> Ok ()
 
 
@@ -175,14 +175,14 @@ let verify_signature
     ~path
     ~location
     ~normalized_model_parameters
-    ~name:callable_name
+    ~friendly_name
     ~imported_name
     callable_signatures
   =
   let open Result in
-  verify_model_syntax ~path ~location ~callable_name ~normalized_model_parameters
+  verify_model_syntax ~path ~location ~friendly_name ~normalized_model_parameters
   >>= fun () ->
-  verify_imported_model ~path ~location ~callable_name ~imported_name
+  verify_imported_model ~path ~location ~friendly_name ~imported_name
   >>= fun () ->
   match callable_signatures with
   | Some callable_signatures ->
@@ -206,84 +206,10 @@ let verify_signature
              ~path
              ~location
              (IncompatibleModelError
-                { name = Reference.show callable_name; callable_signatures; errors }))
+                { name = Reference.show friendly_name; callable_signatures; errors }))
       else
         Ok ()
   | _ -> Ok ()
-
-
-let verify_global_attribute ~path ~location ~pyre_api ~name =
-  let module Global = PyrePysaApi.ModelQueries.Global in
-  let global =
-    PyrePysaApi.ModelQueries.resolve_qualified_name_to_global
-      pyre_api
-      ~is_property_getter:false
-      ~is_property_setter:false
-      name
-  in
-  match global with
-  | Some (Global.Class _) ->
-      Error
-        (model_verification_error ~path ~location (ModelingClassAsAttribute (Reference.show name)))
-  | Some Global.Module ->
-      Error
-        (model_verification_error ~path ~location (ModelingModuleAsAttribute (Reference.show name)))
-  | Some (Global.Function _) ->
-      Error
-        (model_verification_error
-           ~path
-           ~location
-           (ModelingCallableAsAttribute (Reference.show name)))
-  | Some (Global.ModuleGlobal _)
-  | Some (Global.ClassAttribute _)
-  | Some (Global.UnknownClassAttribute _)
-  | Some (Global.UnknownModuleGlobal _)
-  | None -> (
-      let class_name = Reference.prefix name |> Option.value ~default:Reference.empty in
-      let class_attributes =
-        PyrePysaApi.ReadOnly.get_class_attributes
-          pyre_api
-          ~include_generated_attributes:false
-          ~only_simple_assignments:false
-          (Reference.show class_name)
-      in
-      match class_attributes, global with
-      | Some class_attributes, _ ->
-          let attribute_name = Reference.last name in
-          if List.mem ~equal:String.equal class_attributes attribute_name then
-            Ok ()
-          else
-            Error
-              (model_verification_error
-                 ~path
-                 ~location
-                 (MissingAttribute
-                    { class_name = Reference.show class_name; attribute_name = Reference.last name }))
-      | None, Some _ -> Ok ()
-      | None, None -> (
-          let module_name =
-            Reference.first (PyrePysaApi.ReadOnly.add_builtins_prefix pyre_api name)
-          in
-          let module_resolved =
-            PyrePysaApi.ModelQueries.resolve_qualified_name_to_global
-              pyre_api
-              ~is_property_getter:false
-              ~is_property_setter:false
-              (Reference.create module_name)
-          in
-          match module_resolved with
-          | Some _ ->
-              Error
-                (model_verification_error
-                   ~path
-                   ~location
-                   (MissingSymbol { module_name; symbol_name = Reference.show name }))
-          | None ->
-              Error
-                (model_verification_error
-                   ~path
-                   ~location
-                   (BaseModuleNotInEnvironment { module_name; name = Reference.show name }))))
 
 
 (* List of stdlib modules. To keep it short, this only includes modules that we want to annotate

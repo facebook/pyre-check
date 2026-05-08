@@ -217,6 +217,11 @@ module ReadOnly : sig
     Ast.Reference.t ->
     Analysis.PyrePysaEnvironment.ModelQueries.FunctionSignature.t list
 
+  val get_model_parser_function_info
+    :  t ->
+    Ast.Reference.t ->
+    Analysis.PyrePysaEnvironment.ModelQueries.Function.t
+
   val get_class_summary : t -> string -> PysaClassSummary.t
 
   val get_class_decorators_opt : t -> string -> Ast.Expression.t list AstResult.t
@@ -302,12 +307,13 @@ module ModelQueries : sig
   module Function = Analysis.PyrePysaEnvironment.ModelQueries.Function
   module Global = Analysis.PyrePysaEnvironment.ModelQueries.Global
 
-  val resolve_qualified_name_to_global
+  val resolve_user_qualified_name
     :  ReadOnly.t ->
     is_property_getter:bool ->
     is_property_setter:bool ->
+    verify_class_attributes:bool ->
     Ast.Reference.t ->
-    Global.t option
+    Global.t list
 
   val class_method_signatures
     :  ReadOnly.t ->

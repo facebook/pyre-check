@@ -326,7 +326,8 @@ module ModelQueriesExpectedResults = struct
     in
     let errors = Map.fold logging_group_map ~f:check_logging_group ~init:errors in
     Statistics.flush ();
-    errors
+    (* Errors were accumulated in reverse order via `::` in the fold. *)
+    List.rev errors
 end
 
 module ExecutionResult = struct

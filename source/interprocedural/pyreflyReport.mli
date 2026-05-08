@@ -152,6 +152,20 @@ module GlobalCallableIdSharedMemoryKey : sig
   val to_string : t -> string
 end
 
+(* The name of a module without any path prefix. *)
+module ModuleName : sig
+  type t [@@deriving compare, equal, sexp, hash, show]
+
+  val create : Ast.Reference.t -> t
+
+  val to_reference : t -> Ast.Reference.t
+
+  val from_reference_unchecked : Ast.Reference.t -> t
+
+  module Map : Map.S with type Key.t = t
+end
+
+(* A unique qualifier for a module, possibly including a path prefix for disambiguation. *)
 module ModuleQualifier : sig
   type t [@@deriving compare, equal, sexp, hash, show]
 
@@ -161,11 +175,19 @@ module ModuleQualifier : sig
 
   val from_reference_unchecked : Ast.Reference.t -> t
 
+  val bare_module_name : t -> ModuleName.t
+
   module Map : Map.S with type Key.t = t
 end
 
 module ModuleQualifierSharedMemoryKey : sig
   type t = ModuleQualifier.t [@@deriving compare]
+
+  val to_string : t -> string
+end
+
+module ModuleNameSharedMemoryKey : sig
+  type t = ModuleName.t [@@deriving compare]
 
   val to_string : t -> string
 end

@@ -677,16 +677,43 @@ end
 module ModelQueries = struct
   let property_decorators = Pyre1Api.ModelQueries.property_decorators
 
+  let mangle_top_level_name = Pyre1Api.ModelQueries.mangle_top_level_name
+
+  let demangle_class_attribute = Pyre1Api.ModelQueries.demangle_class_attribute
+
+  let has_class_attribute_form = Pyre1Api.ModelQueries.has_class_attribute_form
+
+  let mangle_class_attribute = Pyre1Api.ModelQueries.mangle_class_attribute
+
   module FunctionParameter = Pyre1Api.ModelQueries.FunctionParameter
   module FunctionParameters = Pyre1Api.ModelQueries.FunctionParameters
   module FunctionSignature = Analysis.PyrePysaEnvironment.ModelQueries.FunctionSignature
   module Function = Pyre1Api.ModelQueries.Function
   module Global = Pyre1Api.ModelQueries.Global
 
-  let resolve_qualified_name_to_global = function
-    | ReadOnly.Pyre1 pyre_api -> Pyre1Api.ModelQueries.resolve_qualified_name_to_global pyre_api
+  let resolve_user_qualified_name
+      api
+      ~is_property_getter
+      ~is_property_setter
+      ~verify_class_attributes
+      name
+    =
+    match api with
+    | ReadOnly.Pyre1 pyre_api ->
+        Pyre1Api.ModelQueries.resolve_user_qualified_name
+          pyre_api
+          ~is_property_getter
+          ~is_property_setter
+          ~verify_class_attributes
+          name
+        |> Option.to_list
     | ReadOnly.Pyrefly pyrefly_api ->
-        PyreflyApi.ModelQueries.resolve_qualified_name_to_global pyrefly_api
+        PyreflyApi.ModelQueries.resolve_user_qualified_name
+          pyrefly_api
+          ~is_property_getter
+          ~is_property_setter
+          ~verify_class_attributes
+          name
 
 
   let class_method_signatures = function

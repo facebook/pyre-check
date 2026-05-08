@@ -1498,6 +1498,15 @@ module ModelQueries = struct
       (* module global exists, but type is unknown. *)
       | UnknownModuleGlobal of { name: Ast.Reference.t }
     [@@deriving show]
+
+    let is_module = function
+      | Module -> true
+      | _ -> false
+
+
+    let is_class = function
+      | Class _ -> true
+      | _ -> false
   end
 
   let containing_source read_only reference =
@@ -1595,16 +1604,58 @@ module ModelQueries = struct
     Set.union Recognized.property_decorators Recognized.classproperty_decorators
 
 
-  (* This is a very specific Pysa API used for dealing with model verification: it - determines what
-     a fully qualified name means, where qualification handles not only module name prepending but
-     nesting of classes, functions, and methods/attributes - if the meaning is not a class or
-     module, it returns the type. For callable types, it uses the undecorated signature rather than
-     the decorated signature.
+  let mangle_top_level_name name =
+    Ast.Reference.map_last
+      ~f:(function
+        | "__top_level__" -> Ast.Statement.toplevel_define_name
+        | "__class_top_level__" -> Ast.Statement.class_toplevel_define_name
+        | identifier -> identifier)
+      name
 
-     This logic used to live inside of `modelVerifier`, but it is extremely invasive to Pyre
-     internals so we need to extract it if we want to be able to work toward a well-defined
-     interface. *)
-  let resolve_qualified_name_to_global read_only ~is_property_getter ~is_property_setter name =
+
+  let demangle_class_attribute name =
+    let parts = Ast.Reference.as_list name in
+    if List.exists parts ~f:(String.equal "__class__") then
+      match List.rev parts with
+      | attribute :: "__class__" :: rest ->
+          attribute :: rest |> List.rev |> Ast.Reference.create_from_list
+      | _ -> name
+    else
+      name
+
+
+  let has_class_attribute_form name =
+    let name = Ast.Reference.as_list name in
+    List.exists ~f:(String.equal "__class__") name
+    &&
+    match List.rev name with
+    | _ :: "__class__" :: _ -> true
+    | _ -> false
+
+
+  let mangle_class_attribute name =
+    let parts = Ast.Reference.as_list name in
+    match List.rev parts with
+    | attribute :: rest ->
+        attribute :: "__class__" :: rest |> List.rev |> Ast.Reference.create_from_list
+    | [] -> name
+
+
+  (* Resolve a user-provided qualified name (from a .pysa model file) to the corresponding global
+     symbol. Returns the kind of symbol (function, class, module, attribute, etc.) along with
+     metadata such as undecorated signatures for callables.
+
+     When `verify_class_attributes` is true, class attributes are verified against
+     `get_class_attributes` to ensure they are directly defined on the class (not just inherited).
+     This is used when parsing attribute models only, for backward compatibility. *)
+  let resolve_user_qualified_name
+      read_only
+      ~is_property_getter
+      ~is_property_setter
+      ~verify_class_attributes
+      name
+    =
+    let name = name |> mangle_top_level_name |> demangle_class_attribute in
     let get_callable_type = function
       | PyreType.Callable t -> t
       | _ -> failwith "expected callable type"
@@ -1776,53 +1827,83 @@ module ModelQueries = struct
                   ~create_origin:(fun _ -> None)
                 |> ReadOnly.resolve_expression_to_type_info read_only
               in
-              match TypeInfo.Unit.annotation annotation with
-              | PyreType.Parametric { name = "type"; _ }
-                when ReadOnly.class_exists read_only (Ast.Reference.show name) ->
-                  Some (Global.Class { class_name = Ast.Reference.show name })
-              | PyreType.Top when ReadOnly.module_exists read_only name -> Some Global.Module
-              | PyreType.Top when not (TypeInfo.Unit.is_immutable annotation) ->
-                  (* FIXME: We are relying on the fact that nonexistent functions & attributes
-                     resolve to mutable annotation, while existing ones resolve to immutable
-                     annotation. This is fragile! *)
-                  None
-              | PyreType.Parametric
-                  {
-                    name = "BoundMethod";
-                    arguments = [PyreType.Argument.Single (PyreType.Callable t); _];
-                  } ->
-                  Some
-                    (Global.Function
-                       {
-                         define_name = name;
-                         imported_name = get_imported_name t;
-                         undecorated_signatures = Some (FunctionSignature.from_callable_type t);
-                         is_property_getter = false;
-                         is_property_setter = false;
-                         is_method = Option.is_some class_summary;
-                       })
-              | PyreType.Callable t ->
-                  Some
-                    (Global.Function
-                       {
-                         define_name = name;
-                         imported_name = get_imported_name t;
-                         undecorated_signatures = Some (FunctionSignature.from_callable_type t);
-                         is_property_getter = false;
-                         is_property_setter = false;
-                         is_method = Option.is_some class_summary;
-                       })
-              | PyreType.Top
-              | PyreType.Any ->
-                  if Option.is_some class_summary then
-                    Some (Global.UnknownClassAttribute { name })
-                  else
-                    Some (Global.UnknownModuleGlobal { name })
-              | _ ->
-                  if Option.is_some class_summary then
-                    Some (Global.ClassAttribute { name })
-                  else
-                    Some (Global.ModuleGlobal { name })))
+              let global =
+                match TypeInfo.Unit.annotation annotation with
+                | PyreType.Parametric { name = "type"; _ }
+                  when ReadOnly.class_exists read_only (Ast.Reference.show name) ->
+                    Some (Global.Class { class_name = Ast.Reference.show name })
+                | PyreType.Top when ReadOnly.module_exists read_only name -> Some Global.Module
+                | PyreType.Top when not (TypeInfo.Unit.is_immutable annotation) ->
+                    (* FIXME: We are relying on the fact that nonexistent functions & attributes
+                       resolve to mutable annotation, while existing ones resolve to immutable
+                       annotation. This is fragile! *)
+                    None
+                | PyreType.Parametric
+                    {
+                      name = "BoundMethod";
+                      arguments = [PyreType.Argument.Single (PyreType.Callable t); _];
+                    } ->
+                    Some
+                      (Global.Function
+                         {
+                           define_name = name;
+                           imported_name = get_imported_name t;
+                           undecorated_signatures = Some (FunctionSignature.from_callable_type t);
+                           is_property_getter = false;
+                           is_property_setter = false;
+                           is_method = Option.is_some class_summary;
+                         })
+                | PyreType.Callable t ->
+                    Some
+                      (Global.Function
+                         {
+                           define_name = name;
+                           imported_name = get_imported_name t;
+                           undecorated_signatures = Some (FunctionSignature.from_callable_type t);
+                           is_property_getter = false;
+                           is_property_setter = false;
+                           is_method = Option.is_some class_summary;
+                         })
+                | PyreType.Top
+                | PyreType.Any ->
+                    if Option.is_some class_summary then
+                      Some (Global.UnknownClassAttribute { name })
+                    else
+                      Some (Global.UnknownModuleGlobal { name })
+                | _ ->
+                    if Option.is_some class_summary then
+                      Some (Global.ClassAttribute { name })
+                    else
+                      Some (Global.ModuleGlobal { name })
+              in
+              (* When verify_class_attributes is set, check that class attributes are directly
+                 defined on the class (not just inherited). *)
+              match global with
+              | Some (Global.ModuleGlobal _)
+              | Some (Global.ClassAttribute _)
+              | Some (Global.UnknownClassAttribute _)
+              | Some (Global.UnknownModuleGlobal _)
+              | None
+                when verify_class_attributes -> (
+                  let class_name =
+                    Ast.Reference.prefix name |> Option.value ~default:Ast.Reference.empty
+                  in
+                  let attribute_name = Ast.Reference.last name in
+                  let class_attributes =
+                    ReadOnly.get_class_attributes
+                      read_only
+                      ~include_generated_attributes:false
+                      ~only_simple_assignments:false
+                      (Ast.Reference.show class_name)
+                  in
+                  match class_attributes with
+                  | Some attributes ->
+                      if List.mem ~equal:String.equal attributes attribute_name then
+                        Some (Global.ClassAttribute { name })
+                      else
+                        None
+                  | _ -> global)
+              | _ -> global))
 
 
   let invalidate_cache = ClassMethodSignatureCache.invalidate

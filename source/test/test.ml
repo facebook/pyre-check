@@ -3544,7 +3544,13 @@ module ScratchPyreflyProject = struct
     configuration: Configuration.Analysis.t;
   }
 
-  let find_pyrefly_binary () = Stdlib.Sys.getenv_opt "PYREFLY_BINARY"
+  let find_pyrefly_binary () =
+    match Stdlib.Sys.getenv_opt "PYREFLY_BINARY" with
+    | Some ""
+    | None ->
+        None
+    | Some _ as result -> result
+
 
   let setup ~context ~pyrefly_binary ~requires_type_of_expressions ?(external_sources = []) sources =
     let local_root = bracket_tmpdir context |> PyrePath.create_absolute in

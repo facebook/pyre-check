@@ -114,14 +114,15 @@ let convert_to_pyrefly_global global =
   | global -> global
 
 
-let test_resolve_qualified_name_to_global context =
+let test_resolve_user_qualified_name context =
   let assert_resolve ~context ?pyrefly_expect sources name ~expect =
     let pyre_api =
       Test.ScratchPyrePysaProject.setup ~context ~requires_type_of_expressions:false sources
       |> Test.ScratchPyrePysaProject.read_only_api
     in
     let actual =
-      PyrePysaApi.ModelQueries.resolve_qualified_name_to_global
+      PyrePysaApi.ModelQueries.resolve_user_qualified_name
+        ~verify_class_attributes:false
         pyre_api
         ~is_property_getter:false
         ~is_property_setter:false
@@ -138,12 +139,12 @@ let test_resolve_qualified_name_to_global context =
       else
         expect
     in
+    let expected_list = Option.to_list expect in
     let () = PyrePysaApi.ModelQueries.invalidate_cache pyre_api in
-    let printer = function
-      | None -> "None"
-      | Some global -> Global.show global
+    let printer globals =
+      List.map globals ~f:Global.show |> String.concat ~sep:", " |> Format.asprintf "[%s]"
     in
-    assert_equal ~printer expect actual
+    assert_equal ~printer expected_list actual
   in
   let create_parameter ?(annotation = Type.Any) ?(position = 0) name =
     PyrePysaEnvironment.ModelQueries.FunctionParameter.Named
@@ -625,5 +626,5 @@ let test_resolve_qualified_name_to_global context =
 
 let () =
   "pyrePysaApi"
-  >::: ["resolve_qualified_name_to_global" >:: test_resolve_qualified_name_to_global]
+  >::: ["resolve_user_qualified_name" >:: test_resolve_user_qualified_name]
   |> Test.run

@@ -5856,9 +5856,9 @@ let test_model_query_error context =
         [
           {
             "description": "Model Query group `query_group` output no models.",
-            "line": 9,
+            "line": 2,
             "column": 0,
-            "stop_line": 15,
+            "stop_line": 8,
             "stop_column": 1,
             "path": "/a/b.pysa",
             "code": 67
