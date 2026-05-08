@@ -192,3 +192,11 @@ def optional_str(condition: bool):
     if condition:
         s = StrIsTainted()
     eval(str(s))
+
+
+def test_str_with_starred_args(*args: object) -> str:
+    return str(*args)
+
+
+def test_str_with_double_starred_kwargs(**kwargs: object) -> str:
+    return str(**kwargs)

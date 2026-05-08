@@ -1536,6 +1536,64 @@
 {
   "kind": "model",
   "data": {
+    "callable": "string_conversion.test_str_with_double_starred_kwargs",
+    "filename": "string_conversion.py",
+    "callable_line": 201,
+    "tito": [
+      {
+        "port": "formal(**kwargs)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 202, "start": 15, "end": 23 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.test_str_with_starred_args",
+    "filename": "string_conversion.py",
+    "callable_line": 197,
+    "tito": [
+      {
+        "port": "formal(*args, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 198, "start": 15, "end": 20 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "string_conversion.tito_f",
     "filename": "string_conversion.py",
     "callable_line": 122,

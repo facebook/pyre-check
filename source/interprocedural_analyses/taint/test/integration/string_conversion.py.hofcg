@@ -1155,6 +1155,58 @@ Higher order call graphs
   }
 }
 {
+  "callable": "string_conversion.test_str_with_double_starred_kwargs",
+  "returned_callables": [],
+  "calls": {
+    "202:11-202:24": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "str.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "string_conversion.test_str_with_starred_args",
+  "returned_callables": [],
+  "calls": {
+    "198:11-198:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "str.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "string_conversion.C.__str__",
   "returned_callables": [],
   "calls": {

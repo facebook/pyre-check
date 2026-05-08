@@ -863,8 +863,14 @@ let preprocess_special_calls
       location = callee_location;
     }
   in
+  let is_starred expression =
+    match Node.value expression with
+    | Expression.Starred _ -> true
+    | _ -> false
+  in
   match Node.value callee, arguments with
-  | Name (Name.Identifier "str"), [{ Call.Argument.value; name = None }] ->
+  | Name (Name.Identifier "str"), [{ Call.Argument.value; name = None }] when not (is_starred value)
+    ->
       (* str() takes an optional encoding and errors - if these are present, the call shouldn't be
          redirected: https://docs.python.org/3/library/stdtypes.html#str *)
       let origin =
@@ -880,7 +886,8 @@ let preprocess_special_calls
       in
       let callee = attribute_access ~base:value ~method_name ~origin:(Some origin) in
       Some { Call.callee; arguments = []; origin = Some origin }
-  | Name (Name.Identifier "abs"), [{ Call.Argument.value; name = None }] ->
+  | Name (Name.Identifier "abs"), [{ Call.Argument.value; name = None }] when not (is_starred value)
+    ->
       let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.AbsCall) in
       Some
         {
@@ -888,7 +895,8 @@ let preprocess_special_calls
           arguments = [];
           origin;
         }
-  | Name (Name.Identifier "repr"), [{ Call.Argument.value; name = None }] ->
+  | Name (Name.Identifier "repr"), [{ Call.Argument.value; name = None }]
+    when not (is_starred value) ->
       let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.ReprCall) in
       Some
         {
@@ -896,7 +904,8 @@ let preprocess_special_calls
           arguments = [];
           origin;
         }
-  | Name (Name.Identifier "iter"), [{ Call.Argument.value; name = None }] ->
+  | Name (Name.Identifier "iter"), [{ Call.Argument.value; name = None }]
+    when not (is_starred value) ->
       (* Only handle `iter` with a single argument here. *)
       let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.IterCall) in
       Some
@@ -905,7 +914,8 @@ let preprocess_special_calls
           arguments = [];
           origin;
         }
-  | Name (Name.Identifier "next"), [{ Call.Argument.value; name = None }] ->
+  | Name (Name.Identifier "next"), [{ Call.Argument.value; name = None }]
+    when not (is_starred value) ->
       (* Only handle `next` with a single argument here. *)
       let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.NextCall) in
       Some
@@ -914,7 +924,8 @@ let preprocess_special_calls
           arguments = [];
           origin;
         }
-  | Name (Name.Identifier "anext"), [{ Call.Argument.value; name = None }] ->
+  | Name (Name.Identifier "anext"), [{ Call.Argument.value; name = None }]
+    when not (is_starred value) ->
       (* Only handle `anext` with a single argument here. *)
       let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.NextCall) in
       Some
