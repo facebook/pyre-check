@@ -572,3 +572,7 @@ def test_dict_getitem_mutate():
 def test_type_comments(g: Dict[str, Any]):
     # Test disabling the parsing of type comments
     g["a"] = {}  # type: Dict[str, Any]
+
+
+def test_setitem_with_parenthesized_target(d: Dict[str, str]):
+    (d["foo"]) = "bar"
