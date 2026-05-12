@@ -170,57 +170,73 @@ module Make (Config : PRODUCT_CONFIG) = struct
 
 
     let join left right =
-      let merge (Slot slot) =
-        let module D = (val Config.slot_domain slot) in
-        let left = get slot left in
-        let right = get slot right in
-        Element (D.join left right)
-      in
       if left == right || is_bottom right then
         left
+      else if is_bottom left then
+        right
       else
-        Array.map merge slots
+        let changed = ref false in
+        let merge (Slot slot) =
+          let module D = (val Config.slot_domain slot) in
+          let left = get slot left in
+          let right = get slot right in
+          let result = D.join left right in
+          if result != left then changed := true;
+          Element result
+        in
+        let result = Array.map merge slots in
+        if !changed then result else left
 
 
     let widen ~iteration ~prev ~next =
-      let merge (Slot slot) =
-        let module D = (val Config.slot_domain slot) in
-        let prev = get slot prev in
-        let next = get slot next in
-        Element (D.widen ~iteration ~prev ~next)
-      in
       if prev == next then
         prev
       else
-        Array.map merge slots
+        let changed = ref false in
+        let merge (Slot slot) =
+          let module D = (val Config.slot_domain slot) in
+          let prev = get slot prev in
+          let next = get slot next in
+          let result = D.widen ~iteration ~prev ~next in
+          if result != prev then changed := true;
+          Element result
+        in
+        let result = Array.map merge slots in
+        if !changed then result else prev
 
 
     let equal left right =
-      let equal_slot (Slot slot) =
-        let module D = (val Config.slot_domain slot) in
-        let left = get slot left in
-        let right = get slot right in
-        if not (D.equal left right) then raise_notrace Exit
-      in
-      try
-        Array.iter equal_slot slots;
+      if left == right then
         true
-      with
-      | Exit -> false
+      else
+        let equal_slot (Slot slot) =
+          let module D = (val Config.slot_domain slot) in
+          let left = get slot left in
+          let right = get slot right in
+          if not (D.equal left right) then raise_notrace Exit
+        in
+        try
+          Array.iter equal_slot slots;
+          true
+        with
+        | Exit -> false
 
 
     let less_or_equal ~left ~right =
-      let less_or_equal_slot (Slot slot) =
-        let module D = (val Config.slot_domain slot) in
-        let left = get slot left in
-        let right = get slot right in
-        if not (D.less_or_equal ~left ~right) then raise_notrace Exit
-      in
-      try
-        Array.iter less_or_equal_slot slots;
+      if left == right then
         true
-      with
-      | Exit -> false
+      else
+        let less_or_equal_slot (Slot slot) =
+          let module D = (val Config.slot_domain slot) in
+          let left = get slot left in
+          let right = get slot right in
+          if not (D.less_or_equal ~left ~right) then raise_notrace Exit
+        in
+        try
+          Array.iter less_or_equal_slot slots;
+          true
+        with
+        | Exit -> false
 
 
     let meet left right =
