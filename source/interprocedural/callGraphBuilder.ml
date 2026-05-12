@@ -4331,11 +4331,15 @@ module HigherOrderCallGraph = struct
             with
             | None -> state
             | Some { root; path } ->
-                (* For now, we ignore the path entirely. Thus, we should only perform strong updates
-                   when writing to an empty path. E.g, `x = foo` should be strong update, `x.foo =
-                   bar` should be a weak update. *)
-                let strong_update = TaintAccessPath.Path.is_empty path in
-                store_callees ~weak:(not strong_update) ~root ~callees state)
+                if TaintAccessPath.Path.is_empty path then
+                  store_callees ~weak:false ~root ~callees state
+                else
+                  (* Attribute assignments like `self.x = foo` should not propagate callees to the
+                     root variable. The callable is stored on an attribute, not on the variable
+                     itself. *)
+                  (* TODO(T270919728): Handle attribute assignments using an abstract tree domain,
+                     similar to the taint tree. *)
+                  state)
         | Assign { Assign.target; value = None; _ } -> (
             let _target_callees, state =
               analyze_expression ~pyre_in_context ~state ~expression:target

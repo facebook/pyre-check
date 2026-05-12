@@ -1035,16 +1035,7 @@ Higher order call graphs
 }
 {
   "callable": "attributes.IsAttributeBug.__init__",
-  "returned_callables": [
-    {
-      "target": "weakref.ReferenceType.__call__",
-      "index": 0,
-      "implicit_receiver": true,
-      "implicit_dunder_call": true,
-      "return_type": [],
-      "receiver_class": "weakref.ReferenceType"
-    }
-  ],
+  "returned_callables": [],
   "calls": {
     "217:8-217:14": {
       "attribute_access": {
@@ -1153,32 +1144,4 @@ Higher order call graphs
       }
     }
   }
-}
-{
-  "callable": "Overrides{attributes.IsAttributeBug.__init__}",
-  "returned_callables": [
-    {
-      "target": "weakref.ReferenceType.__call__",
-      "index": 0,
-      "implicit_receiver": true,
-      "implicit_dunder_call": true,
-      "return_type": [],
-      "receiver_class": "weakref.ReferenceType"
-    }
-  ],
-  "calls": {}
-}
-{
-  "callable": "Overrides{builtins.object.__init__}",
-  "returned_callables": [
-    {
-      "target": "weakref.ReferenceType.__call__",
-      "index": 0,
-      "implicit_receiver": true,
-      "implicit_dunder_call": true,
-      "return_type": [],
-      "receiver_class": "weakref.ReferenceType"
-    }
-  ],
-  "calls": {}
 }

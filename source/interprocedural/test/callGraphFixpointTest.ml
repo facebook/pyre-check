@@ -1209,6 +1209,7 @@ let test_higher_order_call_graph_fixpoint =
                };
              ]
            ();
+      (* TODO: This test requires the higher order call graph analysis to handle attributes. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_higher_order_call_graph_fixpoint
            ~source:
@@ -1241,30 +1242,9 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "19:9-19:16",
-                       ExpressionCallees.from_call
-                         (CallCallees.create
-                            ~call_targets:
-                              [
-                                CallTarget.create_regular
-                                  ~implicit_receiver:true
-                                  (Target.Regular.Method
-                                     {
-                                       class_name = "test.MyClass";
-                                       method_name = "bar";
-                                       kind = Normal;
-                                     });
-                              ]
-                            ()) );
+                       ExpressionCallees.from_call (CallCallees.create ~call_targets:[] ()) );
                    ];
-                 returned_callables =
-                   [
-                     (* TODO: Handle descriptors properly. Since `o.bar` evaluates into `foo`
-                        (because of calling `classproperty.__get__`, which results in calling
-                        `MyClass.bar`), `o.bar()` is `foo()`. Hence nothing should be returned
-                        here. *)
-                     CallTarget.create_regular
-                       (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                   ];
+                 returned_callables = [];
                };
                {
                  Expected.callable =
@@ -1284,13 +1264,7 @@ let test_higher_order_call_graph_fixpoint =
                            |> Target.from_regular );
                        ];
                  call_graph = [];
-                 returned_callables =
-                   [
-                     CallTarget.create_regular
-                       ~implicit_receiver:true
-                       (Target.Regular.Method
-                          { class_name = "test.MyClass"; method_name = "bar"; kind = Normal });
-                   ];
+                 returned_callables = [];
                };
                {
                  Expected.callable =
@@ -1357,13 +1331,7 @@ let test_higher_order_call_graph_fixpoint =
                                  ())
                             ()) );
                    ];
-                 returned_callables =
-                   [
-                     CallTarget.create_regular
-                       ~implicit_receiver:true
-                       (Target.Regular.Method
-                          { class_name = "test.MyClass"; method_name = "bar"; kind = Normal });
-                   ];
+                 returned_callables = [];
                };
              ]
            ();
@@ -1469,6 +1437,7 @@ let test_higher_order_call_graph_fixpoint =
                };
              ]
            ();
+      (* This test requires our higher order call graph analysis to handle attributes. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_higher_order_call_graph_fixpoint
            ~source:
@@ -1504,22 +1473,9 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "22:15-22:22",
-                       ExpressionCallees.from_call
-                         (CallCallees.create
-                            ~call_targets:
-                              [
-                                CallTarget.create_regular
-                                  ~implicit_receiver:true
-                                  (Target.Regular.Method
-                                     { class_name = "test.A"; method_name = "bar"; kind = Normal });
-                              ]
-                            ()) );
+                       ExpressionCallees.from_call (CallCallees.create ~call_targets:[] ()) );
                    ];
-                 returned_callables =
-                   [
-                     CallTarget.create_regular
-                       (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                   ];
+                 returned_callables = [];
                };
              ]
            ();
