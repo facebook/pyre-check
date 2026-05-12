@@ -14,6 +14,9 @@ Call dependencies
   "higher_order_functions.CallableSource.__call__ (method)": [
     "pysa._test_source (fun)"
   ],
+  "higher_order_functions.CallableSourceSubclass.__call__ (method)": [
+    "pysa._test_source (fun)"
+  ],
   "higher_order_functions.apply (fun)[formal(f, position=0)=higher_order_functions.has_tito (fun)]": [
     "higher_order_functions.has_tito (fun)"
   ],
@@ -101,7 +104,7 @@ Call dependencies
     "pysa._test_source (fun)"
   ],
   "higher_order_functions.test_callable_class_to_obscure (fun)": [
-    "higher_order_functions.CallableSource.__call__ (method)",
+    "higher_order_functions.CallableSource.__call__ (override)",
     "higher_order_functions.CallableSource.__init__ (method)",
     "higher_order_functions.test_callable_class_to_obscure.obscure_tito (fun)",
     "object.__new__ (method)"
@@ -113,6 +116,11 @@ Call dependencies
   ],
   "higher_order_functions.test_callable_default_value (fun)": [
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
+  ],
+  "higher_order_functions.test_callable_subclass_to_annotated_superclass (fun)": [
+    "higher_order_functions.CallableSource.__init__ (method)",
+    "higher_order_functions.test_callable_subclass_to_annotated_superclass.accept_callable_source (fun)[formal(x, position=0)=higher_order_functions.CallableSourceSubclass.__call__ (method)]",
+    "object.__new__ (method)"
   ],
   "higher_order_functions.test_conditional_apply_backward (fun)": [
     "higher_order_functions.conditional_apply (fun)[formal(f, position=0)=higher_order_functions.safe (fun), formal(g, position=1)=pysa._test_sink (fun)]",

@@ -2681,9 +2681,16 @@ module ReadOnly = struct
 
 
   (* Check if a class name is any variant of "object" *)
-  let is_object_class ~object_classes class_name =
+  let is_object_class_internal ~object_classes class_name =
     List.exists object_classes ~f:(fun { TypeshedClass.fully_qualified_name; _ } ->
         FullyQualifiedName.equal class_name fully_qualified_name)
+
+
+  (* Check if a class name is any variant of "object" *)
+  let is_object_class { object_classes; _ } class_name =
+    is_object_class_internal
+      ~object_classes
+      (FullyQualifiedName.from_reference_unchecked (Reference.create class_name))
 
 
   (* Get the SysInfo for a class by looking up its module *)
@@ -2726,7 +2733,7 @@ module ReadOnly = struct
     let class_name = FullyQualifiedName.from_reference_unchecked (Reference.create class_name) in
     let get_parents_from_class_metadata { ClassMetadataSharedMemory.Metadata.parents; _ } =
       match parents with
-      | [] when not (is_object_class ~object_classes class_name) ->
+      | [] when not (is_object_class_internal ~object_classes class_name) ->
           let object_class = get_object_class_for api class_name in
           [object_class]
       | parents ->
@@ -2752,7 +2759,7 @@ module ReadOnly = struct
     let class_name = FullyQualifiedName.from_reference_unchecked (Reference.create class_name) in
     let get_mro_from_class_metadata { ClassMetadataSharedMemory.Metadata.mro; _ } =
       match mro with
-      | _ when is_object_class ~object_classes class_name -> []
+      | _ when is_object_class_internal ~object_classes class_name -> []
       | ModuleDefinitionsFile.ClassMro.Cyclic ->
           (* Failed to resolve the mro because the class hierarchy is cyclic. Fallback to
              [object]. *)
@@ -2783,7 +2790,7 @@ module ReadOnly = struct
     =
     let parent = FullyQualifiedName.from_reference_unchecked (Reference.create parent) in
     let child = FullyQualifiedName.from_reference_unchecked (Reference.create child) in
-    if FullyQualifiedName.equal parent child || is_object_class ~object_classes parent then
+    if FullyQualifiedName.equal parent child || is_object_class_internal ~object_classes parent then
       true
     else
       let { ClassMetadataSharedMemory.Metadata.mro; _ } =

@@ -167,6 +167,21 @@ def test_callable_class_to_perfect_tito():
     return perfect_tito(c)  # Expecting no taint since we see the body of perfect_tito
 
 
+class CallableSourceSubclass(CallableSource):
+    def __call__(self) -> str:
+        return _test_source()
+
+
+def test_callable_subclass_to_annotated_superclass():
+    def accept_callable_source(x: CallableSource) -> CallableSource:
+        return x
+
+    c = CallableSourceSubclass()
+    # Expecting no parameterized target with __call__ since CallableSourceSubclass
+    # is a subclass of the annotated parameter type CallableSource.
+    return accept_callable_source(c)
+
+
 def test_duplicate_issues_in_different_parameterized_callables(f, flag: bool):
     def sink_wrapper(f, arg):
         _test_sink(arg)

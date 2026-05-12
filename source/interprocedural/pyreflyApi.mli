@@ -148,6 +148,8 @@ module ReadOnly : sig
 
   val is_subclass : t -> parent:string -> child:string -> bool
 
+  val is_object_class : t -> string -> bool
+
   val get_callable_metadata : t -> Ast.Reference.t -> CallableMetadata.t
 
   val get_callable_metadata_opt : t -> Ast.Reference.t -> CallableMetadata.t option

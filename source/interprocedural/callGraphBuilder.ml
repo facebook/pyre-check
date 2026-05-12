@@ -3682,13 +3682,104 @@ module HigherOrderCallGraph = struct
         analyze_expression ~pyre_in_context ~state ~expression:call.Call.callee
       in
       let ( (state, additional_higher_order_parameters, decorated_targets_from_arguments),
-            argument_callees_not_called_when_parameter )
+            argument_callees )
         =
         track_apply_call_step AnalyzeArguments (fun () ->
             List.fold_mapi
               arguments
               ~f:(analyze_argument ~higher_order_parameters:original_higher_order_parameters)
               ~init:(state, HigherOrderParameterMap.empty, []))
+      in
+      let argument_callees =
+        (* When passing an instance of a class with a `__call__` method as an argument, we end up
+           inferring an implicit `__call__` target for the argument. When the function is annotated
+           as taking the callable class, we should NOT create a parameterized target for it. This is
+           similar to the `filter_implicit_dunder_calls` logic in the pyrefly call graph building.
+           We check both call_targets and init_targets since constructor calls use init_targets. *)
+        match Context.pyre_api with
+        | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->
+            let any_parameter_annotation_has_class callable_class signatures =
+              let annotation_has_class annotation =
+                let { PyrePysaApi.ClassNamesFromType.classes; is_exhaustive = _ } =
+                  PyreflyApi.ReadOnly.Type.get_class_names pyrefly_api annotation
+                in
+                let allow_modifier = function
+                  | PyrePysaApi.TypeModifier.Optional
+                  | ReadOnly
+                  | Awaitable
+                  | Coroutine ->
+                      true
+                  | Type
+                  | TypeVariableBound
+                  | TypeVariableConstraint ->
+                      false
+                in
+                List.exists
+                  classes
+                  ~f:(fun { PyrePysaApi.ClassWithModifiers.class_name; modifiers } ->
+                    (not (PyreflyApi.ReadOnly.is_object_class pyrefly_api class_name))
+                    && List.for_all modifiers ~f:allow_modifier
+                    && PyreflyApi.ReadOnly.is_subclass
+                         pyrefly_api
+                         ~parent:class_name
+                         ~child:callable_class)
+              in
+              let parameter_has_class parameter =
+                PyrePysaApi.ModelQueries.FunctionParameter.annotation parameter
+                >>| annotation_has_class
+                |> Option.value ~default:false
+              in
+              List.exists
+                signatures
+                ~f:(fun { PyrePysaApi.ModelQueries.FunctionSignature.parameters; _ } ->
+                  match parameters with
+                  | PyrePysaApi.ModelQueries.FunctionParameters.List params ->
+                      List.exists params ~f:parameter_has_class
+                  | Ellipsis
+                  | ParamSpec ->
+                      false)
+            in
+            let filter_argument_callee ~signatures { CallTarget.implicit_dunder_call; target; _ } =
+              if not implicit_dunder_call then
+                true
+              else
+                let target =
+                  target
+                  |> Target.get_regular
+                  |> Target.Regular.override_to_method
+                  |> Target.from_regular
+                in
+                match target with
+                | Target.Regular
+                    (Target.Regular.Method
+                      { class_name = callable_class; method_name = "__call__"; _ }) ->
+                    not (any_parameter_annotation_has_class callable_class signatures)
+                | _ -> true
+            in
+            let filter_for_callee_targets callee_targets argument_callees =
+              match callee_targets with
+              | [{ CallTarget.target = callee; _ }] when not (Target.is_object callee) ->
+                  let define_name =
+                    callee
+                    |> Target.get_regular
+                    |> Target.Regular.override_to_method
+                    |> Target.Regular.define_name_exn
+                  in
+                  let signatures =
+                    PyreflyApi.ReadOnly.get_undecorated_signatures pyrefly_api define_name
+                  in
+                  List.map argument_callees ~f:(fun call_target_set ->
+                      CallTarget.Set.transform
+                        CallTarget.Set.Element
+                        Filter
+                        ~f:(filter_argument_callee ~signatures)
+                        call_target_set)
+              | _ -> argument_callees
+            in
+            argument_callees
+            |> filter_for_callee_targets original_call_targets
+            |> filter_for_callee_targets original_init_targets
+        | _ -> argument_callees
       in
       let ( parameterized_call_targets,
             decorated_call_targets,
@@ -3710,7 +3801,7 @@ module HigherOrderCallGraph = struct
                ~arguments
                ~unresolved
                ~override_implicit_receiver:true
-               ~argument_callees:argument_callees_not_called_when_parameter
+               ~argument_callees
                ~track_apply_call_step_name:"callee_return_targets"
         in
         let {
@@ -3726,7 +3817,7 @@ module HigherOrderCallGraph = struct
             ~arguments
             ~unresolved
             ~override_implicit_receiver:false
-            ~argument_callees:argument_callees_not_called_when_parameter
+            ~argument_callees
             ~track_apply_call_step_name:"call_targets"
             original_call_targets
         in
@@ -3748,7 +3839,7 @@ module HigherOrderCallGraph = struct
           ~arguments
           ~unresolved
           ~override_implicit_receiver:false
-          ~argument_callees:argument_callees_not_called_when_parameter
+          ~argument_callees
           ~track_apply_call_step_name:"init_targets"
           original_init_targets
       in
@@ -3862,7 +3953,7 @@ module HigherOrderCallGraph = struct
               Algorithms.fold_balanced
                 ~f:CallTarget.Set.join
                 ~init:CallTarget.Set.bottom
-                argument_callees_not_called_when_parameter
+                argument_callees
             else
               CallTarget.Set.bottom
           in
