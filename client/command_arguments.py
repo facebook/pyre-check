@@ -330,6 +330,7 @@ class AnalyzeArguments:
     show_type_errors: bool = False
     skip_buck_dependencies: bool = False
     pyrefly_results: Optional[str] = None
+    debug_pyrefly_report: bool = False
     sequential: bool = False
     taint_models_path: List[str] = field(default_factory=list)
     use_cache: bool = False

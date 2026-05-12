@@ -602,6 +602,7 @@ def _run_pyrefly(
     pyrefly_results: str,
     show_type_errors: bool = False,
     skip_buck_dependencies: bool = False,
+    report_format_json: bool = False,
 ) -> commands.ExitCode:
     with (
         backend_arguments.backend_log_file(prefix="pyrefly_check") as log_file,
@@ -630,6 +631,7 @@ def _run_pyrefly(
                 source_db_path,
                 "--report-pysa",
                 pyrefly_results,
+                *(["--report-pysa-format=json"] if report_format_json else []),
             ]
         else:
             pyrefly_working_directory = None
@@ -641,6 +643,7 @@ def _run_pyrefly(
                 "--progress-bar=simple",
                 "--report-pysa",
                 pyrefly_results,
+                *(["--report-pysa-format=json"] if report_format_json else []),
                 "--output-format",
                 "json",
                 "--output",
@@ -731,7 +734,9 @@ def run(
             tempfile.NamedTemporaryFile(
                 mode="w", delete=True, delete_on_close=False
             ) as temporary_file,
-            tempfile.TemporaryDirectory() as pyrefly_results,
+            tempfile.TemporaryDirectory(
+                delete=not analyze_arguments.debug_pyrefly_report
+            ) as pyrefly_results,
         ):
             pyrefly_binary_path = _download_pyrefly_binary(
                 configuration,
@@ -740,12 +745,16 @@ def run(
             )
             temporary_file.close()
 
+            if analyze_arguments.debug_pyrefly_report:
+                LOG.info(f"Pyrefly report will be preserved in: {pyrefly_results}")
+
             return_code = _run_pyrefly(
                 configuration,
                 pyrefly_binary_path,
                 pyrefly_results,
                 show_type_errors=analyze_arguments.show_type_errors,
                 skip_buck_dependencies=analyze_arguments.skip_buck_dependencies,
+                report_format_json=analyze_arguments.debug_pyrefly_report,
             )
             if return_code != commands.ExitCode.SUCCESS:
                 return return_code
