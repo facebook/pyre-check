@@ -112,19 +112,6 @@ def _parse_arguments(
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
     parser.add_argument("--mode", action="append", choices=generator_options.keys())
     parser.add_argument(
-        "--no-saved-state",
-        action="store_true",
-        default=False,
-        help="Deprecated and unused.",
-    )
-    parser.add_argument("--isolation-prefix", type=str, help="Deprecated and unused.")
-    parser.add_argument(
-        "--stop-pyre-server",
-        action="store_true",
-        default=False,
-        help="Deprecated and unused.",
-    )
-    parser.add_argument(
         "--output-directory", type=_file_exists, help="Directory to write models to"
     )
     arguments: argparse.Namespace = parser.parse_args()
