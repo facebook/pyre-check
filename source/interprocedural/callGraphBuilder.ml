@@ -662,18 +662,24 @@ let resolve_callee_from_defining_expression
 
 module ResolvedStrinfigy = struct
   type t =
-    | Str
-    | Repr
+    | Str of { method_name: string }
+    | Repr of { method_name: string }
 
-  let from_method_name = function
-    | "__str__" -> Some Str
-    | "__repr__" -> Some Repr
+  let from_method_name method_name =
+    let base_name =
+      match String.lsplit2 method_name ~on:'$' with
+      | Some (prefix, _) when not (String.is_empty prefix) -> prefix
+      | _ -> method_name
+    in
+    match base_name with
+    | "__str__" -> Some (Str { method_name })
+    | "__repr__" -> Some (Repr { method_name })
     | _ -> None
 
 
   let to_method_name = function
-    | Str -> "__str__"
-    | Repr -> "__repr__"
+    | Str { method_name } -> method_name
+    | Repr { method_name } -> method_name
 end
 
 (* Resolve a call to `str(x)` into `x.__str__()` or `x.__repr__()` *)
@@ -711,10 +717,10 @@ let resolve_stringify_call
         with
         | Some name when Reference.equal name (Reference.create "object.__str__") ->
             (* Call resolved to object.__str__, fallback to calling __repr__ if it exists. *)
-            ResolvedStrinfigy.Repr
-        | _ -> ResolvedStrinfigy.Str
+            ResolvedStrinfigy.Repr { method_name = "__repr__" }
+        | _ -> ResolvedStrinfigy.Str { method_name = "__str__" }
       with
-      | Analysis.ClassHierarchy.Untracked _ -> Str)
+      | Analysis.ClassHierarchy.Untracked _ -> Str { method_name = "__str__" })
   | PyrePysaApi.InContext.Pyrefly pyrefly_api -> (
       (* When using pyrefly, use the callee of the artificial call resolved by pyrefly *)
       let call_graph = PyreflyApi.InContext.call_graph pyrefly_api in
@@ -736,11 +742,12 @@ let resolve_stringify_call
                 }
                 :: _;
               _;
-            }) ->
-          ResolvedStrinfigy.from_method_name method_name
-          |> Option.value_exn ~message:"unexpected method name"
+            }) -> (
+          match ResolvedStrinfigy.from_method_name method_name with
+          | Some resolved -> resolved
+          | None -> failwith (Format.asprintf "unexpected method name: %s" method_name))
       | Some (ExpressionCallees.Call { CallCallees.unresolved = Unresolved.True _; _ }) ->
-          ResolvedStrinfigy.Repr (* fallback *)
+          ResolvedStrinfigy.Repr { method_name = "__repr__" } (* fallback *)
       | _ ->
           Format.asprintf
             "Missing or unexpected call graph edge for expression identifier %a"
@@ -2630,8 +2637,10 @@ module CallGraphBuilder = struct
                              ~location:expression_location)
                         expression
                     with
-                    | ResolvedStrinfigy.Str -> "__str__", Origin.FormatStringImplicitStr
-                    | ResolvedStrinfigy.Repr -> "__repr__", Origin.FormatStringImplicitRepr
+                    | ResolvedStrinfigy.Str { method_name } ->
+                        method_name, Origin.FormatStringImplicitStr
+                    | ResolvedStrinfigy.Repr { method_name } ->
+                        method_name, Origin.FormatStringImplicitRepr
                   in
                   {
                     Node.value =

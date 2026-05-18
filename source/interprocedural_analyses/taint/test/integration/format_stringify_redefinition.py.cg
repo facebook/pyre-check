@@ -1,0 +1,13 @@
+@generated
+Call dependencies
+{
+  "format_stringify_redefinition.source_via_str (fun)": [
+    "pysa._test_source (fun)"
+  ],
+  "format_stringify_redefinition.str_of_base (fun)": [
+    "BaseException.__str__ (method)"
+  ],
+  "format_stringify_redefinition.str_of_sub (fun)": [
+    "BaseException.__str__ (method)"
+  ]
+}
