@@ -847,7 +847,7 @@ module StaticAnalysis = struct
 
   (* Maximum depth for parameterized targets, i.e `foo[x: bar[y: baz]]` has depth 2. We limit the
      depth to prevent infinite recursion. *)
-  let default_maximum_target_depth = 10
+  let default_maximum_target_depth = 6
 
   (* Maximum number of parameterized targets that can be created at a call site. *)
   let default_maximum_parameterized_targets_at_call_site = 10
@@ -898,7 +898,8 @@ module StaticAnalysis = struct
       ?(compute_coverage = false)
       ?(scheduler_policies = SchedulerPolicies.empty)
       ?(higher_order_call_graph_max_iterations = default_higher_order_call_graph_max_iterations)
-      ?(maximum_parameterized_targets_at_call_site = None)
+      ?(maximum_parameterized_targets_at_call_site =
+        Some default_maximum_parameterized_targets_at_call_site)
       ()
     =
     {

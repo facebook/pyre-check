@@ -423,7 +423,11 @@ let static_analysis_configuration_of
       Option.value
         maximum_target_depth
         ~default:Configuration.StaticAnalysis.default_maximum_target_depth;
-    maximum_parameterized_targets_at_call_site;
+    maximum_parameterized_targets_at_call_site =
+      Some
+        (Option.value
+           maximum_parameterized_targets_at_call_site
+           ~default:Configuration.StaticAnalysis.default_maximum_parameterized_targets_at_call_site);
   }
 
 
