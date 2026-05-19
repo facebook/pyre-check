@@ -1542,6 +1542,26 @@ module ModelQueries = struct
           UnknownClassAttribute { name; module_qualifier = None; location = None }
       | UnknownModuleGlobal { name; _ } ->
           UnknownModuleGlobal { name; module_qualifier = None; location = None }
+
+
+    let module_qualifier = function
+      | Class { module_qualifier; _ } -> module_qualifier
+      | Module { qualifier } -> Some qualifier
+      | Function { module_qualifier; _ } -> module_qualifier
+      | ClassAttribute { module_qualifier; _ } -> module_qualifier
+      | ModuleGlobal { module_qualifier; _ } -> module_qualifier
+      | UnknownClassAttribute { module_qualifier; _ } -> module_qualifier
+      | UnknownModuleGlobal { module_qualifier; _ } -> module_qualifier
+
+
+    let location = function
+      | Class { location; _ } -> location
+      | Module _ -> None
+      | Function { location; _ } -> location
+      | ClassAttribute { location; _ } -> location
+      | ModuleGlobal { location; _ } -> location
+      | UnknownClassAttribute { location; _ } -> location
+      | UnknownModuleGlobal { location; _ } -> location
   end
 
   let containing_source read_only reference =

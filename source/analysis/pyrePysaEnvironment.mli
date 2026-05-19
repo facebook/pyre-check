@@ -619,6 +619,10 @@ module ModelQueries : sig
     val is_class : t -> bool
 
     val strip_location_and_module : t -> t
+
+    val module_qualifier : t -> Ast.Reference.t option
+
+    val location : t -> Ast.Location.t option
   end
 
   val mangle_top_level_name : Ast.Reference.t -> Ast.Reference.t

@@ -48,6 +48,18 @@ module FormatStringError : sig
   val description : t -> string
 end
 
+module SourceLocation : sig
+  type t = {
+    path: string;
+    location: Location.t option;
+  }
+  [@@deriving equal, compare]
+
+  val pp : Format.formatter -> t -> unit
+
+  val show : t -> string
+end
+
 type kind =
   | ParseError
   | UnexpectedStatement of Statement.t
@@ -60,10 +72,12 @@ type kind =
       name: string;
       callable_signatures: Interprocedural.PyrePysaApi.ModelQueries.FunctionSignature.t list;
       errors: IncompatibleModelError.t list;
+      define_location: SourceLocation.t option;
     }
   | ImportedFunctionModel of {
       name: Reference.t;
       actual_name: Reference.t;
+      define_location: SourceLocation.t option;
     }
   | ModelQueryUnsupportedNamedParameter of string
   | ModelQueryUnnamedParameter of Expression.t
@@ -106,12 +120,30 @@ type kind =
       symbol_name: string;
     }
   | MissingClass of { class_name: string }
-  | ModelingClassAsDefine of string
-  | ModelingModuleAsDefine of string
-  | ModelingAttributeAsDefine of string
-  | ModelingClassAsAttribute of string
-  | ModelingModuleAsAttribute of string
-  | ModelingCallableAsAttribute of string
+  | ModelingClassAsDefine of {
+      name: string;
+      class_location: SourceLocation.t option;
+    }
+  | ModelingModuleAsDefine of {
+      name: string;
+      module_path: string option;
+    }
+  | ModelingAttributeAsDefine of {
+      name: string;
+      attribute_location: SourceLocation.t option;
+    }
+  | ModelingClassAsAttribute of {
+      name: string;
+      class_location: SourceLocation.t option;
+    }
+  | ModelingModuleAsAttribute of {
+      name: string;
+      module_path: string option;
+    }
+  | ModelingCallableAsAttribute of {
+      name: string;
+      callable_location: SourceLocation.t option;
+    }
   | BaseModuleNotInEnvironment of {
       module_name: string;
       name: string;

@@ -3633,6 +3633,14 @@ let is_property_getter_setter ~decorators ~callable_name =
   is_property_getter, is_property_setter
 
 
+let source_location_of_global ~pyre_api global =
+  let module_qualifier = PyrePysaApi.ModelQueries.Global.module_qualifier global in
+  let location = PyrePysaApi.ModelQueries.Global.location global in
+  module_qualifier
+  >>= PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api
+  >>| fun path -> { ModelVerificationError.SourceLocation.path; location }
+
+
 let create_models_from_signature
     ~pyre_api
     ~path
@@ -3740,23 +3748,41 @@ let create_models_from_signature
                         module_qualifier;
                         location;
                       }
-                | Global.Class _ ->
+                | Global.Class _ as global ->
                     Second
                       (make_verification_error
-                         (ModelingClassAsDefine (Reference.show user_provided_callable_name)))
-                | Global.Module _ ->
+                         (ModelingClassAsDefine
+                            {
+                              name = Reference.show user_provided_callable_name;
+                              class_location = source_location_of_global ~pyre_api global;
+                            }))
+                | Global.Module { qualifier } ->
+                    let module_path =
+                      PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api qualifier
+                    in
                     Second
                       (make_verification_error
-                         (ModelingModuleAsDefine (Reference.show user_provided_callable_name)))
-                | Global.ClassAttribute _
-                | Global.ModuleGlobal _ ->
+                         (ModelingModuleAsDefine
+                            { name = Reference.show user_provided_callable_name; module_path }))
+                | (Global.ClassAttribute _ | Global.ModuleGlobal _) as global ->
                     Second
                       (make_verification_error
-                         (ModelingAttributeAsDefine (Reference.show user_provided_callable_name)))))
+                         (ModelingAttributeAsDefine
+                            {
+                              name = Reference.show user_provided_callable_name;
+                              attribute_location = source_location_of_global ~pyre_api global;
+                            }))))
   in
-  let build_model_for_callable ({ Function.define_name; _ } as callable) =
-    let open Core.Result in
+  let build_model_for_callable
+      ({ Function.define_name; module_qualifier; location = callable_location; _ } as callable)
+    =
     let model_verification_error kind = Error (make_verification_error kind) in
+    let define_location () =
+      module_qualifier
+      >>= PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api
+      >>| fun path -> { ModelVerificationError.SourceLocation.path; location = callable_location }
+    in
+    let open Core.Result in
     (* Check model matches callables primary signature. *)
     let callable_parameter_names_to_roots =
       (* TODO(T180849788): Consolidate `callable_signature` accesses into an API *)
@@ -3810,6 +3836,7 @@ let create_models_from_signature
                        Option.value_exn undecorated_signatures);
                     errors =
                       [ModelVerificationError.IncompatibleModelError.{ reason; overload = None }];
+                    define_location = define_location ();
                   };
               path;
               location;
@@ -3954,6 +3981,7 @@ let create_models_from_signature
       ~normalized_model_parameters
       ~friendly_name:(CallableName.reference callable_name)
       ~imported_name
+      ~define_location
       callable_undecorated_signatures
     >>= fun () ->
     List.map
@@ -4105,18 +4133,30 @@ let create_models_from_attribute
             | Global.ModuleGlobal { name; _ } -> First name
             | Global.UnknownClassAttribute { name; _ } -> First name
             | Global.UnknownModuleGlobal { name; _ } -> First name
-            | Global.Class _ ->
+            | Global.Class _ as global ->
                 Second
                   (make_verification_error
-                     (ModelingClassAsAttribute (Reference.show user_provided_attribute_name)))
-            | Global.Module _ ->
+                     (ModelingClassAsAttribute
+                        {
+                          name = Reference.show user_provided_attribute_name;
+                          class_location = source_location_of_global ~pyre_api global;
+                        }))
+            | Global.Module { qualifier } ->
+                let module_path =
+                  PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api qualifier
+                in
                 Second
                   (make_verification_error
-                     (ModelingModuleAsAttribute (Reference.show user_provided_attribute_name)))
-            | Global.Function _ ->
+                     (ModelingModuleAsAttribute
+                        { name = Reference.show user_provided_attribute_name; module_path }))
+            | Global.Function _ as global ->
                 Second
                   (make_verification_error
-                     (ModelingCallableAsAttribute (Reference.show user_provided_attribute_name))))
+                     (ModelingCallableAsAttribute
+                        {
+                          name = Reference.show user_provided_attribute_name;
+                          callable_location = source_location_of_global ~pyre_api global;
+                        })))
   in
   let build_model_for_attribute attribute_name =
     let open Core.Result in

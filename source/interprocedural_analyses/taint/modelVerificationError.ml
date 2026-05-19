@@ -63,6 +63,32 @@ module FormatStringError = struct
         Format.asprintf "identifier `%s` cannot be used in an integer expression" identifier
 end
 
+module SourceLocation = struct
+  type t = {
+    path: string;
+    location: Location.t option;
+  }
+  [@@deriving equal, compare]
+
+  let pp formatter { path; location } =
+    match location with
+    | Some location -> Format.fprintf formatter "%s:%d" path (Location.line location)
+    | None -> Format.fprintf formatter "%s" path
+
+
+  let show source_location = Format.asprintf "%a" pp source_location
+
+  let pp_defined_at formatter { path; location } =
+    match location with
+    | Some location -> Format.fprintf formatter " (defined at %s:%d)" path (Location.line location)
+    | None -> Format.fprintf formatter " (defined in %s)" path
+
+
+  let pp_defined_at_option formatter = function
+    | Some source_location -> pp_defined_at formatter source_location
+    | None -> ()
+end
+
 type kind =
   | ParseError
   | UnexpectedStatement of Statement.t
@@ -75,10 +101,12 @@ type kind =
       name: string;
       callable_signatures: PyrePysaApi.ModelQueries.FunctionSignature.t list;
       errors: IncompatibleModelError.t list;
+      define_location: SourceLocation.t option;
     }
   | ImportedFunctionModel of {
       name: Reference.t;
       actual_name: Reference.t;
+      define_location: SourceLocation.t option;
     }
   | ModelQueryUnsupportedNamedParameter of string
   | ModelQueryUnnamedParameter of Expression.t
@@ -121,12 +149,30 @@ type kind =
       symbol_name: string;
     }
   | MissingClass of { class_name: string }
-  | ModelingClassAsDefine of string
-  | ModelingModuleAsDefine of string
-  | ModelingAttributeAsDefine of string
-  | ModelingClassAsAttribute of string
-  | ModelingModuleAsAttribute of string
-  | ModelingCallableAsAttribute of string
+  | ModelingClassAsDefine of {
+      name: string;
+      class_location: SourceLocation.t option;
+    }
+  | ModelingModuleAsDefine of {
+      name: string;
+      module_path: string option;
+    }
+  | ModelingAttributeAsDefine of {
+      name: string;
+      attribute_location: SourceLocation.t option;
+    }
+  | ModelingClassAsAttribute of {
+      name: string;
+      class_location: SourceLocation.t option;
+    }
+  | ModelingModuleAsAttribute of {
+      name: string;
+      module_path: string option;
+    }
+  | ModelingCallableAsAttribute of {
+      name: string;
+      callable_location: SourceLocation.t option;
+    }
   | BaseModuleNotInEnvironment of {
       module_name: string;
       name: string;
@@ -295,7 +341,7 @@ let description error =
         callable_name
         name
         (Expression.show expression)
-  | IncompatibleModelError { name; callable_signatures; errors } ->
+  | IncompatibleModelError { name; callable_signatures; errors; define_location } ->
       let errors =
         List.map errors ~f:(fun { reason; overload } ->
             let reason =
@@ -339,16 +385,20 @@ let description error =
         | errors -> Format.sprintf "Reasons:\n%s" (String.concat errors ~sep:"\n")
       in
       Format.asprintf
-        "Model signature parameters for `%s` do not match implementation `%a`. %s"
+        "Model signature parameters for `%s`%a do not match implementation `%a`. %s"
         name
+        SourceLocation.pp_defined_at_option
+        define_location
         pp_function_signatures
         callable_signatures
         reasons
-  | ImportedFunctionModel { name; actual_name } ->
+  | ImportedFunctionModel { name; actual_name; define_location } ->
       Format.asprintf
-        "The modelled function `%a` is an imported function, please model `%a` directly."
+        "The modelled function `%a`%a is an imported function, please model `%a` directly."
         Reference.pp
         name
+        SourceLocation.pp_defined_at_option
+        define_location
         Reference.pp
         actual_name
   | ModelQueryUnsupportedNamedParameter name ->
@@ -449,31 +499,49 @@ let description error =
   | MissingSymbol { module_name; symbol_name } ->
       Format.sprintf "Module `%s` does not define `%s`." module_name symbol_name
   | MissingClass { class_name } -> Format.sprintf "Class `%s` does not exist." class_name
-  | ModelingClassAsDefine class_name ->
-      Format.sprintf
-        "The class `%s` is not a valid define - did you mean to model `%s.__init__()`?"
-        class_name
-        class_name
-  | ModelingModuleAsDefine module_name ->
-      Format.sprintf "The module `%s` is not a valid define." module_name
-  | ModelingAttributeAsDefine attribute_name ->
-      Format.sprintf
-        "The attribute `%s` is not a valid define - did you mean to use `%s: ...`?"
-        attribute_name
-        attribute_name
-  | ModelingClassAsAttribute class_name ->
-      Format.sprintf
-        "The class `%s` is not a valid attribute - did you mean to model `%s.__init__()`?"
-        class_name
-        class_name
-  | ModelingModuleAsAttribute module_name ->
-      Format.sprintf "The module `%s` is not a valid attribute." module_name
-  | ModelingCallableAsAttribute callable_name ->
-      Format.sprintf
-        "The function, method or property `%s` is not a valid attribute - did you mean to use `def \
-         %s(): ...`?"
-        callable_name
-        callable_name
+  | ModelingClassAsDefine { name; class_location } ->
+      Format.asprintf
+        "The class `%s`%a is not a valid define - did you mean to model `%s.__init__()`?"
+        name
+        SourceLocation.pp_defined_at_option
+        class_location
+        name
+  | ModelingModuleAsDefine { name; module_path } ->
+      let location_suffix =
+        match module_path with
+        | Some path -> Format.sprintf " (defined in %s)" path
+        | None -> ""
+      in
+      Format.sprintf "The module `%s`%s is not a valid define." name location_suffix
+  | ModelingAttributeAsDefine { name; attribute_location } ->
+      Format.asprintf
+        "The attribute `%s`%a is not a valid define - did you mean to use `%s: ...`?"
+        name
+        SourceLocation.pp_defined_at_option
+        attribute_location
+        name
+  | ModelingClassAsAttribute { name; class_location } ->
+      Format.asprintf
+        "The class `%s`%a is not a valid attribute - did you mean to model `%s.__init__()`?"
+        name
+        SourceLocation.pp_defined_at_option
+        class_location
+        name
+  | ModelingModuleAsAttribute { name; module_path } ->
+      let location_suffix =
+        match module_path with
+        | Some path -> Format.sprintf " (defined in %s)" path
+        | None -> ""
+      in
+      Format.sprintf "The module `%s`%s is not a valid attribute." name location_suffix
+  | ModelingCallableAsAttribute { name; callable_location } ->
+      Format.asprintf
+        "The function, method or property `%s`%a is not a valid attribute - did you mean to use \
+         `def %s(): ...`?"
+        name
+        SourceLocation.pp_defined_at_option
+        callable_location
+        name
   | BaseModuleNotInEnvironment { module_name; name } ->
       Format.sprintf
         "`%s` is not part of the environment, no module `%s` in search path."

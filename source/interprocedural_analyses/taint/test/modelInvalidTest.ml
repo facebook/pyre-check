@@ -349,70 +349,78 @@ let test_invalid_models =
              "def test.sink_with_optional(parameter, firstOptional, secondOptional, \
               thirdOptional): ..."
            ~expect:
-             "Model signature parameters for `test.sink_with_optional` do not match implementation \
-              `def (parameter: unknown, firstOptional: unknown = ..., secondOptional: unknown = \
-              ...) -> None: ...`. Reason: unexpected named parameter: `thirdOptional`."
+             "Model signature parameters for `test.sink_with_optional` (defined at test.py:7) do \
+              not match implementation `def (parameter: unknown, firstOptional: unknown = ..., \
+              secondOptional: unknown = ...) -> None: ...`. Reason: unexpected named parameter: \
+              `thirdOptional`."
            ~pyrefly_expect:
-             "Model signature parameters for `test.sink_with_optional` do not match implementation \
-              `def (parameter: Unknown, firstOptional: int | Unknown = ..., secondOptional: int | \
-              Unknown = ...) -> None: ...`. Reason: unexpected named parameter: `thirdOptional`.";
+             "Model signature parameters for `test.sink_with_optional` (defined at test.py:7) do \
+              not match implementation `def (parameter: Unknown, firstOptional: int | Unknown = \
+              ..., secondOptional: int | Unknown = ...) -> None: ...`. Reason: unexpected named \
+              parameter: `thirdOptional`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"def test.sink_with_optional(parameter, firstBad, secondBad): ..."
            ~expect:
-             "Model signature parameters for `test.sink_with_optional` do not match implementation \
-              `def (parameter: unknown, firstOptional: unknown = ..., secondOptional: unknown = \
-              ...) -> None: ...`. Reason: unexpected named parameter: `firstBad`."
+             "Model signature parameters for `test.sink_with_optional` (defined at test.py:7) do \
+              not match implementation `def (parameter: unknown, firstOptional: unknown = ..., \
+              secondOptional: unknown = ...) -> None: ...`. Reason: unexpected named parameter: \
+              `firstBad`."
            ~pyrefly_expect:
-             "Model signature parameters for `test.sink_with_optional` do not match implementation \
-              `def (parameter: Unknown, firstOptional: int | Unknown = ..., secondOptional: int | \
-              Unknown = ...) -> None: ...`. Reason: unexpected named parameter: `firstBad`.";
+             "Model signature parameters for `test.sink_with_optional` (defined at test.py:7) do \
+              not match implementation `def (parameter: Unknown, firstOptional: int | Unknown = \
+              ..., secondOptional: int | Unknown = ...) -> None: ...`. Reason: unexpected named \
+              parameter: `firstBad`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"def test.sink_with_optional(parameter, *args): ..."
            ~expect:
-             "Model signature parameters for `test.sink_with_optional` do not match implementation \
-              `def (parameter: unknown, firstOptional: unknown = ..., secondOptional: unknown = \
-              ...) -> None: ...`. Reason: unexpected star parameter."
+             "Model signature parameters for `test.sink_with_optional` (defined at test.py:7) do \
+              not match implementation `def (parameter: unknown, firstOptional: unknown = ..., \
+              secondOptional: unknown = ...) -> None: ...`. Reason: unexpected star parameter."
            ~pyrefly_expect:
-             "Model signature parameters for `test.sink_with_optional` do not match implementation \
-              `def (parameter: Unknown, firstOptional: int | Unknown = ..., secondOptional: int | \
-              Unknown = ...) -> None: ...`. Reason: unexpected star parameter.";
+             "Model signature parameters for `test.sink_with_optional` (defined at test.py:7) do \
+              not match implementation `def (parameter: Unknown, firstOptional: int | Unknown = \
+              ..., secondOptional: int | Unknown = ...) -> None: ...`. Reason: unexpected star \
+              parameter.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"def test.sink_with_optional(parameter, **kwargs): ..."
            ~expect:
-             "Model signature parameters for `test.sink_with_optional` do not match implementation \
-              `def (parameter: unknown, firstOptional: unknown = ..., secondOptional: unknown = \
-              ...) -> None: ...`. Reason: unexpected star star parameter."
+             "Model signature parameters for `test.sink_with_optional` (defined at test.py:7) do \
+              not match implementation `def (parameter: unknown, firstOptional: unknown = ..., \
+              secondOptional: unknown = ...) -> None: ...`. Reason: unexpected star star \
+              parameter."
            ~pyrefly_expect:
-             "Model signature parameters for `test.sink_with_optional` do not match implementation \
-              `def (parameter: Unknown, firstOptional: int | Unknown = ..., secondOptional: int | \
-              Unknown = ...) -> None: ...`. Reason: unexpected star star parameter.";
+             "Model signature parameters for `test.sink_with_optional` (defined at test.py:7) do \
+              not match implementation `def (parameter: Unknown, firstOptional: int | Unknown = \
+              ..., secondOptional: int | Unknown = ...) -> None: ...`. Reason: unexpected star \
+              star parameter.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"def test.sink_with_optional(__parameter): ..."
            ~expect:
-             "Model signature parameters for `test.sink_with_optional` do not match implementation \
-              `def (parameter: unknown, firstOptional: unknown = ..., secondOptional: unknown = \
-              ...) -> None: ...`. Reason: unexpected positional only parameter: `__parameter`."
+             "Model signature parameters for `test.sink_with_optional` (defined at test.py:7) do \
+              not match implementation `def (parameter: unknown, firstOptional: unknown = ..., \
+              secondOptional: unknown = ...) -> None: ...`. Reason: unexpected positional only \
+              parameter: `__parameter`."
            ~pyrefly_expect:
-             "Model signature parameters for `test.sink_with_optional` do not match implementation \
-              `def (parameter: Unknown, firstOptional: int | Unknown = ..., secondOptional: int | \
-              Unknown = ...) -> None: ...`. Reason: unexpected positional only parameter: \
-              `__parameter`.";
+             "Model signature parameters for `test.sink_with_optional` (defined at test.py:7) do \
+              not match implementation `def (parameter: Unknown, firstOptional: int | Unknown = \
+              ..., secondOptional: int | Unknown = ...) -> None: ...`. Reason: unexpected \
+              positional only parameter: `__parameter`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:
              "def test.function_with_args(normal_arg, __random_name, named_arg, *args): ..."
            ~expect:
-             "Model signature parameters for `test.function_with_args` do not match implementation \
-              `def (normal_arg: unknown, __arg1: unknown, *args) -> None: ...`. Reason: unexpected \
-              named parameter: `named_arg`."
+             "Model signature parameters for `test.function_with_args` (defined at test.py:13) do \
+              not match implementation `def (normal_arg: unknown, __arg1: unknown, *args) -> None: \
+              ...`. Reason: unexpected named parameter: `named_arg`."
            ~pyrefly_expect:
-             "Model signature parameters for `test.function_with_args` do not match implementation \
-              `def (normal_arg: Unknown, __anonymous_arg: Unknown, args) -> None: ...`. Reason: \
-              unexpected named parameter: `named_arg`.";
+             "Model signature parameters for `test.function_with_args` (defined at test.py:13) do \
+              not match implementation `def (normal_arg: Unknown, __anonymous_arg: Unknown, args) \
+              -> None: ...`. Reason: unexpected named parameter: `named_arg`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model
            ~model_source:"def test.function_with_args(normal_arg, __random_name, *args): ...";
@@ -421,13 +429,13 @@ let test_invalid_models =
            ~model_source:
              "def test.function_with_args(normal_arg, __random_name, *, named_arg, *args): ..."
            ~expect:
-             "Model signature parameters for `test.function_with_args` do not match implementation \
-              `def (normal_arg: unknown, __arg1: unknown, *args) -> None: ...`. Reason: unexpected \
-              named parameter: `named_arg`."
+             "Model signature parameters for `test.function_with_args` (defined at test.py:13) do \
+              not match implementation `def (normal_arg: unknown, __arg1: unknown, *args) -> None: \
+              ...`. Reason: unexpected named parameter: `named_arg`."
            ~pyrefly_expect:
-             "Model signature parameters for `test.function_with_args` do not match implementation \
-              `def (normal_arg: Unknown, __anonymous_arg: Unknown, args) -> None: ...`. Reason: \
-              unexpected named parameter: `named_arg`.";
+             "Model signature parameters for `test.function_with_args` (defined at test.py:13) do \
+              not match implementation `def (normal_arg: Unknown, __anonymous_arg: Unknown, args) \
+              -> None: ...`. Reason: unexpected named parameter: `named_arg`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model
            ~model_source:
@@ -438,13 +446,13 @@ let test_invalid_models =
       @@ assert_invalid_model
            ~model_source:"def test.function_with_kwargs(normal_arg, crazy_arg, **kwargs): ..."
            ~expect:
-             "Model signature parameters for `test.function_with_kwargs` do not match \
-              implementation `def (normal_arg: unknown, **kwargs: unknown) -> None: ...`. Reason: \
-              unexpected named parameter: `crazy_arg`."
+             "Model signature parameters for `test.function_with_kwargs` (defined at test.py:14) \
+              do not match implementation `def (normal_arg: unknown, **kwargs: unknown) -> None: \
+              ...`. Reason: unexpected named parameter: `crazy_arg`."
            ~pyrefly_expect:
-             "Model signature parameters for `test.function_with_kwargs` do not match \
-              implementation `def (normal_arg: Unknown, kwargs: Unknown) -> None: ...`. Reason: \
-              unexpected named parameter: `crazy_arg`.";
+             "Model signature parameters for `test.function_with_kwargs` (defined at test.py:14) \
+              do not match implementation `def (normal_arg: Unknown, kwargs: Unknown) -> None: \
+              ...`. Reason: unexpected named parameter: `crazy_arg`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model ~model_source:"def test.function_with_overloads(__key): ...";
       labeled_test_case __FUNCTION__ __LINE__
@@ -455,21 +463,23 @@ let test_invalid_models =
       @@ assert_invalid_model
            ~model_source:"def test.function_with_overloads(unknownNamed): ..."
            ~expect:
-             "Model signature parameters for `test.function_with_overloads` do not match \
-              implementation `def (__arg0: str) -> int | str: ... | def (__arg0: str, firstNamed: \
-              int) -> int: ... | def (__arg0: str, secondNamed: str) -> str: ...`. Reason: \
-              unexpected named parameter: `unknownNamed`."
+             "Model signature parameters for `test.function_with_overloads` (defined at \
+              test.py:20) do not match implementation `def (__arg0: str) -> int | str: ... | def \
+              (__arg0: str, firstNamed: int) -> int: ... | def (__arg0: str, secondNamed: str) -> \
+              str: ...`. Reason: unexpected named parameter: `unknownNamed`."
            ~pyrefly_expect:
-             "Model signature parameters for `test.function_with_overloads` do not match \
-              implementation `def (__key: str, firstNamed: int) -> int: ... | def (__key: str, \
-              secondNamed: str) -> str: ...`. Reason: unexpected named parameter: `unknownNamed`.";
+             "Model signature parameters for `test.function_with_overloads` (defined at \
+              test.py:23) do not match implementation `def (__key: str, firstNamed: int) -> int: \
+              ... | def (__key: str, secondNamed: str) -> str: ...`. Reason: unexpected named \
+              parameter: `unknownNamed`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"def test.function_with_overloads(firstNamed, secondNamed): ..."
            ~expect:
-             "Model signature parameters for `test.function_with_overloads` do not match \
-              implementation `def (__arg0: str) -> int | str: ... | def (__arg0: str, firstNamed: \
-              int) -> int: ... | def (__arg0: str, secondNamed: str) -> str: ...`. Reasons:\n\
+             "Model signature parameters for `test.function_with_overloads` (defined at \
+              test.py:20) do not match implementation `def (__arg0: str) -> int | str: ... | def \
+              (__arg0: str, firstNamed: int) -> int: ... | def (__arg0: str, secondNamed: str) -> \
+              str: ...`. Reasons:\n\
               unexpected named parameter: `secondNamed` in overload `def (__arg0: str) -> int | \
               str: ...`\n\
               unexpected named parameter: `firstNamed` in overload `def (__arg0: str) -> int | \
@@ -479,9 +489,9 @@ let test_invalid_models =
               unexpected named parameter: `firstNamed` in overload `def (__arg0: str, secondNamed: \
               str) -> str: ...`"
            ~pyrefly_expect:
-             "Model signature parameters for `test.function_with_overloads` do not match \
-              implementation `def (__key: str, firstNamed: int) -> int: ... | def (__key: str, \
-              secondNamed: str) -> str: ...`. Reasons:\n\
+             "Model signature parameters for `test.function_with_overloads` (defined at \
+              test.py:23) do not match implementation `def (__key: str, firstNamed: int) -> int: \
+              ... | def (__key: str, secondNamed: str) -> str: ...`. Reasons:\n\
               unexpected named parameter: `secondNamed` in overload `def (__key: str, firstNamed: \
               int) -> int: ...`\n\
               unexpected named parameter: `firstNamed` in overload `def (__key: str, secondNamed: \
@@ -490,24 +500,24 @@ let test_invalid_models =
       @@ assert_invalid_model
            ~model_source:"def test.function_with_multiple_positions(c): ..."
            ~expect:
-             "Model signature parameters for `test.function_with_multiple_positions` do not match \
-              implementation `def (a: int, b: int, c: int) -> int | str: ... | def (a: int, c: \
-              int) -> str: ...`. Reason: invalid position 0 for named parameter `c` (valid options \
-              are {formal(c, position=1), formal(c, position=2)})."
+             "Model signature parameters for `test.function_with_multiple_positions` (defined at \
+              test.py:26) do not match implementation `def (a: int, b: int, c: int) -> int | str: \
+              ... | def (a: int, c: int) -> str: ...`. Reason: invalid position 0 for named \
+              parameter `c` (valid options are {formal(c, position=1), formal(c, position=2)})."
            ~skip_for_pyrefly:true;
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"def test.function_with_positional_and_named(__x): ..."
            ~expect:
-             "Model signature parameters for `test.function_with_positional_and_named` do not \
-              match implementation `def (a: str, __arg1: str, __arg2: str, b: str) -> None: ...`. \
-              Reason: unexpected positional only parameter: `__x` at position: 0 (0 not in {1, \
-              2})."
+             "Model signature parameters for `test.function_with_positional_and_named` (defined at \
+              test.py:28) do not match implementation `def (a: str, __arg1: str, __arg2: str, b: \
+              str) -> None: ...`. Reason: unexpected positional only parameter: `__x` at position: \
+              0 (0 not in {1, 2})."
            ~pyrefly_expect:
-             "Model signature parameters for `test.function_with_positional_and_named` do not \
-              match implementation `def (a: str, __x: str, __y: str, b: str) -> None: ...`. \
-              Reason: unexpected positional only parameter: `__x` at position: 0 (0 not in {1, \
-              2}).";
+             "Model signature parameters for `test.function_with_positional_and_named` (defined at \
+              test.py:28) do not match implementation `def (a: str, __x: str, __y: str, b: str) -> \
+              None: ...`. Reason: unexpected positional only parameter: `__x` at position: 0 (0 \
+              not in {1, 2}).";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model
            ~model_source:"def test.function_with_positional_and_named(a, __random_name): ...";
@@ -518,15 +528,15 @@ let test_invalid_models =
       @@ assert_invalid_model
            ~model_source:"def test.function_with_positional_and_named(a, __x, b, __y): ..."
            ~expect:
-             "Model signature parameters for `test.function_with_positional_and_named` do not \
-              match implementation `def (a: str, __arg1: str, __arg2: str, b: str) -> None: ...`. \
-              Reason: unexpected positional only parameter: `__y` at position: 3 (3 not in {1, \
-              2})."
+             "Model signature parameters for `test.function_with_positional_and_named` (defined at \
+              test.py:28) do not match implementation `def (a: str, __arg1: str, __arg2: str, b: \
+              str) -> None: ...`. Reason: unexpected positional only parameter: `__y` at position: \
+              3 (3 not in {1, 2})."
            ~pyrefly_expect:
-             "Model signature parameters for `test.function_with_positional_and_named` do not \
-              match implementation `def (a: str, __x: str, __y: str, b: str) -> None: ...`. \
-              Reason: unexpected positional only parameter: `__y` at position: 3 (3 not in {1, \
-              2}).";
+             "Model signature parameters for `test.function_with_positional_and_named` (defined at \
+              test.py:28) do not match implementation `def (a: str, __x: str, __y: str, b: str) -> \
+              None: ...`. Reason: unexpected positional only parameter: `__y` at position: 3 (3 \
+              not in {1, 2}).";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model
            ~model_source:"def test.function_with_kwargs(normal_arg, *, crazy_arg, **kwargs): ...";
@@ -536,13 +546,13 @@ let test_invalid_models =
       @@ assert_invalid_model
            ~model_source:"def test.anonymous_only(parameter: Any): ..."
            ~expect:
-             "Model signature parameters for `test.anonymous_only` do not match implementation \
-              `def (__arg0: unknown, __arg1: unknown, __arg2: unknown) -> None: ...`. Reason: \
-              unexpected named parameter: `parameter`."
+             "Model signature parameters for `test.anonymous_only` (defined at test.py:15) do not \
+              match implementation `def (__arg0: unknown, __arg1: unknown, __arg2: unknown) -> \
+              None: ...`. Reason: unexpected named parameter: `parameter`."
            ~pyrefly_expect:
-             "Model signature parameters for `test.anonymous_only` do not match implementation \
-              `def (__arg1: Unknown, __arg2: Unknown, __arg3: Unknown) -> None: ...`. Reason: \
-              unexpected named parameter: `parameter`.";
+             "Model signature parameters for `test.anonymous_only` (defined at test.py:15) do not \
+              match implementation `def (__arg1: Unknown, __arg2: Unknown, __arg3: Unknown) -> \
+              None: ...`. Reason: unexpected named parameter: `parameter`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model ~model_source:"def test.anonymous_with_optional(__a1, __a2): ...";
       labeled_test_case __FUNCTION__ __LINE__
@@ -859,8 +869,9 @@ let test_invalid_models =
              "Model signature parameters for `test.C.foo` do not match implementation `def (self: \
               C) -> int: ...`. Reason: unexpected named parameter: `value`."
            ~pyrefly_expect:
-             "Model signature parameters for `test.C.foo` do not match implementation `def (self: \
-              test.C) -> int: ...`. Reason: unexpected named parameter: `value`.";
+             "Model signature parameters for `test.C.foo` (defined at test.py:4) do not match \
+              implementation `def (self: test.C) -> int: ...`. Reason: unexpected named parameter: \
+              `value`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model
            ~source:
@@ -1053,7 +1064,10 @@ let test_invalid_models =
            ~model_source:"test.C.foo: TaintSource[A] = ..."
            ~expect:
              "The function, method or property `test.C.foo` is not a valid attribute - did you \
-              mean to use `def test.C.foo(): ...`?";
+              mean to use `def test.C.foo(): ...`?"
+           ~pyrefly_expect:
+             "The function, method or property `test.C.foo` (defined at test.py:4) is not a valid \
+              attribute - did you mean to use `def test.C.foo(): ...`?";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~source:{|
@@ -2853,7 +2867,8 @@ let test_invalid_decorators =
       def test.C(): ...
     |}
            ~expect:
-             "The class `test.C` is not a valid define - did you mean to model `test.C.__init__()`?";
+             "The class `test.C` (defined at test.py:2) is not a valid define - did you mean to \
+              model `test.C.__init__()`?";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~source:{|
@@ -2864,8 +2879,8 @@ let test_invalid_decorators =
       test.C: Sanitize
     |}
            ~expect:
-             "The class `test.C` is not a valid attribute - did you mean to model \
-              `test.C.__init__()`?";
+             "The class `test.C` (defined at test.py:2) is not a valid attribute - did you mean to \
+              model `test.C.__init__()`?";
       (* Class models don't error. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model
@@ -2906,7 +2921,10 @@ let test_invalid_decorators =
     |}
            ~expect:
              "The function, method or property `test.Foo.bar` is not a valid attribute - did you \
-              mean to use `def test.Foo.bar(): ...`?";
+              mean to use `def test.Foo.bar(): ...`?"
+           ~pyrefly_expect:
+             "The function, method or property `test.Foo.bar` (defined at test.py:4) is not a \
+              valid attribute - did you mean to use `def test.Foo.bar(): ...`?";
     ]
 
 
@@ -2933,11 +2951,11 @@ let test_invalid_callables =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"def test(parameter: InvalidTaintDirection[Test]): ..."
-           ~expect:"The module `test` is not a valid define.";
+           ~expect:"The module `test` (defined in test.py) is not a valid define.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"test: Sanitize"
-           ~expect:"The module `test` is not a valid attribute.";
+           ~expect:"The module `test` (defined in test.py) is not a valid attribute.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~source:{|
@@ -2949,7 +2967,10 @@ let test_invalid_callables =
     |}
            ~expect:
              "The attribute `test.Foo.x` is not a valid define - did you mean to use `test.Foo.x: \
-              ...`?";
+              ...`?"
+           ~pyrefly_expect:
+             "The attribute `test.Foo.x` (defined at test.py:3) is not a valid define - did you \
+              mean to use `test.Foo.x: ...`?";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~source:{|
@@ -2960,8 +2981,8 @@ let test_invalid_callables =
       test.foo: TaintSource[Test]
     |}
            ~expect:
-             "The function, method or property `test.foo` is not a valid attribute - did you mean \
-              to use `def test.foo(): ...`?";
+             "The function, method or property `test.foo` (defined at test.py:2) is not a valid \
+              attribute - did you mean to use `def test.foo(): ...`?";
       (* Accept callable models for Any or Top because of type error. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model
@@ -3030,7 +3051,10 @@ let test_invalid_overloads =
     |}
            ~expect:
              "The function, method or property `test.Foo.bar` is not a valid attribute - did you \
-              mean to use `def test.Foo.bar(): ...`?";
+              mean to use `def test.Foo.bar(): ...`?"
+           ~pyrefly_expect:
+             "The function, method or property `test.Foo.bar` (defined at test.pyi:7) is not a \
+              valid attribute - did you mean to use `def test.Foo.bar(): ...`?";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~source:

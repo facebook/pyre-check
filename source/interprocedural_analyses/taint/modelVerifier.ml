@@ -82,7 +82,8 @@ let verify_imported_model ~path ~location ~friendly_name ~imported_name =
         (model_verification_error
            ~path
            ~location
-           (ImportedFunctionModel { name = friendly_name; actual_name = imported_name }))
+           (ImportedFunctionModel
+              { name = friendly_name; actual_name = imported_name; define_location = None }))
   | _ -> Ok ()
 
 
@@ -177,6 +178,7 @@ let verify_signature
     ~normalized_model_parameters
     ~friendly_name
     ~imported_name
+    ~define_location
     callable_signatures
   =
   let open Result in
@@ -206,7 +208,12 @@ let verify_signature
              ~path
              ~location
              (IncompatibleModelError
-                { name = Reference.show friendly_name; callable_signatures; errors }))
+                {
+                  name = Reference.show friendly_name;
+                  callable_signatures;
+                  errors;
+                  define_location = define_location ();
+                }))
       else
         Ok ()
   | _ -> Ok ()
