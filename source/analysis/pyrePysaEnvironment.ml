@@ -1479,34 +1479,69 @@ module ModelQueries = struct
       is_property_getter: bool;
       is_property_setter: bool;
       is_method: bool;
+      module_qualifier: Ast.Reference.t option;
+      location: Ast.Location.t option;
     }
     [@@deriving show]
   end
 
   module Global = struct
     type t =
-      | Class of { class_name: string }
-      | Module
+      | Class of {
+          class_name: string;
+          module_qualifier: Ast.Reference.t option;
+          location: Ast.Location.t option;
+        }
+      | Module of { qualifier: Ast.Reference.t }
       (* function or method *)
       | Function of Function.t
       (* non-callable class attribute. *)
-      | ClassAttribute of { name: Ast.Reference.t }
+      | ClassAttribute of {
+          name: Ast.Reference.t;
+          module_qualifier: Ast.Reference.t option;
+          location: Ast.Location.t option;
+        }
       (* non-callable module global variable. *)
-      | ModuleGlobal of { name: Ast.Reference.t }
+      | ModuleGlobal of {
+          name: Ast.Reference.t;
+          module_qualifier: Ast.Reference.t option;
+          location: Ast.Location.t option;
+        }
       (* class attribute exists, but type is unknown. *)
-      | UnknownClassAttribute of { name: Ast.Reference.t }
+      | UnknownClassAttribute of {
+          name: Ast.Reference.t;
+          module_qualifier: Ast.Reference.t option;
+          location: Ast.Location.t option;
+        }
       (* module global exists, but type is unknown. *)
-      | UnknownModuleGlobal of { name: Ast.Reference.t }
+      | UnknownModuleGlobal of {
+          name: Ast.Reference.t;
+          module_qualifier: Ast.Reference.t option;
+          location: Ast.Location.t option;
+        }
     [@@deriving show]
 
     let is_module = function
-      | Module -> true
+      | Module _ -> true
       | _ -> false
 
 
     let is_class = function
       | Class _ -> true
       | _ -> false
+
+
+    let strip_location_and_module = function
+      | Class { class_name; _ } -> Class { class_name; module_qualifier = None; location = None }
+      | Module { qualifier } -> Module { qualifier }
+      | Function f -> Function { f with module_qualifier = None; location = None }
+      | ClassAttribute { name; _ } ->
+          ClassAttribute { name; module_qualifier = None; location = None }
+      | ModuleGlobal { name; _ } -> ModuleGlobal { name; module_qualifier = None; location = None }
+      | UnknownClassAttribute { name; _ } ->
+          UnknownClassAttribute { name; module_qualifier = None; location = None }
+      | UnknownModuleGlobal { name; _ } ->
+          UnknownModuleGlobal { name; module_qualifier = None; location = None }
   end
 
   let containing_source read_only reference =
@@ -1682,6 +1717,8 @@ module ModelQueries = struct
                is_property_getter = false;
                is_property_setter = false;
                is_method = false;
+               module_qualifier = Ast.Reference.prefix name;
+               location = Some Ast.Location.line_one;
              })
       else
         None
@@ -1702,6 +1739,8 @@ module ModelQueries = struct
                is_property_getter = false;
                is_property_setter = false;
                is_method = true;
+               module_qualifier = None;
+               location = None;
              })
       else
         None
@@ -1720,6 +1759,8 @@ module ModelQueries = struct
           is_property_setter;
           is_property_getter;
           is_method = true;
+          module_qualifier = None;
+          location = None;
         }
     else if is_property_setter then
       find_method_definitions
@@ -1736,6 +1777,8 @@ module ModelQueries = struct
           is_property_getter;
           is_property_setter;
           is_method = true;
+          module_qualifier = None;
+          location = None;
         }
     else (* Resolve undecorated functions. *)
       let class_summary =
@@ -1773,6 +1816,12 @@ module ModelQueries = struct
       in
       match maybe_signature_of_function with
       | Some signature ->
+          let module_qualifier, location =
+            match ReadOnly.location_of_global read_only name with
+            | Some { Ast.Location.WithModule.module_reference; start; stop } ->
+                Some module_reference, Some { Ast.Location.start; stop }
+            | None -> None, None
+          in
           Some
             (Global.Function
                {
@@ -1782,6 +1831,8 @@ module ModelQueries = struct
                  is_property_getter = false;
                  is_property_setter = false;
                  is_method = Option.is_some class_summary;
+                 module_qualifier;
+                 location;
                })
       | None -> (
           (* Resolve undecorated methods. *)
@@ -1796,6 +1847,8 @@ module ModelQueries = struct
                      is_property_getter = false;
                      is_property_setter = false;
                      is_method = Option.is_some class_summary;
+                     module_qualifier = None;
+                     location = None;
                    })
           | first :: _ :: _ as overloads ->
               (* Note that we use the first overload as the base implementation, which might be
@@ -1817,6 +1870,8 @@ module ModelQueries = struct
                      is_property_getter = false;
                      is_property_setter = false;
                      is_method = Option.is_some class_summary;
+                     module_qualifier = None;
+                     location = None;
                    })
           | [] -> (
               (* Fall back for anything else. *)
@@ -1831,8 +1886,17 @@ module ModelQueries = struct
                 match TypeInfo.Unit.annotation annotation with
                 | PyreType.Parametric { name = "type"; _ }
                   when ReadOnly.class_exists read_only (Ast.Reference.show name) ->
-                    Some (Global.Class { class_name = Ast.Reference.show name })
-                | PyreType.Top when ReadOnly.module_exists read_only name -> Some Global.Module
+                    let module_qualifier, location =
+                      match ReadOnly.location_of_global read_only name with
+                      | Some { Ast.Location.WithModule.module_reference; start; stop } ->
+                          Some module_reference, Some { Ast.Location.start; stop }
+                      | None -> None, None
+                    in
+                    Some
+                      (Global.Class
+                         { class_name = Ast.Reference.show name; module_qualifier; location })
+                | PyreType.Top when ReadOnly.module_exists read_only name ->
+                    Some (Global.Module { qualifier = name })
                 | PyreType.Top when not (TypeInfo.Unit.is_immutable annotation) ->
                     (* FIXME: We are relying on the fact that nonexistent functions & attributes
                        resolve to mutable annotation, while existing ones resolve to immutable
@@ -1852,6 +1916,8 @@ module ModelQueries = struct
                            is_property_getter = false;
                            is_property_setter = false;
                            is_method = Option.is_some class_summary;
+                           module_qualifier = None;
+                           location = None;
                          })
                 | PyreType.Callable t ->
                     Some
@@ -1863,18 +1929,25 @@ module ModelQueries = struct
                            is_property_getter = false;
                            is_property_setter = false;
                            is_method = Option.is_some class_summary;
+                           module_qualifier = None;
+                           location = None;
                          })
                 | PyreType.Top
                 | PyreType.Any ->
                     if Option.is_some class_summary then
-                      Some (Global.UnknownClassAttribute { name })
+                      Some
+                        (Global.UnknownClassAttribute
+                           { name; module_qualifier = None; location = None })
                     else
-                      Some (Global.UnknownModuleGlobal { name })
+                      Some
+                        (Global.UnknownModuleGlobal
+                           { name; module_qualifier = None; location = None })
                 | _ ->
                     if Option.is_some class_summary then
-                      Some (Global.ClassAttribute { name })
+                      Some
+                        (Global.ClassAttribute { name; module_qualifier = None; location = None })
                     else
-                      Some (Global.ModuleGlobal { name })
+                      Some (Global.ModuleGlobal { name; module_qualifier = None; location = None })
               in
               (* When verify_class_attributes is set, check that class attributes are directly
                  defined on the class (not just inherited). *)
@@ -1899,7 +1972,8 @@ module ModelQueries = struct
                   match class_attributes with
                   | Some attributes ->
                       if List.mem ~equal:String.equal attributes attribute_name then
-                        Some (Global.ClassAttribute { name })
+                        Some
+                          (Global.ClassAttribute { name; module_qualifier = None; location = None })
                       else
                         None
                   | _ -> global)

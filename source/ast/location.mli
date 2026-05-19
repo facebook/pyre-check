@@ -30,6 +30,8 @@ val equal : t -> t -> bool
 
 val any : t
 
+val line_one : t
+
 val start : t -> position
 
 val stop : t -> position

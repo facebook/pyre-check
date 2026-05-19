@@ -572,29 +572,53 @@ module ModelQueries : sig
       is_property_getter: bool;
       is_property_setter: bool;
       is_method: bool;
+      module_qualifier: Ast.Reference.t option;
+      location: Ast.Location.t option;
     }
     [@@deriving show]
   end
 
   module Global : sig
     type t =
-      | Class of { class_name: string }
-      | Module
+      | Class of {
+          class_name: string;
+          module_qualifier: Ast.Reference.t option;
+          location: Ast.Location.t option;
+        }
+      | Module of { qualifier: Ast.Reference.t }
       (* function or method *)
       | Function of Function.t
       (* non-callable class attribute. *)
-      | ClassAttribute of { name: Ast.Reference.t }
+      | ClassAttribute of {
+          name: Ast.Reference.t;
+          module_qualifier: Ast.Reference.t option;
+          location: Ast.Location.t option;
+        }
       (* non-callable module global variable. *)
-      | ModuleGlobal of { name: Ast.Reference.t }
+      | ModuleGlobal of {
+          name: Ast.Reference.t;
+          module_qualifier: Ast.Reference.t option;
+          location: Ast.Location.t option;
+        }
       (* class attribute exists, but type is unknown. *)
-      | UnknownClassAttribute of { name: Ast.Reference.t }
+      | UnknownClassAttribute of {
+          name: Ast.Reference.t;
+          module_qualifier: Ast.Reference.t option;
+          location: Ast.Location.t option;
+        }
       (* module global exists, but type is unknown. *)
-      | UnknownModuleGlobal of { name: Ast.Reference.t }
+      | UnknownModuleGlobal of {
+          name: Ast.Reference.t;
+          module_qualifier: Ast.Reference.t option;
+          location: Ast.Location.t option;
+        }
     [@@deriving show]
 
     val is_module : t -> bool
 
     val is_class : t -> bool
+
+    val strip_location_and_module : t -> t
   end
 
   val mangle_top_level_name : Ast.Reference.t -> Ast.Reference.t

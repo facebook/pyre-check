@@ -66,6 +66,11 @@ module T = struct
 
   let any = { start = any_position; stop = any_position }
 
+  let line_one =
+    let position = { line = 1; column = 0 } in
+    { start = position; stop = position }
+
+
   let start { start; _ } = start
 
   let stop { stop; _ } = stop

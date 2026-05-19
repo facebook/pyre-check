@@ -3056,12 +3056,7 @@ module ReadOnly = struct
       define_name
     =
     let fully_qualified_name = FullyQualifiedName.from_reference_unchecked define_name in
-    let {
-      CallableMetadataSharedMemory.Value.metadata =
-        { is_property_getter; is_property_setter; parent_is_class; _ };
-      _;
-    }
-      =
+    let { CallableMetadataSharedMemory.Value.metadata; _ } =
       CallableMetadataSharedMemory.get callable_metadata_shared_memory fully_qualified_name
       |> assert_shared_memory_key_exists (fun () -> "missing callable metadata")
     in
@@ -3070,13 +3065,23 @@ module ReadOnly = struct
         callable_undecorated_signatures_shared_memory
         fully_qualified_name
     in
+    let location =
+      match metadata.name_location with
+      | NameLocation.DefineName loc
+      | NameLocation.ClassName loc ->
+          Some loc
+      | NameLocation.ModuleTopLevel -> Some Location.line_one
+      | NameLocation.UnknonwnForClassField -> None
+    in
     {
       Pyre1Api.ModelQueries.Function.define_name;
       imported_name = None;
       undecorated_signatures;
-      is_property_getter;
-      is_property_setter;
-      is_method = parent_is_class;
+      is_property_getter = metadata.is_property_getter;
+      is_property_setter = metadata.is_property_setter;
+      is_method = metadata.parent_is_class;
+      module_qualifier = Some metadata.module_qualifier;
+      location;
     }
 
 
@@ -4016,6 +4021,7 @@ module ModelQueries = struct
       {
         ReadOnly.callable_metadata_shared_memory;
         callable_undecorated_signatures_shared_memory;
+        class_metadata_shared_memory;
         class_fields_shared_memory;
         module_globals_shared_memory;
         module_name_to_qualifiers_shared_memory;
@@ -4061,7 +4067,9 @@ module ModelQueries = struct
     in
     match find_module_qualifiers name with
     | None -> []
-    | Some (_, suffix) when Reference.is_empty suffix -> [Global.Module]
+    | Some (qualifiers, suffix) when Reference.is_empty suffix ->
+        List.map qualifiers ~f:(fun qualifier ->
+            Global.Module { qualifier = ModuleQualifier.to_reference qualifier })
     | Some (qualifiers, suffix) ->
         let local_name_of_fully_qualified_name ~bare_module_name fully_qualified_name =
           let symbolic_name =
@@ -4084,24 +4092,22 @@ module ModelQueries = struct
                        callable_metadata_shared_memory
                        fully_qualified_name
                    with
-                   | Some
-                       {
-                         CallableMetadataSharedMemory.Value.metadata =
-                           {
-                             is_property_getter = callable_is_property_getter;
-                             is_property_setter = callable_is_property_setter;
-                             parent_is_class;
-                             _;
-                           };
-                         _;
-                       }
-                     when Bool.equal is_property_setter callable_is_property_setter ->
+                   | Some { CallableMetadataSharedMemory.Value.metadata; _ }
+                     when Bool.equal is_property_setter metadata.is_property_setter ->
                        let undecorated_signatures =
                          CallableUndecoratedSignaturesSharedMemory.get
                            callable_undecorated_signatures_shared_memory
                            fully_qualified_name
                          |> assert_shared_memory_key_exists (fun () ->
                                 "missing undecorated signatures for callable")
+                       in
+                       let location =
+                         match metadata.name_location with
+                         | NameLocation.DefineName loc
+                         | NameLocation.ClassName loc ->
+                             Some loc
+                         | NameLocation.ModuleTopLevel -> Some Location.line_one
+                         | NameLocation.UnknonwnForClassField -> None
                        in
                        Some
                          (Global.Function
@@ -4110,9 +4116,11 @@ module ModelQueries = struct
                                 FullyQualifiedName.to_reference fully_qualified_name;
                               imported_name = None;
                               undecorated_signatures = Some undecorated_signatures;
-                              is_property_getter = callable_is_property_getter;
-                              is_property_setter = callable_is_property_setter;
-                              is_method = parent_is_class;
+                              is_property_getter = metadata.is_property_getter;
+                              is_property_setter = metadata.is_property_setter;
+                              is_method = metadata.parent_is_class;
+                              module_qualifier = Some metadata.module_qualifier;
+                              location;
                             })
                    | _ -> None
                  else
@@ -4126,6 +4134,10 @@ module ModelQueries = struct
                    local_name_of_fully_qualified_name ~bare_module_name fully_qualified_name
                  in
                  if Reference.equal local_part suffix then
+                   let { ClassMetadataSharedMemory.Metadata.name_location; _ } =
+                     ClassMetadataSharedMemory.get class_metadata_shared_memory fully_qualified_name
+                     |> assert_shared_memory_key_exists (fun () -> "missing class metadata")
+                   in
                    Some
                      (Global.Class
                         {
@@ -4133,6 +4145,8 @@ module ModelQueries = struct
                             fully_qualified_name
                             |> FullyQualifiedName.to_reference
                             |> Reference.show;
+                          module_qualifier = Some (ModuleQualifier.to_reference qualifier);
+                          location = Some name_location;
                         })
                  else
                    None)
@@ -4152,17 +4166,17 @@ module ModelQueries = struct
                    if Reference.equal local_part class_suffix then
                      ClassFieldsSharedMemory.get class_fields_shared_memory fully_qualified_name
                      >>= fun fields ->
-                     if SerializableStringMap.mem attribute_name fields then
-                       Some
-                         (Global.ClassAttribute
-                            {
-                              name =
-                                Reference.combine
-                                  (FullyQualifiedName.to_reference fully_qualified_name)
-                                  (Reference.create attribute_name);
-                            })
-                     else
-                       None
+                     SerializableStringMap.find_opt attribute_name fields
+                     >>| fun { ClassField.location; _ } ->
+                     Global.ClassAttribute
+                       {
+                         name =
+                           Reference.combine
+                             (FullyQualifiedName.to_reference fully_qualified_name)
+                             (Reference.create attribute_name);
+                         module_qualifier = Some (ModuleQualifier.to_reference qualifier);
+                         location;
+                       }
                    else
                      None)
         in
@@ -4173,18 +4187,20 @@ module ModelQueries = struct
             let global_name = Reference.last suffix in
             ModuleGlobalsSharedMemory.get module_globals_shared_memory qualifier
             |> Option.value_map ~default:[] ~f:(fun globals ->
-                   if SerializableStringMap.mem global_name globals then
-                     [
-                       Global.ModuleGlobal
-                         {
-                           name =
-                             Reference.combine
-                               (ModuleQualifier.to_reference qualifier)
-                               (Reference.create global_name);
-                         };
-                     ]
-                   else
-                     [])
+                   match SerializableStringMap.find_opt global_name globals with
+                   | Some { GlobalVariable.location; _ } ->
+                       [
+                         Global.ModuleGlobal
+                           {
+                             name =
+                               Reference.combine
+                                 (ModuleQualifier.to_reference qualifier)
+                                 (Reference.create global_name);
+                             module_qualifier = Some (ModuleQualifier.to_reference qualifier);
+                             location = Some location;
+                           };
+                       ]
+                   | None -> [])
         in
         let resolve_in_qualifier qualifier =
           let bare_module_name =

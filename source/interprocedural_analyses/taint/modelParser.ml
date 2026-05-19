@@ -3724,8 +3724,8 @@ let create_models_from_signature
                while propagating errors for non-function globals. *)
             List.partition_map globals ~f:(function
                 | Global.Function resolved_callable -> First resolved_callable
-                | (Global.UnknownClassAttribute { name } | Global.UnknownModuleGlobal { name }) as
-                  kind ->
+                | ( Global.UnknownClassAttribute { name; module_qualifier; location; _ }
+                  | Global.UnknownModuleGlobal { name; module_qualifier; location; _ } ) as kind ->
                     First
                       {
                         Function.define_name = name;
@@ -3737,12 +3737,14 @@ let create_models_from_signature
                           (match kind with
                           | Global.UnknownClassAttribute _ -> true
                           | _ -> false);
+                        module_qualifier;
+                        location;
                       }
                 | Global.Class _ ->
                     Second
                       (make_verification_error
                          (ModelingClassAsDefine (Reference.show user_provided_callable_name)))
-                | Global.Module ->
+                | Global.Module _ ->
                     Second
                       (make_verification_error
                          (ModelingModuleAsDefine (Reference.show user_provided_callable_name)))
@@ -4099,15 +4101,15 @@ let create_models_from_attribute
         [], [error]
     | globals ->
         List.partition_map globals ~f:(function
-            | Global.ClassAttribute { name } -> First name
-            | Global.ModuleGlobal { name } -> First name
-            | Global.UnknownClassAttribute { name } -> First name
-            | Global.UnknownModuleGlobal { name } -> First name
+            | Global.ClassAttribute { name; _ } -> First name
+            | Global.ModuleGlobal { name; _ } -> First name
+            | Global.UnknownClassAttribute { name; _ } -> First name
+            | Global.UnknownModuleGlobal { name; _ } -> First name
             | Global.Class _ ->
                 Second
                   (make_verification_error
                      (ModelingClassAsAttribute (Reference.show user_provided_attribute_name)))
-            | Global.Module ->
+            | Global.Module _ ->
                 Second
                   (make_verification_error
                      (ModelingModuleAsAttribute (Reference.show user_provided_attribute_name)))
@@ -4219,7 +4221,7 @@ let create_models_from_class
         [], [error]
     | globals ->
         List.partition_map globals ~f:(function
-            | Global.Class { class_name } -> First class_name
+            | Global.Class { class_name; _ } -> First class_name
             | _ ->
                 Second
                   (make_verification_error

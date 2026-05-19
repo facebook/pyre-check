@@ -127,6 +127,7 @@ let test_resolve_user_qualified_name context =
         ~is_property_getter:false
         ~is_property_setter:false
         (Ast.Reference.create name)
+      |> List.map ~f:Global.strip_location_and_module
     in
     let expect =
       match pyrefly_expect with
@@ -177,6 +178,8 @@ let test_resolve_user_qualified_name context =
       is_property_getter = false;
       is_property_setter = false;
       is_method;
+      module_qualifier = None;
+      location = None;
     }
   in
   (* Most common cases. *)
@@ -226,7 +229,10 @@ let test_resolve_user_qualified_name context =
                ~define_name:"test.foo"
                ~signatures:[create_signature ~return_annotation:Type.NoneType []]
                ())))
-    ~pyrefly_expect:(Some (Global.ModuleGlobal { name = Reference.create "test.foo" }));
+    ~pyrefly_expect:
+      (Some
+         (Global.ModuleGlobal
+            { name = Reference.create "test.foo"; module_qualifier = None; location = None }));
   assert_resolve
     ~context
     [
@@ -254,7 +260,8 @@ let test_resolve_user_qualified_name context =
         pass
     |}]
     "test.Foo"
-    ~expect:(Some (Global.Class { class_name = "test.Foo" }));
+    ~expect:
+      (Some (Global.Class { class_name = "test.Foo"; module_qualifier = None; location = None }));
   assert_resolve
     ~context
     ["test.py", {|
@@ -263,7 +270,8 @@ let test_resolve_user_qualified_name context =
           pass
     |}]
     "test.Foo.Bar"
-    ~expect:(Some (Global.Class { class_name = "test.Foo.Bar" }));
+    ~expect:
+      (Some (Global.Class { class_name = "test.Foo.Bar"; module_qualifier = None; location = None }));
   assert_resolve
     ~context
     ["test.py", {|
@@ -271,7 +279,7 @@ let test_resolve_user_qualified_name context =
         return None
     |}]
     "test"
-    ~expect:(Some Global.Module);
+    ~expect:(Some (Global.Module { qualifier = Reference.create "test" }));
   assert_resolve
     ~context
     ["test.py", {|
@@ -279,14 +287,20 @@ let test_resolve_user_qualified_name context =
         x: int = 1
     |}]
     "test.Foo.x"
-    ~expect:(Some (Global.ClassAttribute { name = Reference.create "test.Foo.x" }));
+    ~expect:
+      (Some
+         (Global.ClassAttribute
+            { name = Reference.create "test.Foo.x"; module_qualifier = None; location = None }));
   assert_resolve
     ~context
     ["test.py", {|
       x: int = 1
     |}]
     "test.x"
-    ~expect:(Some (Global.ModuleGlobal { name = Reference.create "test.x" }));
+    ~expect:
+      (Some
+         (Global.ModuleGlobal
+            { name = Reference.create "test.x"; module_qualifier = None; location = None }));
   assert_resolve
     ~context
     ["test.py", {|
@@ -294,8 +308,14 @@ let test_resolve_user_qualified_name context =
       x: Any = 1
     |}]
     "test.x"
-    ~expect:(Some (Global.UnknownModuleGlobal { name = Reference.create "test.x" }))
-    ~pyrefly_expect:(Some (Global.ModuleGlobal { name = Reference.create "test.x" }));
+    ~expect:
+      (Some
+         (Global.UnknownModuleGlobal
+            { name = Reference.create "test.x"; module_qualifier = None; location = None }))
+    ~pyrefly_expect:
+      (Some
+         (Global.ModuleGlobal
+            { name = Reference.create "test.x"; module_qualifier = None; location = None }));
   assert_resolve
     ~context
     [
@@ -309,7 +329,10 @@ let test_resolve_user_qualified_name context =
       );
     ]
     "test.x"
-    ~expect:(Some (Global.ModuleGlobal { name = Reference.create "test.x" }));
+    ~expect:
+      (Some
+         (Global.ModuleGlobal
+            { name = Reference.create "test.x"; module_qualifier = None; location = None }));
 
   (* Symbol is not found. *)
   assert_resolve
@@ -494,7 +517,10 @@ let test_resolve_user_qualified_name context =
       );
     ]
     "test.Foo.baz"
-    ~expect:(Some (Global.UnknownClassAttribute { name = Reference.create "test.Foo.baz" }))
+    ~expect:
+      (Some
+         (Global.UnknownClassAttribute
+            { name = Reference.create "test.Foo.baz"; module_qualifier = None; location = None }))
     ~pyrefly_expect:
       (Some
          (Global.Function
@@ -561,14 +587,20 @@ let test_resolve_user_qualified_name context =
                ~define_name:"test.foo"
                ~signatures:[create_signature ~return_annotation:Type.NoneType []]
                ())))
-    ~pyrefly_expect:(Some (Global.ModuleGlobal { name = Reference.create "test.foo" }));
+    ~pyrefly_expect:
+      (Some
+         (Global.ModuleGlobal
+            { name = Reference.create "test.foo"; module_qualifier = None; location = None }));
   assert_resolve
     ~context
     ["test.pyi", {|
       x: int = 1
     |}]
     "test.x"
-    ~expect:(Some (Global.ModuleGlobal { name = Reference.create "test.x" }));
+    ~expect:
+      (Some
+         (Global.ModuleGlobal
+            { name = Reference.create "test.x"; module_qualifier = None; location = None }));
 
   (* Deeply nested code, where outer packages are not importable *)
   assert_resolve
