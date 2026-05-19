@@ -735,7 +735,8 @@ def run(
                 mode="w", delete=True, delete_on_close=False
             ) as temporary_file,
             tempfile.TemporaryDirectory(
-                delete=not analyze_arguments.debug_pyrefly_report
+                prefix="pysa-pyrefly-",
+                delete=not analyze_arguments.debug_pyrefly_report,
             ) as pyrefly_results,
         ):
             pyrefly_binary_path = _download_pyrefly_binary(
