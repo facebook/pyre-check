@@ -660,10 +660,10 @@ let resolve_callee_from_defining_expression
       | _ -> None)
 
 
-module ResolvedStrinfigy = struct
+module ResolvedStringify = struct
   type t =
-    | Str of { method_name: string }
-    | Repr of { method_name: string }
+    | Str
+    | Repr
 
   let from_method_name method_name =
     let base_name =
@@ -672,14 +672,14 @@ module ResolvedStrinfigy = struct
       | _ -> method_name
     in
     match base_name with
-    | "__str__" -> Some (Str { method_name })
-    | "__repr__" -> Some (Repr { method_name })
+    | "__str__" -> Some Str
+    | "__repr__" -> Some Repr
     | _ -> None
 
 
   let to_method_name = function
-    | Str { method_name } -> method_name
-    | Repr { method_name } -> method_name
+    | Str -> "__str__"
+    | Repr -> "__repr__"
 end
 
 (* Resolve a call to `str(x)` into `x.__str__()` or `x.__repr__()` *)
@@ -717,10 +717,10 @@ let resolve_stringify_call
         with
         | Some name when Reference.equal name (Reference.create "object.__str__") ->
             (* Call resolved to object.__str__, fallback to calling __repr__ if it exists. *)
-            ResolvedStrinfigy.Repr { method_name = "__repr__" }
-        | _ -> ResolvedStrinfigy.Str { method_name = "__str__" }
+            ResolvedStringify.Repr
+        | _ -> ResolvedStringify.Str
       with
-      | Analysis.ClassHierarchy.Untracked _ -> Str { method_name = "__str__" })
+      | Analysis.ClassHierarchy.Untracked _ -> Str)
   | PyrePysaApi.InContext.Pyrefly pyrefly_api -> (
       (* When using pyrefly, use the callee of the artificial call resolved by pyrefly *)
       let call_graph = PyreflyApi.InContext.call_graph pyrefly_api in
@@ -730,24 +730,24 @@ let resolve_stringify_call
           ~expression_identifier:outer_expression_identifier
       with
       | Some
-          (ExpressionCallees.Call
-            {
-              CallCallees.call_targets =
-                {
-                  CallTarget.target =
-                    Target.Regular
-                      ( Target.Regular.Method { Target.Method.method_name; _ }
-                      | Target.Regular.Override { Target.Method.method_name; _ } );
-                  _;
-                }
-                :: _;
-              _;
-            }) -> (
-          match ResolvedStrinfigy.from_method_name method_name with
+          (ExpressionCallees.Call { CallCallees.call_targets = { CallTarget.target; _ } :: _; _ })
+        -> (
+          (* Note: the result is only used to create artificial AST nodes. It does not affect the
+             analysis. *)
+          let method_name =
+            Target.collect_nested_regular_targets target
+            |> List.find_map ~f:(fun regular ->
+                   match regular with
+                   | Target.Regular.Method { Target.Method.method_name; _ }
+                   | Target.Regular.Override { Target.Method.method_name; _ } ->
+                       ResolvedStringify.from_method_name method_name
+                   | _ -> None)
+          in
+          match method_name with
           | Some resolved -> resolved
-          | None -> failwith (Format.asprintf "unexpected method name: %s" method_name))
+          | None -> ResolvedStringify.Repr)
       | Some (ExpressionCallees.Call { CallCallees.unresolved = Unresolved.True _; _ }) ->
-          ResolvedStrinfigy.Repr { method_name = "__repr__" } (* fallback *)
+          ResolvedStringify.Repr
       | _ ->
           Format.asprintf
             "Missing or unexpected call graph edge for expression identifier %a"
@@ -889,7 +889,7 @@ let preprocess_special_calls
           ~type_of_expression_shared_memory
           ~outer_expression_identifier:(ExpressionIdentifier.ArtificialCall origin)
           value
-        |> ResolvedStrinfigy.to_method_name
+        |> ResolvedStringify.to_method_name
       in
       let callee = attribute_access ~base:value ~method_name ~origin:(Some origin) in
       Some { Call.callee; arguments = []; origin = Some origin }
@@ -2637,10 +2637,10 @@ module CallGraphBuilder = struct
                              ~location:expression_location)
                         expression
                     with
-                    | ResolvedStrinfigy.Str { method_name } ->
-                        method_name, Origin.FormatStringImplicitStr
-                    | ResolvedStrinfigy.Repr { method_name } ->
-                        method_name, Origin.FormatStringImplicitRepr
+                    | ResolvedStringify.Str ->
+                        ResolvedStringify.to_method_name Str, Origin.FormatStringImplicitStr
+                    | ResolvedStringify.Repr ->
+                        ResolvedStringify.to_method_name Repr, Origin.FormatStringImplicitRepr
                   in
                   {
                     Node.value =

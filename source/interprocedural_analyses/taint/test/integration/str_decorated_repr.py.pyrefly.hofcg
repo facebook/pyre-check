@@ -1,0 +1,391 @@
+@generated
+Higher order call graphs
+{
+  "callable": "str_decorated_repr.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "9:4-9:16": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } },
+    "10:8-10:24": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } }
+  }
+}
+{
+  "callable": "str_decorated_repr.cachedmethod",
+  "returned_callables": [
+    {
+      "target": "str_decorated_repr.cachedmethod.g",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "22:17-22:39|format-string-artificial": {
+      "format_string_artificial": [
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
+      ]
+    },
+    "22:27-22:37|format-string-stringify": {
+      "format_string_stringify": [
+        {
+          "target": "builtins.str.__format__",
+          "index": 0,
+          "implicit_receiver": true,
+          "return_type": [],
+          "receiver_class": "builtins.str"
+        }
+      ]
+    },
+    "24:4-29:35": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "str_decorated_repr.cachedmethod.g",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "31:11-31:12|identifier|g": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "str_decorated_repr.cachedmethod.g",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "str_decorated_repr.cachedmethod.g",
+  "returned_callables": [],
+  "calls": {
+    "26:11-26:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.hasattr",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "26:25-26:30|identifier|cache": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "cache",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ]
+      }
+    },
+    "27:19-27:39": {
+      "call": {
+        "calls": [
+          { "target": "builtins.getattr", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "27:33-27:38|identifier|cache": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "cache",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ]
+      }
+    },
+    "28:8-28:37": {
+      "call": {
+        "calls": [
+          { "target": "builtins.setattr", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "28:22-28:27|identifier|cache": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "cache",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ]
+      }
+    },
+    "28:29-28:30|identifier|f": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "f",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      }
+    },
+    "28:29-28:36": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+    },
+    "29:15-29:35": {
+      "call": {
+        "calls": [
+          { "target": "builtins.getattr", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "29:29-29:34|identifier|cache": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "cache",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "str_decorated_repr.test_str_of_decorated_repr",
+  "returned_callables": [],
+  "calls": {
+    "44:4-44:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "str_decorated_repr._test_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "44:15-44:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.str.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "44:15-44:21|artificial-call|str-call-to-dunder-method": {
+      "call": {
+        "calls": [
+          {
+            "target": "str_decorated_repr.cachedmethod.g[captured_variable(f, str_decorated_repr.cachedmethod)=str_decorated_repr.MyClass.__repr__]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "str_decorated_repr.MyClass.__repr__@decorated",
+  "returned_callables": [
+    {
+      "target": "str_decorated_repr.cachedmethod.g[captured_variable(f, str_decorated_repr.cachedmethod)=str_decorated_repr.MyClass.__repr__]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "38:5-38:17|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "str_decorated_repr.cachedmethod[formal(f, position=0)=str_decorated_repr.MyClass.__repr__]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "39:4-40:25|identifier|__repr__": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "str_decorated_repr.MyClass.__repr__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "str_decorated_repr.cachedmethod[formal(f, position=0)=str_decorated_repr.MyClass.__repr__]",
+  "returned_callables": [
+    {
+      "target": "str_decorated_repr.cachedmethod.g[captured_variable(f, str_decorated_repr.cachedmethod)=str_decorated_repr.MyClass.__repr__]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "22:17-22:39|format-string-artificial": {
+      "format_string_artificial": [
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
+      ]
+    },
+    "22:27-22:37|format-string-stringify": {
+      "format_string_stringify": [
+        {
+          "target": "builtins.str.__format__",
+          "index": 0,
+          "implicit_receiver": true,
+          "return_type": [],
+          "receiver_class": "builtins.str"
+        }
+      ]
+    },
+    "24:4-29:35": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "str_decorated_repr.cachedmethod.g",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "31:11-31:12|identifier|g": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "str_decorated_repr.cachedmethod.g",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "str_decorated_repr.cachedmethod.g[captured_variable(f, str_decorated_repr.cachedmethod)=str_decorated_repr.MyClass.__repr__]",
+  "returned_callables": [],
+  "calls": {
+    "26:11-26:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "builtins.hasattr",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "26:25-26:30|identifier|cache": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "cache",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ]
+      }
+    },
+    "27:19-27:39": {
+      "call": {
+        "calls": [
+          { "target": "builtins.getattr", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "27:33-27:38|identifier|cache": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "cache",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ]
+      }
+    },
+    "28:8-28:37": {
+      "call": {
+        "calls": [
+          { "target": "builtins.setattr", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "28:22-28:27|identifier|cache": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "cache",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ]
+      }
+    },
+    "28:29-28:30|identifier|f": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "f",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      }
+    },
+    "28:29-28:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "str_decorated_repr.MyClass.__repr__",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "29:15-29:35": {
+      "call": {
+        "calls": [
+          { "target": "builtins.getattr", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "29:29-29:34|identifier|cache": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "cache",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ]
+      }
+    }
+  }
+}

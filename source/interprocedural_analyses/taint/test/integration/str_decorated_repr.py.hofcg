@@ -1,0 +1,324 @@
+@generated
+Higher order call graphs
+{
+  "callable": "str_decorated_repr.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "9:0-9:1|identifier|$local_str_decorated_repr$T": {
+      "identifier": {
+        "globals": [ { "target": "Obj{str_decorated_repr.T}", "index": 0 } ]
+      }
+    },
+    "9:4-9:16": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+      }
+    },
+    "10:0-10:5|identifier|$local_str_decorated_repr$TSelf": {
+      "identifier": {
+        "globals": [
+          { "target": "Obj{str_decorated_repr.TSelf}", "index": 0 }
+        ]
+      }
+    },
+    "10:8-10:24": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+      }
+    }
+  }
+}
+{
+  "callable": "str_decorated_repr.cachedmethod",
+  "returned_callables": [
+    {
+      "target": "str_decorated_repr.cachedmethod.g",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "22:17-22:39|format-string-artificial": {
+      "format_string_artificial": [
+        { "target": "Obj{<format-string>}", "index": 0 }
+      ]
+    },
+    "22:27-22:37|format-string-stringify": {
+      "format_string_stringify": [
+        {
+          "target": "str.__str__",
+          "index": 0,
+          "implicit_receiver": true,
+          "return_type": [],
+          "receiver_class": "str"
+        }
+      ]
+    },
+    "24:4-29:35": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "str_decorated_repr.cachedmethod.g",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "str_decorated_repr.cachedmethod.g",
+  "returned_callables": [],
+  "calls": {
+    "26:11-26:31": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+      }
+    },
+    "26:25-26:30|identifier|$local_str_decorated_repr?cachedmethod$cache": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "cache",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ]
+      }
+    },
+    "27:19-27:39": {
+      "call": {
+        "calls": [ { "target": "getattr", "index": 0, "return_type": [] } ]
+      }
+    },
+    "27:33-27:38|identifier|$local_str_decorated_repr?cachedmethod$cache": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "cache",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ]
+      }
+    },
+    "28:8-28:37": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+      }
+    },
+    "28:22-28:27|identifier|$local_str_decorated_repr?cachedmethod$cache": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "cache",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ]
+      }
+    },
+    "28:29-28:36": {
+      "call": {
+        "unresolved": [
+          "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+        ]
+      }
+    },
+    "29:15-29:35": {
+      "call": {
+        "calls": [ { "target": "getattr", "index": 1, "return_type": [] } ]
+      }
+    },
+    "29:29-29:34|identifier|$local_str_decorated_repr?cachedmethod$cache": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "cache",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "str_decorated_repr.test_str_of_decorated_repr",
+  "returned_callables": [],
+  "calls": {
+    "44:4-44:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "str_decorated_repr._test_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "44:15-44:21|artificial-call|str-call-to-dunder-method": {
+      "call": {
+        "calls": [
+          {
+            "target": "str_decorated_repr.cachedmethod.g[captured_variable(f, parameter)=str_decorated_repr.MyClass.__repr__]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "str_decorated_repr.MyClass.__repr__@decorated",
+  "returned_callables": [
+    {
+      "target": "str_decorated_repr.cachedmethod.g[captured_variable(f, parameter)=str_decorated_repr.MyClass.__repr__]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "38:5-38:17|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "str_decorated_repr.cachedmethod[formal(f, position=0)=str_decorated_repr.MyClass.__repr__]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "39:4-40:25|artificial-attribute-access|for-decorated-target-callee:str_decorated_repr.MyClass.__repr__": {
+      "attribute_access": {
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "str_decorated_repr.MyClass.__repr__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "str_decorated_repr.cachedmethod[formal(f, position=0)=str_decorated_repr.MyClass.__repr__]",
+  "returned_callables": [
+    {
+      "target": "str_decorated_repr.cachedmethod.g[captured_variable(f, parameter)=str_decorated_repr.MyClass.__repr__]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "22:17-22:39|format-string-artificial": {
+      "format_string_artificial": [
+        { "target": "Obj{<format-string>}", "index": 0 }
+      ]
+    },
+    "22:27-22:37|format-string-stringify": {
+      "format_string_stringify": [
+        {
+          "target": "str.__str__",
+          "index": 0,
+          "implicit_receiver": true,
+          "return_type": [],
+          "receiver_class": "str"
+        }
+      ]
+    },
+    "24:4-29:35": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "str_decorated_repr.cachedmethod.g",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "str_decorated_repr.cachedmethod.g[captured_variable(f, parameter)=str_decorated_repr.MyClass.__repr__]",
+  "returned_callables": [],
+  "calls": {
+    "26:11-26:31": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+      }
+    },
+    "26:25-26:30|identifier|$local_str_decorated_repr?cachedmethod$cache": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "cache",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ]
+      }
+    },
+    "27:19-27:39": {
+      "call": {
+        "calls": [ { "target": "getattr", "index": 0, "return_type": [] } ]
+      }
+    },
+    "27:33-27:38|identifier|$local_str_decorated_repr?cachedmethod$cache": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "cache",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ]
+      }
+    },
+    "28:8-28:37": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+      }
+    },
+    "28:22-28:27|identifier|$local_str_decorated_repr?cachedmethod$cache": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "cache",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ]
+      }
+    },
+    "28:29-28:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "str_decorated_repr.MyClass.__repr__",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "29:15-29:35": {
+      "call": {
+        "calls": [ { "target": "getattr", "index": 1, "return_type": [] } ]
+      }
+    },
+    "29:29-29:34|identifier|$local_str_decorated_repr?cachedmethod$cache": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "cache",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ]
+      }
+    }
+  }
+}
