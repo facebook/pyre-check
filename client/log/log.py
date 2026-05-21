@@ -329,7 +329,7 @@ class StreamLogger:
     _current_section: Optional[str]
 
     _server_log_pattern: Pattern[str] = re.compile(
-        r"\s*(?:\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\S* )?(ERROR|WARNING|WARN|INFO|DEBUG|DUMP|PROGRESS|PARSER|TRACE|PERFORMANCE|SKIPANALYSIS|DECORATORERROR|SKIPPEDOVERRIDE|PARAMETERIZEDTARGET)(.*)"
+        r"\s*(?:\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\S* )?(ERROR|WARNING|WARN|INFO|DEBUG|DUMP|PROGRESS|PARSER|TRACE|PERFORMANCE|CHECK|DEPENDENCIES|DEPENDENCYGRAPH|ENVIRONMENT|EVENT|FIXPOINT|INFER|INTERPROCEDURAL|MEMORY|PROTOCOLS|SERVER|CALLGRAPH|TAINT|SKIPANALYSIS|DECORATORERROR|SKIPPEDOVERRIDE|PARAMETERIZEDTARGET)(.*)"
     )
     # Exclude syntax warnings from the CPython parser.
     _server_log_exclude_pattern: Pattern[str] = re.compile(
@@ -370,13 +370,12 @@ class StreamLogger:
             LOG.warning(message)
         elif section == "PROGRESS":
             LOG.info(message)
-        elif section == "SKIPANALYSIS":
-            LOG.info(message)
-        elif section == "DECORATORERROR":
-            LOG.info(message)
-        elif section == "SKIPPEDOVERRIDE":
-            LOG.info(message)
-        elif section == "PARAMETERIZEDTARGET":
+        elif section in (
+            "SKIPANALYSIS",
+            "DECORATORERROR",
+            "SKIPPEDOVERRIDE",
+            "PARAMETERIZEDTARGET",
+        ):
             LOG.info(message)
         elif section == "PARSER":
             LOG.error(message)
