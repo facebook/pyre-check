@@ -27,6 +27,7 @@ type section =
   | `Info
   | `Interprocedural
   | `Memory
+  | `ParameterizedTarget
   | `Performance
   | `Progress
   | `Protocols
@@ -53,6 +54,7 @@ let section_to_string = function
   | `Infer -> "Infer"
   | `Interprocedural -> "Interprocedural"
   | `Memory -> "Memory"
+  | `ParameterizedTarget -> "ParameterizedTarget"
   | `Performance -> "Performance"
   | `Progress -> "Progress"
   | `Protocols -> "Protocols"

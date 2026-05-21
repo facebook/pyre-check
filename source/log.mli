@@ -33,6 +33,7 @@ type section =
   | `Infer
   | `Interprocedural
   | `Memory
+  | `ParameterizedTarget
   | `Performance
   | `Progress
   | `Protocols

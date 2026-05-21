@@ -355,6 +355,40 @@ let log_decorated_targets_if_no_returned_callables
              Log.log ~section:`DecoratorError "Decorator %s: %d times" decorator count))
 
 
+let log_most_common_parameterized_target_base state =
+  if not (Log.is_enabled `ParameterizedTarget) then
+    ()
+  else
+    let targets = Fixpoint.State.targets state in
+    let parameterized_versions = Target.HashMap.create () in
+    List.iter targets ~f:(fun target ->
+        if Target.is_parameterized target then begin
+          let base = Target.strip_parameters target in
+          let target_string = Target.show_pretty target in
+          Hashtbl.update parameterized_versions base ~f:(function
+              | None -> String.Set.singleton target_string
+              | Some set -> Set.add set target_string)
+        end);
+    let sorted =
+      Hashtbl.to_alist parameterized_versions
+      |> List.sort ~compare:(fun (_, versions1) (_, versions2) ->
+             Int.compare (Set.length versions2) (Set.length versions1))
+    in
+    Log.log ~section:`ParameterizedTarget "Top targets with the most parameterized versions:";
+    List.take sorted 100
+    |> List.iter ~f:(fun (base, versions) ->
+           let count = Set.length versions in
+           Log.log
+             ~section:`ParameterizedTarget
+             "  %a: %d parameterized versions"
+             Target.pp_pretty
+             base
+             count;
+           Set.to_list versions
+           |> Fn.flip List.take 3
+           |> List.iter ~f:(fun version -> Log.log ~section:`ParameterizedTarget "    %s" version))
+
+
 let compute
     ~scheduler
     ~scheduler_policy
@@ -483,6 +517,7 @@ let compute
       ~filename_prefix:"higher-order-call-graph"
       ~callables:(analyzed_callables fixpoint)
   in
+  log_most_common_parameterized_target_base state;
   log_decorated_targets_if_no_returned_callables
     ~scheduler
     ~scheduler_policy
