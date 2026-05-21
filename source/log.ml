@@ -31,6 +31,7 @@ type section =
   | `Progress
   | `Protocols
   | `Server
+  | `SkippedOverride
   | `SkipAnalysis
   | `CallGraph
   | `Taint
@@ -56,6 +57,7 @@ let section_to_string = function
   | `Progress -> "Progress"
   | `Protocols -> "Protocols"
   | `Server -> "Server"
+  | `SkippedOverride -> "SkippedOverride"
   | `SkipAnalysis -> "SkipAnalysis"
   | `CallGraph -> "CallGraph"
   | `Taint -> "Taint"
@@ -65,7 +67,7 @@ let section_to_string = function
 module GlobalState = struct
   let enabled =
     String.Hash_set.of_list
-      ["Dump"; "Error"; "Info"; "Memory"; "Progress"; "Performance"; "Warning"]
+      ["Dump"; "Error"; "Info"; "Memory"; "Progress"; "Performance"; "SkippedOverride"; "Warning"]
 
 
   let initialize ~debug ~sections =

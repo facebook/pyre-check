@@ -37,6 +37,7 @@ type section =
   | `Progress
   | `Protocols
   | `Server
+  | `SkippedOverride
   | `SkipAnalysis
   | `CallGraph
   | `Taint

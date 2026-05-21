@@ -132,7 +132,8 @@ module Heap = struct
             if number_of_overrides < cap then
               true
             else begin
-              Log.info
+              Log.log
+                ~section:`SkippedOverride
                 "Omitting overrides for `%s`. The number of overrides %d exceeds the limit %d."
                 (Target.show_pretty member)
                 number_of_overrides
