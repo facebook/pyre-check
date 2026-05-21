@@ -30,6 +30,7 @@ type section =
   | `Progress
   | `Protocols
   | `Server
+  | `SkipAnalysis
   | `CallGraph
   | `Taint
   | `Warning
@@ -53,6 +54,7 @@ let section_to_string = function
   | `Progress -> "Progress"
   | `Protocols -> "Protocols"
   | `Server -> "Server"
+  | `SkipAnalysis -> "SkipAnalysis"
   | `CallGraph -> "CallGraph"
   | `Taint -> "Taint"
   | `Warning -> "Warning"
@@ -68,7 +70,7 @@ module GlobalState = struct
     if debug then
       Hash_set.add enabled "Debug";
     let handle_section section =
-      let normalize section = String.lowercase section |> String.capitalize in
+      let normalize section = String.capitalize section in
       match String.chop_prefix ~prefix:"-" section with
       | Some section -> normalize section |> Hash_set.remove enabled
       | None -> normalize section |> Hash_set.add enabled

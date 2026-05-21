@@ -329,7 +329,7 @@ class StreamLogger:
     _current_section: Optional[str]
 
     _server_log_pattern: Pattern[str] = re.compile(
-        r"\s*(?:\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\S* )?(ERROR|WARNING|WARN|INFO|DEBUG|DUMP|PROGRESS|PARSER|TRACE|PERFORMANCE)(.*)"
+        r"\s*(?:\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\S* )?(ERROR|WARNING|WARN|INFO|DEBUG|DUMP|PROGRESS|PARSER|TRACE|PERFORMANCE|SKIPANALYSIS)(.*)"
     )
     # Exclude syntax warnings from the CPython parser.
     _server_log_exclude_pattern: Pattern[str] = re.compile(
@@ -369,6 +369,8 @@ class StreamLogger:
         elif section == "WARNING" or section == "WARN":
             LOG.warning(message)
         elif section == "PROGRESS":
+            LOG.info(message)
+        elif section == "SKIPANALYSIS":
             LOG.info(message)
         elif section == "PARSER":
             LOG.error(message)

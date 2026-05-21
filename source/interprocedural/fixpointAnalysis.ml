@@ -904,7 +904,8 @@ module Make (Analysis : ANALYSIS) = struct
     |> List.map ~f:Target.strip_parameters
     |> Target.Set.of_list
     |> Target.Set.iter (fun callable ->
-           Log.info
+           Log.log
+             ~section:`SkipAnalysis
              "Skipping global fixpoint analysis of `%a` (and its parameterized variants)"
              Target.pp_pretty
              callable);
