@@ -42,6 +42,7 @@ class Arguments:
     """
 
     base_arguments: backend_arguments.BaseArguments
+    additional_logging_sections: Sequence[str] = dataclasses.field(default_factory=list)
 
     dump_call_graph: Optional[str] = None
     dump_model_query_results: Optional[str] = None
@@ -124,6 +125,7 @@ class Arguments:
         )
         return {
             **self.base_arguments.serialize(),
+            "additional_logging_sections": self.additional_logging_sections,
             **({} if dump_call_graph is None else {"dump_call_graph": dump_call_graph}),
             **(
                 {}
@@ -265,6 +267,10 @@ def create_analyze_arguments(
     any filesystem state.
     """
     log_directory = configuration.get_log_directory()
+    logging_sections = analyze_arguments.logging_sections
+    additional_logging_sections = (
+        [] if logging_sections is None else logging_sections.split(",")
+    )
     profiling_output = (
         backend_arguments.get_profiling_log_path(log_directory)
         if analyze_arguments.enable_profiling
@@ -350,6 +356,7 @@ def create_analyze_arguments(
 
     return Arguments(
         base_arguments=base_arguments,
+        additional_logging_sections=additional_logging_sections,
         dump_call_graph=analyze_arguments.dump_call_graph,
         dump_model_query_results=analyze_arguments.dump_model_query_results,
         find_missing_flows=(

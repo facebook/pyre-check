@@ -726,6 +726,7 @@ def analyze(
             dump_model_query_results=dump_model_query_results,
             enable_memory_profiling=command_argument.enable_memory_profiling,
             enable_profiling=command_argument.enable_profiling,
+            logging_sections=command_argument.logging_sections,
             find_missing_flows=(
                 command_arguments.MissingFlowsKind(find_missing_flows)
                 if find_missing_flows is not None

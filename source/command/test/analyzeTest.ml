@@ -27,6 +27,7 @@ let test_json_parsing context =
   let dummy_analyze_configuration =
     {
       AnalyzeConfiguration.base = BaseConfigurationTest.dummy_base_configuration;
+      additional_logging_sections = [];
       pyrefly_results = None;
       dump_call_graph = None;
       dump_model_query_results = None;

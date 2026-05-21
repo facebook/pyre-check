@@ -57,8 +57,8 @@ let run_command query output_file configuration_file =
       Log.error "%s" message;
       (* Be consistent with the exit code of pyre server when running `pyre query` *)
       ServerCommand.ExitStatus.Error |> ServerCommand.ExitStatus.exit_code |> exit
-  | Result.Ok { base; taint_model_paths; strict; pyrefly_results; _ } ->
-      AnalyzeCommand.setup_global_states base;
+  | Result.Ok ({ base; taint_model_paths; strict; pyrefly_results; _ } as analyze_configuration) ->
+      AnalyzeCommand.setup_global_states analyze_configuration;
       let configuration =
         AnalyzeCommand.analysis_configuration_of
           ~taint_model_paths

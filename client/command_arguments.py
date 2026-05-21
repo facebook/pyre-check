@@ -303,6 +303,7 @@ class AnalyzeArguments:
     infer_self_tito: bool = True
     infer_argument_tito: bool = False
     log_identifier: Optional[str] = None
+    logging_sections: Optional[str] = None
     maximum_model_source_tree_width: Optional[int] = None
     maximum_model_sink_tree_width: Optional[int] = None
     maximum_model_tito_tree_width: Optional[int] = None

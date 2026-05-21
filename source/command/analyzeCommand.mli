@@ -21,6 +21,7 @@ end
 module AnalyzeConfiguration : sig
   type t = {
     base: CommandStartup.BaseConfiguration.t;
+    additional_logging_sections: string list;
     dump_call_graph: PyrePath.t option;
     dump_model_query_results: PyrePath.t option;
     find_missing_flows: Configuration.MissingFlowKind.t option;
@@ -69,7 +70,7 @@ module AnalyzeConfiguration : sig
   val of_yojson : Yojson.Safe.t -> (t, string) Result.t
 end
 
-val setup_global_states : CommandStartup.BaseConfiguration.t -> unit
+val setup_global_states : AnalyzeConfiguration.t -> unit
 
 val analysis_configuration_of
   :  taint_model_paths:PyrePath.t list ->

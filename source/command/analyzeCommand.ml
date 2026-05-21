@@ -30,6 +30,7 @@ end
 module AnalyzeConfiguration = struct
   type t = {
     base: CommandStartup.BaseConfiguration.t;
+    additional_logging_sections: string list;
     dump_call_graph: PyrePath.t option;
     dump_model_query_results: PyrePath.t option;
     find_missing_flows: Configuration.MissingFlowKind.t option;
@@ -84,6 +85,9 @@ module AnalyzeConfiguration = struct
       match CommandStartup.BaseConfiguration.of_yojson json with
       | Result.Error _ as error -> error
       | Result.Ok base ->
+          let additional_logging_sections =
+            json |> string_list_member "additional_logging_sections" ~default:[]
+          in
           let dump_call_graph = optional_path_member "dump_call_graph" json in
           let dump_model_query_results = optional_path_member "dump_model_query_results" json in
           optional_string_member "find_missing_flows" json
@@ -182,6 +186,7 @@ module AnalyzeConfiguration = struct
           Result.Ok
             {
               base;
+              additional_logging_sections;
               pyrefly_results;
               dump_call_graph;
               dump_model_query_results;
@@ -302,12 +307,17 @@ let analysis_configuration_of
 
 let setup_global_states
     {
-      CommandStartup.BaseConfiguration.global_root;
-      local_root;
-      debug;
-      remote_logging;
-      profiling_output;
-      memory_profiling_output;
+      AnalyzeConfiguration.base =
+        {
+          CommandStartup.BaseConfiguration.global_root;
+          local_root;
+          debug;
+          remote_logging;
+          profiling_output;
+          memory_profiling_output;
+          _;
+        };
+      additional_logging_sections;
       _;
     }
   =
@@ -315,7 +325,7 @@ let setup_global_states
     ~global_root
     ~local_root
     ~debug
-    ~additional_logging_sections:[]
+    ~additional_logging_sections
     ~remote_logging
     ~profiling_output
     ~memory_profiling_output
@@ -325,6 +335,7 @@ let setup_global_states
 let static_analysis_configuration_of
     {
       AnalyzeConfiguration.base;
+      additional_logging_sections = _;
       dump_call_graph;
       dump_model_query_results;
       find_missing_flows;
@@ -523,7 +534,7 @@ let run_analyze configuration_file =
         Log.error "%s" message;
         ExitStatus.CheckStatus CheckCommand.ExitStatus.PyreError
     | Result.Ok analyze_configuration ->
-        setup_global_states analyze_configuration.base;
+        setup_global_states analyze_configuration;
         Lwt_main.run
           (Lwt.catch
              (fun () -> run_analyze analyze_configuration)
