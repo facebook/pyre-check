@@ -20,6 +20,8 @@ open Statement
 open Domains
 open ModelParseResult
 module PyrePysaLogic = Analysis.PyrePysaLogic
+module ResolutionResult = PyrePysaApi.ModelQueries.ResolutionResult
+module ModuleResolutionResult = PyrePysaApi.ModelQueries.ModuleResolutionResult
 
 module SystemCondition = struct
   type t =
@@ -3680,7 +3682,9 @@ let create_models_from_signature
                   ~is_property_setter
                   define_name
               with
-              | [Global.Function function_] -> function_
+              | ResolutionResult.ModuleFound
+                  [ModuleResolutionResult.Resolved (Global.Function function_)] ->
+                  function_
               | _ -> failwith "expected a single resolved function for a resolved callable name")
           | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->
               Interprocedural.PyreflyApi.ReadOnly.get_model_parser_function_info
@@ -3689,7 +3693,7 @@ let create_models_from_signature
         in
         [resolved_function], []
     | CallableName.UserProvided user_provided_callable_name -> (
-        let globals =
+        let resolution_result =
           PyrePysaApi.ModelQueries.resolve_user_qualified_name
             ~verify_class_attributes:false
             pyre_api
@@ -3697,81 +3701,81 @@ let create_models_from_signature
             ~is_property_setter
             user_provided_callable_name
         in
-        match globals with
-        | [] ->
+        match resolution_result with
+        | ResolutionResult.BaseModuleNotFound ->
             let module_name =
               Reference.first
                 (PyrePysaApi.ReadOnly.add_builtins_prefix pyre_api user_provided_callable_name)
             in
-            let module_resolved =
-              PyrePysaApi.ModelQueries.resolve_user_qualified_name
-                ~verify_class_attributes:false
-                pyre_api
-                ~is_property_getter:false
-                ~is_property_setter:false
-                (Reference.create module_name)
-            in
-            let module_exists =
-              (not (List.is_empty module_resolved))
-              && List.for_all module_resolved ~f:Global.is_module
-            in
-            let error =
-              if module_exists then
-                make_verification_error
-                  (MissingSymbol
-                     { module_name; symbol_name = Reference.show user_provided_callable_name })
-              else
+            ( [],
+              [
                 make_verification_error
                   (BaseModuleNotInEnvironment
-                     { module_name; name = Reference.show user_provided_callable_name })
+                     { module_name; name = Reference.show user_provided_callable_name });
+              ] )
+        | ResolutionResult.ModuleFound results ->
+            let globals, unresolved_errors =
+              List.partition_map results ~f:(function
+                  | ModuleResolutionResult.Resolved global -> First global
+                  | ModuleResolutionResult.Unresolved { module_qualifier; module_name; suffix } ->
+                      let module_path =
+                        PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api module_qualifier
+                      in
+                      Second
+                        (make_verification_error
+                           (MissingSymbol
+                              {
+                                module_name = Reference.show module_name;
+                                module_path;
+                                symbol_name = Reference.show suffix;
+                              })))
             in
-            [], [error]
-        | globals ->
-            (* For each global, generate either a callable (for Function/Unknown entries) or an
-               error (for Class/Module/Attribute entries). We produce valid models for functions
-               while propagating errors for non-function globals. *)
-            List.partition_map globals ~f:(function
-                | Global.Function resolved_callable -> First resolved_callable
-                | ( Global.UnknownClassAttribute { name; module_qualifier; location; _ }
-                  | Global.UnknownModuleGlobal { name; module_qualifier; location; _ } ) as kind ->
-                    First
-                      {
-                        Function.define_name = name;
-                        imported_name = None;
-                        undecorated_signatures = None;
-                        is_property_getter;
-                        is_property_setter;
-                        is_method =
-                          (match kind with
-                          | Global.UnknownClassAttribute _ -> true
-                          | _ -> false);
-                        module_qualifier;
-                        location;
-                      }
-                | Global.Class _ as global ->
-                    Second
-                      (make_verification_error
-                         (ModelingClassAsDefine
-                            {
-                              name = Reference.show user_provided_callable_name;
-                              class_location = source_location_of_global ~pyre_api global;
-                            }))
-                | Global.Module { qualifier } ->
-                    let module_path =
-                      PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api qualifier
-                    in
-                    Second
-                      (make_verification_error
-                         (ModelingModuleAsDefine
-                            { name = Reference.show user_provided_callable_name; module_path }))
-                | (Global.ClassAttribute _ | Global.ModuleGlobal _) as global ->
-                    Second
-                      (make_verification_error
-                         (ModelingAttributeAsDefine
-                            {
-                              name = Reference.show user_provided_callable_name;
-                              attribute_location = source_location_of_global ~pyre_api global;
-                            }))))
+            let callables, classify_errors =
+              List.partition_map globals ~f:(function
+                  | Global.Function resolved_callable -> First resolved_callable
+                  | ( Global.UnknownClassAttribute { name; module_qualifier; location; _ }
+                    | Global.UnknownModuleGlobal { name; module_qualifier; location; _ } ) as kind
+                    ->
+                      First
+                        {
+                          Function.define_name = name;
+                          imported_name = None;
+                          undecorated_signatures = None;
+                          is_property_getter;
+                          is_property_setter;
+                          is_method =
+                            (match kind with
+                            | Global.UnknownClassAttribute _ -> true
+                            | _ -> false);
+                          module_qualifier;
+                          location;
+                        }
+                  | Global.Class _ as global ->
+                      Second
+                        (make_verification_error
+                           (ModelingClassAsDefine
+                              {
+                                name = Reference.show user_provided_callable_name;
+                                class_location = source_location_of_global ~pyre_api global;
+                              }))
+                  | Global.Module { qualifier } ->
+                      let module_path =
+                        PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api qualifier
+                      in
+                      Second
+                        (make_verification_error
+                           (ModelingModuleAsDefine
+                              { name = Reference.show user_provided_callable_name; module_path }))
+                  | (Global.ClassAttribute _ | Global.ModuleGlobal _) as global ->
+                      Second
+                        (make_verification_error
+                           (ModelingAttributeAsDefine
+                              {
+                                name = Reference.show user_provided_callable_name;
+                                attribute_location = source_location_of_global ~pyre_api global;
+                              })))
+            in
+            callables, unresolved_errors @ classify_errors)
   in
   let build_model_for_callable
       ({ Function.define_name; module_qualifier; location = callable_location; _ } as callable)
@@ -4065,7 +4069,7 @@ let create_models_from_attribute
   =
   let module Global = PyrePysaApi.ModelQueries.Global in
   let make_verification_error kind = { ModelVerificationError.kind; path; location } in
-  let globals =
+  let resolution_result =
     PyrePysaApi.ModelQueries.resolve_user_qualified_name
       ~verify_class_attributes:true
       pyre_api
@@ -4074,89 +4078,107 @@ let create_models_from_attribute
       user_provided_attribute_name
   in
   let resolved_attributes, resolution_errors =
-    match globals with
-    | [] ->
+    match resolution_result with
+    | ResolutionResult.BaseModuleNotFound ->
         let module_name =
           Reference.first
             (PyrePysaApi.ReadOnly.add_builtins_prefix pyre_api user_provided_attribute_name)
         in
-        let module_resolved =
-          PyrePysaApi.ModelQueries.resolve_user_qualified_name
-            ~verify_class_attributes:false
-            pyre_api
-            ~is_property_getter:false
-            ~is_property_setter:false
-            (Reference.create module_name)
-        in
-        let module_exists =
-          (not (List.is_empty module_resolved)) && List.for_all module_resolved ~f:Global.is_module
-        in
-        let error =
-          if module_exists then
-            let class_name =
-              user_provided_attribute_name
-              |> PyrePysaApi.ReadOnly.add_builtins_prefix pyre_api
-              |> PyrePysaApi.ModelQueries.demangle_class_attribute
-              |> Reference.prefix
-              |> Option.value ~default:Reference.empty
-            in
-            let class_resolved =
-              PyrePysaApi.ModelQueries.resolve_user_qualified_name
-                ~verify_class_attributes:false
-                pyre_api
-                ~is_property_getter:false
-                ~is_property_setter:false
-                class_name
-            in
-            if
-              (not (List.is_empty class_resolved)) && List.for_all class_resolved ~f:Global.is_class
-            then
-              make_verification_error
-                (MissingAttribute
-                   {
-                     class_name = Reference.show class_name;
-                     attribute_name = Reference.last user_provided_attribute_name;
-                   })
-            else
-              make_verification_error
-                (MissingSymbol
-                   { module_name; symbol_name = Reference.show user_provided_attribute_name })
-          else
+        ( [],
+          [
             make_verification_error
               (BaseModuleNotInEnvironment
-                 { module_name; name = Reference.show user_provided_attribute_name })
+                 { module_name; name = Reference.show user_provided_attribute_name });
+          ] )
+    | ResolutionResult.ModuleFound results ->
+        let resolved_attributes, unresolved_errors =
+          List.partition_map results ~f:(function
+              | ModuleResolutionResult.Resolved global -> First global
+              | ModuleResolutionResult.Unresolved { module_qualifier; module_name; suffix } -> (
+                  (* Secondary class check — does the class part exist? *)
+                  let class_name =
+                    user_provided_attribute_name
+                    |> PyrePysaApi.ReadOnly.add_builtins_prefix pyre_api
+                    |> PyrePysaApi.ModelQueries.demangle_class_attribute
+                    |> Reference.prefix
+                    |> Option.value ~default:Reference.empty
+                  in
+                  let class_resolution =
+                    PyrePysaApi.ModelQueries.resolve_user_qualified_name
+                      ~verify_class_attributes:false
+                      pyre_api
+                      ~is_property_getter:false
+                      ~is_property_setter:false
+                      class_name
+                  in
+                  let results_for_qualifier =
+                    match class_resolution with
+                    | ResolutionResult.BaseModuleNotFound -> []
+                    | ResolutionResult.ModuleFound results ->
+                        List.filter results ~f:(function
+                            | ModuleResolutionResult.Resolved global ->
+                                PyrePysaApi.ModelQueries.Global.module_qualifier global
+                                |> Option.exists ~f:(Reference.equal module_qualifier)
+                            | ModuleResolutionResult.Unresolved { module_qualifier = qualifier; _ }
+                              ->
+                                Reference.equal qualifier module_qualifier)
+                  in
+                  match results_for_qualifier with
+                  | ModuleResolutionResult.Resolved (Global.Class _ as global) :: _ ->
+                      let class_location = source_location_of_global ~pyre_api global in
+                      Second
+                        (make_verification_error
+                           (MissingAttribute
+                              {
+                                class_name = Reference.show class_name;
+                                class_location;
+                                attribute_name = Reference.last user_provided_attribute_name;
+                              }))
+                  | _ ->
+                      let module_path =
+                        PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api module_qualifier
+                      in
+                      Second
+                        (make_verification_error
+                           (MissingSymbol
+                              {
+                                module_name = Reference.show module_name;
+                                module_path;
+                                symbol_name = Reference.show suffix;
+                              }))))
         in
-        [], [error]
-    | globals ->
-        List.partition_map globals ~f:(function
-            | Global.ClassAttribute { name; _ } -> First name
-            | Global.ModuleGlobal { name; _ } -> First name
-            | Global.UnknownClassAttribute { name; _ } -> First name
-            | Global.UnknownModuleGlobal { name; _ } -> First name
-            | Global.Class _ as global ->
-                Second
-                  (make_verification_error
-                     (ModelingClassAsAttribute
-                        {
-                          name = Reference.show user_provided_attribute_name;
-                          class_location = source_location_of_global ~pyre_api global;
-                        }))
-            | Global.Module { qualifier } ->
-                let module_path =
-                  PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api qualifier
-                in
-                Second
-                  (make_verification_error
-                     (ModelingModuleAsAttribute
-                        { name = Reference.show user_provided_attribute_name; module_path }))
-            | Global.Function _ as global ->
-                Second
-                  (make_verification_error
-                     (ModelingCallableAsAttribute
-                        {
-                          name = Reference.show user_provided_attribute_name;
-                          callable_location = source_location_of_global ~pyre_api global;
-                        })))
+        let resolved_attributes, classify_errors =
+          List.partition_map resolved_attributes ~f:(function
+              | Global.ClassAttribute { name; _ } -> First name
+              | Global.ModuleGlobal { name; _ } -> First name
+              | Global.UnknownClassAttribute { name; _ } -> First name
+              | Global.UnknownModuleGlobal { name; _ } -> First name
+              | Global.Class _ as global ->
+                  Second
+                    (make_verification_error
+                       (ModelingClassAsAttribute
+                          {
+                            name = Reference.show user_provided_attribute_name;
+                            class_location = source_location_of_global ~pyre_api global;
+                          }))
+              | Global.Module { qualifier } ->
+                  let module_path =
+                    PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api qualifier
+                  in
+                  Second
+                    (make_verification_error
+                       (ModelingModuleAsAttribute
+                          { name = Reference.show user_provided_attribute_name; module_path }))
+              | Global.Function _ as global ->
+                  Second
+                    (make_verification_error
+                       (ModelingCallableAsAttribute
+                          {
+                            name = Reference.show user_provided_attribute_name;
+                            callable_location = source_location_of_global ~pyre_api global;
+                          })))
+        in
+        resolved_attributes, unresolved_errors @ classify_errors
   in
   let build_model_for_attribute attribute_name =
     let open Core.Result in
@@ -4222,7 +4244,7 @@ let create_models_from_class
   =
   let module Global = PyrePysaApi.ModelQueries.Global in
   let make_verification_error kind = { ModelVerificationError.kind; path; location } in
-  let globals =
+  let resolution_result =
     PyrePysaApi.ModelQueries.resolve_user_qualified_name
       ~verify_class_attributes:false
       pyre_api
@@ -4231,42 +4253,65 @@ let create_models_from_class
       user_provided_class_name
   in
   let resolved_classes, resolution_errors =
-    match globals with
-    | [] ->
+    match resolution_result with
+    | ResolutionResult.BaseModuleNotFound ->
         let module_name =
           Reference.first
             (PyrePysaApi.ReadOnly.add_builtins_prefix pyre_api user_provided_class_name)
         in
-        let module_resolved =
-          PyrePysaApi.ModelQueries.resolve_user_qualified_name
-            ~verify_class_attributes:false
-            pyre_api
-            ~is_property_getter:false
-            ~is_property_setter:false
-            (Reference.create module_name)
-        in
-        let module_exists =
-          (not (List.is_empty module_resolved)) && List.for_all module_resolved ~f:Global.is_module
-        in
-        let error =
-          if module_exists then
-            make_verification_error
-              (ModelVerificationError.MissingClass
-                 { class_name = Reference.show user_provided_class_name })
-          else
+        ( [],
+          [
             make_verification_error
               (BaseModuleNotInEnvironment
-                 { module_name; name = Reference.show user_provided_class_name })
+                 { module_name; name = Reference.show user_provided_class_name });
+          ] )
+    | ResolutionResult.ModuleFound results ->
+        let globals, unresolved_errors =
+          List.partition_map results ~f:(function
+              | ModuleResolutionResult.Resolved global -> First global
+              | ModuleResolutionResult.Unresolved { module_qualifier; module_name; suffix = _ } ->
+                  let module_path =
+                    PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api module_qualifier
+                  in
+                  Second
+                    (make_verification_error
+                       (ModelVerificationError.MissingClass
+                          {
+                            class_name = Reference.show user_provided_class_name;
+                            module_name = Reference.show module_name;
+                            module_path;
+                          })))
         in
-        [], [error]
-    | globals ->
-        List.partition_map globals ~f:(function
-            | Global.Class { class_name; _ } -> First class_name
-            | _ ->
-                Second
-                  (make_verification_error
-                     (ModelVerificationError.MissingClass
-                        { class_name = Reference.show user_provided_class_name })))
+        let classes, classify_errors =
+          List.partition_map globals ~f:(function
+              | Global.Class { class_name; _ } -> First class_name
+              | Global.Function _ as global ->
+                  Second
+                    (make_verification_error
+                       (ModelVerificationError.ModelingCallableAsClass
+                          {
+                            name = Reference.show user_provided_class_name;
+                            callable_location = source_location_of_global ~pyre_api global;
+                          }))
+              | Global.Module { qualifier } ->
+                  let module_path =
+                    PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api qualifier
+                  in
+                  Second
+                    (make_verification_error
+                       (ModelVerificationError.ModelingModuleAsClass
+                          { name = Reference.show user_provided_class_name; module_path }))
+              | ( Global.ClassAttribute _ | Global.ModuleGlobal _ | Global.UnknownClassAttribute _
+                | Global.UnknownModuleGlobal _ ) as global ->
+                  Second
+                    (make_verification_error
+                       (ModelVerificationError.ModelingAttributeAsClass
+                          {
+                            name = Reference.show user_provided_class_name;
+                            attribute_location = source_location_of_global ~pyre_api global;
+                          })))
+        in
+        classes, unresolved_errors @ classify_errors
   in
   let create_models_for_class resolved_class_name =
     match
@@ -4346,12 +4391,19 @@ let create_models_from_class
         let all_results = method_signatures |> List.map ~f:create_model_for_method |> List.concat in
         let all_models, all_errors = List.unzip all_results in
         List.concat all_models, List.concat all_errors
+    | None when PyrePysaApi.ReadOnly.is_pyrefly pyre_api -> failwith "unreachable"
     | None ->
         ( [],
           [
             make_verification_error
               (ModelVerificationError.MissingClass
-                 { class_name = Reference.show user_provided_class_name });
+                 {
+                   class_name = Reference.show user_provided_class_name;
+                   module_name =
+                     Reference.first
+                       (PyrePysaApi.ReadOnly.add_builtins_prefix pyre_api user_provided_class_name);
+                   module_path = None;
+                 });
           ] )
   in
   let class_models, class_errors =
@@ -5072,7 +5124,7 @@ let create_callable_model_from_annotations
   let define_name = Target.define_name_exn target in
   let callable_undecorated_signatures =
     match pyre_api with
-    | PyrePysaApi.ReadOnly.Pyre1 _ ->
+    | PyrePysaApi.ReadOnly.Pyre1 _ -> (
         (* TODO: As a workaround, we use `resolve_user_qualified_name` to get the undecorated
            signatures, but this is far from ideal, since at this point, we already have a resolved
            fully qualified name. *)
@@ -5080,17 +5132,22 @@ let create_callable_model_from_annotations
         let is_property_getter, is_property_setter =
           is_property_getter_setter ~decorators ~callable_name:(CallableName.Resolved define_name)
         in
-        PyrePysaApi.ModelQueries.resolve_user_qualified_name
-          ~verify_class_attributes:false
-          pyre_api
-          ~is_property_getter
-          ~is_property_setter
-          define_name
-        |> List.find_map ~f:(function
-               | PyrePysaApi.ModelQueries.Global.Function
-                   { PyrePysaApi.ModelQueries.Function.undecorated_signatures; _ } ->
-                   undecorated_signatures
-               | _ -> None)
+        match
+          PyrePysaApi.ModelQueries.resolve_user_qualified_name
+            ~verify_class_attributes:false
+            pyre_api
+            ~is_property_getter
+            ~is_property_setter
+            define_name
+        with
+        | ResolutionResult.ModuleFound
+            [
+              ModuleResolutionResult.Resolved
+                (PyrePysaApi.ModelQueries.Global.Function
+                  { PyrePysaApi.ModelQueries.Function.undecorated_signatures; _ });
+            ] ->
+            undecorated_signatures
+        | _ -> None)
     | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->
         Some
           (Interprocedural.PyreflyApi.ReadOnly.get_undecorated_signatures pyrefly_api define_name)

@@ -391,6 +391,8 @@ module ModelQueries : sig
   module FunctionSignature = Analysis.PyrePysaEnvironment.ModelQueries.FunctionSignature
   module Function = Analysis.PyrePysaEnvironment.ModelQueries.Function
   module Global = Analysis.PyrePysaEnvironment.ModelQueries.Global
+  module ModuleResolutionResult = Analysis.PyrePysaEnvironment.ModelQueries.ModuleResolutionResult
+  module ResolutionResult = Analysis.PyrePysaEnvironment.ModelQueries.ResolutionResult
 
   val resolve_user_qualified_name
     :  ReadOnly.t ->
@@ -398,7 +400,7 @@ module ModelQueries : sig
     is_property_setter:bool ->
     verify_class_attributes:bool ->
     Ast.Reference.t ->
-    Global.t list
+    ResolutionResult.t
 
   val class_method_signatures
     :  ReadOnly.t ->

@@ -587,7 +587,9 @@ let test_invalid_models =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"test.missing_global: TaintSink[Test]"
-           ~expect:"Module `test` does not define `test.missing_global`.";
+           ~expect:
+             "Could not find symbol `missing_global` in longest matching module `test` (defined in \
+              test.py).";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~source:{|
@@ -595,13 +597,13 @@ let test_invalid_models =
         a: int = 1
      |}
            ~model_source:"test.C.b: TaintSink[Test] = ..."
-           ~expect:"Class `test.C` has no attribute `b`.";
+           ~expect:"Class `test.C` (defined at test.py:2) has no attribute `b`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model ~model_source:"test.C.unannotated_class_variable: TaintSink[Test]";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"test.C.missing: TaintSink[Test]"
-           ~expect:"Class `test.C` has no attribute `missing`.";
+           ~expect:"Class `test.C` (defined at test.py:17) has no attribute `missing`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:"test.C().unannotated_class_variable: TaintSink[Test]"
@@ -957,7 +959,9 @@ let test_invalid_models =
            ~expect:
              "The modelled function `unittest.TestCase.assertIsNotNone` is an imported function, \
               please model `unittest.case.TestCase.assertIsNotNone` directly."
-           ~pyrefly_expect:"Module `unittest` does not define `unittest.TestCase.assertIsNotNone`.";
+           ~pyrefly_expect:
+             "Could not find symbol `TestCase.assertIsNotNone` in longest matching module \
+              `unittest` (defined in unittest/__init__.pyi).";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:
@@ -1077,7 +1081,7 @@ let test_invalid_models =
         pass
     |}
            ~model_source:"test.D.foo: TaintSource[A] = ..."
-           ~expect:"Class `test.D` has no attribute `foo`.";
+           ~expect:"Class `test.D` (defined at test.py:4) has no attribute `foo`.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model
            ~source:{|
@@ -3070,7 +3074,9 @@ let test_invalid_overloads =
            ~expect:
              "The modelled function `test.Child.foo` is an imported function, please model \
               `test.Parent.foo` directly."
-           ~pyrefly_expect:"Module `test` does not define `test.Child.foo`.";
+           ~pyrefly_expect:
+             "Could not find symbol `Child.foo` in longest matching module `test` (defined in \
+              test.py).";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~source:
@@ -3086,7 +3092,9 @@ let test_invalid_overloads =
       @property
       def test.Child.foo(self) -> TaintSource[Test]: ...
     |}
-           ~expect:"Module `test` does not define `test.Child.foo`.";
+           ~expect:
+             "Could not find symbol `Child.foo` in longest matching module `test` (defined in \
+              test.py).";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~source:{|

@@ -625,6 +625,26 @@ module ModelQueries : sig
     val location : t -> Ast.Location.t option
   end
 
+  module ModuleResolutionResult : sig
+    type t =
+      (* Symbol found in a module *)
+      | Resolved of Global.t
+      (* Module exists but symbol not found within it *)
+      | Unresolved of {
+          module_qualifier: Ast.Reference.t;
+          module_name: Ast.Reference.t; (* Bare module name *)
+          suffix: Ast.Reference.t; (* Unresolved part of the name *)
+        }
+  end
+
+  module ResolutionResult : sig
+    type t =
+      (* At least one module prefix matched. The list contains one result per matching module. *)
+      | ModuleFound of ModuleResolutionResult.t list
+      (* No module prefix matched at all *)
+      | BaseModuleNotFound
+  end
+
   val mangle_top_level_name : Ast.Reference.t -> Ast.Reference.t
 
   val demangle_class_attribute : Ast.Reference.t -> Ast.Reference.t
@@ -639,7 +659,7 @@ module ModelQueries : sig
     is_property_setter:bool ->
     verify_class_attributes:bool ->
     Ast.Reference.t ->
-    Global.t option
+    ResolutionResult.t
 
   val class_method_signatures
     :  ReadOnly.t ->

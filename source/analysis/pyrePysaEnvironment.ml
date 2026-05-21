@@ -1564,6 +1564,26 @@ module ModelQueries = struct
       | UnknownModuleGlobal { location; _ } -> location
   end
 
+  module ModuleResolutionResult = struct
+    type t =
+      (* Symbol found in a module *)
+      | Resolved of Global.t
+      (* Module exists but symbol not found within it *)
+      | Unresolved of {
+          module_qualifier: Ast.Reference.t;
+          module_name: Ast.Reference.t; (* Bare module name *)
+          suffix: Ast.Reference.t; (* Unresolved part of the name *)
+        }
+  end
+
+  module ResolutionResult = struct
+    type t =
+      (* At least one module prefix matched. The list contains one result per matching module. *)
+      | ModuleFound of ModuleResolutionResult.t list
+      (* No module prefix matched at all *)
+      | BaseModuleNotFound
+  end
+
   let containing_source read_only reference =
     let rec qualifier ~found ~lead ~tail =
       match tail with
@@ -1696,6 +1716,22 @@ module ModelQueries = struct
     | [] -> name
 
 
+  let find_longest_matching_module read_only name =
+    let rec try_prefix candidate suffix =
+      if Ast.Reference.is_empty candidate then
+        None
+      else if ReadOnly.module_exists read_only candidate then
+        Some (candidate, suffix)
+      else
+        match Ast.Reference.prefix candidate with
+        | Some prefix ->
+            let last = Ast.Reference.last candidate in
+            try_prefix prefix (Ast.Reference.combine (Ast.Reference.create last) suffix)
+        | None -> None
+    in
+    try_prefix name Ast.Reference.empty
+
+
   (* Resolve a user-provided qualified name (from a .pysa model file) to the corresponding global
      symbol. Returns the kind of symbol (function, class, module, attribute, etc.) along with
      metadata such as undecorated signatures for callables.
@@ -1711,293 +1747,308 @@ module ModelQueries = struct
       name
     =
     let name = name |> mangle_top_level_name |> demangle_class_attribute in
-    let get_callable_type = function
-      | PyreType.Callable t -> t
-      | _ -> failwith "expected callable type"
-    in
-    let get_imported_name { PyreType.Callable.kind; _ } =
-      match kind with
-      | Named name -> Some name
-      | _ -> None
-    in
-    let name_end = Ast.Reference.last name in
-    if Ast.Identifier.equal name_end Ast.Statement.toplevel_define_name then
-      if
-        name
-        |> Ast.Reference.prefix
-        >>| ReadOnly.module_exists read_only
-        |> Option.value ~default:false
-      then
-        Some
-          (Global.Function
-             {
-               Function.define_name = name;
-               imported_name = None;
-               undecorated_signatures = Some [FunctionSignature.toplevel];
-               is_property_getter = false;
-               is_property_setter = false;
-               is_method = false;
-               module_qualifier = Ast.Reference.prefix name;
-               location = Some Ast.Location.line_one;
-             })
-      else
-        None
-    else if Ast.Identifier.equal name_end Ast.Statement.class_toplevel_define_name then
-      if
-        name
-        |> Ast.Reference.prefix
-        >>| Ast.Reference.show
-        >>| ReadOnly.class_exists read_only
-        |> Option.value ~default:false
-      then
-        Some
-          (Global.Function
-             {
-               Function.define_name = name;
-               imported_name = None;
-               undecorated_signatures = Some [FunctionSignature.toplevel];
-               is_property_getter = false;
-               is_property_setter = false;
-               is_method = true;
-               module_qualifier = None;
-               location = None;
-             })
-      else
-        None
-    else if is_property_getter then
-      let predicate define =
-        Set.exists property_decorators ~f:(Ast.Statement.Define.Signature.has_decorator define)
+    let result =
+      let get_callable_type = function
+        | PyreType.Callable t -> t
+        | _ -> failwith "expected callable type"
       in
-      find_method_definitions read_only ~predicate name
-      |> List.hd
-      >>| fun callable ->
-      Global.Function
-        {
-          Function.define_name = name;
-          imported_name = None;
-          undecorated_signatures = Some [FunctionSignature.from_overload callable];
-          is_property_setter;
-          is_property_getter;
-          is_method = true;
-          module_qualifier = None;
-          location = None;
-        }
-    else if is_property_setter then
-      find_method_definitions
-        read_only
-        ~predicate:Ast.Statement.Define.Signature.is_property_setter
-        name
-      |> List.hd
-      >>| fun callable ->
-      Global.Function
-        {
-          Function.define_name = name;
-          imported_name = None;
-          undecorated_signatures = Some [FunctionSignature.from_overload callable];
-          is_property_getter;
-          is_property_setter;
-          is_method = true;
-          module_qualifier = None;
-          location = None;
-        }
-    else (* Resolve undecorated functions. *)
-      let class_summary =
-        Ast.Reference.prefix name
-        >>| ReadOnly.parse_reference read_only
-        >>| PyreType.split
-        >>| fst
-        >>= PyreType.primitive_name
-        >>= ReadOnly.get_class_summary read_only
+      let get_imported_name { PyreType.Callable.kind; _ } =
+        match kind with
+        | Named name -> Some name
+        | _ -> None
       in
-      let maybe_signature_of_function =
-        match ReadOnly.global read_only name with
-        | Some { AttributeResolution.Global.undecorated_signature = Some signature; _ } ->
-            Some signature
-        | _ ->
-            ReadOnly.get_define_body read_only name
-            >>| Ast.Node.value
-            |> (function
-                 | Some
-                     ({
-                        Ast.Statement.Define.signature =
-                          { parent = Ast.NestingContext.Function _; _ };
-                        _;
-                      } as define) ->
-                     Some
-                       (ReadOnly.resolve_define_undecorated
-                          ~callable_name:(Some name)
-                          ~implementation:(Some define.signature)
-                          ~overloads:[]
-                          ~scoped_type_variables:None
-                          read_only)
-                 | _ -> None)
-            |> Option.map ~f:(fun { AnnotatedAttribute.undecorated_signature = signature; _ } ->
-                   signature)
-      in
-      match maybe_signature_of_function with
-      | Some signature ->
-          let module_qualifier, location =
-            match ReadOnly.location_of_global read_only name with
-            | Some { Ast.Location.WithModule.module_reference; start; stop } ->
-                Some module_reference, Some { Ast.Location.start; stop }
-            | None -> None, None
-          in
+      let name_end = Ast.Reference.last name in
+      if Ast.Identifier.equal name_end Ast.Statement.toplevel_define_name then
+        if
+          name
+          |> Ast.Reference.prefix
+          >>| ReadOnly.module_exists read_only
+          |> Option.value ~default:false
+        then
           Some
             (Global.Function
                {
                  Function.define_name = name;
-                 imported_name = get_imported_name signature;
-                 undecorated_signatures = Some (FunctionSignature.from_callable_type signature);
+                 imported_name = None;
+                 undecorated_signatures = Some [FunctionSignature.toplevel];
                  is_property_getter = false;
                  is_property_setter = false;
-                 is_method = Option.is_some class_summary;
-                 module_qualifier;
-                 location;
+                 is_method = false;
+                 module_qualifier = Ast.Reference.prefix name;
+                 location = Some Ast.Location.line_one;
                })
-      | None -> (
-          (* Resolve undecorated methods. *)
-          match find_method_definitions read_only name with
-          | [callable] ->
-              Some
-                (Global.Function
-                   {
-                     define_name = name;
-                     imported_name = None;
-                     undecorated_signatures = Some [FunctionSignature.from_overload callable];
-                     is_property_getter = false;
-                     is_property_setter = false;
-                     is_method = Option.is_some class_summary;
-                     module_qualifier = None;
-                     location = None;
-                   })
-          | first :: _ :: _ as overloads ->
-              (* Note that we use the first overload as the base implementation, which might be
-                 unsound. *)
-              Some
-                (Global.Function
-                   {
-                     define_name = name;
-                     imported_name = None;
-                     undecorated_signatures =
+        else
+          None
+      else if Ast.Identifier.equal name_end Ast.Statement.class_toplevel_define_name then
+        if
+          name
+          |> Ast.Reference.prefix
+          >>| Ast.Reference.show
+          >>| ReadOnly.class_exists read_only
+          |> Option.value ~default:false
+        then
+          Some
+            (Global.Function
+               {
+                 Function.define_name = name;
+                 imported_name = None;
+                 undecorated_signatures = Some [FunctionSignature.toplevel];
+                 is_property_getter = false;
+                 is_property_setter = false;
+                 is_method = true;
+                 module_qualifier = None;
+                 location = None;
+               })
+        else
+          None
+      else if is_property_getter then
+        let predicate define =
+          Set.exists property_decorators ~f:(Ast.Statement.Define.Signature.has_decorator define)
+        in
+        find_method_definitions read_only ~predicate name
+        |> List.hd
+        >>| fun callable ->
+        Global.Function
+          {
+            Function.define_name = name;
+            imported_name = None;
+            undecorated_signatures = Some [FunctionSignature.from_overload callable];
+            is_property_setter;
+            is_property_getter;
+            is_method = true;
+            module_qualifier = None;
+            location = None;
+          }
+      else if is_property_setter then
+        find_method_definitions
+          read_only
+          ~predicate:Ast.Statement.Define.Signature.is_property_setter
+          name
+        |> List.hd
+        >>| fun callable ->
+        Global.Function
+          {
+            Function.define_name = name;
+            imported_name = None;
+            undecorated_signatures = Some [FunctionSignature.from_overload callable];
+            is_property_getter;
+            is_property_setter;
+            is_method = true;
+            module_qualifier = None;
+            location = None;
+          }
+      else (* Resolve undecorated functions. *)
+        let class_summary =
+          Ast.Reference.prefix name
+          >>| ReadOnly.parse_reference read_only
+          >>| PyreType.split
+          >>| fst
+          >>= PyreType.primitive_name
+          >>= ReadOnly.get_class_summary read_only
+        in
+        let maybe_signature_of_function =
+          match ReadOnly.global read_only name with
+          | Some { AttributeResolution.Global.undecorated_signature = Some signature; _ } ->
+              Some signature
+          | _ ->
+              ReadOnly.get_define_body read_only name
+              >>| Ast.Node.value
+              |> (function
+                   | Some
+                       ({
+                          Ast.Statement.Define.signature =
+                            { parent = Ast.NestingContext.Function _; _ };
+                          _;
+                        } as define) ->
                        Some
-                         (PyreType.Callable.create
-                            ~overloads
-                            ~parameters:first.parameters
-                            ~annotation:first.annotation
-                            ()
-                         |> get_callable_type
-                         |> FunctionSignature.from_callable_type);
-                     is_property_getter = false;
-                     is_property_setter = false;
-                     is_method = Option.is_some class_summary;
-                     module_qualifier = None;
-                     location = None;
-                   })
-          | [] -> (
-              (* Fall back for anything else. *)
-              let annotation =
-                Ast.Expression.from_reference
-                  name
-                  ~location:Ast.Location.any
-                  ~create_origin:(fun _ -> None)
-                |> ReadOnly.resolve_expression_to_type_info read_only
-              in
-              let global =
-                match TypeInfo.Unit.annotation annotation with
-                | PyreType.Parametric { name = "type"; _ }
-                  when ReadOnly.class_exists read_only (Ast.Reference.show name) ->
-                    let module_qualifier, location =
-                      match ReadOnly.location_of_global read_only name with
-                      | Some { Ast.Location.WithModule.module_reference; start; stop } ->
-                          Some module_reference, Some { Ast.Location.start; stop }
-                      | None -> None, None
-                    in
-                    Some
-                      (Global.Class
-                         { class_name = Ast.Reference.show name; module_qualifier; location })
-                | PyreType.Top when ReadOnly.module_exists read_only name ->
-                    Some (Global.Module { qualifier = name })
-                | PyreType.Top when not (TypeInfo.Unit.is_immutable annotation) ->
-                    (* FIXME: We are relying on the fact that nonexistent functions & attributes
-                       resolve to mutable annotation, while existing ones resolve to immutable
-                       annotation. This is fragile! *)
-                    None
-                | PyreType.Parametric
-                    {
-                      name = "BoundMethod";
-                      arguments = [PyreType.Argument.Single (PyreType.Callable t); _];
-                    } ->
-                    Some
-                      (Global.Function
-                         {
-                           define_name = name;
-                           imported_name = get_imported_name t;
-                           undecorated_signatures = Some (FunctionSignature.from_callable_type t);
-                           is_property_getter = false;
-                           is_property_setter = false;
-                           is_method = Option.is_some class_summary;
-                           module_qualifier = None;
-                           location = None;
-                         })
-                | PyreType.Callable t ->
-                    Some
-                      (Global.Function
-                         {
-                           define_name = name;
-                           imported_name = get_imported_name t;
-                           undecorated_signatures = Some (FunctionSignature.from_callable_type t);
-                           is_property_getter = false;
-                           is_property_setter = false;
-                           is_method = Option.is_some class_summary;
-                           module_qualifier = None;
-                           location = None;
-                         })
-                | PyreType.Top
-                | PyreType.Any ->
-                    if Option.is_some class_summary then
+                         (ReadOnly.resolve_define_undecorated
+                            ~callable_name:(Some name)
+                            ~implementation:(Some define.signature)
+                            ~overloads:[]
+                            ~scoped_type_variables:None
+                            read_only)
+                   | _ -> None)
+              |> Option.map ~f:(fun { AnnotatedAttribute.undecorated_signature = signature; _ } ->
+                     signature)
+        in
+        match maybe_signature_of_function with
+        | Some signature ->
+            let module_qualifier, location =
+              match ReadOnly.location_of_global read_only name with
+              | Some { Ast.Location.WithModule.module_reference; start; stop } ->
+                  Some module_reference, Some { Ast.Location.start; stop }
+              | None -> None, None
+            in
+            Some
+              (Global.Function
+                 {
+                   Function.define_name = name;
+                   imported_name = get_imported_name signature;
+                   undecorated_signatures = Some (FunctionSignature.from_callable_type signature);
+                   is_property_getter = false;
+                   is_property_setter = false;
+                   is_method = Option.is_some class_summary;
+                   module_qualifier;
+                   location;
+                 })
+        | None -> (
+            (* Resolve undecorated methods. *)
+            match find_method_definitions read_only name with
+            | [callable] ->
+                Some
+                  (Global.Function
+                     {
+                       define_name = name;
+                       imported_name = None;
+                       undecorated_signatures = Some [FunctionSignature.from_overload callable];
+                       is_property_getter = false;
+                       is_property_setter = false;
+                       is_method = Option.is_some class_summary;
+                       module_qualifier = None;
+                       location = None;
+                     })
+            | first :: _ :: _ as overloads ->
+                (* Note that we use the first overload as the base implementation, which might be
+                   unsound. *)
+                Some
+                  (Global.Function
+                     {
+                       define_name = name;
+                       imported_name = None;
+                       undecorated_signatures =
+                         Some
+                           (PyreType.Callable.create
+                              ~overloads
+                              ~parameters:first.parameters
+                              ~annotation:first.annotation
+                              ()
+                           |> get_callable_type
+                           |> FunctionSignature.from_callable_type);
+                       is_property_getter = false;
+                       is_property_setter = false;
+                       is_method = Option.is_some class_summary;
+                       module_qualifier = None;
+                       location = None;
+                     })
+            | [] -> (
+                (* Fall back for anything else. *)
+                let annotation =
+                  Ast.Expression.from_reference
+                    name
+                    ~location:Ast.Location.any
+                    ~create_origin:(fun _ -> None)
+                  |> ReadOnly.resolve_expression_to_type_info read_only
+                in
+                let global =
+                  match TypeInfo.Unit.annotation annotation with
+                  | PyreType.Parametric { name = "type"; _ }
+                    when ReadOnly.class_exists read_only (Ast.Reference.show name) ->
+                      let module_qualifier, location =
+                        match ReadOnly.location_of_global read_only name with
+                        | Some { Ast.Location.WithModule.module_reference; start; stop } ->
+                            Some module_reference, Some { Ast.Location.start; stop }
+                        | None -> None, None
+                      in
                       Some
-                        (Global.UnknownClassAttribute
-                           { name; module_qualifier = None; location = None })
-                    else
+                        (Global.Class
+                           { class_name = Ast.Reference.show name; module_qualifier; location })
+                  | PyreType.Top when ReadOnly.module_exists read_only name ->
+                      Some (Global.Module { qualifier = name })
+                  | PyreType.Top when not (TypeInfo.Unit.is_immutable annotation) ->
+                      (* FIXME: We are relying on the fact that nonexistent functions & attributes
+                         resolve to mutable annotation, while existing ones resolve to immutable
+                         annotation. This is fragile! *)
+                      None
+                  | PyreType.Parametric
+                      {
+                        name = "BoundMethod";
+                        arguments = [PyreType.Argument.Single (PyreType.Callable t); _];
+                      } ->
                       Some
-                        (Global.UnknownModuleGlobal
-                           { name; module_qualifier = None; location = None })
-                | _ ->
-                    if Option.is_some class_summary then
+                        (Global.Function
+                           {
+                             define_name = name;
+                             imported_name = get_imported_name t;
+                             undecorated_signatures = Some (FunctionSignature.from_callable_type t);
+                             is_property_getter = false;
+                             is_property_setter = false;
+                             is_method = Option.is_some class_summary;
+                             module_qualifier = None;
+                             location = None;
+                           })
+                  | PyreType.Callable t ->
                       Some
-                        (Global.ClassAttribute { name; module_qualifier = None; location = None })
-                    else
-                      Some (Global.ModuleGlobal { name; module_qualifier = None; location = None })
-              in
-              (* When verify_class_attributes is set, check that class attributes are directly
-                 defined on the class (not just inherited). *)
-              match global with
-              | Some (Global.ModuleGlobal _)
-              | Some (Global.ClassAttribute _)
-              | Some (Global.UnknownClassAttribute _)
-              | Some (Global.UnknownModuleGlobal _)
-              | None
-                when verify_class_attributes -> (
-                  let class_name =
-                    Ast.Reference.prefix name |> Option.value ~default:Ast.Reference.empty
-                  in
-                  let attribute_name = Ast.Reference.last name in
-                  let class_attributes =
-                    ReadOnly.get_class_attributes
-                      read_only
-                      ~include_generated_attributes:false
-                      ~only_simple_assignments:false
-                      (Ast.Reference.show class_name)
-                  in
-                  match class_attributes with
-                  | Some attributes ->
-                      if List.mem ~equal:String.equal attributes attribute_name then
+                        (Global.Function
+                           {
+                             define_name = name;
+                             imported_name = get_imported_name t;
+                             undecorated_signatures = Some (FunctionSignature.from_callable_type t);
+                             is_property_getter = false;
+                             is_property_setter = false;
+                             is_method = Option.is_some class_summary;
+                             module_qualifier = None;
+                             location = None;
+                           })
+                  | PyreType.Top
+                  | PyreType.Any ->
+                      if Option.is_some class_summary then
+                        Some
+                          (Global.UnknownClassAttribute
+                             { name; module_qualifier = None; location = None })
+                      else
+                        Some
+                          (Global.UnknownModuleGlobal
+                             { name; module_qualifier = None; location = None })
+                  | _ ->
+                      if Option.is_some class_summary then
                         Some
                           (Global.ClassAttribute { name; module_qualifier = None; location = None })
                       else
-                        None
-                  | _ -> global)
-              | _ -> global))
+                        Some
+                          (Global.ModuleGlobal { name; module_qualifier = None; location = None })
+                in
+                (* When verify_class_attributes is set, check that class attributes are directly
+                   defined on the class (not just inherited). *)
+                match global with
+                | Some (Global.ModuleGlobal _)
+                | Some (Global.ClassAttribute _)
+                | Some (Global.UnknownClassAttribute _)
+                | Some (Global.UnknownModuleGlobal _)
+                | None
+                  when verify_class_attributes -> (
+                    let class_name =
+                      Ast.Reference.prefix name |> Option.value ~default:Ast.Reference.empty
+                    in
+                    let attribute_name = Ast.Reference.last name in
+                    let class_attributes =
+                      ReadOnly.get_class_attributes
+                        read_only
+                        ~include_generated_attributes:false
+                        ~only_simple_assignments:false
+                        (Ast.Reference.show class_name)
+                    in
+                    match class_attributes with
+                    | Some attributes ->
+                        if List.mem ~equal:String.equal attributes attribute_name then
+                          Some
+                            (Global.ClassAttribute
+                               { name; module_qualifier = None; location = None })
+                        else
+                          None
+                    | _ -> global)
+                | _ -> global))
+    in
+    match result with
+    | Some global -> ResolutionResult.ModuleFound [ModuleResolutionResult.Resolved global]
+    | None -> (
+        match find_longest_matching_module read_only name with
+        | Some (module_reference, suffix) ->
+            ResolutionResult.ModuleFound
+              [
+                ModuleResolutionResult.Unresolved
+                  { module_qualifier = module_reference; module_name = module_reference; suffix };
+              ]
+        | None -> ResolutionResult.BaseModuleNotFound)
 
 
   let invalidate_cache = ClassMethodSignatureCache.invalidate

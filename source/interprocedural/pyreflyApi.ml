@@ -4016,6 +4016,8 @@ let target_symbolic_name reference =
 module ModelQueries = struct
   module Function = Pyre1Api.ModelQueries.Function
   module Global = Pyre1Api.ModelQueries.Global
+  module ModuleResolutionResult = Pyre1Api.ModelQueries.ModuleResolutionResult
+  module ResolutionResult = Pyre1Api.ModelQueries.ResolutionResult
 
   let resolve_user_qualified_name
       {
@@ -4055,7 +4057,7 @@ module ModelQueries = struct
             |> Option.value ~default:[]
           in
           if not (List.is_empty matching_qualifiers) then
-            Some (matching_qualifiers, suffix)
+            Some (matching_qualifiers, suffix, candidate)
           else
             match Reference.prefix candidate with
             | Some prefix_candidate ->
@@ -4066,11 +4068,13 @@ module ModelQueries = struct
       try_candidate name Reference.empty
     in
     match find_module_qualifiers name with
-    | None -> []
-    | Some (qualifiers, suffix) when Reference.is_empty suffix ->
-        List.map qualifiers ~f:(fun qualifier ->
-            Global.Module { qualifier = ModuleQualifier.to_reference qualifier })
-    | Some (qualifiers, suffix) ->
+    | None -> ResolutionResult.BaseModuleNotFound
+    | Some (qualifiers, suffix, _module_name) when Reference.is_empty suffix ->
+        ResolutionResult.ModuleFound
+          (List.map qualifiers ~f:(fun qualifier ->
+               ModuleResolutionResult.Resolved
+                 (Global.Module { qualifier = ModuleQualifier.to_reference qualifier })))
+    | Some (qualifiers, suffix, bare_module_name) ->
         let local_name_of_fully_qualified_name ~bare_module_name fully_qualified_name =
           let symbolic_name =
             target_symbolic_name (FullyQualifiedName.to_reference fully_qualified_name)
@@ -4079,7 +4083,7 @@ module ModelQueries = struct
         in
         (* For each qualifier, try to find a callable/class/class attribute/global matching the
            suffix. *)
-        let find_matching_callables ~bare_module_name qualifier =
+        let find_matching_callables ~bare_module_name ~suffix qualifier =
           ModuleCallablesSharedMemory.get module_callables_shared_memory qualifier
           |> Option.value ~default:[]
           |> List.filter_map ~f:(fun fully_qualified_name ->
@@ -4126,7 +4130,7 @@ module ModelQueries = struct
                  else
                    None)
         in
-        let find_matching_classes ~bare_module_name qualifier =
+        let find_matching_classes ~bare_module_name ~suffix qualifier =
           ModuleClassesSharedMemory.get module_classes_shared_memory qualifier
           |> Option.value ~default:[]
           |> List.filter_map ~f:(fun fully_qualified_name ->
@@ -4151,7 +4155,7 @@ module ModelQueries = struct
                  else
                    None)
         in
-        let find_matching_class_attributes ~bare_module_name qualifier =
+        let find_matching_class_attributes ~bare_module_name ~suffix qualifier =
           if Reference.length suffix < 2 then
             []
           else
@@ -4180,7 +4184,7 @@ module ModelQueries = struct
                    else
                      None)
         in
-        let find_matching_module_globals qualifier =
+        let find_matching_module_globals ~bare_module_name:_ ~suffix qualifier =
           if Reference.length suffix <> 1 then
             []
           else
@@ -4202,25 +4206,34 @@ module ModelQueries = struct
                        ]
                    | None -> [])
         in
-        let resolve_in_qualifier qualifier =
-          let bare_module_name =
-            ModuleQualifier.bare_module_name qualifier |> ModuleName.to_reference
-          in
-          let results = find_matching_callables ~bare_module_name qualifier in
+        let resolve_in_qualifier ~bare_module_name ~suffix qualifier =
+          let results = find_matching_callables ~bare_module_name ~suffix qualifier in
           if not (List.is_empty results) then
-            results
+            List.map results ~f:(fun global -> ModuleResolutionResult.Resolved global)
           else
-            let results = find_matching_classes ~bare_module_name qualifier in
+            let results = find_matching_classes ~bare_module_name ~suffix qualifier in
             if not (List.is_empty results) then
-              results
+              List.map results ~f:(fun global -> ModuleResolutionResult.Resolved global)
             else
-              let results = find_matching_class_attributes ~bare_module_name qualifier in
+              let results = find_matching_class_attributes ~bare_module_name ~suffix qualifier in
               if not (List.is_empty results) then
-                results
+                List.map results ~f:(fun global -> ModuleResolutionResult.Resolved global)
               else
-                find_matching_module_globals qualifier
+                let results = find_matching_module_globals ~bare_module_name ~suffix qualifier in
+                if not (List.is_empty results) then
+                  List.map results ~f:(fun global -> ModuleResolutionResult.Resolved global)
+                else
+                  [
+                    ModuleResolutionResult.Unresolved
+                      {
+                        module_qualifier = ModuleQualifier.to_reference qualifier;
+                        module_name = bare_module_name;
+                        suffix;
+                      };
+                  ]
         in
-        List.concat_map qualifiers ~f:resolve_in_qualifier
+        ResolutionResult.ModuleFound
+          (List.concat_map qualifiers ~f:(resolve_in_qualifier ~bare_module_name ~suffix))
 
 
   let class_method_signatures

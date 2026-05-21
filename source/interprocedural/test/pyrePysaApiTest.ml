@@ -120,6 +120,8 @@ let test_resolve_user_qualified_name context =
       Test.ScratchPyrePysaProject.setup ~context ~requires_type_of_expressions:false sources
       |> Test.ScratchPyrePysaProject.read_only_api
     in
+    let module ResolutionResult = PyrePysaApi.ModelQueries.ResolutionResult in
+    let module ModuleResolutionResult = PyrePysaApi.ModelQueries.ModuleResolutionResult in
     let actual =
       PyrePysaApi.ModelQueries.resolve_user_qualified_name
         ~verify_class_attributes:false
@@ -127,6 +129,12 @@ let test_resolve_user_qualified_name context =
         ~is_property_getter:false
         ~is_property_setter:false
         (Ast.Reference.create name)
+      |> (function
+           | ResolutionResult.ModuleFound results ->
+               List.filter_map results ~f:(function
+                   | ModuleResolutionResult.Resolved global -> Some global
+                   | ModuleResolutionResult.Unresolved _ -> None)
+           | ResolutionResult.BaseModuleNotFound -> [])
       |> List.map ~f:Global.strip_location_and_module
     in
     let expect =

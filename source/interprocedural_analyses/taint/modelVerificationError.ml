@@ -142,13 +142,19 @@ type kind =
     }
   | MissingAttribute of {
       class_name: string;
+      class_location: SourceLocation.t option;
       attribute_name: string;
     }
   | MissingSymbol of {
       module_name: string;
+      module_path: string option;
       symbol_name: string;
     }
-  | MissingClass of { class_name: string }
+  | MissingClass of {
+      class_name: string;
+      module_name: string;
+      module_path: string option;
+    }
   | ModelingClassAsDefine of {
       name: string;
       class_location: SourceLocation.t option;
@@ -172,6 +178,18 @@ type kind =
   | ModelingCallableAsAttribute of {
       name: string;
       callable_location: SourceLocation.t option;
+    }
+  | ModelingCallableAsClass of {
+      name: string;
+      callable_location: SourceLocation.t option;
+    }
+  | ModelingModuleAsClass of {
+      name: string;
+      module_path: string option;
+    }
+  | ModelingAttributeAsClass of {
+      name: string;
+      attribute_location: SourceLocation.t option;
     }
   | BaseModuleNotInEnvironment of {
       module_name: string;
@@ -494,11 +512,35 @@ let description error =
       Format.sprintf "Class model for `%s` must have a body of `...`." class_name
   | DefineBodyNotEllipsis model_name ->
       Format.sprintf "Callable model for `%s` must have a body of `...`." model_name
-  | MissingAttribute { class_name; attribute_name } ->
-      Format.sprintf "Class `%s` has no attribute `%s`." class_name attribute_name
-  | MissingSymbol { module_name; symbol_name } ->
-      Format.sprintf "Module `%s` does not define `%s`." module_name symbol_name
-  | MissingClass { class_name } -> Format.sprintf "Class `%s` does not exist." class_name
+  | MissingAttribute { class_name; class_location; attribute_name } ->
+      Format.asprintf
+        "Class `%s`%a has no attribute `%s`."
+        class_name
+        SourceLocation.pp_defined_at_option
+        class_location
+        attribute_name
+  | MissingSymbol { module_name; module_path; symbol_name } ->
+      let path_suffix =
+        match module_path with
+        | Some path -> Format.sprintf " (defined in %s)" path
+        | None -> ""
+      in
+      Format.sprintf
+        "Could not find symbol `%s` in longest matching module `%s`%s."
+        symbol_name
+        module_name
+        path_suffix
+  | MissingClass { class_name; module_name; module_path } ->
+      let path_suffix =
+        match module_path with
+        | Some path -> Format.sprintf " (defined in %s)" path
+        | None -> ""
+      in
+      Format.sprintf
+        "Could not find class `%s` in longest matching module `%s`%s."
+        class_name
+        module_name
+        path_suffix
   | ModelingClassAsDefine { name; class_location } ->
       Format.asprintf
         "The class `%s`%a is not a valid define - did you mean to model `%s.__init__()`?"
@@ -542,6 +584,25 @@ let description error =
         SourceLocation.pp_defined_at_option
         callable_location
         name
+  | ModelingCallableAsClass { name; callable_location } ->
+      Format.asprintf
+        "The function, method or property `%s`%a is not a valid class."
+        name
+        SourceLocation.pp_defined_at_option
+        callable_location
+  | ModelingModuleAsClass { name; module_path } ->
+      let location_suffix =
+        match module_path with
+        | Some path -> Format.sprintf " (defined in %s)" path
+        | None -> ""
+      in
+      Format.sprintf "The module `%s`%s is not a valid class." name location_suffix
+  | ModelingAttributeAsClass { name; attribute_location } ->
+      Format.asprintf
+        "The attribute `%s`%a is not a valid class."
+        name
+        SourceLocation.pp_defined_at_option
+        attribute_location
   | BaseModuleNotInEnvironment { module_name; name } ->
       Format.sprintf
         "`%s` is not part of the environment, no module `%s` in search path."
@@ -786,6 +847,9 @@ let code { kind; _ } =
   | DeprecatedAnnotationEquals _ -> 79
   | DeprecatedAnnotationMatches _ -> 80
   | UnsupportedPlatformComparison _ -> 81
+  | ModelingCallableAsClass _ -> 82
+  | ModelingModuleAsClass _ -> 83
+  | ModelingAttributeAsClass _ -> 84
 
 
 let display { kind = error; path; location } =

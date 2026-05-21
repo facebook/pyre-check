@@ -690,6 +690,8 @@ module ModelQueries = struct
   module FunctionSignature = Analysis.PyrePysaEnvironment.ModelQueries.FunctionSignature
   module Function = Pyre1Api.ModelQueries.Function
   module Global = Pyre1Api.ModelQueries.Global
+  module ModuleResolutionResult = Pyre1Api.ModelQueries.ModuleResolutionResult
+  module ResolutionResult = Pyre1Api.ModelQueries.ResolutionResult
 
   let resolve_user_qualified_name
       api
@@ -706,7 +708,6 @@ module ModelQueries = struct
           ~is_property_setter
           ~verify_class_attributes
           name
-        |> Option.to_list
     | ReadOnly.Pyrefly pyrefly_api ->
         PyreflyApi.ModelQueries.resolve_user_qualified_name
           pyrefly_api

@@ -113,13 +113,19 @@ type kind =
     }
   | MissingAttribute of {
       class_name: string;
+      class_location: SourceLocation.t option;
       attribute_name: string;
     }
   | MissingSymbol of {
       module_name: string;
+      module_path: string option;
       symbol_name: string;
     }
-  | MissingClass of { class_name: string }
+  | MissingClass of {
+      class_name: string;
+      module_name: string;
+      module_path: string option;
+    }
   | ModelingClassAsDefine of {
       name: string;
       class_location: SourceLocation.t option;
@@ -143,6 +149,18 @@ type kind =
   | ModelingCallableAsAttribute of {
       name: string;
       callable_location: SourceLocation.t option;
+    }
+  | ModelingCallableAsClass of {
+      name: string;
+      callable_location: SourceLocation.t option;
+    }
+  | ModelingModuleAsClass of {
+      name: string;
+      module_path: string option;
+    }
+  | ModelingAttributeAsClass of {
+      name: string;
+      attribute_location: SourceLocation.t option;
     }
   | BaseModuleNotInEnvironment of {
       module_name: string;
