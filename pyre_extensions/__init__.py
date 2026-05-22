@@ -3,7 +3,12 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-ignore-all-errors
+# pyre-strict
+
+# These errors are intrinsic to the runtime stubs of Pyre's special forms
+# (e.g. variadic `Generic`, `Callable[ParamSpec, ...]`, `TypeVarTuple`), which
+# Pyre normally type-checks via dedicated logic rather than the runtime types.
+# pyre-ignore-all-errors[11, 24, 31]
 from typing import Any, Callable, Dict, List, TypeVar, Union
 
 from typing_extensions import Protocol
@@ -39,7 +44,7 @@ TClass = TypeVar("TClass")
 JSON = Union[bool, float, int, str, Dict[str, "JSON"], List["JSON"]]
 
 
-class ParameterSpecification(list):
+class ParameterSpecification(List[Any]):
     """This kind of type variable captures callable parameter specifications
     (known as argspecs in the runtime and inspect library) instead of types,
     allowing the typing of decorators which transform the return type of the
@@ -71,8 +76,8 @@ class ParameterSpecification(list):
             return [f(*args, **kwargs)]
     """
 
-    args = object()
-    kwargs = object()
+    args: object = object()
+    kwargs: object = object()
 
     def __init__(self, *args: object, **kwargs: object) -> None:
         pass
@@ -86,7 +91,7 @@ _A = TypeVar("_A", bound=int)
 _B = TypeVar("_B", bound=int)
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
-_Ts = TypeVarTuple("_Ts")
+_Ts: object = TypeVarTuple("_Ts")
 _P = ParameterSpecification("_P")
 
 T = TypeVar("T", bound=Callable[..., object])
