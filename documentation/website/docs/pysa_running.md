@@ -23,6 +23,11 @@ The setup requires the following 4 types of files.
    the directory containing the source code you want to analyze.
    `taint_models_path` tells Pysa where to find the config and model files.
 
+## IDE Integration
+As of June 2021, we now provide a Pysa [extension for *VSCode*](https://marketplace.visualstudio.com/) with the following features:
+- Syntax highlighting in `.pysa` and `taint.config` files
+- Surfacing inline model-valdiation errors in `.pysa` files
+
 ## Example
 
 Let's look at a simple taint analysis example. To follow along, create a
