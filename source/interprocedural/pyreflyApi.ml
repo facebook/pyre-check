@@ -1905,8 +1905,16 @@ module ReadWrite = struct
                 decorator_callees;
               };
             let fields =
+              (* When the user declares both `__x` and `_ClassName__x` in a class body, pyrefly
+                 emits them as separate fields. After mangling, both map to `_ClassName__x`, so we
+                 skip the private-name entry to avoid duplicates. *)
+              let original_field_names =
+                fields
+                |> List.map ~f:(fun { ModuleDefinitionsFile.PyreflyClassField.name; _ } -> name)
+                |> String.Set.of_list
+              in
               fields
-              |> List.map
+              |> List.filter_map
                    ~f:(fun
                         {
                           ModuleDefinitionsFile.PyreflyClassField.name;
@@ -1918,10 +1926,16 @@ module ReadWrite = struct
                       ->
                      let name =
                        if Identifier.is_private_name name then
-                         Identifier.mangle_private_name ~class_name name
+                         let mangled_name = Identifier.mangle_private_name ~class_name name in
+                         if Set.mem original_field_names mangled_name then
+                           None
+                         else
+                           Some mangled_name
                        else
-                         name
+                         Some name
                      in
+                     name
+                     >>| fun name ->
                      ( name,
                        {
                          ClassField.type_ = PysaType.from_pyrefly_type type_;

@@ -55,6 +55,9 @@ Call dependencies
     "private_variables.Other.private_into_sink (method)",
     "private_variables.Simple.__init__ (method)", "pysa._test_source (fun)"
   ],
+  "private_variables.test_access_private_with_explicit_mangled_form (fun)": [
+    "pysa._test_sink (fun)"
+  ],
   "private_variables.test_bypass_private (fun)": [
     "builtins.object.__new__ (method)",
     "private_variables.Simple.__init__ (method)", "pysa._test_sink (fun)",

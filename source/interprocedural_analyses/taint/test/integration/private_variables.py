@@ -140,3 +140,14 @@ def test_private_attribute_sink_models() -> None:
     PrivateAttributeSinkModels().set_model_unmangled(_test_source())
     # Error
     PrivateAttributeSinkModels().set_model_query(_test_source())
+
+
+class HasBothMangledAndUnmangled:
+    __x: int = 1
+    _HasBothMangledAndUnmangled__x: str = "hello"
+
+
+def test_access_private_with_explicit_mangled_form(
+    c: HasBothMangledAndUnmangled,
+) -> None:
+    _test_sink(c._HasBothMangledAndUnmangled__x)

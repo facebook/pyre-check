@@ -70,6 +70,19 @@ Higher order call graphs
   }
 }
 {
+  "callable": "private_variables.test_access_private_with_explicit_mangled_form",
+  "returned_callables": [],
+  "calls": {
+    "153:4-153:48": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "private_variables.test_bypass_private",
   "returned_callables": [],
   "calls": {
