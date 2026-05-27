@@ -344,8 +344,7 @@ end = struct
   include T
 
   let create ~path module_name =
-    let () =
-      (* Sanity check our naming scheme *)
+    let module_name =
       if
         List.exists (Reference.as_list module_name) ~f:(fun s ->
             String.contains s ':'
@@ -353,7 +352,19 @@ end = struct
             || String.contains s '$'
             || String.contains s '@')
       then
-        failwith "unexpected: module name contains an invalid character (`:#$@`)"
+        let escape_special_characters s =
+          s
+          |> String.substr_replace_all ~pattern:":" ~with_:"\\x3a"
+          |> String.substr_replace_all ~pattern:"#" ~with_:"\\x23"
+          |> String.substr_replace_all ~pattern:"$" ~with_:"\\x24"
+          |> String.substr_replace_all ~pattern:"@" ~with_:"\\x40"
+        in
+        module_name
+        |> Reference.as_list
+        |> List.map ~f:escape_special_characters
+        |> Reference.create_from_list
+      else
+        module_name
     in
     match path with
     | None -> module_name
@@ -377,7 +388,18 @@ end = struct
       else
         qualifier
     in
-    ModuleName.from_reference_unchecked reference
+    let unescape_special_characters s =
+      s
+      |> String.substr_replace_all ~pattern:"\\x3a" ~with_:":"
+      |> String.substr_replace_all ~pattern:"\\x23" ~with_:"#"
+      |> String.substr_replace_all ~pattern:"\\x24" ~with_:"$"
+      |> String.substr_replace_all ~pattern:"\\x40" ~with_:"@"
+    in
+    reference
+    |> Reference.as_list
+    |> List.map ~f:unescape_special_characters
+    |> Reference.create_from_list
+    |> ModuleName.from_reference_unchecked
 
 
   module Map = Map.Make (T)

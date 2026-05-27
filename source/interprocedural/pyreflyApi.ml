@@ -163,10 +163,16 @@ end = struct
   include T
 
   let create ~module_qualifier ~local_name ~add_module_separator =
-    let () =
-      (* Sanity check *)
+    let local_name =
       if List.exists local_name ~f:(fun s -> String.contains s '#' || String.contains s ':') then
-        failwith "unexpected: local name contains an invalid character (`:#`)"
+        let escape_special_characters s =
+          s
+          |> String.substr_replace_all ~pattern:":" ~with_:"\\x3a"
+          |> String.substr_replace_all ~pattern:"#" ~with_:"\\x23"
+        in
+        List.map local_name ~f:escape_special_characters
+      else
+        local_name
     in
     if not add_module_separator then
       Reference.combine
@@ -4009,6 +4015,16 @@ let target_symbolic_name reference =
       name
     in
     List.map ~f:strip_suffix reference
+  in
+  let reference =
+    let unescape_special_characters s =
+      s
+      |> String.substr_replace_all ~pattern:"\\x3a" ~with_:":"
+      |> String.substr_replace_all ~pattern:"\\x23" ~with_:"#"
+      |> String.substr_replace_all ~pattern:"\\x24" ~with_:"$"
+      |> String.substr_replace_all ~pattern:"\\x40" ~with_:"@"
+    in
+    List.map ~f:unescape_special_characters reference
   in
   Reference.create_from_list reference
 
