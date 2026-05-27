@@ -3,13 +3,13 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 import os  # noqa
 import textwrap
 import unittest
 from typing import Any, Callable, Dict, IO, Iterable, Optional, Set
-from unittest.mock import call, mock_open, patch
+from unittest.mock import call, MagicMock, mock_open, patch
 
 from ..get_globals import __name__ as get_globals_name, GlobalModelGenerator
 
@@ -24,19 +24,23 @@ def _open_implementation(path_to_content: Dict[str, str]) -> Callable[[str, str]
     return _nested_open_implementation
 
 
+def _identity(path: str) -> str:
+    return path
+
+
+def _path_exists(path: str) -> bool:
+    return path in {"/root/a.py", "/root/a.pyi", "/root/b.py"} or "/stub_root" in path
+
+
 class GetGlobalsTest(unittest.TestCase):
-    @patch(
-        "os.path.exists",
-        side_effect=lambda path: path in {"/root/a.py", "/root/a.pyi", "/root/b.py"}
-        or "/stub_root" in path,
-    )
-    @patch("os.path.abspath", side_effect=lambda path: path)
+    @patch("os.path.exists", side_effect=_path_exists)
+    @patch("os.path.abspath", side_effect=_identity)
     @patch("os.getcwd", return_value="/root")
     def test_get_globals(
         self,
-        current_working_directory: unittest.mock._patch,
-        absolute_path: unittest.mock._patch,
-        exists: unittest.mock._patch,
+        current_working_directory: MagicMock,
+        absolute_path: MagicMock,
+        exists: MagicMock,
     ) -> None:
         with patch(
             f"{get_globals_name}.GlobalModelGenerator._globals"
@@ -91,7 +95,7 @@ class GetGlobalsTest(unittest.TestCase):
             )
 
     @patch("builtins.open")
-    def test_globals(self, open: unittest.mock._patch) -> None:
+    def test_globals(self, open: MagicMock) -> None:
         self.assert_module_has_global_models(
             """
             A = 1
