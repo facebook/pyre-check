@@ -3552,7 +3552,14 @@ module ScratchPyreflyProject = struct
     | Some _ as result -> result
 
 
-  let setup ~context ~pyrefly_binary ~requires_type_of_expressions ?(external_sources = []) sources =
+  let setup
+      ~context
+      ~pyrefly_binary
+      ~requires_type_of_expressions
+      ~python_version
+      ?(external_sources = [])
+      sources
+    =
     let local_root = bracket_tmpdir context |> PyrePath.create_absolute in
     let external_root = bracket_tmpdir context |> PyrePath.create_absolute in
     let add_source ~root (relative, content) =
@@ -3576,7 +3583,6 @@ module ScratchPyreflyProject = struct
            (PyrePath.create_relative ~root:local_root ~relative:"pyrefly.toml"))
     in
     let result_directory = bracket_tmpdir context |> PyrePath.create_absolute in
-    let python_version = Configuration.PythonVersion.create () in
     let arguments =
       [
         "check";
@@ -3584,7 +3590,7 @@ module ScratchPyreflyProject = struct
         "--verbose";
         Format.sprintf
           "--python-version=%d.%d.%d"
-          python_version.major
+          python_version.Configuration.PythonVersion.major
           python_version.minor
           python_version.micro;
         "--search-path";
@@ -3782,6 +3788,7 @@ end = struct
     let timer = Timer.start () in
     let external_sources = Map.to_alist external_sources in
     let sources = Map.to_alist sources in
+    let default_python_version = { Configuration.PythonVersion.major = 3; minor = 12; micro = 2 } in
     let () =
       match decorator_preprocessing_configuration with
       | Some configuration -> PyrePysaLogic.DecoratorPreprocessing.setup_preprocessing configuration
@@ -3795,13 +3802,20 @@ end = struct
               ~context
               ~pyrefly_binary
               ~requires_type_of_expressions
+              ~python_version:default_python_version
               ~external_sources
               sources
           in
           let pyrefly_api = ScratchPyreflyProject.pyre_pysa_read_only_api project in
           Pyrefly { project; pyrefly_api }
       | _ ->
-          let project = ScratchProject.setup ~context ~external_sources sources in
+          let project =
+            ScratchProject.setup
+              ~context
+              ~python_version:default_python_version
+              ~external_sources
+              sources
+          in
           let _, errors = ScratchProject.build_type_environment_and_postprocess project in
           let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
           Pyre1 { project; pyre_api; errors }

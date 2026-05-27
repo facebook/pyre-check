@@ -1,0 +1,29 @@
+@generated
+Higher order call graphs
+{
+  "callable": "except_star.test_except_star",
+  "returned_callables": [],
+  "calls": {
+    "12:12-12:22|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotFindAttribute" ] ]
+      }
+    },
+    "12:12-12:22|artificial-call|try-handler-isinstance": {
+      "call": {
+        "calls": [
+          {
+            "target": "isinstance",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "13:8-13:16": {
+      "call": {
+        "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+      }
+    }
+  }
+}

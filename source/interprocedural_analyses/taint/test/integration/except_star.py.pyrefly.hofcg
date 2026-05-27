@@ -1,0 +1,48 @@
+@generated
+Higher order call graphs
+{
+  "callable": "except_star.test_except_star",
+  "returned_callables": [],
+  "calls": {
+    "12:12-12:22|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttr" ] }
+    },
+    "12:12-12:22|artificial-call|try-handler-isinstance": {
+      "call": {
+        "calls": [
+          { "target": "builtins.isinstance", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "12:12-12:22|identifier|ValueError": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.BaseException.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.BaseException.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "builtins.ValueError"
+            }
+          ]
+        }
+      }
+    },
+    "13:8-13:16": {
+      "call": {
+        "calls": [
+          { "target": "builtins.print", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
