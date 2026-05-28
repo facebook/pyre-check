@@ -17,7 +17,7 @@ let output_query_response ~output_file ~content =
   | None -> Log.print "%s\n%!" content
 
 
-let run_pyrefly_query ~pyrefly_results ~query ~configuration ~scheduler =
+let run_pyrefly_query ~pyrefly_results ~query ~configuration ~repository_root ~scheduler =
   let create_pyre_api () =
     pyrefly_results
     |> PyrePath.create_absolute
@@ -31,15 +31,31 @@ let run_pyrefly_query ~pyrefly_results ~query ~configuration ~scheduler =
   match Server.Query.parse_request query with
   | Result.Error message -> Server.Query.Response.Error message
   | Result.Ok (ModelQuery { path; query_name }) ->
+      let pyre_api = create_pyre_api () in
+      let path_of_qualifier =
+        Interprocedural.PyrePysaApi.ReadOnly.repository_relative_path_of_qualifier
+          ~repository_root:(Option.value repository_root ~default:configuration.local_root)
+          ~lookup_source:(fun _ -> failwith "lookup_source is not used by pyrefly")
+          pyre_api
+      in
       Server.Query.process_model_query
-        ~pyre_api:(create_pyre_api ())
+        ~pyre_api
+        ~path_of_qualifier
         ~scheduler
         ~configuration
         ~path
         ~query_name
   | Result.Ok (ValidateTaintModels { path; verify_dsl }) ->
+      let pyre_api = create_pyre_api () in
+      let path_of_qualifier =
+        Interprocedural.PyrePysaApi.ReadOnly.repository_relative_path_of_qualifier
+          ~repository_root:(Option.value repository_root ~default:configuration.local_root)
+          ~lookup_source:(fun _ -> failwith "lookup_source is not used by pyrefly")
+          pyre_api
+      in
       Server.Query.process_validate_taint_models
-        ~pyre_api:(create_pyre_api ())
+        ~pyre_api
+        ~path_of_qualifier
         ~scheduler
         ~configuration
         ~path
@@ -57,7 +73,9 @@ let run_command query output_file configuration_file =
       Log.error "%s" message;
       (* Be consistent with the exit code of pyre server when running `pyre query` *)
       ServerCommand.ExitStatus.Error |> ServerCommand.ExitStatus.exit_code |> exit
-  | Result.Ok ({ base; taint_model_paths; strict; pyrefly_results; _ } as analyze_configuration) ->
+  | Result.Ok
+      ({ base; taint_model_paths; strict; pyrefly_results; repository_root; _ } as
+      analyze_configuration) ->
       AnalyzeCommand.setup_global_states analyze_configuration;
       let configuration =
         AnalyzeCommand.analysis_configuration_of
@@ -75,7 +93,8 @@ let run_command query output_file configuration_file =
         Scheduler.with_scheduler
           ~configuration
           ~should_log_exception:(fun _ -> false)
-          ~f:(fun scheduler -> run_pyrefly_query ~pyrefly_results ~query ~configuration ~scheduler)
+          ~f:(fun scheduler ->
+            run_pyrefly_query ~pyrefly_results ~query ~configuration ~repository_root ~scheduler)
       in
       let json = Server.Query.Response.to_yojson query_response in
       output_query_response ~output_file ~content:(Yojson.Safe.pretty_to_string json);

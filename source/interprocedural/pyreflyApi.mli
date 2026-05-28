@@ -122,7 +122,7 @@ module ReadOnly : sig
 
   val absolute_source_path_of_qualifier : t -> Ast.Reference.t -> string option
 
-  val relative_path_of_qualifier : t -> Ast.Reference.t -> string option
+  val search_path_relative_path_of_qualifier : t -> Ast.Reference.t -> string option
 
   val get_class_names_for_qualifier
     :  t ->

@@ -397,7 +397,7 @@ let check_expectation
     let to_analysis_error =
       Error.instantiate
         ~show_error_traces:true
-        ~lookup:(PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api)
+        ~lookup:(PyrePysaApi.ReadOnly.search_path_relative_path_of_qualifier pyre_api)
     in
     get_errors callable
     |> List.map ~f:(Issue.to_error ~taint_configuration)
@@ -457,6 +457,7 @@ let get_initial_models ~pyre_api =
   let { ModelParseResult.models; errors; _ } =
     ModelParser.parse
       ~pyre_api
+      ~path_of_qualifier:(PyrePysaApi.ReadOnly.search_path_relative_path_of_qualifier pyre_api)
       ~source:initial_models_source
       ~taint_configuration:TaintConfiguration.Heap.default
       ~source_sink_filter:None
@@ -679,6 +680,8 @@ let initialize
         let { ModelParseResult.models = regular_models; errors; queries } =
           ModelParser.parse
             ~pyre_api
+            ~path_of_qualifier:
+              (PyrePysaApi.ReadOnly.search_path_relative_path_of_qualifier pyre_api)
             ?path:model_path
             ~source:(Test.trim_extra_indentation source)
             ~taint_configuration
@@ -1254,7 +1257,7 @@ let end_to_end_integration_test path context =
         ~state:fixpoint_state
     in
     let resolve_module_path qualifier =
-      PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api qualifier
+      PyrePysaApi.ReadOnly.search_path_relative_path_of_qualifier pyre_api qualifier
       >>| fun filename ->
       { RepositoryPath.filename = Some filename; path = PyrePath.create_absolute filename }
     in

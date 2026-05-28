@@ -102,7 +102,14 @@ module ReadOnly : sig
     Ast.Reference.t ->
     string option
 
-  val relative_path_of_qualifier : t -> Ast.Reference.t -> string option
+  val repository_relative_path_of_qualifier
+    :  repository_root:PyrePath.t ->
+    lookup_source:(ArtifactPath.t -> SourcePath.t option) ->
+    t ->
+    Ast.Reference.t ->
+    string option
+
+  val search_path_relative_path_of_qualifier : t -> Ast.Reference.t -> string option
 
   val source_of_qualifier : t -> Ast.Reference.t -> Ast.Source.t option
 

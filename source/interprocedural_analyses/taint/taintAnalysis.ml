@@ -256,6 +256,7 @@ let create_pyre_read_write_api_and_perform_type_analysis
 let parse_models_and_queries_from_sources
     ~scheduler
     ~pyre_api
+    ~path_of_qualifier
     ~taint_configuration
     ~source_sink_filter
     ~callables_to_definitions_map
@@ -267,6 +268,7 @@ let parse_models_and_queries_from_sources
     List.fold sources ~init:ModelParseResult.empty ~f:(fun state (path, source) ->
         ModelParser.parse
           ~pyre_api
+          ~path_of_qualifier
           ~path
           ~source
           ~taint_configuration
@@ -294,6 +296,7 @@ let parse_models_and_queries_from_sources
 let parse_models_and_queries_from_configuration
     ~scheduler
     ~pyre_api
+    ~path_of_qualifier
     ~static_analysis_configuration:{ Configuration.StaticAnalysis.verify_models; configuration; _ }
     ~taint_configuration
     ~source_sink_filter
@@ -305,6 +308,7 @@ let parse_models_and_queries_from_configuration
     |> parse_models_and_queries_from_sources
          ~scheduler
          ~pyre_api
+         ~path_of_qualifier
          ~taint_configuration
          ~source_sink_filter
          ~callables_to_definitions_map
@@ -325,8 +329,14 @@ end
 let initialize_models
     ~scheduler
     ~pyre_api
+    ~lookup_source
     ~static_analysis_configuration:
-      ({ Configuration.StaticAnalysis.scheduler_policies; _ } as static_analysis_configuration)
+      ({
+         Configuration.StaticAnalysis.configuration = { local_root; _ };
+         repository_root;
+         scheduler_policies;
+         _;
+       } as static_analysis_configuration)
     ~taint_configuration
     ~taint_configuration_shared_memory
     ~class_hierarchy_graph
@@ -337,10 +347,17 @@ let initialize_models
   let step_logger =
     StepLogger.start ~start_message:"Parsing taint models" ~end_message:"Parsed taint models" ()
   in
+  let path_of_qualifier =
+    PyrePysaApi.ReadOnly.repository_relative_path_of_qualifier
+      ~repository_root:(Option.value repository_root ~default:local_root)
+      ~lookup_source
+      pyre_api
+  in
   let { ModelParseResult.models = regular_models; queries; errors } =
     parse_models_and_queries_from_configuration
       ~scheduler
       ~pyre_api
+      ~path_of_qualifier
       ~static_analysis_configuration
       ~taint_configuration:taint_configuration_shared_memory
       ~source_sink_filter:taint_configuration.source_sink_filter
@@ -697,6 +714,7 @@ let run_taint_analysis
     initialize_models
       ~scheduler
       ~pyre_api
+      ~lookup_source
       ~static_analysis_configuration
       ~taint_configuration
       ~taint_configuration_shared_memory

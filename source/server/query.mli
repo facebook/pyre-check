@@ -207,6 +207,7 @@ val parse_request : string -> (Request.t, string) Core.Result.t
 
 val process_model_query
   :  pyre_api:Interprocedural.PyrePysaApi.ReadOnly.t ->
+  path_of_qualifier:(Ast.Reference.t -> string option) ->
   scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   path:PyrePath.t ->
@@ -215,6 +216,7 @@ val process_model_query
 
 val process_validate_taint_models
   :  pyre_api:Interprocedural.PyrePysaApi.ReadOnly.t ->
+  path_of_qualifier:(Ast.Reference.t -> string option) ->
   scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   path:string option ->

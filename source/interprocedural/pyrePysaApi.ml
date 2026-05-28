@@ -157,10 +157,22 @@ module ReadOnly = struct
     | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.absolute_source_path_of_qualifier pyrefly_api
 
 
-  let relative_path_of_qualifier api qualifier =
+  let repository_relative_path_of_qualifier ~repository_root ~lookup_source api qualifier =
+    let open Core.Option.Monad_infix in
+    absolute_source_path_of_qualifier ~lookup_source api qualifier
+    >>| fun path ->
+    match
+      PyrePath.get_relative_to_root ~root:repository_root ~path:(PyrePath.create_absolute path)
+    with
+    | Some relative -> relative
+    | None -> path
+
+
+  let search_path_relative_path_of_qualifier api qualifier =
     match api with
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.relative_path_of_qualifier pyre_api qualifier
-    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.relative_path_of_qualifier pyrefly_api qualifier
+    | Pyrefly pyrefly_api ->
+        PyreflyApi.ReadOnly.search_path_relative_path_of_qualifier pyrefly_api qualifier
 
 
   let source_of_qualifier = function

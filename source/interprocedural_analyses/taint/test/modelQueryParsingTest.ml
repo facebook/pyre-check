@@ -59,6 +59,7 @@ let set_up_environment ?source ~context ~model_source ~validate () =
   let ({ ModelParseResult.errors; _ } as parse_result) =
     ModelParser.parse
       ~pyre_api
+      ~path_of_qualifier:(PyrePysaApi.ReadOnly.search_path_relative_path_of_qualifier pyre_api)
       ~source
       ~taint_configuration
       ~source_sink_filter:(Some taint_configuration.source_sink_filter)

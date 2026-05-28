@@ -143,6 +143,7 @@ let set_up_environment
   let ({ ModelParseResult.errors; _ } as parse_result) =
     ModelParser.parse
       ~pyre_api
+      ~path_of_qualifier:(PyrePysaApi.ReadOnly.search_path_relative_path_of_qualifier pyre_api)
       ~source
       ~taint_configuration
       ~source_sink_filter:(Some taint_configuration.source_sink_filter)
@@ -275,6 +276,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
     PyrePysaApi.ModelQueries.invalidate_cache pyre_api;
     ModelParser.parse
       ~pyre_api
+      ~path_of_qualifier:(PyrePysaApi.ReadOnly.search_path_relative_path_of_qualifier pyre_api)
       ~taint_configuration
       ~source_sink_filter:None
       ?path

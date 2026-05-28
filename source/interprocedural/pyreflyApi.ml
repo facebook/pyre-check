@@ -2563,7 +2563,7 @@ module ReadOnly = struct
     artifact_path_of_qualifier api qualifier >>| ArtifactPath.raw >>| PyrePath.absolute
 
 
-  let relative_path_of_qualifier { module_infos_shared_memory; _ } qualifier =
+  let search_path_relative_path_of_qualifier { module_infos_shared_memory; _ } qualifier =
     ModuleInfosSharedMemory.get
       module_infos_shared_memory
       (ModuleQualifier.from_reference_unchecked qualifier)

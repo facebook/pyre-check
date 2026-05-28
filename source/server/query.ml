@@ -536,6 +536,7 @@ let parse_request query =
 
 let parse_model_queries
     ~pyre_api
+    ~path_of_qualifier
     ~scheduler
     ~taint_configuration
     ~all_sys_infos
@@ -552,6 +553,7 @@ let parse_model_queries
   let parse_model_source (path, source) =
     Taint.ModelParser.parse
       ~pyre_api
+      ~path_of_qualifier
       ~path
       ~source
       ~taint_configuration
@@ -674,7 +676,7 @@ let setup_and_execute_model_queries ~pyre_api ~scheduler ~configuration model_qu
     model_queries
 
 
-let process_model_query ~pyre_api ~scheduler ~configuration ~path ~query_name =
+let process_model_query ~pyre_api ~path_of_qualifier ~scheduler ~configuration ~path ~query_name =
   let results =
     if not (PyrePath.file_exists path) then
       Result.Error (Format.sprintf "File path `%s` does not exist" (PyrePath.show path))
@@ -701,6 +703,7 @@ let process_model_query ~pyre_api ~scheduler ~configuration ~path ~query_name =
             in
             parse_model_queries
               ~pyre_api
+              ~path_of_qualifier
               ~scheduler
               ~taint_configuration
               ~all_sys_infos
@@ -782,7 +785,14 @@ let process_model_query ~pyre_api ~scheduler ~configuration ~path ~query_name =
   | Result.Error message -> Response.Error message
 
 
-let process_validate_taint_models ~pyre_api ~scheduler ~configuration ~path ~verify_dsl =
+let process_validate_taint_models
+    ~pyre_api
+    ~path_of_qualifier
+    ~scheduler
+    ~configuration
+    ~path
+    ~verify_dsl
+  =
   let open Response in
   let paths =
     match path with
@@ -812,6 +822,7 @@ let process_validate_taint_models ~pyre_api ~scheduler ~configuration ~path ~ver
     let all_sys_infos = Interprocedural.PyrePysaApi.ReadOnly.all_sys_infos pyre_api in
     parse_model_queries
       ~pyre_api
+      ~path_of_qualifier
       ~scheduler
       ~taint_configuration
       ~all_sys_infos
@@ -1223,7 +1234,13 @@ let rec process_request_exn
             ~type_environment
             ~global_module_paths_api
         in
-        process_model_query ~pyre_api ~scheduler ~configuration ~path ~query_name
+        let path_of_qualifier =
+          Interprocedural.PyrePysaApi.ReadOnly.repository_relative_path_of_qualifier
+            ~repository_root:configuration.local_root
+            ~lookup_source:(BuildSystem.lookup_source build_system)
+            pyre_api
+        in
+        process_model_query ~pyre_api ~path_of_qualifier ~scheduler ~configuration ~path ~query_name
     | ModulesOfPath path ->
         Single
           (Base.FoundModules
@@ -1369,7 +1386,19 @@ let rec process_request_exn
             ~type_environment
             ~global_module_paths_api
         in
-        process_validate_taint_models ~pyre_api ~scheduler ~configuration ~path ~verify_dsl
+        let path_of_qualifier =
+          Interprocedural.PyrePysaApi.ReadOnly.repository_relative_path_of_qualifier
+            ~repository_root:configuration.local_root
+            ~lookup_source:(BuildSystem.lookup_source build_system)
+            pyre_api
+        in
+        process_validate_taint_models
+          ~pyre_api
+          ~path_of_qualifier
+          ~scheduler
+          ~configuration
+          ~path
+          ~verify_dsl
   in
   try process_request_exn () with
   | ClassHierarchy.Untracked untracked ->

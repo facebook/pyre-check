@@ -3635,16 +3635,17 @@ let is_property_getter_setter ~decorators ~callable_name =
   is_property_getter, is_property_setter
 
 
-let source_location_of_global ~pyre_api global =
+let source_location_of_global ~path_of_qualifier global =
   let module_qualifier = PyrePysaApi.ModelQueries.Global.module_qualifier global in
   let location = PyrePysaApi.ModelQueries.Global.location global in
   module_qualifier
-  >>= PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api
+  >>= path_of_qualifier
   >>| fun path -> { ModelVerificationError.SourceLocation.path; location }
 
 
 let create_models_from_signature
     ~pyre_api
+    ~path_of_qualifier
     ~path
     ~taint_configuration
     ~source_sink_filter
@@ -3718,9 +3719,7 @@ let create_models_from_signature
               List.partition_map results ~f:(function
                   | ModuleResolutionResult.Resolved global -> First global
                   | ModuleResolutionResult.Unresolved { module_qualifier; module_name; suffix } ->
-                      let module_path =
-                        PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api module_qualifier
-                      in
+                      let module_path = path_of_qualifier module_qualifier in
                       Second
                         (make_verification_error
                            (MissingSymbol
@@ -3756,12 +3755,10 @@ let create_models_from_signature
                            (ModelingClassAsDefine
                               {
                                 name = Reference.show user_provided_callable_name;
-                                class_location = source_location_of_global ~pyre_api global;
+                                class_location = source_location_of_global ~path_of_qualifier global;
                               }))
                   | Global.Module { qualifier } ->
-                      let module_path =
-                        PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api qualifier
-                      in
+                      let module_path = path_of_qualifier qualifier in
                       Second
                         (make_verification_error
                            (ModelingModuleAsDefine
@@ -3772,7 +3769,8 @@ let create_models_from_signature
                            (ModelingAttributeAsDefine
                               {
                                 name = Reference.show user_provided_callable_name;
-                                attribute_location = source_location_of_global ~pyre_api global;
+                                attribute_location =
+                                  source_location_of_global ~path_of_qualifier global;
                               })))
             in
             callables, unresolved_errors @ classify_errors)
@@ -3783,7 +3781,7 @@ let create_models_from_signature
     let model_verification_error kind = Error (make_verification_error kind) in
     let define_location () =
       module_qualifier
-      >>= PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api
+      >>= path_of_qualifier
       >>| fun path -> { ModelVerificationError.SourceLocation.path; location = callable_location }
     in
     let open Core.Result in
@@ -4062,6 +4060,7 @@ let create_models_from_signature
 
 let create_models_from_attribute
     ~pyre_api
+    ~path_of_qualifier
     ~path
     ~taint_configuration
     ~source_sink_filter
@@ -4125,7 +4124,7 @@ let create_models_from_attribute
                   in
                   match results_for_qualifier with
                   | ModuleResolutionResult.Resolved (Global.Class _ as global) :: _ ->
-                      let class_location = source_location_of_global ~pyre_api global in
+                      let class_location = source_location_of_global ~path_of_qualifier global in
                       Second
                         (make_verification_error
                            (MissingAttribute
@@ -4135,9 +4134,7 @@ let create_models_from_attribute
                                 attribute_name = Reference.last user_provided_attribute_name;
                               }))
                   | _ ->
-                      let module_path =
-                        PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api module_qualifier
-                      in
+                      let module_path = path_of_qualifier module_qualifier in
                       Second
                         (make_verification_error
                            (MissingSymbol
@@ -4159,12 +4156,10 @@ let create_models_from_attribute
                        (ModelingClassAsAttribute
                           {
                             name = Reference.show user_provided_attribute_name;
-                            class_location = source_location_of_global ~pyre_api global;
+                            class_location = source_location_of_global ~path_of_qualifier global;
                           }))
               | Global.Module { qualifier } ->
-                  let module_path =
-                    PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api qualifier
-                  in
+                  let module_path = path_of_qualifier qualifier in
                   Second
                     (make_verification_error
                        (ModelingModuleAsAttribute
@@ -4175,7 +4170,7 @@ let create_models_from_attribute
                        (ModelingCallableAsAttribute
                           {
                             name = Reference.show user_provided_attribute_name;
-                            callable_location = source_location_of_global ~pyre_api global;
+                            callable_location = source_location_of_global ~path_of_qualifier global;
                           })))
         in
         resolved_attributes, unresolved_errors @ classify_errors
@@ -4229,6 +4224,7 @@ let create_models_from_attribute
 
 let create_models_from_class
     ~pyre_api
+    ~path_of_qualifier
     ~path
     ~taint_configuration
     ~source_sink_filter
@@ -4270,9 +4266,7 @@ let create_models_from_class
           List.partition_map results ~f:(function
               | ModuleResolutionResult.Resolved global -> First global
               | ModuleResolutionResult.Unresolved { module_qualifier; module_name; suffix = _ } ->
-                  let module_path =
-                    PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api module_qualifier
-                  in
+                  let module_path = path_of_qualifier module_qualifier in
                   Second
                     (make_verification_error
                        (ModelVerificationError.MissingClass
@@ -4291,12 +4285,10 @@ let create_models_from_class
                        (ModelVerificationError.ModelingCallableAsClass
                           {
                             name = Reference.show user_provided_class_name;
-                            callable_location = source_location_of_global ~pyre_api global;
+                            callable_location = source_location_of_global ~path_of_qualifier global;
                           }))
               | Global.Module { qualifier } ->
-                  let module_path =
-                    PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api qualifier
-                  in
+                  let module_path = path_of_qualifier qualifier in
                   Second
                     (make_verification_error
                        (ModelVerificationError.ModelingModuleAsClass
@@ -4308,7 +4300,7 @@ let create_models_from_class
                        (ModelVerificationError.ModelingAttributeAsClass
                           {
                             name = Reference.show user_provided_class_name;
-                            attribute_location = source_location_of_global ~pyre_api global;
+                            attribute_location = source_location_of_global ~path_of_qualifier global;
                           })))
         in
         classes, unresolved_errors @ classify_errors
@@ -4355,6 +4347,7 @@ let create_models_from_class
                   ~define_decorators
                 |> create_models_from_signature
                      ~pyre_api
+                     ~path_of_qualifier
                      ~path
                      ~taint_configuration
                      ~source_sink_filter
@@ -4424,6 +4417,7 @@ let is_obscure ~callables_to_definitions_map call_target =
 
 let parse_expected_models
     ~pyre_api
+    ~path_of_qualifier
     ~taint_configuration
     ~source_sink_filter
     ~callables_to_definitions_map
@@ -4433,6 +4427,7 @@ let parse_expected_models
       let models, verification_errors =
         create_models_from_signature
           ~pyre_api
+          ~path_of_qualifier
           ~path:None
           ~taint_configuration
           ~source_sink_filter
@@ -4534,6 +4529,7 @@ let mangle_private_variable name =
 
 let rec parse_statement
     ~pyre_api
+    ~path_of_qualifier
     ~path
     ~taint_configuration
     ~source_sink_filter
@@ -4780,6 +4776,7 @@ let rec parse_statement
                   ~f:
                     (parse_statement
                        ~pyre_api
+                       ~path_of_qualifier
                        ~path
                        ~taint_configuration
                        ~source_sink_filter
@@ -4836,6 +4833,7 @@ let rec parse_statement
                 | Ok parsed_signatures ->
                     parse_expected_models
                       ~pyre_api
+                      ~path_of_qualifier
                       ~taint_configuration
                       ~source_sink_filter
                       ~callables_to_definitions_map
@@ -4907,6 +4905,7 @@ let rec parse_statement
                      ~f:
                        (parse_statement
                           ~pyre_api
+                          ~path_of_qualifier
                           ~path
                           ~taint_configuration
                           ~source_sink_filter
@@ -4939,6 +4938,7 @@ let verify_no_duplicate_model_query_names ~path statements =
 
 let create
     ~pyre_api
+    ~path_of_qualifier
     ~path
     ~taint_configuration
     ~source_sink_filter
@@ -4956,6 +4956,7 @@ let create
                ~f:
                  (parse_statement
                     ~pyre_api
+                    ~path_of_qualifier
                     ~path
                     ~taint_configuration
                     ~source_sink_filter
@@ -4977,6 +4978,7 @@ let create
     | ParsedSignature parsed_signature ->
         create_models_from_signature
           ~pyre_api
+          ~path_of_qualifier
           ~path
           ~taint_configuration
           ~source_sink_filter
@@ -4986,6 +4988,7 @@ let create
     | ParsedAttribute parsed_attribute ->
         create_models_from_attribute
           ~pyre_api
+          ~path_of_qualifier
           ~path
           ~taint_configuration
           ~source_sink_filter
@@ -4994,6 +4997,7 @@ let create
     | ParsedClass parsed_class ->
         create_models_from_class
           ~pyre_api
+          ~path_of_qualifier
           ~path
           ~taint_configuration
           ~source_sink_filter
@@ -5081,6 +5085,7 @@ let decorator_actions_from_modes model_modes =
 
 let parse
     ~pyre_api
+    ~path_of_qualifier
     ?path
     ~source
     ~taint_configuration
@@ -5092,6 +5097,7 @@ let parse
   let new_models_and_queries, errors =
     create
       ~pyre_api
+      ~path_of_qualifier
       ~path
       ~taint_configuration
       ~source_sink_filter

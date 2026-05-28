@@ -90,6 +90,7 @@ let assert_invalid_model
     PyrePysaApi.ModelQueries.invalidate_cache pyre_api;
     ModelParser.parse
       ~pyre_api
+      ~path_of_qualifier:(PyrePysaApi.ReadOnly.search_path_relative_path_of_qualifier pyre_api)
       ~taint_configuration
       ~source_sink_filter:None
       ?path

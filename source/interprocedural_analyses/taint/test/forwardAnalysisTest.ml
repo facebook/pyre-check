@@ -43,6 +43,7 @@ let assert_taint ?models ?models_source ?(skip_for_pyrefly = false) ~context sou
     let { ModelParseResult.models; errors; _ } =
       ModelParser.parse
         ~pyre_api
+        ~path_of_qualifier:(PyrePysaApi.ReadOnly.search_path_relative_path_of_qualifier pyre_api)
         ~source:models
         ~taint_configuration:TaintConfiguration.Heap.default
         ~source_sink_filter:None
