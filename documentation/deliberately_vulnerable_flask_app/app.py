@@ -78,7 +78,6 @@ def user_data_to_filesystem_read_write_tp(payload: Path) -> None:
 
 @app.route("/open_redirect_tp/<string:payload>")
 def open_redirect_tp(payload: str) -> None:
-    # TODO(T189346522): Fix false negative due to unresolved call.
     redirect(payload)
 
 @app.route("/open_redirect_tn/<int:payload>")
