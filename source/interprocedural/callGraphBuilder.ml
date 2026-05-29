@@ -5737,17 +5737,17 @@ let build_whole_program_call_graph_for_pyrefly
     in
     let call_indexer = CallGraph.Indexer.create () in
     let call_graph =
+      DefineCallGraph.map_target
+        ~f:(CallableToDecoratorsMap.SharedMemory.redirect_to_decorated callables_to_decorators_map)
+        ~map_call_if:CallCallees.should_redirect_to_decorated
+        ~map_return_if:(fun _ -> false)
+        call_graph
+    in
+    let call_graph =
       if Target.is_decorated callable then
         transform_redirected_call_graph callable call_graph
       else
-        call_graph
-        |> DefineCallGraph.map_target
-             ~f:
-               (CallableToDecoratorsMap.SharedMemory.redirect_to_decorated
-                  callables_to_decorators_map)
-             ~map_call_if:CallCallees.should_redirect_to_decorated
-             ~map_return_if:(fun _ -> false)
-        |> add_targets ~debug ~define_and_qualifier callable
+        add_targets ~debug ~define_and_qualifier callable call_graph
     in
     call_graph
     |> DefineCallGraph.dedup_and_sort

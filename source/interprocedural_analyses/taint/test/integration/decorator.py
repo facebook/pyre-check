@@ -442,3 +442,25 @@ def test_decorated_call_in_tuple_assignment():
 def test_decorated_call_in_lambda_default():
     f = lambda x=sink_via_trivial_decorator(_test_source()): x
     f()
+
+
+
+def simple_wrapper(f: Callable) -> Callable:
+    def inner(*args: object, **kwargs: object) -> object:
+        return f(*args, **kwargs)
+
+    return inner
+
+
+@simple_wrapper
+def doubly_decorated_logging(function: Callable) -> Callable:
+    return function
+
+
+@doubly_decorated_logging
+def sink_via_doubly_decorated(x: str) -> None:
+    _test_sink(x)
+
+
+def test_issue_via_doubly_decorated():
+    sink_via_doubly_decorated(_test_source())

@@ -58,6 +58,9 @@ Call dependencies
   "decorator.decorated@decorated (fun)": [
     "decorator._strip_first_parameter_ (fun)[formal(f, position=0)=decorator.decorated (fun)]"
   ],
+  "decorator.doubly_decorated_logging@decorated (fun)": [
+    "decorator.simple_wrapper (fun)[formal(f, position=0)=decorator.doubly_decorated_logging (fun)]"
+  ],
   "decorator.foo (fun)": [ "print (fun)" ],
   "decorator.foo@decorated (fun)": [
     "decorator.with_logging (fun)[formal(f, position=0)=decorator.foo (fun)]"
@@ -180,6 +183,10 @@ Call dependencies
     "decorator.conditional_no_op_decorator_factory.inner_false (fun)[formal(f, position=0)=decorator.sink_via_conditional_no_op_decorator_factory (fun)]",
     "decorator.conditional_no_op_decorator_factory.inner_true (fun)[formal(f, position=0)=decorator.sink_via_conditional_no_op_decorator_factory (fun)]"
   ],
+  "decorator.sink_via_doubly_decorated (fun)": [ "pysa._test_sink (fun)" ],
+  "decorator.sink_via_doubly_decorated@decorated (fun)": [
+    "decorator.doubly_decorated_logging (fun)[formal(function, position=0)=decorator.sink_via_doubly_decorated (fun)]"
+  ],
   "decorator.sink_via_no_op_decorator (fun)": [ "pysa._test_sink (fun)" ],
   "decorator.sink_via_no_op_decorator@decorated (fun)": [
     "decorator.no_op_decorator (fun)[formal(f, position=0)=decorator.sink_via_no_op_decorator (fun)]"
@@ -215,6 +222,9 @@ Call dependencies
   ],
   "decorator.test_decorated_higher_order_parameter.inner@decorated (fun)": [
     "decorator.with_logging_args_kwargs_no_sink (fun)[formal(f, position=0)=decorator.test_decorated_higher_order_parameter.inner (fun)]"
+  ],
+  "decorator.test_issue_via_doubly_decorated (fun)": [
+    "decorator.sink_via_doubly_decorated (fun)", "pysa._test_source (fun)"
   ],
   "decorator.test_parameter_default_value (fun)": [
     "decorator.add_return_source.inner (fun)[captured_variable(callable, parameter)=decorator.return_source_via_decorator (fun)]",
