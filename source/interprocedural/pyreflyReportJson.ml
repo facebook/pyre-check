@@ -294,7 +294,9 @@ module ProjectFile = struct
       JsonUtil.get_optional_bool_member ~default:false json "is_init"
       >>= fun is_init ->
       JsonUtil.get_optional_bool_member ~default:false json "is_internal"
-      >>| fun is_internal ->
+      >>= fun is_internal ->
+      JsonUtil.get_optional_bool_member ~default:false json "failed_to_load"
+      >>| fun failed_to_load ->
       {
         PyreflyReport.ProjectFile.Module.module_id = PyreflyReport.ModuleId.from_int module_id;
         module_name = Reference.create module_name;
@@ -307,6 +309,7 @@ module ProjectFile = struct
         is_interface;
         is_init;
         is_internal;
+        failed_to_load;
       }
   end
 

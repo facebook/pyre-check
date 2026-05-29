@@ -151,6 +151,7 @@ end
 module AstResult : sig
   type 'a t =
     | Some of 'a
+    | FailedToLoad (* callable in a module that pyrefly failed to load *)
     | ParseError (* callable in a module that failed to parse *)
     | TestFile (* callable in a module marked with is_test = true *)
     | Synthesized (* callable in a synthesized class or function *)

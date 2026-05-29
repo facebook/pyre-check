@@ -439,6 +439,7 @@ module ProjectFile : sig
       is_interface: bool;
       is_init: bool;
       is_internal: bool;
+      failed_to_load: bool;
     }
     [@@deriving equal, show]
   end
@@ -629,6 +630,7 @@ module Testing : sig
       is_test: bool;
       is_stub: bool;
       is_internal: bool;
+      failed_to_load: bool;
     }
     [@@deriving compare, equal, show]
   end

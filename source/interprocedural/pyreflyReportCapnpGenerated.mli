@@ -733,6 +733,7 @@ module type S = sig
       val is_interface_get : t -> bool
       val is_init_get : t -> bool
       val is_internal_get : t -> bool
+      val failed_to_load_get : t -> bool
       val of_message : 'cap message_t -> t
       val of_builder : struct_t builder_t -> t
     end
@@ -1985,6 +1986,8 @@ module type S = sig
       val is_init_set : t -> bool -> unit
       val is_internal_get : t -> bool
       val is_internal_set : t -> bool -> unit
+      val failed_to_load_get : t -> bool
+      val failed_to_load_set : t -> bool -> unit
       val of_message : rw message_t -> t
       val to_message : t -> rw message_t
       val to_reader : t -> struct_t reader_t

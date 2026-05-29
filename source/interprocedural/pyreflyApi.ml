@@ -67,6 +67,7 @@ module ModuleInfosSharedMemory = struct
       is_test: bool; (* Is this a test file? *)
       is_stub: bool; (* Is this a stub file (e.g, `a.pyi`)? *)
       is_internal: bool; (* Is this an internal module (within the project's source directories)? *)
+      failed_to_load: bool; (* Pyrefly failed to load the source file *)
     }
   end
 
@@ -551,6 +552,7 @@ let is_stub_like_from_metadata
   in
   match parse_result with
   | AstResult.Some () -> false
+  | AstResult.FailedToLoad -> true
   | AstResult.ParseError -> true
   | AstResult.TestFile -> true
   | AstResult.Synthesized -> true
@@ -611,6 +613,7 @@ module ReadWrite = struct
       is_test: bool;
       is_stub: bool;
       is_internal: bool;
+      failed_to_load: bool;
     }
     [@@deriving compare, equal, show]
 
@@ -627,6 +630,7 @@ module ReadWrite = struct
           is_test;
           is_interface;
           is_internal;
+          failed_to_load;
           _;
         }
       =
@@ -640,6 +644,7 @@ module ReadWrite = struct
         is_test;
         is_stub = is_interface;
         is_internal;
+        failed_to_load;
       }
   end
 
@@ -763,6 +768,7 @@ module ReadWrite = struct
                         is_test = false;
                         is_stub = false;
                         is_internal = false;
+                        failed_to_load = false;
                       } );
                   ]
             in
@@ -840,6 +846,7 @@ module ReadWrite = struct
                     is_test;
                     is_stub;
                     is_internal;
+                    failed_to_load;
                     _;
                   } )
               ->
@@ -855,6 +862,7 @@ module ReadWrite = struct
                  is_test;
                  is_stub;
                  is_internal;
+                 failed_to_load;
                };
              ModuleIdToQualifierSharedMemory.write_around
                module_id_to_qualifier_shared_memory
@@ -1290,6 +1298,16 @@ module ReadWrite = struct
       | { ModuleInfosSharedMemory.Module.is_test = true; _ }, Some callables, Some classes ->
           let () = store_callable_asts callables AstResult.TestFile in
           let () = store_class_decorators classes AstResult.TestFile in
+          ()
+      | { ModuleInfosSharedMemory.Module.failed_to_load = true; _ }, Some callables, Some classes ->
+          let () =
+            Log.warning
+              "Pyrefly failed to load module `%a`, skipping analysis"
+              ModuleQualifier.pp
+              qualifier
+          in
+          let () = store_callable_asts callables AstResult.FailedToLoad in
+          let () = store_class_decorators classes AstResult.FailedToLoad in
           ()
       | ( {
             ModuleInfosSharedMemory.Module.absolute_source_path = Some source_path;

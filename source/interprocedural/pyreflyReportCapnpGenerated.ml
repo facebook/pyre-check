@@ -733,6 +733,7 @@ module type S = sig
       val is_interface_get : t -> bool
       val is_init_get : t -> bool
       val is_internal_get : t -> bool
+      val failed_to_load_get : t -> bool
       val of_message : 'cap message_t -> t
       val of_builder : struct_t builder_t -> t
     end
@@ -1985,6 +1986,8 @@ module type S = sig
       val is_init_set : t -> bool -> unit
       val is_internal_get : t -> bool
       val is_internal_set : t -> bool -> unit
+      val failed_to_load_get : t -> bool
+      val failed_to_load_set : t -> bool -> unit
       val of_message : rw message_t -> t
       val to_message : t -> rw message_t
       val to_reader : t -> struct_t reader_t
@@ -3616,6 +3619,8 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
         RA_.get_bit ~default:false x ~byte_ofs:4 ~bit_ofs:2
       let is_internal_get x =
         RA_.get_bit ~default:false x ~byte_ofs:4 ~bit_ofs:3
+      let failed_to_load_get x =
+        RA_.get_bit ~default:false x ~byte_ofs:4 ~bit_ofs:4
       let of_message x = RA_.get_root_struct (RA_.Message.readonly x)
       let of_builder x = Some (RA_.StructStorage.readonly x)
     end
@@ -5982,6 +5987,10 @@ module MakeRPC(MessageWrapper : Capnp.RPC.S) = struct
         BA_.get_bit ~default:false x ~byte_ofs:4 ~bit_ofs:3
       let is_internal_set x v =
         BA_.set_bit ~default:false x ~byte_ofs:4 ~bit_ofs:3 v
+      let failed_to_load_get x =
+        BA_.get_bit ~default:false x ~byte_ofs:4 ~bit_ofs:4
+      let failed_to_load_set x v =
+        BA_.set_bit ~default:false x ~byte_ofs:4 ~bit_ofs:4 v
       let of_message x = BA_.get_root_struct ~data_words:1 ~pointer_words:6 x
       let to_message x = x.BA_.NM.StructStorage.data.MessageWrapper.Slice.msg
       let to_reader x = Some (RA_.StructStorage.readonly x)

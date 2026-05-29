@@ -761,6 +761,7 @@ module ProjectFile = struct
     let is_interface = CapnpReader.PysaProjectModule.is_interface_get reader in
     let is_init = CapnpReader.PysaProjectModule.is_init_get reader in
     let is_internal = CapnpReader.PysaProjectModule.is_internal_get reader in
+    let failed_to_load = CapnpReader.PysaProjectModule.failed_to_load_get reader in
     {
       PyreflyReport.ProjectFile.Module.module_id;
       module_name;
@@ -773,6 +774,7 @@ module ProjectFile = struct
       is_interface;
       is_init;
       is_internal;
+      failed_to_load;
     }
 
 

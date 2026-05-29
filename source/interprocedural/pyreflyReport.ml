@@ -451,6 +451,7 @@ module ProjectFile = struct
       is_interface: bool;
       is_init: bool;
       is_internal: bool;
+      failed_to_load: bool;
     }
     [@@deriving equal, show]
   end

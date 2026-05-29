@@ -276,12 +276,14 @@ end
 module AstResult = struct
   type 'a t =
     | Some of 'a
+    | FailedToLoad (* callable in a module that pyrefly failed to load *)
     | ParseError (* callable in a module that failed to parse *)
     | TestFile (* callable in a module marked with is_test = true *)
     | Synthesized (* callable in a synthesized class or function *)
     | Pyre1NotFound (* callable not found - only raised when using pyre1 *)
 
   let to_option = function
+    | FailedToLoad -> None
     | ParseError -> None
     | TestFile -> None
     | Synthesized -> None
@@ -291,6 +293,7 @@ module AstResult = struct
 
   let value_exn ~message = function
     | Some value -> value
+    | FailedToLoad -> Format.sprintf "%s (reason: failed to load source)" message |> failwith
     | ParseError -> Format.sprintf "%s (reason: parser error)" message |> failwith
     | TestFile -> Format.sprintf "%s (reason: within a test file)" message |> failwith
     | Synthesized -> Format.sprintf "%s (reason: synthesized function)" message |> failwith
@@ -299,6 +302,7 @@ module AstResult = struct
 
   let map ~f = function
     | Some ast -> Some (f ast)
+    | FailedToLoad -> FailedToLoad
     | ParseError -> ParseError
     | TestFile -> TestFile
     | Synthesized -> Synthesized
@@ -307,6 +311,7 @@ module AstResult = struct
 
   let map_node ~f = function
     | Some { Ast.Node.value = ast; location } -> Some { Ast.Node.value = f ast; location }
+    | FailedToLoad -> FailedToLoad
     | ParseError -> ParseError
     | TestFile -> TestFile
     | Synthesized -> Synthesized

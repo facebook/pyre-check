@@ -57,6 +57,7 @@ let test_module_qualifiers _ =
         is_interface = false;
         is_init = false;
         is_internal = false;
+        failed_to_load = false;
       }
     in
     let make_testing_module { ModuleQualifierExpected.module_name; source_path; id; qualifier = _ } =
@@ -75,6 +76,7 @@ let test_module_qualifiers _ =
         is_test = false;
         is_stub = false;
         is_internal = false;
+        failed_to_load = false;
       }
     in
     let to_string map =
