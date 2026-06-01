@@ -233,19 +233,38 @@ let drop_decorated_targets_from_model
   }
 
 
-let get_model_from_readonly_state ~readonly_state ~drop_decorated_targets callable =
+let apply_decorator_fallback_to_model
+    ({ CallGraphBuilder.HigherOrderCallGraph.call_graph; _ } as model)
+  =
+  {
+    model with
+    CallGraphBuilder.HigherOrderCallGraph.call_graph =
+      CallGraph.DefineCallGraph.apply_decorator_fallback call_graph;
+  }
+
+
+let get_model_from_readonly_state
+    ~readonly_state
+    ~drop_decorated_targets
+    ~apply_decorator_fallback
+    callable
+  =
   let open Core.Option in
   let model = Fixpoint.State.ReadOnly.get_model readonly_state callable in
+  let model =
+    if apply_decorator_fallback then model >>| apply_decorator_fallback_to_model else model
+  in
   let model =
     if drop_decorated_targets then model >>| drop_decorated_targets_from_model else model
   in
   model
 
 
-let get_model { fixpoint = { state; _ }; _ } ~drop_decorated_targets =
+let get_model { fixpoint = { state; _ }; _ } ~drop_decorated_targets ~apply_decorator_fallback =
   get_model_from_readonly_state
     ~readonly_state:(Fixpoint.State.read_only state)
     ~drop_decorated_targets
+    ~apply_decorator_fallback
 
 
 let cleanup ~keep_models { Fixpoint.state; _ } = Fixpoint.State.cleanup ~keep_models state
@@ -253,7 +272,10 @@ let cleanup ~keep_models { Fixpoint.state; _ } = Fixpoint.State.cleanup ~keep_mo
 let get_define_call_graph ~readonly_state callable =
   let open Option in
   callable
-  |> get_model_from_readonly_state ~readonly_state ~drop_decorated_targets:true
+  |> get_model_from_readonly_state
+       ~readonly_state
+       ~drop_decorated_targets:true
+       ~apply_decorator_fallback:true
   >>| fun { CallGraphBuilder.HigherOrderCallGraph.call_graph; _ } -> call_graph
 
 
@@ -298,7 +320,10 @@ let log_decorated_targets_if_no_returned_callables
     let log_and_count_if_no_returned_callables ~readonly_state so_far callable =
       let open Option in
       callable
-      |> get_model_from_readonly_state ~readonly_state ~drop_decorated_targets:false
+      |> get_model_from_readonly_state
+           ~readonly_state
+           ~drop_decorated_targets:false
+           ~apply_decorator_fallback:false
       >>| (fun { CallGraphBuilder.HigherOrderCallGraph.returned_callables; _ } ->
             if CallGraph.CallTarget.Set.is_bottom returned_callables then (
               let decorator_expressions =
@@ -512,7 +537,11 @@ let compute
       ~static_analysis_configuration
       ~resolve_qualifier:(CallablesSharedMemory.ReadOnly.get_qualifier callables_to_definitions_map)
       ~resolve_module_path
-      ~get_call_graph:(get_model_from_readonly_state ~readonly_state ~drop_decorated_targets:true)
+      ~get_call_graph:
+        (get_model_from_readonly_state
+           ~readonly_state
+           ~drop_decorated_targets:true
+           ~apply_decorator_fallback:true)
       ~json_kind:NewlineDelimitedJson.Kind.HigherOrderCallGraph
       ~filename_prefix:"higher-order-call-graph"
       ~callables:(analyzed_callables fixpoint)

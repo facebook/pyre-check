@@ -485,6 +485,17 @@
   },
   {
     "code": 5001,
+    "column": 19,
+    "define": "integration_test.cache.test_ignore_decorator",
+    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "line": 23,
+    "name": "Possible shell injection",
+    "path": "fixture_source/integration_test/cache.py",
+    "stop_column": 27,
+    "stop_line": 23
+  },
+  {
+    "code": 5001,
     "column": 20,
     "define": "integration_test.cache.test_overrides_cap",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",

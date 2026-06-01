@@ -661,6 +661,10 @@ module DefineCallGraph : sig
   (* Ensure the taint analysis does not use these targets. *)
   val drop_decorated_targets : t -> t
 
+  (* When decorator inlining failed (no call_targets but decorated_targets exist), fall back to the
+     undecorated target. Then drop all remaining decorated targets. *)
+  val apply_decorator_fallback : t -> t
+
   val dedup_and_sort : t -> t
 
   val regenerate_call_indices : indexer:Indexer.t -> t -> t

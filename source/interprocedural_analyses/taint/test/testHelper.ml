@@ -1112,6 +1112,7 @@ let end_to_end_integration_test path context =
                match
                  CallGraphFixpoint.get_model
                    ~drop_decorated_targets:true
+                   ~apply_decorator_fallback:true
                    call_graph_fixpoint_state
                    callable
                with

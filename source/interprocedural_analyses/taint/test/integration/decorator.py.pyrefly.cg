@@ -230,7 +230,7 @@ Call dependencies
     "decorator.with_logging_args_kwargs_no_sink (fun)[formal(f, position=0)=decorator.test_decorated_higher_order_parameter.inner (fun)]"
   ],
   "decorator.test_issue_via_doubly_decorated (fun)": [
-    "pysa._test_source (fun)"
+    "decorator.sink_via_doubly_decorated (fun)", "pysa._test_source (fun)"
   ],
   "decorator.test_parameter_default_value (fun)": [
     "decorator.add_return_source.inner (fun)[captured_variable(callable, decorator.add_return_source)=decorator.return_source_via_decorator (fun)]",

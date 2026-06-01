@@ -1032,6 +1032,23 @@ module CallCallees = struct
     }
 
 
+  (* When decorator inlining fails (call_targets is empty but decorated_targets is not), fall back
+     to calling the undecorated target directly. *)
+  let apply_decorator_fallback ({ call_targets; decorated_targets; _ } as call_callees) =
+    if List.is_empty call_targets && not (List.is_empty decorated_targets) then
+      {
+        call_callees with
+        call_targets =
+          List.map decorated_targets ~f:(fun call_target ->
+              {
+                call_target with
+                CallTarget.target = Target.set_kind Target.Normal call_target.target;
+              });
+      }
+    else
+      call_callees
+
+
   let regenerate_call_indices
       ~indexer
       ({
@@ -1604,6 +1621,11 @@ module ExpressionCallees = struct
     | Return callees -> Return callees
 
 
+  let apply_decorator_fallback = function
+    | Call callees -> Call (CallCallees.apply_decorator_fallback callees)
+    | callees -> callees
+
+
   let regenerate_call_indices ~indexer callees =
     Indexer.generate_fresh_indices indexer;
     match callees with
@@ -2060,6 +2082,10 @@ module DefineCallGraph = struct
 
   (* Ensure the taint analysis does not use these targets. *)
   let drop_decorated_targets = update_expression_callees ~f:ExpressionCallees.drop_decorated_targets
+
+  let apply_decorator_fallback =
+    update_expression_callees ~f:ExpressionCallees.apply_decorator_fallback
+
 
   let dedup_and_sort = update_expression_callees ~f:ExpressionCallees.dedup_and_sort
 

@@ -35,6 +35,7 @@ val analyzed_callables : fixpoint -> Target.t list
 val get_model
   :  t ->
   drop_decorated_targets:bool ->
+  apply_decorator_fallback:bool ->
   Target.t ->
   CallGraphBuilder.HigherOrderCallGraph.t option
 

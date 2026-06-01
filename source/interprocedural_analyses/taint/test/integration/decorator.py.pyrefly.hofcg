@@ -2415,7 +2415,17 @@ Higher order call graphs
   "callable": "decorator.test_issue_via_doubly_decorated",
   "returned_callables": [],
   "calls": {
-    "466:4-466:45": { "call": {} },
+    "466:4-466:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "decorator.sink_via_doubly_decorated",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "466:30-466:44": {
       "call": {
         "calls": [
