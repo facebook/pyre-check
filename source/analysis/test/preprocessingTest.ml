@@ -20,32 +20,6 @@ let location (start_line, start_column) (stop_line, stop_column) =
   }
 
 
-(* This function is here for backward compatibility reason only. Please avoid using it and prefer
-   `Test.parse` instead. *)
-let legacy_parse ~handle source =
-  let lines = String.split (Test.trim_extra_indentation source) ~on:'\n' in
-  match PyreMenhirParser.Parser.parse ~relative:handle lines with
-  | Result.Ok statements ->
-      let typecheck_flags =
-        let qualifier = ModulePath.qualifier_from_relative_path handle in
-        Source.TypecheckFlags.parse ~qualifier lines
-      in
-      Source.create ~typecheck_flags ~relative:handle statements
-  | Result.Error
-      {
-        PyreMenhirParser.Parser.Error.location = { Location.start = { Location.line; column }; _ };
-        _;
-      } ->
-      let error =
-        Format.asprintf
-          "Could not parse test source at line %d, column %d. Test input:\n%s"
-          line
-          column
-          source
-      in
-      failwith error
-
-
 let test_expand_relative_imports =
   let assert_expand ~handle source expected _ =
     let parse = parse ~handle in
@@ -453,6 +427,163 @@ let test_expand_string_annotation_preserves_locations =
 
 
 let test_qualify_source =
+  let parse_expected ~handle expected =
+    (* The expected strings contain Pyre-internal identifiers with '$', '?' and '#' characters
+       (e.g., $parameter$x, $local_qualifier?foo$bar, def qualifier#foo():) which the CPython parser
+       rejects. We use '#' to represent '.' in def/class name positions where a dot is not valid
+       Python. We temporarily replace these characters with valid Python identifier substrings,
+       parse, then restore them in the resulting AST. *)
+    let dollar_placeholder = "XDOLLARX" in
+    let question_placeholder = "XQUESTIONX" in
+    let hash_placeholder = "XHASHX" in
+    let escaped =
+      expected
+      |> String.substr_replace_all ~pattern:"$" ~with_:dollar_placeholder
+      |> String.substr_replace_all ~pattern:"?" ~with_:question_placeholder
+      |> String.substr_replace_all ~pattern:"#" ~with_:hash_placeholder
+    in
+    let unescape_identifier identifier =
+      identifier
+      |> String.substr_replace_all ~pattern:dollar_placeholder ~with_:"$"
+      |> String.substr_replace_all ~pattern:question_placeholder ~with_:"?"
+      |> String.substr_replace_all ~pattern:hash_placeholder ~with_:"."
+    in
+    let unescape_reference reference =
+      Reference.show reference |> unescape_identifier |> Reference.create
+    in
+    let unescape_reference_node { Node.location; value } =
+      { Node.location; value = unescape_reference value }
+    in
+    let parsed = parse ~handle escaped in
+    let module UnescapeTransform = Transform.Make (struct
+      type t = unit
+
+      let transform_expression_children _ _ = true
+
+      let identifier_to_name ~location identifier =
+        Ast.Expression.create_name_from_reference
+          ~location
+          ~create_origin:(fun _ -> None)
+          (Reference.create identifier)
+
+
+      let unescape_parameter { Node.location; value = { Parameter.name; value; annotation } } =
+        { Node.location; value = { Parameter.name = unescape_identifier name; value; annotation } }
+
+
+      let expression _ { Node.location; value } =
+        let value =
+          match value with
+          | Expression.Name (Name.Identifier identifier) ->
+              let unescaped = unescape_identifier identifier in
+              if String.mem unescaped '.' then
+                Expression.Name (identifier_to_name ~location unescaped)
+              else
+                Expression.Name (Name.Identifier unescaped)
+          | Expression.Name (Name.Attribute ({ Name.Attribute.attribute; _ } as name)) ->
+              Expression.Name
+                (Name.Attribute
+                   { name with Name.Attribute.attribute = unescape_identifier attribute })
+          | Expression.Constant
+              (Constant.String { StringLiteral.value; kind; qualified_expression }) ->
+              Expression.Constant
+                (Constant.String
+                   { StringLiteral.value = unescape_identifier value; kind; qualified_expression })
+          | Expression.Lambda ({ Lambda.parameters; _ } as lambda) ->
+              Expression.Lambda
+                { lambda with Lambda.parameters = List.map parameters ~f:unescape_parameter }
+          | Expression.Call ({ Call.arguments; _ } as call) ->
+              let unescape_argument ({ Call.Argument.name; _ } as argument) =
+                {
+                  argument with
+                  Call.Argument.name =
+                    Option.map name ~f:(fun { Node.location; value } ->
+                        { Node.location; value = unescape_identifier value });
+                }
+              in
+              Expression.Call { call with Call.arguments = List.map arguments ~f:unescape_argument }
+          | other -> other
+        in
+        { Node.location; value }
+
+
+      let transform_children state _ = state, true
+
+      let unescape_import { Import.name; alias } =
+        { Import.name = unescape_reference name; alias = Option.map alias ~f:unescape_identifier }
+
+
+      let rec unescape_nesting_context = function
+        | NestingContext.TopLevel as top_level -> top_level
+        | NestingContext.Function { name; parent } ->
+            NestingContext.create_function
+              ~parent:(unescape_nesting_context parent)
+              (unescape_identifier name)
+        | NestingContext.Class { name; parent } ->
+            NestingContext.create_class
+              ~parent:(unescape_nesting_context parent)
+              (unescape_identifier name)
+
+
+      let statement state { Node.location; value } =
+        let value =
+          match value with
+          | Statement.Class ({ Class.name; parent; _ } as class_definition) ->
+              Statement.Class
+                {
+                  class_definition with
+                  Class.name = unescape_reference name;
+                  parent = unescape_nesting_context parent;
+                }
+          | Statement.Define
+              ({
+                 Define.signature =
+                   { Define.Signature.name; legacy_parent; parameters; parent; _ } as signature;
+                 _;
+               } as define) ->
+              Statement.Define
+                {
+                  define with
+                  Define.signature =
+                    {
+                      signature with
+                      Define.Signature.name = unescape_reference name;
+                      legacy_parent = Option.map legacy_parent ~f:unescape_reference;
+                      parameters = List.map parameters ~f:unescape_parameter;
+                      parent = unescape_nesting_context parent;
+                    };
+                }
+          | Statement.Import { Import.from; imports } ->
+              Statement.Import
+                {
+                  Import.from = Option.map from ~f:unescape_reference_node;
+                  imports =
+                    List.map imports ~f:(fun { Node.location; value } ->
+                        { Node.location; value = unescape_import value });
+                }
+          | Statement.Try ({ Try.handlers; _ } as try_statement) ->
+              let unescape_handler ({ Try.Handler.name; _ } as handler) =
+                {
+                  handler with
+                  Try.Handler.name =
+                    Option.map name ~f:(fun { Node.location; value } ->
+                        { Node.location; value = unescape_identifier value });
+                }
+              in
+              Statement.Try
+                { try_statement with Try.handlers = List.map handlers ~f:unescape_handler }
+          | Statement.Global identifiers ->
+              Statement.Global (List.map identifiers ~f:unescape_identifier)
+          | Statement.Nonlocal identifiers ->
+              Statement.Nonlocal (List.map identifiers ~f:unescape_identifier)
+          | other -> other
+        in
+        state, [{ Node.location; value }]
+    end)
+    in
+    let { UnescapeTransform.source; _ } = UnescapeTransform.transform () parsed in
+    source
+  in
   (* Expected sources may make parent info qualified which we don't care about in this test. So,
      strip them. *)
   let dequalify_parent source =
@@ -509,7 +640,7 @@ let test_qualify_source =
   let assert_qualify ?(handle = "qualifier.py") source expected _ =
     let parsed = parse ~handle source in
     let processed = Preprocessing.qualify parsed in
-    let expected = legacy_parse ~handle expected |> dequalify_parent in
+    let expected = parse_expected ~handle expected |> dequalify_parent in
     assert_source_equal ~location_insensitive:true expected processed;
     (* Qualifying twice should not change the source. *)
     assert_source_equal ~location_insensitive:true expected (Preprocessing.qualify processed)
@@ -718,10 +849,10 @@ let test_qualify_source =
     |}
            {|
       from typing import List
-      class qualifier.Class():
+      class qualifier#Class():
         qualifier.Class.attribute: typing.List[int] = 1
         qualifier.Class.first, qualifier.Class.second = 1, 2
-        def qualifier.Class.method($parameter$self: qualifier.Class):
+        def qualifier#Class#method($parameter$self: qualifier.Class):
           $parameter$self.attribute = 1
           $parameter$self.attribute
     |};
@@ -736,13 +867,13 @@ let test_qualify_source =
     |}
            {|
       from typing import Union
-      class qualifier.Class:
+      class qualifier#Class:
         qualifier.Class._Alias = typing.Union[int, str]
         qualifier.Class.a = qualifier.Class._Alias
-        def qualifier.Class.method($parameter$self, $parameter$alias: qualifier.Class._Alias): ...
+        def qualifier#Class#method($parameter$self, $parameter$alias: qualifier.Class._Alias): ...
     |};
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_qualify "class Class: ..." "class qualifier.Class: ...";
+      @@ assert_qualify "class Class: ..." "class qualifier#Class: ...";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
            {|
@@ -753,7 +884,7 @@ let test_qualify_source =
            {|
       from decorators import transform
       @decorators.transform
-      class qualifier.Class(): pass
+      class qualifier#Class(): pass
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
@@ -763,9 +894,9 @@ let test_qualify_source =
           def method(self): pass
     |}
            {|
-      class qualifier.Class():
-        class qualifier.Class.Nested():
-          def qualifier.Class.Nested.method($parameter$self): pass
+      class qualifier#Class():
+        class qualifier#Class#Nested():
+          def qualifier#Class#Nested#method($parameter$self): pass
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
@@ -775,9 +906,9 @@ let test_qualify_source =
         def classmethod(): pass
     |}
            {|
-      class qualifier.Class():
+      class qualifier#Class():
         @classmethod
-        def qualifier.Class.classmethod(): pass
+        def qualifier#Class#classmethod(): pass
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
@@ -790,7 +921,7 @@ let test_qualify_source =
            {|
       from module import C
       $local_qualifier$a = qualifier.C
-      class qualifier.C: ...
+      class qualifier#C: ...
       $local_qualifier$b = qualifier.C
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -801,7 +932,7 @@ let test_qualify_source =
         INDENT, other = 2, 3
     |}
            {|
-      class qualifier.C:
+      class qualifier#C:
          qualifier.C.INDENT = 1
          qualifier.C.INDENT, qualifier.C.other = (2, 3)
     |};
@@ -813,8 +944,8 @@ let test_qualify_source =
         foo().x = 1
     |}
            {|
-      def qualifier.foo(): pass
-      class qualifier.C:
+      def qualifier#foo(): pass
+      class qualifier#C:
         qualifier.foo().x = 1
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -827,8 +958,8 @@ let test_qualify_source =
     |}
            {|
       $local_qualifier$local = 0
-      class qualifier.C:
-        def qualifier.C.__init__($parameter$self):
+      class qualifier#C:
+        def qualifier#C#__init__($parameter$self):
           $parameter$self.local = 1
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -841,7 +972,7 @@ let test_qualify_source =
     |}
            {|
       $local_qualifier$INDENT = 0
-      class qualifier.C:
+      class qualifier#C:
          qualifier.C.INDENT = 1
          qualifier.C.INDENT, qualifier.C.other = (2, 3)
     |};
@@ -855,7 +986,7 @@ let test_qualify_source =
     |}
            {|
       Type: _SpecialForm = ...
-      def typing.foo($parameter$l: typing.Type[int]): ...
+      def typing#foo($parameter$l: typing.Type[int]): ...
     |};
       (* Only qualify strings for annotations and potential type aliases. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -871,7 +1002,7 @@ let test_qualify_source =
            {|
       from typing import List
       $local_qualifier$T = 'typing.List'
-      def qualifier.foo() -> 'typing.List[int]': ...
+      def qualifier#foo() -> 'typing.List[int]': ...
       $local_qualifier$a = ['List']
       $local_qualifier$d = {'List': 'List'}
       $local_qualifier$f = MayBeType['typing.List']
@@ -889,7 +1020,7 @@ let test_qualify_source =
     |}
            {|
       from typing import List
-      def qualifier.f():
+      def qualifier#f():
         $local_qualifier?f$T = 'List'
         def $local_qualifier?f$foo() -> 'typing.List[int]': ...
         $local_qualifier?f$a = ['List']
@@ -904,7 +1035,7 @@ let test_qualify_source =
         return {'arg': x}
     |}
            {|
-      def qualifier.foo($parameter$arg):
+      def qualifier#foo($parameter$arg):
         $local_qualifier?foo$x = 'arg'
         return {'arg': $local_qualifier?foo$x}
     |};
@@ -940,7 +1071,7 @@ let test_qualify_source =
            {|
       from typing_extensions import TypeAlias
 
-      class qualifier.C: ...
+      class qualifier#C: ...
       $local_qualifier$my_alias: typing_extensions.TypeAlias = "qualifier.C"
     |};
       (* Don't qualify the TypeVar name argument. *)
@@ -968,7 +1099,7 @@ let test_qualify_source =
     |}
            {|
       from typing import TypeVar as TV
-      class qualifier.C():
+      class qualifier#C():
         qualifier.C.T = "C"
         qualifier.C.TSelf = typing.TypeVar("TSelf",$parameter$bound = "qualifier.C")
     |};
@@ -984,9 +1115,9 @@ let test_qualify_source =
     |}
            {|
       from typing import TypeVar as TV
-      class qualifier.X(): pass
-      class qualifier.A(): pass
-      class qualifier.C():
+      class qualifier#X(): pass
+      class qualifier#A(): pass
+      class qualifier#C():
         qualifier.C.T = "C"
         qualifier.C.TSelf = typing.TypeVar("TSelf", "qualifier.C", qualifier.X, "qualifier.A")
     |};
@@ -1020,7 +1151,7 @@ let test_qualify_source =
       from typing import Generic, TypeVar
 
       $local_qualifier$T = typing.TypeVar("T")
-      class qualifier.NotLiteral(typing.Generic[$local_qualifier$T]): ...
+      class qualifier#NotLiteral(typing.Generic[$local_qualifier$T]): ...
 
       $local_qualifier$x: int = 8
       $local_qualifier$treats_x_as_annotation: qualifier.NotLiteral["$local_qualifier$x"]
@@ -1037,9 +1168,9 @@ let test_qualify_source =
            {|
       from typing_extensions import Literal as MyLiteral
 
-      class qualifier.Foo():
+      class qualifier#Foo():
         qualifier.Foo.x: int = 7
-        def qualifier.Foo.treats_x_as_string_literal(
+        def qualifier#Foo#treats_x_as_string_literal(
           $parameter$self,
           $parameter$a: typing_extensions.Literal["x"]
         ) -> int: ...
@@ -1060,11 +1191,11 @@ let test_qualify_source =
       from typing import Generic, TypeVar
 
       $local_qualifier$T = typing.TypeVar("T")
-      class qualifier.NotLiteral(typing.Generic[$local_qualifier$T]): ...
+      class qualifier#NotLiteral(typing.Generic[$local_qualifier$T]): ...
 
-      class qualifier.Foo:
+      class qualifier#Foo:
         qualifier.Foo.x: int = 7
-        def qualifier.Foo.treats_x_as_attribute(
+        def qualifier#Foo#treats_x_as_attribute(
           $parameter$self,
           $parameter$a: qualifier.NotLiteral["qualifier.Foo.x"],
         ) -> int: ...
@@ -1096,8 +1227,8 @@ let test_qualify_source =
       def foo(x: 'A'): ...
     |}
            {|
-      class qualifier.A(): pass
-      def qualifier.foo($parameter$x: 'qualifier.A'): ...
+      class qualifier#A(): pass
+      def qualifier#foo($parameter$x: 'qualifier.A'): ...
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
@@ -1108,8 +1239,8 @@ let test_qualify_source =
     |}
            {|
       from typing_extensions import Literal
-      class qualifier.A(): pass
-      def qualifier.foo($parameter$x: typing_extensions.Literal['A']): ...
+      class qualifier#A(): pass
+      def qualifier#foo($parameter$x: typing_extensions.Literal['A']): ...
     |};
       (* Qualify functions. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -1119,7 +1250,7 @@ let test_qualify_source =
       foo()
     |}
            {|
-      def qualifier.foo(): pass
+      def qualifier#foo(): pass
       qualifier.foo()
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1131,7 +1262,7 @@ let test_qualify_source =
     |}
            {|
       from abc import foo
-      def qualifier.foo(): pass
+      def qualifier#foo(): pass
       qualifier.foo()
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1145,9 +1276,9 @@ let test_qualify_source =
     |}
            {|
       from abc import foo
-      def qualifier.foo(): pass
+      def qualifier#foo(): pass
       qualifier.foo()
-      def qualifier.foo(): pass
+      def qualifier#foo(): pass
       qualifier.foo()
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1160,7 +1291,7 @@ let test_qualify_source =
           pass
     |}
            {|
-      def qualifier.foo():
+      def qualifier#foo():
         def $local_qualifier?foo$foo():
           pass
         def $local_qualifier?foo$foo():
@@ -1177,7 +1308,7 @@ let test_qualify_source =
           pass
     |}
            {|
-      def qualifier.foo():
+      def qualifier#foo():
         def $local_qualifier?foo$foo():
           def $local_qualifier?foo?foo$foo():
             pass
@@ -1196,7 +1327,7 @@ let test_qualify_source =
         bar()
     |}
            {|
-      def qualifier.foo():
+      def qualifier#foo():
         from abc import bar
         $local_qualifier?foo$bar()
         def $local_qualifier?foo$bar(): pass
@@ -1214,8 +1345,8 @@ let test_qualify_source =
       |}
            {|
       from abc import foo
-      def qualifier.bar(): qualifier.foo()
-      def qualifier.foo(): pass
+      def qualifier#bar(): qualifier.foo()
+      def qualifier#foo(): pass
       qualifier.foo()
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1233,11 +1364,11 @@ let test_qualify_source =
            {|
       from abc import foo
       qualifier.foo();
-      def qualifier.foo(): pass
+      def qualifier#foo(): pass
       qualifier.foo()
       from abc import foo
       qualifier.foo();
-      def qualifier.foo(): pass
+      def qualifier#foo(): pass
       qualifier.foo()
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1248,10 +1379,10 @@ let test_qualify_source =
     |}
            {|
       for qualifier.b in []: pass
-      def qualifier.b(): pass
+      def qualifier#b(): pass
     |};
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_qualify "def foo(): ..." "def qualifier.foo(): ...";
+      @@ assert_qualify "def foo(): ..." "def qualifier#foo(): ...";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
            {|
@@ -1259,7 +1390,7 @@ let test_qualify_source =
       "expression".foo()
     |}
            {|
-      def qualifier.foo(): ...
+      def qualifier#foo(): ...
       "expression".foo()
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1270,7 +1401,7 @@ let test_qualify_source =
     |}
            {|
       qualifier.foo()
-      def qualifier.foo(): pass
+      def qualifier#foo(): pass
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
@@ -1282,7 +1413,7 @@ let test_qualify_source =
            {|
       from decorators import memoize
       @decorators.memoize
-      def qualifier.foo(): pass
+      def qualifier#foo(): pass
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
@@ -1292,7 +1423,7 @@ let test_qualify_source =
     |}
            {|
       @qualifier.foo.setter
-      def qualifier.foo(): pass
+      def qualifier#foo(): pass
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
@@ -1302,7 +1433,7 @@ let test_qualify_source =
     |}
            {|
       from typing import List
-      def qualifier.foo() -> typing.List[int]: pass
+      def qualifier#foo() -> typing.List[int]: pass
     |};
       (* TODO(T46137017): This is incorrect, as the variable should be hoisted *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -1315,7 +1446,7 @@ let test_qualify_source =
     |}
            {|
       $local_qualifier$x = 7
-      def qualifier.foo():
+      def qualifier#foo():
         print($local_qualifier?foo$x)
         $local_qualifier?foo$x = 9
     |};
@@ -1329,7 +1460,7 @@ let test_qualify_source =
           nested()
     |}
            {|
-      def qualifier.foo():
+      def qualifier#foo():
         def $local_qualifier?foo$nested():
           $local_qualifier?foo?nested$x = 7
           $local_qualifier?foo$nested()
@@ -1345,7 +1476,7 @@ let test_qualify_source =
           nestedA()
     |}
            {|
-      def qualifier.foo():
+      def qualifier#foo():
         def $local_qualifier?foo$nestedA():
           $local_qualifier?foo$nestedB()
         def $local_qualifier?foo$nestedB():
@@ -1359,7 +1490,7 @@ let test_qualify_source =
           def a(): pass
     |}
            {|
-      def qualifier.foo():
+      def qualifier#foo():
         def $local_qualifier?foo$nested($parameter$a):
           def $local_qualifier?foo?nested$a(): pass
     |};
@@ -1384,7 +1515,7 @@ let test_qualify_source =
     |}
            {|
       $local_qualifier$constant: int = 1
-      def qualifier.foo():
+      def qualifier#foo():
         $local_qualifier?foo$constant = 2
         $local_qualifier?foo$constant = 3
     |};
@@ -1397,7 +1528,7 @@ let test_qualify_source =
         foo()
     |}
            {|
-      def qualifier.foo():
+      def qualifier#foo():
         $local_qualifier?foo$foo()
         $local_qualifier?foo$foo = 1
         $local_qualifier?foo$foo()
@@ -1422,7 +1553,7 @@ let test_qualify_source =
     |}
            {|
       $local_qualifier$constant = 1
-      def qualifier.foo():
+      def qualifier#foo():
         $local_qualifier$constant = 2
         global constant
     |};
@@ -1436,7 +1567,7 @@ let test_qualify_source =
     |}
            {|
       $local_qualifier$constant = 0
-      def qualifier.foo():
+      def qualifier#foo():
         while True:
           $local_qualifier?foo$constant += 1
     |};
@@ -1456,7 +1587,7 @@ let test_qualify_source =
    |}
            {|
       $local_qualifier$global_constant = 1
-      def qualifier.foo():
+      def qualifier#foo():
         $local_qualifier?foo$nonlocal_constant = 2
         def $local_qualifier?foo$bar():
           global global_constant
@@ -1477,7 +1608,7 @@ let test_qualify_source =
             y.append(4)
    |}
            {|
-      def qualifier.foo():
+      def qualifier#foo():
         if $local_qualifier?foo$x := [1]:
           $local_qualifier?foo$y = [2]
           def $local_qualifier?foo$nested():
@@ -1491,7 +1622,7 @@ let test_qualify_source =
         parameter = 1
     |}
            {|
-      def qualifier.foo($parameter$parameter):
+      def qualifier#foo($parameter$parameter):
         $parameter$parameter = 1
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1501,7 +1632,7 @@ let test_qualify_source =
         parameter = 1
     |}
            {|
-      def qualifier.foo($parameter$parameter: int, $parameter$other: parameter.T):
+      def qualifier#foo($parameter$parameter: int, $parameter$other: parameter.T):
         $parameter$parameter = 1
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1561,7 +1692,7 @@ let test_qualify_source =
         return foo
     |}
            {|
-      def qualifier.foo($parameter$foo):
+      def qualifier#foo($parameter$foo):
         return $parameter$foo
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1635,7 +1766,7 @@ let test_qualify_source =
     |}
            {|
        $local_qualifier$a: qualifier.x = ...
-       def qualifier.x(): ...
+       def qualifier#x(): ...
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
@@ -1644,8 +1775,8 @@ let test_qualify_source =
        def x(): ...
     |}
            {|
-       def qualifier.f($parameter$a: qualifier.x): ...
-       def qualifier.x():
+       def qualifier#f($parameter$a: qualifier.x): ...
+       def qualifier#x():
          ...
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1658,10 +1789,10 @@ let test_qualify_source =
           ...
     |}
            {|
-      class qualifier.C:
-        def qualifier.C.f($parameter$parameter: x):
+      class qualifier#C:
+        def qualifier#C#f($parameter$parameter: x):
           ...
-        def qualifier.C.x():
+        def qualifier#C#x():
           ...
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1674,7 +1805,7 @@ let test_qualify_source =
     |}
            {|
       $local_qualifier$x: int = ...
-      class qualifier.C:
+      class qualifier#C:
         qualifier.C.x: int = ...
         qualifier.C.y = qualifier.C.x
     |};
@@ -1687,9 +1818,9 @@ let test_qualify_source =
         slice: slice = ...
     |}
            {|
-      class qualifier.slice:
+      class qualifier#slice:
         pass
-      class qualifier.C:
+      class qualifier#C:
         qualifier.C.slice: qualifier.slice = ...
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1705,13 +1836,13 @@ let test_qualify_source =
           return f()
     |}
            {|
-      def qualifier.f():
+      def qualifier#f():
         pass
-      class qualifier.C:
-        def qualifier.C.f():
+      class qualifier#C:
+        def qualifier#C#f():
           return qualifier.f()
         qualifier.C.a = qualifier.C.f
-        def qualifier.C.g():
+        def qualifier#C#g():
           return qualifier.f()
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1725,11 +1856,11 @@ let test_qualify_source =
           pass
     |}
            {|
-      class qualifier.C:
+      class qualifier#C:
         qualifier.C.alias = int
-        def qualifier.C.f() -> qualifier.C.alias:
+        def qualifier#C#f() -> qualifier.C.alias:
           return alias
-        def qualifier.C.g($parameter$x: qualifier.C.alias):
+        def qualifier#C#g($parameter$x: qualifier.C.alias):
           pass
     |};
       (* Decorator qualification tests *)
@@ -1743,10 +1874,10 @@ let test_qualify_source =
         pass
     |}
            {|
-      def qualifier.mydecorator($parameter$decorated):
+      def qualifier#mydecorator($parameter$decorated):
         return $parameter$decorated
       @qualifier.mydecorator
-      def qualifier.f():
+      def qualifier#f():
         pass
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1760,11 +1891,11 @@ let test_qualify_source =
             pass
     |}
            {|
-      def qualifier.mydecorator($parameter$decorated):
+      def qualifier#mydecorator($parameter$decorated):
         return $parameter$decorated
-      class qualifier.C:
+      class qualifier#C:
         @qualifier.mydecorator
-        def qualifier.C.f($parameter$self):
+        def qualifier#C#f($parameter$self):
           pass
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1780,13 +1911,13 @@ let test_qualify_source =
           pass
     |}
            {|
-      class qualifier.D:
+      class qualifier#D:
         @staticmethod
-        def qualifier.D.mydecorator($parameter$decorated):
+        def qualifier#D#mydecorator($parameter$decorated):
           return $parameter$decorated
-      class qualifier.C:
+      class qualifier#C:
         @qualifier.D.mydecorator
-        def qualifier.C.f($parameter$self):
+        def qualifier#C#f($parameter$self):
           pass
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1802,13 +1933,13 @@ let test_qualify_source =
         pass
     |}
            {|
-      def qualifier.mydecoratorwrapper($parameter$x):
+      def qualifier#mydecoratorwrapper($parameter$x):
         def $local_qualifier?mydecoratorwrapper$mydecorator($parameter$decorated):
           return $parameter$decorated
         return $local_qualifier?mydecoratorwrapper$mydecorator
       $local_qualifier$x = 42
       @qualifier.mydecoratorwrapper($local_qualifier$x)
-      def qualifier.f():
+      def qualifier#f():
         pass
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1825,14 +1956,14 @@ let test_qualify_source =
             pass
     |}
            {|
-      def qualifier.mydecoratorwrapper($parameter$x):
+      def qualifier#mydecoratorwrapper($parameter$x):
         def $local_qualifier?mydecoratorwrapper$mydecorator($parameter$decorated):
           return $parameter$decorated
         return $local_qualifier?mydecoratorwrapper$mydecorator
-      class qualifier.A:
+      class qualifier#A:
         qualifier.A.x = 42
         @qualifier.mydecoratorwrapper(qualifier.A.x)
-        def qualifier.A.f($parameter$self):
+        def qualifier#A#f($parameter$self):
             pass
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1850,15 +1981,15 @@ let test_qualify_source =
             pass
     |}
            {|
-      def qualifier.mydecoratorwrapper($parameter$x):
+      def qualifier#mydecoratorwrapper($parameter$x):
         def $local_qualifier?mydecoratorwrapper$mydecorator($parameter$decorated):
           return $parameter$decorated
         return $local_qualifier?mydecoratorwrapper$mydecorator
       $local_qualifier$x = 42
-      class qualifier.A:
+      class qualifier#A:
         qualifier.A.y = 42
         @qualifier.mydecoratorwrapper($local_qualifier$x + qualifier.A.y)
-        def qualifier.A.f($parameter$self):
+        def qualifier#A#f($parameter$self):
             pass
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1870,9 +2001,9 @@ let test_qualify_source =
             return 42
     |}
            {|
-      class qualifier.A:
+      class qualifier#A:
         @property
-        def qualifier.A.f($parameter$self):
+        def qualifier#A#f($parameter$self):
             return 42
     |};
       labeled_test_case __FUNCTION__ __LINE__
@@ -1887,12 +2018,12 @@ let test_qualify_source =
             pass
     |}
            {|
-      class qualifier.A:
+      class qualifier#A:
         @property
-        def qualifier.A.f($parameter$self):
+        def qualifier#A#f($parameter$self):
             return 42
         @f.setter
-        def qualifier.A.f($parameter$self, $parameter$f):
+        def qualifier#A#f($parameter$self, $parameter$f):
             pass
     |};
       (* Qualify the type argument to `cast`. *)
@@ -1930,10 +2061,10 @@ let test_qualify_source =
            {|
       from typing import cast
       import pyre_extensions
-      class qualifier.A: ...
-      class qualifier.B(qualifier.A): ...
+      class qualifier#A: ...
+      class qualifier#B(qualifier.A): ...
 
-      def qualifier.foo($parameter$o: object) -> qualifier.B:
+      def qualifier#foo($parameter$o: object) -> qualifier.B:
         return typing.cast('qualifier.B', safe_cast('qualifier.A',
           pyre_extensions.safe_cast('qualifier.B', $parameter$o)))
     |};
@@ -1947,7 +2078,7 @@ let test_qualify_source =
     |}
            {|
       from typing import cast
-      class qualifier.A: ...
+      class qualifier#A: ...
       typing.cast('qualifier.A', 'A')
     |};
       (* Qualify quoted base classes. This is an edge case where the base class accepts the current
@@ -1962,7 +2093,7 @@ let test_qualify_source =
            {|
       from typing import List
 
-      class qualifier.Bar(typing.List["qualifier.Bar"]): ...
+      class qualifier#Bar(typing.List["qualifier.Bar"]): ...
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
@@ -1978,8 +2109,8 @@ let test_qualify_source =
            {|
       from typing import Annotated
 
-      class qualifier.Foo:
-        def qualifier.Foo.__init__($parameter$self, $parameter$x: str) -> None: ...
+      class qualifier#Foo:
+        def qualifier#Foo#__init__($parameter$self, $parameter$x: str) -> None: ...
 
       $local_qualifier$hello: int = 1
       $local_qualifier$foo: typing.Annotated["int", qualifier.Foo("hello")]
@@ -1992,7 +2123,7 @@ let test_qualify_source =
            x
     |}
            {|
-      class qualifier.A:
+      class qualifier#A:
          for $local_qualifier?A$x in []:
            $local_qualifier?A$x
     |};
@@ -2004,7 +2135,7 @@ let test_qualify_source =
            x
     |}
            {|
-      class qualifier.A:
+      class qualifier#A:
          with item as $local_qualifier?A$x:
            $local_qualifier?A$x
     |};
@@ -2021,7 +2152,7 @@ let test_qualify_source =
            {|
       import typing
 
-      def qualifier.foo($parameter$x: int) -> None:
+      def qualifier#foo($parameter$x: int) -> None:
         $local_qualifier?foo$d: typing.Dict[str, int]
         $local_qualifier?foo$d["x"]
     |};
@@ -2045,7 +2176,7 @@ let test_qualify_source =
       def foo( *args, **kwargs): ...
     |}
            {|
-      def qualifier.foo( *$parameter$args, **$parameter$kwargs): ...
+      def qualifier#foo( *$parameter$args, **$parameter$kwargs): ...
     |};
       (* Class with the same name as the module. *)
       labeled_test_case __FUNCTION__ __LINE__
@@ -2054,7 +2185,7 @@ let test_qualify_source =
       class qualifier: ...
     |}
            {|
-      class qualifier.qualifier: ...
+      class qualifier#qualifier: ...
     |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify
@@ -2069,7 +2200,7 @@ let test_qualify_source =
           y = x
     |}
            {|
-      def qualifier.foo():
+      def qualifier#foo():
         $local_qualifier?foo$x: str = ""
         def $local_qualifier?foo$bar():
           nonlocal x
@@ -2087,7 +2218,7 @@ let test_qualify_source =
           x = "x"
     |}
            {|
-      def qualifier.foo($parameter$x: str):
+      def qualifier#foo($parameter$x: str):
         def $local_qualifier?foo$bar():
           nonlocal x
           $parameter$x = "x"
@@ -2100,7 +2231,7 @@ let test_qualify_source =
           x
     |}
            {|
-      def qualifier.foo($parameter$x):
+      def qualifier#foo($parameter$x):
         for $parameter$x in [1]:
           $parameter$x
     |};
@@ -2143,7 +2274,7 @@ let test_qualify_source =
         d[k], y = "v", 42
     |}
            {|
-      def qualifier.f():
+      def qualifier#f():
         $local_qualifier?f$d = {}
         $local_qualifier?f$k = "k"
         $local_qualifier?f$d[$local_qualifier?f$k], $local_qualifier?f$y = "v", 42
@@ -2156,7 +2287,7 @@ let test_qualify_source =
           x = "x"
     |}
            {|
-      def qualifier.foo($parameter$x: str):
+      def qualifier#foo($parameter$x: str):
         def $local_qualifier?foo$bar():
           $local_qualifier?foo?bar$x = "x"
     |};

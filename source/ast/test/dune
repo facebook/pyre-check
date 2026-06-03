@@ -17,4 +17,11 @@
    ppx_compare
    ppx_sexp_conv
    ppx_sexp_message))
- (libraries ounit2 sexplib ppxlib ppx_deriving pyrelib.test pyrelib.ast))
+ (libraries
+  ounit2
+  sexplib
+  ppxlib
+  ppx_deriving
+  pyrelib.test
+  pyrelib.ast
+  pyrelib.pyreCPythonParser))

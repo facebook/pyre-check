@@ -689,13 +689,12 @@ let test_pp _ =
     in
     let source = Test.trim_extra_indentation source |> String.rstrip ~drop:(Char.equal '\n') in
     let pretty_print_of_source =
-      source
-      |> String.split_on_chars ~on:['\n']
-      |> PyreMenhirParser.Parser.parse_exn
-      |> List.map ~f:show
-      |> String.concat ~sep:"\n"
-      |> String.rstrip ~drop:(Char.equal '\n')
-      |> Test.trim_extra_indentation
+      PyreCPythonParser.with_context (fun context ->
+          PyreCPythonParser.parse_module_exn ~context source
+          |> List.map ~f:show
+          |> String.concat ~sep:"\n"
+          |> String.rstrip ~drop:(Char.equal '\n')
+          |> Test.trim_extra_indentation)
     in
     assert_equal
       ~printer:Fn.id
