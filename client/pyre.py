@@ -410,6 +410,12 @@ def pyre(
     help="Do not verify models or DSL model queries for the taint analysis.",
 )
 @click.option(
+    "--group-missing-module-errors",
+    is_flag=True,
+    default=None,
+    help="Group and downgrade model errors for symbols whose base module is not in the search path.",
+)
+@click.option(
     "--verify-dsl",
     is_flag=True,
     default=False,
@@ -662,6 +668,7 @@ def analyze(
     analysis: str,
     taint_models_path: Iterable[str],
     no_verify: bool,
+    group_missing_module_errors: Optional[bool],
     verify_dsl: bool,
     verify_taint_config_only: bool,
     version: command_arguments.VersionKind,
@@ -748,6 +755,7 @@ def analyze(
             maximum_tito_depth=maximum_tito_depth,
             maximum_trace_length=maximum_trace_length,
             no_verify=no_verify,
+            group_missing_module_errors=group_missing_module_errors,
             verify_dsl=verify_dsl,
             verify_taint_config_only=verify_taint_config_only,
             output=command_argument.output,

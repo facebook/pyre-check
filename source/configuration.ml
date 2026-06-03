@@ -809,6 +809,7 @@ module StaticAnalysis = struct
     verify_models: bool;
     verify_dsl: bool;
     verify_taint_config_only: bool;
+    group_missing_module_errors: bool;
     (* Analysis configuration *)
     configuration: Analysis.t;
     rule_filter: int list option;
@@ -868,6 +869,7 @@ module StaticAnalysis = struct
       ?(verify_models = true)
       ?(verify_dsl = true)
       ?(verify_taint_config_only = false)
+      ?(group_missing_module_errors = false)
       ?rule_filter
       ?source_filter
       ?sink_filter
@@ -911,6 +913,7 @@ module StaticAnalysis = struct
       verify_models;
       verify_dsl;
       verify_taint_config_only;
+      group_missing_module_errors;
       configuration;
       rule_filter;
       source_filter;

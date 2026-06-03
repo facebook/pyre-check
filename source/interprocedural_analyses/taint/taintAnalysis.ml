@@ -297,7 +297,8 @@ let parse_models_and_queries_from_configuration
     ~scheduler
     ~pyre_api
     ~path_of_qualifier
-    ~static_analysis_configuration:{ Configuration.StaticAnalysis.verify_models; configuration; _ }
+    ~static_analysis_configuration:
+      { Configuration.StaticAnalysis.verify_models; group_missing_module_errors; configuration; _ }
     ~taint_configuration
     ~source_sink_filter
     ~callables_to_definitions_map
@@ -315,7 +316,22 @@ let parse_models_and_queries_from_configuration
          ~all_sys_infos
   in
   let errors = ModelVerifier.filter_unused_stdlib_modules_errors errors in
-  let () = ModelVerificationError.verify_models_and_dsl ~raise_exception:verify_models errors in
+  let errors =
+    if group_missing_module_errors then begin
+      let warnings, errors = ModelVerifier.group_base_module_not_in_environment_errors errors in
+      if not (List.is_empty warnings) then begin
+        Log.warning "Found %d model verification warnings:" (List.length warnings);
+        List.iter warnings ~f:(fun warning ->
+            Log.warning "%s" (ModelVerificationError.display warning))
+      end;
+      errors
+    end
+    else
+      errors
+  in
+  let () =
+    ModelVerificationError.log_model_verification_errors ~raise_exception:verify_models errors
+  in
   { parse_result with errors }
 
 
@@ -404,7 +420,7 @@ let initialize_models
           ModelQueryExecution.ExecutionResult.get_errors model_query_results
         in
         let () =
-          ModelVerificationError.verify_models_and_dsl
+          ModelVerificationError.log_model_verification_errors
             ~raise_exception:static_analysis_configuration.verify_dsl
             model_query_errors
         in

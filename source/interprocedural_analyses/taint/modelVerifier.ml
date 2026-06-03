@@ -272,3 +272,62 @@ let filter_unused_stdlib_modules_errors errors =
     | _ -> true
   in
   List.filter ~f:filter errors
+
+
+let group_base_module_not_in_environment_errors errors =
+  let module Key = struct
+    type t = {
+      path: PyrePath.t option;
+      module_name: string;
+    }
+    [@@deriving sexp, compare]
+  end
+  in
+  let module Value = struct
+    type t = {
+      location: Ast.Location.t;
+      count: int;
+    }
+
+    let empty location = { location; count = 1 }
+
+    let update value location =
+      let location =
+        if Ast.Location.compare_position location.Ast.Location.start value.location.start < 0 then
+          location
+        else
+          value.location
+      in
+      { location; count = value.count + 1 }
+  end
+  in
+  let module GroupMap = Map.Make (Key) in
+  let base_module_errors, other_errors =
+    List.partition_tf errors ~f:(fun error ->
+        match error.ModelVerificationError.kind with
+        | ModelVerificationError.BaseModuleNotInEnvironment _ -> true
+        | _ -> false)
+  in
+  let group_key { ModelVerificationError.kind; path; _ } =
+    match kind with
+    | ModelVerificationError.BaseModuleNotInEnvironment { module_name; _ } ->
+        { Key.path; module_name }
+    | _ -> failwith "unreachable"
+  in
+  let groups =
+    List.fold base_module_errors ~init:GroupMap.empty ~f:(fun sofar error ->
+        Map.change sofar (group_key error) ~f:(function
+            | None -> Some (Value.empty error.location)
+            | Some value -> Some (Value.update value error.location)))
+  in
+  let grouped_warnings =
+    Map.fold groups ~init:[] ~f:(fun ~key:{ Key.path; module_name } ~data:{ location; count } acc ->
+        {
+          ModelVerificationError.kind =
+            ModelVerificationError.GroupedBaseModuleNotInEnvironment { module_name; count };
+          path;
+          location;
+        }
+        :: acc)
+  in
+  grouped_warnings, other_errors

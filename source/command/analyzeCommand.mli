@@ -43,6 +43,7 @@ module AnalyzeConfiguration : sig
     no_verify: bool;
     verify_dsl: bool;
     verify_taint_config_only: bool;
+    group_missing_module_errors: bool;
     repository_root: PyrePath.t option;
     rule_filter: int list option;
     source_filter: string list option;

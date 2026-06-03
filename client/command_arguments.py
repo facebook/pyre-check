@@ -316,6 +316,7 @@ class AnalyzeArguments:
     maximum_tito_depth: Optional[int] = None
     maximum_trace_length: Optional[int] = None
     no_verify: bool = False
+    group_missing_module_errors: Optional[bool] = None
     verify_dsl: bool = False
     verify_taint_config_only: bool = False
     output: str = TEXT

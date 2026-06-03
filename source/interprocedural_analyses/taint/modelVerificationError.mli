@@ -166,6 +166,10 @@ type kind =
       module_name: string;
       name: string;
     }
+  | GroupedBaseModuleNotInEnvironment of {
+      module_name: string;
+      count: int;
+    }
   | UnexpectedDecorators of {
       name: Reference.t;
       unexpected_decorators: Expression.t list;
@@ -268,4 +272,4 @@ val display : t -> string
 
 exception ModelVerificationErrors of t list
 
-val verify_models_and_dsl : raise_exception:bool -> t list -> unit
+val log_model_verification_errors : raise_exception:bool -> t list -> unit

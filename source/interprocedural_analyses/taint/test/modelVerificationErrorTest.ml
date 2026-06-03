@@ -45,6 +45,54 @@ let test_to_json _ =
     ~expected:
       {|
         {
+          "description": "Ignored 12 models for symbols in `aiohttp` because it is not in the search path.",
+          "line": 1,
+          "column": 2,
+          "stop_line": 3,
+          "stop_column": 4,
+          "path": "/a/b.pysa",
+          "code": 85
+        }
+        |}
+    {
+      ModelVerificationError.kind =
+        ModelVerificationError.GroupedBaseModuleNotInEnvironment
+          { module_name = "aiohttp"; count = 12 };
+      location =
+        {
+          Ast.Location.start = { Ast.Location.line = 1; column = 2 };
+          stop = { Ast.Location.line = 3; column = 4 };
+        };
+      path = Some (PyrePath.create_absolute "/a/b.pysa");
+    };
+  assert_json
+    ~expected:
+      {|
+        {
+          "description": "Ignored 1 model for symbols in `falcon` because it is not in the search path.",
+          "line": 5,
+          "column": 0,
+          "stop_line": 5,
+          "stop_column": 0,
+          "path": "/a/c.pysa",
+          "code": 85
+        }
+        |}
+    {
+      ModelVerificationError.kind =
+        ModelVerificationError.GroupedBaseModuleNotInEnvironment
+          { module_name = "falcon"; count = 1 };
+      location =
+        {
+          Ast.Location.start = { Ast.Location.line = 5; column = 0 };
+          stop = { Ast.Location.line = 5; column = 0 };
+        };
+      path = Some (PyrePath.create_absolute "/a/c.pysa");
+    };
+  assert_json
+    ~expected:
+      {|
+        {
           "description": "Model Query `get_foo` output no models.",
           "line": 1,
           "column": 2,

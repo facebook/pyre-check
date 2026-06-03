@@ -62,6 +62,7 @@ class Arguments:
     maximum_tito_depth: Optional[int] = None
     maximum_trace_length: Optional[int] = None
     no_verify: bool = False
+    group_missing_module_errors: bool = False
     verify_dsl: bool = False
     verify_taint_config_only: bool = False
     repository_root: Optional[str] = None
@@ -204,6 +205,7 @@ class Arguments:
                 else {"maximum_trace_length": maximum_trace_length}
             ),
             "no_verify": self.no_verify,
+            "group_missing_module_errors": self.group_missing_module_errors,
             "verify_dsl": self.verify_dsl,
             "verify_taint_config_only": self.verify_taint_config_only,
             **({} if repository_root is None else {"repository_root": repository_root}),
@@ -377,6 +379,7 @@ def create_analyze_arguments(
         maximum_tito_depth=analyze_arguments.maximum_tito_depth,
         maximum_trace_length=analyze_arguments.maximum_trace_length,
         no_verify=analyze_arguments.no_verify,
+        group_missing_module_errors=bool(analyze_arguments.group_missing_module_errors),
         verify_dsl=analyze_arguments.verify_dsl,
         verify_taint_config_only=analyze_arguments.verify_taint_config_only,
         repository_root=repository_root,

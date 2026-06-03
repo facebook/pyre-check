@@ -728,7 +728,7 @@ let initialize
             queries
         in
         let errors = ModelQueryExecution.ExecutionResult.get_errors model_query_results in
-        ModelVerificationError.verify_models_and_dsl ~raise_exception:true errors;
+        ModelVerificationError.log_model_verification_errors ~raise_exception:true errors;
         let models_from_queries =
           ModelQueryExecution.ExecutionResult.get_models model_query_results
         in

@@ -52,6 +52,7 @@ module AnalyzeConfiguration = struct
     no_verify: bool;
     verify_dsl: bool;
     verify_taint_config_only: bool;
+    group_missing_module_errors: bool;
     repository_root: PyrePath.t option;
     rule_filter: int list option;
     source_filter: string list option;
@@ -141,6 +142,9 @@ module AnalyzeConfiguration = struct
           let verify_taint_config_only =
             bool_member "verify_taint_config_only" ~default:false json
           in
+          let group_missing_module_errors =
+            bool_member "group_missing_module_errors" ~default:false json
+          in
           let repository_root = optional_path_member "repository_root" json in
           let rule_filter = optional_list_member ~f:to_int "rule_filter" json in
           let source_filter = optional_list_member ~f:to_string "source_filter" json in
@@ -209,6 +213,7 @@ module AnalyzeConfiguration = struct
               no_verify;
               verify_dsl;
               verify_taint_config_only;
+              group_missing_module_errors;
               repository_root;
               rule_filter;
               source_filter;
@@ -354,6 +359,7 @@ let static_analysis_configuration_of
       no_verify;
       verify_dsl;
       verify_taint_config_only;
+      group_missing_module_errors;
       rule_filter;
       source_filter;
       sink_filter;
@@ -397,6 +403,7 @@ let static_analysis_configuration_of
     verify_models = not no_verify;
     verify_dsl;
     verify_taint_config_only;
+    group_missing_module_errors;
     rule_filter;
     source_filter;
     sink_filter;

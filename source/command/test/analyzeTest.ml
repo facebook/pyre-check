@@ -61,6 +61,7 @@ let test_json_parsing context =
       no_verify = false;
       verify_dsl = false;
       verify_taint_config_only = false;
+      group_missing_module_errors = false;
       check_invariants = false;
       limit_entrypoints = false;
       compact_ocaml_heap = false;

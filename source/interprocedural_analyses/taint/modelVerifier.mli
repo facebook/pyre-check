@@ -21,3 +21,7 @@ val verify_signature
 val filter_unused_stdlib_modules_errors
   :  ModelVerificationError.t list ->
   ModelVerificationError.t list
+
+val group_base_module_not_in_environment_errors
+  :  ModelVerificationError.t list ->
+  ModelVerificationError.t list * ModelVerificationError.t list

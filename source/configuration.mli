@@ -313,6 +313,7 @@ module StaticAnalysis : sig
     verify_models: bool;
     verify_dsl: bool;
     verify_taint_config_only: bool;
+    group_missing_module_errors: bool;
     (* Analysis configuration *)
     configuration: Analysis.t;
     rule_filter: int list option;
@@ -368,6 +369,7 @@ module StaticAnalysis : sig
     ?verify_models:bool ->
     ?verify_dsl:bool ->
     ?verify_taint_config_only:bool ->
+    ?group_missing_module_errors:bool ->
     ?rule_filter:int list ->
     ?source_filter:string list ->
     ?sink_filter:string list ->

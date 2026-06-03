@@ -195,6 +195,10 @@ type kind =
       module_name: string;
       name: string;
     }
+  | GroupedBaseModuleNotInEnvironment of {
+      module_name: string;
+      count: int;
+    }
   | UnexpectedDecorators of {
       name: Reference.t;
       unexpected_decorators: Expression.t list;
@@ -608,6 +612,12 @@ let description error =
         "`%s` is not part of the environment, no module `%s` in search path."
         name
         module_name
+  | GroupedBaseModuleNotInEnvironment { module_name; count } ->
+      Format.sprintf
+        "Ignored %d model%s for symbols in `%s` because it is not in the search path."
+        count
+        (if count > 1 then "s" else "")
+        module_name
   | UnexpectedTaintAnnotation taint_annotation ->
       Format.sprintf "Unexpected taint annotation `%s`" taint_annotation
   | UnsupportedConstraint constraint_name ->
@@ -850,6 +860,7 @@ let code { kind; _ } =
   | ModelingCallableAsClass _ -> 82
   | ModelingModuleAsClass _ -> 83
   | ModelingAttributeAsClass _ -> 84
+  | GroupedBaseModuleNotInEnvironment _ -> 85
 
 
 let display { kind = error; path; location } =
@@ -881,7 +892,7 @@ let to_json ({ kind; path; location } as error) =
 
 exception ModelVerificationErrors of t list
 
-let verify_models_and_dsl ~raise_exception errors =
+let log_model_verification_errors ~raise_exception errors =
   if not (List.is_empty errors) then
     (* Exit or log errors, depending on whether models need to be verified. *)
     if not raise_exception then begin

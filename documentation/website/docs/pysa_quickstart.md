@@ -215,6 +215,8 @@ $ rm -rf ~/.venvs/pysa
 **Solution**:
 If you don't use the `module.path.function_name` mentioned in your project, you can ignore them. Pysa ships with many taint models for code that isn't present in all projects. The errors you are seeing is Pysa informing you that Pysa hasn't found the source code for that particular function in your project or your venv.
 
+To reduce the noise, you can use `--group-missing-module-errors` which will group these errors by module and downgrade them to warnings. For example, instead of 30 individual errors about `aiohttp`, you will see a single message: `Ignored 30 models for symbols in 'aiohttp' because it is not in the search path.` This flag can also be set in your `.pysa_configuration` file as `"group_missing_module_errors": true`.
+
 If you do use the `module.path.function_name` mentioned in your project and the package wasn't installed with `pip`, you will need to add the package's path to `search_path` in your `.pyre_configuration`. Eventually, your `.pyre_configuration` should look something like this:
 ```json
 {
