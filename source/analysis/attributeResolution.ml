@@ -1582,7 +1582,7 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
                     | {
                         Node.value =
                           Expression.Constant
-                            (Constant.String { StringLiteral.kind = String; value });
+                            (Constant.String { StringLiteral.kind = String; value; _ });
                         _;
                       } ->
                         Some (Type.Literal (String (LiteralValue value)))

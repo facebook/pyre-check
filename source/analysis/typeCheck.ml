@@ -3314,7 +3314,7 @@ module State (Context : Context) = struct
             resolved_annotation = None;
             base = None;
           }
-      | Constant (Constant.String { StringLiteral.kind = StringLiteral.Bytes; value }) ->
+      | Constant (Constant.String { StringLiteral.kind = StringLiteral.Bytes; value; _ }) ->
           {
             resolution;
             errors = [];
@@ -3322,7 +3322,7 @@ module State (Context : Context) = struct
             resolved_annotation = None;
             base = None;
           }
-      | Constant (Constant.String { StringLiteral.kind = StringLiteral.String; value }) ->
+      | Constant (Constant.String { StringLiteral.kind = StringLiteral.String; value; _ }) ->
           {
             resolution;
             errors = [];
@@ -6161,7 +6161,7 @@ module State (Context : Context) = struct
                 {
                   Subscript.base;
                   index =
-                    { Node.value = Constant (String { kind = String; value = field_name }); _ };
+                    { Node.value = Constant (String { kind = String; value = field_name; _ }); _ };
                   origin = _;
                 } -> (
                 let { Resolved.resolved; _ } = forward_expression ~resolution base in

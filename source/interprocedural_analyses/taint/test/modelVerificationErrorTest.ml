@@ -243,7 +243,8 @@ let test_to_json _ =
                       {
                         value =
                           Constant
-                            (Ast.Expression.Constant.String { value = "foo(): ..."; kind = String });
+                            (Ast.Expression.Constant.String
+                               { value = "foo(): ..."; kind = String; qualified_expression = None });
                         location = Ast.Location.any;
                       };
                     ];

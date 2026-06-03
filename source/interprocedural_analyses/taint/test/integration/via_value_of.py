@@ -138,7 +138,7 @@ def test_kwargs_parameter():
 def test_args_kwargs_parameter():
     args = ["1"]
     kwargs = {"second": "2"}
-    # pyrefly: ignore[bad-keyword-argument]
+    # pyrefly: ignore[potential-bad-keyword-argument]
     return return_via_second_parameter(*args, **kwargs)
 
 

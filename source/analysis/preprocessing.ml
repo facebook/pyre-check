@@ -108,8 +108,18 @@ let is_type_variable_definition callee =
   || name_is ~name:"typing_extensions.IntVar" callee
 
 
-let transform_string_annotation_expression_after_qualification ~preserve_original_location ~relative
-  =
+let adjust_string_expression_locations ~start_line ~start_column expression =
+  Transform.map_location expression ~transform_location:(fun { Location.start; stop } ->
+      let adjust_position ({ Location.line; column } as position) =
+        if line = 1 then
+          { Location.line = line + start_line - 1; column = column + start_column + 1 }
+        else
+          { position with Location.line = line + start_line - 1 }
+      in
+      { Location.start = adjust_position start; stop = adjust_position stop })
+
+
+let transform_string_annotation_expression_after_qualification ~preserve_original_location =
   let rec transform_expression
       {
         Node.location =
@@ -155,29 +165,34 @@ let transform_string_annotation_expression_after_qualification ~preserve_origina
               origin;
             }
       | List elements -> List (List.map elements ~f:transform_expression)
-      | Constant (Constant.String { StringLiteral.value = string_value; _ }) -> (
-          (* Start at column + 1 since parsing begins after the opening quote of the string
-             literal. *)
-          match
-            PyreMenhirParser.Parser.parse
-              ~start_line
-              ~start_column:(start_column + 1)
-              [string_value ^ "\n"]
-              ~relative
-          with
-          | Ok [{ Node.value = Expression ({ Node.value = Name _; _ } as expression); _ }]
-          | Ok [{ Node.value = Expression ({ Node.value = Subscript _; _ } as expression); _ }]
-          | Ok [{ Node.value = Expression ({ Node.value = BinaryOperator _; _ } as expression); _ }]
-          | Ok [{ Node.value = Expression ({ Node.value = Call _; _ } as expression); _ }] ->
+      | Constant (Constant.String { StringLiteral.qualified_expression = Some expression; _ }) -> (
+          match expression with
+          | { Node.value = Name _; _ }
+          | { Node.value = Subscript _; _ }
+          | { Node.value = BinaryOperator _; _ }
+          | { Node.value = Call _; _ } ->
               if preserve_original_location then
                 Transform.map_location expression ~transform_location:(fun _ -> location)
                 |> Node.value
               else
                 Node.value expression
-          | Ok _
-          | Error _ ->
-              (* TODO(T76231928): replace this silent ignore with something typeCheck.ml can use *)
-              value)
+          | _ -> value)
+      | Constant (Constant.String { StringLiteral.value = string_value; _ }) -> (
+          match
+            PyreCPythonParser.with_context (fun context ->
+                PyreCPythonParser.parse_expression ~context string_value)
+          with
+          | Ok ({ Node.value = Name _; _ } as expression)
+          | Ok ({ Node.value = Subscript _; _ } as expression)
+          | Ok ({ Node.value = BinaryOperator _; _ } as expression)
+          | Ok ({ Node.value = Call _; _ } as expression) ->
+              if preserve_original_location then
+                Transform.map_location expression ~transform_location:(fun _ -> location)
+                |> Node.value
+              else
+                adjust_string_expression_locations ~start_line ~start_column expression
+                |> Node.value
+          | _ -> value)
       | Tuple elements -> Tuple (List.map elements ~f:transform_expression)
       | _ -> value
     in
@@ -190,7 +205,6 @@ let transform_string_annotation_expression_before_qualification
     ~preserve_original_location
     ~qualifier
     ~scopes
-    ~relative
   =
   let is_literal =
     create_callee_name_matcher_from_references
@@ -239,24 +253,20 @@ let transform_string_annotation_expression_before_qualification
             }
       | List elements -> List (List.map elements ~f:transform_expression)
       | Constant (Constant.String { StringLiteral.value = string_value; _ }) -> (
-          (* Start at column + 1 since parsing begins after the opening quote of the string
-             literal. *)
           match
-            PyreMenhirParser.Parser.parse
-              ~start_line
-              ~start_column:(start_column + 1)
-              [string_value ^ "\n"]
-              ~relative
+            PyreCPythonParser.with_context (fun context ->
+                PyreCPythonParser.parse_expression ~context string_value)
           with
-          | Ok [{ Node.value = Expression ({ Node.value = Name _; _ } as expression); _ }]
-          | Ok [{ Node.value = Expression ({ Node.value = Subscript _; _ } as expression); _ }]
-          | Ok [{ Node.value = Expression ({ Node.value = BinaryOperator _; _ } as expression); _ }]
-          | Ok [{ Node.value = Expression ({ Node.value = Call _; _ } as expression); _ }] ->
+          | Ok ({ Node.value = Name _; _ } as expression)
+          | Ok ({ Node.value = Subscript _; _ } as expression)
+          | Ok ({ Node.value = BinaryOperator _; _ } as expression)
+          | Ok ({ Node.value = Call _; _ } as expression) ->
               if preserve_original_location then
                 Transform.map_location expression ~transform_location:(fun _ -> location)
                 |> Node.value
               else
-                Node.value expression
+                adjust_string_expression_locations ~start_line ~start_column expression
+                |> Node.value
           | Ok _
           | Error _ ->
               (* TODO(T76231928): replace this silent ignore with something typeCheck.ml can use *)
@@ -398,14 +408,12 @@ let expand_string_annotations ~preserve_original_location ({ Source.module_path;
       (transform_string_annotation_expression_before_qualification
          ~preserve_original_location
          ~qualifier:(ModulePath.qualifier module_path)
-         ~scopes
-         ~relative:(ModulePath.relative module_path))
+         ~scopes)
     source
 
 
 let expand_strings_in_annotation_expression =
   transform_string_annotation_expression_after_qualification
-    ~relative:"$path_placeholder_for_alias_string_annotations"
 
 
 let get_qualified_local_identifier ~qualifier name =
@@ -580,7 +588,15 @@ module Qualify = struct
         | result -> { Node.value = result; location })
 
 
-  and qualify_expression ~qualify_strings ~scope ({ Node.location; value } as expression) =
+  and qualify_expression
+      ~qualify_strings
+      ~scope
+      ({
+         Node.location =
+           { Location.start = { Location.line = start_line; column = start_column }; _ } as location;
+         value;
+       } as expression)
+    =
     let value =
       let qualify_entry ~qualify_strings ~scope entry =
         let open Dictionary.Entry in
@@ -748,7 +764,7 @@ module Qualify = struct
                   }
           in
           FormatString (List.map substrings ~f:qualify_substring)
-      | Constant (Constant.String { StringLiteral.value; kind }) -> (
+      | Constant (Constant.String { StringLiteral.value; kind; _ }) -> (
           let error_on_qualification_failure =
             match qualify_strings with
             | Qualify -> true
@@ -757,15 +773,20 @@ module Qualify = struct
           match qualify_strings with
           | Qualify
           | OptionallyQualify -> (
-              match PyreMenhirParser.Parser.parse [value ^ "\n"] with
-              | Ok [{ Node.value = Expression expression; _ }] ->
-                  qualify_expression ~qualify_strings ~scope expression
-                  |> Expression.show
-                  |> fun value ->
-                  Expression.Constant (Constant.String { StringLiteral.value; kind })
-              | Ok _
-              | Error _
-                when error_on_qualification_failure ->
+              match
+                PyreCPythonParser.with_context (fun context ->
+                    PyreCPythonParser.parse_expression ~context value)
+              with
+              | Ok expression ->
+                  let qualified = qualify_expression ~qualify_strings ~scope expression in
+                  let value = Expression.show qualified in
+                  let qualified =
+                    adjust_string_expression_locations ~start_line ~start_column qualified
+                  in
+                  Expression.Constant
+                    (Constant.String
+                       { StringLiteral.value; kind; qualified_expression = Some qualified })
+              | Error _ when error_on_qualification_failure ->
                   let { module_name; _ } = scope in
                   Log.debug
                     "Invalid string annotation `%s` at %a:%a"
@@ -774,9 +795,13 @@ module Qualify = struct
                     module_name
                     Location.pp
                     location;
-                  Constant (Constant.String { StringLiteral.value; kind })
-              | _ -> Constant (Constant.String { StringLiteral.value; kind }))
-          | DoNotQualify -> Constant (Constant.String { StringLiteral.value; kind }))
+                  Constant
+                    (Constant.String { StringLiteral.value; kind; qualified_expression = None })
+              | _ ->
+                  Constant
+                    (Constant.String { StringLiteral.value; kind; qualified_expression = None }))
+          | DoNotQualify ->
+              Constant (Constant.String { StringLiteral.value; kind; qualified_expression = None }))
       | Ternary { Ternary.target; test; alternative } ->
           Ternary
             {
@@ -2377,7 +2402,7 @@ let replace_lazy_import ?(is_lazy_import = default_is_lazy_import) source =
                                   Node.value =
                                     Expression.Constant
                                       (Constant.String
-                                        { StringLiteral.kind = String; value = literal });
+                                        { StringLiteral.kind = String; value = literal; _ });
                                   _;
                                 };
                               _;
@@ -2424,7 +2449,7 @@ let replace_lazy_import ?(is_lazy_import = default_is_lazy_import) source =
                                   Node.value =
                                     Expression.Constant
                                       (Constant.String
-                                        { StringLiteral.kind = String; value = from_literal });
+                                        { StringLiteral.kind = String; value = from_literal; _ });
                                   _;
                                 };
                               _;
@@ -2435,7 +2460,7 @@ let replace_lazy_import ?(is_lazy_import = default_is_lazy_import) source =
                                   Node.value =
                                     Expression.Constant
                                       (Constant.String
-                                        { StringLiteral.kind = String; value = import_literal });
+                                        { StringLiteral.kind = String; value = import_literal; _ });
                                   _;
                                 };
                               _;
@@ -2487,13 +2512,15 @@ let expand_typed_dictionary_declarations
   let rec expand_typed_dictionaries ({ Node.location; value } as statement) =
     let expanded_declaration =
       let string_literal identifier =
-        Expression.Constant (Constant.String { value = identifier; kind = StringLiteral.String })
+        Expression.Constant
+          (Constant.String
+             { value = identifier; kind = StringLiteral.String; qualified_expression = None })
         |> Node.create ~location
       in
       let extract_string_literal literal_expression =
         match Node.value literal_expression with
-        | Expression.Constant (Constant.String { StringLiteral.value; kind = StringLiteral.String })
-          ->
+        | Expression.Constant
+            (Constant.String { StringLiteral.value; kind = StringLiteral.String; _ }) ->
             Some value
         | _ -> None
       in
@@ -2525,7 +2552,8 @@ let expand_typed_dictionary_declarations
         match name with
         | {
          Node.value =
-           Expression.Constant (Constant.String { value = class_name; kind = StringLiteral.String });
+           Expression.Constant
+             (Constant.String { value = class_name; kind = StringLiteral.String; _ });
          _;
         } ->
             let class_reference = Reference.create class_name in
@@ -2534,7 +2562,7 @@ let expand_typed_dictionary_declarations
                 match Node.value key with
                 | Expression.Constant
                     (Constant.String
-                      { StringLiteral.value = attribute_name; kind = StringLiteral.String }) ->
+                      { StringLiteral.value = attribute_name; kind = StringLiteral.String; _ }) ->
                     Some
                       (Statement.Assign
                          {
@@ -4457,7 +4485,7 @@ let expand_pytorch_register_buffer
                       value =
                         {
                           Node.value =
-                            Constant (Constant.String { value = attribute_name; kind = String });
+                            Constant (Constant.String { value = attribute_name; kind = String; _ });
                           _;
                         };
                     }
@@ -4928,7 +4956,11 @@ module SelfType = struct
                        value =
                          Expression.Constant
                            (Constant.String
-                              { StringLiteral.kind = String; value = self_variable_name })
+                              {
+                                StringLiteral.kind = String;
+                                value = self_variable_name;
+                                qualified_expression = None;
+                              })
                          |> Node.create_with_default_location;
                      };
                      {
@@ -5014,7 +5046,7 @@ let expand_enum_functional_syntax
               Node.value =
                 Expression.Constant
                   (Constant.String
-                    { StringLiteral.value = attribute_name; kind = StringLiteral.String });
+                    { StringLiteral.value = attribute_name; kind = StringLiteral.String; _ });
               location;
             } ->
               let target =
@@ -5092,6 +5124,7 @@ let expand_enum_functional_syntax
                                       {
                                         StringLiteral.value = class_name;
                                         kind = StringLiteral.String;
+                                        _;
                                       });
                                 _;
                               };

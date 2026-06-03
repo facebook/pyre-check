@@ -117,12 +117,16 @@ let source_of_qualifier ~string_annotation_preserve_location ~parse_result_of_qu
   | Result.Error
       {
         Parsing.ParseResult.Error.module_path =
-          { ModulePath.raw = { relative; _ }; qualifier; _ } as module_path;
+          { ModulePath.raw = { relative = _; _ }; qualifier; _ } as module_path;
         _;
       } ->
       (* Files that have parser errors fall back into getattr-any. *)
       let fallback_source = ["import typing"; "def __getattr__(name: str) -> typing.Any: ..."] in
       let typecheck_flags = Source.TypecheckFlags.parse ~qualifier fallback_source in
-      let statements = PyreMenhirParser.Parser.parse_exn ~relative fallback_source in
+      let fallback_code = String.concat ~sep:"\n" fallback_source in
+      let statements =
+        PyreCPythonParser.with_context (fun context ->
+            PyreCPythonParser.parse_module_exn ~context fallback_code)
+      in
       Parsing.create_source ~typecheck_flags ~module_path statements
       |> Preprocessing.preprocess_after_wildcards ~string_annotation_preserve_location

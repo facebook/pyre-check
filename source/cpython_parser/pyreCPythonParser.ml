@@ -223,7 +223,12 @@ let argument ~location ~identifier ~annotation ~type_comment =
             let comment_annotation =
               Ast.Expression.(
                 Expression.Constant
-                  (Constant.String { StringLiteral.kind = StringLiteral.String; value = comment }))
+                  (Constant.String
+                     {
+                       StringLiteral.kind = StringLiteral.String;
+                       value = comment;
+                       qualified_expression = None;
+                     }))
             in
             Some (Ast.Node.create ~location comment_annotation))
   in
@@ -434,8 +439,8 @@ let expression =
   let joined_str ~location ~values =
     let collapse_formatted_value ({ Node.value; location } as expression) =
       match value with
-      | Expression.Constant (Constant.String { StringLiteral.kind = StringLiteral.String; value })
-        ->
+      | Expression.Constant
+          (Constant.String { StringLiteral.kind = StringLiteral.String; value; _ }) ->
           Substring.Literal (Node.create ~location value)
       | Expression.FormatString [substring] -> substring
       | _ ->

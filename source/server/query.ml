@@ -353,25 +353,16 @@ end
 
 let rec parse_request_exn query =
   let open Expression in
-  match PyreMenhirParser.Parser.parse [query] with
+  match
+    PyreCPythonParser.with_context (fun context ->
+        PyreCPythonParser.parse_expression ~context query)
+  with
   | Ok
-      [
-        {
-          Node.value =
-            Expression
-              {
-                Node.value =
-                  Call
-                    {
-                      callee = { Node.value = Name (Name.Identifier name); _ };
-                      arguments;
-                      origin = _;
-                    };
-                _;
-              };
-          _;
-        };
-      ] -> (
+      {
+        Node.value =
+          Call { callee = { Node.value = Name (Name.Identifier name); _ }; arguments; origin = _ };
+        _;
+      } -> (
       let expression { Call.Argument.value; _ } = value in
       let access = function
         | { Call.Argument.value; _ } when has_identifier_base value -> value
@@ -386,7 +377,7 @@ let rec parse_request_exn query =
         | {
             Node.value =
               Expression.Constant
-                (Constant.String { StringLiteral.value; kind = StringLiteral.String });
+                (Constant.String { StringLiteral.value; kind = StringLiteral.String; _ });
             _;
           } ->
             value

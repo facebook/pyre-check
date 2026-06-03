@@ -78,8 +78,7 @@ let callable_body =
         value =
           Some
             (Node.create_with_default_location
-               (Expression.Constant
-                  (Constant.String { StringLiteral.kind = StringLiteral.String; value = "" })));
+               (Expression.Constant (Constant.String (StringLiteral.create ""))));
         origin = Some (Origin.create ~location:Location.any Origin.MissingStubCallable);
       };
   ]

@@ -566,7 +566,7 @@ let rec weaken_mutable_literals
         {
           Node.value =
             Expression.Constant
-              (Constant.String { StringLiteral.kind = StringLiteral.String; value = _ }) as
+              (Constant.String { StringLiteral.kind = StringLiteral.String; value = _; _ }) as
             expression;
           _;
         },

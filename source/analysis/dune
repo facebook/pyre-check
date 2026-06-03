@@ -33,7 +33,7 @@
   ppx_deriving_yojson
   ppx_deriving
   pyrelib.ast
-  pyrelib.pyreMenhirParser
+  pyrelib.pyreCPythonParser
   pyrelib.recognized
   pyrelib.statistics
   pyrelib.file
@@ -60,7 +60,7 @@
   ppx_deriving
   pyrelib.ast
   pyrelib.scheduler
-  pyrelib.pyreMenhirParser
+  pyrelib.pyreCPythonParser
   pyrelib.recognized
   pyrelib.statistics
   preprocessing
@@ -90,7 +90,6 @@
   pyrelib.memory
   pyrelib.dependencyTrackedMemory
   pyrelib.scheduler
-  pyrelib.pyreMenhirParser
   pyrelib.pyreCPythonParser
   pyrelib.recognized
   pyrelib.statistics

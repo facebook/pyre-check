@@ -52,7 +52,8 @@ module Heap = struct
           let as_local = Ast.Expression.name_to_reference_exn name in
           let delocalized = Ast.Reference.delocalize as_local in
           if Ast.Reference.is_prefix ~prefix:qualifier delocalized then
-            Some (delocalized, value)
+            Some
+              (delocalized, { value with Ast.Expression.StringLiteral.qualified_expression = None })
           else (* Should not collect global variables imported from a different module. *)
             None
       | _ -> None

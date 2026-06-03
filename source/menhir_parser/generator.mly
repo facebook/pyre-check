@@ -152,13 +152,15 @@
     | [] -> Expression.Constant
               (AstExpression.Constant.String {
                    AstExpression.StringLiteral.value = "";
-                   kind = AstExpression.StringLiteral.String
+                   kind = AstExpression.StringLiteral.String;
+                   qualified_expression = None;
               })
     | [ { Substring.kind = Substring.Kind.Literal; value; _ } ] ->
        Expression.Constant
          (AstExpression.Constant.String {
               AstExpression.StringLiteral.value;
-              kind = AstExpression.StringLiteral.String
+              kind = AstExpression.StringLiteral.String;
+              qualified_expression = None;
          })
     | _ as pieces ->
        let is_all_literal = List.for_all ~f:(fun { Substring.kind; _ } ->
@@ -175,7 +177,8 @@
           Expression.Constant
             (AstExpression.Constant.String {
                  AstExpression.StringLiteral.value;
-                 kind = AstExpression.StringLiteral.String
+                 kind = AstExpression.StringLiteral.String;
+                 qualified_expression = None;
             })
         else
           Expression.FormatString pieces

@@ -3937,10 +3937,14 @@ module ToExpression = struct
           | Boolean false -> Expression.Constant Constant.False
           | Integer literal -> Expression.Constant (Constant.Integer literal)
           | String (LiteralValue literal) ->
-              Expression.Constant (Constant.String { value = literal; kind = StringLiteral.String })
+              Expression.Constant
+                (Constant.String
+                   { value = literal; kind = StringLiteral.String; qualified_expression = None })
           | String AnyLiteral -> create_name "str"
           | Bytes literal ->
-              Expression.Constant (Constant.String { value = literal; kind = StringLiteral.Bytes })
+              Expression.Constant
+                (Constant.String
+                   { value = literal; kind = StringLiteral.Bytes; qualified_expression = None })
           | EnumerationMember { enumeration_type; member_name } ->
               Expression.Name
                 (Attribute
@@ -4527,9 +4531,9 @@ let create_literal = function
   | Expression.Constant Constant.True -> Some (Literal (Boolean true))
   | Expression.Constant Constant.False -> Some (Literal (Boolean false))
   | Expression.Constant (Constant.Integer literal) -> Some (Literal (Integer literal))
-  | Expression.Constant (Constant.String { StringLiteral.kind = StringLiteral.String; value }) ->
+  | Expression.Constant (Constant.String { StringLiteral.kind = StringLiteral.String; value; _ }) ->
       Some (Literal (String (LiteralValue value)))
-  | Expression.Constant (Constant.String { StringLiteral.kind = StringLiteral.Bytes; value }) ->
+  | Expression.Constant (Constant.String { StringLiteral.kind = StringLiteral.Bytes; value; _ }) ->
       Some (Literal (Bytes value))
   | Expression.Name
       (Attribute { base = { Node.value = Expression.Name base_name; _ }; attribute; _ }) -> (
@@ -4991,15 +4995,12 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
     | Constant Constant.Ellipsis -> Primitive "..."
     | Constant (Constant.String { StringLiteral.value; _ }) ->
         let expression =
-          try
-            let parsed =
-              PyreMenhirParser.Parser.parse_exn [value] |> Source.create |> Source.statements
-            in
-            match parsed with
-            | [{ Node.value = Expression { Node.value; _ }; _ }] -> Some value
-            | _ -> None
+          match
+            PyreCPythonParser.with_context (fun context ->
+                PyreCPythonParser.parse_expression ~context value)
           with
-          | _ -> None
+          | Ok { Node.value; _ } -> Some value
+          | Error _ -> None
         in
         expression
         >>| Node.create_with_default_location

@@ -1850,7 +1850,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            Call.Argument.value =
              {
                Node.value =
-                 Expression.Constant (Constant.String { value = attribute; kind = String });
+                 Expression.Constant (Constant.String { value = attribute; kind = String; _ });
                _;
              };
            name = None;
@@ -2648,7 +2648,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 | Substring.Format { value; format_spec = Some format_spec } -> [value; format_spec]
                 | Substring.Literal { Node.value; location } ->
                     [
-                      Expression.Constant (Constant.String { StringLiteral.value; kind = String })
+                      Expression.Constant
+                        (Constant.String
+                           { StringLiteral.value; kind = String; qualified_expression = None })
                       |> Node.create ~location;
                     ])
           in

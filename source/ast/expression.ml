@@ -25,7 +25,7 @@ open Core
 open Sexplib.Std
 open Pyre
 
-module StringLiteral = struct
+module rec StringLiteral : sig
   type kind =
     | String
     | Bytes
@@ -34,6 +34,31 @@ module StringLiteral = struct
   type t = {
     value: string;
     kind: kind;
+    (* When a string literal is used as a type annotation (e.g., x: "List[int]"), the qualification
+       step parses and qualifies the expression inside the string. This field caches the qualified
+       expression to avoid re-parsing later, which would fail for Pyre-internal qualified names
+       containing $ characters. *)
+    qualified_expression: Expression.t option;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  val location_insensitive_compare : t -> t -> int
+
+  val create : ?bytes:bool -> string -> t
+end = struct
+  type kind =
+    | String
+    | Bytes
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  type t = {
+    value: string;
+    kind: kind;
+    (* When a string literal is used as a type annotation (e.g., x: "List[int]"), the qualification
+       step parses and qualifies the expression inside the string. This field caches the qualified
+       expression to avoid re-parsing later, which would fail for Pyre-internal qualified names
+       containing $ characters. *)
+    qualified_expression: Expression.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -44,7 +69,7 @@ module StringLiteral = struct
       else
         String
     in
-    { value; kind }
+    { value; kind; qualified_expression = None }
 
 
   let location_insensitive_compare_kind left right =
@@ -62,7 +87,23 @@ module StringLiteral = struct
     | _ -> location_insensitive_compare_kind left.kind right.kind
 end
 
-module Constant = struct
+and Constant : sig
+  type t =
+    | NoneLiteral
+    | Ellipsis
+    | False
+    | True
+    | Integer of int
+    | BigInteger of string
+    | Float of float
+    | Complex of float
+    | String of StringLiteral.t
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  val location_insensitive_compare : t -> t -> int
+
+  val pp : Format.formatter -> t -> unit
+end = struct
   type t =
     | NoneLiteral
     | Ellipsis
@@ -86,7 +127,7 @@ module Constant = struct
     | Float left, Float right
     | Complex left, Complex right ->
         Float.compare left right
-    | String left, String right -> StringLiteral.compare left right
+    | String left, String right -> StringLiteral.location_insensitive_compare left right
     | BigInteger left, BigInteger right -> String.compare left right
     | NoneLiteral, _ -> -1
     | Ellipsis, _ -> -1
@@ -100,7 +141,7 @@ module Constant = struct
 
 
   let pp formatter = function
-    | String { StringLiteral.value; kind } ->
+    | String { StringLiteral.value; kind; _ } ->
         let bytes =
           match kind with
           | StringLiteral.Bytes -> "b"
@@ -117,7 +158,7 @@ module Constant = struct
     | True -> Format.fprintf formatter "%s" "True"
 end
 
-module rec BooleanOperator : sig
+and BooleanOperator : sig
   type operator =
     | And
     | Or
@@ -1872,7 +1913,7 @@ end = struct
     | Call left, Call right -> Call.location_insensitive_compare left right
     | ComparisonOperator left, ComparisonOperator right ->
         ComparisonOperator.location_insensitive_compare left right
-    | Constant left, Constant right -> Constant.compare left right
+    | Constant left, Constant right -> Constant.location_insensitive_compare left right
     | Dictionary left, Dictionary right -> Dictionary.location_insensitive_compare left right
     | DictionaryComprehension left, DictionaryComprehension right ->
         Comprehension.location_insensitive_compare

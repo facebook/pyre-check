@@ -2477,7 +2477,7 @@ module CallGraphBuilder = struct
              Call.Argument.value =
                {
                  Node.value =
-                   Expression.Constant (Constant.String { value = attribute; kind = String });
+                   Expression.Constant (Constant.String { value = attribute; kind = String; _ });
                  _;
                };
              name = None;
@@ -5661,7 +5661,7 @@ let build_whole_program_call_graph_for_pyrefly
                           {
                             Node.value =
                               Expression.Constant
-                                (Constant.String { value = attribute; kind = String });
+                                (Constant.String { value = attribute; kind = String; _ });
                             _;
                           };
                         name = None;

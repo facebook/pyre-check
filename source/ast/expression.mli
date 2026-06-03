@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module StringLiteral : sig
+module rec StringLiteral : sig
   type kind =
     | String
     | Bytes
@@ -14,6 +14,11 @@ module StringLiteral : sig
   type t = {
     value: string;
     kind: kind;
+    (* When a string literal is used as a type annotation (e.g., x: "List[int]"), the qualification
+       step parses and qualifies the expression inside the string. This field caches the qualified
+       expression to avoid re-parsing later, which would fail for Pyre-internal qualified names
+       containing $ characters. *)
+    qualified_expression: Expression.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -22,7 +27,7 @@ module StringLiteral : sig
   val create : ?bytes:bool -> string -> t
 end
 
-module Constant : sig
+and Constant : sig
   type t =
     | NoneLiteral
     | Ellipsis
@@ -38,7 +43,7 @@ module Constant : sig
   val location_insensitive_compare : t -> t -> int
 end
 
-module rec BooleanOperator : sig
+and BooleanOperator : sig
   type operator =
     | And
     | Or

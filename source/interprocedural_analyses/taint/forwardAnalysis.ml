@@ -3003,7 +3003,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 | Substring.Format { value; format_spec = Some format_spec } -> [value; format_spec]
                 | Substring.Literal { Node.value; location } ->
                     [
-                      Expression.Constant (Constant.String { StringLiteral.value; kind = String })
+                      Expression.Constant
+                        (Constant.String
+                           { StringLiteral.value; kind = String; qualified_expression = None })
                       |> Node.create ~location;
                     ])
           in

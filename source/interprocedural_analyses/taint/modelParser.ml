@@ -338,7 +338,7 @@ let rec parse_via_breadcrumbs ~taint_configuration ?(is_dynamic = false) express
   let open TaintConfiguration.Heap in
   match expression.Node.value with
   | Expression.Name (Name.Identifier breadcrumb)
-  | Expression.Constant (Constant.String { value = breadcrumb; kind = String }) ->
+  | Expression.Constant (Constant.String { value = breadcrumb; kind = String; _ }) ->
       if is_dynamic then
         Ok [Features.Breadcrumb.SimpleVia breadcrumb]
       else

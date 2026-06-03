@@ -442,7 +442,12 @@ let test_expand_string_annotation_preserves_locations =
              Node.location = location (1, 5) (1, 10);
              value =
                Constant
-                 (Constant.String { StringLiteral.value = "test.Foo"; kind = StringLiteral.String });
+                 (Constant.String
+                    {
+                      StringLiteral.value = "test.Foo";
+                      kind = StringLiteral.String;
+                      qualified_expression = None;
+                    });
            }));
     ]
 
