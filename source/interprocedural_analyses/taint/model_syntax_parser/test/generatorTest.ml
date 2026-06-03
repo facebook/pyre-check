@@ -13,11 +13,12 @@ open Statement
 open Test
 
 let parse_untrimmed source =
-  match PyreMenhirParser.Parser.parse (String.split source ~on:'\n') with
+  match PysaModelSyntaxParser.Parser.parse (String.split source ~on:'\n') with
   | Result.Ok statements -> Source.create statements
   | Result.Error
       {
-        PyreMenhirParser.Parser.Error.location = { Location.start = { Location.line; column }; _ };
+        PysaModelSyntaxParser.Parser.Error.location =
+          { Location.start = { Location.line; column }; _ };
         _;
       } ->
       let error =
@@ -42,7 +43,7 @@ let assert_parsed_equal source statements _context =
 
 
 let assert_not_parsed source _context =
-  match PyreMenhirParser.Parser.parse (String.split source ~on:'\n') with
+  match PysaModelSyntaxParser.Parser.parse (String.split source ~on:'\n') with
   | Result.Error _ -> ()
   | Result.Ok statements ->
       let error =
@@ -6442,14 +6443,14 @@ let test_setitem =
 let test_byte_order_mark =
   "test_byte_order_mark"
   >:: fun _context ->
-  let parse lines = PyreMenhirParser.Parser.parse_exn lines |> ignore in
+  let parse lines = PysaModelSyntaxParser.Parser.parse_exn lines |> ignore in
   let byte_order_mark = [0xEF; 0xBB; 0xBF] |> List.map ~f:Char.of_int_exn |> String.of_char_list in
   (* Ensure that we can parse UTF-8 files with byte order marks properly. *)
   parse [byte_order_mark ^ "1"];
   assert_raises
-    (PyreMenhirParser.Parser.Error
+    (PysaModelSyntaxParser.Parser.Error
        {
-         PyreMenhirParser.Parser.Error.location =
+         PysaModelSyntaxParser.Parser.Error.location =
            {
              Location.start = { Location.line = 2; column = 0 };
              stop = { Location.line = 2; column = 0 };

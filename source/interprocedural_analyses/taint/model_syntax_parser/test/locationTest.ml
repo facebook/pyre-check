@@ -13,11 +13,12 @@ open Statement
 open Test
 
 let parse_untrimmed source =
-  match PyreMenhirParser.Parser.parse (String.split source ~on:'\n') with
+  match PysaModelSyntaxParser.Parser.parse (String.split source ~on:'\n') with
   | Result.Ok statements -> Source.create statements
   | Result.Error
       {
-        PyreMenhirParser.Parser.Error.location = { Location.start = { Location.line; column }; _ };
+        PysaModelSyntaxParser.Parser.Error.location =
+          { Location.start = { Location.line; column }; _ };
         _;
       } ->
       let error =

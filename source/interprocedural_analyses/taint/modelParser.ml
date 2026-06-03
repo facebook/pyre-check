@@ -4771,7 +4771,7 @@ let rec parse_statement
         | Ok None -> Ok []
         | Ok (Some (model_strings, location)) -> (
             model_strings
-            |> PyreMenhirParser.Parser.parse
+            |> PysaModelSyntaxParser.Parser.parse
             >>| List.map
                   ~f:
                     (parse_statement
@@ -4816,7 +4816,7 @@ let rec parse_statement
                   else
                     Error errors)
             |> function
-            | Error { PyreMenhirParser.Parser.Error.location = parse_location; _ } ->
+            | Error { PysaModelSyntaxParser.Parser.Error.location = parse_location; _ } ->
                 let { Location.line; column } = Location.start parse_location in
                 let start, stop = Location.start location, Location.stop location in
                 let location =
@@ -4948,7 +4948,7 @@ let create
   =
   let open Core.Result in
   let signatures_and_queries, errors =
-    match PyreMenhirParser.Parser.parse (String.split ~on:'\n' source) with
+    match PysaModelSyntaxParser.Parser.parse (String.split ~on:'\n' source) with
     | Ok statements ->
         let statements, errors =
           statements
@@ -4971,7 +4971,7 @@ let create
           | Error error -> error :: errors
         in
         statements, errors
-    | Error { PyreMenhirParser.Parser.Error.location; _ } ->
+    | Error { PysaModelSyntaxParser.Parser.Error.location; _ } ->
         [], [model_verification_error ~path ~location ParseError]
   in
   let create_models_or_queries_from_statement = function
@@ -5045,9 +5045,9 @@ let parse_model_modes ~path ~source =
         List.fold ~init:modes ~f:get_mode taint_decorators
     | _ -> modes
   in
-  match String.split ~on:'\n' source |> PyreMenhirParser.Parser.parse with
+  match String.split ~on:'\n' source |> PysaModelSyntaxParser.Parser.parse with
   | Ok statements -> List.fold ~init:Reference.SerializableMap.empty ~f:parse_statement statements
-  | Error { PyreMenhirParser.Parser.Error.location; _ } ->
+  | Error { PysaModelSyntaxParser.Parser.Error.location; _ } ->
       let error = model_verification_error ~path:(Some path) ~location ParseError in
       raise (ModelVerificationError.ModelVerificationErrors [error])
 
@@ -5210,8 +5210,8 @@ let create_attribute_model_from_annotations ~pyre_api ~name ~source_sink_filter 
 
 
 let verify_model_syntax ~path ~source =
-  match String.split ~on:'\n' source |> PyreMenhirParser.Parser.parse with
+  match String.split ~on:'\n' source |> PysaModelSyntaxParser.Parser.parse with
   | Ok _ -> ()
-  | Error { PyreMenhirParser.Parser.Error.location; _ } ->
+  | Error { PysaModelSyntaxParser.Parser.Error.location; _ } ->
       let error = model_verification_error ~path:(Some path) ~location ParseError in
       raise (ModelVerificationError.ModelVerificationErrors [error])

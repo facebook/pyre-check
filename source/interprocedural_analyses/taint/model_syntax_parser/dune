@@ -4,8 +4,8 @@
  (modules generator))
 
 (library
- (name pyreMenhirParser)
- (public_name pyrelib.pyreMenhirParser)
+ (name pysaModelSyntaxParser)
+ (public_name pyrelib.pysaModelSyntaxParser)
  (preprocess
   (pps
    ppx_deriving.eq

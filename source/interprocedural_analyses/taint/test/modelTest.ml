@@ -3967,7 +3967,7 @@ let test_access_path _ =
   let module TreeLabel = Abstract.TreeDomain.Label in
   let module TaintPath = ModelParseResult.TaintPath in
   let parse_access_path source =
-    PyreMenhirParser.Parser.parse_exn [source]
+    PysaModelSyntaxParser.Parser.parse_exn [source]
     |> (function
          | [{ Ast.Node.value = Ast.Statement.Statement.Expression expression; _ }] -> expression
          | _ -> failwith "unexpected statement for acces path")

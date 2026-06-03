@@ -5,10 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* This module provides the top-level interface to Pyre's original Menhir parser. Pyre mostly uses
-   other parsers (either an ocaml wrapper around the CPython parser), but Pysa models still use this
-   parser and for the moment there are still a few places where Pyre uses this parser to parse
-   individual expressions *)
+(* This module provides the parser for .pysa model files. It uses a Menhir-generated parser with a
+   grammar tailored to model syntax. It is NOT used for regular Python parsing (which uses
+   PyreCPythonParser). *)
 
 open Core
 open Pyre
