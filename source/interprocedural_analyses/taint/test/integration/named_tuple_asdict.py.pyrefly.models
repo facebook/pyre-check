@@ -7,7 +7,7 @@
     "callable_line": 37,
     "sinks": [
       {
-        "port": "formal(connection_params, position=0)",
+        "port": "formal(connection_params, position=0)[charset]",
         "taint": [
           {
             "kinds": [
@@ -19,13 +19,8 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [
-              { "line": 38, "start": 18, "end": 35 },
-              { "line": 39, "start": 15, "end": 26 }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 38, "start": 18, "end": 35 } ],
             "origin": { "line": 39, "start": 15, "end": 47 },
             "call_site": "39:4-39:48"
           }
@@ -104,7 +99,7 @@
     "callable_line": 18,
     "sinks": [
       {
-        "port": "formal(connection_params, position=0)",
+        "port": "formal(connection_params, position=0)[charset]",
         "taint": [
           {
             "kinds": [
@@ -116,13 +111,8 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [
-              { "line": 19, "start": 18, "end": 35 },
-              { "line": 20, "start": 14, "end": 25 }
-            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 19, "start": 18, "end": 35 } ],
             "origin": { "line": 21, "start": 15, "end": 22 },
             "call_site": "21:4-21:23"
           }

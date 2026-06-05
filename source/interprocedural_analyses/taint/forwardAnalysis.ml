@@ -2244,13 +2244,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          _;
        };
      arguments =
-       [
-         {
-           Call.Argument.value =
-             { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ };
-           name = None;
-         };
-       ];
+       {
+         Call.Argument.value =
+           { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ };
+         name = None;
+       }
+       :: (([] | [_]) as optional_arguments);
      origin = _;
     }
       when CallGraph.CallCallees.is_mapping_method callees ->
@@ -2272,6 +2271,24 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let key_taint =
           ForwardState.Tree.read [Abstract.TreeDomain.Label.Index value] taint
           |> add_type_breadcrumbs
+        in
+        let key_taint, new_state =
+          match optional_arguments with
+          | [{ Call.Argument.value = default_expression; _ }] ->
+              let default_taint, new_state =
+                analyze_expression
+                  ~pyre_in_context
+                  ~state:new_state
+                  ~is_result_used
+                  ~expression:default_expression
+                |>> ForwardState.Tree.transform
+                      Features.TitoPositionSet.Element
+                      Add
+                      ~f:default_expression.Node.location
+              in
+              ForwardState.Tree.join key_taint default_taint, new_state
+          | [] -> key_taint, new_state
+          | _ -> failwith "unreachable"
         in
         key_taint, new_state
     | {

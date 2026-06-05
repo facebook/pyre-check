@@ -2087,13 +2087,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          _;
        };
      arguments =
-       [
-         {
-           Call.Argument.value =
-             { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ };
-           name = None;
-         };
-       ];
+       {
+         Call.Argument.value =
+           { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ };
+         name = None;
+       }
+       :: (([] | [_]) as optional_arguments);
      origin = _;
     }
       when CallGraph.CallCallees.is_mapping_method callees ->
@@ -2103,12 +2102,31 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~location:base_location
             ~identifier
         in
+        let taint = add_type_breadcrumbs taint in
+        let state =
+          match optional_arguments with
+          | [{ Call.Argument.value = default_expression; _ }] ->
+              let default_taint =
+                BackwardState.Tree.transform
+                  Features.TitoPositionSet.Element
+                  Add
+                  ~f:default_expression.Node.location
+                  taint
+              in
+              analyze_expression
+                ~pyre_in_context
+                ~taint:default_taint
+                ~state
+                ~expression:default_expression
+          | [] -> state
+          | _ -> failwith "unreachable"
+        in
         let old_taint = get_taint (Some { AccessPath.root = base_root; path = [] }) state in
         let new_taint =
           BackwardState.Tree.assign
             ~tree:old_taint
             [Abstract.TreeDomain.Label.Index value]
-            ~subtree:(add_type_breadcrumbs taint)
+            ~subtree:taint
         in
         store_taint ~root:base_root ~path:[] new_taint state
     | {
