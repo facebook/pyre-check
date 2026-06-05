@@ -1,2 +1,13 @@
 def pysa._test_sink(arg: TaintSink[Test, Via[special_sink]]): ...
 def pysa._test_source() -> TaintSource[Test, Via[special_source]]: ...
+
+# NamedTuple._asdict() returns a dict mirroring the tuple fields. By default it is an
+# obscure model that collapses the access path, so taint on `self.charset` is broadened
+# onto the whole object. Override it with a structure-preserving NoCollapse TITO so
+# `self[charset]` maps to `return[charset]`. The resolved callable name differs by frontend.
+if USING_PYRE1:
+    @SkipObscure
+    def typing.NamedTuple._asdict(self: TaintInTaintOut[LocalReturn, NoCollapse]): ...
+if USING_PYREFLY:
+    @SkipObscure
+    def _typeshed._type_checker_internals.NamedTupleFallback._asdict(self: TaintInTaintOut[LocalReturn, NoCollapse]): ...

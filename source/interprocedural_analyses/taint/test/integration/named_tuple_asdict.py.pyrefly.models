@@ -70,7 +70,7 @@
     "callable_line": 31,
     "sinks": [
       {
-        "port": "formal(connection_params, position=0)",
+        "port": "formal(connection_params, position=0)[charset]",
         "taint": [
           {
             "kinds": [
@@ -85,10 +85,7 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "charset" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" }
+              { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 32, "start": 18, "end": 35 } ],
             "origin": { "line": 33, "start": 15, "end": 37 },
@@ -182,6 +179,28 @@
       }
     ],
     "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_typeshed._type_checker_internals.NamedTupleFallback._asdict",
+    "filename": "_typeshed/_type_checker_internals.pyi",
+    "callable_line": 76,
+    "tito": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "SkipObscure" ]
   }
 }
 {
