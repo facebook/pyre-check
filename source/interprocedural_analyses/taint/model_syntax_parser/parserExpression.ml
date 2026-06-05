@@ -93,80 +93,6 @@ end = struct
   }
 end
 
-and Comprehension : sig
-  module Generator : sig
-    type t = {
-      target: Expression.t;
-      iterator: Expression.t;
-      conditions: Expression.t list;
-      async: bool;
-    }
-  end
-
-  type 'element t = {
-    element: 'element;
-    generators: Generator.t list;
-  }
-end = struct
-  module Generator = struct
-    type t = {
-      target: Expression.t;
-      iterator: Expression.t;
-      conditions: Expression.t list;
-      async: bool;
-    }
-  end
-
-  type 'element t = {
-    element: 'element;
-    generators: Generator.t list;
-  }
-end
-
-and Dictionary : sig
-  module Entry : sig
-    module KeyValue : sig
-      type t = {
-        key: Expression.t;
-        value: Expression.t;
-      }
-    end
-
-    type t =
-      | KeyValue of KeyValue.t
-      | Splat of Expression.t
-  end
-
-  type t = Entry.t list
-end = struct
-  module Entry = struct
-    module KeyValue = struct
-      type t = {
-        key: Expression.t;
-        value: Expression.t;
-      }
-    end
-
-    type t =
-      | KeyValue of KeyValue.t
-      | Splat of Expression.t
-  end
-
-  type t = Entry.t list
-end
-
-and Lambda : sig
-  type t = {
-    parameters: Parameter.t list;
-    body: Expression.t;
-  }
-end = struct
-  type t = {
-    parameters: Parameter.t list;
-    body: Expression.t;
-  }
-end
-
 and Name : sig
   module Attribute : sig
     type t = {
@@ -245,20 +171,6 @@ end = struct
   }
 end
 
-and Ternary : sig
-  type t = {
-    target: Expression.t;
-    test: Expression.t;
-    alternative: Expression.t;
-  }
-end = struct
-  type t = {
-    target: Expression.t;
-    test: Expression.t;
-    alternative: Expression.t;
-  }
-end
-
 and UnaryOperator : sig
   type t = {
     operator: AstExpression.UnaryOperator.operator;
@@ -271,76 +183,40 @@ end = struct
   }
 end
 
-and WalrusOperator : sig
-  type t = {
-    target: Expression.t;
-    value: Expression.t;
-  }
-end = struct
-  type t = {
-    target: Expression.t;
-    value: Expression.t;
-  }
-end
-
 and Expression : sig
   type expression =
-    | Await of t
     | BinaryOperator of BinaryOperator.t
     | BooleanOperator of BooleanOperator.t
     | Call of Call.t
     | ComparisonOperator of ComparisonOperator.t
     | Constant of AstExpression.Constant.t
-    | Dictionary of Dictionary.t
-    | DictionaryComprehension of Dictionary.Entry.KeyValue.t Comprehension.t
-    | Generator of t Comprehension.t
     | FormatString of Substring.t list
-    | Lambda of Lambda.t
     | List of t list
-    | ListComprehension of t Comprehension.t
     | Name of Name.t
     | Parenthesis of t
-    | Set of t list
-    | SetComprehension of t Comprehension.t
     | Slice of Slice.t
     | Starred of Starred.t
     | Subscript of Subscript.t
-    | Ternary of Ternary.t
     | Tuple of t list
     | UnaryOperator of UnaryOperator.t
-    | WalrusOperator of WalrusOperator.t
-    | Yield of t option
-    | YieldFrom of t
 
   and t = expression Node.t
 end = struct
   type expression =
-    | Await of t
     | BinaryOperator of BinaryOperator.t
     | BooleanOperator of BooleanOperator.t
     | Call of Call.t
     | ComparisonOperator of ComparisonOperator.t
     | Constant of AstExpression.Constant.t
-    | Dictionary of Dictionary.t
-    | DictionaryComprehension of Dictionary.Entry.KeyValue.t Comprehension.t
-    | Generator of t Comprehension.t
     | FormatString of Substring.t list
-    | Lambda of Lambda.t
     | List of t list
-    | ListComprehension of t Comprehension.t
     | Name of Name.t
     | Parenthesis of t
-    | Set of t list
-    | SetComprehension of t Comprehension.t
     | Slice of Slice.t
     | Starred of Starred.t
     | Subscript of Subscript.t
-    | Ternary of Ternary.t
     | Tuple of t list
     | UnaryOperator of UnaryOperator.t
-    | WalrusOperator of WalrusOperator.t
-    | Yield of t option
-    | YieldFrom of t
 
   and t = expression Node.t
 end

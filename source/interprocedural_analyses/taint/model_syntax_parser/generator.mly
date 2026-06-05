@@ -8,7 +8,6 @@
 %{
   open Core
 
-  open Pyre
   module Location = Ast.Location
   open ParserExpression
   open ParserStatement
@@ -31,26 +30,6 @@
         let decorated = { value with Define.signature } in
         { Node.location; value = Statement.Define decorated }
     | _ -> raise (Failure "Cannot decorate statement")
-
-  type entry =
-    | Entry of Dictionary.Entry.t
-    | Item of Expression.t
-    | Comprehension of Comprehension.Generator.t
-
-  type entries = {
-      entries: Dictionary.Entry.t list;
-      items: Expression.t list;
-      comprehensions: Comprehension.Generator.t list;
-    }
-
-
-  let add_entry so_far = function
-    | Entry entry ->
-        { so_far with entries = entry :: so_far.entries }
-    | Item item ->
-        { so_far with items = item :: so_far.items }
-    | Comprehension comprehension ->
-        { so_far with comprehensions = comprehension :: so_far.comprehensions }
 
   (* Helper function to combine a start position of type Lexing.position and
    * stop position of type Location.position. *)
@@ -99,7 +78,6 @@
     Expression.Slice { Slice.start = lower; stop = upper; step }
     |> Node.create ~location:slice_location
 
-
   let create_ellipsis (start, stop) =
     let location = Location.create ~start ~stop in
     Node.create (Expression.Constant AstExpression.Constant.Ellipsis) ~location
@@ -120,18 +98,6 @@
     Expression.Subscript { Subscript.base = head; index }
     |> Node.create ~location:{ subscript_location with Location.start = location.Location.start }
 
-  let with_annotation ~parameter ~annotation =
-    let value =
-      let { Node.value = { Parameter.annotation = existing; _ } as value; _ } = parameter in
-      let annotation =
-        match existing, annotation with
-        | None, Some annotation -> Some annotation
-        | _ -> existing
-      in
-      { value with Parameter.annotation }
-    in
-    { parameter with Node.value }
-
   let create_literal_substring (string_position, (start, stop), value) =
     string_position,
     {
@@ -150,18 +116,12 @@
 
   let create_mixed_string = function
     | [] -> Expression.Constant
-              (AstExpression.Constant.String {
-                   AstExpression.StringLiteral.value = "";
-                   kind = AstExpression.StringLiteral.String;
-                   qualified_expression = None;
-              })
+              (AstExpression.Constant.String
+                (AstExpression.StringLiteral.create ""))
     | [ { Substring.kind = Substring.Kind.Literal; value; _ } ] ->
        Expression.Constant
-         (AstExpression.Constant.String {
-              AstExpression.StringLiteral.value;
-              kind = AstExpression.StringLiteral.String;
-              qualified_expression = None;
-         })
+         (AstExpression.Constant.String
+            (AstExpression.StringLiteral.create value))
     | _ as pieces ->
        let is_all_literal = List.for_all ~f:(fun { Substring.kind; _ } ->
           match kind with
@@ -175,24 +135,19 @@
             |> String.concat ~sep:""
           in
           Expression.Constant
-            (AstExpression.Constant.String {
-                 AstExpression.StringLiteral.value;
-                 kind = AstExpression.StringLiteral.String;
-                 qualified_expression = None;
-            })
+            (AstExpression.Constant.String
+              (AstExpression.StringLiteral.create value))
         else
           Expression.FormatString pieces
+
 %}
 
-(* The syntactic junkyard. *)
-%token <Lexing.position> EXCEPT_STAR
+(* Tokens. *)
 %token <Lexing.position * Lexing.position> ASTERIKS
-%token <Lexing.position> AWAIT
 %token <Lexing.position> COLON
 %token <Lexing.position> DEDENT
 %token <Lexing.position * Lexing.position> DOT
 %token <Lexing.position> LEFTBRACKET
-%token <Lexing.position> LEFTCURLY
 %token <Lexing.position> LEFTPARENS
 %token <Lexing.position> MINUS
 %token <Lexing.position> NEWLINE
@@ -201,63 +156,36 @@
 %token <Lexing.position> SLASH
 (* the RIGHT* lexemes only contain the end position. *)
 %token <Lexing.position> RIGHTBRACKET
-%token <Lexing.position> RIGHTCURLY
 %token <Lexing.position> RIGHTPARENS
 %token <Lexing.position> TILDE
 
-%token <(Lexing.position * Lexing.position) * string list * string> SIGNATURE_COMMENT
-%token <(Lexing.position * Lexing.position) * string> ANNOTATION_COMMENT
-
-%token AMPERSAND
-%token AMPERSANDEQUALS
 %token AND
-%token ASTERIKSASTERIKSEQUALS
-%token ASTERIKSEQUALS
 %token AT
-%token ATEQUALS
-%token BAR
-%token BAREQUALS
 %token COMMA
-%token COLONEQUALS
 %token DOUBLEEQUALS
 %token EOF
 %token EQUALS
 %token EXCLAMATIONMARK
-%token HAT
-%token HATEQUALS
 %token INDENT
 %token IS
 %token ISNOT
 %token LEFTANGLE
 %token LEFTANGLEEQUALS
-%token LEFTANGLELEFTANGLE
-%token LEFTANGLELEFTANGLEEQUALS
-%token MINUSEQUALS
 %token OR
-%token PERCENT
-%token PERCENTEQUALS
-%token PLUSEQUALS
 %token RIGHTANGLE
 %token RIGHTANGLEEQUALS
-%token RIGHTANGLERIGHTANGLE
-%token RIGHTANGLERIGHTANGLEEQUALS
-%token SEMICOLON
-%token SLASHEQUALS
-%token SLASHSLASHEQUALS
 
 (* Declarations. *)
 %token <Lexing.position * Lexing.position> ASYNC
 %token <Lexing.position> CLASS
 %token <Lexing.position> DEFINE
-%token <Lexing.position> LAMBDA
 
 (* Values. *)
 %token <(Lexing.position * Lexing.position) * float> FLOAT
 %token <(Lexing.position * Lexing.position) * float> COMPLEX
 %token <(Lexing.position * Lexing.position) * int> INTEGER
-%token <(Lexing.position * Lexing.position) * (Lexing.position * Lexing.position) * string> BYTES
-%token <(Lexing.position * Lexing.position) * (Lexing.position * Lexing.position) * string> FORMAT
 %token <(Lexing.position * Lexing.position) * string> IDENTIFIER
+%token <(Lexing.position * Lexing.position) * (Lexing.position * Lexing.position) * string> FORMAT
 %token <(Lexing.position * Lexing.position) * (Lexing.position * Lexing.position) * string> STRING
 %token <(Lexing.position * Lexing.position)> ELLIPSES
 %token <(Lexing.position * Lexing.position)> FALSE
@@ -265,38 +193,14 @@
 %token <(Lexing.position * Lexing.position)> NONE
 
 (* Control. *)
-%token <Lexing.position> ASSERT
-%token <Lexing.position * Lexing.position> BREAK
-%token <Lexing.position * Lexing.position> CONTINUE
-%token <Lexing.position> DELETE
 %token <Lexing.position> ELSEIF
-%token <Lexing.position> FOR
-%token <Lexing.position> FROM
-%token <Lexing.position> GLOBAL
 %token <Lexing.position> IF
-%token <Lexing.position> IMPORT
-%token <Lexing.position> NONLOCAL
-%token <Lexing.position * Lexing.position> PASS
-%token <Lexing.position * Lexing.position> RAISE
-%token <Lexing.position * Lexing.position> RETURN
-%token <Lexing.position> TRY
-%token <Lexing.position> WITH
-%token <Lexing.position> WHILE
-%token <Lexing.position * Lexing.position> YIELD
-%token AS
 %token ELSE
-%token <Lexing.position> EXCEPT
-%token FINALLY
 %token IN
 
-%left LEFTANGLELEFTANGLE RIGHTANGLERIGHTANGLE
 %left NOT
-%left BAR
-%left HAT
-%left AMPERSAND
 %left PLUS MINUS
-%left ASTERIKS PERCENT SLASH
-%left AWAIT
+%left ASTERIKS SLASH
 %left TILDE
 %left AT
 %left DOT
@@ -314,88 +218,44 @@
 %type <ParserStatement.Expression.expression Ast.Node.t> atom
 %type <ParserExpression.Call.Argument.t list> bases
 %type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> block
-%type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> block_or_stub_body
 %type <ParserStatement.Expression.expression Ast.Node.t> comparison
 %type <Ast.Expression.ComparisonOperator.operator * ParserStatement.Expression.expression Ast.Node.t> comparison_operator
 %type <ParserStatement.Statement.statement Ast.Node.t> compound_statement
-%type <ParserExpression.Comprehension.Generator.t> comprehension
-%type <ParserStatement.Expression.expression Ast.Node.t> condition
 %type <Location.t * ParserStatement.Statement.statement> conditional
 %type <ParserStatement.Statement.statement Ast.Node.t> decorated_statement
 %type <ParserStatement.Expression.expression Ast.Node.t> decorator
 %type <ParserExpression.Parameter.t list> define_parameters
-%type <string> ellipsis_or_dot
+%type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> ellipsis_body
 %type <ParserStatement.Expression.expression Ast.Node.t> expression
-%type <ParserStatement.Expression.expression Ast.Node.t> expression_list
-%type <Location.AstReference.t option> from
-%type <string> from_string
-%type <ParserStatement.Expression.expression Ast.Node.t> generator
-%type <Location.t * ParserStatement.Try.Handler.t> handler
-%type <Location.t * ParserStatement.Try.Handler.t> group_handler
 %type <Location.t * string> identifier
-%type <Location.t * Ast.Statement.Import.import> import
-%type <Location.t * Ast.Statement.Import.import Ast.Node.t list> imports
 %type <Lexing.position list> list(NEWLINE)
-%type <ParserExpression.Expression.t list> list(condition)
-%type <(Location.t * ParserStatement.Try.Handler.t) list> list(handler)
-%type <(Location.t * ParserStatement.Try.Handler.t) list> list(group_handler)
 %type <((Lexing.position * Lexing.position) * ParserExpression.Substring.t) list> mixed_string
 %type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> named_optional_block(ELSE)
-%type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> named_optional_block(FINALLY)
-%type <((Lexing.position * Lexing.position) * (Lexing.position * Lexing.position) * string) list> nonempty_list(BYTES)
 %type <Lexing.position list> nonempty_list(NEWLINE)
 %type <(Ast.Expression.ComparisonOperator.operator * ParserStatement.Expression.expression Ast.Node.t) list> nonempty_list(comparison_operator)
-%type <ParserExpression.Comprehension.Generator.t list> nonempty_list(comprehension)
 %type <ParserStatement.Expression.t list> nonempty_list(decorator)
-%type <string list> nonempty_list(ellipsis_or_dot)
 %type <ParserStatement.Expression.expression Ast.Node.t> not_test
-%type <((Lexing.position * Lexing.position) * string) option> option(ANNOTATION_COMMENT)
-%type <unit option> option(COMMA)
-%type <((Lexing.position * Lexing.position) * string list * string) option> option(SIGNATURE_COMMENT)
 %type <ParserExpression.Expression.t option> option(annotation)
-%type <ParserExpression.Expression.t option> option(comment_annotation)
-%type <ParserStatement.Expression.t option> option(raise_from)
 %type <ParserStatement.Expression.expression Ast.Node.t option> option(return_annotation)
-%type <ParserStatement.Expression.expression Ast.Node.t option> option(test)
-%type <ParserStatement.Expression.t option> option(test_list)
+%type <ParserStatement.Expression.expression Ast.Node.t option> option(value)
 %type <ParserStatement.Expression.expression Ast.Node.t> or_test
 %type <ParserExpression.Call.Argument.t list> parser_generator_separated_list(COMMA,argument)
-%type <(Location.t * string) list> parser_generator_separated_list(COMMA,identifier)
-%type <(Location.t * Ast.Statement.Import.import) list> parser_generator_separated_list(COMMA,import)
-%type <ParserExpression.Parameter.t list> parser_generator_separated_list(COMMA,lambda_parameter)
 %type <ParserStatement.Expression.t list> parser_generator_separated_list(COMMA,subscript_key)
-%type <ParserStatement.Expression.t list> parser_generator_separated_list(COMMA,test)
-%type <(ParserStatement.Expression.t * ParserStatement.Expression.t option) list> parser_generator_separated_list(COMMA,with_item)
+%type <ParserStatement.Expression.t list> parser_generator_separated_list(COMMA,value)
 %type <(Location.t * string) list> parser_generator_separated_list(DOT,identifier)
-%type <ParserStatement.Statement.statement Ast.Node.t list list> parser_generator_separated_list_of_lists(SEMICOLON,small_statement)
-%type <(Location.t * string) list> parser_generator_separated_nonempty_list(COMMA,identifier)
-%type <(Location.t * Ast.Statement.Import.import) list> parser_generator_separated_nonempty_list(COMMA,import)
 %type <ParserStatement.Expression.t list> parser_generator_separated_nonempty_list(COMMA,subscript_key)
-%type <(ParserStatement.Expression.t * ParserStatement.Expression.t option) list> parser_generator_separated_nonempty_list(COMMA,with_item)
 %type <(Location.t * string) list> parser_generator_separated_nonempty_list(DOT,identifier)
-%type <ParserStatement.Statement.statement Ast.Node.t list list> parser_generator_separated_nonempty_list_of_lists(SEMICOLON,small_statement)
-%type <ParserStatement.Expression.expression Ast.Node.t> raise_from
 %type <Location.t * Location.AstReference.t> reference
-%type <ParserStatement.Expression.t list> separated_nonempty_list(COMMA,expression)
-%type <ParserStatement.Expression.expression Ast.Node.t list * bool> separated_nonempty_list_indicator(COMMA,expression)
-%type <ParserStatement.Expression.expression Ast.Node.t list * bool> separated_nonempty_list_indicator(COMMA,test)
-%type <ParserStatement.Expression.expression Ast.Node.t list * bool> separated_nonempty_list_indicator_tail(COMMA,expression)
-%type <ParserStatement.Expression.expression Ast.Node.t list * bool> separated_nonempty_list_indicator_tail(COMMA,test)
-%type <ParserStatement.Expression.expression Ast.Node.t> set_or_dictionary
-%type <entry> set_or_dictionary_entry
-%type <entries> set_or_dictionary_maker
+%type <ParserStatement.Expression.expression Ast.Node.t list * bool> separated_nonempty_list_indicator(COMMA,value)
+%type <ParserStatement.Expression.expression Ast.Node.t list * bool> separated_nonempty_list_indicator_tail(COMMA,value)
 %type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> simple_statement
 %type <ParserStatement.Statement.statement Ast.Node.t list> small_statement
 %type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> statement
 %type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> statements
 %type <ParserStatement.Expression.expression Ast.Node.t> subscript_key
-%type <(value:ParserStatement.Expression.expression Ast.Node.t -> annotation:ParserExpression.Expression.t option -> index_in_chain:int option -> ParserStatement.Statement.statement Ast.Node.t) list> targets
-%type <ParserStatement.Expression.expression Ast.Node.t> test
-%type <ParserStatement.Expression.expression Ast.Node.t> test_list
-%type <ParserStatement.Expression.expression Ast.Node.t> test_with_generator
 %type <ParserStatement.Expression.expression Ast.Node.t> value
-%type <ParserStatement.Expression.t * ParserStatement.Expression.t option> with_item
-%type <ParserStatement.Expression.expression Ast.Node.t> yield_form
+%type <ParserStatement.Expression.expression Ast.Node.t> value_list
+
 %%
 
 parse_module:
@@ -430,33 +290,16 @@ statement:
   | statement = async_statement { statement.Node.location, [statement] }
 
 simple_statement:
-  | statements = parser_generator_separated_nonempty_list_of_lists(SEMICOLON, small_statement);
-    NEWLINE {
-      let flattened_statements = List.concat statements in
-      let head = List.hd_exn flattened_statements in
-      let last = List.last_exn flattened_statements in
+  | statements = small_statement; NEWLINE {
+      let head = List.hd_exn statements in
+      let last = List.last_exn statements in
       let location = {head.Node.location with Location.stop = Node.stop last} in
-      location, flattened_statements
+      location, statements
     }
   ;
 
 small_statement:
-  | target = test_list;
-    operator = compound_operator;
-    value = value {
-      [{
-        Node.location = {
-          target.Node.location with Location.stop =
-            value.Node.location.Location.stop;
-        };
-        value = Statement.AugmentedAssign {
-          AugmentedAssign.target = target;
-          operator;
-          value;
-        };
-      }]
-    }
-  | target = test_list;
+  | target = expression;
     annotation = annotation {
       [{
         Node.location = {
@@ -471,65 +314,7 @@ small_statement:
         };
       }]
     }
-  | target = test_list;
-    annotation = comment_annotation {
-      [{
-        Node.location = {
-          target.Node.location with Location.stop =
-            annotation.Node.location.Location.stop;
-        };
-        value = Statement.Assign {
-          Assign.target = target;
-          annotation = Some annotation;
-          value = None;
-          index_in_chain = None;
-        };
-      }]
-    }
-  | target = test_list;
-    annotation = annotation;
-    EQUALS;
-    value = test_list {
-      [{
-        Node.location = {
-          target.Node.location with Location.stop =
-            value.Node.location.Location.stop;
-        };
-        value = Statement.Assign {
-          Assign.target = target;
-          annotation = Some annotation;
-          value = Some value;
-          index_in_chain = None;
-        };
-      }]
-    }
-  | target = test_list;
-    annotation = annotation;
-    EQUALS;
-    value = value {
-      [{
-        Node.location = {
-          target.Node.location with Location.stop =
-            value.Node.location.Location.stop;
-        };
-        value = Statement.Assign {
-          Assign.target = target;
-          annotation = Some annotation;
-          value = Some value;
-          index_in_chain = None;
-        };
-      }]
-    }
-  | targets = targets; value = value; annotation = comment_annotation? {
-      let is_chain = List.length targets > 1 in
-      List.mapi ~f:(fun index target -> target ~value ~annotation ~index_in_chain:(Option.some_if is_chain index)) targets
-  }
-  | targets = targets; ellipsis = ELLIPSES {
-      let value = create_ellipsis ellipsis in
-      let is_chain = List.length targets > 1 in
-      List.mapi ~f:(fun index target -> target ~value ~annotation:None ~index_in_chain:(Option.some_if is_chain index)) targets
-    }
-  | target = test_list;
+  | target = expression;
     annotation = annotation;
     EQUALS;
     ellipsis = ELLIPSES {
@@ -547,124 +332,15 @@ small_statement:
         };
       }]
     }
-
-  | start = ASSERT; test = test {
-      [{
-        Node.location = location_create_with_stop ~start ~stop:(Node.stop test);
-        value = Statement.Assert { Assert.test = test; message = None }
-      }]
+  | expression = value {
+      [{ Node.location = expression.Node.location; value = Statement.Expression expression }]
     }
-  | start = ASSERT; test = test;
-    COMMA; message = test {
-      [{
-        Node.location = location_create_with_stop ~start ~stop:(Node.stop test);
-        value = Statement.Assert { Assert.test = test; message = Some message }
-      }]
-    }
-
-  | position = BREAK {
-      let start, stop = position in
-      [{ Node.location = Location.create ~start ~stop; value = Statement.Break }]
-    }
-
-  | position = CONTINUE {
-      let start, stop = position in
-      [{ Node.location = Location.create ~start ~stop; value = Statement.Continue }]
-    }
-
-  | test = test_list {
-      [{ Node.location = test.Node.location; value = Statement.Expression test }]
-    }
-
-  | value = value {
-      [{ Node.location = value.Node.location; value = Statement.Expression value }]
-    }
-
-  | start = GLOBAL; globals = parser_generator_separated_nonempty_list(COMMA, identifier) {
-      let last = List.last_exn globals in
-      let stop = (fst last).Location.stop in
-      [{
-        Node.location = location_create_with_stop ~start ~stop;
-        value = Statement.Global (List.map globals ~f:snd);
-      }]
-    }
-
-  | start = IMPORT; imports = imports; {
-      [{
-        Node.location = location_create_with_stop ~start ~stop:((fst imports).Location.stop);
-        value = Statement.Import { Import.from = None; imports = snd imports };
-      }]
-    }
-  | start = FROM; from = from; IMPORT; imports = imports {
-      [{
-        Node.location = location_create_with_stop ~start ~stop:((fst imports).Location.stop);
-        value = Statement.Import {
-          Import.from;
-          imports = snd imports;
-        };
-      }]
-    }
-
-  | start = NONLOCAL; nonlocals = parser_generator_separated_nonempty_list(COMMA, identifier) {
-      let stop = (fst (List.last_exn nonlocals)).Location.stop in
-      [{
-        Node.location = location_create_with_stop ~start ~stop;
-        value = Statement.Nonlocal (List.map nonlocals ~f:snd);
-      }]
-    }
-
-  | position = PASS {
-      let start, stop = position in
-      [{ Node.location = Location.create ~start ~stop; value = Statement.Pass }]
-    }
-
-  | position = RAISE; test = test_list?; raise_from = raise_from? {
-      let start, stop = position in
-      let location =
-        match (test, raise_from) with
-        | None, None -> Location.create ~start ~stop
-        | Some node, None ->
-          location_create_with_stop ~start ~stop:(Node.stop node)
-        | _, Some { Node.location; _ } ->
-          location_create_with_stop ~start ~stop:(location.Location.stop)
-      in
-      [{
-        Node.location;
-        value = Statement.Raise { Raise.expression = test; from = raise_from };
-      }]
-    }
-
-  | return = RETURN; test = test_list? {
-      let start, stop = return in
-      let location =
-        match test with
-        | None -> Location.create ~start ~stop
-        | Some node -> location_create_with_stop ~start ~stop:(Node.stop node)
-      in
-      [{
-        Node.location;
-        value = Statement.Return { Return.expression = test; is_implicit = false };
-      }]
-    }
-
-  | delete = DELETE;
-    expressions = separated_nonempty_list(COMMA, expression) {
-      let stop = Node.stop (List.last_exn expressions) in
-      [{
-        Node.location = location_create_with_stop ~start:delete ~stop;
-        value = Statement.Delete expressions;
-      }]
-    }
-  ;
-
-raise_from:
-  | FROM; test_list = test_list { test_list }
   ;
 
 compound_statement:
   | definition = CLASS; name = reference;
     bases = bases; colon_position = COLON;
-    body = block_or_stub_body {
+    body = ellipsis_body {
       let location = Location.create ~start:definition ~stop:colon_position in
       let body_location, body = body in
       let location = { location with Location.stop = body_location.Location.stop } in
@@ -686,73 +362,10 @@ compound_statement:
     RIGHTPARENS;
     return_annotation = return_annotation?;
     COLON;
-    signature_comment = SIGNATURE_COMMENT?;
-    body = block_or_stub_body {
+    body = ellipsis_body {
       let body_location, body = body in
       let location =
         location_create_with_stop ~start:definition ~stop:body_location.Location.stop
-      in
-      let annotation =
-        match return_annotation with
-        | Some return_annotation -> Some return_annotation
-        | None ->
-          signature_comment
-          >>= (fun ((start, stop), _, return_annotation) ->
-              Some {
-                Node.location = Location.create ~start ~stop;
-                value = Expression.Constant (
-                          AstExpression.Constant.String
-                            (AstExpression.StringLiteral.create return_annotation)
-                        );
-              }
-            )
-      in
-      let parameters =
-        match signature_comment with
-        | Some ((start, stop), parameter_annotations, _)
-          when not (List.is_empty parameter_annotations) ->
-            let add_annotation ({ Node.value = parameter; _ } as parameter_node) annotation =
-                match annotation with
-                | None ->
-                    parameter_node
-                | Some annotation -> {
-                    parameter_node with
-                    Node.value = {
-                      parameter with
-                        Parameter.annotation = Some {
-                          Node.location = Location.create ~start ~stop;
-                          value = Expression.Constant (
-                                    AstExpression.Constant.String
-                                      (AstExpression.StringLiteral.create annotation)
-                                  );
-                        };
-                      }
-                  }
-            in
-            (* We don't know whether a define is a method at this point, and mypy's documentation
-               specifies that a method's self should NOT be annotated:
-               `https://mypy.readthedocs.io/en/latest/python2.html`.
-
-                Because we don't know whether we are parsing a method at this point or whether
-                there's any decorators that mean a function doesn't have a self parameter, we make
-                the angelic assumption that annotations lacking a single annotation knowingly elided
-                the self annotation. *)
-            let unannotated_parameter_count =
-               List.length parameters - List.length parameter_annotations
-            in
-            if unannotated_parameter_count = 0 || unannotated_parameter_count = 1 then
-              let parameter_annotations =
-                List.init ~f:(fun _ -> None) unannotated_parameter_count @
-                List.map ~f:Option.some parameter_annotations
-              in
-              List.map2_exn
-                ~f:add_annotation
-                parameters
-                parameter_annotations
-            else
-              parameters
-        | _ ->
-            parameters
       in
       let _, name = name in
       {
@@ -762,28 +375,10 @@ compound_statement:
             Define.Signature.name = name;
             parameters = parameters;
             decorators = [];
-            return_annotation = annotation;
+            return_annotation = return_annotation;
             async = false;
           };
           body
-        };
-      }
-    }
-
-  | start = FOR; target = expression_list; IN; iterator = test_list; COLON;
-    ANNOTATION_COMMENT?; body = block; orelse = named_optional_block(ELSE) {
-      let stop = begin match orelse with
-      | _, [] -> (fst body).Location.stop
-      | location, _ -> location.Location.stop
-      end in
-      {
-        Node.location = location_create_with_stop ~start ~stop;
-        value = Statement.For {
-          For.target = target;
-          iterator = iterator;
-          body = snd body;
-          orelse = snd orelse;
-          async = false
         };
       }
     }
@@ -796,86 +391,6 @@ compound_statement:
       }
     }
 
-  (* TryStar requires at least 1 group_handler because with no handlers it is ambiguous with Try *)
-  | start = TRY; COLON;
-    body = block;
-    first_handler = group_handler;
-    handlers = list(group_handler);
-    orelse = named_optional_block(ELSE);
-    finally = named_optional_block(FINALLY) {
-      let handlers = first_handler::handlers in
-      let stop =
-        begin
-          match handlers, snd orelse, snd finally with
-          | _, _, (_::_) -> fst finally
-          | _, (_::_), [] -> fst orelse
-          | (_::_), [], [] -> (fst (List.last_exn handlers))
-          | _ -> (fst body)
-        end.Location.stop
-      in
-      {
-        Node.location = location_create_with_stop ~start ~stop;
-        value = Statement.Try {
-          Try.body = snd body;
-          handlers = List.map ~f:snd handlers;
-          orelse = snd orelse;
-          finally = snd finally;
-          handles_exception_group = true
-        };
-      }
-    }
-
-  | start = TRY; COLON;
-    body = block;
-    handlers = list(handler);
-    orelse = named_optional_block(ELSE);
-    finally = named_optional_block(FINALLY) {
-      let stop =
-        begin
-          match handlers, snd orelse, snd finally with
-          | _, _, (_::_) -> fst finally
-          | _, (_::_), [] -> fst orelse
-          | (_::_), [], [] -> (fst (List.last_exn handlers))
-          | _ -> (fst body)
-        end.Location.stop
-      in
-      {
-        Node.location = location_create_with_stop ~start ~stop;
-        value = Statement.Try {
-          Try.body = snd body;
-          handlers = List.map ~f:snd handlers;
-          orelse = snd orelse;
-          finally = snd finally;
-          handles_exception_group = false
-        };
-      }
-    }
-
-  | start = WITH;
-    items = parser_generator_separated_nonempty_list(COMMA, with_item); COLON;
-    ANNOTATION_COMMENT?;
-    body = block {
-      {
-        Node.location = location_create_with_stop ~start ~stop:(fst body).Location.stop;
-        value = Statement.With {
-          With.items = items;
-          body = snd body;
-          async = false;
-        };
-      }
-    }
-
-  | start = WHILE; test = test_list; COLON;
-    body = block; orelse = named_optional_block(ELSE) {
-      let stop =
-        match orelse with
-        | _, [] -> (fst body).Location.stop
-        | location, _ -> location.Location.stop in
-      {
-        Node.location = location_create_with_stop ~start ~stop;
-        value = Statement.While { While.test = test; body = snd body; orelse = snd orelse };
-      }
-    }
   ;
 
 decorated_statement:
@@ -898,23 +413,11 @@ async_statement:
             Node.location;
             value = Statement.Define decorated;
           }
-      | { Node.value = Statement.For value; _ } ->
-          let with_async = { value with For.async = true } in
-          {
-            Node.location;
-            value = Statement.For with_async;
-          }
-      | { Node.value = Statement.With value; _ } ->
-          let with_async = { value with With.async = true } in
-          {
-            Node.location;
-            value = Statement.With with_async;
-          }
       | _ -> raise (Failure "Async not supported on statement.")
     }
   ;
 
-block_or_stub_body:
+ellipsis_body:
   | ellipsis = ELLIPSES; NEWLINE
   | NEWLINE+; INDENT; ellipsis = ELLIPSES; NEWLINE; DEDENT; NEWLINE* {
     let location = Location.create ~start:(fst ellipsis) ~stop:(snd ellipsis) in
@@ -930,7 +433,6 @@ block_or_stub_body:
     ] in
     location, body
    }
-  | statements = block { statements }
   ;
 
 block:
@@ -946,24 +448,24 @@ named_optional_block(NAME):
   ;
 
 conditional:
-  | test = test_list; COLON;
+  | condition = value_list; COLON;
     body = block; orelse = named_optional_block(ELSE) {
       {
-        test.Node.location with
+        condition.Node.location with
         Location.stop =
           match orelse with
           | _, [] -> (fst body).Location.stop
           | location, _ -> location.Location.stop;
       },
-      Statement.If { If.test = test; body = snd body; orelse = snd orelse }
+      Statement.If { If.test = condition; body = snd body; orelse = snd orelse }
     }
-  | test = test_list; COLON;
+  | condition = value_list; COLON;
     body = block;
     else_start = ELSEIF; value = conditional {
       let stop = (fst value).Location.stop in
-      { test.Node.location with Location.stop },
+      { condition.Node.location with Location.stop },
       Statement.If {
-        If.test = test;
+        If.test = condition;
         body = (snd body);
         orelse = [{
           Node.location =
@@ -1014,12 +516,8 @@ reference:
   ;
 
 define_parameters:
-  | parameter = define_parameter;
-    COMMA;
-    annotation = comment_annotation?;
-    parameters = define_parameters { (with_annotation ~parameter ~annotation) :: parameters }
-  | parameter = define_parameter;
-    annotation = comment_annotation? { [with_annotation ~parameter ~annotation] }
+  | parameter = define_parameter; COMMA; parameters = define_parameters { parameter :: parameters }
+  | parameter = define_parameter { [parameter] }
   | { [] }
 
 %inline define_parameter:
@@ -1056,7 +554,7 @@ define_parameters:
         value = { Parameter.name = snd name; value = None; annotation };
       }
     }
-  | name = name; annotation = annotation?; EQUALS; value = test {
+  | name = name; annotation = annotation?; EQUALS; value = value {
       let location =
         let name_location = fst name in
         match annotation with
@@ -1066,32 +564,6 @@ define_parameters:
       {
         Node.location;
         value = { Parameter.name = snd name; value = Some value; annotation };
-      }
-    }
-  ;
-
-%inline lambda_parameter:
-  (* `*` is a valid parameter for lambdas as well. *)
-  | asteriks = ASTERIKS {
-      {
-        Node.location = Location.create ~start:(fst asteriks) ~stop:(snd asteriks);
-        value = {
-            Parameter.name = "*";
-            value = None;
-            annotation = None;
-        };
-      }
-    }
-  | name = name {
-      {
-        Node.location = fst name;
-        value = { Parameter.name = snd name; value = None; annotation = None }
-      }
-    }
-  | name = name; EQUALS; value = test {
-      {
-        Node.location = { (fst name) with Location.stop = value.Node.location.Location.stop };
-        value = { Parameter.name = snd name; value = Some value; annotation = None};
       }
     }
   ;
@@ -1122,16 +594,6 @@ define_parameters:
   | COLON; expression = expression { expression }
   ;
 
-%inline comment_annotation:
-  | annotation = ANNOTATION_COMMENT {
-      let (start, stop), annotation = annotation in
-      annotation
-      |> String.strip ~drop:(function | '\'' | '"' -> true | _ -> false)
-      |> AstExpression.StringLiteral.create
-      |> fun string -> Expression.Constant (AstExpression.Constant.String string)
-      |> Node.create ~location:(Location.create ~start ~stop)
-    }
-
 %inline return_annotation:
   | MINUS; RIGHTANGLE; expression = expression { expression }
   ;
@@ -1143,172 +605,6 @@ define_parameters:
     right = RIGHTBRACKET {
       head, subscripts, Location.create ~start:left ~stop:right
     }
-  ;
-
-with_item:
-  | resource = test { resource, None }
-  | resource = test; AS; target = expression { resource, Some target }
-  ;
-
-handler:
-  | start = EXCEPT; COLON; handler_body = block {
-      location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.Handler.kind = None; name = None; body = snd handler_body }
-    }
-  | start = EXCEPT; kind = expression; COLON; handler_body = block {
-      location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.Handler.kind = Some kind; name = None; body = snd handler_body }
-    }
-  | start = EXCEPT;
-    kind = expression; AS; name = identifier;
-    COLON; handler_body = block
-  | start = EXCEPT;
-    kind = expression; COMMA; name = identifier;
-    COLON; handler_body = block {
-      location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.Handler.kind = Some kind; name = Some ({Node.location=(fst name); value=(snd name)}); body = snd handler_body }
-    }
-  | start = EXCEPT;
-    kind = or_test; COLON; handler_body = block {
-      location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.Handler.kind = Some kind; name = None; body = snd handler_body }
-    }
-  | start = EXCEPT;
-    kind = or_test; AS; name = identifier;
-    COLON; handler_body = block {
-      location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.Handler.kind = Some kind; name = Some ({Node.location=(fst name); value=(snd name)}); body = snd handler_body }
-    }
-  ;
-
-group_handler:
-  | start = EXCEPT_STAR; kind = expression; COLON; handler_body = block {
-      location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.Handler.kind = Some kind; name = None; body = snd handler_body }
-    }
-  | start = EXCEPT_STAR;
-    kind = expression; AS; name = identifier;
-    COLON; handler_body = block {
-      location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.Handler.kind = Some kind; name = Some ({Node.location=(fst name); value=(snd name)}); body = snd handler_body }
-    }
-  | start = EXCEPT_STAR;
-    kind = or_test; COLON; handler_body = block {
-      location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.Handler.kind = Some kind; name = None; body = snd handler_body }
-    }
-  | start = EXCEPT_STAR;
-    kind = or_test; AS; name = identifier;
-    COLON; handler_body = block {
-      location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.Handler.kind = Some kind; name = Some ({Node.location=(fst name); value=(snd name)}); body = snd handler_body }
-    }
-  ;
-
-from:
-  | from = from_string {
-      Some (Reference.create from)
-    }
-  ;
-
-from_string:
-  | identifier = identifier {
-      snd identifier
-  }
-  | identifier = identifier; from_string = from_string {
-      (snd identifier) ^ from_string
-    }
-  | relative = nonempty_list(ellipsis_or_dot) {
-      String.concat relative
-    }
-  | relative = nonempty_list(ellipsis_or_dot);
-    from_string = from_string {
-      (String.concat relative) ^ from_string
-    }
-  ;
-
-ellipsis_or_dot:
-  | DOT {
-      "."
-    }
-  | ELLIPSES {
-      "..."
-    }
-  ;
-
-imports:
-  | imports = parser_generator_separated_nonempty_list(COMMA, import) {
-      let location =
-        let (start, _) = List.hd_exn imports in
-        let (stop, _) = List.last_exn imports in
-        { start with Location.stop = stop.Location.stop }
-      in
-      location, List.map imports ~f:(fun (location, value) -> { Node.value; location })
-    }
-  | start = LEFTPARENS;
-    imports = parser_generator_separated_nonempty_list(COMMA, import);
-    stop = RIGHTPARENS {
-      (Location.create ~start ~stop),
-      List.map imports ~f:(fun (location, value) -> { Node.value; location })
-    }
-  ;
-
-import:
-  | position = ASTERIKS {
-      let location =
-        let start, stop = position in
-        Location.create ~start ~stop
-      in
-      location,
-      {
-        Ast.Statement.Import.name = Reference.create "*";
-        alias = None;
-      }
-    }
-  | name = reference {
-      fst name,
-      {
-        Ast.Statement.Import.name = snd name;
-        alias = None;
-      }
-    }
-  | name = reference;
-    AS; alias = identifier {
-      {(fst name) with Location.stop = (fst alias).Location.stop},
-      {
-        Ast.Statement.Import.name = snd name;
-        alias = Some (snd alias);
-      }
-    }
-  ;
-
-%inline target:
-  | target = test_list {
-      let assignment_with_annotation ~value ~annotation ~index_in_chain =
-        {
-          Node.location = {
-            target.Node.location with Location.stop =
-              value.Node.location.Location.stop;
-          };
-          value = Statement.Assign {
-            Assign.target = target;
-            annotation = annotation;
-            value = Some value;
-            index_in_chain;
-          };
-        }
-      in
-      assignment_with_annotation
-    }
-
-targets:
-  | target = target; EQUALS { [target] }
-  | targets = targets; target = target; EQUALS { targets @ [target] }
-  ;
-
-value:
-  | test = test_list { test }
-  | yield_form = yield_form { yield_form }
   ;
 
 (* Expressions. *)
@@ -1326,36 +622,6 @@ atom:
       Node.create (Expression.Constant AstExpression.Constant.Ellipsis) ~location
     }
 
-  | left = expression;
-    operator = binary_operator;
-    right = expression; {
-      binary_operator ~left ~operator ~right
-    }
-
-  | bytes = BYTES+ {
-      let (start, stop), _, _ = List.hd_exn bytes in
-      {
-        Node.location = Location.create ~start ~stop;
-        value = Expression.Constant (AstExpression.Constant.String (
-          AstExpression.StringLiteral.create
-            ~bytes:true
-            (String.concat (List.map bytes ~f:(fun (_, _, value) -> value)))
-        ));
-      }
-    }
-
-  | format = FORMAT; mixed_string = mixed_string {
-      let all_strings = create_raw_format_substring format :: mixed_string in
-      let all_pieces = List.map all_strings ~f:snd in
-      let (head, _), (last, _) = List.hd_exn all_strings, List.last_exn all_strings in
-      let (start, _) = head in
-      let (_, stop) = last in
-      {
-        Node.location = Location.create ~start ~stop;
-        value = create_mixed_string all_pieces;
-      }
-    }
-
   | name = expression;
     start = LEFTPARENS;
     arguments = arguments;
@@ -1364,10 +630,6 @@ atom:
       Expression.Call { Call.callee = name; arguments }
       |> Node.create
         ~location:({ name.Node.location with Location.stop = call_location.Location.stop })
-    }
-
-  | set_or_dictionary = set_or_dictionary {
-      set_or_dictionary
     }
 
   | position = FALSE {
@@ -1411,52 +673,45 @@ atom:
     }
 
   | start = LEFTBRACKET;
-    items = parser_generator_separated_list(COMMA, test);
+    items = parser_generator_separated_list(COMMA, value);
     stop = RIGHTBRACKET {
       {
         Node.location = Location.create ~start ~stop;
         value = Expression.List items;
       }
     }
-  | start = LEFTBRACKET;
-    element = test;
-    generators = comprehension+;
-    stop = RIGHTBRACKET {
-      {
-        Node.location = Location.create ~start ~stop;
-        value = Expression.ListComprehension { Comprehension.element; generators };
-      }
-    }
 
-  | start = LEFTCURLY;
-    element = test;
-    generators = comprehension+;
-    stop = RIGHTCURLY {
-      {
-        Node.location = Location.create ~start ~stop;
-        value = Expression.SetComprehension { Comprehension.element; generators };
-      }
-    }
-
-  | position = ASTERIKS; test = expression {
+  | position = ASTERIKS; inner = expression {
     let start, _ = position in
-    let location = location_create_with_stop ~start ~stop:(Node.stop test) in
-    match test with
+    let location = location_create_with_stop ~start ~stop:(Node.stop inner) in
+    match inner with
     | {
-        Node.value = Expression.Starred (Starred.Once test);
+        Node.value = Expression.Starred (Starred.Once inner);
         _;
       } -> {
         Node.location;
-        value = Expression.Starred (Starred.Twice test);
+        value = Expression.Starred (Starred.Twice inner);
       }
     | _ -> {
         Node.location;
-        value = Expression.Starred (Starred.Once test);
+        value = Expression.Starred (Starred.Once inner);
       }
     }
 
   | string = STRING; mixed_string = mixed_string {
       let all_strings = create_literal_substring string :: mixed_string in
+      let all_pieces = List.map all_strings ~f:snd in
+      let (head, _), (last, _) = List.hd_exn all_strings, List.last_exn all_strings in
+      let (start, _) = head in
+      let (_, stop) = last in
+      {
+        Node.location = Location.create ~start ~stop;
+        value = create_mixed_string all_pieces;
+      }
+    }
+
+  | format = FORMAT; mixed_string = mixed_string {
+      let all_strings = create_raw_format_substring format :: mixed_string in
       let all_pieces = List.map all_strings ~f:snd in
       let (head, _), (last, _) = List.hd_exn all_strings, List.last_exn all_strings in
       let (start, _) = head in
@@ -1506,10 +761,10 @@ expression:
       }
     }
 
-  | start = LEFTPARENS; test = test_list; stop = RIGHTPARENS {
+  | start = LEFTPARENS; inner = value_list; stop = RIGHTPARENS {
       {
         Node.location = Location.create ~start ~stop;
-        value = Expression.Parenthesis test;
+        value = Expression.Parenthesis inner;
       }
     }
 
@@ -1527,35 +782,10 @@ expression:
 
   | subscript = subscript { subscript_access subscript }
 
-  | start = AWAIT; expression = expression {
-      {
-        Node.location = location_create_with_stop ~start ~stop:(Node.stop expression);
-        value = Expression.Await expression;
-      }
-    }
-
-  | LEFTPARENS; generator = generator; RIGHTPARENS { generator }
-
-  | LEFTPARENS; yield_form = yield_form; RIGHTPARENS { yield_form }
-  ;
-
-expression_list:
-  | items = separated_nonempty_list_indicator(COMMA, expression) {
-      match items with
-      | head::[], has_trailing_comma ->
-          if has_trailing_comma then
-            {
-              Node.location = head.Node.location;
-              value = Expression.Tuple [head];
-            }
-          else head
-      | (head :: _) as items, _ ->
-          let last = List.last_exn items in
-          {
-            Node.location = { head.Node.location with Location.stop = Node.stop last };
-            value = Expression.Tuple items;
-          }
-      | _ -> raise (Failure "invalid atom")
+  | left = expression;
+    operator = binary_operator;
+    right = expression {
+      binary_operator ~left ~operator ~right
     }
   ;
 
@@ -1641,49 +871,12 @@ or_test:
    }
   ;
 
-test_with_generator:
-  | generator = generator { generator }
-  | test = test { test }
-  ;
-
-test:
+value:
   | or_test = or_test { or_test }
-
-  | target = identifier; COLONEQUALS; value = test {
-      {
-        Node.location = { (fst target) with Location.stop = Node.stop value };
-        value = Expression.WalrusOperator {
-          WalrusOperator.target =
-            Expression.Name (Name.Identifier (snd target))
-            |> Node.create ~location:(fst target);
-          value = value;
-        }
-      }
-    }
-
-  | target = or_test;
-    IF;
-    test = test_list;
-    ELSE;
-    alternative = test {
-      {
-        Node.location = { target.Node.location with Location.stop = Node.stop alternative };
-        value = Expression.Ternary { Ternary.target; test; alternative };
-      }
-    }
-  | start = LAMBDA;
-    parameters = parser_generator_separated_list(COMMA, lambda_parameter);
-    COLON;
-    body = test {
-      {
-        Node.location =  location_create_with_stop ~start ~stop:(Node.stop body);
-        value = Expression.Lambda { Lambda.parameters; body }
-      }
-    }
   ;
 
-test_list:
-  | items = separated_nonempty_list_indicator(COMMA, test) {
+value_list:
+  | items = separated_nonempty_list_indicator(COMMA, value) {
       match items with
       | head :: [], has_trailing_comma ->
         if has_trailing_comma then
@@ -1703,45 +896,11 @@ test_list:
     }
   ;
 
-yield_form:
-  | yield_token = YIELD; test = test_list?; {
-      let start, stop = yield_token in
-      let location =
-        Option.map
-         ~f:(fun test -> location_create_with_stop ~start ~stop:(Node.stop test))
-         test
-        |> Option.value ~default:(Location.create ~start ~stop)
-      in
-      {
-        Node.location;
-        value = Expression.Yield test;
-      }
-    }
-
-  | yield_token = YIELD; FROM; test = test_list; {
-      let start, _ = yield_token in
-      let location = location_create_with_stop ~start ~stop:(Node.stop test) in
-      {
-        Node.location;
-        value = Expression.YieldFrom test;
-      }
-    }
-  ;
-
 %inline binary_operator:
   | PLUS { AstExpression.BinaryOperator.Add }
-  | AT { AstExpression.BinaryOperator.MatMult }
-  | AMPERSAND { AstExpression.BinaryOperator.BitAnd }
-  | BAR { AstExpression.BinaryOperator.BitOr }
-  | HAT { AstExpression.BinaryOperator.BitXor }
-  | SLASH; SLASH { AstExpression.BinaryOperator.FloorDiv }
-  | SLASH { AstExpression.BinaryOperator.Div }
-  | LEFTANGLELEFTANGLE { AstExpression.BinaryOperator.LShift }
-  | PERCENT { AstExpression.BinaryOperator.Mod }
-  | ASTERIKS; ASTERIKS { AstExpression.BinaryOperator.Pow }
-  | ASTERIKS { AstExpression.BinaryOperator.Mult }
-  | RIGHTANGLERIGHTANGLE { AstExpression.BinaryOperator.RShift }
   | MINUS { AstExpression.BinaryOperator.Sub }
+  | ASTERIKS { AstExpression.BinaryOperator.Mult }
+  | SLASH { AstExpression.BinaryOperator.Div }
   ;
 
 comparison_operator:
@@ -1763,22 +922,6 @@ comparison_operator:
   | NOT; IN; operand = expression { AstExpression.ComparisonOperator.NotIn, operand }
   ;
 
-%inline compound_operator:
-  | PLUSEQUALS { AstExpression.BinaryOperator.Add }
-  | ATEQUALS { AstExpression.BinaryOperator.MatMult }
-  | AMPERSANDEQUALS { AstExpression.BinaryOperator.BitAnd }
-  | BAREQUALS { AstExpression.BinaryOperator.BitOr }
-  | HATEQUALS { AstExpression.BinaryOperator.BitXor }
-  | SLASHSLASHEQUALS { AstExpression.BinaryOperator.FloorDiv }
-  | SLASHEQUALS { AstExpression.BinaryOperator.Div }
-  | LEFTANGLELEFTANGLEEQUALS { AstExpression.BinaryOperator.LShift }
-  | PERCENTEQUALS { AstExpression.BinaryOperator.Mod }
-  | ASTERIKSASTERIKSEQUALS { AstExpression.BinaryOperator.Pow }
-  | ASTERIKSEQUALS { AstExpression.BinaryOperator.Mult }
-  | RIGHTANGLERIGHTANGLEEQUALS { AstExpression.BinaryOperator.RShift }
-  | MINUSEQUALS { AstExpression.BinaryOperator.Sub }
-  ;
-
 %inline unary_operator:
   | position = TILDE { position, AstExpression.UnaryOperator.Invert }
   | position = MINUS { position, AstExpression.UnaryOperator.Negative }
@@ -1788,114 +931,26 @@ comparison_operator:
 
 arguments:
   | arguments = parser_generator_separated_list(COMMA, argument) { arguments }
-  | test = test_with_generator { [{ Call.Argument.name = None; value = test }] }
-  | test = generator; COMMA { [{ Call.Argument.name = None; value = test }] }
   ;
 
 argument:
-  | identifier = identifier; EQUALS; value = test {
+  | identifier = identifier; EQUALS; value = value {
      {
         Call.Argument.name = Some { Node.location = fst identifier; value = snd identifier };
         value;
       }
     }
-  | value = test { { Call.Argument.name = None; value } }
+  | value = value { { Call.Argument.name = None; value } }
   ;
 
 subscript_key:
-  | index = test { index }
-  | lower = test?; bound_colon = COLON; upper = test? {
+  | index = value { index }
+  | lower = value?; bound_colon = COLON; upper = value? {
       slice ~lower ~upper ~step:None ~bound_colon ~step_colon:None
     }
-  | lower = test?; bound_colon = COLON; upper = test?; step_colon = COLON; step = test? {
+  | lower = value?; bound_colon = COLON; upper = value?; step_colon = COLON; step = value? {
       slice ~lower ~upper ~step ~bound_colon ~step_colon:(Some step_colon)
     }
-  ;
-
-(* Collections. *)
-set_or_dictionary_entry:
-  | test = test {
-      match test with
-      | { Node.value = Expression.Starred (Starred.Twice keywords); _ } ->
-          Entry (Dictionary.Entry.Splat keywords)
-      | _ ->
-          Item test
-    }
-  | key = test; COLON; value = test {
-      Entry (Dictionary.Entry.KeyValue Dictionary.Entry.KeyValue.{ key = key; value = value; })
-    }
-  ;
-
-set_or_dictionary_maker:
-  | entry = set_or_dictionary_entry {
-      add_entry { entries = []; comprehensions = []; items = [] } entry
-    }
-  | items = set_or_dictionary_maker; COMMA; entry = set_or_dictionary_entry {
-      add_entry items entry
-    }
-  | items = set_or_dictionary_maker; comprehension = comprehension {
-      add_entry items (Comprehension comprehension)
-    }
-  ;
-
-set_or_dictionary:
-  | start = LEFTCURLY; stop = RIGHTCURLY {
-      {
-        Node.location = Location.create ~start ~stop;
-        value = Expression.Dictionary [];
-      }
-    }
-  | start = LEFTCURLY; items = set_or_dictionary_maker; COMMA?; stop = RIGHTCURLY {
-      let value =
-        match items with
-        | { entries; comprehensions = []; items = [] } ->
-             Expression.Dictionary (List.rev entries)
-        | { entries = [Dictionary.Entry.KeyValue entry]; items = []; comprehensions  } ->
-              Expression.DictionaryComprehension {
-                Comprehension.element = entry;
-                generators = List.rev comprehensions;
-              }
-        | { items; entries = []; comprehensions = [] } ->
-               Expression.Set (List.rev items)
-        | { items = [item]; comprehensions; entries = [] } ->
-             Expression.SetComprehension {
-               Comprehension.element = item;
-               generators = List.rev comprehensions;
-             }
-        | _ -> failwith "Invalid dictionary or set"
-      in
-      { Node.location = Location.create ~start ~stop; value }
-    }
-
-generator:
-  | element = test; generators = comprehension+ {
-      let stop =
-        let { Comprehension.Generator.iterator; conditions; _ } = List.last_exn generators in
-        match List.rev conditions with
-        | [] -> Node.stop iterator
-        | condition :: _ -> Node.stop condition
-      in
-      {
-        Node.location = { element.Node.location with Location.stop };
-        value = Expression.Generator { Comprehension.element; generators };
-      }
-    }
-  ;
-
-comprehension:
-  | ASYNC; FOR; target = expression_list; IN; iterator = or_test;
-    conditions = list(condition) {
-      { Comprehension.Generator.target; iterator; conditions; async = true }
-    }
-  | FOR; target = expression_list; IN; iterator = or_test;
-    conditions = list(condition) {
-      { Comprehension.Generator.target; iterator; conditions; async = false }
-    }
-
-  ;
-
-condition:
-  | IF; test = or_test { test }
   ;
 
 (* Helper rule dumping ground. *)
@@ -1929,22 +984,5 @@ parser_generator_separated_nonempty_list(SEPARATOR, item):
   | item = item { [item] }
   | item = item; SEPARATOR; rest = parser_generator_separated_list(SEPARATOR, item) {
       item::rest
-    }
-  ;
-
-parser_generator_separated_list_of_lists(SEPARATOR, list_item):
-  | { [] }
-  | list_item = list_item { [list_item] }
-  | list_item = list_item; SEPARATOR;
-    rest = parser_generator_separated_list_of_lists(SEPARATOR, list_item) {
-      list_item::rest
-    }
-  ;
-
-parser_generator_separated_nonempty_list_of_lists(SEPARATOR, list_item):
-  | list_item = list_item { [list_item] }
-  | list_item = list_item; SEPARATOR;
-    rest = parser_generator_separated_list_of_lists(SEPARATOR, list_item) {
-      list_item::rest
     }
   ;

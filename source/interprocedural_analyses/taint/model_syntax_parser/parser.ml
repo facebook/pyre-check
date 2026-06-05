@@ -153,7 +153,7 @@ module ParserToAst = struct
                   (* This means the expansion ends cleanly. *)
                   sofar
               | { State.kind = State.Expression; _ } ->
-                  (* The fstring contatins unclosed an curly brace, which is malformed. *)
+                  (* The fstring contains an unclosed curly brace, which is malformed. *)
                   sofar
               | { State.kind = State.Literal; start_line = line; start_column = column; content } ->
                   (* This means the fstring ends with some literal characters as opposed to an
@@ -255,29 +255,8 @@ module ParserToAst = struct
 
 
   and convert_expression { Node.location; value } =
-    let convert_entry entry =
-      let open Dictionary.Entry in
-      match entry with
-      | KeyValue KeyValue.{ key; value } ->
-          AstExpression.Dictionary.Entry.KeyValue
-            AstExpression.Dictionary.Entry.KeyValue.
-              { key = convert_expression key; value = convert_expression value }
-      | Splat s -> AstExpression.Dictionary.Entry.Splat (convert_expression s)
-    in
-    let convert_generator { Comprehension.Generator.target; iterator; conditions; async } =
-      {
-        AstExpression.Comprehension.Generator.target = convert_expression target;
-        iterator = convert_expression iterator;
-        conditions = List.map ~f:convert_expression conditions;
-        async;
-      }
-    in
     let open Expression in
     match value with
-    | Await expression ->
-        AstExpression.Expression.Await
-          { AstExpression.Await.operand = convert_expression expression; origin = None }
-        |> Node.create ~location
     | BinaryOperator { BinaryOperator.left; operator; right } ->
         AstExpression.Expression.BinaryOperator
           {
@@ -314,45 +293,11 @@ module ParserToAst = struct
           }
         |> Node.create ~location
     | Constant value -> AstExpression.Expression.Constant value |> Node.create ~location
-    | Dictionary entries ->
-        AstExpression.Expression.Dictionary (List.map ~f:convert_entry entries)
-        |> Node.create ~location
-    | DictionaryComprehension
-        { Comprehension.element = Dictionary.Entry.KeyValue.{ key; value }; generators } ->
-        AstExpression.Expression.DictionaryComprehension
-          {
-            AstExpression.Comprehension.element =
-              AstExpression.Dictionary.Entry.KeyValue.
-                { key = convert_expression key; value = convert_expression value };
-            generators = List.map ~f:convert_generator generators;
-          }
-        |> Node.create ~location
-    | Generator { Comprehension.element; generators } ->
-        AstExpression.Expression.Generator
-          {
-            AstExpression.Comprehension.element = convert_expression element;
-            generators = List.map ~f:convert_generator generators;
-          }
-        |> Node.create ~location
     | FormatString substrings ->
         AstExpression.Expression.FormatString (expand_format_string substrings)
         |> Node.create ~location
-    | Lambda { Lambda.parameters; body } ->
-        AstExpression.Expression.Lambda
-          {
-            AstExpression.Lambda.parameters = List.map ~f:convert_parameter parameters;
-            body = convert_expression body;
-          }
-        |> Node.create ~location
     | List expression_list ->
         AstExpression.Expression.List (List.map ~f:convert_expression expression_list)
-        |> Node.create ~location
-    | ListComprehension { Comprehension.element; generators } ->
-        AstExpression.Expression.ListComprehension
-          {
-            AstExpression.Comprehension.element = convert_expression element;
-            generators = List.map ~f:convert_generator generators;
-          }
         |> Node.create ~location
     | Name (Name.Attribute { Name.Attribute.base; attribute }) ->
         AstExpression.Expression.Name
@@ -366,16 +311,6 @@ module ParserToAst = struct
     | Name (Name.Identifier name) ->
         AstExpression.Expression.Name (AstExpression.Name.Identifier name) |> Node.create ~location
     | Parenthesis expression -> convert_expression expression
-    | Set expression_list ->
-        AstExpression.Expression.Set (List.map ~f:convert_expression expression_list)
-        |> Node.create ~location
-    | SetComprehension { Comprehension.element; generators } ->
-        AstExpression.Expression.SetComprehension
-          {
-            AstExpression.Comprehension.element = convert_expression element;
-            generators = List.map ~f:convert_generator generators;
-          }
-        |> Node.create ~location
     | Starred (Starred.Once expression) ->
         AstExpression.Expression.Starred
           (AstExpression.Starred.Once (convert_expression expression))
@@ -401,14 +336,6 @@ module ParserToAst = struct
             origin = None;
           }
         |> Node.create ~location
-    | Ternary { Ternary.target; test; alternative } ->
-        AstExpression.Expression.Ternary
-          {
-            AstExpression.Ternary.target = convert_expression target;
-            test = convert_expression test;
-            alternative = convert_expression alternative;
-          }
-        |> Node.create ~location
     | Tuple expression_list ->
         AstExpression.Expression.Tuple (List.map ~f:convert_expression expression_list)
         |> Node.create ~location
@@ -419,19 +346,6 @@ module ParserToAst = struct
             operand = convert_expression operand;
             origin = None;
           }
-        |> Node.create ~location
-    | WalrusOperator { WalrusOperator.target; value } ->
-        AstExpression.Expression.WalrusOperator
-          {
-            AstExpression.WalrusOperator.target = convert_expression target;
-            value = convert_expression value;
-            origin = None;
-          }
-        |> Node.create ~location
-    | Yield expression ->
-        AstExpression.Expression.Yield (expression >>| convert_expression) |> Node.create ~location
-    | YieldFrom expression ->
-        AstExpression.Expression.YieldFrom (expression |> convert_expression)
         |> Node.create ~location
 
 
@@ -464,21 +378,6 @@ module ParserToAst = struct
                 AstExpression.Origin.create ~location (AstExpression.Origin.ChainedAssign { index })
                 );
             }
-      | Assert { Assert.test; message } ->
-          AstStatement.Statement.Assert
-            {
-              AstStatement.Assert.test = convert_expression test;
-              message = message >>| convert_expression;
-              origin = None;
-            }
-      | AugmentedAssign { AugmentedAssign.target; operator; value } ->
-          AstStatement.Statement.AugmentedAssign
-            {
-              AstStatement.AugmentedAssign.target = convert_expression target;
-              operator;
-              value = convert_expression value;
-            }
-      | Break -> AstStatement.Statement.Break
       | Class { Class.name; base_arguments; body; decorators } ->
           let body =
             let parent = NestingContext.create_class ~parent (Reference.show name) in
@@ -494,7 +393,6 @@ module ParserToAst = struct
               top_level_unbound_names = [];
               type_params = [];
             }
-      | Continue -> AstStatement.Statement.Continue
       | Define { Define.signature; body } ->
           let body =
             let { ParserStatement.Define.Signature.name; _ } = signature in
@@ -534,85 +432,11 @@ module ParserToAst = struct
               unbound_names = [];
               body;
             }
-      | Delete expressions ->
-          AstStatement.Statement.Delete (List.map ~f:convert_expression expressions)
       | Expression expression -> AstStatement.Statement.Expression (convert_expression expression)
-      | For { For.target; iterator; body; orelse; async } ->
-          AstStatement.Statement.For
-            {
-              AstStatement.For.target = convert_expression target;
-              iterator = convert_expression iterator;
-              body = List.map ~f:(convert_statement ~parent) body;
-              orelse = List.map ~f:(convert_statement ~parent) orelse;
-              async;
-            }
-      | Global identifiers -> AstStatement.Statement.Global identifiers
       | If { If.test; body; orelse } ->
           AstStatement.Statement.If
             {
               AstStatement.If.test = convert_expression test;
-              body = List.map ~f:(convert_statement ~parent) body;
-              orelse = List.map ~f:(convert_statement ~parent) orelse;
-            }
-      | Import { Import.from = None; imports } ->
-          AstStatement.Statement.Import { AstStatement.Import.from = None; imports }
-      | Import { Import.from = Some from; imports } ->
-          let new_location =
-            match location with
-            | { Location.start = { Location.line; column }; _ } ->
-                (* Add 5 characters for 'from ' *)
-                {
-                  Location.start = { Location.line; column = column + 5 };
-                  stop =
-                    {
-                      Location.line;
-                      column = column + 5 + String.length ([%show: Reference.t] from);
-                    };
-                }
-          in
-          AstStatement.Statement.Import
-            { AstStatement.Import.from = Some (Node.create ~location:new_location from); imports }
-      | Nonlocal identifiers -> AstStatement.Statement.Nonlocal identifiers
-      | Pass -> AstStatement.Statement.Pass
-      | Raise { Raise.expression; from } ->
-          AstStatement.Statement.Raise
-            {
-              AstStatement.Raise.expression = expression >>| convert_expression;
-              from = from >>| convert_expression;
-            }
-      | Return { Return.is_implicit; expression } ->
-          AstStatement.Statement.Return
-            { AstStatement.Return.is_implicit; expression = expression >>| convert_expression }
-      | Try { Try.body; handlers; orelse; finally; handles_exception_group } ->
-          let convert_handler { ParserStatement.Try.Handler.kind; name; body } =
-            {
-              AstStatement.Try.Handler.kind = kind >>| convert_expression;
-              name;
-              body = List.map ~f:(convert_statement ~parent) body;
-            }
-          in
-          AstStatement.Statement.Try
-            {
-              AstStatement.Try.body = List.map ~f:(convert_statement ~parent) body;
-              handlers = List.map ~f:convert_handler handlers;
-              orelse = List.map ~f:(convert_statement ~parent) orelse;
-              finally = List.map ~f:(convert_statement ~parent) finally;
-              handles_exception_group;
-            }
-      | With { With.items; body; async } ->
-          let convert_item (resource, target) =
-            convert_expression resource, target >>| convert_expression
-          in
-          AstStatement.Statement.With
-            {
-              AstStatement.With.items = List.map ~f:convert_item items;
-              body = List.map ~f:(convert_statement ~parent) body;
-              async;
-            }
-      | While { While.test; body; orelse } ->
-          AstStatement.Statement.While
-            {
-              AstStatement.While.test = convert_expression test;
               body = List.map ~f:(convert_statement ~parent) body;
               orelse = List.map ~f:(convert_statement ~parent) orelse;
             }

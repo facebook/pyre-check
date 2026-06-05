@@ -144,7 +144,7 @@ let test_lexer =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "def foo():\n\tprint >> a"
+           "def foo(): ..."
            [
              +Statement.Define
                 {
@@ -162,61 +162,8 @@ let test_lexer =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Expression !"a"];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "1 +\\\n 2"
-           [
-             +Statement.Expression
-                (+Expression.BinaryOperator
-                    {
-                      operator = BinaryOperator.Add;
-                      left = +Expression.Constant (Constant.Integer 1);
-                      right = +Expression.Constant (Constant.Integer 2);
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "1 + \\\n 2"
-           [
-             +Statement.Expression
-                (+Expression.BinaryOperator
-                    {
-                      operator = BinaryOperator.Add;
-                      left = +Expression.Constant (Constant.Integer 1);
-                      right = +Expression.Constant (Constant.Integer 2);
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "(1 +\n 2)"
-           [
-             +Statement.Expression
-                (+Expression.BinaryOperator
-                    {
-                      operator = BinaryOperator.Add;
-                      left = +Expression.Constant (Constant.Integer 1);
-                      right = +Expression.Constant (Constant.Integer 2);
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "(1 +\n 2)\n3"
-           [
-             +Statement.Expression
-                (+Expression.BinaryOperator
-                    {
-                      operator = BinaryOperator.Add;
-                      left = +Expression.Constant (Constant.Integer 1);
-                      right = +Expression.Constant (Constant.Integer 2);
-                      origin = None;
-                    });
-             +Statement.Expression (+Expression.Constant (Constant.Integer 3));
            ];
     ]
 
@@ -251,10 +198,6 @@ let test_number =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
            "((1))"
-           [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "1;"
            [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
@@ -333,60 +276,6 @@ let test_number =
       @@ assert_parsed_equal
            "0xffffffffff0000000000000000000000"
            [+Statement.Expression (+Expression.Constant (Constant.Integer Int.max_value))];
-    ]
-
-
-let test_await =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "await 1"
-           [
-             +Statement.Expression
-                (+Expression.Await
-                    { Await.operand = +Expression.Constant (Constant.Integer 1); origin = None });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "await foo() + 1"
-           [
-             +Statement.Expression
-                (+Expression.BinaryOperator
-                    {
-                      operator = BinaryOperator.Add;
-                      left =
-                        +Expression.Await
-                           {
-                             Await.operand =
-                               +Expression.Call
-                                  { Call.callee = !"foo"; arguments = []; origin = None };
-                             origin = None;
-                           };
-                      right = +Expression.Constant (Constant.Integer 1);
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "await foo() * 2"
-           [
-             +Statement.Expression
-                (+Expression.BinaryOperator
-                    {
-                      operator = BinaryOperator.Mult;
-                      left =
-                        +Expression.Await
-                           {
-                             Await.operand =
-                               +Expression.Call
-                                  { Call.callee = !"foo"; arguments = []; origin = None };
-                             origin = None;
-                           };
-                      right = +Expression.Constant (Constant.Integer 2);
-                      origin = None;
-                    });
-           ];
     ]
 
 
@@ -601,32 +490,6 @@ let test_name =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "a[:1 if True else 2]"
-           [
-             +Statement.Expression
-                (+Expression.Subscript
-                    {
-                      Subscript.base = !"a";
-                      index =
-                        +Expression.Slice
-                           {
-                             Slice.start = None;
-                             stop =
-                               Some
-                                 (+Expression.Ternary
-                                     {
-                                       Ternary.target = +Expression.Constant (Constant.Integer 1);
-                                       test = +Expression.Constant Constant.True;
-                                       alternative = +Expression.Constant (Constant.Integer 2);
-                                     });
-                             step = None;
-                             origin = None;
-                           };
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
            "a[1:1]"
            [
              +Statement.Expression
@@ -716,13 +579,6 @@ let test_compound =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "1.0;2"
-           [
-             +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
-             +Statement.Expression (+Expression.Constant (Constant.Integer 2));
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
            "\n1.0\n2\n3"
            [
              +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
@@ -746,30 +602,7 @@ let test_define =
     [
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "def foo(a):\n  1"
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
-                      decorators = [];
-                      return_annotation = None;
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "def foo(*, a):\n  1"
+           "def foo(*, a): ..."
            [
              +Statement.Define
                 {
@@ -791,12 +624,12 @@ let test_define =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "def foo(a, /, b):\n  1"
+           "def foo(a, /, b): ..."
            [
              +Statement.Define
                 {
@@ -819,12 +652,12 @@ let test_define =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "def foo(**a):\n  1"
+           "def foo(**a): ..."
            [
              +Statement.Define
                 {
@@ -842,30 +675,7 @@ let test_define =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "async def foo():\n  1"
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      return_annotation = None;
-                      async = true;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -893,7 +703,7 @@ let test_define =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "@foo\nasync def foo():\n  1"
+           "@foo\nasync def foo(): ..."
            [
              +Statement.Define
                 {
@@ -911,12 +721,12 @@ let test_define =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "@decorator\ndef foo(a):\n  1"
+           "@decorator\ndef foo(a): ..."
            [
              +Statement.Define
                 {
@@ -934,12 +744,12 @@ let test_define =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "@decorator(a=b, c=d)\ndef foo(a):\n  1"
+           "@decorator(a=b, c=d)\ndef foo(a): ..."
            [
              +Statement.Define
                 {
@@ -966,12 +776,12 @@ let test_define =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "@foo\n\n@bar\ndef foo(a):\n  1"
+           "@foo\n\n@bar\ndef foo(a): ..."
            [
              +Statement.Define
                 {
@@ -989,12 +799,12 @@ let test_define =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "@x[0].y\ndef foo(a):\n  1"
+           "@x[0].y\ndef foo(a): ..."
            [
              +Statement.Define
                 {
@@ -1027,12 +837,12 @@ let test_define =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "@(x<y)\ndef foo(a):\n  1"
+           "@(x<y)\ndef foo(a): ..."
            [
              +Statement.Define
                 {
@@ -1059,12 +869,12 @@ let test_define =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "def foo(a, b):\n  1"
+           "def foo(a, b): ..."
            [
              +Statement.Define
                 {
@@ -1086,12 +896,12 @@ let test_define =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "def foo(a = 1, b):\n  1"
+           "def foo(a = 1, b): ..."
            [
              +Statement.Define
                 {
@@ -1117,12 +927,12 @@ let test_define =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "def foo(a=()):\n  1"
+           "def foo(a=()): ..."
            [
              +Statement.Define
                 {
@@ -1147,115 +957,12 @@ let test_define =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "def foo(): 1; 2"
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      return_annotation = None;
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Expression (+Expression.Constant (Constant.Integer 1));
-                      +Statement.Expression (+Expression.Constant (Constant.Integer 2));
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "def foo():\n  1\n  2\n3"
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      return_annotation = None;
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Expression (+Expression.Constant (Constant.Integer 1));
-                      +Statement.Expression (+Expression.Constant (Constant.Integer 2));
-                    ];
-                };
-             +Statement.Expression (+Expression.Constant (Constant.Integer 3));
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "def foo():\n  def bar():\n    1\n    2\n3"
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      return_annotation = None;
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Define
-                         {
-                           Define.signature =
-                             {
-                               Define.Signature.name = !&"bar";
-                               parameters = [];
-                               decorators = [];
-                               return_annotation = None;
-                               async = false;
-                               generator = false;
-                               parent = NestingContext.create_function ~parent "foo";
-                               legacy_parent = None;
-                               type_params = [];
-                             };
-                           captures = [];
-                           unbound_names = [];
-                           body =
-                             [
-                               +Statement.Expression (+Expression.Constant (Constant.Integer 1));
-                               +Statement.Expression (+Expression.Constant (Constant.Integer 2));
-                             ];
-                         };
-                    ];
-                };
-             +Statement.Expression (+Expression.Constant (Constant.Integer 3));
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "def foo(a: int):  1"
+           "def foo(a: int):  ..."
            [
              +Statement.Define
                 {
@@ -1274,12 +981,12 @@ let test_define =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "def foo(a: int = 1):  1"
+           "def foo(a: int = 1):  ..."
            [
              +Statement.Define
                 {
@@ -1304,12 +1011,12 @@ let test_define =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "def foo(a: int, b: string):  1"
+           "def foo(a: int, b: string):  ..."
            [
              +Statement.Define
                 {
@@ -1331,12 +1038,12 @@ let test_define =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "def foo(a: Tuple[int, str]):\n  1"
+           "def foo(a: Tuple[int, str]): ..."
            [
              +Statement.Define
                 {
@@ -1368,12 +1075,12 @@ let test_define =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "def foo(a, b,) -> c:\n  1"
+           "def foo(a, b,) -> c: ..."
            [
              +Statement.Define
                 {
@@ -1395,12 +1102,12 @@ let test_define =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "def foo() -> str:\n  1\n  2"
+           "def foo() -> str: ..."
            [
              +Statement.Define
                 {
@@ -1418,954 +1125,7 @@ let test_define =
                     };
                   captures = [];
                   unbound_names = [];
-                  body =
-                    [
-                      +Statement.Expression (+Expression.Constant (Constant.Integer 1));
-                      +Statement.Expression (+Expression.Constant (Constant.Integer 2));
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-      def foo():  # pyre-ignore
-        # type: (...) -> int
-        return 4
-    |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      return_annotation =
-                        Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Return
-                         {
-                           Return.expression = Some (+Expression.Constant (Constant.Integer 4));
-                           is_implicit = false;
-                         };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-      def foo():
-        # type: (...) -> int
-        return 4
-    |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      return_annotation =
-                        Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Return
-                         {
-                           Return.expression = Some (+Expression.Constant (Constant.Integer 4));
-                           is_implicit = false;
-                         };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-      def foo():
-        # type: (...) -> 'int'
-        return 4
-    |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      return_annotation =
-                        Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Return
-                         {
-                           Return.expression = Some (+Expression.Constant (Constant.Integer 4));
-                           is_implicit = false;
-                         };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-      def foo():
-        # type: () -> str
-        return 4
-    |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      return_annotation =
-                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Return
-                         {
-                           Return.expression = Some (+Expression.Constant (Constant.Integer 4));
-                           is_implicit = false;
-                         };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-        def foo(): # type: ()-> str
-          return 4
-      |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      return_annotation =
-                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Return
-                         {
-                           Return.expression = Some (+Expression.Constant (Constant.Integer 4));
-                           is_implicit = false;
-                         };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-        def foo(): # type:   ()-> str
-          return 4
-      |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      return_annotation =
-                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Return
-                         {
-                           Return.expression = Some (+Expression.Constant (Constant.Integer 4));
-                           is_implicit = false;
-                         };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-         def foo( *args): # type: ( *str) -> str
-           return 4
-       |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters =
-                        [
-                          +{
-                             Parameter.name = "*args";
-                             value = None;
-                             annotation =
-                               Some
-                                 (+Expression.Constant
-                                     (Constant.String (StringLiteral.create "str")));
-                           };
-                        ];
-                      decorators = [];
-                      return_annotation =
-                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Return
-                         {
-                           Return.expression = Some (+Expression.Constant (Constant.Integer 4));
-                           is_implicit = false;
-                         };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-         def foo( **kwargs): # type: ( **str) -> str
-           return 4
-       |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters =
-                        [
-                          +{
-                             Parameter.name = "**kwargs";
-                             value = None;
-                             annotation =
-                               Some
-                                 (+Expression.Constant
-                                     (Constant.String (StringLiteral.create "str")));
-                           };
-                        ];
-                      decorators = [];
-                      return_annotation =
-                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Return
-                         {
-                           Return.expression = Some (+Expression.Constant (Constant.Integer 4));
-                           is_implicit = false;
-                         };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-         def foo( *args, **kwargs): # type: ( *str, **str) -> str
-           return 4
-       |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters =
-                        [
-                          +{
-                             Parameter.name = "*args";
-                             value = None;
-                             annotation =
-                               Some
-                                 (+Expression.Constant
-                                     (Constant.String (StringLiteral.create "str")));
-                           };
-                          +{
-                             Parameter.name = "**kwargs";
-                             value = None;
-                             annotation =
-                               Some
-                                 (+Expression.Constant
-                                     (Constant.String (StringLiteral.create "str")));
-                           };
-                        ];
-                      decorators = [];
-                      return_annotation =
-                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Return
-                         {
-                           Return.expression = Some (+Expression.Constant (Constant.Integer 4));
-                           is_implicit = false;
-                         };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-      def foo(a):
-        # type: (str) -> str
-        return 4
-    |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters =
-                        [
-                          +{
-                             Parameter.name = "a";
-                             value = None;
-                             annotation =
-                               Some
-                                 (+Expression.Constant
-                                     (Constant.String (StringLiteral.create "str")));
-                           };
-                        ];
-                      decorators = [];
-                      return_annotation =
-                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Return
-                         {
-                           Return.expression = Some (+Expression.Constant (Constant.Integer 4));
-                           is_implicit = false;
-                         };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-      def foo(a): # type: (str) -> str
-        return 4
-    |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters =
-                        [
-                          +{
-                             Parameter.name = "a";
-                             value = None;
-                             annotation =
-                               Some
-                                 (+Expression.Constant
-                                     (Constant.String (StringLiteral.create "str")));
-                           };
-                        ];
-                      decorators = [];
-                      return_annotation =
-                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Return
-                         {
-                           Return.expression = Some (+Expression.Constant (Constant.Integer 4));
-                           is_implicit = false;
-                         };
-                    ];
-                };
-           ];
-      (* Don't use string annotations if list length does not match signature *)
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-      def foo(a): # type: (str, str) -> str
-        return 4
-    |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
-                      decorators = [];
-                      return_annotation =
-                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Return
-                         {
-                           Return.expression = Some (+Expression.Constant (Constant.Integer 4));
-                           is_implicit = false;
-                         };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-      def foo(a, b): # type: (typing.Union[typing.List[int], str], str) -> str
-        return 4
-    |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters =
-                        [
-                          +{
-                             Parameter.name = "a";
-                             value = None;
-                             annotation =
-                               Some
-                                 (+Expression.Constant
-                                     (Constant.String
-                                        (StringLiteral.create "typing.Union[typing.List[int], str]")));
-                           };
-                          +{
-                             Parameter.name = "b";
-                             value = None;
-                             annotation =
-                               Some
-                                 (+Expression.Constant
-                                     (Constant.String (StringLiteral.create "str")));
-                           };
-                        ];
-                      decorators = [];
-                      return_annotation =
-                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Return
-                         {
-                           Return.expression = Some (+Expression.Constant (Constant.Integer 4));
-                           is_implicit = false;
-                         };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-      def foo(a, b): # type: (typing.Union[typing.List[int], str], typing.List[str]) -> str
-        return 4
-    |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters =
-                        [
-                          +{
-                             Parameter.name = "a";
-                             value = None;
-                             annotation =
-                               Some
-                                 (+Expression.Constant
-                                     (Constant.String
-                                        (StringLiteral.create "typing.Union[typing.List[int], str]")));
-                           };
-                          +{
-                             Parameter.name = "b";
-                             value = None;
-                             annotation =
-                               Some
-                                 (+Expression.Constant
-                                     (Constant.String (StringLiteral.create "typing.List[str]")));
-                           };
-                        ];
-                      decorators = [];
-                      return_annotation =
-                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Return
-                         {
-                           Return.expression = Some (+Expression.Constant (Constant.Integer 4));
-                           is_implicit = false;
-                         };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-      def foo(self, a, b): # type: (typing.Union[typing.List[int], str], typing.List[str]) -> str
-        return 4
-    |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters =
-                        [
-                          +{ Parameter.name = "self"; value = None; annotation = None };
-                          +{
-                             Parameter.name = "a";
-                             value = None;
-                             annotation =
-                               Some
-                                 (+Expression.Constant
-                                     (Constant.String
-                                        (StringLiteral.create "typing.Union[typing.List[int], str]")));
-                           };
-                          +{
-                             Parameter.name = "b";
-                             value = None;
-                             annotation =
-                               Some
-                                 (+Expression.Constant
-                                     (Constant.String (StringLiteral.create "typing.List[str]")));
-                           };
-                        ];
-                      decorators = [];
-                      return_annotation =
-                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Return
-                         {
-                           Return.expression = Some (+Expression.Constant (Constant.Integer 4));
-                           is_implicit = false;
-                         };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-      def foo(self, a, b): # type: (int) -> str
-        return 4
-    |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters =
-                        [
-                          +{ Parameter.name = "self"; value = None; annotation = None };
-                          +{ Parameter.name = "a"; value = None; annotation = None };
-                          +{ Parameter.name = "b"; value = None; annotation = None };
-                        ];
-                      decorators = [];
-                      return_annotation =
-                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Return
-                         {
-                           Return.expression = Some (+Expression.Constant (Constant.Integer 4));
-                           is_implicit = false;
-                         };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-      def foo():
-        # type: (...) ->List[str]
-        return 4
-    |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      return_annotation =
-                        Some
-                          (+Expression.Constant (Constant.String (StringLiteral.create "List[str]")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Return
-                         {
-                           Return.expression = Some (+Expression.Constant (Constant.Integer 4));
-                           is_implicit = false;
-                         };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-      def foo(
-        self,
-        a,  # type: bool
-        b,  # type: bool
-      ):  # type: (...) -> int
-        pass
-    |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters =
-                        [
-                          +{ Parameter.name = "self"; value = None; annotation = None };
-                          +{
-                             Parameter.name = "a";
-                             value = None;
-                             annotation =
-                               Some
-                                 (+Expression.Constant
-                                     (Constant.String (StringLiteral.create "bool")));
-                           };
-                          +{
-                             Parameter.name = "b";
-                             value = None;
-                             annotation =
-                               Some
-                                 (+Expression.Constant
-                                     (Constant.String (StringLiteral.create "bool")));
-                           };
-                        ];
-                      decorators = [];
-                      return_annotation =
-                        Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body = [+Statement.Pass];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-      def foo(
-        a,  # type: bool
-        b  # type: bool
-      ):
-        pass
-    |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters =
-                        [
-                          +{
-                             Parameter.name = "a";
-                             value = None;
-                             annotation =
-                               Some
-                                 (+Expression.Constant
-                                     (Constant.String (StringLiteral.create "bool")));
-                           };
-                          +{
-                             Parameter.name = "b";
-                             value = None;
-                             annotation =
-                               Some
-                                 (+Expression.Constant
-                                     (Constant.String (StringLiteral.create "bool")));
-                           };
-                        ];
-                      decorators = [];
-                      return_annotation = None;
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body = [+Statement.Pass];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-      def foo(
-        a,  # type: bool
-        **kwargs
-      ):
-        pass
-    |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters =
-                        [
-                          +{
-                             Parameter.name = "a";
-                             value = None;
-                             annotation =
-                               Some
-                                 (+Expression.Constant
-                                     (Constant.String (StringLiteral.create "bool")));
-                           };
-                          +{ Parameter.name = "**kwargs"; value = None; annotation = None };
-                        ];
-                      decorators = [];
-                      return_annotation = None;
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body = [+Statement.Pass];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-        def foo(a): # type: (A_b.C) -> str
-          return "hi"
-    |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters =
-                        [
-                          +{
-                             Parameter.name = "a";
-                             value = None;
-                             annotation =
-                               Some
-                                 (+Expression.Constant
-                                     (Constant.String (StringLiteral.create "A_b.C")));
-                           };
-                        ];
-                      decorators = [];
-                      return_annotation =
-                        Some (+Expression.Constant (Constant.String (StringLiteral.create "str")));
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Return
-                         {
-                           Return.expression =
-                             Some
-                               (+Expression.Constant (Constant.String (StringLiteral.create "hi")));
-                           is_implicit = false;
-                         };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation {|
-        async def foo(a):
-          yield "A"
-    |})
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
-                      decorators = [];
-                      return_annotation = None;
-                      async = true;
-                      generator = true;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Expression
-                         (+Expression.Yield
-                             (Some
-                                (+Expression.Constant (Constant.String (StringLiteral.create "A")))));
-                    ];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
     ]
@@ -2440,123 +1200,6 @@ let test_boolean_operator =
     ]
 
 
-let test_binary_operator =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "1 + 2"
-           [
-             +Statement.Expression
-                (+Expression.BinaryOperator
-                    {
-                      operator = BinaryOperator.Add;
-                      left = +Expression.Constant (Constant.Integer 1);
-                      right = +Expression.Constant (Constant.Integer 2);
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "1 ^ 2"
-           [
-             +Statement.Expression
-                (+Expression.BinaryOperator
-                    {
-                      operator = BinaryOperator.BitXor;
-                      left = +Expression.Constant (Constant.Integer 1);
-                      right = +Expression.Constant (Constant.Integer 2);
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "1 // 2"
-           [
-             +Statement.Expression
-                (+Expression.BinaryOperator
-                    {
-                      operator = BinaryOperator.FloorDiv;
-                      left = +Expression.Constant (Constant.Integer 1);
-                      right = +Expression.Constant (Constant.Integer 2);
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "1 >> 2 >> 3"
-           [
-             +Statement.Expression
-                (+Expression.BinaryOperator
-                    {
-                      operator = BinaryOperator.RShift;
-                      left =
-                        +Expression.BinaryOperator
-                           {
-                             operator = BinaryOperator.RShift;
-                             left = +Expression.Constant (Constant.Integer 1);
-                             right = +Expression.Constant (Constant.Integer 2);
-                             origin = None;
-                           };
-                      right = +Expression.Constant (Constant.Integer 3);
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "1 >> a.b"
-           [
-             +Statement.Expression
-                (+Expression.BinaryOperator
-                    {
-                      operator = BinaryOperator.RShift;
-                      left = +Expression.Constant (Constant.Integer 1);
-                      right =
-                        +Expression.Name
-                           (Name.Attribute
-                              { Name.Attribute.base = !"a"; attribute = "b"; origin = None });
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "1 - 2 + 3"
-           [
-             +Statement.Expression
-                (+Expression.BinaryOperator
-                    {
-                      operator = BinaryOperator.Add;
-                      left =
-                        +Expression.BinaryOperator
-                           {
-                             operator = BinaryOperator.Sub;
-                             left = +Expression.Constant (Constant.Integer 1);
-                             right = +Expression.Constant (Constant.Integer 2);
-                             origin = None;
-                           };
-                      right = +Expression.Constant (Constant.Integer 3);
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a + b.c"
-           [
-             +Statement.Expression
-                (+Expression.BinaryOperator
-                    {
-                      operator = BinaryOperator.Add;
-                      left = !"a";
-                      right =
-                        +Expression.Name
-                           (Name.Attribute
-                              { Name.Attribute.base = !"b"; attribute = "c"; origin = None });
-                      origin = None;
-                    });
-           ];
-    ]
-
-
 let test_unary_operator =
   test_list
     [
@@ -2599,478 +1242,6 @@ let test_unary_operator =
     ]
 
 
-let test_lambda =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "lambda: 1"
-           [
-             +Statement.Expression
-                (+Expression.Lambda
-                    { Lambda.parameters = []; body = +Expression.Constant (Constant.Integer 1) });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "lambda x,: x"
-           [
-             +Statement.Expression
-                (+Expression.Lambda
-                    {
-                      Lambda.parameters =
-                        [+{ Parameter.name = "x"; value = None; annotation = None }];
-                      body = !"x";
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "lambda x: x is y"
-           [
-             +Statement.Expression
-                (+Expression.Lambda
-                    {
-                      Lambda.parameters =
-                        [+{ Parameter.name = "x"; value = None; annotation = None }];
-                      body =
-                        +Expression.ComparisonOperator
-                           {
-                             ComparisonOperator.left = !"x";
-                             operator = ComparisonOperator.Is;
-                             right = !"y";
-                             origin = None;
-                           };
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "lambda x: x"
-           [
-             +Statement.Expression
-                (+Expression.Lambda
-                    {
-                      Lambda.parameters =
-                        [+{ Parameter.name = "x"; value = None; annotation = None }];
-                      body = !"x";
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "lambda x = 1, y: x + 1"
-           [
-             +Statement.Expression
-                (+Expression.Lambda
-                    {
-                      Lambda.parameters =
-                        [
-                          +{
-                             Parameter.name = "x";
-                             value = Some (+Expression.Constant (Constant.Integer 1));
-                             annotation = None;
-                           };
-                          +{ Parameter.name = "y"; value = None; annotation = None };
-                        ];
-                      body =
-                        +Expression.BinaryOperator
-                           {
-                             operator = BinaryOperator.Add;
-                             left = !"x";
-                             right = +Expression.Constant (Constant.Integer 1);
-                             origin = None;
-                           };
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "lambda *, x: x"
-           [
-             +Statement.Expression
-                (+Expression.Lambda
-                    {
-                      Lambda.parameters =
-                        [
-                          +{ Parameter.name = "*"; value = None; annotation = None };
-                          +{ Parameter.name = "x"; value = None; annotation = None };
-                        ];
-                      body = !"x";
-                    });
-           ];
-    ]
-
-
-let test_ternary =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "5 if 1 else 1"
-           [
-             +Statement.Expression
-                (+Expression.Ternary
-                    {
-                      Ternary.target = +Expression.Constant (Constant.Integer 5);
-                      test = +Expression.Constant (Constant.Integer 1);
-                      alternative = +Expression.Constant (Constant.Integer 1);
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a in b if 1 else 1"
-           [
-             +Statement.Expression
-                (+Expression.Ternary
-                    {
-                      Ternary.target =
-                        +Expression.ComparisonOperator
-                           {
-                             ComparisonOperator.left = !"a";
-                             operator = ComparisonOperator.In;
-                             right = !"b";
-                             origin = None;
-                           };
-                      test = +Expression.Constant (Constant.Integer 1);
-                      alternative = +Expression.Constant (Constant.Integer 1);
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "1 if 2 else 3 if 4 else 5"
-           [
-             +Statement.Expression
-                (+Expression.Ternary
-                    {
-                      Ternary.target = +Expression.Constant (Constant.Integer 1);
-                      test = +Expression.Constant (Constant.Integer 2);
-                      alternative =
-                        +Expression.Ternary
-                           {
-                             Ternary.target = +Expression.Constant (Constant.Integer 3);
-                             test = +Expression.Constant (Constant.Integer 4);
-                             alternative = +Expression.Constant (Constant.Integer 5);
-                           };
-                    });
-           ];
-    ]
-
-
-let test_dictionary =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal "{}" [+Statement.Expression (+Expression.Dictionary [])];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{1: 2}"
-           [
-             +Statement.Expression
-                (+Expression.Dictionary
-                    [
-                      KeyValue
-                        {
-                          key = +Expression.Constant (Constant.Integer 1);
-                          value = +Expression.Constant (Constant.Integer 2);
-                        };
-                    ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{1: 2,}"
-           [
-             +Statement.Expression
-                (+Expression.Dictionary
-                    [
-                      KeyValue
-                        {
-                          key = +Expression.Constant (Constant.Integer 1);
-                          value = +Expression.Constant (Constant.Integer 2);
-                        };
-                    ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{1: 2, **durp}"
-           [
-             +Statement.Expression
-                (+Expression.Dictionary
-                    [
-                      KeyValue
-                        {
-                          key = +Expression.Constant (Constant.Integer 1);
-                          value = +Expression.Constant (Constant.Integer 2);
-                        };
-                      Splat !"durp";
-                    ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{1: 2, **durp, **hurp}"
-           [
-             +Statement.Expression
-                (+Expression.Dictionary
-                    [
-                      KeyValue
-                        {
-                          key = +Expression.Constant (Constant.Integer 1);
-                          value = +Expression.Constant (Constant.Integer 2);
-                        };
-                      Splat !"durp";
-                      Splat !"hurp";
-                    ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{**[1]}"
-           [
-             +Statement.Expression
-                (+Expression.Dictionary
-                    [Splat (+Expression.List [+Expression.Constant (Constant.Integer 1)])]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{**durp, 1: 2}"
-           [
-             +Statement.Expression
-                (+Expression.Dictionary
-                    [
-                      Splat !"durp";
-                      KeyValue
-                        {
-                          key = +Expression.Constant (Constant.Integer 1);
-                          value = +Expression.Constant (Constant.Integer 2);
-                        };
-                    ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{1: 1 < 2,}"
-           [
-             +Statement.Expression
-                (+Expression.Dictionary
-                    [
-                      KeyValue
-                        {
-                          key = +Expression.Constant (Constant.Integer 1);
-                          value =
-                            +Expression.ComparisonOperator
-                               {
-                                 ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
-                                 operator = ComparisonOperator.LessThan;
-                                 right = +Expression.Constant (Constant.Integer 2);
-                                 origin = None;
-                               };
-                        };
-                    ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{1: 2, 2: 3}"
-           [
-             +Statement.Expression
-                (+Expression.Dictionary
-                    [
-                      KeyValue
-                        {
-                          key = +Expression.Constant (Constant.Integer 1);
-                          value = +Expression.Constant (Constant.Integer 2);
-                        };
-                      KeyValue
-                        {
-                          key = +Expression.Constant (Constant.Integer 2);
-                          value = +Expression.Constant (Constant.Integer 3);
-                        };
-                    ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{\n\t1: 2,\n\t2: 3}"
-           [
-             +Statement.Expression
-                (+Expression.Dictionary
-                    [
-                      KeyValue
-                        {
-                          key = +Expression.Constant (Constant.Integer 1);
-                          value = +Expression.Constant (Constant.Integer 2);
-                        };
-                      KeyValue
-                        {
-                          key = +Expression.Constant (Constant.Integer 2);
-                          value = +Expression.Constant (Constant.Integer 3);
-                        };
-                    ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{a: b for a in []}"
-           [
-             +Statement.Expression
-                (+Expression.DictionaryComprehension
-                    {
-                      Comprehension.element = { key = !"a"; value = !"b" };
-                      generators =
-                        [
-                          {
-                            Comprehension.Generator.target = !"a";
-                            iterator = +Expression.List [];
-                            conditions = [];
-                            async = false;
-                          };
-                        ];
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{a if a else a: b for a in []}"
-           [
-             +Statement.Expression
-                (+Expression.DictionaryComprehension
-                    {
-                      Comprehension.element =
-                        {
-                          key =
-                            +Expression.Ternary
-                               { Ternary.target = !"a"; test = !"a"; alternative = !"a" };
-                          value = !"b";
-                        };
-                      generators =
-                        [
-                          {
-                            Comprehension.Generator.target = !"a";
-                            iterator = +Expression.List [];
-                            conditions = [];
-                            async = false;
-                          };
-                        ];
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{a if a else a: b if b else b for a in []}"
-           [
-             +Statement.Expression
-                (+Expression.DictionaryComprehension
-                    {
-                      Comprehension.element =
-                        {
-                          key =
-                            +Expression.Ternary
-                               { Ternary.target = !"a"; test = !"a"; alternative = !"a" };
-                          value =
-                            +Expression.Ternary
-                               { Ternary.target = !"b"; test = !"b"; alternative = !"b" };
-                        };
-                      generators =
-                        [
-                          {
-                            Comprehension.Generator.target = !"a";
-                            iterator = +Expression.List [];
-                            conditions = [];
-                            async = false;
-                          };
-                        ];
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{a.b or c: a for a in b}"
-           [
-             +Statement.Expression
-                (+Expression.DictionaryComprehension
-                    {
-                      Comprehension.element =
-                        {
-                          key =
-                            +Expression.BooleanOperator
-                               {
-                                 BooleanOperator.left =
-                                   +Expression.Name
-                                      (Name.Attribute
-                                         {
-                                           Name.Attribute.base = !"a";
-                                           attribute = "b";
-                                           origin = None;
-                                         });
-                                 operator = BooleanOperator.Or;
-                                 right = !"c";
-                                 origin = None;
-                               };
-                          value = !"a";
-                        };
-                      generators =
-                        [
-                          {
-                            Comprehension.Generator.target = !"a";
-                            iterator = !"b";
-                            conditions = [];
-                            async = false;
-                          };
-                        ];
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{a: b for c, d in []}"
-           [
-             +Statement.Expression
-                (+Expression.DictionaryComprehension
-                    {
-                      Comprehension.element = { key = !"a"; value = !"b" };
-                      generators =
-                        [
-                          {
-                            Comprehension.Generator.target = +Expression.Tuple [!"c"; !"d"];
-                            iterator = +Expression.List [];
-                            conditions = [];
-                            async = false;
-                          };
-                        ];
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{a or b: 2}"
-           [
-             +Statement.Expression
-                (+Expression.Dictionary
-                    [
-                      KeyValue
-                        {
-                          key =
-                            +Expression.BooleanOperator
-                               {
-                                 BooleanOperator.left = !"a";
-                                 operator = BooleanOperator.Or;
-                                 right = !"b";
-                                 origin = None;
-                               };
-                          value = +Expression.Constant (Constant.Integer 2);
-                        };
-                    ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{a and b: 2}"
-           [
-             +Statement.Expression
-                (+Expression.Dictionary
-                    [
-                      KeyValue
-                        {
-                          key =
-                            +Expression.BooleanOperator
-                               {
-                                 BooleanOperator.left = !"a";
-                                 operator = BooleanOperator.And;
-                                 right = !"b";
-                                 origin = None;
-                               };
-                          value = +Expression.Constant (Constant.Integer 2);
-                        };
-                    ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__ @@ assert_not_parsed "{ a or lambda b: b + 1: c }";
-    ]
-
-
 let test_list_parsing =
   test_list
     [
@@ -3095,21 +1266,6 @@ let test_list_parsing =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "[1 if 2 else 3]"
-           [
-             +Statement.Expression
-                (+Expression.List
-                    [
-                      +Expression.Ternary
-                         {
-                           Ternary.target = +Expression.Constant (Constant.Integer 1);
-                           test = +Expression.Constant (Constant.Integer 2);
-                           alternative = +Expression.Constant (Constant.Integer 3);
-                         };
-                    ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
            "[\n\t1,\n\t2\n]"
            [
              +Statement.Expression
@@ -3118,421 +1274,6 @@ let test_list_parsing =
                       +Expression.Constant (Constant.Integer 1);
                       +Expression.Constant (Constant.Integer 2);
                     ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "[a for a in []]"
-           [
-             +Statement.Expression
-                (+Expression.ListComprehension
-                    {
-                      Comprehension.element = !"a";
-                      generators =
-                        [
-                          {
-                            Comprehension.Generator.target = !"a";
-                            iterator = +Expression.List [];
-                            conditions = [];
-                            async = false;
-                          };
-                        ];
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "[a in b for a in []]"
-           [
-             +Statement.Expression
-                (+Expression.ListComprehension
-                    {
-                      Comprehension.element =
-                        +Expression.ComparisonOperator
-                           {
-                             ComparisonOperator.left = !"a";
-                             operator = ComparisonOperator.In;
-                             right = !"b";
-                             origin = None;
-                           };
-                      generators =
-                        [
-                          {
-                            Comprehension.Generator.target = !"a";
-                            iterator = +Expression.List [];
-                            conditions = [];
-                            async = false;
-                          };
-                        ];
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "[a for a in a for b in []]"
-           [
-             +Statement.Expression
-                (+Expression.ListComprehension
-                    {
-                      Comprehension.element = !"a";
-                      generators =
-                        [
-                          {
-                            Comprehension.Generator.target = !"a";
-                            iterator = !"a";
-                            conditions = [];
-                            async = false;
-                          };
-                          {
-                            Comprehension.Generator.target = !"b";
-                            iterator = +Expression.List [];
-                            conditions = [];
-                            async = false;
-                          };
-                        ];
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "[a for a in [] if b]"
-           [
-             +Statement.Expression
-                (+Expression.ListComprehension
-                    {
-                      Comprehension.element = !"a";
-                      generators =
-                        [
-                          {
-                            Comprehension.Generator.target = !"a";
-                            iterator = +Expression.List [];
-                            conditions = [!"b"];
-                            async = false;
-                          };
-                        ];
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "[a for a in (c for c in []) if b]"
-           [
-             +Statement.Expression
-                (+Expression.ListComprehension
-                    {
-                      Comprehension.element = !"a";
-                      generators =
-                        [
-                          {
-                            Comprehension.Generator.target = !"a";
-                            iterator =
-                              +Expression.Generator
-                                 {
-                                   Comprehension.element = !"c";
-                                   generators =
-                                     [
-                                       {
-                                         Comprehension.Generator.target = !"c";
-                                         iterator = +Expression.List [];
-                                         conditions = [];
-                                         async = false;
-                                       };
-                                     ];
-                                 };
-                            conditions = [!"b"];
-                            async = false;
-                          };
-                        ];
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "[a for a in [] if 1 < 2]"
-           [
-             +Statement.Expression
-                (+Expression.ListComprehension
-                    {
-                      Comprehension.element = !"a";
-                      generators =
-                        [
-                          {
-                            Comprehension.Generator.target = !"a";
-                            iterator = +Expression.List [];
-                            conditions =
-                              [
-                                +Expression.ComparisonOperator
-                                   {
-                                     ComparisonOperator.left =
-                                       +Expression.Constant (Constant.Integer 1);
-                                     operator = ComparisonOperator.LessThan;
-                                     right = +Expression.Constant (Constant.Integer 2);
-                                     origin = None;
-                                   };
-                              ];
-                            async = false;
-                          };
-                        ];
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "[a for a in [] if a is 1 or True]"
-           [
-             +Statement.Expression
-                (+Expression.ListComprehension
-                    {
-                      Comprehension.element = !"a";
-                      generators =
-                        [
-                          {
-                            Comprehension.Generator.target = !"a";
-                            iterator = +Expression.List [];
-                            conditions =
-                              [
-                                +Expression.BooleanOperator
-                                   {
-                                     BooleanOperator.left =
-                                       +Expression.ComparisonOperator
-                                          {
-                                            ComparisonOperator.left = !"a";
-                                            operator = ComparisonOperator.Is;
-                                            right = +Expression.Constant (Constant.Integer 1);
-                                            origin = None;
-                                          };
-                                     operator = BooleanOperator.Or;
-                                     right = +Expression.Constant Constant.True;
-                                     origin = None;
-                                   };
-                              ];
-                            async = false;
-                          };
-                        ];
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "[a async for a in []]"
-           [
-             +Statement.Expression
-                (+Expression.ListComprehension
-                    {
-                      Comprehension.element = !"a";
-                      generators =
-                        [
-                          {
-                            Comprehension.Generator.target = !"a";
-                            iterator = +Expression.List [];
-                            conditions = [];
-                            async = true;
-                          };
-                        ];
-                    });
-           ];
-    ]
-
-
-let test_set =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{1}"
-           [+Statement.Expression (+Expression.Set [+Expression.Constant (Constant.Integer 1)])];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{*[1]}"
-           [
-             +Statement.Expression
-                (+Expression.Set
-                    [
-                      +Expression.Starred
-                         (Starred.Once
-                            (+Expression.List [+Expression.Constant (Constant.Integer 1)]));
-                    ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{1,}"
-           [+Statement.Expression (+Expression.Set [+Expression.Constant (Constant.Integer 1)])];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{1, 2}"
-           [
-             +Statement.Expression
-                (+Expression.Set
-                    [
-                      +Expression.Constant (Constant.Integer 1);
-                      +Expression.Constant (Constant.Integer 2);
-                    ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{1, 1 if 2 else 3}"
-           [
-             +Statement.Expression
-                (+Expression.Set
-                    [
-                      +Expression.Constant (Constant.Integer 1);
-                      +Expression.Ternary
-                         {
-                           Ternary.target = +Expression.Constant (Constant.Integer 1);
-                           test = +Expression.Constant (Constant.Integer 2);
-                           alternative = +Expression.Constant (Constant.Integer 3);
-                         };
-                    ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{a for a in []}"
-           [
-             +Statement.Expression
-                (+Expression.SetComprehension
-                    {
-                      Comprehension.element = !"a";
-                      generators =
-                        [
-                          {
-                            Comprehension.Generator.target = !"a";
-                            iterator = +Expression.List [];
-                            conditions = [];
-                            async = false;
-                          };
-                        ];
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{a for a in [] if b}"
-           [
-             +Statement.Expression
-                (+Expression.SetComprehension
-                    {
-                      Comprehension.element = !"a";
-                      generators =
-                        [
-                          {
-                            Comprehension.Generator.target = !"a";
-                            iterator = +Expression.List [];
-                            conditions = [!"b"];
-                            async = false;
-                          };
-                        ];
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "{a for a in [] if b if c}"
-           [
-             +Statement.Expression
-                (+Expression.SetComprehension
-                    {
-                      Comprehension.element = !"a";
-                      generators =
-                        [
-                          {
-                            Comprehension.Generator.target = !"a";
-                            iterator = +Expression.List [];
-                            conditions = [!"b"; !"c"];
-                            async = false;
-                          };
-                        ];
-                    });
-           ];
-    ]
-
-
-let test_generator =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "(a in b for a in [] if b)"
-           [
-             +Statement.Expression
-                (+Expression.Generator
-                    {
-                      Comprehension.element =
-                        +Expression.ComparisonOperator
-                           {
-                             ComparisonOperator.left = !"a";
-                             operator = ComparisonOperator.In;
-                             right = !"b";
-                             origin = None;
-                           };
-                      generators =
-                        [
-                          {
-                            Comprehension.Generator.target = !"a";
-                            iterator = +Expression.List [];
-                            conditions = [!"b"];
-                            async = false;
-                          };
-                        ];
-                    });
-           ];
-    ]
-
-
-let test_yield =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal "yield" [+Statement.Expression (+Expression.Yield None)];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "yield 1"
-           [
-             +Statement.Expression
-                (+Expression.Yield (Some (+Expression.Constant (Constant.Integer 1))));
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "yield from a"
-           [+Statement.Expression (+Expression.YieldFrom (+Expression.Name (Name.Identifier "a")))];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "yield 1, 2"
-           [
-             +Statement.Expression
-                (+Expression.Yield
-                    (Some
-                       (+Expression.Tuple
-                           [
-                             +Expression.Constant (Constant.Integer 1);
-                             +Expression.Constant (Constant.Integer 2);
-                           ])));
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "x = yield 1"
-           [
-             +Statement.Assign
-                {
-                  Assign.target = !"x";
-                  annotation = None;
-                  value =
-                    Some (+Expression.Yield (Some (+Expression.Constant (Constant.Integer 1))));
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "x: str = yield 1"
-           [
-             +Statement.Assign
-                {
-                  Assign.target = !"x";
-                  annotation = Some !"str";
-                  value =
-                    Some (+Expression.Yield (Some (+Expression.Constant (Constant.Integer 1))));
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "x += yield 1"
-           [
-             +Statement.AugmentedAssign
-                {
-                  AugmentedAssign.target = !"x";
-                  operator = BinaryOperator.Add;
-                  value = +Expression.Yield (Some (+Expression.Constant (Constant.Integer 1)));
-                };
            ];
     ]
 
@@ -3690,68 +1431,6 @@ let test_call =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "foo(a for a in [])"
-           [
-             +Statement.Expression
-                (+Expression.Call
-                    {
-                      Call.callee = !"foo";
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value =
-                              +Expression.Generator
-                                 {
-                                   Comprehension.element = !"a";
-                                   generators =
-                                     [
-                                       {
-                                         Comprehension.Generator.target = !"a";
-                                         iterator = +Expression.List [];
-                                         conditions = [];
-                                         async = false;
-                                       };
-                                     ];
-                                 };
-                          };
-                        ];
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "foo(a for a in [],)"
-           [
-             +Statement.Expression
-                (+Expression.Call
-                    {
-                      Call.callee = !"foo";
-                      arguments =
-                        [
-                          {
-                            Call.Argument.name = None;
-                            value =
-                              +Expression.Generator
-                                 {
-                                   Comprehension.element = !"a";
-                                   generators =
-                                     [
-                                       {
-                                         Comprehension.Generator.target = !"a";
-                                         iterator = +Expression.List [];
-                                         conditions = [];
-                                         async = false;
-                                       };
-                                     ];
-                                 };
-                          };
-                        ];
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
            "foo(1, 2,)"
            [
              +Statement.Expression
@@ -3890,7 +1569,6 @@ let test_call =
 
 
 let test_string =
-  let create_literal value = Substring.Literal (+value) in
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
@@ -3937,34 +1615,6 @@ let test_string =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "b'foo'"
-           [
-             +Statement.Expression
-                (+Expression.Constant (Constant.String (StringLiteral.create ~bytes:true "foo")));
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "u'foo'"
-           [
-             +Statement.Expression
-                (+Expression.Constant (Constant.String (StringLiteral.create "foo")));
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "ub'foo'"
-           [
-             +Statement.Expression
-                (+Expression.Constant (Constant.String (StringLiteral.create ~bytes:true "foo")));
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "bR'foo'"
-           [
-             +Statement.Expression
-                (+Expression.Constant (Constant.String (StringLiteral.create ~bytes:true "foo")));
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
            "'foo' 'bar'"
            [
              +Statement.Expression
@@ -3997,35 +1647,6 @@ let test_string =
            [
              +Statement.Expression
                 (+Expression.Constant (Constant.String (StringLiteral.create "foo")));
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "f'foo'"
-           [+Statement.Expression (+Expression.FormatString [create_literal "foo"])];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "F'foo'"
-           [+Statement.Expression (+Expression.FormatString [create_literal "foo"])];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "f'foo' f'bar'"
-           [
-             +Statement.Expression
-                (+Expression.FormatString [create_literal "foo"; create_literal "bar"]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "f'foo' 'bar'"
-           [
-             +Statement.Expression
-                (+Expression.FormatString [create_literal "foo"; create_literal "bar"]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "'foo' f'bar'"
-           [
-             +Statement.Expression
-                (+Expression.FormatString [create_literal "foo"; create_literal "bar"]);
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
@@ -4069,58 +1690,6 @@ let test_string =
              +Statement.Expression
                 (+Expression.Constant (Constant.String (StringLiteral.create "f.o\\no")));
            ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "'a' + 'b'"
-           [
-             +Statement.Expression
-                (+Expression.BinaryOperator
-                    {
-                      operator = BinaryOperator.Add;
-                      left = +Expression.Constant (Constant.String (StringLiteral.create "a"));
-                      right = +Expression.Constant (Constant.String (StringLiteral.create "b"));
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "\"a\" + \"b\""
-           [
-             +Statement.Expression
-                (+Expression.BinaryOperator
-                    {
-                      operator = BinaryOperator.Add;
-                      left = +Expression.Constant (Constant.String (StringLiteral.create "a"));
-                      right = +Expression.Constant (Constant.String (StringLiteral.create "b"));
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "'''a''' + '''b'''"
-           [
-             +Statement.Expression
-                (+Expression.BinaryOperator
-                    {
-                      operator = BinaryOperator.Add;
-                      left = +Expression.Constant (Constant.String (StringLiteral.create "a"));
-                      right = +Expression.Constant (Constant.String (StringLiteral.create "b"));
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "\"\"\"a\"\"\" + \"\"\"b\"\"\""
-           [
-             +Statement.Expression
-                (+Expression.BinaryOperator
-                    {
-                      operator = BinaryOperator.Add;
-                      left = +Expression.Constant (Constant.String (StringLiteral.create "a"));
-                      right = +Expression.Constant (Constant.String (StringLiteral.create "b"));
-                      origin = None;
-                    });
-           ];
     ]
 
 
@@ -4130,14 +1699,14 @@ let test_class =
     [
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "@bar\nclass foo():\n\tpass"
+           "@bar\nclass foo():\n\t..."
            [
              +Statement.Class
                 {
                   Class.name = !&"foo";
                   base_arguments = [];
                   parent;
-                  body = [+Statement.Pass];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                   decorators = [decorator "bar"];
                   top_level_unbound_names = [];
                   type_params = [];
@@ -4145,14 +1714,14 @@ let test_class =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "class foo: pass"
+           "class foo: ..."
            [
              +Statement.Class
                 {
                   Class.name = !&"foo";
                   base_arguments = [];
                   parent;
-                  body = [+Statement.Pass];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                   decorators = [];
                   top_level_unbound_names = [];
                   type_params = [];
@@ -4160,169 +1729,14 @@ let test_class =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "class foo:\n\tclass bar:\n\t\tpass"
-           [
-             +Statement.Class
-                {
-                  Class.name = !&"foo";
-                  base_arguments = [];
-                  parent;
-                  body =
-                    [
-                      +Statement.Class
-                         {
-                           Class.name = !&"bar";
-                           base_arguments = [];
-                           parent = NestingContext.create_class ~parent "foo";
-                           body = [+Statement.Pass];
-                           decorators = [];
-                           top_level_unbound_names = [];
-                           type_params = [];
-                         };
-                    ];
-                  decorators = [];
-                  top_level_unbound_names = [];
-                  type_params = [];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "def foo():\n\tclass bar:\n\t\tpass"
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      return_annotation = None;
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body =
-                    [
-                      +Statement.Class
-                         {
-                           Class.name = !&"bar";
-                           base_arguments = [];
-                           parent = NestingContext.create_function ~parent "foo";
-                           body = [+Statement.Pass];
-                           decorators = [];
-                           top_level_unbound_names = [];
-                           type_params = [];
-                         };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "class foo():\n\tdef bar(): pass"
-           [
-             +Statement.Class
-                {
-                  Class.name = !&"foo";
-                  base_arguments = [];
-                  parent;
-                  body =
-                    [
-                      (let parent = NestingContext.create_class ~parent "foo" in
-                       +Statement.Define
-                          {
-                            Define.signature =
-                              {
-                                Define.Signature.name = !&"bar";
-                                parameters = [];
-                                decorators = [];
-                                return_annotation = None;
-                                async = false;
-                                generator = false;
-                                parent;
-                                legacy_parent = Some !&"foo";
-                                type_params = [];
-                              };
-                            captures = [];
-                            unbound_names = [];
-                            body = [+Statement.Pass];
-                          });
-                    ];
-                  decorators = [];
-                  top_level_unbound_names = [];
-                  type_params = [];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "class foo():\n\tdef bar():\n\t\tdef baz(): pass"
-           [
-             +Statement.Class
-                {
-                  Class.name = !&"foo";
-                  base_arguments = [];
-                  parent;
-                  body =
-                    (let parent = NestingContext.create_class ~parent "foo" in
-                     [
-                       +Statement.Define
-                          {
-                            Define.signature =
-                              {
-                                Define.Signature.name = !&"bar";
-                                parameters = [];
-                                decorators = [];
-                                return_annotation = None;
-                                async = false;
-                                generator = false;
-                                parent;
-                                legacy_parent = Some !&"foo";
-                                type_params = [];
-                              };
-                            captures = [];
-                            unbound_names = [];
-                            body =
-                              [
-                                (let parent = NestingContext.create_function ~parent "bar" in
-                                 +Statement.Define
-                                    {
-                                      Define.signature =
-                                        {
-                                          Define.Signature.name = !&"baz";
-                                          parameters = [];
-                                          decorators = [];
-                                          return_annotation = None;
-                                          async = false;
-                                          generator = false;
-                                          parent;
-                                          legacy_parent = None;
-                                          type_params = [];
-                                        };
-                                      captures = [];
-                                      unbound_names = [];
-                                      body = [+Statement.Pass];
-                                    });
-                              ];
-                          };
-                     ]);
-                  decorators = [];
-                  top_level_unbound_names = [];
-                  type_params = [];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "class foo.bar: pass"
+           "class foo.bar: ..."
            [
              +Statement.Class
                 {
                   Class.name = !&"foo.bar";
                   base_arguments = [];
                   parent;
-                  body = [+Statement.Pass];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                   decorators = [];
                   top_level_unbound_names = [];
                   type_params = [];
@@ -4330,7 +1744,7 @@ let test_class =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "class foo(1, 2):\n\t1"
+           "class foo(1, 2): ..."
            [
              +Statement.Class
                 {
@@ -4347,7 +1761,7 @@ let test_class =
                       };
                     ];
                   parent;
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                   decorators = [];
                   top_level_unbound_names = [];
                   type_params = [];
@@ -4355,7 +1769,7 @@ let test_class =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "class foo(init_subclass_arg=\"literal_string\"):\n\t1"
+           "class foo(init_subclass_arg=\"literal_string\"): ..."
            [
              +Statement.Class
                 {
@@ -4370,7 +1784,7 @@ let test_class =
                       };
                     ];
                   parent;
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                   decorators = [];
                   top_level_unbound_names = [];
                   type_params = [];
@@ -4378,7 +1792,7 @@ let test_class =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "class foo(1, **kwargs):\n\t1"
+           "class foo(1, **kwargs): ..."
            [
              +Statement.Class
                 {
@@ -4395,7 +1809,7 @@ let test_class =
                       };
                     ];
                   parent;
-                  body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                   decorators = [];
                   top_level_unbound_names = [];
                   type_params = [];
@@ -4403,247 +1817,19 @@ let test_class =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "class foo:\n\tattribute: int = 1"
-           [
-             +Statement.Class
-                {
-                  Class.name = !&"foo";
-                  base_arguments = [];
-                  parent;
-                  body =
-                    [
-                      +Statement.Assign
-                         {
-                           Assign.target = !"attribute";
-                           annotation = Some !"int";
-                           value = Some (+Expression.Constant (Constant.Integer 1));
-                           origin = None;
-                         };
-                    ];
-                  decorators = [];
-                  top_level_unbound_names = [];
-                  type_params = [];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "class foo:\n\tattribute = 1 # type: int"
-           [
-             +Statement.Class
-                {
-                  Class.name = !&"foo";
-                  base_arguments = [];
-                  parent;
-                  body =
-                    [
-                      +Statement.Assign
-                         {
-                           Assign.target = !"attribute";
-                           annotation =
-                             Some
-                               (+Expression.Constant (Constant.String (StringLiteral.create "int")));
-                           value = Some (+Expression.Constant (Constant.Integer 1));
-                           origin = None;
-                         };
-                    ];
-                  decorators = [];
-                  top_level_unbound_names = [];
-                  type_params = [];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "class foo:\n\tattribute: int"
-           [
-             +Statement.Class
-                {
-                  Class.name = !&"foo";
-                  base_arguments = [];
-                  parent;
-                  body =
-                    [
-                      +Statement.Assign
-                         {
-                           Assign.target = !"attribute";
-                           annotation = Some !"int";
-                           value = None;
-                           origin = None;
-                         };
-                    ];
-                  decorators = [];
-                  top_level_unbound_names = [];
-                  type_params = [];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "class foo(superfoo):\n\tdef bar(): pass"
+           "class foo(superfoo): ..."
            [
              +Statement.Class
                 {
                   Class.name = !&"foo";
                   base_arguments = [{ Call.Argument.name = None; value = !"superfoo" }];
                   parent;
-                  body =
-                    [
-                      +Statement.Define
-                         {
-                           Define.signature =
-                             {
-                               Define.Signature.name = !&"bar";
-                               parameters = [];
-                               decorators = [];
-                               return_annotation = None;
-                               async = false;
-                               generator = false;
-                               parent = NestingContext.create_class ~parent "foo";
-                               legacy_parent = Some !&"foo";
-                               type_params = [];
-                             };
-                           captures = [];
-                           unbound_names = [];
-                           body = [+Statement.Pass];
-                         };
-                    ];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                   decorators = [];
                   top_level_unbound_names = [];
                   type_params = [];
                 };
            ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "class foo():\n\tdef __init__(self): self.bar = 0"
-           [
-             +Statement.Class
-                {
-                  Class.name = !&"foo";
-                  base_arguments = [];
-                  parent;
-                  body =
-                    [
-                      +Statement.Define
-                         {
-                           Define.signature =
-                             {
-                               Define.Signature.name = !&"__init__";
-                               parameters =
-                                 [+{ Parameter.name = "self"; value = None; annotation = None }];
-                               decorators = [];
-                               return_annotation = None;
-                               async = false;
-                               generator = false;
-                               parent = NestingContext.create_class ~parent "foo";
-                               legacy_parent = Some !&"foo";
-                               type_params = [];
-                             };
-                           captures = [];
-                           unbound_names = [];
-                           body =
-                             [
-                               +Statement.Assign
-                                  {
-                                    Assign.target =
-                                      +Expression.Name
-                                         (Name.Attribute
-                                            {
-                                              Name.Attribute.base = !"self";
-                                              attribute = "bar";
-                                              origin = None;
-                                            });
-                                    annotation = None;
-                                    value = Some (+Expression.Constant (Constant.Integer 0));
-                                    origin = None;
-                                  };
-                             ];
-                         };
-                    ];
-                  decorators = [];
-                  top_level_unbound_names = [];
-                  type_params = [];
-                };
-           ];
-      (* We mark parents for functions under if statements. *)
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (trim_extra_indentation
-              {|
-      class foo():
-        if True:
-          def bar():
-            pass
-    |})
-           [
-             +Statement.Class
-                {
-                  Class.name = !&"foo";
-                  base_arguments = [];
-                  parent;
-                  body =
-                    [
-                      +Statement.If
-                         {
-                           If.test = +Expression.Constant Constant.True;
-                           body =
-                             [
-                               +Statement.Define
-                                  {
-                                    Define.signature =
-                                      {
-                                        Define.Signature.name = !&"bar";
-                                        parameters = [];
-                                        decorators = [];
-                                        return_annotation = None;
-                                        async = false;
-                                        generator = false;
-                                        parent = NestingContext.create_class ~parent "foo";
-                                        legacy_parent = Some !&"foo";
-                                        type_params = [];
-                                      };
-                                    captures = [];
-                                    unbound_names = [];
-                                    body = [+Statement.Pass];
-                                  };
-                             ];
-                           orelse = [];
-                         };
-                    ];
-                  decorators = [];
-                  top_level_unbound_names = [];
-                  type_params = [];
-                };
-           ];
-    ]
-
-
-let test_return =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "return"
-           [+Statement.Return { Return.expression = None; is_implicit = false }];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "return 1"
-           [
-             +Statement.Return
-                {
-                  Return.expression = Some (+Expression.Constant (Constant.Integer 1));
-                  is_implicit = false;
-                };
-           ];
-    ]
-
-
-let test_delete =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal "del a" [+Statement.Delete [!"a"]];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal "del a, b" [+Statement.Delete [!"a"; !"b"]];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal "del (a, b)" [+Statement.Delete [+Expression.Tuple [!"a"; !"b"]]];
     ]
 
 
@@ -4652,396 +1838,10 @@ let test_assign =
     [
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "a = b"
-           [
-             +Statement.Assign
-                { Assign.target = !"a"; annotation = None; value = Some !"b"; origin = None };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a = 1"
-           [
-             +Statement.Assign
-                {
-                  Assign.target = !"a";
-                  annotation = None;
-                  value = Some (+Expression.Constant (Constant.Integer 1));
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a: int = 1"
-           [
-             +Statement.Assign
-                {
-                  Assign.target = !"a";
-                  annotation = Some !"int";
-                  value = Some (+Expression.Constant (Constant.Integer 1));
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a = 1  # type: int"
-           [
-             +Statement.Assign
-                {
-                  Assign.target = !"a";
-                  annotation =
-                    Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
-                  value = Some (+Expression.Constant (Constant.Integer 1));
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a = 1  # type: 'int'"
-           [
-             +Statement.Assign
-                {
-                  Assign.target = !"a";
-                  annotation =
-                    Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
-                  value = Some (+Expression.Constant (Constant.Integer 1));
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
            "a: int"
            [
              +Statement.Assign
                 { Assign.target = !"a"; annotation = Some !"int"; value = None; origin = None };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a # type: int"
-           [
-             +Statement.Assign
-                {
-                  Assign.target = !"a";
-                  annotation =
-                    Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
-                  value = None;
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a = 1  # type: ignore"
-           [
-             +Statement.Assign
-                {
-                  Assign.target = !"a";
-                  annotation = None;
-                  value = Some (+Expression.Constant (Constant.Integer 1));
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a, b = 1"
-           [
-             +Statement.Assign
-                {
-                  Assign.target = +Expression.Tuple [!"a"; !"b"];
-                  annotation = None;
-                  value = Some (+Expression.Constant (Constant.Integer 1));
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a = a().foo()"
-           [
-             +Statement.Assign
-                {
-                  Assign.target = !"a";
-                  annotation = None;
-                  value =
-                    Some
-                      (+Expression.Call
-                          {
-                            Call.callee =
-                              +Expression.Name
-                                 (Name.Attribute
-                                    {
-                                      Name.Attribute.base =
-                                        +Expression.Call
-                                           { Call.callee = !"a"; arguments = []; origin = None };
-                                      attribute = "foo";
-                                      origin = None;
-                                    });
-                            arguments = [];
-                            origin = None;
-                          });
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a = b = 1"
-           [
-             +Statement.Assign
-                {
-                  Assign.target = !"a";
-                  annotation = None;
-                  value = Some (+Expression.Constant (Constant.Integer 1));
-                  origin = None;
-                };
-             +Statement.Assign
-                {
-                  Assign.target = !"b";
-                  annotation = None;
-                  value = Some (+Expression.Constant (Constant.Integer 1));
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a = yield from b"
-           [
-             +Statement.Assign
-                {
-                  Assign.target = !"a";
-                  annotation = None;
-                  value = Some (+Expression.YieldFrom !"b");
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a += 1"
-           [
-             +Statement.AugmentedAssign
-                {
-                  AugmentedAssign.target = !"a";
-                  value = +Expression.Constant (Constant.Integer 1);
-                  operator = BinaryOperator.Add;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a.b += 1"
-           [
-             +Statement.AugmentedAssign
-                {
-                  AugmentedAssign.target =
-                    +Expression.Name
-                       (Name.Attribute
-                          { Name.Attribute.base = !"a"; attribute = "b"; origin = None });
-                  operator = BinaryOperator.Add;
-                  value = +Expression.Constant (Constant.Integer 1);
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a = b if b else c"
-           [
-             +Statement.Assign
-                {
-                  Assign.target = !"a";
-                  annotation = None;
-                  value =
-                    Some
-                      (+Expression.Ternary
-                          { Ternary.target = !"b"; test = !"b"; alternative = !"c" });
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a = b or c"
-           [
-             +Statement.Assign
-                {
-                  Assign.target = !"a";
-                  annotation = None;
-                  value =
-                    Some
-                      (+Expression.BooleanOperator
-                          {
-                            BooleanOperator.left = !"b";
-                            operator = BooleanOperator.Or;
-                            right = !"c";
-                            origin = None;
-                          });
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a = b or c or d"
-           [
-             +Statement.Assign
-                {
-                  Assign.target = !"a";
-                  annotation = None;
-                  value =
-                    Some
-                      (+Expression.BooleanOperator
-                          {
-                            BooleanOperator.left = !"b";
-                            operator = BooleanOperator.Or;
-                            right =
-                              +Expression.BooleanOperator
-                                 {
-                                   BooleanOperator.left = !"c";
-                                   operator = BooleanOperator.Or;
-                                   right = !"d";
-                                   origin = None;
-                                 };
-                            origin = None;
-                          });
-                  origin = None;
-                };
-           ];
-    ]
-
-
-let test_for =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "for a in b: c\n"
-           [
-             +Statement.For
-                {
-                  For.target = !"a";
-                  iterator = !"b";
-                  body = [+Statement.Expression !"c"];
-                  orelse = [];
-                  async = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "for a, b in c: d\n"
-           [
-             +Statement.For
-                {
-                  For.target = +Expression.Tuple [!"a"; !"b"];
-                  iterator = !"c";
-                  body = [+Statement.Expression !"d"];
-                  orelse = [];
-                  async = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "for a in b: break\n"
-           [
-             +Statement.For
-                {
-                  For.target = !"a";
-                  iterator = !"b";
-                  body = [+Statement.Break];
-                  orelse = [];
-                  async = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "for a in b: continue\n"
-           [
-             +Statement.For
-                {
-                  For.target = !"a";
-                  iterator = !"b";
-                  body = [+Statement.Continue];
-                  orelse = [];
-                  async = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "async for a in b: c\n"
-           [
-             +Statement.For
-                {
-                  For.target = !"a";
-                  iterator = !"b";
-                  body = [+Statement.Expression !"c"];
-                  orelse = [];
-                  async = true;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "for a in b:\n\tc\n"
-           [
-             +Statement.For
-                {
-                  For.target = !"a";
-                  iterator = !"b";
-                  body = [+Statement.Expression !"c"];
-                  orelse = [];
-                  async = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "for a in b:\n\tc\nelse:\n\td\n"
-           [
-             +Statement.For
-                {
-                  For.target = !"a";
-                  iterator = !"b";
-                  body = [+Statement.Expression !"c"];
-                  orelse = [+Statement.Expression !"d"];
-                  async = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "for a in b: # type: int\n\ta"
-           [
-             +Statement.For
-                {
-                  For.target = !"a";
-                  iterator = !"b";
-                  body = [+Statement.Expression !"a"];
-                  orelse = [];
-                  async = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "for a, *b in c: \n\ta"
-           [
-             +Statement.For
-                {
-                  For.target = +Expression.Tuple [!"a"; +Expression.Starred (Starred.Once !"b")];
-                  iterator = !"c";
-                  body = [+Statement.Expression !"a"];
-                  orelse = [];
-                  async = false;
-                };
-           ];
-    ]
-
-
-let test_while =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "while a: b\n"
-           [
-             +Statement.While { While.test = !"a"; body = [+Statement.Expression !"b"]; orelse = [] };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "while a:\n\tb\nelse:\n\tc\n"
-           [
-             +Statement.While
-                {
-                  While.test = !"a";
-                  body = [+Statement.Expression !"b"];
-                  orelse = [+Statement.Expression !"c"];
-                };
            ];
     ]
 
@@ -5298,596 +2098,6 @@ let test_if =
     ]
 
 
-let test_with =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "with a: b\n"
-           [
-             +Statement.With
-                { With.items = [!"a", None]; body = [+Statement.Expression !"b"]; async = false };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "with (yield from a): b\n"
-           [
-             +Statement.With
-                {
-                  With.items = [+Expression.YieldFrom !"a", None];
-                  body = [+Statement.Expression !"b"];
-                  async = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "async with a: b\n"
-           [
-             +Statement.With
-                { With.items = [!"a", None]; body = [+Statement.Expression !"b"]; async = true };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "with a as b: b\n"
-           [
-             +Statement.With
-                {
-                  With.items = [!"a", Some !"b"];
-                  body = [+Statement.Expression !"b"];
-                  async = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "with a as b, c as d: b\n"
-           [
-             +Statement.With
-                {
-                  With.items = [!"a", Some !"b"; !"c", Some !"d"];
-                  body = [+Statement.Expression !"b"];
-                  async = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "with a, c as d: b\n"
-           [
-             +Statement.With
-                {
-                  With.items = [!"a", None; !"c", Some !"d"];
-                  body = [+Statement.Expression !"b"];
-                  async = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "with a as b: # type: int\n\tb\n"
-           [
-             +Statement.With
-                {
-                  With.items = [!"a", Some !"b"];
-                  body = [+Statement.Expression !"b"];
-                  async = false;
-                };
-           ];
-    ]
-
-
-let test_raise =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal "raise" [+Statement.Raise { Raise.expression = None; from = None }];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "raise a"
-           [+Statement.Raise { Raise.expression = Some !"a"; from = None }];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "raise a from b"
-           [+Statement.Raise { Raise.expression = Some !"a"; from = Some !"b" }];
-    ]
-
-
-let test_try =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "try: a"
-           [
-             +Statement.Try
-                {
-                  Try.body = [+Statement.Expression !"a"];
-                  handlers = [];
-                  orelse = [];
-                  finally = [];
-                  handles_exception_group = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "try:\n\ta\nelse:\n\tb"
-           [
-             +Statement.Try
-                {
-                  Try.body = [+Statement.Expression !"a"];
-                  handlers = [];
-                  orelse = [+Statement.Expression !"b"];
-                  finally = [];
-                  handles_exception_group = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "try:\n\ta\nfinally:\n\tb"
-           [
-             +Statement.Try
-                {
-                  Try.body = [+Statement.Expression !"a"];
-                  handlers = [];
-                  orelse = [];
-                  finally = [+Statement.Expression !"b"];
-                  handles_exception_group = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "try:\n\ta\nexcept:\n\tb"
-           [
-             +Statement.Try
-                {
-                  Try.body = [+Statement.Expression !"a"];
-                  handlers =
-                    [{ Try.Handler.kind = None; name = None; body = [+Statement.Expression !"b"] }];
-                  orelse = [];
-                  finally = [];
-                  handles_exception_group = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "try:\n\ta\nexcept a:\n\tb"
-           [
-             +Statement.Try
-                {
-                  Try.body = [+Statement.Expression !"a"];
-                  handlers =
-                    [
-                      {
-                        Try.Handler.kind = Some !"a";
-                        name = None;
-                        body = [+Statement.Expression !"b"];
-                      };
-                    ];
-                  orelse = [];
-                  finally = [];
-                  handles_exception_group = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "try:\n\ta\nexcept a as b:\n\tb"
-           [
-             +Statement.Try
-                {
-                  Try.body = [+Statement.Expression !"a"];
-                  handlers =
-                    [
-                      {
-                        Try.Handler.kind = Some !"a";
-                        name = Some (+"b");
-                        body = [+Statement.Expression !"b"];
-                      };
-                    ];
-                  orelse = [];
-                  finally = [];
-                  handles_exception_group = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "try:\n\ta\nexcept a or b:\n\tc"
-           [
-             +Statement.Try
-                {
-                  Try.body = [+Statement.Expression !"a"];
-                  handlers =
-                    [
-                      {
-                        Try.Handler.kind =
-                          Some
-                            (+Expression.BooleanOperator
-                                {
-                                  BooleanOperator.left = !"a";
-                                  operator = BooleanOperator.Or;
-                                  right = !"b";
-                                  origin = None;
-                                });
-                        name = None;
-                        body = [+Statement.Expression !"c"];
-                      };
-                    ];
-                  orelse = [];
-                  finally = [];
-                  handles_exception_group = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "try:\n\ta\nexcept a or b as e:\n\tc"
-           [
-             +Statement.Try
-                {
-                  Try.body = [+Statement.Expression !"a"];
-                  handlers =
-                    [
-                      {
-                        Try.Handler.kind =
-                          Some
-                            (+Expression.BooleanOperator
-                                {
-                                  BooleanOperator.left = !"a";
-                                  operator = BooleanOperator.Or;
-                                  right = !"b";
-                                  origin = None;
-                                });
-                        name = Some (+"e");
-                        body = [+Statement.Expression !"c"];
-                      };
-                    ];
-                  orelse = [];
-                  finally = [];
-                  handles_exception_group = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "try:\n\ta\nexcept a, b:\n\tb"
-           [
-             +Statement.Try
-                {
-                  Try.body = [+Statement.Expression !"a"];
-                  handlers =
-                    [
-                      {
-                        Try.Handler.kind = Some !"a";
-                        name = Some (+"b");
-                        body = [+Statement.Expression !"b"];
-                      };
-                    ];
-                  orelse = [];
-                  finally = [];
-                  handles_exception_group = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "try:\n\ta\nexcept (a, b) as c:\n\tb"
-           [
-             +Statement.Try
-                {
-                  Try.body = [+Statement.Expression !"a"];
-                  handlers =
-                    [
-                      {
-                        Try.Handler.kind = Some (+Expression.Tuple [!"a"; !"b"]);
-                        name = Some (+"c");
-                        body = [+Statement.Expression !"b"];
-                      };
-                    ];
-                  orelse = [];
-                  finally = [];
-                  handles_exception_group = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "try:\n\ta\nexcept a as b:\n\tb\nexcept d:\n\te"
-           [
-             +Statement.Try
-                {
-                  Try.body = [+Statement.Expression !"a"];
-                  handlers =
-                    [
-                      {
-                        Try.Handler.kind = Some !"a";
-                        name = Some (+"b");
-                        body = [+Statement.Expression !"b"];
-                      };
-                      {
-                        Try.Handler.kind = Some !"d";
-                        name = None;
-                        body = [+Statement.Expression !"e"];
-                      };
-                    ];
-                  orelse = [];
-                  finally = [];
-                  handles_exception_group = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "try:\n\ta\nexcept:\n\tb\nelse:\n\tc\nfinally:\n\td"
-           [
-             +Statement.Try
-                {
-                  Try.body = [+Statement.Expression !"a"];
-                  handlers =
-                    [{ Try.Handler.kind = None; name = None; body = [+Statement.Expression !"b"] }];
-                  orelse = [+Statement.Expression !"c"];
-                  finally = [+Statement.Expression !"d"];
-                  handles_exception_group = false;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "try:\n\ta\nexcept* a:\n\tb"
-           [
-             +Statement.Try
-                {
-                  Try.body = [+Statement.Expression !"a"];
-                  handlers =
-                    [
-                      {
-                        Try.Handler.kind = Some !"a";
-                        name = None;
-                        body = [+Statement.Expression !"b"];
-                      };
-                    ];
-                  orelse = [];
-                  finally = [];
-                  handles_exception_group = true;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "try:\n\ta\nexcept* a as b:\n\tb"
-           [
-             +Statement.Try
-                {
-                  Try.body = [+Statement.Expression !"a"];
-                  handlers =
-                    [
-                      {
-                        Try.Handler.kind = Some !"a";
-                        name = Some (+"b");
-                        body = [+Statement.Expression !"b"];
-                      };
-                    ];
-                  orelse = [];
-                  finally = [];
-                  handles_exception_group = true;
-                };
-           ];
-    ]
-
-
-let test_assert =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "assert a"
-           [+Statement.Assert { Assert.test = !"a"; message = None; origin = None }];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "assert a is b"
-           [
-             +Statement.Assert
-                {
-                  Assert.test =
-                    +Expression.ComparisonOperator
-                       {
-                         ComparisonOperator.left = !"a";
-                         operator = ComparisonOperator.Is;
-                         right = !"b";
-                         origin = None;
-                       };
-                  message = None;
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "assert a, b"
-           [+Statement.Assert { Assert.test = !"a"; message = Some !"b"; origin = None }];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "assert a is not None, 'b or c'"
-           [
-             +Statement.Assert
-                {
-                  Assert.test =
-                    +Expression.ComparisonOperator
-                       {
-                         ComparisonOperator.left = !"a";
-                         operator = ComparisonOperator.IsNot;
-                         right = +Expression.Constant Constant.NoneLiteral;
-                         origin = None;
-                       };
-                  message =
-                    Some (+Expression.Constant (Constant.String (StringLiteral.create "b or c")));
-                  origin = None;
-                };
-           ];
-    ]
-
-
-(* TODO(T145739378) Add location information on from *)
-let test_import =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "import a"
-           [
-             +Statement.Import
-                { Import.from = None; imports = [+{ Import.name = !&"a"; alias = None }] };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "import async"
-           [
-             +Statement.Import
-                { Import.from = None; imports = [+{ Import.name = !&"async"; alias = None }] };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "import a.async"
-           [
-             +Statement.Import
-                { Import.from = None; imports = [+{ Import.name = !&"a.async"; alias = None }] };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "import a.b"
-           [
-             +Statement.Import
-                { Import.from = None; imports = [+{ Import.name = !&"a.b"; alias = None }] };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "import a as b"
-           [
-             +Statement.Import
-                { Import.from = None; imports = [+{ Import.name = !&"a"; alias = Some "b" }] };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "import a as b, c, d as e"
-           [
-             +Statement.Import
-                {
-                  Import.from = None;
-                  imports =
-                    [
-                      +{ Import.name = !&"a"; alias = Some "b" };
-                      +{ Import.name = !&"c"; alias = None };
-                      +{ Import.name = !&"d"; alias = Some "e" };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "from a import b"
-           [
-             +Statement.Import
-                {
-                  Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"a");
-                  imports = [+{ Import.name = !&"b"; alias = None }];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "from a import *"
-           [
-             +Statement.Import
-                {
-                  Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"a");
-                  imports = [+{ Import.name = !&"*"; alias = None }];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "from . import b"
-           [
-             +Statement.Import
-                {
-                  Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&".");
-                  imports = [+{ Import.name = !&"b"; alias = None }];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "from ...foo import b"
-           [
-             +Statement.Import
-                {
-                  Import.from = Some (node ~start:(1, 5) ~stop:(1, 11) !&"...foo");
-                  imports = [+{ Import.name = !&"b"; alias = None }];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "from .....foo import b"
-           [
-             +Statement.Import
-                {
-                  Import.from = Some (node ~start:(1, 5) ~stop:(1, 13) !&".....foo");
-                  imports = [+{ Import.name = !&"b"; alias = None }];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "from .a import b"
-           [
-             +Statement.Import
-                {
-                  Import.from = Some (node ~start:(1, 5) ~stop:(1, 7) !&".a");
-                  imports = [+{ Import.name = !&"b"; alias = None }];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "from ..a import b"
-           [
-             +Statement.Import
-                {
-                  Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"..a");
-                  imports = [+{ Import.name = !&"b"; alias = None }];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "from a import (b, c)"
-           [
-             +Statement.Import
-                {
-                  Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"a");
-                  imports =
-                    [+{ Import.name = !&"b"; alias = None }; +{ Import.name = !&"c"; alias = None }];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "from a.b import c"
-           [
-             +Statement.Import
-                {
-                  Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"a.b");
-                  imports = [+{ Import.name = !&"c"; alias = None }];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "from f import a as b, c, d as e"
-           [
-             +Statement.Import
-                {
-                  Import.from = Some (node ~start:(1, 5) ~stop:(1, 6) !&"f");
-                  imports =
-                    [
-                      +{ Import.name = !&"a"; alias = Some "b" };
-                      +{ Import.name = !&"c"; alias = None };
-                      +{ Import.name = !&"d"; alias = Some "e" };
-                    ];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__ @@ assert_not_parsed "from import x";
-    ]
-
-
-let test_global =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal "global a" [+Statement.Global ["a"]];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal "global a, b" [+Statement.Global ["a"; "b"]];
-    ]
-
-
 let test_tuple =
   test_list
     [
@@ -5899,67 +2109,6 @@ let test_tuple =
       @@ assert_parsed_equal
            "(1,)"
            [+Statement.Expression (+Expression.Tuple [+Expression.Constant (Constant.Integer 1)])];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "1, 2"
-           [
-             +Statement.Expression
-                (+Expression.Tuple
-                    [
-                      +Expression.Constant (Constant.Integer 1);
-                      +Expression.Constant (Constant.Integer 2);
-                    ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "1, 1 + 1"
-           [
-             +Statement.Expression
-                (+Expression.Tuple
-                    [
-                      +Expression.Constant (Constant.Integer 1);
-                      +Expression.BinaryOperator
-                         {
-                           operator = BinaryOperator.Add;
-                           left = +Expression.Constant (Constant.Integer 1);
-                           right = +Expression.Constant (Constant.Integer 1);
-                           origin = None;
-                         };
-                    ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "1, 2 if 3 else 4"
-           [
-             +Statement.Expression
-                (+Expression.Tuple
-                    [
-                      +Expression.Constant (Constant.Integer 1);
-                      +Expression.Ternary
-                         {
-                           Ternary.target = +Expression.Constant (Constant.Integer 2);
-                           test = +Expression.Constant (Constant.Integer 3);
-                           alternative = +Expression.Constant (Constant.Integer 4);
-                         };
-                    ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "1 + 1, 1"
-           [
-             +Statement.Expression
-                (+Expression.Tuple
-                    [
-                      +Expression.BinaryOperator
-                         {
-                           operator = BinaryOperator.Add;
-                           left = +Expression.Constant (Constant.Integer 1);
-                           right = +Expression.Constant (Constant.Integer 1);
-                           origin = None;
-                         };
-                      +Expression.Constant (Constant.Integer 1);
-                    ]);
-           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
            "(1, 2, 3)"
@@ -5981,66 +2130,12 @@ let test_stubs =
     [
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "a = ..."
-           [
-             +Statement.Assign
-                {
-                  Assign.target = !"a";
-                  annotation = None;
-                  value = Some (+Expression.Constant Constant.Ellipsis);
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
            "a: int = ..."
            [
              +Statement.Assign
                 {
                   Assign.target = !"a";
                   annotation = Some !"int";
-                  value = Some (+Expression.Constant Constant.Ellipsis);
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a = ... # type: int"
-           [
-             +Statement.Assign
-                {
-                  Assign.target = !"a";
-                  annotation =
-                    Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
-                  value = Some (+Expression.Constant Constant.Ellipsis);
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a = ... # type: Tuple[str]"
-           [
-             +Statement.Assign
-                {
-                  Assign.target = !"a";
-                  annotation =
-                    Some
-                      (+Expression.Constant (Constant.String (StringLiteral.create "Tuple[str]")));
-                  value = Some (+Expression.Constant Constant.Ellipsis);
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "a = ... # type: Tuple[str, ...]"
-           [
-             +Statement.Assign
-                {
-                  Assign.target = !"a";
-                  annotation =
-                    Some
-                      (+Expression.Constant
-                          (Constant.String (StringLiteral.create "Tuple[str, ...]")));
                   value = Some (+Expression.Constant Constant.Ellipsis);
                   origin = None;
                 };
@@ -6062,56 +2157,7 @@ let test_stubs =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "class A:\n\ta = ... # type: int"
-           [
-             +Statement.Class
-                {
-                  Class.name = !&"A";
-                  base_arguments = [];
-                  parent;
-                  body =
-                    [
-                      +Statement.Assign
-                         {
-                           Assign.target = !"a";
-                           annotation =
-                             Some
-                               (+Expression.Constant (Constant.String (StringLiteral.create "int")));
-                           value = Some (+Expression.Constant Constant.Ellipsis);
-                           origin = None;
-                         };
-                    ];
-                  decorators = [];
-                  top_level_unbound_names = [];
-                  type_params = [];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
            "def foo(a): ..."
-           [
-             +Statement.Define
-                {
-                  Define.signature =
-                    {
-                      Define.Signature.name = !&"foo";
-                      parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
-                      decorators = [];
-                      return_annotation = None;
-                      async = false;
-                      generator = false;
-                      parent;
-                      legacy_parent = None;
-                      type_params = [];
-                    };
-                  captures = [];
-                  unbound_names = [];
-                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "def foo(a): ... # type: ignore"
            [
              +Statement.Define
                 {
@@ -6215,31 +2261,6 @@ let test_stubs =
                   type_params = [];
                 };
            ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "class foo(): ... # type: ignore"
-           [
-             +Statement.Class
-                {
-                  Class.name = !&"foo";
-                  base_arguments = [];
-                  parent;
-                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
-                  decorators = [];
-                  top_level_unbound_names = [];
-                  type_params = [];
-                };
-           ];
-    ]
-
-
-let test_nonlocal =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal "nonlocal a" [+Statement.Nonlocal ["a"]];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal "nonlocal a, b" [+Statement.Nonlocal ["a"; "b"]];
     ]
 
 
@@ -6248,7 +2269,7 @@ let test_ellipsis =
     [
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "def __init__(debug = ...):\n\tpass"
+           "def __init__(debug = ...):\n\t..."
            [
              +Statement.Define
                 {
@@ -6273,12 +2294,12 @@ let test_ellipsis =
                     };
                   captures = [];
                   unbound_names = [];
-                  body = [+Statement.Pass];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                 };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
-           "if x is ...:\n\tpass"
+           "if x is ...:\n\t..."
            [
              +Statement.If
                 {
@@ -6290,151 +2311,8 @@ let test_ellipsis =
                          right = +Expression.Constant Constant.Ellipsis;
                          origin = None;
                        };
-                  body = [+Statement.Pass];
+                  body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
                   orelse = [];
-                };
-           ];
-    ]
-
-
-let test_setitem =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "i[j] = 3"
-           [
-             +Statement.Assign
-                {
-                  Assign.target =
-                    +Expression.Subscript { Subscript.base = !"i"; index = !"j"; origin = None };
-                  value = Some (+Expression.Constant (Constant.Integer 3));
-                  annotation = None;
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "i[j] += 3"
-           [
-             +Statement.AugmentedAssign
-                {
-                  AugmentedAssign.target =
-                    +Expression.Subscript { Subscript.base = !"i"; index = !"j"; origin = None };
-                  value = +Expression.Constant (Constant.Integer 3);
-                  operator = BinaryOperator.Add;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "i[j][7] = 8"
-           [
-             +Statement.Assign
-                {
-                  Assign.target =
-                    +Expression.Subscript
-                       {
-                         Subscript.base =
-                           +Expression.Subscript
-                              { Subscript.base = !"i"; index = !"j"; origin = None };
-                         index = +Expression.Constant (Constant.Integer 7);
-                         origin = None;
-                       };
-                  value = Some (+Expression.Constant (Constant.Integer 8));
-                  annotation = None;
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "i[j::1] = i[:j]"
-           [
-             +Statement.Assign
-                {
-                  Assign.target =
-                    +Expression.Subscript
-                       {
-                         Subscript.base = !"i";
-                         index =
-                           +Expression.Slice
-                              {
-                                Slice.start = Some !"j";
-                                stop = None;
-                                step = Some (+Expression.Constant (Constant.Integer 1));
-                                origin = None;
-                              };
-                         origin = None;
-                       };
-                  value =
-                    Some
-                      (+Expression.Subscript
-                          {
-                            Subscript.base = !"i";
-                            index =
-                              +Expression.Slice
-                                 {
-                                   Slice.start = None;
-                                   stop = Some !"j";
-                                   step = None;
-                                   origin = None;
-                                 };
-                            origin = None;
-                          });
-                  annotation = None;
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "i[j] = 5 if 1 else 1"
-           [
-             +Statement.Assign
-                {
-                  Assign.target =
-                    +Expression.Subscript { Subscript.base = !"i"; index = !"j"; origin = None };
-                  value =
-                    Some
-                      (+Expression.Ternary
-                          {
-                            Ternary.target = +Expression.Constant (Constant.Integer 5);
-                            test = +Expression.Constant (Constant.Integer 1);
-                            alternative = +Expression.Constant (Constant.Integer 1);
-                          });
-                  annotation = None;
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "x = i[j] = y"
-           [
-             +Statement.Assign
-                { Assign.target = !"x"; annotation = None; value = Some !"y"; origin = None };
-             +Statement.Assign
-                {
-                  Assign.target =
-                    +Expression.Subscript { Subscript.base = !"i"; index = !"j"; origin = None };
-                  value = Some !"y";
-                  annotation = None;
-                  origin = None;
-                };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "x, i[j] = y"
-           [
-             +Statement.Assign
-                {
-                  Assign.target =
-                    +Expression.Tuple
-                       [
-                         !"x";
-                         +Expression.Subscript
-                            { Subscript.base = !"i"; index = !"j"; origin = None };
-                       ];
-                  annotation = None;
-                  value = Some !"y";
-                  origin = None;
                 };
            ];
     ]
@@ -6461,327 +2339,27 @@ let test_byte_order_mark =
     (fun () -> parse ["1"; byte_order_mark ^ "2"])
 
 
-let test_walrus_operator =
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "(a := 1)"
-           [
-             +Statement.Expression
-                (+Expression.WalrusOperator
-                    {
-                      WalrusOperator.target = !"a";
-                      value = +Expression.Constant (Constant.Integer 1);
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (* Binds more tightly than a comma. *)
-           "(a := 1, 2)"
-           [
-             +Statement.Expression
-                (+Expression.Tuple
-                    [
-                      +Expression.WalrusOperator
-                         {
-                           WalrusOperator.target = !"a";
-                           value = +Expression.Constant (Constant.Integer 1);
-                           origin = None;
-                         };
-                      +Expression.Constant (Constant.Integer 2);
-                    ]);
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (* Binds less tightly than a binary operator. *)
-           "(a := 1 + 2)"
-           [
-             +Statement.Expression
-                (+Expression.WalrusOperator
-                    {
-                      WalrusOperator.target = !"a";
-                      value =
-                        +Expression.BinaryOperator
-                           {
-                             operator = BinaryOperator.Add;
-                             left = +Expression.Constant (Constant.Integer 1);
-                             right = +Expression.Constant (Constant.Integer 2);
-                             origin = None;
-                           };
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (* Binds less tightly than `and`. *)
-           "(a := True and False)"
-           [
-             +Statement.Expression
-                (+Expression.WalrusOperator
-                    {
-                      WalrusOperator.target = !"a";
-                      value =
-                        +Expression.BooleanOperator
-                           {
-                             BooleanOperator.left = +Expression.Constant Constant.True;
-                             operator = BooleanOperator.And;
-                             right = +Expression.Constant Constant.False;
-                             origin = None;
-                           };
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           (* Binds less tightly than a conditional expression. *)
-           "(a := 1 if True else 2)"
-           [
-             +Statement.Expression
-                (+Expression.WalrusOperator
-                    {
-                      WalrusOperator.target = !"a";
-                      value =
-                        +Expression.Ternary
-                           {
-                             Ternary.target = +Expression.Constant (Constant.Integer 1);
-                             test = +Expression.Constant Constant.True;
-                             alternative = +Expression.Constant (Constant.Integer 2);
-                           };
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed_equal
-           "(a := (b := 1))"
-           [
-             +Statement.Expression
-                (+Expression.WalrusOperator
-                    {
-                      WalrusOperator.target = !"a";
-                      value =
-                        +Expression.WalrusOperator
-                           {
-                             WalrusOperator.target = !"b";
-                             value = +Expression.Constant (Constant.Integer 1);
-                             origin = None;
-                           };
-                      origin = None;
-                    });
-           ];
-      labeled_test_case __FUNCTION__ __LINE__ @@ assert_not_parsed "(a := 1) := 2";
-    ]
-
-
-let test_format_string =
-  let assert_format_string source value _context =
-    let parsed_source = parse_untrimmed source in
-    let found_any =
-      Visit.collect_locations parsed_source |> List.for_all ~f:(Location.equal Location.any)
-    in
-    if found_any then
-      Printf.printf "\nLocation.any\n  found in parse of %s\n" source;
-    assert_false found_any;
-    assert_source_equal
-      ~location_insensitive:true
-      (Source.create [+Statement.Expression (+Expression.FormatString value)])
-      parsed_source
-  in
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_format_string "f'foo'" [Substring.Literal (+"foo")];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_format_string
-           "f'{1}'"
-           [
-             Substring.Format
-               { format_spec = None; value = +Expression.Constant (Constant.Integer 1) };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_format_string
-           "f'foo{1}'"
-           [
-             Substring.Literal (+"foo");
-             Substring.Format
-               { format_spec = None; value = +Expression.Constant (Constant.Integer 1) };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_format_string
-           "f'foo{1}' 'foo{2}'"
-           [
-             Substring.Literal (+"foo");
-             Substring.Format
-               { format_spec = None; value = +Expression.Constant (Constant.Integer 1) };
-             Substring.Literal (+"foo{2}");
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_format_string
-           "'foo{1}' f'foo{2}'"
-           [
-             Substring.Literal (+"foo{1}");
-             Substring.Literal (+"foo");
-             Substring.Format
-               { format_spec = None; value = +Expression.Constant (Constant.Integer 2) };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_format_string
-           "f'foo{1}' f'foo{2}'"
-           [
-             Substring.Literal (+"foo");
-             Substring.Format
-               { format_spec = None; value = +Expression.Constant (Constant.Integer 1) };
-             Substring.Literal (+"foo");
-             Substring.Format
-               { format_spec = None; value = +Expression.Constant (Constant.Integer 2) };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_format_string
-           "f'foo{1}{2}foo'"
-           [
-             Substring.Literal (+"foo");
-             Substring.Format
-               { format_spec = None; value = +Expression.Constant (Constant.Integer 1) };
-             Substring.Format
-               { format_spec = None; value = +Expression.Constant (Constant.Integer 2) };
-             Substring.Literal (+"foo");
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_format_string
-           "f'foo{{1}}'"
-           [Substring.Literal (+"foo"); Substring.Literal (+"{{1}}")];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_format_string
-           "f'foo{{ {1} }}'"
-           [
-             Substring.Literal (+"foo");
-             Substring.Literal (+"{{ ");
-             Substring.Format
-               { format_spec = None; value = +Expression.Constant (Constant.Integer 1) };
-             Substring.Literal (+" }}");
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_format_string
-           "f'foo{{{1} }}'"
-           [
-             Substring.Literal (+"foo");
-             Substring.Literal (+"{{");
-             Substring.Format
-               { format_spec = None; value = +Expression.Constant (Constant.Integer 1) };
-             Substring.Literal (+" }}");
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_format_string
-           "f'foo{{ {1}}}'"
-           [
-             Substring.Literal (+"foo");
-             Substring.Literal (+"{{ ");
-             Substring.Format
-               { format_spec = None; value = +Expression.Constant (Constant.Integer 1) };
-             Substring.Literal (+"}}");
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_format_string
-           "f'foo{{{1}}}'"
-           [
-             Substring.Literal (+"foo");
-             Substring.Literal (+"{{");
-             Substring.Format
-               { format_spec = None; value = +Expression.Constant (Constant.Integer 1) };
-             Substring.Literal (+"}}");
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_format_string "f'foo{{'" [Substring.Literal (+"foo"); Substring.Literal (+"{{")];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_format_string "f'foo}}'" [Substring.Literal (+"foo}}")];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_format_string
-           "f'foo{1+2}'"
-           [
-             Substring.Literal (+"foo");
-             Substring.Format
-               {
-                 format_spec = None;
-                 value =
-                   +Expression.BinaryOperator
-                      {
-                        operator = BinaryOperator.Add;
-                        left = +Expression.Constant (Constant.Integer 1);
-                        right = +Expression.Constant (Constant.Integer 2);
-                        origin = None;
-                      };
-               };
-           ];
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_format_string
-           "f'{x for x in []}'"
-           [
-             Substring.Format
-               {
-                 format_spec = None;
-                 value =
-                   +Expression.Generator
-                      {
-                        Comprehension.element = +Expression.Name (Name.Identifier "x");
-                        generators =
-                          [
-                            {
-                              Comprehension.Generator.target = +Expression.Name (Name.Identifier "x");
-                              iterator = +Expression.List [];
-                              conditions = [];
-                              async = false;
-                            };
-                          ];
-                      };
-               };
-           ];
-    ]
-
-
 let () =
   "parsing"
   >::: [
          test_lexer;
          test_number;
-         test_await;
          test_name;
          test_starred;
          test_compound;
          test_define;
          test_boolean_operator;
-         test_binary_operator;
          test_unary_operator;
-         test_lambda;
-         test_ternary;
-         test_dictionary;
          test_list_parsing;
-         test_set;
-         test_generator;
-         test_yield;
          test_comparison;
          test_call;
          test_string;
          test_class;
-         test_return;
-         test_delete;
          test_assign;
-         test_for;
-         test_while;
          test_if;
-         test_with;
-         test_raise;
-         test_try;
-         test_assert;
-         test_import;
-         test_global;
          test_tuple;
          test_stubs;
-         test_nonlocal;
          test_ellipsis;
-         test_setitem;
          test_byte_order_mark;
-         test_walrus_operator;
-         test_format_string;
        ]
   |> Test.run

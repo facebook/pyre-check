@@ -131,11 +131,11 @@ let test_invalid_models =
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_invalid_model ~model_source:"1 + import" ~expect:"Syntax error.";
-      labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
-           ~model_source:"import foo"
-           ~expect:"Unexpected statement: `import foo`";
+           ~model_source:"1 + import"
+           ~expect:"Unexpected statement: `1 + import`";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model ~model_source:"import foo" ~expect:"Syntax error.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:
@@ -622,13 +622,13 @@ let test_invalid_models =
       class test.ClassSinkWithMethod(TaintSink[TestSink]):
           def method(self): ...
       |}
-           ~expect:"Class model for `test.ClassSinkWithMethod` must have a body of `...`.";
+           ~expect:"Syntax error.";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model
            ~model_source:{|
       def foo(): TaintSource[A]
     |}
-           ~expect:"Callable model for `foo` must have a body of `...`.";
+           ~expect:"Syntax error.";
       (* Attach syntax. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_invalid_model

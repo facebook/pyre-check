@@ -24,55 +24,7 @@ module Assign = struct
   }
 end
 
-module AugmentedAssign = struct
-  type t = {
-    target: Expression.t;
-    operator: AstExpression.BinaryOperator.operator;
-    value: Expression.t;
-  }
-end
-
-module Import = struct
-  type t = {
-    from: Reference.t option;
-    imports: Ast.Statement.Import.import Node.t list;
-  }
-end
-
-module Raise = struct
-  type t = {
-    expression: Expression.t option;
-    from: Expression.t option;
-  }
-end
-
-module Return = struct
-  type t = {
-    is_implicit: bool;
-    expression: Expression.t option;
-  }
-end
-
-module Decorator = struct
-  type t = {
-    name: Reference.t Node.t;
-    arguments: ParserExpression.Call.Argument.t list option;
-  }
-end
-
-module rec Assert : sig
-  type t = {
-    test: Expression.t;
-    message: Expression.t option;
-  }
-end = struct
-  type t = {
-    test: Expression.t;
-    message: Expression.t option;
-  }
-end
-
-and Class : sig
+module rec Class : sig
   type t = {
     name: Reference.t;
     base_arguments: ParserExpression.Call.Argument.t list;
@@ -120,24 +72,6 @@ end = struct
   }
 end
 
-and For : sig
-  type t = {
-    target: Expression.t;
-    iterator: Expression.t;
-    body: Statement.t list;
-    orelse: Statement.t list;
-    async: bool;
-  }
-end = struct
-  type t = {
-    target: Expression.t;
-    iterator: Expression.t;
-    body: Statement.t list;
-    orelse: Statement.t list;
-    async: bool;
-  }
-end
-
 and If : sig
   type t = {
     test: Expression.t;
@@ -152,114 +86,22 @@ end = struct
   }
 end
 
-and Try : sig
-  module Handler : sig
-    type t = {
-      kind: Expression.t option;
-      name: Identifier.t Node.t option;
-      body: Statement.t list;
-    }
-  end
-
-  type t = {
-    body: Statement.t list;
-    handlers: Handler.t list;
-    orelse: Statement.t list;
-    finally: Statement.t list;
-    handles_exception_group: bool;
-  }
-end = struct
-  module Handler = struct
-    type t = {
-      kind: Expression.t option;
-      name: Identifier.t Node.t option;
-      body: Statement.t list;
-    }
-  end
-
-  type t = {
-    body: Statement.t list;
-    handlers: Handler.t list;
-    orelse: Statement.t list;
-    finally: Statement.t list;
-    handles_exception_group: bool;
-  }
-end
-
-and While : sig
-  type t = {
-    test: Expression.t;
-    body: Statement.t list;
-    orelse: Statement.t list;
-  }
-end = struct
-  type t = {
-    test: Expression.t;
-    body: Statement.t list;
-    orelse: Statement.t list;
-  }
-end
-
-and With : sig
-  type t = {
-    items: (Expression.t * Expression.t option) list;
-    body: Statement.t list;
-    async: bool;
-  }
-end = struct
-  type t = {
-    items: (Expression.t * Expression.t option) list;
-    body: Statement.t list;
-    async: bool;
-  }
-end
-
 and Statement : sig
   type statement =
     | Assign of Assign.t
-    | Assert of Assert.t
-    | AugmentedAssign of AugmentedAssign.t
-    | Break
     | Class of Class.t
-    | Continue
     | Define of Define.t
-    | Delete of Expression.t list
     | Expression of Expression.t
-    | For of For.t
-    | Global of Identifier.t list
     | If of If.t
-    | Import of Import.t
-    | Nonlocal of Identifier.t list
-    | Pass
-    | Raise of Raise.t
-    | Return of Return.t
-    | Try of Try.t
-    | With of With.t
-    | While of While.t
 
   type t = statement Node.t
 end = struct
   type statement =
     | Assign of Assign.t
-    | Assert of Assert.t
-    | AugmentedAssign of AugmentedAssign.t
-    | Break
     | Class of Class.t
-    | Continue
     | Define of Define.t
-    | Delete of Expression.t list
     | Expression of Expression.t
-    | For of For.t
-    | Global of Identifier.t list
     | If of If.t
-    | Import of Import.t
-    | Nonlocal of Identifier.t list
-    | Pass
-    | Raise of Raise.t
-    | Return of Return.t
-    | Try of Try.t
-    | With of With.t
-    | While of While.t
 
   type t = statement Node.t
 end
