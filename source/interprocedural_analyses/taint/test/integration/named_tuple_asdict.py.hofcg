@@ -1,0 +1,132 @@
+@generated
+Higher order call graphs
+{
+  "callable": "named_tuple_asdict.sink_on_asdict_pop_value",
+  "returned_callables": [],
+  "calls": {
+    "38:18-38:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.NamedTuple._asdict",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "named_tuple_asdict.ConnectionParams"
+          }
+        ]
+      }
+    },
+    "39:4-39:48": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "39:15-39:47": {
+      "call": {
+        "calls": [
+          {
+            "target": "collections.OrderedDict.pop",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "collections.OrderedDict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "named_tuple_asdict.sink_on_charset_direct",
+  "returned_callables": [],
+  "calls": {
+    "26:4-26:41": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "named_tuple_asdict.sink_on_charset_via_asdict_getitem",
+  "returned_callables": [],
+  "calls": {
+    "32:18-32:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.NamedTuple._asdict",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "named_tuple_asdict.ConnectionParams"
+          }
+        ]
+      }
+    },
+    "33:4-33:38": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "33:15-33:37|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "collections.OrderedDict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "named_tuple_asdict.sink_on_charset_via_asdict_pop",
+  "returned_callables": [],
+  "calls": {
+    "19:18-19:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.NamedTuple._asdict",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "named_tuple_asdict.ConnectionParams"
+          }
+        ]
+      }
+    },
+    "20:14-20:46": {
+      "call": {
+        "calls": [
+          {
+            "target": "collections.OrderedDict.pop",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "collections.OrderedDict"
+          }
+        ]
+      }
+    },
+    "21:4-21:23": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
