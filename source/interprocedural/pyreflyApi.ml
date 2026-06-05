@@ -4002,6 +4002,17 @@ let strip_builtins_prefix name =
   | _ -> name
 
 
+(* Pyrefly may prefix the module name with the source path to disambiguate modules that share the
+   same name (e.g. `a/b/c.py:a.b.c.foo`). Remove that path prefix. This is a no-op when there is no
+   path prefix (e.g. for unambiguous module names). When the path itself contains a colon (e.g.
+   `typeshed://typing.py:typing.foo`), we split on the last colon, which is the path/module
+   boundary. *)
+let strip_path_prefix name =
+  match String.rsplit2 name ~on:':' with
+  | Some (_path_prefix, bare_name) -> bare_name
+  | None -> name
+
+
 (* Given a fully qualified name for a function, method, class, attribute or global variable, return
    its 'symbolic' name. This removes any path prefix and suffixes such as `@setter` and `$2`. *)
 let target_symbolic_name reference =
@@ -4011,11 +4022,7 @@ let target_symbolic_name reference =
   let reference =
     (* First, strip the potential path prefixed to the module name, if any. *)
     if List.exists reference ~f:(fun s -> String.contains s ':') then
-      reference
-      |> String.concat ~sep:"."
-      |> String.rsplit2_exn ~on:':'
-      |> snd
-      |> String.split ~on:'.'
+      reference |> String.concat ~sep:"." |> strip_path_prefix |> String.split ~on:'.'
     else
       reference
   in
@@ -4059,6 +4066,28 @@ let target_symbolic_name reference =
     List.map ~f:unescape_special_characters reference
   in
   Reference.create_from_list reference
+
+
+(* Remove the pyrefly source-path prefix from a callable's module name, recursively including the
+   names of its parameter targets. See `strip_path_prefix`. *)
+let rec strip_target_path_prefix target =
+  let strip_regular = function
+    | Target.Regular.Function ({ name; _ } as function_target) ->
+        Target.Regular.Function { function_target with name = strip_path_prefix name }
+    | Target.Regular.Method ({ class_name; _ } as method_target) ->
+        Target.Regular.Method { method_target with class_name = strip_path_prefix class_name }
+    | Target.Regular.Override ({ class_name; _ } as override_target) ->
+        Target.Regular.Override { override_target with class_name = strip_path_prefix class_name }
+    | Target.Regular.Object name -> Target.Regular.Object (strip_path_prefix name)
+  in
+  match target with
+  | Target.Regular regular -> Target.from_regular (strip_regular regular)
+  | Target.Parameterized { regular; parameters } ->
+      Target.Parameterized
+        {
+          regular = strip_regular regular;
+          parameters = Target.ParameterMap.map strip_target_path_prefix parameters;
+        }
 
 
 module ModelQueries = struct

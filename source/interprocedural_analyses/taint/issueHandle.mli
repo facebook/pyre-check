@@ -50,6 +50,10 @@ type t = {
 
 val strip_all_callable_parameters : t -> t
 
+(* Remove the source path prefix that pyrefly may add to callable names, so that issue handles
+   remain stable across runs. See `Interprocedural.PyreflyApi.strip_target_path_prefix`. *)
+val strip_callable_path_prefix : t -> t
+
 val deterministic_compare : t -> t -> int
 
 val master_handle : t -> string

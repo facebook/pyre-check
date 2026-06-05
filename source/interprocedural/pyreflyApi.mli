@@ -305,6 +305,15 @@ val strip_builtins_prefix : Ast.Reference.t -> Ast.Reference.t
 
 val target_symbolic_name : Ast.Reference.t -> Ast.Reference.t
 
+(* Remove the source path prefix that pyrefly may add to a module name to disambiguate modules
+   sharing the same name (e.g. `a/b/c.py:a.b.c.foo` -> `a.b.c.foo`). No-op when there is no
+   prefix. *)
+val strip_path_prefix : string -> string
+
+(* Like `strip_path_prefix`, but operates on a callable target. Used to keep issue handles stable
+   across runs. *)
+val strip_target_path_prefix : Target.t -> Target.t
+
 module ModelQueries : sig
   module Function = Analysis.PyrePysaEnvironment.ModelQueries.Function
   module Global = Analysis.PyrePysaEnvironment.ModelQueries.Global

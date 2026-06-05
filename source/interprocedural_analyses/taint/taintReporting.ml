@@ -75,7 +75,7 @@ end = struct
   let get map target = Target.Map.find_opt target map |> Option.value ~default:[]
 end
 
-let merge_issues_ignoring_callable_parameters issues =
+let merge_issues_by_canonical_handle issues =
   (* We deduplicate issues in the following cases.
    * - Case 1: If `foo` has an issue with a non-parameterized sink callable `bar`, then there may
    * exist the same issue in `foo` with a parameterized `bar`.
@@ -84,10 +84,18 @@ let merge_issues_ignoring_callable_parameters issues =
    * - Case 3: Derived from Case 1 and 2 -- if `foo` has an issue with a non-parameterized sink
    * callable `bar`, then there may exist the same issue in any parameterized `foo` with a
    * parameterized `bar`.
-   * We realize the deduplication by using the "canonical" versions of the issue handles. *)
+   * We realize the deduplication by using the "canonical" versions of the issue handles. In
+   * addition to ignoring callable parameters, we strip the source-path prefix that pyrefly may
+   * add to callable names, so that issue handles are stable across runs. *)
   let group_by_stripped_handle map issue =
     let issue =
-      { issue with Issue.handle = IssueHandle.strip_all_callable_parameters issue.Issue.handle }
+      {
+        issue with
+        Issue.handle =
+          issue.Issue.handle
+          |> IssueHandle.strip_all_callable_parameters
+          |> IssueHandle.strip_callable_path_prefix;
+      }
     in
     IssueHandle.SerializableMap.update
       issue.Issue.handle
@@ -137,7 +145,7 @@ let extract_errors ~scheduler ~scheduler_policies ~taint_configuration ~callable
     ~inputs:callables
     ()
   |> List.concat_no_order
-  |> merge_issues_ignoring_callable_parameters
+  |> merge_issues_by_canonical_handle
   |> List.map ~f:(Issue.to_error ~taint_configuration)
 
 
@@ -208,9 +216,7 @@ let issues_to_newline_delimited_json
     in
     let callables = callable :: CallableToParameters.get callable_to_parameters callable in
     let issues =
-      List.map ~f:fetch_issues callables
-      |> List.concat_no_order
-      |> merge_issues_ignoring_callable_parameters
+      List.map ~f:fetch_issues callables |> List.concat_no_order |> merge_issues_by_canonical_handle
     in
     let issues =
       if sorted then

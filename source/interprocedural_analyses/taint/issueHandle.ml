@@ -89,6 +89,16 @@ module Sink = struct
     | sink -> sink
 
 
+  let strip_callee_path_prefix = function
+    | Call ({ callee; _ } as call) ->
+        Call { call with callee = PyreflyApi.strip_target_path_prefix callee }
+    | Global ({ callee; _ } as global) ->
+        Global { global with callee = PyreflyApi.strip_target_path_prefix callee }
+    | StringFormat ({ callee; _ } as string_format) ->
+        StringFormat { string_format with callee = PyreflyApi.strip_target_path_prefix callee }
+    | (Return | LiteralStringSink _ | ConditionalTestSink _) as sink -> sink
+
+
   let make_call ~call_target:{ CallGraph.CallTarget.target; index; _ } ~root ~callee_as_name =
     let root =
       (* Ignore extra information in the parameter in order to group issues together. *)
@@ -168,6 +178,14 @@ module T = struct
       handle with
       callable = Target.strip_parameters callable;
       sink = Sink.strip_callee_parameters sink;
+    }
+
+
+  let strip_callable_path_prefix ({ callable; sink; _ } as handle) =
+    {
+      handle with
+      callable = PyreflyApi.strip_target_path_prefix callable;
+      sink = Sink.strip_callee_path_prefix sink;
     }
 
 

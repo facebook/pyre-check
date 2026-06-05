@@ -9,6 +9,7 @@ open Core
 open OUnit2
 open Interprocedural
 open Ast
+module AccessPath = Analysis.TaintAccessPath
 module ModulePath = PyreflyApi.ModulePath
 module ModuleId = PyreflyApi.ModuleId
 module ModuleQualifier = PyreflyApi.ModuleQualifier
@@ -759,10 +760,78 @@ let test_fully_qualified_names _ =
   ()
 
 
+let test_strip_path_prefix _ =
+  let assert_strip_string ~expected name =
+    assert_equal ~cmp:String.equal ~printer:Fn.id expected (PyreflyApi.strip_path_prefix name)
+  in
+  (* A path prefix is stripped. *)
+  assert_strip_string ~expected:"a.b.c.foo" "a/b/c.py:a.b.c.foo";
+  (* A name without a path prefix is unchanged. *)
+  assert_strip_string ~expected:"a.b.c.foo" "a.b.c.foo";
+  (* When the path itself contains a colon, we split on the last colon. *)
+  assert_strip_string ~expected:"typing.foo" "typeshed://typing.py:typing.foo";
+  let assert_strip_target ~expected ~target =
+    assert_equal
+      ~cmp:(fun a b -> Target.compare a b = 0)
+      ~printer:Target.show_pretty
+      expected
+      (PyreflyApi.strip_target_path_prefix target)
+  in
+  (* Function with a path prefix is stripped. *)
+  assert_strip_target
+    ~expected:
+      (Target.Regular.Function { name = "a.b.c.foo"; kind = Target.Normal } |> Target.from_regular)
+    ~target:
+      (Target.Regular.Function { name = "a/b/c.py:a.b.c.foo"; kind = Target.Normal }
+      |> Target.from_regular);
+  (* Method has the path prefix in its class_name. *)
+  assert_strip_target
+    ~expected:
+      (Target.Regular.Method { class_name = "a.b.c.C"; method_name = "foo"; kind = Target.Normal }
+      |> Target.from_regular)
+    ~target:
+      (Target.Regular.Method
+         { class_name = "a/b/c.py:a.b.c.C"; method_name = "foo"; kind = Target.Normal }
+      |> Target.from_regular);
+  (* Object with a path prefix is stripped. *)
+  assert_strip_target
+    ~expected:(Target.Regular.Object "a.b.c.x" |> Target.from_regular)
+    ~target:(Target.Regular.Object "a/b/c.py:a.b.c.x" |> Target.from_regular);
+  (* A parameterized target has the path prefix stripped from both the regular target and its
+     parameter targets. *)
+  assert_strip_target
+    ~expected:
+      (Target.Parameterized
+         {
+           regular = Target.Regular.Function { name = "a.b.c.foo"; kind = Target.Normal };
+           parameters =
+             [
+               ( AccessPath.Root.Variable "x",
+                 Target.Regular.Function { name = "d.e.f.bar"; kind = Target.Normal }
+                 |> Target.from_regular );
+             ]
+             |> Target.ParameterMap.of_alist_exn;
+         })
+    ~target:
+      (Target.Parameterized
+         {
+           regular = Target.Regular.Function { name = "a/b/c.py:a.b.c.foo"; kind = Target.Normal };
+           parameters =
+             [
+               ( AccessPath.Root.Variable "x",
+                 Target.Regular.Function { name = "d/e/f.py:d.e.f.bar"; kind = Target.Normal }
+                 |> Target.from_regular );
+             ]
+             |> Target.ParameterMap.of_alist_exn;
+         });
+  ()
+
+
 let () =
   "pyreflyApi"
   >::: [
          "module_qualifiers" >:: test_module_qualifiers;
          "fully_qualified_names" >:: test_fully_qualified_names;
+         "strip_path_prefix" >:: test_strip_path_prefix;
        ]
   |> Test.run
