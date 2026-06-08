@@ -15,10 +15,7 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './styles.module.css';
 
-import {
-  FbInternalOnly,
-  OssOnly,
-} from 'docusaurus-plugin-internaldocs-fb/internal';
+import {FbInternalOnly} from 'docusaurus-plugin-internaldocs-fb/internal';
 
 const features = [
   {
@@ -132,16 +129,6 @@ function Home() {
               to={useBaseUrl('docs/getting-started')}>
               Getting Started
             </Link>
-            <OssOnly>
-              <Link
-                className={classnames(
-                  'button button--outline button--secondary button--lg',
-                  styles.getStarted,
-                )}
-                to={useBaseUrl('play')}>
-                Playground
-              </Link>
-            </OssOnly>
             <FbInternalOnly>
               <Link
                 className={classnames(
