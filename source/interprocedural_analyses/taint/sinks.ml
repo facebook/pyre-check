@@ -103,6 +103,11 @@ let ignore_kind_at_call = function
   | _ -> false
 
 
+let ignore_local_breadcrumbs = function
+  | AddFeatureToArgument -> true
+  | _ -> false
+
+
 let apply_call = function
   | Transform { local; global; base } ->
       Transform

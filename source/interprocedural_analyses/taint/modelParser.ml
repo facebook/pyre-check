@@ -1296,10 +1296,19 @@ let introduce_sink_taint
       |> Features.BreadcrumbMayAlwaysSet.add_set ~to_add:type_breadcrumbs
     in
     let via_features = Features.ViaFeatureSet.of_list via_features in
+    let store_declared_breadcrumbs =
+      match taint_sink_kind with
+      | Sinks.AddFeatureToArgument ->
+          (* For `AddFeatureToArgument` sinks, the declared breadcrumbs are stored in the
+             `LocalKindSpecificBreadcrumb` slot rather than the propagated slot, so they don't end
+             up mixed up with inferred breadcrumbs. *)
+          Frame.transform Features.LocalKindSpecificBreadcrumbSet.Self Map ~f:(fun _ -> breadcrumbs)
+      | _ -> Frame.transform Features.PropagatedBreadcrumbSet.Self Map ~f:(fun _ -> breadcrumbs)
+    in
     let leaf_taint =
       Frame.initial
       |> Frame.transform Features.LeafNameSet.Self Add ~f:leaf_names
-      |> Frame.transform Features.PropagatedBreadcrumbSet.Self Map ~f:(fun _ -> breadcrumbs)
+      |> store_declared_breadcrumbs
       |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
       |> transform_trace_length
       |> BackwardTaint.singleton CallInfo.declaration taint_sink_kind

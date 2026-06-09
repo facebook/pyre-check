@@ -73,13 +73,50 @@ def test_add_multiple_feature(parameter):
 def tito_with_feature(x): ...
 
 
-# AddFeatureToArgument accumulates breadcrumbs from calls along the path.
-def add_feature_to_argument_accumulates_features(x):
+# `AddFeatureToArgument` adds only its declared feature (`string_concat_lhs`); a
+# breadcrumb inferred along the propagation path (here `via_tito_with_feature`,
+# added by `tito_with_feature` via TITO) must NOT be propagated to the argument.
+def add_feature_to_argument_does_not_propagate_inferred_tito_feature(x):
     x = tito_with_feature(x)
     add_feature_to_first(x, 0)
 
 
-def source_add_feature_to_argument_accumulates_features():
+def source_add_feature_to_argument_does_not_propagate_inferred_tito_feature():
     x = _test_source()
-    add_feature_to_argument_accumulates_features(x)
+    add_feature_to_argument_does_not_propagate_inferred_tito_feature(x)
+    return x
+
+
+def tito_returns_int(x) -> int: ...
+
+
+# `AddFeatureToArgument` adds only its declared feature (`string_concat_lhs`); an
+# inferred type breadcrumb (here `type:integer`/`type:scalar`, because
+# `tito_returns_int` returns `int`) must NOT be propagated to the argument -- the
+# value is never actually an integer.
+def add_feature_to_argument_does_not_propagate_inferred_type_breadcrumb(x):
+    x = tito_returns_int(x)
+    add_feature_to_first(x, 0)
+
+
+def source_add_feature_to_argument_does_not_propagate_inferred_type_breadcrumb():
+    x = _test_source()
+    add_feature_to_argument_does_not_propagate_inferred_type_breadcrumb(x)
+    return x
+
+
+def add_via_breadcrumb(x): ...
+
+
+# `AddFeatureToArgument` adds only its declared feature (`string_concat_lhs`); an
+# inferred `Via` breadcrumb (here `special_sink`, added by `add_via_breadcrumb`
+# via TITO) must NOT be propagated to the argument.
+def add_feature_to_argument_does_not_propagate_inferred_via_breadcrumb(x):
+    x = add_via_breadcrumb(x)
+    add_feature_to_first(x, 0)
+
+
+def source_add_feature_to_argument_does_not_propagate_inferred_via_breadcrumb():
+    x = _test_source()
+    add_feature_to_argument_does_not_propagate_inferred_via_breadcrumb(x)
     return x

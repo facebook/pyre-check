@@ -739,7 +739,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | Some { AccessPath.root; path } ->
             let breadcrumbs_to_add =
               BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument sink_taint
-              |> BackwardTaint.joined_breadcrumbs
+              |> BackwardTaint.kind_specific_breadcrumbs
             in
             if Features.BreadcrumbMayAlwaysSet.is_bottom breadcrumbs_to_add then
               state

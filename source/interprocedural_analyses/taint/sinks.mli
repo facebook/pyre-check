@@ -56,6 +56,8 @@ val make_transform : local:TaintTransforms.t -> global:TaintTransforms.t -> base
 
 val ignore_kind_at_call : t -> bool
 
+val ignore_local_breadcrumbs : t -> bool
+
 val apply_call : t -> t
 
 module Set : sig

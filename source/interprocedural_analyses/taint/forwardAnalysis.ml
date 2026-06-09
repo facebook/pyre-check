@@ -687,7 +687,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~f:(fun sofar { SinkTreeWithHandle.sink_tree; _ } ->
                   sink_tree
                   |> BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument
-                  |> BackwardTaint.joined_breadcrumbs
+                  |> BackwardTaint.kind_specific_breadcrumbs
                   |> Features.BreadcrumbMayAlwaysSet.add_set ~to_add:sofar)
                 ~init:Features.BreadcrumbMayAlwaysSet.bottom
             in

@@ -603,6 +603,10 @@ module type TAINT_DOMAIN = sig
    * The over-under approximation is properly preserved. *)
   val joined_breadcrumbs : t -> Features.BreadcrumbMayAlwaysSet.t
 
+  (* Only the kind-specific breadcrumbs (the `LocalKindSpecificBreadcrumb` frame slot), ignoring
+   * the propagated and shared local breadcrumb slots. *)
+  val kind_specific_breadcrumbs : t -> Features.BreadcrumbMayAlwaysSet.t
+
   val first_indices : t -> Features.FirstIndexSet.t
 
   val first_fields : t -> Features.FirstFieldSet.t
@@ -722,7 +726,12 @@ module type KIND_ARG = sig
 
   val show : t -> string
 
+  (* When true, frames for this kind are not propagated to callees. *)
   val ignore_kind_at_call : t -> bool
+
+  (* When true, frames for this kind keep only their declared (kind-specific) breadcrumbs and do not
+     accumulate the shared local breadcrumbs (those inferred along the propagation path). *)
+  val ignore_local_breadcrumbs : t -> bool
 
   val apply_call : t -> t
 
@@ -1136,6 +1145,23 @@ end = struct
       taint
 
 
+  (* Only the kind-specific breadcrumbs (the `LocalKindSpecificBreadcrumb` frame slot), ignoring
+   * the propagated and shared local breadcrumb slots. *)
+  let kind_specific_breadcrumbs taint =
+    let local_taint_features local_taint sofar =
+      let frame_features frame sofar =
+        Frame.get Frame.Slots.LocalKindSpecificBreadcrumb frame
+        |> Features.BreadcrumbMayAlwaysSet.join sofar
+      in
+      LocalTaintDomain.fold Frame.Self local_taint ~init:sofar ~f:frame_features
+    in
+    fold
+      LocalTaintDomain.Self
+      ~f:local_taint_features
+      ~init:Features.BreadcrumbMayAlwaysSet.bottom
+      taint
+
+
   let get_first ~propagated_slot ~local_slot ~bottom ~join ~sequence_join taint =
     let local_taint_first local_taint sofar =
       let local_first = LocalTaintDomain.get local_slot local_taint in
@@ -1352,57 +1378,80 @@ end = struct
         |> LocalTaintDomain.update LocalTaintDomain.Slots.FirstIndex Features.FirstIndexSet.bottom
         |> LocalTaintDomain.update LocalTaintDomain.Slots.FirstField Features.FirstFieldSet.bottom
       in
-      let apply_frame frame =
-        let frame, kind_specific_local_breadcrumbs =
-          match call_info with
-          | CallInfo.Declaration _ ->
-              (* Propagate breadcrumbs and extra traces onto the first frame, since Declaration
-                 frame are never shown in the SAPP UI. The first frame is the Origin one. *)
-              let user_declared_breadcrumbs = Frame.get Frame.Slots.PropagatedBreadcrumb frame in
-              let frame =
-                frame
-                |> Frame.transform
-                     Features.LocalKindSpecificBreadcrumbSet.Self
-                     Map
-                     ~f:(Features.BreadcrumbMayAlwaysSet.add_set ~to_add:user_declared_breadcrumbs)
-                |> Frame.update
-                     Frame.Slots.PropagatedBreadcrumb
-                     Features.BreadcrumbMayAlwaysSet.empty
-              in
-              frame, Features.BreadcrumbMayAlwaysSet.empty
-          | _ ->
-              let local_breadcrumbs = Frame.get Frame.Slots.LocalKindSpecificBreadcrumb frame in
-              let frame =
-                frame
-                |> Frame.update Frame.Slots.ExtraTraceFirstHopSet ExtraTraceFirstHop.Set.bottom
-                |> Frame.update
-                     Frame.Slots.LocalKindSpecificBreadcrumb
-                     Features.BreadcrumbMayAlwaysSet.empty
-              in
-              frame, local_breadcrumbs
-        in
-        (* Existing local breadcrumbs (kind specific or not) become "propagated" breadcrumbs *)
-        let local_breadcrumbs =
-          Features.BreadcrumbMayAlwaysSet.sequence_join
-            kind_specific_local_breadcrumbs
-            local_breadcrumbs
-        in
-        frame
-        |> Frame.update Frame.Slots.ViaFeature Features.ViaFeatureSet.bottom
-        |> Frame.transform
-             Features.PropagatedBreadcrumbSet.Self
-             Map
-             ~f:(Features.BreadcrumbMayAlwaysSet.sequence_join local_breadcrumbs)
-        |> Frame.transform
-             Features.FirstIndexSet.Self
-             Map
-             ~f:(Features.FirstIndexSet.sequence_join local_first_indices)
-        |> Frame.transform
-             Features.FirstFieldSet.Self
-             Map
-             ~f:(Features.FirstFieldSet.sequence_join local_first_fields)
+      let apply_frame kind frame =
+        if Kind.ignore_local_breadcrumbs kind then
+          (* For kinds such as `Sinks.AddFeatureToArgument`, do not propagate or accumulate local
+             breadcrumbs *)
+          frame
+          |> Frame.update Frame.Slots.ViaFeature Features.ViaFeatureSet.bottom
+          |> Frame.update Frame.Slots.PropagatedBreadcrumb Features.BreadcrumbMayAlwaysSet.empty
+          |> Frame.update Frame.Slots.FirstIndex Features.FirstIndexSet.bottom
+          |> Frame.update Frame.Slots.FirstField Features.FirstFieldSet.bottom
+          |> Frame.update Frame.Slots.ExtraTraceFirstHopSet ExtraTraceFirstHop.Set.bottom
+        else
+          let frame, kind_specific_local_breadcrumbs =
+            match call_info with
+            | CallInfo.Declaration _ ->
+                (* Propagate breadcrumbs and extra traces onto the first frame, since Declaration
+                   frame are never shown in the SAPP UI. The first frame is the Origin one. *)
+                let user_declared_breadcrumbs = Frame.get Frame.Slots.PropagatedBreadcrumb frame in
+                let frame =
+                  frame
+                  |> Frame.transform
+                       Features.LocalKindSpecificBreadcrumbSet.Self
+                       Map
+                       ~f:
+                         (Features.BreadcrumbMayAlwaysSet.add_set ~to_add:user_declared_breadcrumbs)
+                  |> Frame.update
+                       Frame.Slots.PropagatedBreadcrumb
+                       Features.BreadcrumbMayAlwaysSet.empty
+                in
+                frame, Features.BreadcrumbMayAlwaysSet.empty
+            | _ ->
+                let kind_specific_local_breadcrumbs =
+                  Frame.get Frame.Slots.LocalKindSpecificBreadcrumb frame
+                in
+                let frame =
+                  frame
+                  |> Frame.update Frame.Slots.ExtraTraceFirstHopSet ExtraTraceFirstHop.Set.bottom
+                  |> Frame.update
+                       Frame.Slots.LocalKindSpecificBreadcrumb
+                       Features.BreadcrumbMayAlwaysSet.empty
+                in
+                frame, kind_specific_local_breadcrumbs
+          in
+          (* Existing local breadcrumbs (kind specific and the shared accumulated ones) become
+             "propagated" breadcrumbs. *)
+          let propagated_local_breadcrumbs =
+            Features.BreadcrumbMayAlwaysSet.sequence_join
+              kind_specific_local_breadcrumbs
+              local_breadcrumbs
+          in
+          let frame =
+            frame
+            |> Frame.update Frame.Slots.ViaFeature Features.ViaFeatureSet.bottom
+            |> Frame.transform
+                 Features.PropagatedBreadcrumbSet.Self
+                 Map
+                 ~f:(Features.BreadcrumbMayAlwaysSet.sequence_join propagated_local_breadcrumbs)
+            |> Frame.transform
+                 Features.FirstIndexSet.Self
+                 Map
+                 ~f:(Features.FirstIndexSet.sequence_join local_first_indices)
+            |> Frame.transform
+                 Features.FirstFieldSet.Self
+                 Map
+                 ~f:(Features.FirstFieldSet.sequence_join local_first_fields)
+          in
+          frame
       in
-      let local_taint = LocalTaintDomain.transform Frame.Self Map ~f:apply_frame local_taint in
+      let local_taint =
+        LocalTaintDomain.transform
+          Frame.Self
+          (Context (KindTaintDomain.Key, Map))
+          ~f:apply_frame
+          local_taint
+      in
       let class_intervals =
         match Target.get_regular callee with
         | Target.Regular.Object _
