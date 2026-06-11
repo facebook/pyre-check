@@ -229,6 +229,7 @@ def run_pysa(
     error_help: Optional[str] = None,
     use_pyrefly: bool = False,
     skip_buck_dependencies: bool = False,
+    show_type_errors: bool = False,
 ) -> str:
     """Run pysa for the given test and produce a list of errors in JSON."""
     if run_from == RunFrom.PYRE_IN_PATH:
@@ -278,6 +279,9 @@ def run_pysa(
 
     if use_pyrefly:
         command.append("--use-pyrefly")
+
+    if show_type_errors:
+        command.append("--show-type-errors")
 
     if skip_buck_dependencies:
         command.append("--skip-buck-dependencies")

@@ -40,6 +40,7 @@ def main(
     ignore_positions: bool,
     write_actual_results_on_failure: bool,
     use_pyrefly: bool,
+    show_type_errors: bool,
 ) -> None:
     """
     Entry point function to run a full end-to-end integration test.
@@ -73,6 +74,7 @@ def main(
         check_invariants=check_invariants,
         use_pyrefly=use_pyrefly,
         working_directory=working_directory,
+        show_type_errors=show_type_errors,
     )
 
     test_result_directory = (
@@ -171,6 +173,12 @@ if __name__ == "__main__":
         default=False,
         help="Use pyrefly as the type checker, instead of pyre1",
     )
+    parser.add_argument(
+        "--show-type-errors",
+        action="store_true",
+        default=False,
+        help="Show type errors from Pyrefly",
+    )
 
     parsed: argparse.Namespace = parser.parse_args()
     run_from = test_runner_lib.RunFrom(parsed.run_from)
@@ -193,4 +201,5 @@ if __name__ == "__main__":
         ignore_positions=parsed.ignore_positions,
         write_actual_results_on_failure=parsed.write_actual_results_on_failure,
         use_pyrefly=parsed.use_pyrefly,
+        show_type_errors=parsed.show_type_errors,
     )

@@ -21,7 +21,8 @@ os.execv(
         "--require-pyre-env",
         "--check-invariants",
         "--skip-model-verification-with-pyrefly",
-        "--typeshed", "../typeshed/typeshed",
+        "--typeshed=../typeshed/typeshed",
+        "--show-type-errors",
     ]
     + sys.argv[1:],
 )
