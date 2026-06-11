@@ -808,7 +808,8 @@ let test_strip_path_prefix _ =
              [
                ( AccessPath.Root.Variable "x",
                  Target.Regular.Function { name = "d.e.f.bar"; kind = Target.Normal }
-                 |> Target.from_regular );
+                 |> Target.from_regular
+                 |> Target.ParameterValue.create );
              ]
              |> Target.ParameterMap.of_alist_exn;
          })
@@ -820,7 +821,8 @@ let test_strip_path_prefix _ =
              [
                ( AccessPath.Root.Variable "x",
                  Target.Regular.Function { name = "d/e/f.py:d.e.f.bar"; kind = Target.Normal }
-                 |> Target.from_regular );
+                 |> Target.from_regular
+                 |> Target.ParameterValue.create );
              ]
              |> Target.ParameterMap.of_alist_exn;
          });

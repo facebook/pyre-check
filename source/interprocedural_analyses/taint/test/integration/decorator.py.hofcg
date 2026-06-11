@@ -322,9 +322,8 @@ Higher order call graphs
         ]
       }
     },
-    "291:0-292:25|artificial-attribute-access|for-decorated-target-callee:decorator.decorated": {
-      "attribute_access": {
-        "is_attribute": true,
+    "291:0-292:25|identifier|decorated": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -385,9 +384,8 @@ Higher order call graphs
         ]
       }
     },
-    "456:0-457:19|artificial-attribute-access|for-decorated-target-callee:decorator.doubly_decorated_logging": {
-      "attribute_access": {
-        "is_attribute": true,
+    "456:0-457:19|identifier|doubly_decorated_logging": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -433,9 +431,8 @@ Higher order call graphs
         ]
       }
     },
-    "25:0-26:12|artificial-attribute-access|for-decorated-target-callee:decorator.foo": {
-      "attribute_access": {
-        "is_attribute": true,
+    "25:0-26:12|identifier|foo": {
+      "identifier": {
         "if_called": {
           "calls": [
             { "target": "decorator.foo", "index": 0, "return_type": [] }
@@ -477,9 +474,8 @@ Higher order call graphs
         ]
       }
     },
-    "68:0-69:12|artificial-attribute-access|for-decorated-target-callee:decorator.foo_args_kwargs": {
-      "attribute_access": {
-        "is_attribute": true,
+    "68:0-69:12|identifier|foo_args_kwargs": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -527,9 +523,8 @@ Higher order call graphs
         ]
       }
     },
-    "80:0-81:17|artificial-attribute-access|for-decorated-target-callee:decorator.foo_args_kwargs_with_sink": {
-      "attribute_access": {
-        "is_attribute": true,
+    "80:0-81:17|identifier|foo_args_kwargs_with_sink": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -575,9 +570,8 @@ Higher order call graphs
         ]
       }
     },
-    "55:0-56:12|artificial-attribute-access|for-decorated-target-callee:decorator.foo_async": {
-      "attribute_access": {
-        "is_attribute": true,
+    "55:0-56:12|identifier|foo_async": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -623,9 +617,8 @@ Higher order call graphs
         ]
       }
     },
-    "143:0-144:15|artificial-attribute-access|for-decorated-target-callee:decorator.foo_log_first_parameter": {
-      "attribute_access": {
-        "is_attribute": true,
+    "143:0-144:15|identifier|foo_log_first_parameter": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -687,9 +680,8 @@ Higher order call graphs
         ]
       }
     },
-    "125:0-126:12|artificial-attribute-access|for-decorated-target-callee:decorator.foo_using_decorator_factory": {
-      "attribute_access": {
-        "is_attribute": true,
+    "125:0-126:12|identifier|foo_using_decorator_factory": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -735,9 +727,8 @@ Higher order call graphs
         ]
       }
     },
-    "169:0-170:15|artificial-attribute-access|for-decorated-target-callee:decorator.foo_with_helper_function": {
-      "attribute_access": {
-        "is_attribute": true,
+    "169:0-170:15|identifier|foo_with_helper_function": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -827,9 +818,8 @@ Higher order call graphs
         ]
       }
     },
-    "108:0-109:12|artificial-attribute-access|for-decorated-target-callee:decorator.foo_with_shady_decorators": {
-      "attribute_access": {
-        "is_attribute": true,
+    "108:0-109:12|identifier|foo_with_shady_decorators": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -882,9 +872,8 @@ Higher order call graphs
         ]
       }
     },
-    "37:0-39:12|artificial-attribute-access|for-decorated-target-callee:decorator.foo_with_sink": {
-      "attribute_access": {
-        "is_attribute": true,
+    "37:0-39:12|identifier|foo_with_sink": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -1296,6 +1285,7 @@ Higher order call graphs
           {
             "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.Foo.foo]",
             "index": 0,
+            "implicit_receiver": true,
             "return_type": []
           }
         ]
@@ -1334,6 +1324,7 @@ Higher order call graphs
           {
             "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.Foo.foo]",
             "index": 1,
+            "implicit_receiver": true,
             "return_type": []
           }
         ]
@@ -1410,6 +1401,7 @@ Higher order call graphs
           {
             "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.with_logging_args_kwargs.inner[captured_variable(f, parameter)=decorator.Foo.bar]]",
             "index": 0,
+            "implicit_receiver": true,
             "return_type": []
           }
         ]
@@ -1448,6 +1440,7 @@ Higher order call graphs
           {
             "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.Foo.self_has_generic_type]",
             "index": 0,
+            "implicit_receiver": true,
             "return_type": []
           }
         ]
@@ -1486,6 +1479,7 @@ Higher order call graphs
           {
             "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.Foo.some_class_method]",
             "index": 0,
+            "implicit_receiver": true,
             "return_type": []
           }
         ]
@@ -1544,9 +1538,8 @@ Higher order call graphs
         ]
       }
     },
-    "415:0-416:13|artificial-attribute-access|for-decorated-target-callee:decorator.return_source_via_decorator": {
-      "attribute_access": {
-        "is_attribute": true,
+    "415:0-416:13|identifier|return_source_via_decorator": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -1556,6 +1549,42 @@ Higher order call graphs
             }
           ]
         }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.returns_function_decorator",
+  "returned_callables": [
+    {
+      "target": "decorator.returns_function_decorator.replacement",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "486:4-487:26": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "decorator.returns_function_decorator.replacement",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.returns_function_decorator.replacement",
+  "returned_callables": [],
+  "calls": {
+    "487:8-487:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -1594,9 +1623,8 @@ Higher order call graphs
         ]
       }
     },
-    "258:0-259:20|artificial-attribute-access|for-decorated-target-callee:decorator.second_parameter_source_inlineable_decorator": {
-      "attribute_access": {
-        "is_attribute": true,
+    "258:0-259:20|identifier|second_parameter_source_inlineable_decorator": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -1659,9 +1687,8 @@ Higher order call graphs
         ]
       }
     },
-    "263:0-269:11|artificial-attribute-access|for-decorated-target-callee:decorator.second_parameter_source_inlineable_decorator_with_inner": {
-      "attribute_access": {
-        "is_attribute": true,
+    "263:0-269:11|identifier|second_parameter_source_inlineable_decorator_with_inner": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -1722,9 +1749,8 @@ Higher order call graphs
         ]
       }
     },
-    "246:0-247:20|artificial-attribute-access|for-decorated-target-callee:decorator.second_parameter_source_with_non_inlineable_decorator": {
-      "attribute_access": {
-        "is_attribute": true,
+    "246:0-247:20|identifier|second_parameter_source_with_non_inlineable_decorator": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -1827,9 +1853,8 @@ Higher order call graphs
         ]
       }
     },
-    "380:0-381:12|artificial-attribute-access|for-decorated-target-callee:decorator.sink_via_conditional_decorator_factory": {
-      "attribute_access": {
-        "is_attribute": true,
+    "380:0-381:12|identifier|sink_via_conditional_decorator_factory": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -1893,9 +1918,8 @@ Higher order call graphs
         ]
       }
     },
-    "350:0-351:17|artificial-attribute-access|for-decorated-target-callee:decorator.sink_via_conditional_no_op_decorator_factory": {
-      "attribute_access": {
-        "is_attribute": true,
+    "350:0-351:17|identifier|sink_via_conditional_no_op_decorator_factory": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -1943,9 +1967,8 @@ Higher order call graphs
         ]
       }
     },
-    "461:0-462:17|artificial-attribute-access|for-decorated-target-callee:decorator.sink_via_doubly_decorated": {
-      "attribute_access": {
-        "is_attribute": true,
+    "461:0-462:17|identifier|sink_via_doubly_decorated": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -1993,9 +2016,8 @@ Higher order call graphs
         ]
       }
     },
-    "307:0-308:17|artificial-attribute-access|for-decorated-target-callee:decorator.sink_via_no_op_decorator": {
-      "attribute_access": {
-        "is_attribute": true,
+    "307:0-308:17|identifier|sink_via_no_op_decorator": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -2054,9 +2076,8 @@ Higher order call graphs
         ]
       }
     },
-    "325:0-326:17|artificial-attribute-access|for-decorated-target-callee:decorator.sink_via_no_op_decorator_factory": {
-      "attribute_access": {
-        "is_attribute": true,
+    "325:0-326:17|identifier|sink_via_no_op_decorator_factory": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -2104,9 +2125,8 @@ Higher order call graphs
         ]
       }
     },
-    "273:0-274:17|artificial-attribute-access|for-decorated-target-callee:decorator.sink_via_trivial_decorator": {
-      "attribute_access": {
-        "is_attribute": true,
+    "273:0-274:17|identifier|sink_via_trivial_decorator": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -2116,6 +2136,96 @@ Higher order call graphs
             }
           ]
         }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.test_add_decorated_returns_function",
+  "returned_callables": [],
+  "calls": {
+    "499:4-499:24": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "499:4-499:41|artificial-call|binary": {
+      "call": {
+        "calls": [
+          {
+            "target": "decorator.returns_function_decorator.replacement",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "499:27-499:41": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.test_add_decorated_returns_staticmethod",
+  "returned_callables": [],
+  "calls": {
+    "521:4-521:28": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "521:4-521:45|artificial-call|binary": {
+      "call": {
+        "calls": [
+          {
+            "target": "decorator.AddReturnsStaticmethod.__add__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "521:31-521:45": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -2266,9 +2376,8 @@ Higher order call graphs
         ]
       }
     },
-    "428:4-429:29|artificial-attribute-access|for-decorated-target-callee:decorator.test_decorated_higher_order_parameter.inner": {
-      "attribute_access": {
-        "is_attribute": true,
+    "428:4-429:29|identifier|inner": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -2279,19 +2388,115 @@ Higher order call graphs
           ]
         }
       }
+    }
+  }
+}
+{
+  "callable": "decorator.test_decorator_bound",
+  "returned_callables": [],
+  "calls": {
+    "471:4-471:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "decorator.simple_wrapper[formal(f, position=0)=decorator.Foo.sink_method (bound)]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
     },
-    "428:4-429:29|artificial-attribute-access|for-decorated-target-callee:decorator.test_decorated_higher_order_parameter": {
-      "attribute_access": {
-        "is_attribute": true,
-        "if_called": {
-          "calls": [
-            {
-              "target": "decorator.test_decorated_higher_order_parameter",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "471:4-471:53": {
+      "call": {
+        "calls": [
+          {
+            "target": "decorator.simple_wrapper.inner[captured_variable(f, parameter)=decorator.Foo.sink_method (bound)]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "471:19-471:24": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "471:38-471:52": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.test_decorator_unbound",
+  "returned_callables": [],
+  "calls": {
+    "476:4-476:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "decorator.simple_wrapper[formal(f, position=0)=decorator.Foo.sink_method]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "476:4-476:58": {
+      "call": {
+        "calls": [
+          {
+            "target": "decorator.simple_wrapper.inner[captured_variable(f, parameter)=decorator.Foo.sink_method]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "476:36-476:41": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "476:43-476:57": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -2963,6 +3168,72 @@ Higher order call graphs
   }
 }
 {
+  "callable": "decorator.AddReturnsFunction.__add__@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.returns_function_decorator.replacement",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "493:5-493:31|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "decorator.returns_function_decorator[formal(f, position=0)=decorator.AddReturnsFunction.__add__]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "494:4-495:19|identifier|__add__": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "decorator.AddReturnsFunction.__add__",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.AddReturnsStaticmethod.__add__@decorated",
+  "returned_callables": [],
+  "calls": {
+    "515:5-515:35|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "decorator.returns_staticmethod_decorator[formal(f, position=0)=decorator.AddReturnsStaticmethod.__add__]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "516:4-517:19|identifier|__add__": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "decorator.AddReturnsStaticmethod.__add__",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "decorator.Foo.bar",
   "returned_callables": [],
   "calls": {
@@ -3005,17 +3276,11 @@ Higher order call graphs
         ]
       }
     },
-    "187:4-188:16|artificial-attribute-access|for-decorated-target-callee:decorator.Foo.bar": {
-      "attribute_access": {
-        "is_attribute": true,
+    "187:4-188:16|identifier|bar": {
+      "identifier": {
         "if_called": {
           "calls": [
-            {
-              "target": "decorator.Foo.bar",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
+            { "target": "decorator.Foo.bar", "index": 0, "return_type": [] }
           ]
         }
       }
@@ -3062,17 +3327,11 @@ Higher order call graphs
         ]
       }
     },
-    "182:4-183:27|artificial-attribute-access|for-decorated-target-callee:decorator.Foo.foo": {
-      "attribute_access": {
-        "is_attribute": true,
+    "182:4-183:27|identifier|foo": {
+      "identifier": {
         "if_called": {
           "calls": [
-            {
-              "target": "decorator.Foo.foo",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
+            { "target": "decorator.Foo.foo", "index": 0, "return_type": [] }
           ]
         }
       }
@@ -3089,6 +3348,7 @@ Higher order call graphs
           {
             "target": "decorator.with_logging_args_kwargs_no_sink.inner[captured_variable(f, parameter)=decorator.with_logging_args_kwargs.inner[captured_variable(f, parameter)=decorator.Foo.bar]]",
             "index": 0,
+            "implicit_receiver": true,
             "return_type": []
           }
         ]
@@ -3117,15 +3377,13 @@ Higher order call graphs
         ]
       }
     },
-    "191:4-192:22|artificial-attribute-access|for-decorated-target-callee:decorator.Foo.self_has_generic_type": {
-      "attribute_access": {
-        "is_attribute": true,
+    "191:4-192:22|identifier|self_has_generic_type": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
               "target": "decorator.Foo.self_has_generic_type",
               "index": 0,
-              "implicit_receiver": true,
               "return_type": []
             }
           ]
@@ -3212,20 +3470,31 @@ Higher order call graphs
         ]
       }
     },
-    "196:4-197:28|artificial-attribute-access|for-decorated-target-callee:decorator.Foo.some_class_method": {
-      "attribute_access": {
-        "is_attribute": true,
+    "196:4-197:28|identifier|some_class_method": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
               "target": "decorator.Foo.some_class_method",
               "index": 0,
-              "implicit_receiver": true,
               "return_type": [],
               "is_class_method": true
             }
           ]
         }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.StaticAddHolder.static_add",
+  "returned_callables": [],
+  "calls": {
+    "507:8-507:26": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -3289,7 +3558,6 @@ Higher order call graphs
     {
       "target": "decorator.StringWrapper.__add__",
       "index": 0,
-      "implicit_receiver": true,
       "return_type": []
     }
   ],
@@ -3305,15 +3573,13 @@ Higher order call graphs
         ]
       }
     },
-    "393:4-396:54|artificial-attribute-access|for-decorated-target-callee:decorator.StringWrapper.__add__": {
-      "attribute_access": {
-        "is_attribute": true,
+    "393:4-396:54|identifier|__add__": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
               "target": "decorator.StringWrapper.__add__",
               "index": 0,
-              "implicit_receiver": true,
               "return_type": []
             }
           ]
@@ -3620,7 +3886,6 @@ Higher order call graphs
     {
       "target": "decorator.StringWrapper.__add__",
       "index": 0,
-      "implicit_receiver": true,
       "return_type": []
     }
   ],
@@ -3638,6 +3903,29 @@ Higher order call graphs
   "calls": {}
 }
 {
+  "callable": "decorator.returns_function_decorator[formal(f, position=0)=decorator.AddReturnsFunction.__add__]",
+  "returned_callables": [
+    {
+      "target": "decorator.returns_function_decorator.replacement",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "486:4-487:26": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "decorator.returns_function_decorator.replacement",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "decorator.simple_wrapper[formal(f, position=0)=decorator.doubly_decorated_logging]",
   "returned_callables": [
     {
@@ -3653,6 +3941,87 @@ Higher order call graphs
           {
             "target": "decorator.simple_wrapper.inner",
             "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.simple_wrapper[formal(f, position=0)=decorator.Foo.sink_method]",
+  "returned_callables": [
+    {
+      "target": "decorator.simple_wrapper.inner[captured_variable(f, parameter)=decorator.Foo.sink_method]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "449:4-450:33": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "decorator.simple_wrapper.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.simple_wrapper[formal(f, position=0)=decorator.Foo.sink_method (bound)]",
+  "returned_callables": [
+    {
+      "target": "decorator.simple_wrapper.inner[captured_variable(f, parameter)=decorator.Foo.sink_method (bound)]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "449:4-450:33": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "decorator.simple_wrapper.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.simple_wrapper.inner[captured_variable(f, parameter)=decorator.Foo.sink_method]",
+  "returned_callables": [],
+  "calls": {
+    "450:15-450:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "decorator.Foo.sink_method",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.simple_wrapper.inner[captured_variable(f, parameter)=decorator.Foo.sink_method (bound)]",
+  "returned_callables": [],
+  "calls": {
+    "450:15-450:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "decorator.Foo.sink_method",
+            "index": 0,
+            "implicit_receiver": true,
             "return_type": []
           }
         ]

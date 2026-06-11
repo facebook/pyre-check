@@ -11,11 +11,18 @@ Call dependencies
   "higher_order_functions.C.self_to_sink (method)": [
     "pysa._test_sink (fun)"
   ],
+  "higher_order_functions.Cache.row_update (method)": [
+    "higher_order_functions.Connection.execute (method)",
+    "higher_order_functions.return_callable_as_any (fun)[formal(f, position=0)=higher_order_functions.Connection.execute (method) (bound)]"
+  ],
   "higher_order_functions.CallableSource.__call__ (method)": [
     "pysa._test_source (fun)"
   ],
   "higher_order_functions.CallableSourceSubclass.__call__ (method)": [
     "pysa._test_source (fun)"
+  ],
+  "higher_order_functions.Connection.execute (method)": [
+    "pysa._test_sink (fun)"
   ],
   "higher_order_functions.apply (fun)[formal(f, position=0)=higher_order_functions.has_tito (fun)]": [
     "higher_order_functions.has_tito (fun)"
@@ -57,10 +64,10 @@ Call dependencies
     "higher_order_functions.safe (fun)", "pysa._test_source (fun)"
   ],
   "higher_order_functions.goes_to_sink (fun)": [ "pysa._test_sink (fun)" ],
-  "higher_order_functions.higher_order_function (fun)[formal(f, position=0)=higher_order_functions.C.method_to_sink (method)]": [
+  "higher_order_functions.higher_order_function (fun)[formal(f, position=0)=higher_order_functions.C.method_to_sink (method) (bound)]": [
     "higher_order_functions.C.method_to_sink (method)"
   ],
-  "higher_order_functions.higher_order_function (fun)[formal(f, position=0)=higher_order_functions.C.self_to_sink (method)]": [
+  "higher_order_functions.higher_order_function (fun)[formal(f, position=0)=higher_order_functions.C.self_to_sink (method) (bound)]": [
     "higher_order_functions.C.self_to_sink (method)"
   ],
   "higher_order_functions.higher_order_function (fun)[formal(f, position=0)=higher_order_functions.goes_to_sink (fun)]": [
@@ -76,7 +83,7 @@ Call dependencies
     "higher_order_functions.goes_to_sink (fun)", "pysa._test_sink (fun)"
   ],
   "higher_order_functions.higher_order_method (fun)": [
-    "higher_order_functions.higher_order_function (fun)[formal(f, position=0)=higher_order_functions.C.method_to_sink (method)]"
+    "higher_order_functions.higher_order_function (fun)[formal(f, position=0)=higher_order_functions.C.method_to_sink (method) (bound)]"
   ],
   "higher_order_functions.sink_after_apply (fun)": [
     "pysa._test_sink (fun)"
@@ -103,6 +110,12 @@ Call dependencies
     "higher_order_functions.apply_without_return (fun)[formal(f, position=0)=pysa._test_sink (fun)]",
     "pysa._test_source (fun)"
   ],
+  "higher_order_functions.test_bound_method_through_higher_order (fun)": [
+    "higher_order_functions.Cache.row_update (method)",
+    "higher_order_functions.Connection.execute (method)",
+    "higher_order_functions.return_callable_as_any (fun)[formal(f, position=0)=higher_order_functions.Connection.execute (method) (bound)]",
+    "pysa._test_source (fun)"
+  ],
   "higher_order_functions.test_callable_class_to_obscure (fun)": [
     "higher_order_functions.CallableSource.__call__ (override)",
     "higher_order_functions.CallableSource.__init__ (method)",
@@ -119,7 +132,7 @@ Call dependencies
   ],
   "higher_order_functions.test_callable_subclass_to_annotated_superclass (fun)": [
     "higher_order_functions.CallableSource.__init__ (method)",
-    "higher_order_functions.test_callable_subclass_to_annotated_superclass.accept_callable_source (fun)[formal(x, position=0)=higher_order_functions.CallableSourceSubclass.__call__ (method)]",
+    "higher_order_functions.test_callable_subclass_to_annotated_superclass.accept_callable_source (fun)[formal(x, position=0)=higher_order_functions.CallableSourceSubclass.__call__ (method) (bound)]",
     "object.__new__ (method)"
   ],
   "higher_order_functions.test_conditional_apply_backward (fun)": [
@@ -171,7 +184,7 @@ Call dependencies
     "pysa._test_source (fun)"
   ],
   "higher_order_functions.test_higher_order_method_self (fun)": [
-    "higher_order_functions.higher_order_function (fun)[formal(f, position=0)=higher_order_functions.C.self_to_sink (method)]",
+    "higher_order_functions.higher_order_function (fun)[formal(f, position=0)=higher_order_functions.C.self_to_sink (method) (bound)]",
     "pysa._test_source (fun)"
   ],
   "higher_order_functions.test_higher_order_tito (fun)": [

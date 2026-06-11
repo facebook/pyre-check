@@ -373,7 +373,6 @@ Higher order call graphs
     {
       "target": "graphql_callees.GraphQLEntrypoint.callee",
       "index": 0,
-      "implicit_receiver": true,
       "return_type": []
     }
   ],
@@ -396,7 +395,6 @@ Higher order call graphs
             {
               "target": "graphql_callees.GraphQLEntrypoint.callee",
               "index": 0,
-              "implicit_receiver": true,
               "return_type": []
             }
           ]
@@ -479,7 +477,6 @@ Higher order call graphs
     {
       "target": "graphql_callees.GraphQLEntrypoint.callee",
       "index": 0,
-      "implicit_receiver": true,
       "return_type": []
     }
   ],

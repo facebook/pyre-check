@@ -217,7 +217,7 @@ async def main() -> None:
 
     foo_with_helper_function(_test_source(), "hello")
 
-    Foo().foo(_test_source())  # Sink is on the 1st argument (False negative)
+    Foo().foo(_test_source())  # Sink is on the 1st argument. Expect an issue.
     Foo().foo(x=_test_source())  # Expect an issue
     Foo.foo(Foo(), _test_source())  # Expect an issue
 
@@ -228,7 +228,7 @@ async def main() -> None:
 
     Foo.some_class_method(
         _test_source()
-    )  # Sink is on the 1st argument (False negative)
+    )  # Sink is on the 1st argument. Expect an issue.
 
 
 def discard_second_parameter_inner(first_parameter: int) -> None:
@@ -464,3 +464,58 @@ def sink_via_doubly_decorated(x: str) -> None:
 
 def test_issue_via_doubly_decorated():
     sink_via_doubly_decorated(_test_source())
+
+
+def test_decorator_bound() -> None:
+    # `Foo().sink_method` is a bound method passed through `simple_wrapper`.
+    simple_wrapper(Foo().sink_method)(_test_source())
+
+
+def test_decorator_unbound() -> None:
+    # `Foo.sink_method` is unbound; the receiver is passed explicitly.
+    simple_wrapper(Foo.sink_method)(Foo(), _test_source())
+
+
+# Stress the implicit-receiver heuristic for decorated dunder methods.
+
+
+# A decorator that returns a brand-new function (not the wrapped method). When
+# stored as `__add__` and accessed on an instance, the function becomes a bound
+# method via the descriptor protocol, so the receiver IS the implicit first arg.
+def returns_function_decorator(f: Callable) -> Callable:
+    def replacement(first: object, second: object) -> None:
+        _test_sink(second)
+
+    return replacement
+
+
+class AddReturnsFunction:
+    @returns_function_decorator
+    def __add__(self, other: object) -> object:
+        return self
+
+
+def test_add_decorated_returns_function() -> None:
+    AddReturnsFunction() + _test_source()
+
+
+# A decorator that returns a staticmethod of a class. A staticmethod does NOT
+# bind a receiver, so there is no implicit receiver.
+class StaticAddHolder:
+    @staticmethod
+    def static_add(first: object, second: object) -> None:
+        _test_sink(second)
+
+
+def returns_staticmethod_decorator(f: Callable) -> Callable:
+    return StaticAddHolder.static_add
+
+
+class AddReturnsStaticmethod:
+    @returns_staticmethod_decorator
+    def __add__(self, other: object) -> object:
+        return self
+
+
+def test_add_decorated_returns_staticmethod() -> None:
+    AddReturnsStaticmethod() + _test_source()

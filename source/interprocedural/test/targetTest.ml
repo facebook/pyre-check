@@ -128,9 +128,32 @@ let test_pretty_print _ =
            parameters =
              [
                ( AccessPath.Root.Variable "x",
-                 Target.Regular.Function { name = "bar"; kind = Normal } |> Target.from_regular );
+                 Target.Regular.Function { name = "bar"; kind = Normal }
+                 |> Target.from_regular
+                 |> Target.ParameterValue.create );
                ( AccessPath.Root.Variable "y",
-                 Target.Regular.Function { name = "baz"; kind = Normal } |> Target.from_regular );
+                 Target.Regular.Function { name = "baz"; kind = Normal }
+                 |> Target.from_regular
+                 |> Target.ParameterValue.create );
+             ]
+             |> Target.ParameterMap.of_alist_exn;
+         });
+  assert_equal
+    ~expected:"foo[local(x)=bar (bound), local(y)=baz]"
+    ~actual:
+      (Target.Parameterized
+         {
+           regular = Target.Regular.Function { name = "foo"; kind = Normal };
+           parameters =
+             [
+               ( AccessPath.Root.Variable "x",
+                 Target.Regular.Function { name = "bar"; kind = Normal }
+                 |> Target.from_regular
+                 |> Target.ParameterValue.create ~implicit_receiver:true );
+               ( AccessPath.Root.Variable "y",
+                 Target.Regular.Function { name = "baz"; kind = Normal }
+                 |> Target.from_regular
+                 |> Target.ParameterValue.create );
              ]
              |> Target.ParameterMap.of_alist_exn;
          });
@@ -153,7 +176,9 @@ let test_contain_recursive_targets _ =
            parameters =
              [
                ( AccessPath.Root.Variable "x",
-                 Target.Regular.Function { name = "bar"; kind = Normal } |> Target.from_regular );
+                 Target.Regular.Function { name = "bar"; kind = Normal }
+                 |> Target.from_regular
+                 |> Target.ParameterValue.create );
              ]
              |> Target.ParameterMap.of_alist_exn;
          });
@@ -166,7 +191,9 @@ let test_contain_recursive_targets _ =
            parameters =
              [
                ( AccessPath.Root.Variable "x",
-                 Target.Regular.Function { name = "foo"; kind = Normal } |> Target.from_regular );
+                 Target.Regular.Function { name = "foo"; kind = Normal }
+                 |> Target.from_regular
+                 |> Target.ParameterValue.create );
              ]
              |> Target.ParameterMap.of_alist_exn;
          });
@@ -186,10 +213,12 @@ let test_contain_recursive_targets _ =
                        [
                          ( AccessPath.Root.Variable "y",
                            Target.Regular.Function { name = "foo"; kind = Normal }
-                           |> Target.from_regular );
+                           |> Target.from_regular
+                           |> Target.ParameterValue.create );
                        ]
                        |> Target.ParameterMap.of_alist_exn;
-                   } );
+                   }
+                 |> Target.ParameterValue.create );
              ]
              |> Target.ParameterMap.of_alist_exn;
          })
@@ -219,7 +248,9 @@ let test_target_depth _ =
            parameters =
              [
                ( AccessPath.Root.Variable "x",
-                 Target.Regular.Function { name = "bar"; kind = Normal } |> Target.from_regular );
+                 Target.Regular.Function { name = "bar"; kind = Normal }
+                 |> Target.from_regular
+                 |> Target.ParameterValue.create );
              ]
              |> Target.ParameterMap.of_alist_exn;
          });
@@ -239,10 +270,12 @@ let test_target_depth _ =
                        [
                          ( AccessPath.Root.Variable "y",
                            Target.Regular.Function { name = "baz"; kind = Normal }
-                           |> Target.from_regular );
+                           |> Target.from_regular
+                           |> Target.ParameterValue.create );
                        ]
                        |> Target.ParameterMap.of_alist_exn;
-                   } );
+                   }
+                 |> Target.ParameterValue.create );
              ]
              |> Target.ParameterMap.of_alist_exn;
          });
@@ -262,12 +295,16 @@ let test_target_depth _ =
                        [
                          ( AccessPath.Root.Variable "y",
                            Target.Regular.Function { name = "baz"; kind = Normal }
-                           |> Target.from_regular );
+                           |> Target.from_regular
+                           |> Target.ParameterValue.create );
                        ]
                        |> Target.ParameterMap.of_alist_exn;
-                   } );
+                   }
+                 |> Target.ParameterValue.create );
                ( AccessPath.Root.Variable "y",
-                 Target.Regular.Function { name = "test"; kind = Normal } |> Target.from_regular );
+                 Target.Regular.Function { name = "test"; kind = Normal }
+                 |> Target.from_regular
+                 |> Target.ParameterValue.create );
              ]
              |> Target.ParameterMap.of_alist_exn;
          })

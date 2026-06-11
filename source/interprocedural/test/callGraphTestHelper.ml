@@ -36,6 +36,15 @@ module HigherOrderCallGraphForTest = struct
 end
 
 let create_parameterized_target ~regular ~parameters =
+  let parameters =
+    Core.List.map parameters ~f:(fun (root, target) -> root, Target.ParameterValue.create target)
+  in
+  Target.Parameterized { regular; parameters = Target.ParameterMap.of_alist_exn parameters }
+
+
+(* Like `create_parameterized_target`, but each parameter is given as a `Target.ParameterValue.t`,
+   so tests can set the `implicit_receiver` flag (e.g. for captured bound methods). *)
+let create_parameterized_target_with_values ~regular ~parameters =
   Target.Parameterized { regular; parameters = Target.ParameterMap.of_alist_exn parameters }
 
 

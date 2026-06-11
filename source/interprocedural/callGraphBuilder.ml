@@ -1454,6 +1454,7 @@ let resolve_callee_ignoring_decorators
                       ~return_type:(Some (return_type ()))
                       ~is_class_method
                       ~is_static_method:static
+                      ~explicit_receiver:true
                       (Target.create_method class_name attribute);
                   ]
             | Some attribute ->
@@ -3063,7 +3064,7 @@ module HigherOrderCallGraph = struct
 
     let initialize_from_roots ~pyre_api ~callables_to_definitions_map alist =
       alist
-      |> List.filter_map ~f:(fun (root, target) ->
+      |> List.filter_map ~f:(fun (root, { Target.ParameterValue.target; implicit_receiver }) ->
              (* ASTs use `TaintAccessPath.parameter_prefix` to distinguish local variables from
                 parameters, but using parameters from the define does not result in creating
                 parameterized targets whose parameter names contain
@@ -3101,15 +3102,7 @@ module HigherOrderCallGraph = struct
                  Some
                    ( root,
                      target
-                     |> CallTarget.create
-                          ~implicit_receiver:
-                            (is_implicit_receiver
-                               ~is_static_method
-                               ~is_class_method
-                               ~explicit_receiver:false
-                               target)
-                          ~is_class_method
-                          ~is_static_method
+                     |> CallTarget.create ~implicit_receiver ~is_class_method ~is_static_method
                      |> CallTarget.Set.singleton ))
       |> of_list
 
@@ -3186,13 +3179,16 @@ module HigherOrderCallGraph = struct
               if weak then CallTarget.Set.join existing_callees callees else callees)
 
 
-    let returned_callables call_targets =
+    let returned_callables_of_target { CallTarget.target; _ } =
+      log "Fetching returned callables for `%a`" Target.pp_pretty target;
+      match Context.get_callee_model target with
+      | Some { returned_callables; _ } -> returned_callables
+      | None -> CallTarget.Set.bottom
+
+
+    let returned_callables_of_targets call_targets =
       call_targets
-      |> List.map ~f:(fun { CallTarget.target; _ } ->
-             log "Fetching returned callables for `%a`" Target.pp_pretty target;
-             match Context.get_callee_model target with
-             | Some { returned_callables; _ } -> returned_callables
-             | None -> CallTarget.Set.bottom)
+      |> List.map ~f:returned_callables_of_target
       |> Algorithms.fold_balanced ~f:CallTarget.Set.join ~init:CallTarget.Set.bottom
 
 
@@ -3293,13 +3289,38 @@ module HigherOrderCallGraph = struct
         "Decorated targets: `%a`"
         Target.List.pp_pretty_with_kind
         (List.map ~f:CallTarget.target decorated_targets);
+      (* When substituting a decorated call target (e.g. `foo@decorated`) with its returned
+         callables, the decorated call target carries the type-aware receiver information resolved
+         at the call site (`implicit_receiver`). The `@decorated` model's returned callables may not
+         preserve it, so we OR the decorated call target's `implicit_receiver` into each returned
+         callable: whenever the call site has `implicit_receiver=true`, the substituted callable
+         gets it too. We never downgrade a returned callable that is already
+         `implicit_receiver=true` (this is an OR, not an overwrite).
+
+         The returned callable may be a completely different function/method than the decorated
+         call-site target (e.g. `returns_function_decorator.replacement`, or a `*args` wrapper
+         `inner`), so we keep its own `receiver_class`/`is_class_method`/`is_static_method` and only
+         set `implicit_receiver`. *)
+      let resolve_decorated_target ({ CallTarget.implicit_receiver; _ } as decorated_target) =
+        returned_callables_of_target decorated_target
+        |> CallTarget.Set.transform
+             CallTarget.Set.Element
+             Map
+             ~f:(fun ({ CallTarget.implicit_receiver = returned_implicit_receiver; _ } as returned)
+                ->
+               {
+                 returned with
+                 CallTarget.implicit_receiver = returned_implicit_receiver || implicit_receiver;
+               })
+      in
       {
         AnalyzeDecoratedTargetsResult.decorated_targets;
         non_decorated_targets;
         result_targets =
-          non_decorated_targets
-          |> CallTarget.Set.of_list
-          |> CallTarget.Set.join (returned_callables decorated_targets)
+          decorated_targets
+          |> List.map ~f:resolve_decorated_target
+          |> Algorithms.fold_balanced ~f:CallTarget.Set.join ~init:CallTarget.Set.bottom
+          |> CallTarget.Set.join (CallTarget.Set.of_list non_decorated_targets)
           |> CallTarget.Set.elements;
       }
 
@@ -3347,8 +3368,6 @@ module HigherOrderCallGraph = struct
         ~location
         ~call
         ~arguments
-        ~unresolved
-        ~override_implicit_receiver
         ~argument_callees
         ~track_apply_call_step_name
         callee_targets
@@ -3397,8 +3416,8 @@ module HigherOrderCallGraph = struct
                into conflicts in `of_alist_exn` below, which is avoided by excluding those cases,
                such as kwargs and args. *)
             None
-        | { TaintAccessPath.root; _ } :: _, Some parameter_target ->
-            Some (root, parameter_target.CallTarget.target)
+        | { TaintAccessPath.root; _ } :: _, Some { CallTarget.target; implicit_receiver; _ } ->
+            Some (root, { Target.ParameterValue.target; implicit_receiver })
         | _ -> (* TODO: Consider the remaining `argument_matches`. *) None
       in
       let non_parameterized_targets ~parameterized_targets call_targets =
@@ -3421,23 +3440,6 @@ module HigherOrderCallGraph = struct
         =
         track_apply_call_step ComputeCalleeTargets (fun () ->
             resolve_decorated_targets callee_targets)
-      in
-      let recompute_implicit_receiver ({ CallTarget.implicit_receiver; _ } as callee_target) =
-        if not override_implicit_receiver then
-          implicit_receiver
-        else
-          match unresolved with
-          | Unresolved.True _ ->
-              (* Since the original call graphs cannot find the callees, the callee must be
-                 discovered by higher order call graph building. Since it is unclear whether the
-                 callee is always a function or a method under any context, the arguments must be
-                 explicit, unless the callee is a bound method, which is not yet handled. *)
-              log
-                "Setting `implicit_receiver` to false for callee target `%a`"
-                CallTarget.pp
-                callee_target;
-              false
-          | Unresolved.False -> implicit_receiver
       in
       let create_call_target = function
         | Some callee_target :: parameter_targets ->
@@ -3501,18 +3503,16 @@ module HigherOrderCallGraph = struct
                        Some right)
                      closure
               in
-              log "Parameter targets: %a" (Target.ParameterMap.pp Target.pp_pretty) parameters;
+              log
+                "Parameter targets: %a"
+                (Target.ParameterMap.pp Target.ParameterValue.pp_pretty)
+                parameters;
               if Target.ParameterMap.is_empty parameters then
                 None
               else
                 Target.Parameterized { regular = callee_regular; parameters }
                 |> validate_target
-                >>| fun target ->
-                {
-                  callee_target with
-                  CallTarget.target;
-                  implicit_receiver = recompute_implicit_receiver callee_target;
-                }
+                >>| fun target -> { callee_target with CallTarget.target }
         | _ -> None
       in
       (* Treat an empty list as a single element list so that in each result of the cartesian
@@ -3538,13 +3538,7 @@ module HigherOrderCallGraph = struct
       in
       let non_parameterized_targets =
         track_apply_call_step FindNonParameterizedTargets (fun () ->
-            call_targets_from_callee
-            |> non_parameterized_targets ~parameterized_targets
-            |> List.map ~f:(fun call_target ->
-                   {
-                     call_target with
-                     CallTarget.implicit_receiver = recompute_implicit_receiver call_target;
-                   }))
+            non_parameterized_targets ~parameterized_targets call_targets_from_callee)
       in
       List.iter parameterized_targets ~f:(fun { CallTarget.target; _ } ->
           log "Created parameterized target: `%a`" Target.pp_pretty target);
@@ -3808,8 +3802,6 @@ module HigherOrderCallGraph = struct
                ~location
                ~call
                ~arguments
-               ~unresolved
-               ~override_implicit_receiver:true
                ~argument_callees
                ~track_apply_call_step_name:"callee_return_targets"
         in
@@ -3824,8 +3816,6 @@ module HigherOrderCallGraph = struct
             ~location
             ~call
             ~arguments
-            ~unresolved
-            ~override_implicit_receiver:false
             ~argument_callees
             ~track_apply_call_step_name:"call_targets"
             original_call_targets
@@ -3846,8 +3836,6 @@ module HigherOrderCallGraph = struct
           ~location
           ~call
           ~arguments
-          ~unresolved
-          ~override_implicit_receiver:false
           ~argument_callees
           ~track_apply_call_step_name:"init_targets"
           original_init_targets
@@ -3930,7 +3918,7 @@ module HigherOrderCallGraph = struct
               !Context.output_define_call_graph);
       track_apply_call_step FetchReturnedCallables (fun () ->
           let returned_callables_from_call =
-            new_call_targets |> List.rev_append new_init_targets |> returned_callables
+            new_call_targets |> List.rev_append new_init_targets |> returned_callables_of_targets
           in
           (* To avoid false negatives when analyzing targets with `kind=Decorated`, sometimes
            * we allow all function-typed arguments to be passed directly to the return values.
@@ -4421,7 +4409,8 @@ module HigherOrderCallGraph = struct
                              state
                              |> State.get variable
                              |> CallTarget.Set.elements
-                             |> List.map ~f:CallTarget.target
+                             |> List.map ~f:(fun { CallTarget.target; implicit_receiver; _ } ->
+                                    { Target.ParameterValue.target; implicit_receiver })
                            in
                            (* Sometimes a captured variable does not have a record in `state`, but
                               we still want to create a callee with the captured variables that have
@@ -4883,8 +4872,9 @@ let call_graph_of_decorated_callable
       ~callees_at_location:call_graph
       expression
   in
-  (* If Pyre cannot resolve the callable on the callable expression, we hardcode the callable. *)
-  let add_callees_for_original_function_name_if_unresolved
+  (* Add a call graph edge for the decorated function itself, in the return expression
+     `decorator1(decorator2(original_function))`. *)
+  let add_callees_for_original_function_name
       ~callee
       ~original_function_name
       ~original_function_name_location
@@ -4892,60 +4882,41 @@ let call_graph_of_decorated_callable
     =
     let original_function_name =
       match original_function_name with
-      | Name.Attribute attribute -> attribute
+      | Name.Identifier name -> name
       | original_function_name ->
           Format.asprintf
-            "Expect the decorated callable to be an attribute but got `%a`"
+            "Expect the decorated callable to be an identifier, but got `%a`"
             Name.pp
             original_function_name
           |> failwith
     in
-    let should_add_callable =
-      !call_graph
-      |> DefineCallGraph.resolve_attribute_access
-           ~location:original_function_name_location
-           ~attribute_access:original_function_name
-      >>| (fun {
-                 AttributeAccessCallees.if_called =
-                   { CallCallees.call_targets = callable_targets; _ };
-                 property_targets;
-                 _;
-               } -> List.is_empty callable_targets && List.is_empty property_targets)
-      |> Option.value ~default:true
+    let is_class_method, is_static_method =
+      CallablesSharedMemory.ReadOnly.get_method_kind callables_to_definitions_map callee
     in
-    if should_add_callable then
-      let is_class_method, is_static_method =
-        CallablesSharedMemory.ReadOnly.get_method_kind callables_to_definitions_map callee
-      in
-      call_graph :=
-        DefineCallGraph.set_attribute_access_callees
-          ~error_if_new:false (* empty attribute accesses are stripped *)
-          ~location:original_function_name_location
-          ~attribute_access:original_function_name
-          ~callees:
-            (AttributeAccessCallees.create
-               ~if_called:
-                 (CallCallees.create
-                    ~call_targets:
-                      [
-                        CallTarget.create
-                          ~implicit_receiver:
-                            (is_implicit_receiver
-                               ~is_static_method
-                               ~is_class_method
-                               ~explicit_receiver:false
-                               callee)
-                          ~is_class_method
-                          ~is_static_method
-                          callee;
-                      ]
-                    ())
-               ())
-          !call_graph
+    call_graph :=
+      DefineCallGraph.set_identifier_callees
+        ~error_if_new:false
+        ~location:original_function_name_location
+        ~identifier:original_function_name
+        ~identifier_callees:
+          (IdentifierCallees.create
+             ~if_called:
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_receiver:false
+                        ~is_class_method
+                        ~is_static_method
+                        callee;
+                    ]
+                  ())
+             ())
+        !call_graph
   in
   let call_graph = ref DefineCallGraph.empty in
   resolve_callees ~call_graph return_expression;
-  add_callees_for_original_function_name_if_unresolved
+  add_callees_for_original_function_name
     ~callee:callable
     ~original_function_name
     ~original_function_name_location
@@ -5200,12 +5171,7 @@ let build_whole_program_call_graph_for_pyrefly
                 ~call_targets:
                   [
                     CallTarget.create
-                      ~implicit_receiver:
-                        (is_implicit_receiver
-                           ~is_static_method
-                           ~is_class_method
-                           ~explicit_receiver:false
-                           original_callable)
+                      ~implicit_receiver:false
                       ~is_class_method
                       ~is_static_method
                       original_callable;

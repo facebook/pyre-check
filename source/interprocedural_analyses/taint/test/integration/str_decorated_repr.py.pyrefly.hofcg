@@ -193,6 +193,7 @@ Higher order call graphs
           {
             "target": "str_decorated_repr.cachedmethod.g[captured_variable(f, str_decorated_repr.cachedmethod)=str_decorated_repr.MyClass.__repr__]",
             "index": 0,
+            "implicit_receiver": true,
             "return_type": []
           }
         ]
@@ -228,7 +229,6 @@ Higher order call graphs
             {
               "target": "str_decorated_repr.MyClass.__repr__",
               "index": 0,
-              "implicit_receiver": true,
               "return_type": []
             }
           ]

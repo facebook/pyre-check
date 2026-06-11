@@ -161,6 +161,7 @@ Higher order call graphs
           {
             "target": "str_decorated_repr.cachedmethod.g[captured_variable(f, parameter)=str_decorated_repr.MyClass.__repr__]",
             "index": 0,
+            "implicit_receiver": true,
             "return_type": []
           }
         ]
@@ -189,15 +190,13 @@ Higher order call graphs
         ]
       }
     },
-    "39:4-40:25|artificial-attribute-access|for-decorated-target-callee:str_decorated_repr.MyClass.__repr__": {
-      "attribute_access": {
-        "is_attribute": true,
+    "39:4-40:25|identifier|__repr__": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
               "target": "str_decorated_repr.MyClass.__repr__",
               "index": 0,
-              "implicit_receiver": true,
               "return_type": []
             }
           ]

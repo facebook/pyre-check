@@ -1333,7 +1333,6 @@ Higher order call graphs
             {
               "target": "partial.NestedDefineConstructor.__init__",
               "index": 0,
-              "implicit_receiver": true,
               "return_type": []
             }
           ]
@@ -1432,7 +1431,6 @@ Higher order call graphs
             {
               "target": "partial.PartialConstructor.__init__",
               "index": 0,
-              "implicit_receiver": true,
               "return_type": []
             }
           ]

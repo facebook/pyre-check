@@ -4086,7 +4086,11 @@ let rec strip_target_path_prefix target =
       Target.Parameterized
         {
           regular = strip_regular regular;
-          parameters = Target.ParameterMap.map strip_target_path_prefix parameters;
+          parameters =
+            Target.ParameterMap.map
+              (fun ({ Target.target; _ } as value) ->
+                { value with Target.target = strip_target_path_prefix target })
+              parameters;
         }
 
 

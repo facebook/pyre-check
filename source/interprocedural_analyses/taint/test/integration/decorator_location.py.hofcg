@@ -115,9 +115,8 @@ Higher order call graphs
         ]
       }
     },
-    "75:0-76:17|artificial-attribute-access|for-decorated-target-callee:decorator_location.decorated_logging2_skip_this_decorator": {
-      "attribute_access": {
-        "is_attribute": true,
+    "75:0-76:17|identifier|decorated_logging2_skip_this_decorator": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -165,9 +164,8 @@ Higher order call graphs
         ]
       }
     },
-    "102:0-103:17|artificial-attribute-access|for-decorated-target-callee:decorator_location.decorated_logging_ignore_this_decorator": {
-      "attribute_access": {
-        "is_attribute": true,
+    "102:0-103:17|identifier|decorated_logging_ignore_this_decorator": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -226,9 +224,8 @@ Higher order call graphs
         ]
       }
     },
-    "64:0-65:17|artificial-attribute-access|for-decorated-target-callee:decorator_location.decorated_logging_logging2": {
-      "attribute_access": {
-        "is_attribute": true,
+    "64:0-65:17|identifier|decorated_logging_logging2": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -289,9 +286,8 @@ Higher order call graphs
         ]
       }
     },
-    "117:0-118:17|artificial-attribute-access|for-decorated-target-callee:decorator_location.handle_request": {
-      "attribute_access": {
-        "is_attribute": true,
+    "117:0-118:17|identifier|handle_request": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -700,9 +696,8 @@ Higher order call graphs
         ]
       }
     },
-    "136:0-137:16|artificial-attribute-access|for-decorated-target-callee:decorator_location.return_foo": {
-      "attribute_access": {
-        "is_attribute": true,
+    "136:0-137:16|identifier|return_foo": {
+      "identifier": {
         "if_called": {
           "calls": [
             {

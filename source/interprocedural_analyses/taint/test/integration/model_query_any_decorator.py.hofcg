@@ -55,9 +55,8 @@ Higher order call graphs
         ]
       }
     },
-    "38:0-39:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test1_alarm1": {
-      "attribute_access": {
-        "is_attribute": true,
+    "38:0-39:15|identifier|test1_alarm1": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -86,9 +85,8 @@ Higher order call graphs
         ]
       }
     },
-    "43:0-44:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test1_noalarm1": {
-      "attribute_access": {
-        "is_attribute": true,
+    "43:0-44:15|identifier|test1_noalarm1": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -117,9 +115,8 @@ Higher order call graphs
         ]
       }
     },
-    "48:0-49:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test2_alarm1": {
-      "attribute_access": {
-        "is_attribute": true,
+    "48:0-49:15|identifier|test2_alarm1": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -148,9 +145,8 @@ Higher order call graphs
         ]
       }
     },
-    "53:0-54:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test2_noalarm1": {
-      "attribute_access": {
-        "is_attribute": true,
+    "53:0-54:15|identifier|test2_noalarm1": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -190,9 +186,8 @@ Higher order call graphs
         "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
       }
     },
-    "61:0-62:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test3_alarm1": {
-      "attribute_access": {
-        "is_attribute": true,
+    "61:0-62:15|identifier|test3_alarm1": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -232,9 +227,8 @@ Higher order call graphs
         "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
       }
     },
-    "66:0-67:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test3_alarm2": {
-      "attribute_access": {
-        "is_attribute": true,
+    "66:0-67:15|identifier|test3_alarm2": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -274,9 +268,8 @@ Higher order call graphs
         "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
       }
     },
-    "71:0-72:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test3_alarm3": {
-      "attribute_access": {
-        "is_attribute": true,
+    "71:0-72:15|identifier|test3_alarm3": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -316,9 +309,8 @@ Higher order call graphs
         "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
       }
     },
-    "76:0-77:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test3_noalarm1": {
-      "attribute_access": {
-        "is_attribute": true,
+    "76:0-77:15|identifier|test3_noalarm1": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -358,9 +350,8 @@ Higher order call graphs
         "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
       }
     },
-    "81:0-82:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test3_noalarm2": {
-      "attribute_access": {
-        "is_attribute": true,
+    "81:0-82:15|identifier|test3_noalarm2": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -400,9 +391,8 @@ Higher order call graphs
         "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
       }
     },
-    "86:0-87:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test4_alarm1": {
-      "attribute_access": {
-        "is_attribute": true,
+    "86:0-87:15|identifier|test4_alarm1": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -442,9 +432,8 @@ Higher order call graphs
         "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
       }
     },
-    "91:0-92:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test4_noalarm1": {
-      "attribute_access": {
-        "is_attribute": true,
+    "91:0-92:15|identifier|test4_noalarm1": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -484,9 +473,8 @@ Higher order call graphs
         "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
       }
     },
-    "96:0-97:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test4_noalarm2": {
-      "attribute_access": {
-        "is_attribute": true,
+    "96:0-97:15|identifier|test4_noalarm2": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -526,9 +514,8 @@ Higher order call graphs
         "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
       }
     },
-    "101:0-102:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test4_noalarm3": {
-      "attribute_access": {
-        "is_attribute": true,
+    "101:0-102:15|identifier|test4_noalarm3": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -568,9 +555,8 @@ Higher order call graphs
         "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
       }
     },
-    "106:0-107:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test5_alarm1": {
-      "attribute_access": {
-        "is_attribute": true,
+    "106:0-107:15|identifier|test5_alarm1": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -610,9 +596,8 @@ Higher order call graphs
         "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
       }
     },
-    "111:0-112:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test5_alarm2": {
-      "attribute_access": {
-        "is_attribute": true,
+    "111:0-112:15|identifier|test5_alarm2": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -652,9 +637,8 @@ Higher order call graphs
         "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
       }
     },
-    "116:0-117:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test5_noalarm1": {
-      "attribute_access": {
-        "is_attribute": true,
+    "116:0-117:15|identifier|test5_noalarm1": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -694,9 +678,8 @@ Higher order call graphs
         "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
       }
     },
-    "121:0-122:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test5_noalarm2": {
-      "attribute_access": {
-        "is_attribute": true,
+    "121:0-122:15|identifier|test5_noalarm2": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -727,9 +710,8 @@ Higher order call graphs
         ]
       }
     },
-    "134:0-135:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test_local_variable_method_decorator": {
-      "attribute_access": {
-        "is_attribute": true,
+    "134:0-135:15|identifier|test_local_variable_method_decorator": {
+      "identifier": {
         "if_called": {
           "calls": [
             {

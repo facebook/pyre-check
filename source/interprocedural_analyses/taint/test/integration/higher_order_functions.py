@@ -30,12 +30,12 @@ class C:
         _test_sink(self)
 
 
-def higher_order_method(c: C, arg):
-    higher_order_function(c.method_to_sink, arg)  # Expect an issue (False negative)
+def higher_order_method(c: C, arg):  # Expect a sink on arg
+    higher_order_function(c.method_to_sink, arg)
 
 
 def test_higher_order_method():
-    higher_order_method(C(), _test_source())
+    higher_order_method(C(), _test_source())  # Expect an issue
 
 
 def test_higher_order_method_self():
@@ -251,3 +251,39 @@ def test_skip_both_higher_order_function():
 
 def test_skip_both_tito(x):
     return apply_skip_both(has_tito, x)
+
+
+class Connection:
+    def execute(self, sql, parameters):
+        # Sink only on the first parameter besides `self`, like
+        # `sqlite3.Connection.execute`.
+        _test_sink(sql)
+
+
+from typing import Any
+
+
+def return_callable_as_any(f: Any) -> Any:
+    # The `Any` return type hides the concrete callable, so calling the result
+    # is only resolved through higher order call graph building.
+    return f
+
+
+class Cache:
+    def __init__(self, con: Connection) -> None:
+        self._con = con
+
+    def row_update(self, rowid) -> None:
+        # `self._con.execute` is a bound method discovered only by higher order
+        # call graph building. `rowid` is passed in the parameterized-query
+        # tuple (the second argument) and must NOT reach the `sql` sink.
+        sql = return_callable_as_any(self._con.execute)
+        sql("UPDATE Cache SET value = ? WHERE rowid = ?", (rowid,))
+
+
+def test_bound_method_through_higher_order(cache: Cache, con: Connection) -> None:
+    cache.row_update(_test_source())  # No issue: the tainted value is a query parameter
+
+    sql = return_callable_as_any(con.execute)
+    sql(_test_source(), 0)  # Expect an issue: the source flows to the `sql` sink
+    sql(0, _test_source())  # No issue: the source is the second argument

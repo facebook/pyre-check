@@ -117,23 +117,8 @@ Higher order call graphs
         ]
       }
     },
-    "62:4-63:22|artificial-attribute-access|for-decorated-target-callee:entrypoint.entrypoint_into_lambda": {
-      "attribute_access": {
-        "is_attribute": true,
-        "if_called": {
-          "calls": [
-            {
-              "target": "entrypoint.entrypoint_into_lambda",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "62:4-63:22|artificial-attribute-access|for-decorated-target-callee:entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator": {
-      "attribute_access": {
-        "is_attribute": true,
+    "62:4-63:22|identifier|lambda_entrypoint_with_decorator": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -192,9 +177,8 @@ Higher order call graphs
         ]
       }
     },
-    "56:0-57:18|artificial-attribute-access|for-decorated-target-callee:entrypoint.function_entrypoint_with_decorator": {
-      "attribute_access": {
-        "is_attribute": true,
+    "56:0-57:18|identifier|function_entrypoint_with_decorator": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -527,7 +511,6 @@ Higher order call graphs
     {
       "target": "entrypoint.MyClass.method_entrypoint_with_decorator",
       "index": 0,
-      "implicit_receiver": true,
       "return_type": []
     }
   ],
@@ -543,15 +526,13 @@ Higher order call graphs
         ]
       }
     },
-    "20:4-21:22|artificial-attribute-access|for-decorated-target-callee:entrypoint.MyClass.method_entrypoint_with_decorator": {
-      "attribute_access": {
-        "is_attribute": true,
+    "20:4-21:22|identifier|method_entrypoint_with_decorator": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
               "target": "entrypoint.MyClass.method_entrypoint_with_decorator",
               "index": 0,
-              "implicit_receiver": true,
               "return_type": []
             }
           ]
@@ -612,7 +593,6 @@ Higher order call graphs
     {
       "target": "entrypoint.MyClass.method_entrypoint_with_decorator",
       "index": 0,
-      "implicit_receiver": true,
       "return_type": []
     }
   ],

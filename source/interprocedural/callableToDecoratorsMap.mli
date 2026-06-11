@@ -31,7 +31,7 @@ module SharedMemory : sig
 
   val read_only : t -> ReadOnly.t
 
-  val create_empty : is_pyrefly:bool -> unit -> t
+  val create_empty : unit -> t
 
   (* We assume `DecoratorPreprocessing.setup_preprocessing` is called before since we use its shared
      memory here. *)

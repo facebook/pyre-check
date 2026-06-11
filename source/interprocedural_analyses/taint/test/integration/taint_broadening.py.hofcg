@@ -1395,9 +1395,8 @@ Higher order call graphs
         ]
       }
     },
-    "361:0-393:38|artificial-attribute-access|for-decorated-target-callee:taint_broadening.model_broadening_no_collapse_sink_width": {
-      "attribute_access": {
-        "is_attribute": true,
+    "361:0-393:38|identifier|model_broadening_no_collapse_sink_width": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -2038,9 +2037,8 @@ Higher order call graphs
         ]
       }
     },
-    "323:0-357:17|artificial-attribute-access|for-decorated-target-callee:taint_broadening.model_broadening_no_collapse_source_width": {
-      "attribute_access": {
-        "is_attribute": true,
+    "323:0-357:17|identifier|model_broadening_no_collapse_source_width": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -3483,9 +3481,8 @@ Higher order call graphs
         ]
       }
     },
-    "397:0-412:17|artificial-attribute-access|for-decorated-target-callee:taint_broadening.tito_no_broadening_input_and_output_paths": {
-      "attribute_access": {
-        "is_attribute": true,
+    "397:0-412:17|identifier|tito_no_broadening_input_and_output_paths": {
+      "identifier": {
         "if_called": {
           "calls": [
             {

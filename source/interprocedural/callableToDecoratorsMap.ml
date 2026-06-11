@@ -217,16 +217,10 @@ module SharedMemory = struct
         let description = "callables to decorators"
       end)
 
-  type t = {
-    handle: T.t;
-    is_pyrefly: bool;
-  }
+  type t = { handle: T.t }
 
   module ReadOnly = struct
-    type t = {
-      handle: T.ReadOnly.t;
-      is_pyrefly: bool;
-    }
+    type t = { handle: T.ReadOnly.t }
 
     let get { handle; _ } = T.ReadOnly.get ~cache:true handle
 
@@ -234,9 +228,9 @@ module SharedMemory = struct
       callable |> get readonly >>| fun { decorators; _ } -> decorators
   end
 
-  let create_empty ~is_pyrefly () = { handle = T.create (); is_pyrefly }
+  let create_empty () = { handle = T.create () }
 
-  let read_only { handle; is_pyrefly } = { ReadOnly.handle = T.read_only handle; is_pyrefly }
+  let read_only { handle } = { ReadOnly.handle = T.read_only handle }
 
   let targets_with_decorators { handle; _ } = T.keys handle
 
@@ -351,7 +345,7 @@ module SharedMemory = struct
         ()
     in
     let shared_memory = T.from_add_only shared_memory_add_only in
-    { handle = shared_memory; is_pyrefly = PyrePysaApi.ReadOnly.is_pyrefly pyre_api }
+    { handle = shared_memory }
 
 
   let is_decorated { ReadOnly.handle; _ } callable =
@@ -384,7 +378,7 @@ module SharedMemory = struct
      * ```
      * would resolve into expression `decorator(decorator_factory(1, 2)(foo))`.
      *)
-  let decorated_callable_body ({ ReadOnly.is_pyrefly; _ } as decorators) callable =
+  let decorated_callable_body decorators callable =
     let create_decorator_call previous_argument decorator =
       Node.create
         ~location:decorator.Node.location
@@ -413,19 +407,7 @@ module SharedMemory = struct
     >>| fun { decorators; define_location; module_qualifier } ->
     let define_name = Target.define_name_exn callable in
     let original_function_name_location = define_location in
-    let original_function_name =
-      if not is_pyrefly then (* When using Pyre1, create a fully qualified expression *)
-        Ast.Expression.create_name_from_reference
-          ~location:original_function_name_location
-          ~create_origin:(fun attributes ->
-            Some
-              (Origin.create
-                 ~location:original_function_name_location
-                 (Origin.ForDecoratedTargetCallee attributes)))
-          define_name
-      else (* When using Pyrefly, just use an identifier *)
-        Ast.Expression.Name.Identifier (Reference.last define_name)
-    in
+    let original_function_name = Ast.Expression.Name.Identifier (Reference.last define_name) in
     let decorated_callable = Target.set_kind Target.Decorated callable in
     let define_name = Reference.create ~prefix:(Target.define_name_exn callable) "@decorated" in
     let return_expression =

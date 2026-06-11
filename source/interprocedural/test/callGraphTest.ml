@@ -9087,13 +9087,13 @@ let test_resolve_decorator_callees =
                Target.Regular.Function { name = "test.decorator2"; kind = Normal }, None;
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
                  Some
-                   ( "test.decorator2(test.decorator(test.foo))",
+                   ( "test.decorator2(test.decorator(foo))",
                      Target.Regular.Function { name = "test.foo"; kind = Decorated },
                      "test.foo.@decorated",
                      [
-                       ( "12:0-13:10|artificial-attribute-access|for-decorated-target-callee:test.foo",
-                         ExpressionCallees.from_attribute_access
-                           (AttributeAccessCallees.create
+                       ( "12:0-13:10|identifier|foo",
+                         ExpressionCallees.from_identifier
+                           (IdentifierCallees.create
                               ~if_called:
                                 (CallCallees.create
                                    ~call_targets:
@@ -9123,20 +9123,6 @@ let test_resolve_decorator_callees =
                                     (Target.Regular.Function
                                        { name = "test.decorator"; kind = Normal });
                                 ]
-                              ~higher_order_parameters:
-                                (HigherOrderParameterMap.from_list
-                                   [
-                                     {
-                                       index = 0;
-                                       call_targets =
-                                         [
-                                           CallTarget.create_regular
-                                             (Target.Regular.Function
-                                                { name = "test.foo"; kind = Normal });
-                                         ];
-                                       unresolved = CallGraph.Unresolved.False;
-                                     };
-                                   ])
                               ()) );
                      ] ) );
              ]
@@ -9222,13 +9208,13 @@ let test_resolve_decorator_callees =
                Target.Regular.Function { name = "test.decorator_factory"; kind = Normal }, None;
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
                  Some
-                   ( "test.decorator_factory(1, 2)(test.foo)",
+                   ( "test.decorator_factory(1, 2)(foo)",
                      Target.Regular.Function { name = "test.foo"; kind = Decorated },
                      "test.foo.@decorated",
                      [
-                       ( "7:0-8:10|artificial-attribute-access|for-decorated-target-callee:test.foo",
-                         ExpressionCallees.from_attribute_access
-                           (AttributeAccessCallees.create
+                       ( "7:0-8:10|identifier|foo",
+                         ExpressionCallees.from_identifier
+                           (IdentifierCallees.create
                               ~if_called:
                                 (CallCallees.create
                                    ~call_targets:
@@ -9254,20 +9240,6 @@ let test_resolve_decorator_callees =
                            (CallCallees.create
                               ~unresolved:
                                 (CallGraph.Unresolved.True (BypassingDecorators UnknownCallCallee))
-                              ~higher_order_parameters:
-                                (HigherOrderParameterMap.from_list
-                                   [
-                                     {
-                                       index = 0;
-                                       call_targets =
-                                         [
-                                           CallTarget.create_regular
-                                             (Target.Regular.Function
-                                                { name = "test.foo"; kind = Normal });
-                                         ];
-                                       unresolved = CallGraph.Unresolved.False;
-                                     };
-                                   ])
                               ()) );
                      ] ) );
              ]
@@ -9293,13 +9265,13 @@ let test_resolve_decorator_callees =
                Target.Regular.Function { name = "test.decorator_factory"; kind = Normal }, None;
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
                  Some
-                   ( "test.decorator_factory(1, test.bar)(test.foo)",
+                   ( "test.decorator_factory(1, test.bar)(foo)",
                      Target.Regular.Function { name = "test.foo"; kind = Decorated },
                      "test.foo.@decorated",
                      [
-                       ( "9:0-10:10|artificial-attribute-access|for-decorated-target-callee:test.foo",
-                         ExpressionCallees.from_attribute_access
-                           (AttributeAccessCallees.create
+                       ( "9:0-10:10|identifier|foo",
+                         ExpressionCallees.from_identifier
+                           (IdentifierCallees.create
                               ~if_called:
                                 (CallCallees.create
                                    ~call_targets:
@@ -9352,20 +9324,6 @@ let test_resolve_decorator_callees =
                            (CallCallees.create
                               ~unresolved:
                                 (CallGraph.Unresolved.True (BypassingDecorators UnknownCallCallee))
-                              ~higher_order_parameters:
-                                (HigherOrderParameterMap.from_list
-                                   [
-                                     {
-                                       index = 0;
-                                       call_targets =
-                                         [
-                                           CallTarget.create_regular
-                                             (Target.Regular.Function
-                                                { name = "test.foo"; kind = Normal });
-                                         ];
-                                       unresolved = CallGraph.Unresolved.False;
-                                     };
-                                   ])
                               ()) );
                      ] ) );
              ]
@@ -9468,13 +9426,13 @@ let test_resolve_decorator_callees =
                  None );
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
                  Some
-                   ( "test.ClassDecorator(test.foo)",
+                   ( "test.ClassDecorator(foo)",
                      Target.Regular.Function { name = "test.foo"; kind = Decorated },
                      "test.foo.@decorated",
                      [
-                       ( "8:0-9:10|artificial-attribute-access|for-decorated-target-callee:test.foo",
-                         ExpressionCallees.from_attribute_access
-                           (AttributeAccessCallees.create
+                       ( "8:0-9:10|identifier|foo",
+                         ExpressionCallees.from_identifier
+                           (IdentifierCallees.create
                               ~if_called:
                                 (CallCallees.create
                                    ~call_targets:
@@ -9512,27 +9470,6 @@ let test_resolve_decorator_callees =
                                          kind = Normal;
                                        });
                                 ]
-                              ~higher_order_parameters:
-                                (HigherOrderParameterMap.from_list
-                                   [
-                                     {
-                                       index = 0;
-                                       call_targets =
-                                         [
-                                           CallTarget.create_regular
-                                             ~implicit_receiver:true
-                                             ~implicit_dunder_call:true
-                                             ~receiver_class:"test.ClassDecorator"
-                                             (Target.Regular.Method
-                                                {
-                                                  class_name = "test.ClassDecorator";
-                                                  method_name = "__call__";
-                                                  kind = Normal;
-                                                });
-                                         ];
-                                       unresolved = CallGraph.Unresolved.False;
-                                     };
-                                   ])
                               ()) );
                      ] ) );
              ]
@@ -9562,13 +9499,13 @@ let test_resolve_decorator_callees =
                  None );
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
                  Some
-                   ( "test.A.decorator(test.foo)",
+                   ( "test.A.decorator(foo)",
                      Target.Regular.Function { name = "test.foo"; kind = Decorated },
                      "test.foo.@decorated",
                      [
-                       ( "9:0-10:10|artificial-attribute-access|for-decorated-target-callee:test.foo",
-                         ExpressionCallees.from_attribute_access
-                           (AttributeAccessCallees.create
+                       ( "9:0-10:10|identifier|foo",
+                         ExpressionCallees.from_identifier
+                           (IdentifierCallees.create
                               ~if_called:
                                 (CallCallees.create
                                    ~call_targets:
@@ -9595,20 +9532,6 @@ let test_resolve_decorator_callees =
                                          kind = Normal;
                                        });
                                 ]
-                              ~higher_order_parameters:
-                                (HigherOrderParameterMap.from_list
-                                   [
-                                     {
-                                       index = 0;
-                                       call_targets =
-                                         [
-                                           CallTarget.create_regular
-                                             (Target.Regular.Function
-                                                { name = "test.foo"; kind = Normal });
-                                         ];
-                                       unresolved = CallGraph.Unresolved.False;
-                                     };
-                                   ])
                               ()) );
                      ] ) );
              ]
@@ -9638,7 +9561,7 @@ let test_resolve_decorator_callees =
                  None );
                ( Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal },
                  Some
-                   ( "test.A.decorator(test.A.foo)",
+                   ( "test.A.decorator(foo)",
                      Target.Regular.Method
                        { class_name = "test.A"; method_name = "foo"; kind = Decorated },
                      "test.A.foo.@decorated",
@@ -9656,35 +9579,15 @@ let test_resolve_decorator_callees =
                                          kind = Normal;
                                        });
                                 ]
-                              ~higher_order_parameters:
-                                (HigherOrderParameterMap.from_list
-                                   [
-                                     {
-                                       index = 0;
-                                       call_targets =
-                                         [
-                                           CallTarget.create_regular
-                                             ~implicit_receiver:true
-                                             (Target.Regular.Method
-                                                {
-                                                  class_name = "test.A";
-                                                  method_name = "foo";
-                                                  kind = Normal;
-                                                });
-                                         ];
-                                       unresolved = CallGraph.Unresolved.False;
-                                     };
-                                   ])
                               ()) );
-                       ( "9:2-10:12|artificial-attribute-access|for-decorated-target-callee:test.A.foo",
-                         ExpressionCallees.from_attribute_access
-                           (AttributeAccessCallees.create
+                       ( "9:2-10:12|identifier|foo",
+                         ExpressionCallees.from_identifier
+                           (IdentifierCallees.create
                               ~if_called:
                                 (CallCallees.create
                                    ~call_targets:
                                      [
                                        CallTarget.create_regular
-                                         ~implicit_receiver:true
                                          (Target.Regular.Method
                                             {
                                               class_name = "test.A";
@@ -9724,13 +9627,13 @@ let test_resolve_decorator_callees =
                  None );
                ( Target.Regular.Function { name = "test.foo"; kind = Normal },
                  Some
-                   ( "test.a_or_b.decorator(test.foo)",
+                   ( "test.a_or_b.decorator(foo)",
                      Target.Regular.Function { name = "test.foo"; kind = Decorated },
                      "test.foo.@decorated",
                      [
-                       ( "11:0-12:10|artificial-attribute-access|for-decorated-target-callee:test.foo",
-                         ExpressionCallees.from_attribute_access
-                           (AttributeAccessCallees.create
+                       ( "11:0-12:10|identifier|foo",
+                         ExpressionCallees.from_identifier
+                           (IdentifierCallees.create
                               ~if_called:
                                 (CallCallees.create
                                    ~call_targets:
@@ -9763,20 +9666,6 @@ let test_resolve_decorator_callees =
                                          kind = Normal;
                                        });
                                 ]
-                              ~higher_order_parameters:
-                                (HigherOrderParameterMap.from_list
-                                   [
-                                     {
-                                       index = 0;
-                                       call_targets =
-                                         [
-                                           CallTarget.create_regular
-                                             (Target.Regular.Function
-                                                { name = "test.foo"; kind = Normal });
-                                         ];
-                                       unresolved = CallGraph.Unresolved.False;
-                                     };
-                                   ])
                               ()) );
                      ] ) );
              ]
@@ -9832,7 +9721,7 @@ let test_resolve_decorator_callees =
                Target.Regular.Function { name = "test.main"; kind = Normal }, None;
                ( Target.Regular.Function { name = "test.main.inner"; kind = Normal },
                  Some
-                   ( "test.decorator(test.main.inner)",
+                   ( "test.decorator(inner)",
                      Target.Regular.Function { name = "test.main.inner"; kind = Decorated },
                      "test.main.inner.@decorated",
                      [
@@ -9846,22 +9735,9 @@ let test_resolve_decorator_callees =
                                        { name = "test.decorator"; kind = Normal });
                                 ]
                               ()) );
-                       ( "8:2-9:10|artificial-attribute-access|for-decorated-target-callee:test.main",
-                         ExpressionCallees.from_attribute_access
-                           (AttributeAccessCallees.create
-                              ~if_called:
-                                (CallCallees.create
-                                   ~call_targets:
-                                     [
-                                       CallTarget.create_regular
-                                         (Target.Regular.Function
-                                            { name = "test.main"; kind = Normal });
-                                     ]
-                                   ())
-                              ()) );
-                       ( "8:2-9:10|artificial-attribute-access|for-decorated-target-callee:test.main.inner",
-                         ExpressionCallees.from_attribute_access
-                           (AttributeAccessCallees.create
+                       ( "8:2-9:10|identifier|inner",
+                         ExpressionCallees.from_identifier
+                           (IdentifierCallees.create
                               ~if_called:
                                 (CallCallees.create
                                    ~call_targets:

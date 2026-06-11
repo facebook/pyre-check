@@ -775,23 +775,30 @@ Higher order call graphs
 }
 {
   "callable": "properties.ClassProperty.my_class_property@decorated",
-  "returned_callables": [],
+  "returned_callables": [
+    {
+      "target": "properties.ClassProperty.my_class_property",
+      "index": 0,
+      "return_type": []
+    }
+  ],
   "calls": {
     "124:5-124:22|artificial-call|for-decorated-target": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
     },
-    "125:4-126:17|artificial-attribute-access|for-decorated-target-callee:properties.ClassProperty.my_class_property": {
-      "attribute_access": {
-        "properties": [
-          {
-            "target": "properties.ClassProperty.my_class_property",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
+    "125:4-126:17|identifier|my_class_property": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "properties.ClassProperty.my_class_property",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }

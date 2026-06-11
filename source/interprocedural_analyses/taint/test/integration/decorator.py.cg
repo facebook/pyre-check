@@ -4,6 +4,12 @@ Call dependencies
   "decorator.$toplevel (fun)": [
     "object.__new__ (method)", "typing.ParamSpec.__init__ (method)"
   ],
+  "decorator.AddReturnsFunction.__add__@decorated (method)": [
+    "decorator.returns_function_decorator (fun)[formal(f, position=0)=decorator.AddReturnsFunction.__add__ (method)]"
+  ],
+  "decorator.AddReturnsStaticmethod.__add__@decorated (method)": [
+    "decorator.returns_staticmethod_decorator (fun)[formal(f, position=0)=decorator.AddReturnsStaticmethod.__add__ (method)]"
+  ],
   "decorator.Foo.bar (method)": [ "print (fun)" ],
   "decorator.Foo.bar@decorated (method)": [
     "decorator.with_logging_args_kwargs (fun)[formal(f, position=0)=decorator.Foo.bar (method)]",
@@ -28,6 +34,9 @@ Call dependencies
   ],
   "decorator.Foo.some_class_method@decorated (method)": [
     "decorator.with_logging_args_kwargs_no_sink (fun)[formal(f, position=0)=decorator.Foo.some_class_method (method)]"
+  ],
+  "decorator.StaticAddHolder.static_add (method)": [
+    "pysa._test_sink (fun)"
   ],
   "decorator.StringWrapper.__add__ (method)": [
     "decorator.StringWrapper.__init__ (method)", "object.__new__ (method)",
@@ -148,6 +157,9 @@ Call dependencies
   "decorator.return_source_via_decorator@decorated (fun)": [
     "decorator.add_return_source (fun)[formal(callable, position=0)=decorator.return_source_via_decorator (fun)]"
   ],
+  "decorator.returns_function_decorator.replacement (fun)": [
+    "pysa._test_sink (fun)"
+  ],
   "decorator.second_parameter_source_inlineable_decorator (fun)": [
     "pysa._test_sink (fun)"
   ],
@@ -168,6 +180,12 @@ Call dependencies
   ],
   "decorator.second_parameter_source_with_non_inlineable_decorator@decorated (fun)": [
     "decorator.discard_second_parameter_non_inlineable (fun)[formal(f, position=0)=decorator.second_parameter_source_with_non_inlineable_decorator (fun)]"
+  ],
+  "decorator.simple_wrapper.inner (fun)[captured_variable(f, parameter)=decorator.Foo.sink_method (method) (bound)]": [
+    "decorator.Foo.sink_method (method)"
+  ],
+  "decorator.simple_wrapper.inner (fun)[captured_variable(f, parameter)=decorator.Foo.sink_method (method)]": [
+    "decorator.Foo.sink_method (method)"
   ],
   "decorator.sink_via_conditional_decorator_factory (fun)": [ "print (fun)" ],
   "decorator.sink_via_conditional_decorator_factory@decorated (fun)": [
@@ -202,6 +220,16 @@ Call dependencies
   "decorator.sink_via_trivial_decorator@decorated (fun)": [
     "decorator.trivial_decorator (fun)[formal(f, position=0)=decorator.sink_via_trivial_decorator (fun)]"
   ],
+  "decorator.test_add_decorated_returns_function (fun)": [
+    "decorator.returns_function_decorator.replacement (fun)",
+    "object.__init__ (method)", "object.__new__ (method)",
+    "pysa._test_source (fun)"
+  ],
+  "decorator.test_add_decorated_returns_staticmethod (fun)": [
+    "decorator.AddReturnsStaticmethod.__add__ (method)",
+    "object.__init__ (method)", "object.__new__ (method)",
+    "pysa._test_source (fun)"
+  ],
   "decorator.test_decorated_call_in_assign_target (fun)": [
     "decorator.trivial_decorator.inner (fun)[captured_variable(f, parameter)=decorator.sink_via_trivial_decorator (fun)]"
   ],
@@ -222,6 +250,18 @@ Call dependencies
   ],
   "decorator.test_decorated_higher_order_parameter.inner@decorated (fun)": [
     "decorator.with_logging_args_kwargs_no_sink (fun)[formal(f, position=0)=decorator.test_decorated_higher_order_parameter.inner (fun)]"
+  ],
+  "decorator.test_decorator_bound (fun)": [
+    "decorator.simple_wrapper (fun)[formal(f, position=0)=decorator.Foo.sink_method (method) (bound)]",
+    "decorator.simple_wrapper.inner (fun)[captured_variable(f, parameter)=decorator.Foo.sink_method (method) (bound)]",
+    "object.__init__ (method)", "object.__new__ (method)",
+    "pysa._test_source (fun)"
+  ],
+  "decorator.test_decorator_unbound (fun)": [
+    "decorator.simple_wrapper (fun)[formal(f, position=0)=decorator.Foo.sink_method (method)]",
+    "decorator.simple_wrapper.inner (fun)[captured_variable(f, parameter)=decorator.Foo.sink_method (method)]",
+    "object.__init__ (method)", "object.__new__ (method)",
+    "pysa._test_source (fun)"
   ],
   "decorator.test_issue_via_doubly_decorated (fun)": [
     "decorator.sink_via_doubly_decorated (fun)", "pysa._test_source (fun)"

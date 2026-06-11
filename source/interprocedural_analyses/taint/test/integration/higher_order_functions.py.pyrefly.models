@@ -324,6 +324,57 @@
 {
   "kind": "model",
   "data": {
+    "callable": "higher_order_functions.higher_order_method",
+    "filename": "higher_order_functions.py",
+    "callable_line": 33,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 34, "start": 44, "end": 47 },
+              "resolves_to": [
+                "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.C.method_to_sink (bound)]"
+              ],
+              "port": "formal(arg, position=1)",
+              "call_site": "34:4-34:48"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "higher_order_functions.return_callable_as_any",
+    "filename": "higher_order_functions.py",
+    "callable_line": 266,
+    "tito": [
+      {
+        "port": "formal(f, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "higher_order_functions.sink_after_apply",
     "filename": "higher_order_functions.py",
     "callable_line": 78,
@@ -593,6 +644,71 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "higher_order_functions.test_bound_method_through_higher_order",
+    "callable_line": 284,
+    "code": 5002,
+    "line": 288,
+    "start": 8,
+    "end": 22,
+    "filename": "higher_order_functions.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 288, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 288, "start": 8, "end": 22 },
+              "resolves_to": [ "higher_order_functions.Connection.execute" ],
+              "port": "formal(sql, position=1)",
+              "call_site": "288:4-288:26"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "higher_order_functions.Connection.execute",
+      "index": 0,
+      "parameter": "formal(sql)"
+    },
+    "master_handle": "higher_order_functions.test_bound_method_through_higher_order:5002:0:Call|higher_order_functions.Connection.execute|0|formal(sql):0283bd5e99ced1ae1d7343f5cfd61847"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.test_callable_class_to_obscure",
@@ -624,7 +740,7 @@
               ],
               "port": "result"
             },
-            "receiver_interval": [ { "lower": 6, "upper": 9 } ],
+            "receiver_interval": [ { "lower": 8, "upper": 11 } ],
             "is_self_call": false
           }
         ]
@@ -1462,6 +1578,71 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "higher_order_functions.test_higher_order_method",
+    "callable_line": 37,
+    "code": 5002,
+    "line": 38,
+    "start": 29,
+    "end": 43,
+    "filename": "higher_order_functions.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "pysa._test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 38, "start": 29, "end": 43 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 38, "start": 29, "end": 43 },
+              "resolves_to": [ "higher_order_functions.higher_order_method" ],
+              "port": "formal(arg, position=1)",
+              "call_site": "38:4-38:44"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "higher_order_functions.higher_order_method",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "higher_order_functions.test_higher_order_method:5002:0:Call|higher_order_functions.higher_order_method|0|formal(arg):bb12423a5f50e40b60294e8804787996"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.test_location",
@@ -2033,6 +2214,30 @@
 {
   "kind": "model",
   "data": {
+    "callable": "higher_order_functions.Cache.__init__",
+    "filename": "higher_order_functions.py",
+    "callable_line": 273,
+    "tito": [
+      {
+        "port": "formal(con, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[_con]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "higher_order_functions.Callable.__init__",
     "filename": "higher_order_functions.py",
     "callable_line": 96,
@@ -2075,7 +2280,7 @@
               }
             ],
             "origin": { "line": 152, "start": 15, "end": 29 },
-            "caller_interval": [ { "lower": 6, "upper": 9 } ],
+            "caller_interval": [ { "lower": 8, "upper": 11 } ],
             "is_self_call": false
           }
         ]
@@ -2104,8 +2309,38 @@
               }
             ],
             "origin": { "line": 172, "start": 15, "end": 29 },
-            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "caller_interval": [ { "lower": 9, "upper": 10 } ],
             "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "higher_order_functions.Connection.execute",
+    "filename": "higher_order_functions.py",
+    "callable_line": 257,
+    "sinks": [
+      {
+        "port": "formal(sql, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 260, "start": 19, "end": 22 },
+            "caller_interval": [ { "lower": 12, "upper": 13 } ],
+            "is_self_call": false,
+            "call_site": "260:8-260:23"
           }
         ]
       }
@@ -2131,7 +2366,7 @@
               }
             ],
             "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 6, "upper": 9 } ],
+            "caller_interval": [ { "lower": 8, "upper": 11 } ],
             "is_self_call": false
           },
           {
@@ -2145,7 +2380,7 @@
               }
             ],
             "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "caller_interval": [ { "lower": 9, "upper": 10 } ],
             "is_self_call": false
           }
         ]
@@ -2172,7 +2407,7 @@
               }
             ],
             "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "caller_interval": [ { "lower": 9, "upper": 10 } ],
             "is_self_call": false
           }
         ]
@@ -2668,7 +2903,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.C.self_to_sink]",
+    "callable": "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.C.method_to_sink (bound)]",
     "filename": "higher_order_functions.py",
     "callable_line": 17,
     "sinks": [
@@ -2685,8 +2920,8 @@
             ],
             "call": {
               "position": { "line": 18, "start": 6, "end": 9 },
-              "resolves_to": [ "higher_order_functions.C.self_to_sink" ],
-              "port": "formal(self, position=0)",
+              "resolves_to": [ "higher_order_functions.C.method_to_sink" ],
+              "port": "formal(arg, position=1)",
               "call_site": "18:4-18:10"
             }
           }
@@ -2732,6 +2967,25 @@
               "port": "formal(arg, position=0)",
               "call_site": "47:4-47:10"
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "higher_order_functions.return_callable_as_any[formal(f, position=0)=higher_order_functions.Connection.execute (bound)]",
+    "filename": "higher_order_functions.py",
+    "callable_line": 266,
+    "tito": [
+      {
+        "port": "formal(f, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
           }
         ]
       }

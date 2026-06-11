@@ -615,7 +615,6 @@ Higher order call graphs
     {
       "target": "call_graph.CallableKindConfusion.foo",
       "index": 0,
-      "implicit_receiver": true,
       "return_type": []
     }
   ],
@@ -661,7 +660,6 @@ Higher order call graphs
             {
               "target": "call_graph.CallableKindConfusion.foo",
               "index": 0,
-              "implicit_receiver": true,
               "return_type": []
             }
           ]
@@ -716,7 +714,6 @@ Higher order call graphs
     {
       "target": "call_graph.CallableKindConfusion.foo",
       "index": 0,
-      "implicit_receiver": true,
       "return_type": []
     }
   ],
@@ -728,7 +725,6 @@ Higher order call graphs
     {
       "target": "call_graph.CallableKindConfusion.foo",
       "index": 0,
-      "implicit_receiver": true,
       "return_type": []
     }
   ],

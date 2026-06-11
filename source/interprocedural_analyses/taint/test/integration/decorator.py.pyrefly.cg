@@ -1,6 +1,12 @@
 @generated
 Call dependencies
 {
+  "decorator.AddReturnsFunction.__add__@decorated (method)": [
+    "decorator.returns_function_decorator (fun)[formal(f, position=0)=decorator.AddReturnsFunction.__add__ (method)]"
+  ],
+  "decorator.AddReturnsStaticmethod.__add__@decorated (method)": [
+    "decorator.returns_staticmethod_decorator (fun)[formal(f, position=0)=decorator.AddReturnsStaticmethod.__add__ (method)]"
+  ],
   "decorator.Foo.bar (method)": [ "builtins.print (fun)" ],
   "decorator.Foo.bar@decorated (method)": [
     "decorator.with_logging_args_kwargs (fun)[formal(f, position=0)=decorator.Foo.bar (method)]",
@@ -27,6 +33,9 @@ Call dependencies
     "builtins.classmethod.__init__ (method)",
     "builtins.object.__new__ (method)",
     "decorator.with_logging_args_kwargs_no_sink (fun)[formal(f, position=0)=decorator.Foo.some_class_method (method)]"
+  ],
+  "decorator.StaticAddHolder.static_add (method)": [
+    "pysa._test_sink (fun)"
   ],
   "decorator.StringWrapper.__add__ (method)": [
     "builtins.object.__new__ (method)", "builtins.str.__add__ (method)",
@@ -149,6 +158,9 @@ Call dependencies
   "decorator.return_source_via_decorator@decorated (fun)": [
     "decorator.add_return_source (fun)[formal(callable, position=0)=decorator.return_source_via_decorator (fun)]"
   ],
+  "decorator.returns_function_decorator.replacement (fun)": [
+    "pysa._test_sink (fun)"
+  ],
   "decorator.second_parameter_source_inlineable_decorator (fun)": [
     "pysa._test_sink (fun)"
   ],
@@ -169,6 +181,12 @@ Call dependencies
   ],
   "decorator.second_parameter_source_with_non_inlineable_decorator@decorated (fun)": [
     "decorator.discard_second_parameter_non_inlineable (fun)[formal(f, position=0)=decorator.second_parameter_source_with_non_inlineable_decorator (fun)]"
+  ],
+  "decorator.simple_wrapper.inner (fun)[captured_variable(f, decorator.simple_wrapper)=decorator.Foo.sink_method (method) (bound)]": [
+    "decorator.Foo.sink_method (method)"
+  ],
+  "decorator.simple_wrapper.inner (fun)[captured_variable(f, decorator.simple_wrapper)=decorator.Foo.sink_method (method)]": [
+    "decorator.Foo.sink_method (method)"
   ],
   "decorator.simple_wrapper.inner (fun)[captured_variable(f, decorator.simple_wrapper)=decorator.doubly_decorated_logging (fun)]": [
     "decorator.doubly_decorated_logging (fun)"
@@ -208,6 +226,16 @@ Call dependencies
   "decorator.sink_via_trivial_decorator@decorated (fun)": [
     "decorator.trivial_decorator (fun)[formal(f, position=0)=decorator.sink_via_trivial_decorator (fun)]"
   ],
+  "decorator.test_add_decorated_returns_function (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "decorator.returns_function_decorator.replacement (fun)",
+    "pysa._test_source (fun)"
+  ],
+  "decorator.test_add_decorated_returns_staticmethod (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "decorator.StaticAddHolder.static_add (method)",
+    "pysa._test_source (fun)"
+  ],
   "decorator.test_decorated_call_in_assign_target (fun)": [
     "decorator.trivial_decorator.inner (fun)[captured_variable(f, decorator.trivial_decorator)=decorator.sink_via_trivial_decorator (fun)]"
   ],
@@ -228,6 +256,18 @@ Call dependencies
   ],
   "decorator.test_decorated_higher_order_parameter.inner@decorated (fun)": [
     "decorator.with_logging_args_kwargs_no_sink (fun)[formal(f, position=0)=decorator.test_decorated_higher_order_parameter.inner (fun)]"
+  ],
+  "decorator.test_decorator_bound (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "decorator.simple_wrapper (fun)[formal(f, position=0)=decorator.Foo.sink_method (method) (bound)]",
+    "decorator.simple_wrapper.inner (fun)[captured_variable(f, decorator.simple_wrapper)=decorator.Foo.sink_method (method) (bound)]",
+    "pysa._test_source (fun)"
+  ],
+  "decorator.test_decorator_unbound (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "decorator.simple_wrapper (fun)[formal(f, position=0)=decorator.Foo.sink_method (method)]",
+    "decorator.simple_wrapper.inner (fun)[captured_variable(f, decorator.simple_wrapper)=decorator.Foo.sink_method (method)]",
+    "pysa._test_source (fun)"
   ],
   "decorator.test_issue_via_doubly_decorated (fun)": [
     "decorator.sink_via_doubly_decorated (fun)", "pysa._test_source (fun)"

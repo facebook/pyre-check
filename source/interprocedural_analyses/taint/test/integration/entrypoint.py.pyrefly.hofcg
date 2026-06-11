@@ -493,7 +493,6 @@ Higher order call graphs
     {
       "target": "entrypoint.MyClass.method_entrypoint_with_decorator",
       "index": 0,
-      "implicit_receiver": true,
       "return_type": []
     }
   ],
@@ -516,7 +515,6 @@ Higher order call graphs
             {
               "target": "entrypoint.MyClass.method_entrypoint_with_decorator",
               "index": 0,
-              "implicit_receiver": true,
               "return_type": []
             }
           ]
@@ -577,7 +575,6 @@ Higher order call graphs
     {
       "target": "entrypoint.MyClass.method_entrypoint_with_decorator",
       "index": 0,
-      "implicit_receiver": true,
       "return_type": []
     }
   ],

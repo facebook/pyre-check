@@ -66,9 +66,8 @@ Higher order call graphs
         ]
       }
     },
-    "35:0-37:21|artificial-attribute-access|for-decorated-target-callee:graphql_callees.return_graphql_entrypoint_1": {
-      "attribute_access": {
-        "is_attribute": true,
+    "35:0-37:21|identifier|return_graphql_entrypoint_1": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -148,9 +147,8 @@ Higher order call graphs
         ]
       }
     },
-    "41:0-43:44|artificial-attribute-access|for-decorated-target-callee:graphql_callees.return_graphql_entrypoint_2": {
-      "attribute_access": {
-        "is_attribute": true,
+    "41:0-43:44|identifier|return_graphql_entrypoint_2": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -203,9 +201,8 @@ Higher order call graphs
         ]
       }
     },
-    "47:0-49:21|artificial-attribute-access|for-decorated-target-callee:graphql_callees.return_graphql_entrypoint_3": {
-      "attribute_access": {
-        "is_attribute": true,
+    "47:0-49:21|identifier|return_graphql_entrypoint_3": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -285,9 +282,8 @@ Higher order call graphs
         ]
       }
     },
-    "53:0-56:23|artificial-attribute-access|for-decorated-target-callee:graphql_callees.return_graphql_entrypoint_strip_list": {
-      "attribute_access": {
-        "is_attribute": true,
+    "53:0-56:23|identifier|return_graphql_entrypoint_strip_list": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -340,9 +336,8 @@ Higher order call graphs
         ]
       }
     },
-    "60:0-64:22|artificial-attribute-access|for-decorated-target-callee:graphql_callees.return_graphql_entrypoint_strip_list_with_sink": {
-      "attribute_access": {
-        "is_attribute": true,
+    "60:0-64:22|identifier|return_graphql_entrypoint_strip_list_with_sink": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -375,7 +370,6 @@ Higher order call graphs
     {
       "target": "graphql_callees.GraphQLEntrypoint.callee",
       "index": 0,
-      "implicit_receiver": true,
       "return_type": []
     }
   ],
@@ -391,15 +385,13 @@ Higher order call graphs
         ]
       }
     },
-    "22:4-23:24|artificial-attribute-access|for-decorated-target-callee:graphql_callees.GraphQLEntrypoint.callee": {
-      "attribute_access": {
-        "is_attribute": true,
+    "22:4-23:24|identifier|callee": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
               "target": "graphql_callees.GraphQLEntrypoint.callee",
               "index": 0,
-              "implicit_receiver": true,
               "return_type": []
             }
           ]
@@ -482,7 +474,6 @@ Higher order call graphs
     {
       "target": "graphql_callees.GraphQLEntrypoint.callee",
       "index": 0,
-      "implicit_receiver": true,
       "return_type": []
     }
   ],

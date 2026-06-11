@@ -268,10 +268,18 @@ module T = struct
     | Regular of Regular.t
     | Parameterized of {
         regular: Regular.t;
-        parameters: t ParameterMap.t;
+        parameters: parameter_value ParameterMap.t;
       }
-      (* This represents a regular callable with its function-typed parameters being instantited
-         with `parameters`. *)
+  (* This represents a regular callable with its function-typed parameters being instantited with
+     `parameters`. *)
+
+  and parameter_value = {
+    target: t;
+    (* Whether an implicit receiver (self/cls) was provided at the capture site for `target`. This
+       is the `CallTarget.implicit_receiver` of the captured callee, preserved so that the inlined
+       call can be reconstructed without an off-by-one argument shift. *)
+    implicit_receiver: bool;
+  }
   [@@deriving show { with_path = false }, sexp, compare, hash, equal]
 end
 
@@ -294,13 +302,28 @@ module MakePrettyPrint (RegularTargetPrettyPrint : RegularTargetPrettyPrintType)
   let rec pp formatter = function
     | Regular regular -> RegularTargetPrettyPrint.pp formatter regular
     | Parameterized { regular; parameters } ->
+        let pp_parameter_value formatter { target; implicit_receiver } =
+          Format.fprintf formatter "%a%s" pp target (if implicit_receiver then " (bound)" else "")
+        in
         let rec pp_parameters formatter = function
           | [] -> Format.fprintf formatter ""
-          | [(access_path, target)] ->
-              Format.fprintf formatter "%a=%a" TaintAccessPath.Root.pp access_path pp target
-          | (access_path, target) :: tail ->
+          | [(access_path, parameter_value)] ->
+              Format.fprintf
+                formatter
+                "%a=%a"
+                TaintAccessPath.Root.pp
+                access_path
+                pp_parameter_value
+                parameter_value
+          | (access_path, parameter_value) :: tail ->
               let () =
-                Format.fprintf formatter "%a=%a, " TaintAccessPath.Root.pp access_path pp target
+                Format.fprintf
+                  formatter
+                  "%a=%a, "
+                  TaintAccessPath.Root.pp
+                  access_path
+                  pp_parameter_value
+                  parameter_value
               in
               pp_parameters formatter tail
         in
@@ -330,6 +353,20 @@ end)
 let pp_pretty = PrettyPrint.pp
 
 let show_pretty = PrettyPrint.show
+
+module ParameterValue = struct
+  type t = parameter_value = {
+    target: T.t;
+    implicit_receiver: bool;
+  }
+
+  let create ?(implicit_receiver = false) target = { target; implicit_receiver }
+
+  let target { target; _ } = target
+
+  let pp_pretty formatter { target; implicit_receiver } =
+    Format.fprintf formatter "%a%s" pp_pretty target (if implicit_receiver then " (bound)" else "")
+end
 
 module PrettyPrintWithKind = MakePrettyPrint (struct
   let pp = Regular.pp_pretty_with_kind
@@ -367,7 +404,7 @@ let collect_nested_regular_targets =
     | Regular regular -> regular :: sofar
     | Parameterized { regular; parameters } ->
         ParameterMap.fold
-          (fun _ parameter sofar -> fold sofar parameter)
+          (fun _ { target; _ } sofar -> fold sofar target)
           parameters
           (regular :: sofar)
   in
@@ -464,7 +501,7 @@ let contain_recursive_target target =
     | Parameterized { regular; parameters } ->
         List.exists existing_regulars ~f:(Regular.equal regular)
         || ParameterMap.exists
-             (fun _ target -> contain_recursive_target (regular :: existing_regulars) target)
+             (fun _ { target; _ } -> contain_recursive_target (regular :: existing_regulars) target)
              parameters
   in
   contain_recursive_target [] target
@@ -477,7 +514,7 @@ let rec depth = function
       1
       + (parameters
         |> ParameterMap.data
-        |> List.map ~f:depth
+        |> List.map ~f:(fun { target; _ } -> depth target)
         |> List.max_elt ~compare:Int.compare
         |> Option.value ~default:0)
 
@@ -488,7 +525,10 @@ let rec for_issue_handle = function
       Parameterized
         {
           regular = Regular.override_to_method regular;
-          parameters = ParameterMap.map for_issue_handle parameters;
+          parameters =
+            ParameterMap.map
+              (fun ({ target; _ } as value) -> { value with target = for_issue_handle target })
+              parameters;
         }
 
 

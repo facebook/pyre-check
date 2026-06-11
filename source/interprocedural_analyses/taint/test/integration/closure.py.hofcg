@@ -207,23 +207,8 @@ Higher order call graphs
         ]
       }
     },
-    "455:4-456:24|artificial-attribute-access|for-decorated-target-callee:closure.async_nonlocal_closure_tito_with_decorator": {
-      "attribute_access": {
-        "is_attribute": true,
-        "if_called": {
-          "calls": [
-            {
-              "target": "closure.async_nonlocal_closure_tito_with_decorator",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "455:4-456:24|artificial-attribute-access|for-decorated-target-callee:closure.async_nonlocal_closure_tito_with_decorator.inner": {
-      "attribute_access": {
-        "is_attribute": true,
+    "455:4-456:24|identifier|inner": {
+      "identifier": {
         "if_called": {
           "calls": [
             {

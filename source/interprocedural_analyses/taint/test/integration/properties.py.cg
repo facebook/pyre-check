@@ -10,9 +10,6 @@ Call dependencies
   "properties.Class.uses_property_but_no_tito_taint (method)": [
     "properties.Class.my_property (override)", "pysa._test_source (fun)"
   ],
-  "properties.ClassProperty.my_class_property@decorated (method)": [
-    "properties.ClassProperty.my_class_property (method)"
-  ],
   "properties.CollidePropertySetterName.collided_property (method)": [
     "properties.CollidePropertySetterName.collided_property.setter (fun)"
   ],

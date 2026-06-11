@@ -456,7 +456,6 @@ Higher order call graphs
     {
       "target": "call_graph.CallableKindConfusion.foo",
       "index": 0,
-      "implicit_receiver": true,
       "return_type": []
     }
   ],
@@ -494,15 +493,13 @@ Higher order call graphs
         ]
       }
     },
-    "98:4-103:14|artificial-attribute-access|for-decorated-target-callee:call_graph.CallableKindConfusion.foo": {
-      "attribute_access": {
-        "is_attribute": true,
+    "98:4-103:14|identifier|foo": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
               "target": "call_graph.CallableKindConfusion.foo",
               "index": 0,
-              "implicit_receiver": true,
               "return_type": []
             }
           ]
@@ -556,7 +553,6 @@ Higher order call graphs
     {
       "target": "call_graph.CallableKindConfusion.foo",
       "index": 0,
-      "implicit_receiver": true,
       "return_type": []
     }
   ],
@@ -568,7 +564,6 @@ Higher order call graphs
     {
       "target": "call_graph.CallableKindConfusion.foo",
       "index": 0,
-      "implicit_receiver": true,
       "return_type": []
     }
   ],

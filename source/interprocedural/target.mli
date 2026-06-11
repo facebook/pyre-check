@@ -66,14 +66,33 @@ type t =
   | Regular of Regular.t
   | Parameterized of {
       regular: Regular.t;
-      parameters: t ParameterMap.t;
+      parameters: parameter_value ParameterMap.t;
     }
-    (* This represents a regular callable with its function-typed parameters being instantited with
-       `parameters`. *)
+(* This represents a regular callable with its function-typed parameters being instantited with
+   `parameters`. *)
+
+and parameter_value = {
+  target: t;
+  (* Whether an implicit receiver (self/cls) was provided at the capture site for `target`. *)
+  implicit_receiver: bool;
+}
 [@@deriving sexp, compare, hash, equal]
 
 module T : sig
   type nonrec t = t [@@deriving sexp, compare, hash, equal]
+end
+
+module ParameterValue : sig
+  type t = parameter_value = {
+    target: T.t;
+    implicit_receiver: bool;
+  }
+
+  val create : ?implicit_receiver:bool -> T.t -> t
+
+  val target : t -> T.t
+
+  val pp_pretty : Format.formatter -> t -> unit
 end
 
 module Map : sig

@@ -1233,15 +1233,13 @@ Higher order call graphs
         ]
       }
     },
-    "153:4-155:18|artificial-attribute-access|for-decorated-target-callee:partial.NestedDefineConstructor.__init__": {
-      "attribute_access": {
-        "is_attribute": true,
+    "153:4-155:18|identifier|__init__": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
               "target": "partial.NestedDefineConstructor.__init__",
               "index": 0,
-              "implicit_receiver": true,
               "return_type": []
             }
           ]
@@ -1313,12 +1311,6 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "partial.PartialDecorator.__init__[formal(func, position=1)=functools.partial.__call__]",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          },
-          {
             "target": "partial.PartialDecorator.__init__[formal(func, position=1)=partial.PartialConstructor.__init__]",
             "index": 0,
             "implicit_receiver": true,
@@ -1327,15 +1319,13 @@ Higher order call graphs
         ]
       }
     },
-    "125:4-127:18|artificial-attribute-access|for-decorated-target-callee:partial.PartialConstructor.__init__": {
-      "attribute_access": {
-        "is_attribute": true,
+    "125:4-127:18|identifier|__init__": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
               "target": "partial.PartialConstructor.__init__",
               "index": 0,
-              "implicit_receiver": true,
               "return_type": []
             }
           ]
