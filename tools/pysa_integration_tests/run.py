@@ -41,6 +41,7 @@ def main(
     write_actual_results_on_failure: bool,
     use_pyrefly: bool,
     show_type_errors: bool,
+    debug_pyrefly_report: bool,
 ) -> None:
     """
     Entry point function to run a full end-to-end integration test.
@@ -75,6 +76,7 @@ def main(
         use_pyrefly=use_pyrefly,
         working_directory=working_directory,
         show_type_errors=show_type_errors,
+        debug_pyrefly_report=debug_pyrefly_report,
     )
 
     test_result_directory = (
@@ -179,6 +181,12 @@ if __name__ == "__main__":
         default=False,
         help="Show type errors from Pyrefly",
     )
+    parser.add_argument(
+        "--debug-pyrefly-report",
+        action="store_true",
+        default=False,
+        help="Preserve the Pyrefly report directory and use JSON output format for debugging.",
+    )
 
     parsed: argparse.Namespace = parser.parse_args()
     run_from = test_runner_lib.RunFrom(parsed.run_from)
@@ -202,4 +210,5 @@ if __name__ == "__main__":
         write_actual_results_on_failure=parsed.write_actual_results_on_failure,
         use_pyrefly=parsed.use_pyrefly,
         show_type_errors=parsed.show_type_errors,
+        debug_pyrefly_report=parsed.debug_pyrefly_report,
     )
