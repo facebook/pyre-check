@@ -41,7 +41,6 @@ open Pyre
 open Domains
 module CallGraph = Interprocedural.CallGraph
 module CallGraphBuilder = Interprocedural.CallGraphBuilder
-module CallResolution = Interprocedural.CallResolution
 module AccessPath = Analysis.TaintAccessPath
 module PyrePysaApi = Interprocedural.PyrePysaApi
 module PyrePysaLogic = Analysis.PyrePysaLogic
@@ -2581,12 +2580,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let location =
           Node.location callee |> Location.with_module ~module_reference:FunctionContext.qualifier
         in
+        let revealed_type =
+          Interprocedural.TypeOfExpressionSharedMemory.compute_or_retrieve_pysa_type
+            FunctionContext.type_of_expression_shared_memory
+            ~pyre_in_context
+            expression
+        in
         Log.dump
-          "%a: Revealed type for %s: %s"
+          "%a: Revealed type for %s: %a"
           Location.WithModule.pp
           location
           (Transform.sanitize_expression expression |> Expression.show)
-          (CallResolution.resolve_ignoring_untracked ~pyre_in_context expression |> Type.show);
+          PyrePysaApi.PysaType.pp_concise
+          revealed_type;
         ForwardState.Tree.bottom, state
     | _ ->
         apply_callees
