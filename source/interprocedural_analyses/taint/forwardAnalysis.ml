@@ -3709,7 +3709,7 @@ let run
 
     let callable = callable
 
-    let debug = Statement.Define.dump define.value
+    let debug = Interprocedural.PysaDump.should_dump_taint ~define:define.value ~callable
 
     let profiler = profiler
 
@@ -3743,7 +3743,10 @@ let run
   in
   let module State = State (FunctionContext) in
   let module Fixpoint = PyrePysaLogic.Fixpoint.Make (State) in
-  if FunctionContext.debug || Statement.Define.dump_call_graph define.value then
+  if
+    FunctionContext.debug
+    || Interprocedural.PysaDump.should_dump_call_graph ~define:define.value ~callable
+  then
     Log.dump
       "Call graph of `%a`:@,%a"
       Reference.pp

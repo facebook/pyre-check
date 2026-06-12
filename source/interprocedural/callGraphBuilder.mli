@@ -132,8 +132,6 @@ end
 
 val default_scheduler_policy : Scheduler.Policy.t
 
-val debug_higher_order_call_graph : Ast.Statement.Define.t -> bool
-
 val higher_order_call_graph_of_define
   :  define_call_graph:CallGraph.DefineCallGraph.t ->
   pyre_api:PyrePysaApi.ReadOnly.t ->

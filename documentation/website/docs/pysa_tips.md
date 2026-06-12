@@ -121,18 +121,31 @@ of square brackets to access a dictionary.
 
 ## Debugging Tools
 
-### `pyre_dump()`
+### `pysa_dump()`
 
-You can insert a call to the (non-existent) `pyre_dump()` function in your code
-to enable verbose logging of the call graph, forward and backward analysis of
-the current function or method. This can be useful as a starting point to figure
-out why something is/isn't happening. This will produce _very_ verbose output.
+You can insert a call to the `pysa_dump()` function (no imported needed) in your code
+to enable verbose logging of every Pysa analysis phase (call graph, higher order
+call graph, forward and backward taint analysis) of the current function or
+method. This is the master switch and can be useful as a starting point to
+figure out why something is/isn't happening. This will produce _very_ verbose
+output.
 
-### `pyre_dump_call_graph`
+Every trigger below has two equivalent forms that are OR'd together: an
+in-source magic call (e.g. `pysa_dump_taint()`) that targets the function or
+method it appears in, and an environment variable (e.g. `PYSA_DUMP_TAINT`) whose
+value is matched _exactly_ against the fully-qualified name of the callable being
+analyzed (e.g. `my.module.MyClass.my_method`). The master `pysa_dump()` /
+`PYSA_DUMP` enables all of the phases below.
 
-You can insert a call to `pyre_dump_call_graph` (no import needed) in a function
-or method to enable logging of the call graph building. This will produce
-verbose output.
+| In-source call                            | Environment variable                      | Effect                                                     |
+| ----------------------------------------- | ----------------------------------------- | ---------------------------------------------------------- |
+| `pysa_dump()`                             | `PYSA_DUMP`                               | Enables every phase below                                  |
+| `pysa_dump_call_graph()`                  | `PYSA_DUMP_CALL_GRAPH`                    | First-order call graph build logs                          |
+| `pysa_dump_higher_order_call_graph()`     | `PYSA_DUMP_HIGHER_ORDER_CALL_GRAPH`       | Higher order call graph build logs                         |
+| `pysa_dump_taint()`                       | `PYSA_DUMP_TAINT`                         | Taint forward/backward analysis and call graph dump        |
+| `pysa_dump_cfg()`                         | `PYSA_DUMP_CFG`                           | Dump the control flow graph at the start of taint analysis |
+| `pysa_dump_perf()`                        | `PYSA_DUMP_PERF`                          | Taint perf profiling (spawns `perf`, see below)            |
+| `pysa_dump_perf_higher_order_call_graph()` | `PYSA_DUMP_PERF_HIGHER_ORDER_CALL_GRAPH` | Higher order call graph perf profiling (in-memory only)    |
 
 ### `reveal_type(YOUR_VARIABLE)`
 
@@ -151,11 +164,17 @@ analyzes the function (which could be many times) it will update it's
 understanding of the taint flowing into the function and output the current
 state. The final output will be the most complete.
 
-### `pyre_dump_perf()`
+### `pysa_dump_perf()`
 
-You can insert a call to `pyre_dump_perf` (no import needed) in a function or
-method to profile the current analysis on that function or method, and dump the
-results on stdout.
+You can insert a call to `pysa_dump_perf` (no import needed) in a function or
+method, or set the `PYSA_DUMP_PERF` environment variable to its fully-qualified
+name, to profile the taint analysis on that function or method and dump the
+results on stdout. This spawns a real `perf` process.
+
+The related `pysa_dump_perf_higher_order_call_graph()` /
+`PYSA_DUMP_PERF_HIGHER_ORDER_CALL_GRAPH` profiles the higher order call graph
+build. Unlike `pysa_dump_perf`, this profiling is in-memory only and does not
+spawn a `perf` process.
 
 ### `results.json`
 

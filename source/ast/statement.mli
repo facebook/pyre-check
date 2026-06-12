@@ -318,13 +318,19 @@ and Define : sig
 
   val dump_locations : t -> bool
 
-  val dump_call_graph : t -> bool
+  val pysa_dump : t -> bool
 
-  val dump_higher_order_call_graph : t -> bool
+  val pysa_dump_call_graph : t -> bool
 
-  val dump_perf_higher_order_call_graph : t -> bool
+  val pysa_dump_higher_order_call_graph : t -> bool
 
-  val dump_perf : t -> bool
+  val pysa_dump_perf_higher_order_call_graph : t -> bool
+
+  val pysa_dump_perf : t -> bool
+
+  val pysa_dump_taint : t -> bool
+
+  val pysa_dump_cfg : t -> bool
 
   val show_json : t -> string
 

@@ -136,7 +136,11 @@ module CallGraphAnalysis = struct
              ~message:(Format.asprintf "Missing call graph for `%a`" Target.pp callable)
       in
       let profiler =
-        if Ast.Statement.Define.dump_perf_higher_order_call_graph (Ast.Node.value define) then
+        if
+          PysaDump.should_dump_perf_higher_order_call_graph
+            ~define:(Ast.Node.value define)
+            ~callable
+        then (* Higher order call graph perf profiling is kept in-memory only. *)
           CallGraphProfiler.start ~enable_perf:false ~callable ()
         else
           CallGraphProfiler.disabled
@@ -190,7 +194,7 @@ module CallGraphAnalysis = struct
                |> Option.value ~default:true
                |> not)
       in
-      if CallGraphBuilder.debug_higher_order_call_graph (Ast.Node.value define) then (
+      if PysaDump.should_dump_higher_order_call_graph ~define:(Ast.Node.value define) ~callable then (
         Log.dump
           "Returned callables for `%a`: `%a`"
           Target.pp_pretty_with_kind

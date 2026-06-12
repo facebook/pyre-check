@@ -652,13 +652,19 @@ and Define : sig
 
   val dump_locations : t -> bool
 
-  val dump_call_graph : t -> bool
+  val pysa_dump : t -> bool
 
-  val dump_higher_order_call_graph : t -> bool
+  val pysa_dump_call_graph : t -> bool
 
-  val dump_perf_higher_order_call_graph : t -> bool
+  val pysa_dump_higher_order_call_graph : t -> bool
 
-  val dump_perf : t -> bool
+  val pysa_dump_perf_higher_order_call_graph : t -> bool
+
+  val pysa_dump_perf : t -> bool
+
+  val pysa_dump_taint : t -> bool
+
+  val pysa_dump_cfg : t -> bool
 
   val show_json : t -> string
 
@@ -1085,15 +1091,23 @@ end = struct
 
   let dump_locations define = contains_call define "pyre_dump_locations"
 
-  let dump_call_graph define = contains_call define "pyre_dump_call_graph"
+  let pysa_dump define = contains_call define "pysa_dump"
 
-  let dump_higher_order_call_graph define = contains_call define "pyre_dump_higher_order_call_graph"
+  let pysa_dump_call_graph define = contains_call define "pysa_dump_call_graph"
 
-  let dump_perf_higher_order_call_graph define =
-    contains_call define "pyre_dump_perf_higher_order_call_graph"
+  let pysa_dump_higher_order_call_graph define =
+    contains_call define "pysa_dump_higher_order_call_graph"
 
 
-  let dump_perf define = contains_call define "pyre_dump_perf"
+  let pysa_dump_perf_higher_order_call_graph define =
+    contains_call define "pysa_dump_perf_higher_order_call_graph"
+
+
+  let pysa_dump_perf define = contains_call define "pysa_dump_perf"
+
+  let pysa_dump_taint define = contains_call define "pysa_dump_taint"
+
+  let pysa_dump_cfg define = contains_call define "pysa_dump_cfg"
 
   let show_json define = define |> to_yojson |> Yojson.Safe.pretty_to_string
 

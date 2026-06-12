@@ -685,6 +685,13 @@ module Builtins = struct
     (* Builtins recognized by Pyre itself *)
     | "BoundMethod"
     | "pyre_dump"
+    | "pysa_dump"
+    | "pysa_dump_call_graph"
+    | "pysa_dump_higher_order_call_graph"
+    | "pysa_dump_perf_higher_order_call_graph"
+    | "pysa_dump_perf"
+    | "pysa_dump_taint"
+    | "pysa_dump_cfg"
     | "reveal_type"
     | "reveal_locals"
     (* Builtins recognized by Python *)

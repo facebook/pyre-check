@@ -3364,7 +3364,7 @@ let run
 
     let callable = callable
 
-    let debug = Statement.Define.dump (Node.value define)
+    let debug = Interprocedural.PysaDump.should_dump_taint ~define:(Node.value define) ~callable
 
     let profiler = profiler
 

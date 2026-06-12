@@ -34,3 +34,4 @@ module IntraproceduralProfiler = IntraproceduralProfiler
 module CallGraphProfiler = CallGraphProfiler
 module TypeOfExpressionSharedMemory = TypeOfExpressionSharedMemory
 module ExpressionIdentifier = ExpressionIdentifier
+module PysaDump = PysaDump

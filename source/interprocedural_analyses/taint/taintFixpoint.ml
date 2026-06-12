@@ -127,7 +127,7 @@ module Analysis = struct
     =
     let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
     let profiler =
-      if Ast.Statement.Define.dump_perf (Ast.Node.value define) then
+      if Interprocedural.PysaDump.should_dump_perf ~define:(Ast.Node.value define) ~callable then
         TaintProfiler.start ~enable_perf:true ~callable ()
       else
         TaintProfiler.disabled
@@ -143,6 +143,12 @@ module Analysis = struct
             ~normalize_asserts:(PyrePysaApi.ReadOnly.is_pyre1 pyre_api)
             define.value)
     in
+    if Interprocedural.PysaDump.should_dump_cfg ~define:(Ast.Node.value define) ~callable then
+      Log.dump
+        "CFG for %a in dot syntax for graphviz:\n----\n%s\n----"
+        Ast.Reference.pp
+        (Ast.Statement.Define.name (Ast.Node.value define))
+        (PyrePysaLogic.Cfg.to_dot ~single_line:true cfg);
     let forward, result, triggered_sinks =
       TaintProfiler.track_duration ~profiler ~name:"Forward analysis" ~f:(fun () ->
           ForwardAnalysis.run

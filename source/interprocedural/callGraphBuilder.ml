@@ -4536,12 +4536,6 @@ module HigherOrderCallGraph = struct
   end
 end
 
-let debug_higher_order_call_graph define =
-  Ast.Statement.Define.dump define
-  || Ast.Statement.Define.dump_call_graph define
-  || Ast.Statement.Define.dump_higher_order_call_graph define
-
-
 let higher_order_call_graph_of_define
     ~define_call_graph
     ~pyre_api
@@ -4568,7 +4562,7 @@ let higher_order_call_graph_of_define
 
     let get_callee_model = get_callee_model
 
-    let debug = debug_higher_order_call_graph (Node.value define)
+    let debug = PysaDump.should_dump_higher_order_call_graph ~define:(Node.value define) ~callable
 
     let module_qualifier = qualifier
 
@@ -4693,9 +4687,7 @@ let call_graph_of_define
            Some { MissingFlowTypeAnalysis.caller = callable }
         else
           None);
-      debug =
-        Ast.Statement.Define.dump (Node.value define)
-        || Ast.Statement.Define.dump_call_graph (Node.value define);
+      debug = PysaDump.should_dump_call_graph ~define:(Node.value define) ~callable;
       override_graph;
       attribute_targets;
       skip_call_higher_order_functions;
@@ -5686,9 +5678,7 @@ let build_whole_program_call_graph_for_pyrefly
       | AstResult.Some
           ({ CallablesSharedMemory.DefineAndQualifier.define = { Node.value = define; _ }; _ } as
           define_and_qualifier) ->
-          let debug =
-            Ast.Statement.Define.dump define || Ast.Statement.Define.dump_call_graph define
-          in
+          let debug = PysaDump.should_dump_call_graph ~define ~callable in
           debug, Some define_and_qualifier
       | _ -> false, None
     in
