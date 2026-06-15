@@ -476,6 +476,13 @@ def pyre(
     help="Skip checking dependencies in Pyrefly buck-check mode.",
 )
 @click.option(
+    "--skip-buck-dependency-module",
+    "skip_buck_dependency_modules",
+    type=str,
+    multiple=True,
+    help="When analyzing a buck target with the Pyrefly backend, skip type-checking dependency modules whose fully-qualified name matches this regular expression. May be passed multiple times. Has no effect with the Pyre backend or when not analyzing a buck target.",
+)
+@click.option(
     "--debug-pyrefly-report",
     is_flag=True,
     default=False,
@@ -678,6 +685,7 @@ def analyze(
     pyrefly_binary: Optional[str],
     show_type_errors: bool,
     skip_buck_dependencies: bool,
+    skip_buck_dependency_modules: Iterable[str],
     pyrefly_results: Optional[str],
     debug_pyrefly_report: bool,
     dump_call_graph: Optional[str],
@@ -774,6 +782,7 @@ def analyze(
             pyrefly_binary=pyrefly_binary,
             show_type_errors=show_type_errors,
             skip_buck_dependencies=skip_buck_dependencies,
+            skip_buck_dependency_modules=list(skip_buck_dependency_modules),
             debug_pyrefly_report=debug_pyrefly_report,
             pyrefly_results=pyrefly_results,
             sequential=command_argument.sequential,

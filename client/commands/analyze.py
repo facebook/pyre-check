@@ -612,6 +612,7 @@ def _run_pyrefly(
     pyrefly_results: str,
     show_type_errors: bool = False,
     skip_buck_dependencies: bool = False,
+    skip_buck_dependency_modules: Sequence[str] = (),
     report_format_json: bool = False,
 ) -> commands.ExitCode:
     with (
@@ -638,6 +639,10 @@ def _run_pyrefly(
                 "--verbose",
                 "--progress-bar=simple",
                 *(["--check-dependencies"] if not skip_buck_dependencies else []),
+                *[
+                    f"--skip-dependency-modules={module_regex}"
+                    for module_regex in skip_buck_dependency_modules
+                ],
                 source_db_path,
                 "--report-pysa",
                 pyrefly_results,
@@ -765,6 +770,7 @@ def run(
                 pyrefly_results,
                 show_type_errors=analyze_arguments.show_type_errors,
                 skip_buck_dependencies=analyze_arguments.skip_buck_dependencies,
+                skip_buck_dependency_modules=analyze_arguments.skip_buck_dependency_modules,
                 report_format_json=analyze_arguments.debug_pyrefly_report,
             )
             if return_code != commands.ExitCode.SUCCESS:

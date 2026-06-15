@@ -331,6 +331,10 @@ class AnalyzeArguments:
     pyrefly_binary: Optional[str] = None
     show_type_errors: bool = False
     skip_buck_dependencies: bool = False
+    skip_buck_dependency_modules: List[str] = field(
+        default_factory=list,
+        metadata={"merge_policy": dataclasses_merge.Policy.PREPEND},
+    )
     pyrefly_results: Optional[str] = None
     debug_pyrefly_report: bool = False
     sequential: bool = False
