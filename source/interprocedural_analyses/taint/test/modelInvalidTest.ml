@@ -18,6 +18,7 @@ let assert_invalid_model
     ?(source_path = "test.py")
     ?source
     ?(sources = [])
+    ?(search_paths = [])
     ?pyrefly_expect
     ~model_source
     ~expect
@@ -58,13 +59,17 @@ let assert_invalid_model
             |}
   in
   let sources = (source_path, source) :: sources in
-  let pyre_api =
+  let project =
     Test.ScratchPyrePysaProject.setup
       ~context
       ~requires_type_of_expressions:false
       ~force_pyre1:skip_for_pyrefly
+      ~search_paths
       sources
-    |> Test.ScratchPyrePysaProject.read_only_api
+  in
+  let pyre_api = Test.ScratchPyrePysaProject.read_only_api project in
+  let { Configuration.Analysis.local_root = repository_root; _ } =
+    Test.ScratchPyrePysaProject.configuration_of project
   in
   let taint_configuration =
     TaintConfiguration.Heap.
@@ -85,12 +90,28 @@ let assert_invalid_model
             ["TestA", ["TestB"]; "TestB", ["TestA"]; "TestC", ["TestD"]; "TestD", ["TestC"]];
       }
   in
+  let path_of_qualifier qualifier =
+    (* Use repository-relative paths (like production) so two source files mapping to the same
+       module name (e.g. a/foo.py and b/foo.py) render distinguishably. For files outside the
+       repository root (e.g. typeshed/external stubs under a separate root, which come back as an
+       absolute path), fall back to the search-path-relative path so rendering stays
+       deterministic. *)
+    match
+      PyrePysaApi.ReadOnly.repository_relative_path_of_qualifier
+        ~repository_root
+        ~lookup_source:(fun _ -> None)
+        pyre_api
+        qualifier
+    with
+    | Some path when not (Filename.is_absolute path) -> Some path
+    | _ -> PyrePysaApi.ReadOnly.search_path_relative_path_of_qualifier pyre_api qualifier
+  in
   let error_message =
     let path = path >>| PyrePath.create_absolute in
     PyrePysaApi.ModelQueries.invalidate_cache pyre_api;
     ModelParser.parse
       ~pyre_api
-      ~path_of_qualifier:(PyrePysaApi.ReadOnly.search_path_relative_path_of_qualifier pyre_api)
+      ~path_of_qualifier
       ~taint_configuration
       ~source_sink_filter:None
       ?path
@@ -3288,6 +3309,82 @@ let test_invalid_via =
     ]
 
 
+(* Tests for aggregated multi-module model verification errors. These only trigger under the Pyrefly
+   type provider, where two source files with `search-path = ["a", "b"]` both map to the module
+   `foo`, so a model definition can resolve to multiple modules. Under Pyre1, the model resolves to
+   a single module (search paths are ignored), so the `~expect` baseline applies. *)
+let test_multi_module_aggregation =
+  test_list
+    [
+      (* def path, case A: signature matches in one module, mismatches in the other. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~search_paths:["a"; "b"]
+           ~source:""
+           ~sources:["a/foo.py", "def bar(): ..."; "b/foo.py", "def bar(x): ..."]
+           ~model_source:"def foo.bar(x: TaintSink[Test]): ..."
+           ~expect:"`foo.bar` is not part of the environment, no module `foo` in search path."
+           ~pyrefly_expect:
+             {|For symbol `foo.bar`, found 2 definitions from longest matching module `foo`:
+  b/foo.py:1: Valid match
+  a/foo.py:1: Model signature parameters do not match implementation `def () -> None: ...`. Reason: unexpected named parameter: `x`.|};
+      (* def path, case B: symbol missing in one module, matches in the other. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~search_paths:["a"; "b"]
+           ~source:""
+           ~sources:["a/foo.py", "x: int = 0"; "b/foo.py", "def bar(x): ..."]
+           ~model_source:"def foo.bar(x: TaintSink[Test]): ..."
+           ~expect:"`foo.bar` is not part of the environment, no module `foo` in search path."
+           ~pyrefly_expect:
+             {|For symbol `foo.bar`, found 2 definitions from longest matching module `foo`:
+  b/foo.py:1: Valid match
+  a/foo.py: Could not find symbol `bar`.|};
+      (* def path, case C: signature mismatches in both modules, no match. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~search_paths:["a"; "b"]
+           ~source:""
+           ~sources:["a/foo.py", "def bar(): ..."; "b/foo.py", "def bar(y): ..."]
+           ~model_source:"def foo.bar(x: TaintSink[Test]): ..."
+           ~expect:"`foo.bar` is not part of the environment, no module `foo` in search path."
+           ~pyrefly_expect:
+             {|For symbol `foo.bar`, found 2 definitions from longest matching module `foo`:
+  a/foo.py:1: Model signature parameters do not match implementation `def () -> None: ...`. Reason: unexpected named parameter: `x`.
+  b/foo.py:1: Model signature parameters do not match implementation `def (y: Unknown) -> None: ...`. Reason: unexpected named parameter: `x`.|};
+      (* attribute path: attribute in one module, callable in the other. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~search_paths:["a"; "b"]
+           ~source:""
+           ~sources:["a/foo.py", "x: int = 0"; "b/foo.py", "def x(): ..."]
+           ~model_source:"foo.x: TaintSource[Test]"
+           ~expect:"`foo.x` is not part of the environment, no module `foo` in search path."
+           ~pyrefly_expect:
+             {|For symbol `foo.x`, found 2 definitions from longest matching module `foo`:
+  a/foo.py:1: Valid match
+  b/foo.py:1: The function, method or property `foo.x` is not a valid attribute - did you mean to use `def foo.x(): ...`?|};
+      (* single-file path: the same name is defined twice in one file (a redefinition). Pyrefly
+         returns both definitions for the qualifier, so the aggregated error reports two definitions
+         from a single file, distinguished by line number. This locks in that the counts are numbers
+         of definitions, not files. Under Pyre1 the name resolves to a single (last) definition,
+         which matches the model, so no error is produced. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~source_path:"foo.py"
+           ~source:{|
+def bar(): ...
+def bar(x): ...
+|}
+           ~model_source:"def foo.bar(x: TaintSink[Test]): ..."
+           ~expect:"no failure"
+           ~pyrefly_expect:
+             {|For symbol `foo.bar`, found 2 definitions from longest matching module `foo`:
+  foo.py:3: Valid match
+  foo.py:2: Model signature parameters do not match implementation `def () -> None: ...`. Reason: unexpected named parameter: `x`.|};
+    ]
+
+
 let () =
   "taint_model"
   >::: [
@@ -3297,5 +3394,6 @@ let () =
          test_invalid_callables;
          test_invalid_overloads;
          test_invalid_via;
+         test_multi_module_aggregation;
        ]
   |> Test.run

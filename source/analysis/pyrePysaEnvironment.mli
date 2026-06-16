@@ -640,8 +640,16 @@ module ModelQueries : sig
 
   module ResolutionResult : sig
     type t =
-      (* At least one module prefix matched. The list contains one result per matching module. *)
-      | ModuleFound of ModuleResolutionResult.t list
+      (* At least one module prefix matched. `results` contains one entry per matching definition; a
+         single module can contribute multiple entries when the same name is defined more than once
+         in a file, and an entry may also indicate the module exists but the symbol was not found
+         (Unresolved). *)
+      | ModuleFound of {
+          (* Bare module name for all results. This is not necessarily a valid module qualifier. Can
+             only be None when using pyre1. *)
+          module_name: Ast.Reference.t option;
+          results: ModuleResolutionResult.t list;
+        }
       (* No module prefix matched at all *)
       | BaseModuleNotFound
   end

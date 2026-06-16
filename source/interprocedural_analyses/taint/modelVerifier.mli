@@ -14,7 +14,7 @@ val verify_signature
   normalized_model_parameters:Analysis.TaintAccessPath.NormalizedParameter.t list ->
   friendly_name:Reference.t ->
   imported_name:Reference.t option ->
-  define_location:(unit -> ModelVerificationError.SourceLocation.t option) ->
+  define_location:ModelVerificationError.SourceLocation.t option Lazy.t ->
   Interprocedural.PyrePysaApi.ModelQueries.FunctionSignature.t list option ->
   (unit, ModelVerificationError.t) result
 

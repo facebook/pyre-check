@@ -1583,8 +1583,16 @@ module ModelQueries = struct
 
   module ResolutionResult = struct
     type t =
-      (* At least one module prefix matched. The list contains one result per matching module. *)
-      | ModuleFound of ModuleResolutionResult.t list
+      (* At least one module prefix matched. `results` contains one entry per matching definition; a
+         single module can contribute multiple entries when the same name is defined more than once
+         in a file, and an entry may also indicate the module exists but the symbol was not found
+         (Unresolved). *)
+      | ModuleFound of {
+          (* Bare module name for all results. This is not necessarily a valid module qualifier. Can
+             only be None when using pyre1. *)
+          module_name: Ast.Reference.t option;
+          results: ModuleResolutionResult.t list;
+        }
       (* No module prefix matched at all *)
       | BaseModuleNotFound
   end
@@ -2044,15 +2052,28 @@ module ModelQueries = struct
                 | _ -> global))
     in
     match result with
-    | Some global -> ResolutionResult.ModuleFound [ModuleResolutionResult.Resolved global]
+    | Some global ->
+        ResolutionResult.ModuleFound
+          {
+            module_name = Global.module_qualifier global;
+            results = [ModuleResolutionResult.Resolved global];
+          }
     | None -> (
         match find_longest_matching_module read_only name with
         | Some (module_reference, suffix) ->
             ResolutionResult.ModuleFound
-              [
-                ModuleResolutionResult.Unresolved
-                  { module_qualifier = module_reference; module_name = module_reference; suffix };
-              ]
+              {
+                module_name = Some module_reference;
+                results =
+                  [
+                    ModuleResolutionResult.Unresolved
+                      {
+                        module_qualifier = module_reference;
+                        module_name = module_reference;
+                        suffix;
+                      };
+                  ];
+              }
         | None -> ResolutionResult.BaseModuleNotFound)
 
 

@@ -4150,11 +4150,15 @@ module ModelQueries = struct
     in
     match find_module_qualifiers name with
     | None -> ResolutionResult.BaseModuleNotFound
-    | Some (qualifiers, suffix, _module_name) when Reference.is_empty suffix ->
+    | Some (qualifiers, suffix, module_name) when Reference.is_empty suffix ->
         ResolutionResult.ModuleFound
-          (List.map qualifiers ~f:(fun qualifier ->
-               ModuleResolutionResult.Resolved
-                 (Global.Module { qualifier = ModuleQualifier.to_reference qualifier })))
+          {
+            module_name = Some module_name;
+            results =
+              List.map qualifiers ~f:(fun qualifier ->
+                  ModuleResolutionResult.Resolved
+                    (Global.Module { qualifier = ModuleQualifier.to_reference qualifier }));
+          }
     | Some (qualifiers, suffix, bare_module_name) ->
         let local_name_of_fully_qualified_name ~bare_module_name fully_qualified_name =
           let symbolic_name =
@@ -4314,7 +4318,10 @@ module ModelQueries = struct
                   ]
         in
         ResolutionResult.ModuleFound
-          (List.concat_map qualifiers ~f:(resolve_in_qualifier ~bare_module_name ~suffix))
+          {
+            module_name = Some bare_module_name;
+            results = List.concat_map qualifiers ~f:(resolve_in_qualifier ~bare_module_name ~suffix);
+          }
 
 
   let class_method_signatures

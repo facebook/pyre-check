@@ -170,6 +170,12 @@ type kind =
       module_name: string;
       count: int;
     }
+  | GroupedModelDefinitionErrors of {
+      name: string;
+      module_name: string;
+      matched: SourceLocation.t list;
+      errors: kind list;
+    }
   | UnexpectedDecorators of {
       name: Reference.t;
       unexpected_decorators: Expression.t list;

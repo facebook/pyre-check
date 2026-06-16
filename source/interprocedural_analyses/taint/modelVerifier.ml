@@ -212,7 +212,7 @@ let verify_signature
                   name = Reference.show friendly_name;
                   callable_signatures;
                   errors;
-                  define_location = define_location ();
+                  define_location = Lazy.force define_location;
                 }))
       else
         Ok ()

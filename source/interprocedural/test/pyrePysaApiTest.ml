@@ -130,7 +130,7 @@ let test_resolve_user_qualified_name context =
         ~is_property_setter:false
         (Ast.Reference.create name)
       |> (function
-           | ResolutionResult.ModuleFound results ->
+           | ResolutionResult.ModuleFound { results; _ } ->
                List.filter_map results ~f:(function
                    | ModuleResolutionResult.Resolved global -> Some global
                    | ModuleResolutionResult.Unresolved _ -> None)

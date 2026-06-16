@@ -93,6 +93,39 @@ let test_to_json _ =
     ~expected:
       {|
         {
+          "description": "For symbol `foo.bar`, found 2 definitions from longest matching module `foo`:\n  b/foo.py: Valid match\n  a/foo.py: Could not find symbol `bar`.",
+          "line": 1,
+          "column": 0,
+          "stop_line": 1,
+          "stop_column": 0,
+          "path": "/a/b.pysa",
+          "code": 86
+        }
+        |}
+    {
+      ModelVerificationError.kind =
+        ModelVerificationError.GroupedModelDefinitionErrors
+          {
+            name = "foo.bar";
+            module_name = "foo";
+            matched = [{ ModelVerificationError.SourceLocation.path = "b/foo.py"; location = None }];
+            errors =
+              [
+                ModelVerificationError.MissingSymbol
+                  { module_name = "foo"; module_path = Some "a/foo.py"; symbol_name = "bar" };
+              ];
+          };
+      location =
+        {
+          Ast.Location.start = { Ast.Location.line = 1; column = 0 };
+          stop = { Ast.Location.line = 1; column = 0 };
+        };
+      path = Some (PyrePath.create_absolute "/a/b.pysa");
+    };
+  assert_json
+    ~expected:
+      {|
+        {
           "description": "Model Query `get_foo` output no models.",
           "line": 1,
           "column": 2,

@@ -3565,6 +3565,7 @@ module ScratchPyreflyProject = struct
       ~requires_type_of_expressions
       ~python_version
       ?(external_sources = [])
+      ?search_paths
       sources
     =
     let local_root = bracket_tmpdir context |> PyrePath.create_absolute in
@@ -3590,6 +3591,14 @@ module ScratchPyreflyProject = struct
            (PyrePath.create_relative ~root:local_root ~relative:"pyrefly.toml"))
     in
     let result_directory = bracket_tmpdir context |> PyrePath.create_absolute in
+    let extra_search_paths =
+      match search_paths with
+      | None -> []
+      | Some search_paths ->
+          List.map search_paths ~f:(fun search_path ->
+              PyrePath.create_relative ~root:local_root ~relative:search_path
+              |> Format.asprintf "--search-path=%a" PyrePath.pp)
+    in
     let arguments =
       [
         "check";
@@ -3600,13 +3609,14 @@ module ScratchPyreflyProject = struct
           python_version.Configuration.PythonVersion.major
           python_version.minor
           python_version.micro;
-        "--search-path";
-        PyrePath.absolute external_root;
-        "--report-pysa";
-        PyrePath.absolute result_directory;
-        "--report-pysa-format=capnp";
-        PyrePath.absolute local_root;
+        Format.asprintf "--search-path=%a" PyrePath.pp external_root;
       ]
+      @ extra_search_paths
+      @ [
+          Format.asprintf "--report-pysa=%a" PyrePath.pp result_directory;
+          "--report-pysa-format=capnp";
+          PyrePath.absolute local_root;
+        ]
     in
     Log.info "Running command: %s" (Stdlib.Filename.quote_command pyrefly_binary arguments);
     let stdout_channel, stdin_channel, stderr_channel =
@@ -3623,6 +3633,7 @@ module ScratchPyreflyProject = struct
     let configuration =
       Configuration.Analysis.create
         ~parallel:false
+        ~local_root
         ~source_paths:[]
         ~search_paths:[]
         ~python_version
@@ -3675,6 +3686,7 @@ module ScratchPyrePysaProject : sig
     ?use_cache:bool ->
     ?force_pyre1:bool ->
     ?external_sources:(string * string) list ->
+    ?search_paths:string list ->
     ?decorator_preprocessing_configuration:PyrePysaLogic.DecoratorPreprocessing.Configuration.t ->
     (string * string) list ->
     t
@@ -3705,6 +3717,7 @@ end = struct
           PyrePysaLogic.DecoratorPreprocessing.Configuration.t option;
         external_sources: string String.Map.t;
         sources: string String.Map.t;
+        search_paths: string list;
       }
       [@@deriving compare, equal, sexp]
     end
@@ -3790,6 +3803,7 @@ end = struct
         decorator_preprocessing_configuration;
         external_sources;
         sources;
+        search_paths;
       }
     =
     let timer = Timer.start () in
@@ -3811,11 +3825,13 @@ end = struct
               ~requires_type_of_expressions
               ~python_version:default_python_version
               ~external_sources
+              ~search_paths
               sources
           in
           let pyrefly_api = ScratchPyreflyProject.pyre_pysa_read_only_api project in
           Pyrefly { project; pyrefly_api }
       | _ ->
+          (* Note: search_paths is ignored for pyre1. *)
           let project =
             ScratchProject.setup
               ~context
@@ -3842,6 +3858,7 @@ end = struct
       ?(use_cache = true)
       ?(force_pyre1 = false)
       ?(external_sources = [])
+      ?(search_paths = [])
       ?decorator_preprocessing_configuration
       sources
     =
@@ -3853,6 +3870,7 @@ end = struct
         external_sources =
           external_sources |> String.Map.of_alist_exn |> String.Map.map ~f:trim_extra_indentation;
         sources = sources |> String.Map.of_alist_exn |> String.Map.map ~f:trim_extra_indentation;
+        search_paths;
       }
     in
     if not use_cache then

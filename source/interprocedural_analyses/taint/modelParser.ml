@@ -3652,6 +3652,59 @@ let source_location_of_global ~path_of_qualifier global =
   >>| fun path -> { ModelVerificationError.SourceLocation.path; location }
 
 
+module MatchedModel = struct
+  type t = {
+    model: Model.t;
+    target: Target.t;
+    location: ModelVerificationError.SourceLocation.t option Lazy.t;
+  }
+
+  let strip_location { model; target; location = _ } = { Model.WithTarget.model; target }
+end
+
+(* When a single model definition resolves to multiple modules (only possible under the Pyrefly type
+   provider), aggregate the per-module failures into a single error that also surfaces the modules
+   where the model matched. For single-module resolution (always the case under Pyre1), the failures
+   pass through unchanged. *)
+let aggregate_model_definition_errors
+    ~make_verification_error
+    ~user_provided_name
+    ~module_name
+    ~models
+    ~errors
+  =
+  match module_name with
+  | None ->
+      (* This only happens when: (1) A BaseModuleNotFound error was raised, or (2) When using pyre1,
+         in which case, we don't aggregate errors *)
+      errors
+  | Some module_name -> (
+      let total_targets = List.length models + List.length errors in
+      match errors with
+      | [] -> []
+      | _ when total_targets < 2 -> errors
+      | _ ->
+          (* If we have multiple matches and/or errors, this must mean that we found multiple
+             definitions, which is only possible when using pyrefly. This means that the matched
+             location should never be None. *)
+          let matched =
+            List.map models ~f:(fun { MatchedModel.location; _ } ->
+                match Lazy.force location with
+                | Some location -> location
+                | None -> failwith "unreachable: None location")
+          in
+          [
+            make_verification_error
+              (ModelVerificationError.GroupedModelDefinitionErrors
+                 {
+                   name = Reference.show user_provided_name;
+                   module_name = Reference.show module_name;
+                   matched;
+                   errors = List.map errors ~f:(fun { ModelVerificationError.kind; _ } -> kind);
+                 });
+          ])
+
+
 let create_models_from_signature
     ~pyre_api
     ~path_of_qualifier
@@ -3676,7 +3729,7 @@ let create_models_from_signature
   let is_property_getter, is_property_setter =
     is_property_getter_setter ~decorators:define_decorators ~callable_name
   in
-  let callables, resolution_errors =
+  let callables, resolution_errors, bare_module_name =
     match callable_name with
     | CallableName.Resolved define_name ->
         (* The name is already resolved (e.g., from class_method_signatures). Skip resolution and
@@ -3693,7 +3746,7 @@ let create_models_from_signature
                   define_name
               with
               | ResolutionResult.ModuleFound
-                  [ModuleResolutionResult.Resolved (Global.Function function_)] ->
+                  { results = [ModuleResolutionResult.Resolved (Global.Function function_)]; _ } ->
                   function_
               | _ -> failwith "expected a single resolved function for a resolved callable name")
           | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->
@@ -3701,7 +3754,7 @@ let create_models_from_signature
                 pyrefly_api
                 define_name
         in
-        [resolved_function], []
+        [resolved_function], [], resolved_function.Function.module_qualifier
     | CallableName.UserProvided user_provided_callable_name -> (
         let resolution_result =
           PyrePysaApi.ModelQueries.resolve_user_qualified_name
@@ -3722,8 +3775,9 @@ let create_models_from_signature
                 make_verification_error
                   (BaseModuleNotInEnvironment
                      { module_name; name = Reference.show user_provided_callable_name });
-              ] )
-        | ResolutionResult.ModuleFound results ->
+              ],
+              None )
+        | ResolutionResult.ModuleFound { module_name = bare_module_name; results } ->
             let globals, unresolved_errors =
               List.partition_map results ~f:(function
                   | ModuleResolutionResult.Resolved global -> First global
@@ -3782,16 +3836,18 @@ let create_models_from_signature
                                   source_location_of_global ~path_of_qualifier global;
                               })))
             in
-            callables, unresolved_errors @ classify_errors)
+            callables, unresolved_errors @ classify_errors, bare_module_name)
   in
   let build_model_for_callable
       ({ Function.define_name; module_qualifier; location = callable_location; _ } as callable)
     =
     let model_verification_error kind = Error (make_verification_error kind) in
-    let define_location () =
-      module_qualifier
-      >>= path_of_qualifier
-      >>| fun path -> { ModelVerificationError.SourceLocation.path; location = callable_location }
+    let define_location =
+      lazy
+        (module_qualifier
+        >>= path_of_qualifier
+        >>| fun path -> { ModelVerificationError.SourceLocation.path; location = callable_location }
+        )
     in
     let open Core.Result in
     (* Check model matches callables primary signature. *)
@@ -3847,7 +3903,7 @@ let create_models_from_signature
                        Option.value_exn undecorated_signatures);
                     errors =
                       [ModelVerificationError.IncompatibleModelError.{ reason; overload = None }];
-                    define_location = define_location ();
+                    define_location = Lazy.force define_location;
                   };
               path;
               location;
@@ -4058,12 +4114,20 @@ let create_models_from_signature
            ~pyre_api
            ~callable_undecorated_signatures
            ~source_sink_filter)
-    >>| fun model -> { Model.WithTarget.model; target = callable }
+    >>| fun model -> { MatchedModel.model; target = callable; location = define_location }
   in
   let models, build_errors =
     List.map callables ~f:build_model_for_callable |> List.partition_result
   in
-  let errors = resolution_errors @ build_errors in
+  let errors =
+    aggregate_model_definition_errors
+      ~make_verification_error
+      ~user_provided_name:(CallableName.reference callable_name)
+      ~module_name:bare_module_name
+      ~models
+      ~errors:(resolution_errors @ build_errors)
+  in
+  let models = List.map models ~f:MatchedModel.strip_location in
   models, errors
 
 
@@ -4085,7 +4149,7 @@ let create_models_from_attribute
       ~is_property_setter:false
       user_provided_attribute_name
   in
-  let resolved_attributes, resolution_errors =
+  let resolved_attributes, resolution_errors, bare_module_name =
     match resolution_result with
     | ResolutionResult.BaseModuleNotFound ->
         let module_name =
@@ -4097,8 +4161,9 @@ let create_models_from_attribute
             make_verification_error
               (BaseModuleNotInEnvironment
                  { module_name; name = Reference.show user_provided_attribute_name });
-          ] )
-    | ResolutionResult.ModuleFound results ->
+          ],
+          None )
+    | ResolutionResult.ModuleFound { module_name = bare_module_name; results } ->
         let resolved_attributes, unresolved_errors =
           List.partition_map results ~f:(function
               | ModuleResolutionResult.Resolved global -> First global
@@ -4122,7 +4187,7 @@ let create_models_from_attribute
                   let results_for_qualifier =
                     match class_resolution with
                     | ResolutionResult.BaseModuleNotFound -> []
-                    | ResolutionResult.ModuleFound results ->
+                    | ResolutionResult.ModuleFound { results; _ } ->
                         List.filter results ~f:(function
                             | ModuleResolutionResult.Resolved global ->
                                 PyrePysaApi.ModelQueries.Global.module_qualifier global
@@ -4155,10 +4220,11 @@ let create_models_from_attribute
         in
         let resolved_attributes, classify_errors =
           List.partition_map resolved_attributes ~f:(function
-              | Global.ClassAttribute { name; _ } -> First name
-              | Global.ModuleGlobal { name; _ } -> First name
-              | Global.UnknownClassAttribute { name; _ } -> First name
-              | Global.UnknownModuleGlobal { name; _ } -> First name
+              | ( Global.ClassAttribute { name; _ }
+                | Global.ModuleGlobal { name; _ }
+                | Global.UnknownClassAttribute { name; _ }
+                | Global.UnknownModuleGlobal { name; _ } ) as global ->
+                  First (name, lazy (source_location_of_global ~path_of_qualifier global))
               | Global.Class _ as global ->
                   Second
                     (make_verification_error
@@ -4182,9 +4248,9 @@ let create_models_from_attribute
                             callable_location = source_location_of_global ~path_of_qualifier global;
                           })))
         in
-        resolved_attributes, unresolved_errors @ classify_errors
+        resolved_attributes, unresolved_errors @ classify_errors, bare_module_name
   in
-  let build_model_for_attribute attribute_name =
+  let build_model_for_attribute (attribute_name, attribute_location) =
     let open Core.Result in
     let model_annotations =
       List.map annotations ~f:(fun annotation ->
@@ -4222,12 +4288,20 @@ let create_models_from_attribute
       else
         attribute_name
     in
-    { Model.WithTarget.model; target = Target.create_object target_name }
+    { MatchedModel.model; target = Target.create_object target_name; location = attribute_location }
   in
   let models, build_errors =
     List.map resolved_attributes ~f:build_model_for_attribute |> List.partition_result
   in
-  let errors = resolution_errors @ build_errors in
+  let errors =
+    aggregate_model_definition_errors
+      ~make_verification_error
+      ~user_provided_name:user_provided_attribute_name
+      ~module_name:bare_module_name
+      ~models
+      ~errors:(resolution_errors @ build_errors)
+  in
+  let models = List.map models ~f:MatchedModel.strip_location in
   models, errors
 
 
@@ -4270,7 +4344,7 @@ let create_models_from_class
               (BaseModuleNotInEnvironment
                  { module_name; name = Reference.show user_provided_class_name });
           ] )
-    | ResolutionResult.ModuleFound results ->
+    | ResolutionResult.ModuleFound { results; _ } ->
         let globals, unresolved_errors =
           List.partition_map results ~f:(function
               | ModuleResolutionResult.Resolved global -> First global
@@ -5156,11 +5230,15 @@ let create_callable_model_from_annotations
             define_name
         with
         | ResolutionResult.ModuleFound
-            [
-              ModuleResolutionResult.Resolved
-                (PyrePysaApi.ModelQueries.Global.Function
-                  { PyrePysaApi.ModelQueries.Function.undecorated_signatures; _ });
-            ] ->
+            {
+              results =
+                [
+                  ModuleResolutionResult.Resolved
+                    (PyrePysaApi.ModelQueries.Global.Function
+                      { PyrePysaApi.ModelQueries.Function.undecorated_signatures; _ });
+                ];
+              _;
+            } ->
             undecorated_signatures
         | _ -> None)
     | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api ->

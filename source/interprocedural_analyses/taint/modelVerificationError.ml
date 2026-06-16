@@ -199,6 +199,12 @@ type kind =
       module_name: string;
       count: int;
     }
+  | GroupedModelDefinitionErrors of {
+      name: string;
+      module_name: string;
+      matched: SourceLocation.t list;
+      errors: kind list;
+    }
   | UnexpectedDecorators of {
       name: Reference.t;
       unexpected_decorators: Expression.t list;
@@ -352,7 +358,42 @@ let pp_function_signatures formatter signatures =
   List.iteri ~f:pp_overload signatures
 
 
-let description error =
+let location_of_kind kind =
+  let source_location_of_module_path module_path =
+    Option.map module_path ~f:(fun path -> { SourceLocation.path; location = None })
+  in
+  match kind with
+  | IncompatibleModelError { define_location; _ }
+  | ImportedFunctionModel { define_location; _ } ->
+      define_location
+  | MissingAttribute { class_location; _ }
+  | ModelingClassAsDefine { class_location; _ }
+  | ModelingClassAsAttribute { class_location; _ } ->
+      class_location
+  | ModelingAttributeAsDefine { attribute_location; _ }
+  | ModelingAttributeAsClass { attribute_location; _ } ->
+      attribute_location
+  | ModelingCallableAsAttribute { callable_location; _ }
+  | ModelingCallableAsClass { callable_location; _ } ->
+      callable_location
+  | MissingSymbol { module_path; _ }
+  | MissingClass { module_path; _ }
+  | ModelingModuleAsDefine { module_path; _ }
+  | ModelingModuleAsAttribute { module_path; _ }
+  | ModelingModuleAsClass { module_path; _ } ->
+      source_location_of_module_path module_path
+  | _ -> None
+
+
+let rec description ?(within_error_group = false) error =
+  let pp_defined_at_option formatter location =
+    if not within_error_group then SourceLocation.pp_defined_at_option formatter location
+  in
+  let pp_module_path formatter = function
+    | _ when within_error_group -> ()
+    | Some path -> Format.fprintf formatter " (defined in %s)" path
+    | None -> ()
+  in
   match error with
   | ParseError -> "Syntax error."
   | UnexpectedStatement statement ->
@@ -406,10 +447,11 @@ let description error =
         | [error] -> Format.sprintf "Reason: %s." error
         | errors -> Format.sprintf "Reasons:\n%s" (String.concat errors ~sep:"\n")
       in
+      let name_clause = if within_error_group then "" else Format.sprintf " for `%s`" name in
       Format.asprintf
-        "Model signature parameters for `%s`%a do not match implementation `%a`. %s"
-        name
-        SourceLocation.pp_defined_at_option
+        "Model signature parameters%s%a do not match implementation `%a`. %s"
+        name_clause
+        pp_defined_at_option
         define_location
         pp_function_signatures
         callable_signatures
@@ -419,7 +461,7 @@ let description error =
         "The modelled function `%a`%a is an imported function, please model `%a` directly."
         Reference.pp
         name
-        SourceLocation.pp_defined_at_option
+        pp_defined_at_option
         define_location
         Reference.pp
         actual_name
@@ -520,92 +562,81 @@ let description error =
       Format.asprintf
         "Class `%s`%a has no attribute `%s`."
         class_name
-        SourceLocation.pp_defined_at_option
+        pp_defined_at_option
         class_location
         attribute_name
   | MissingSymbol { module_name; module_path; symbol_name } ->
-      let path_suffix =
-        match module_path with
-        | Some path -> Format.sprintf " (defined in %s)" path
-        | None -> ""
+      let module_clause =
+        if within_error_group then
+          ""
+        else
+          Format.sprintf " in longest matching module `%s`" module_name
       in
-      Format.sprintf
-        "Could not find symbol `%s` in longest matching module `%s`%s."
+      Format.asprintf
+        "Could not find symbol `%s`%s%a."
         symbol_name
-        module_name
-        path_suffix
+        module_clause
+        pp_module_path
+        module_path
   | MissingClass { class_name; module_name; module_path } ->
-      let path_suffix =
-        match module_path with
-        | Some path -> Format.sprintf " (defined in %s)" path
-        | None -> ""
+      let module_clause =
+        if within_error_group then
+          ""
+        else
+          Format.sprintf " in longest matching module `%s`" module_name
       in
-      Format.sprintf
-        "Could not find class `%s` in longest matching module `%s`%s."
+      Format.asprintf
+        "Could not find class `%s`%s%a."
         class_name
-        module_name
-        path_suffix
+        module_clause
+        pp_module_path
+        module_path
   | ModelingClassAsDefine { name; class_location } ->
       Format.asprintf
         "The class `%s`%a is not a valid define - did you mean to model `%s.__init__()`?"
         name
-        SourceLocation.pp_defined_at_option
+        pp_defined_at_option
         class_location
         name
   | ModelingModuleAsDefine { name; module_path } ->
-      let location_suffix =
-        match module_path with
-        | Some path -> Format.sprintf " (defined in %s)" path
-        | None -> ""
-      in
-      Format.sprintf "The module `%s`%s is not a valid define." name location_suffix
+      Format.asprintf "The module `%s`%a is not a valid define." name pp_module_path module_path
   | ModelingAttributeAsDefine { name; attribute_location } ->
       Format.asprintf
         "The attribute `%s`%a is not a valid define - did you mean to use `%s: ...`?"
         name
-        SourceLocation.pp_defined_at_option
+        pp_defined_at_option
         attribute_location
         name
   | ModelingClassAsAttribute { name; class_location } ->
       Format.asprintf
         "The class `%s`%a is not a valid attribute - did you mean to model `%s.__init__()`?"
         name
-        SourceLocation.pp_defined_at_option
+        pp_defined_at_option
         class_location
         name
   | ModelingModuleAsAttribute { name; module_path } ->
-      let location_suffix =
-        match module_path with
-        | Some path -> Format.sprintf " (defined in %s)" path
-        | None -> ""
-      in
-      Format.sprintf "The module `%s`%s is not a valid attribute." name location_suffix
+      Format.asprintf "The module `%s`%a is not a valid attribute." name pp_module_path module_path
   | ModelingCallableAsAttribute { name; callable_location } ->
       Format.asprintf
         "The function, method or property `%s`%a is not a valid attribute - did you mean to use \
          `def %s(): ...`?"
         name
-        SourceLocation.pp_defined_at_option
+        pp_defined_at_option
         callable_location
         name
   | ModelingCallableAsClass { name; callable_location } ->
       Format.asprintf
         "The function, method or property `%s`%a is not a valid class."
         name
-        SourceLocation.pp_defined_at_option
+        pp_defined_at_option
         callable_location
   | ModelingModuleAsClass { name; module_path } ->
-      let location_suffix =
-        match module_path with
-        | Some path -> Format.sprintf " (defined in %s)" path
-        | None -> ""
-      in
-      Format.sprintf "The module `%s`%s is not a valid class." name location_suffix
+      Format.asprintf "The module `%s`%a is not a valid class." name pp_module_path module_path
   | ModelingAttributeAsClass { name; attribute_location } ->
       Format.asprintf
         "The attribute `%s`%a is not a valid class."
         name
-        SourceLocation.pp_defined_at_option
+        pp_defined_at_option
         attribute_location
   | BaseModuleNotInEnvironment { module_name; name } ->
       Format.sprintf
@@ -618,6 +649,29 @@ let description error =
         count
         (if count > 1 then "s" else "")
         module_name
+  | GroupedModelDefinitionErrors { name; module_name; matched; errors } ->
+      let matched_lines =
+        List.map matched ~f:(fun location ->
+            Format.asprintf "  %a: Valid match" SourceLocation.pp location)
+      in
+      let error_lines =
+        List.map errors ~f:(fun error_kind ->
+            match location_of_kind error_kind with
+            | Some location ->
+                Format.asprintf
+                  "  %a: %s"
+                  SourceLocation.pp
+                  location
+                  (description ~within_error_group:true error_kind)
+            | None ->
+                Format.asprintf "  <unknown>: %s" (description ~within_error_group:true error_kind))
+      in
+      Format.asprintf
+        "For symbol `%s`, found %d definitions from longest matching module `%s`:\n%s"
+        name
+        (List.length matched + List.length errors)
+        module_name
+        (String.concat ~sep:"\n" (matched_lines @ error_lines))
   | UnexpectedTaintAnnotation taint_annotation ->
       Format.sprintf "Unexpected taint annotation `%s`" taint_annotation
   | UnsupportedConstraint constraint_name ->
@@ -861,6 +915,7 @@ let code { kind; _ } =
   | ModelingModuleAsClass _ -> 83
   | ModelingAttributeAsClass _ -> 84
   | GroupedBaseModuleNotInEnvironment _ -> 85
+  | GroupedModelDefinitionErrors _ -> 86
 
 
 let display { kind = error; path; location } =
