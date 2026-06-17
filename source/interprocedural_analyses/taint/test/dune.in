@@ -60,6 +60,8 @@
   globalVariableModelQueryTest
   kindCoverageTest
   ruleCoverageTest)
+ (deps
+  (env_var PYREFLY_BINARY))
  (preprocess
   (pps ppx_sexp_message ppx_compare ppx_deriving.show))
  (libraries pyrelib.taintTestHelper pyrelib.taintAnalysis)
