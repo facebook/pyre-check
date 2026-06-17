@@ -584,6 +584,7 @@ def _build_buck_source_db(
     for target in buck_targets:
         bxl_command.extend(["--target", target])
 
+    LOG.info("Building buck source database")
     LOG.debug("Running command: %s", log.format_command(bxl_command))
     with open(source_db_path, "w") as source_db_file:
         # lint-ignore: NoUnsafeExecRule
@@ -665,6 +666,7 @@ def _run_pyrefly(
                 type_errors_path,
             ]
 
+        LOG.info("Type checking with Pyrefly")
         LOG.debug("Running command: %s", log.format_command(pyrefly_check_command))
         # lint-ignore: NoUnsafeExecRule
         result = subprocess.run(
