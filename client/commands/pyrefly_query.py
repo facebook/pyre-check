@@ -9,7 +9,7 @@ import logging
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Sequence
 
 from .. import (
     backend_arguments,
@@ -35,10 +35,13 @@ def _run_pyrefly_query_command(
     query: str,
     configuration: frontend_configuration.Base,
     output_file: Optional[str],
+    taint_models_path: Sequence[str],
 ) -> commands.ExitCode:
     configuration_arguments = create_analyze_arguments(
         configuration,
-        analyze_arguments=command_arguments.AnalyzeArguments(),
+        analyze_arguments=command_arguments.AnalyzeArguments(
+            taint_models_path=list(taint_models_path)
+        ),
         pyrefly_results=pyrefly_results,
     )
     with (
@@ -87,6 +90,7 @@ def run(
     output_file: Optional[str],
     user_provided_pyrefly_binary: Optional[str],
     skip_buck_dependencies: bool = False,
+    taint_models_path: Sequence[str] = (),
 ) -> commands.ExitCode:
     start_command = _get_server_start_command(configuration)
 
@@ -97,6 +101,7 @@ def run(
             query,
             configuration,
             output_file,
+            taint_models_path,
         )
 
     with (
@@ -128,4 +133,5 @@ def run(
             query,
             configuration,
             output_file,
+            taint_models_path,
         )
