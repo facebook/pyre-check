@@ -667,7 +667,14 @@ let setup_and_execute_model_queries ~pyre_api ~scheduler ~configuration model_qu
     model_queries
 
 
-let process_model_query ~pyre_api ~path_of_qualifier ~scheduler ~configuration ~path ~query_name =
+let process_model_query
+    ~pyre_api
+    ~path_of_qualifier
+    ~scheduler
+    ~configuration:({ Configuration.Analysis.taint_model_paths; _ } as configuration)
+    ~path
+    ~query_name
+  =
   let results =
     if not (PyrePath.file_exists path) then
       Result.Error (Format.sprintf "File path `%s` does not exist" (PyrePath.show path))
@@ -679,7 +686,9 @@ let process_model_query ~pyre_api ~path_of_qualifier ~scheduler ~configuration ~
             ~end_message:"Initialized and verified taint configuration"
             ()
         in
-        let taint_configuration_result = Taint.TaintConfiguration.from_taint_model_paths [path] in
+        let taint_configuration_result =
+          Taint.TaintConfiguration.from_taint_model_paths taint_model_paths
+        in
         Taint.StepLogger.finish step_logger;
         taint_configuration_result
       in
