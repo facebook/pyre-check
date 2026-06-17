@@ -1,8 +1,5 @@
 # Amazon S3
 def boto3.client(
-    __aws_access_key_id: TaintSink[Authentication] = ...,
-    __aws_secret_access_key: TaintSink[Authentication] = ...,
-    *,
     aws_access_key_id: TaintSink[Authentication] = ...,
     aws_secret_access_key: TaintSink[Authentication] = ...,
 ): ...

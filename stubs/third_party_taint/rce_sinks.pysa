@@ -62,7 +62,7 @@ async def asyncssh.connection.SSHClientConnection.create_session(
     subsystem: TaintSink[RemoteCodeExecution],
 ): ...
 async def asyncssh.connection.SSHClientConnection.create_subprocess(
-    *args: TaintSink[RemoteCodeExecution],
+    command: TaintSink[RemoteCodeExecution],
     input: TaintSink[ExecArgSink],
 ): ...
 async def asyncssh.connection.SSHClientConnection.run(
