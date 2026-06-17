@@ -763,11 +763,9 @@ module Make (Analysis : ANALYSIS) = struct
         Logger.on_approaching_max_iterations
           ~max_iterations
           ~current_iteration:iteration
-          "New model of %a: %a"
+          "Found new model for %a"
           Target.pp_pretty
           callable
-          Model.pp
-          result.State.model
       in
       let _ =
         State.set_callable_result
