@@ -56,6 +56,9 @@ let assert_invalid_model
               def function_with_multiple_positions(a: int, c: int) -> str: ...
               def function_with_multiple_positions(a: int, b: int, c: int) -> Union[int, str]: ...
               def function_with_positional_and_named(a: str, __x: str, __y: str, b: str) -> None: ...
+              def only_kwargs(**kwargs) -> None: pass
+              class WithKwargsMethod:
+                def method(self, **kwargs) -> None: pass
             |}
   in
   let sources = (source_path, source) :: sources in
@@ -475,6 +478,47 @@ let test_invalid_models =
              "Model signature parameters for `test.function_with_kwargs` (defined at test.py:14) \
               do not match implementation `def (normal_arg: Unknown, kwargs: Unknown) -> None: \
               ...`. Reason: unexpected named parameter: `crazy_arg`.";
+      (* A model parameter written in the implicit positional-or-keyword form (no leading `*`) is
+         intentionally rejected when the implementation only accepts `**kwargs`. The user must use
+         the explicit keyword-only form (`*, name`) to make it clear the parameter is a keyword that
+         flows into `**kwargs`. The explicit keyword-only cases below remain valid. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.only_kwargs(named): ..."
+           ~expect:
+             "Model signature parameters for `test.only_kwargs` (defined at test.py:29) do not \
+              match implementation `def (**kwargs: unknown) -> None: ...`. Reason: unexpected \
+              named parameter: `named`."
+           ~pyrefly_expect:
+             "Model signature parameters for `test.only_kwargs` (defined at test.py:29) do not \
+              match implementation `def (kwargs: Unknown) -> None: ...`. Reason: unexpected named \
+              parameter: `named`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model ~model_source:"def test.only_kwargs(*, named): ...";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.only_kwargs(named: TaintSink[X]): ..."
+           ~expect:
+             "Model signature parameters for `test.only_kwargs` (defined at test.py:29) do not \
+              match implementation `def (**kwargs: unknown) -> None: ...`. Reason: unexpected \
+              named parameter: `named`."
+           ~pyrefly_expect:
+             "Model signature parameters for `test.only_kwargs` (defined at test.py:29) do not \
+              match implementation `def (kwargs: Unknown) -> None: ...`. Reason: unexpected named \
+              parameter: `named`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_invalid_model
+           ~model_source:"def test.WithKwargsMethod.method(self, named): ..."
+           ~expect:
+             "Model signature parameters for `test.WithKwargsMethod.method` do not match \
+              implementation `def (self: WithKwargsMethod, **kwargs: unknown) -> None: ...`. \
+              Reason: unexpected named parameter: `named`."
+           ~pyrefly_expect:
+             "Model signature parameters for `test.WithKwargsMethod.method` (defined at \
+              test.py:31) do not match implementation `def (self: test.WithKwargsMethod, kwargs: \
+              Unknown) -> None: ...`. Reason: unexpected named parameter: `named`.";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_valid_model ~model_source:"def test.WithKwargsMethod.method(self, *, named): ...";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_valid_model ~model_source:"def test.function_with_overloads(__key): ...";
       labeled_test_case __FUNCTION__ __LINE__
