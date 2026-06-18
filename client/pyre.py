@@ -453,8 +453,13 @@ def pyre(
 @click.option(
     "--use-pyrefly",
     is_flag=True,
-    default=False,
-    help="Whether to run Pysa with Pyrefly.",
+    default=True,
+    help="Use pyrefly as the type checker, instead of pyre (now the default, kept for backwards compatibility).",
+)
+@click.option(
+    "--use-pyre1",
+    is_flag=True,
+    help="Use Pyre1 instead of Pyrefly for type checking.",
 )
 @click.option(
     "--pyrefly-binary",
@@ -682,6 +687,7 @@ def analyze(
     save_results_to: Optional[str],
     output_format: Optional[str],
     use_pyrefly: bool,
+    use_pyre1: bool,
     pyrefly_binary: Optional[str],
     show_type_errors: bool,
     skip_buck_dependencies: bool,
@@ -778,7 +784,7 @@ def analyze(
                 if output_format is not None
                 else None
             ),
-            use_pyrefly=use_pyrefly,
+            use_pyrefly=not use_pyre1,
             pyrefly_binary=pyrefly_binary,
             show_type_errors=show_type_errors,
             skip_buck_dependencies=skip_buck_dependencies,

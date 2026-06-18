@@ -172,8 +172,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--use-pyrefly",
         action="store_true",
+        default=True,
+        help="Use pyrefly as the type checker, instead of pyre1 (now the default, kept for backwards compatibility)",
+    )
+    parser.add_argument(
+        "--use-pyre1",
+        action="store_true",
         default=False,
-        help="Use pyrefly as the type checker, instead of pyre1",
+        help="Use Pyre1 instead of Pyrefly for type checking",
     )
     parser.add_argument(
         "--show-type-errors",
@@ -208,7 +214,7 @@ if __name__ == "__main__":
         require_pyre_env=parsed.require_pyre_env,
         ignore_positions=parsed.ignore_positions,
         write_actual_results_on_failure=parsed.write_actual_results_on_failure,
-        use_pyrefly=parsed.use_pyrefly,
+        use_pyrefly=not parsed.use_pyre1,
         show_type_errors=parsed.show_type_errors,
         debug_pyrefly_report=parsed.debug_pyrefly_report,
     )

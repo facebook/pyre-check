@@ -280,6 +280,8 @@ def run_pysa(
 
     if use_pyrefly:
         command.append("--use-pyrefly")
+    else:
+        command.append("--use-pyre1")
 
     if show_type_errors:
         command.append("--show-type-errors")
