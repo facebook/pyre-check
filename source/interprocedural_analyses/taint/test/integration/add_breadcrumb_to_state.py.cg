@@ -7,7 +7,7 @@ Call dependencies
   "add_breadcrumb_to_state.test_add_breadcrumb_context_manager (fun)": [
     "add_breadcrumb_to_state.BreadcrumbOnEnter.__enter__ (method)",
     "add_breadcrumb_to_state.BreadcrumbOnEnter.__init__ (method)",
-    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)"
   ],
   "add_breadcrumb_to_state.test_if_issue (fun)": [

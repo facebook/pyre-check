@@ -1,6 +1,35 @@
 @generated
 Higher order call graphs
 {
+  "callable": "via_value_of.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "15:13-15:22": {
+      "attribute_access": {
+        "is_attribute": true,
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "enum.Enum.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "via_value_of.attach_to_sink",
   "returned_callables": [],
   "calls": {
@@ -36,7 +65,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_parameter_name",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -53,7 +82,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_parameter_name",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -138,7 +167,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_second_parameter",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -155,7 +184,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_second_parameter",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -219,7 +248,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_parameter_name",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -236,9 +265,31 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_parameter_name",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
+      }
+    },
+    "32:37-32:43|identifier|MyEnum": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "enum.Enum.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -253,7 +304,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_second_parameter",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -270,7 +321,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_parameter_name",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -287,7 +338,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_second_parameter",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -304,7 +355,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_parameter_name",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -321,7 +372,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_second_parameter",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -338,7 +389,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_including_name",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -355,7 +406,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_second_parameter",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -372,7 +423,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_second_parameter",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -389,7 +440,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_keyword_only",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -440,7 +491,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_parameter_name",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -477,7 +528,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_second_parameter",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -494,7 +545,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_second_parameter",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -511,7 +562,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_second_parameter",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -528,7 +579,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_second_parameter",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -545,7 +596,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_second_parameter",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -562,7 +613,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_second_parameter",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -579,7 +630,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_second_parameter",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -596,7 +647,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_second_parameter",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -613,7 +664,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_second_parameter",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -630,7 +681,7 @@ Higher order call graphs
           {
             "target": "via_value_of.return_via_second_parameter",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -644,7 +695,11 @@ Higher order call graphs
     "48:11-48:23": {
       "call": {
         "calls": [
-          { "target": "via_value_of.meta", "index": 0, "return_type": [] }
+          {
+            "target": "via_value_of.meta",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
         ]
       }
     }

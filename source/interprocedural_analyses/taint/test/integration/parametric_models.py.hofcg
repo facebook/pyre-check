@@ -8,9 +8,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 0,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -19,24 +21,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "24:7-24:28|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }
@@ -76,9 +65,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 0,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -87,24 +78,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "39:7-39:28|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }

@@ -4,14 +4,168 @@ Higher order call graphs
   "callable": "properties.$toplevel",
   "returned_callables": [],
   "calls": {
-    "139:0-139:1|identifier|$local_properties$T": {
+    "36:14-36:19|identifier|Class": {
       "identifier": {
-        "globals": [ { "target": "Obj{properties.T}", "index": 0 } ]
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "properties.Class.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "properties.Class"
+            }
+          ]
+        }
+      }
+    },
+    "46:19-46:24|identifier|Class": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "properties.Class.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "properties.Class"
+            }
+          ]
+        }
+      }
+    },
+    "76:27-76:49|identifier|TaintedGetterAndSetter": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "properties.TaintedGetterAndSetter"
+            }
+          ]
+        }
+      }
+    },
+    "86:19-86:39|identifier|DerivedTaintedSetter": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "properties.DerivedTaintedSetter"
+            }
+          ]
+        }
       }
     },
     "139:4-139:31": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+      "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] }
+    },
+    "139:17-139:22|identifier|Class": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "properties.Class.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "properties.Class"
+            }
+          ]
+        }
+      }
+    },
+    "139:24-139:30|identifier|Class2": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "properties.Class2"
+            }
+          ]
+        }
+      }
+    },
+    "292:8-292:12|identifier|Base": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "properties.Base"
+            }
+          ]
+        }
       }
     }
   }
@@ -20,6 +174,16 @@ Higher order call graphs
   "callable": "properties.CollidePropertySetterName.collided_property.setter",
   "returned_callables": [],
   "calls": {
+    "252:12-252:16|identifier|self": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "self",
+            "defining_function": "properties.CollidePropertySetterName.collided_property"
+          }
+        ]
+      }
+    },
     "252:12-252:22": {
       "call": {
         "calls": [
@@ -36,6 +200,60 @@ Higher order call graphs
   }
 }
 {
+  "callable": "properties.PropertyDefinedByAssignment.$class_toplevel",
+  "returned_callables": [],
+  "calls": {
+    "321:18-321:44": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.property.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.property"
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "properties.PropertyDefinedByAssignment._get_my_property",
+                "index": 0,
+                "implicit_receiver": true,
+                "return_type": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "321:27-321:43|identifier|_get_my_property": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "properties.PropertyDefinedByAssignment._get_my_property",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "properties.function_with_nested_properties",
   "returned_callables": [],
   "calls": {
@@ -45,7 +263,7 @@ Higher order call graphs
           {
             "target": "properties.function_with_nested_properties.my_property",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -111,7 +329,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -122,7 +340,8 @@ Higher order call graphs
             "target": "properties.PropertySetterInConstructor.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.PropertySetterInConstructor"
           }
         ]
       }
@@ -148,7 +367,8 @@ Higher order call graphs
             "target": "properties.PropertySetterInConstructor.x",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [ "float", "integer" ]
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "properties.PropertySetterInConstructor"
           }
         ]
       }
@@ -173,7 +393,8 @@ Higher order call graphs
             "target": "Overrides{properties.TaintedGetterAndSetter.my_property@setter}",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.TaintedGetterAndSetter"
           }
         ]
       }
@@ -195,7 +416,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -206,7 +427,8 @@ Higher order call graphs
             "target": "properties.SetterMutatesValue.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.SetterMutatesValue"
           }
         ]
       }
@@ -225,7 +447,8 @@ Higher order call graphs
             "target": "properties.SetterMutatesValue.p",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.SetterMutatesValue"
           }
         ]
       }
@@ -237,7 +460,8 @@ Higher order call graphs
             "target": "properties.SetterMutatesValue.p@setter",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.SetterMutatesValue"
           }
         ]
       }
@@ -263,7 +487,8 @@ Higher order call graphs
             "target": "properties.SetterMutatesValue.p",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.SetterMutatesValue"
           }
         ]
       }
@@ -296,19 +521,23 @@ Higher order call graphs
     },
     "215:15-215:44": {
       "call": {
-        "calls": [ { "target": "getattr", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.getattr", "index": 0, "return_type": [] }
+        ]
       }
     },
     "215:15-215:44|artificial-attribute-access|get-attr-constant-literal": {
       "attribute_access": {
         "properties": [
           {
-            "target": "Overrides{properties.TaintedGetterAndSetter.my_property}",
+            "target": "properties.TaintedGetterAndSetter.my_property",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.TaintedGetterAndSetter"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "EmptyPyreflyCallTarget" ] }
       }
     }
   }
@@ -321,19 +550,55 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "properties.ClassProperty.my_class_property",
+                "index": 0,
+                "return_type": []
+              }
+            ]
+          }
         ]
+      }
+    },
+    "130:15-130:28|identifier|ClassProperty": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "properties.ClassProperty"
+            }
+          ]
+        }
       }
     },
     "130:15-130:46": {
       "attribute_access": {
-        "properties": [
-          {
-            "target": "properties.ClassProperty.my_class_property",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
+        "if_called": {
+          "calls": [
+            {
+              "target": "properties.ClassProperty.my_class_property",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -362,14 +627,24 @@ Higher order call graphs
     },
     "334:15-334:26": {
       "attribute_access": {
-        "properties": [
-          {
-            "target": "object.__class__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.str.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -378,33 +653,31 @@ Higher order call graphs
   "callable": "properties.test_property_augmented_assign",
   "returned_callables": [],
   "calls": {
-    "311:4-311:17|artificial-attribute-access|augmented-assign-lhs": {
+    "311:4-311:17": {
       "attribute_access": {
         "properties": [
           {
             "target": "properties.PropertySetterTitoModel.my_property@setter",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.PropertySetterTitoModel"
           }
-        ]
-      }
-    },
-    "311:4-311:17|artificial-attribute-access|augmented-assign-rhs": {
-      "attribute_access": {
-        "properties": [
-          {
-            "target": "properties.PropertySetterTitoModel.my_property",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     },
     "311:4-311:22|artificial-call|augmented-assign-dunder-call": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.int.__ror__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "builtins.int"
+          }
+        ]
       }
     }
   }
@@ -417,7 +690,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -428,7 +701,8 @@ Higher order call graphs
             "target": "properties.PropertyCallable.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.PropertyCallable"
           }
         ]
       }
@@ -438,6 +712,31 @@ Higher order call graphs
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
+      }
+    },
+    "188:11-188:24": {
+      "attribute_access": {
+        "properties": [
+          {
+            "target": "properties.PropertyCallable.attribute",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "properties.PropertyCallable"
+          }
+        ],
+        "if_called": {
+          "calls": [
+            {
+              "target": "properties.PropertyCallableReturn.__call__",
+              "index": 0,
+              "implicit_receiver": true,
+              "implicit_dunder_call": true,
+              "return_type": [],
+              "receiver_class": "properties.PropertyCallableReturn"
+            }
+          ]
+        }
       }
     },
     "188:11-188:40": {
@@ -475,12 +774,6 @@ Higher order call graphs
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
-          },
-          {
-            "target": "properties.Class2.my_property",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
           }
         ]
       }
@@ -495,9 +788,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 0,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -506,24 +801,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "207:7-207:28|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }
@@ -532,7 +814,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -540,10 +822,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.TaintedGetterAndSetter"
           }
         ]
       }
@@ -552,7 +835,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -563,7 +846,8 @@ Higher order call graphs
             "target": "properties.RegularAttribute.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.RegularAttribute"
           }
         ]
       }
@@ -583,12 +867,6 @@ Higher order call graphs
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
-          },
-          {
-            "target": "Overrides{properties.DerivedTaintedSetter.my_property}",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
           }
         ],
         "is_attribute": true
@@ -604,9 +882,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 0,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -615,24 +895,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "198:7-198:28|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }
@@ -641,7 +908,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -649,10 +916,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.TaintedGetterAndSetter"
           }
         ]
       }
@@ -661,7 +929,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -672,7 +940,8 @@ Higher order call graphs
             "target": "properties.RegularAttribute.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.RegularAttribute"
           }
         ]
       }
@@ -689,12 +958,6 @@ Higher order call graphs
         "properties": [
           {
             "target": "properties.TaintedGetterAndSetter.my_property",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          },
-          {
-            "target": "Overrides{properties.DerivedTaintedSetter.my_property}",
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
@@ -716,7 +979,8 @@ Higher order call graphs
             "target": "Overrides{properties.Class.my_property}",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.Class"
           }
         ]
       }
@@ -741,7 +1005,8 @@ Higher order call graphs
             "target": "Overrides{properties.Class.my_property}",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.Class"
           }
         ]
       }
@@ -766,39 +1031,10 @@ Higher order call graphs
             "target": "Overrides{properties.Class.my_property}",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.Class"
           }
         ]
-      }
-    }
-  }
-}
-{
-  "callable": "properties.ClassProperty.my_class_property@decorated",
-  "returned_callables": [
-    {
-      "target": "properties.ClassProperty.my_class_property",
-      "index": 0,
-      "return_type": []
-    }
-  ],
-  "calls": {
-    "124:5-124:22|artificial-call|for-decorated-target": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-      }
-    },
-    "125:4-126:17|identifier|my_class_property": {
-      "identifier": {
-        "if_called": {
-          "calls": [
-            {
-              "target": "properties.ClassProperty.my_class_property",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
       }
     }
   }
@@ -868,7 +1104,8 @@ Higher order call graphs
             "target": "properties.Class.my_property",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.Derived"
           }
         ]
       }
@@ -893,7 +1130,8 @@ Higher order call graphs
             "target": "properties.Class.my_property",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.Derived"
           }
         ]
       }
@@ -944,7 +1182,8 @@ Higher order call graphs
             "target": "properties.OtherDerived.my_property",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.OtherDerived"
           }
         ]
       }
@@ -966,7 +1205,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -977,7 +1216,8 @@ Higher order call graphs
             "target": "properties.PropertyCallableReturn.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.PropertyCallableReturn"
           }
         ]
       }
@@ -1012,44 +1252,6 @@ Higher order call graphs
   }
 }
 {
-  "callable": "properties.PropertyDefinedByAssignment.$class_toplevel",
-  "returned_callables": [],
-  "calls": {
-    "321:18-321:44": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "object.__new__",
-            "index": 0,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "object.__init__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ],
-        "higher_order_parameters": [
-          {
-            "parameter_index": 0,
-            "calls": [
-              {
-                "target": "properties.PropertyDefinedByAssignment._get_my_property",
-                "index": 0,
-                "return_type": []
-              }
-            ]
-          }
-        ]
-      }
-    }
-  }
-}
-{
   "callable": "properties.PropertyDefinedByAssignment.uses_property",
   "returned_callables": [],
   "calls": {
@@ -1057,6 +1259,19 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "325:15-325:31": {
+      "attribute_access": {
+        "properties": [
+          {
+            "target": "properties.PropertyDefinedByAssignment._get_my_property",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "properties.PropertyDefinedByAssignment"
+          }
         ]
       }
     }
@@ -1073,7 +1288,8 @@ Higher order call graphs
             "target": "properties.PropertySetterInConstructor.x@setter",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.PropertySetterInConstructor"
           }
         ]
       }
@@ -1091,7 +1307,8 @@ Higher order call graphs
             "target": "properties.PropertySetterTitoModel.obscure_property@setter",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.PropertySetterTitoModel"
           }
         ]
       }
@@ -1123,9 +1340,11 @@ Higher order call graphs
             "target": "properties.PropertySetterTitoModel.my_property@setter",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.PropertySetterTitoModel"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     },
     "274:27-274:41": {
@@ -1149,9 +1368,11 @@ Higher order call graphs
             "target": "properties.PropertySetterTitoModel.my_property",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.PropertySetterTitoModel"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -1177,10 +1398,11 @@ Higher order call graphs
       "attribute_access": {
         "properties": [
           {
-            "target": "Overrides{properties.TaintedGetterAndSetter.my_property}",
+            "target": "properties.TaintedGetterAndSetter.my_property",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.TaintedGetterAndSetter"
           }
         ]
       }
@@ -1198,7 +1420,8 @@ Higher order call graphs
             "target": "Overrides{properties.TaintedGetterAndSetter.my_property@setter}",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "properties.TaintedGetterAndSetter"
           }
         ]
       }
@@ -1233,11 +1456,34 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "isinstance",
+            "target": "builtins.isinstance",
             "index": 0,
             "return_type": [ "float", "integer", "boolean" ]
           }
         ]
+      }
+    },
+    "304:29-304:30|identifier|A": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "properties.A"
+            }
+          ]
+        }
       }
     },
     "305:12-305:23": {

@@ -22,10 +22,10 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [ "float", "integer" ],
+            "return_type": [],
             "receiver_class": "typed_dict.NestedTypedDict"
           }
         ]
@@ -49,7 +49,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [],
@@ -62,7 +62,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 2,
             "implicit_receiver": true,
             "return_type": [],
@@ -89,7 +89,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 3,
             "implicit_receiver": true,
             "return_type": [],
@@ -102,7 +102,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 4,
             "implicit_receiver": true,
             "return_type": [],
@@ -121,7 +121,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -132,7 +132,8 @@ Higher order call graphs
             "target": "typed_dict.SimpleTypedDict.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -155,7 +156,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -175,7 +176,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [],
@@ -188,7 +189,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -199,7 +200,8 @@ Higher order call graphs
             "target": "typed_dict.SimpleTypedDict.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -222,7 +224,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 2,
             "implicit_receiver": true,
             "return_type": [],
@@ -232,9 +234,7 @@ Higher order call graphs
       }
     },
     "29:15-29:28|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "30:4-30:29": {
       "call": {
@@ -247,7 +247,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 3,
             "implicit_receiver": true,
             "return_type": [],
@@ -257,9 +257,7 @@ Higher order call graphs
       }
     },
     "30:15-30:28|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "31:4-31:29": {
       "call": {
@@ -272,7 +270,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 4,
             "implicit_receiver": true,
             "return_type": [],
@@ -282,9 +280,7 @@ Higher order call graphs
       }
     },
     "31:15-31:28|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "32:4-32:29": {
       "call": {
@@ -297,7 +293,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 5,
             "implicit_receiver": true,
             "return_type": [],
@@ -307,15 +303,13 @@ Higher order call graphs
       }
     },
     "32:15-32:28|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "34:8-34:58": {
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 2,
             "return_type": [],
             "is_static_method": true
@@ -326,7 +320,8 @@ Higher order call graphs
             "target": "typed_dict.SimpleTypedDict.__init__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -349,7 +344,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 6,
             "implicit_receiver": true,
             "return_type": [],
@@ -369,7 +364,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 7,
             "implicit_receiver": true,
             "return_type": [],
@@ -382,7 +377,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 3,
             "return_type": [],
             "is_static_method": true
@@ -393,7 +388,8 @@ Higher order call graphs
             "target": "typed_dict.SimpleTypedDict.__init__",
             "index": 3,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -416,7 +412,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "typing.Mapping.keys",
+            "target": "_typeshed._type_checker_internals.TypedDictFallback.keys",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -436,7 +432,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 8,
             "implicit_receiver": true,
             "return_type": [],
@@ -456,7 +452,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 9,
             "implicit_receiver": true,
             "return_type": [],
@@ -469,7 +465,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 4,
             "return_type": [],
             "is_static_method": true
@@ -480,7 +476,8 @@ Higher order call graphs
             "target": "typed_dict.SimpleTypedDict.__init__",
             "index": 4,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "typed_dict.SimpleTypedDict"
           }
         ]
       }
@@ -503,7 +500,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 10,
             "implicit_receiver": true,
             "return_type": [],
@@ -523,7 +520,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 11,
             "implicit_receiver": true,
             "return_type": [],
@@ -539,17 +536,7 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "18:4-18:29|artificial-call|subscript-set-item": {
-      "call": {
-        "calls": [
-          {
-            "target": "TypedDictionary.__setitem__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "typed_dict.SimpleTypedDict"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttr" ] }
     },
     "18:15-18:29": {
       "call": {
@@ -569,7 +556,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -589,7 +576,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "TypedDictionary.__getitem__",
+            "target": "typing.Mapping.__getitem__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [],

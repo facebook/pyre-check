@@ -1,6 +1,35 @@
 @generated
 Higher order call graphs
 {
+  "callable": "multi_sink_ports.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "54:12-54:21|identifier|QueryBase": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multi_sink_ports.QueryBase"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "multi_sink_ports.issue",
   "returned_callables": [],
   "calls": {
@@ -47,7 +76,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -55,10 +84,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "multi_sink_ports.Query"
           }
         ]
       }
@@ -221,12 +251,31 @@ Higher order call graphs
     "75:11-75:20|artificial-call|try-handler-isinstance": {
       "call": {
         "calls": [
-          {
-            "target": "isinstance",
-            "index": 0,
-            "return_type": [ "float", "integer", "boolean" ]
-          }
+          { "target": "builtins.isinstance", "index": 0, "return_type": [] }
         ]
+      }
+    },
+    "75:11-75:20|identifier|Exception": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.BaseException.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.BaseException.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "builtins.Exception"
+            }
+          ]
+        }
       }
     },
     "77:4-77:30": {

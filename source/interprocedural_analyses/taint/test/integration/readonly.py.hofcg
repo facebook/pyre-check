@@ -1,24 +1,6 @@
 @generated
 Higher order call graphs
 {
-  "callable": "readonly.$toplevel",
-  "returned_callables": [],
-  "calls": {
-    "-1:-1--1:-1|artificial-call|self-implicit-typevar:_Self_readonly_A__": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-      }
-    },
-    "-1:-1--1:-1|identifier|$local_readonly$_Self_readonly_A__": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{readonly._Self_readonly_A__}", "index": 0 }
-        ]
-      }
-    }
-  }
-}
-{
   "callable": "readonly.readonly_foo_not_tainted",
   "returned_callables": [],
   "calls": {
@@ -44,7 +26,13 @@ Higher order call graphs
     },
     "47:15-47:26": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{readonly.Foo.tainted}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{readonly.Foo.tainted}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     }
@@ -58,7 +46,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -69,7 +57,8 @@ Higher order call graphs
             "target": "readonly.A.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "readonly.A"
           }
         ]
       }
@@ -129,8 +118,43 @@ Higher order call graphs
     },
     "55:15-55:26": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{readonly.Foo.tainted}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{readonly.Foo.tainted}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "pyre_extensions.generic.Generic.__class_getitem__",
+  "returned_callables": [],
+  "calls": {
+    "5:15-5:18|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "pyre_extensions.generic.Generic"
+            }
+          ]
+        }
       }
     }
   }
@@ -141,13 +165,21 @@ Higher order call graphs
   "calls": {
     "15:8-15:14": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{readonly.A.B}", "index": 0 } ],
+        "globals": [
+          { "target": "Obj{readonly.A.B}", "index": 0, "return_type": [] }
+        ],
         "is_attribute": true
       }
     },
     "16:8-16:20": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{readonly.A.mapping}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{readonly.A.mapping}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     }
@@ -166,7 +198,13 @@ Higher order call graphs
     },
     "26:19-26:31": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{readonly.A.mapping}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{readonly.A.mapping}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     },
@@ -198,7 +236,9 @@ Higher order call graphs
     },
     "19:19-19:25": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{readonly.A.B}", "index": 0 } ],
+        "globals": [
+          { "target": "Obj{readonly.A.B}", "index": 0, "return_type": [] }
+        ],
         "is_attribute": true
       }
     }
@@ -217,7 +257,13 @@ Higher order call graphs
     },
     "29:19-29:31": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{readonly.A.mapping}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{readonly.A.mapping}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     },
@@ -249,7 +295,9 @@ Higher order call graphs
     },
     "22:19-22:25": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{readonly.A.B}", "index": 0 } ],
+        "globals": [
+          { "target": "Obj{readonly.A.B}", "index": 0, "return_type": [] }
+        ],
         "is_attribute": true
       }
     }

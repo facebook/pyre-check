@@ -15,11 +15,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "tuple.__getitem__",
+            "target": "builtins.tuple.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "tuple"
+            "receiver_class": "builtins.tuple"
           }
         ]
       }
@@ -34,11 +34,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__setitem__",
+            "target": "builtins.dict.__setitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -54,11 +54,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__setitem__",
+            "target": "builtins.dict.__setitem__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -74,11 +74,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "typing.MutableMapping.pop",
+            "target": "builtins.dict.pop",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }

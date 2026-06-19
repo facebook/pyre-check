@@ -54,7 +54,7 @@ Higher order call graphs
           {
             "target": "features.return_tuple_of_bools",
             "index": 0,
-            "return_type": [ "float", "integer", "boolean" ]
+            "return_type": []
           }
         ]
       }
@@ -83,7 +83,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "int.__new__",
+            "target": "builtins.bool.__new__",
             "index": 0,
             "return_type": [ "float", "integer", "boolean" ],
             "is_static_method": true
@@ -91,7 +91,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ]
@@ -127,11 +127,10 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "object.__eq__",
+            "target": "builtins.str.__eq__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "object"
+            "return_type": [ "float", "integer", "boolean" ]
           }
         ]
       }
@@ -163,11 +162,21 @@ Higher order call graphs
         ]
       }
     },
+    "105:15-105:23|artificial-call|comparison": {
+      "call": {
+        "unresolved": [ "UnresolvedMagicDunderAttrDueToNoAttribute" ]
+      }
+    },
     "106:4-106:24": {
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 1, "return_type": [] }
         ]
+      }
+    },
+    "106:15-106:23|artificial-call|comparison": {
+      "call": {
+        "unresolved": [ "UnresolvedMagicDunderAttrDueToNoAttribute" ]
       }
     }
   }
@@ -187,7 +196,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -195,10 +204,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "features.SetItemClass"
           }
         ]
       }
@@ -259,7 +269,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "int.__new__",
+            "target": "builtins.int.__new__",
             "index": 0,
             "return_type": [ "float", "integer" ],
             "is_static_method": true
@@ -267,7 +277,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer" ]
@@ -301,7 +311,11 @@ Higher order call graphs
     "28:11-28:21": {
       "call": {
         "calls": [
-          { "target": "features.min", "index": 0, "return_type": [] }
+          {
+            "target": "features.min",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
         ]
       }
     }
@@ -314,7 +328,11 @@ Higher order call graphs
     "41:15-41:28": {
       "call": {
         "calls": [
-          { "target": "features.min", "index": 0, "return_type": [] }
+          {
+            "target": "features.min",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
         ]
       }
     }
@@ -327,7 +345,11 @@ Higher order call graphs
     "32:11-32:20": {
       "call": {
         "calls": [
-          { "target": "features.min", "index": 0, "return_type": [] }
+          {
+            "target": "features.min",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
         ]
       }
     }
@@ -370,14 +392,22 @@ Higher order call graphs
     "85:15-85:28": {
       "call": {
         "calls": [
-          { "target": "features.min", "index": 0, "return_type": [] }
+          {
+            "target": "features.min",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
         ]
       }
     },
     "85:30-85:43": {
       "call": {
         "calls": [
-          { "target": "features.min", "index": 1, "return_type": [] }
+          {
+            "target": "features.min",
+            "index": 1,
+            "return_type": [ "float", "integer" ]
+          }
         ]
       }
     }

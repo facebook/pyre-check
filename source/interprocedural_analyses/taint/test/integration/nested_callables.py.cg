@@ -27,6 +27,9 @@ Call dependencies
   "nested_callables.duplicate_function (fun)": [
     "nested_callables.foo (fun)"
   ],
+  "nested_callables.duplicate_function$2 (fun)": [
+    "nested_callables.foo (fun)"
+  ],
   "nested_callables.foo.inner (fun)": [
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
@@ -37,7 +40,7 @@ Call dependencies
     "nested_callables.nested_global_function.g (fun)"
   ],
   "nested_callables.nested_global_function.g (fun)": [
-    "str.__add__ (method)"
+    "builtins.str.__add__ (method)"
   ],
   "nested_callables.outer (fun)": [ "nested_callables.outer.inner (fun)" ],
   "nested_callables.outer.inner (fun)": [ "pysa._test_sink (fun)" ],
@@ -50,7 +53,9 @@ Call dependencies
   "nested_callables.parameter_function (fun)": [
     "nested_callables.parameter_function.add (fun)"
   ],
-  "nested_callables.parameter_function.add (fun)": [ "str.__add__ (method)" ],
+  "nested_callables.parameter_function.add (fun)": [
+    "builtins.str.__add__ (method)"
+  ],
   "nested_callables.some_sink (fun)": [ "pysa._test_sink (fun)" ],
   "nested_callables.test_access_parameter_in_inner_scope_sink (fun)": [
     "nested_callables.access_parameter_in_inner_scope_sink (fun)",
@@ -65,8 +70,8 @@ Call dependencies
     "pysa._test_sink (fun)"
   ],
   "nested_callables.test_mutation_of_class (fun)": [
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
     "nested_callables.test_mutation_of_class.set_a (fun)",
-    "object.__init__ (method)", "object.__new__ (method)",
     "pysa._test_sink (fun)"
   ],
   "nested_callables.test_mutation_of_class.set_a (fun)": [

@@ -2,8 +2,8 @@
 Call dependencies
 {
   "global.$toplevel (fun)": [
-    "global.Object.__init__ (method)", "global.create_global_source (fun)",
-    "object.__new__ (method)", "pysa._test_source (fun)"
+    "builtins.object.__new__ (method)", "global.Object.__init__ (method)",
+    "global.create_global_source (fun)", "pysa._test_source (fun)"
   ],
   "global.create_global_source (fun)": [ "pysa._test_source (fun)" ],
   "global.obj1_flow (fun)": [

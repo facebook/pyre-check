@@ -36,7 +36,7 @@ Higher order call graphs
           {
             "target": "attach_features.attach_to_returned_with_captures.nested",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -47,7 +47,7 @@ Higher order call graphs
           {
             "target": "attach_features.attach_to_returned_with_captures.nested",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -58,7 +58,7 @@ Higher order call graphs
   "callable": "attach_features.attach_to_returned_with_captures.nested",
   "returned_callables": [],
   "calls": {
-    "80:8-80:9|identifier|$local_attach_features?attach_to_returned_with_captures$x": {
+    "80:8-80:9|identifier|x": {
       "identifier": {
         "captured_variables": [
           {
@@ -87,7 +87,7 @@ Higher order call graphs
           {
             "target": "attach_features.source_with_inferred",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -144,7 +144,7 @@ Higher order call graphs
           {
             "target": "attach_features.attach_without_tito",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -178,7 +178,7 @@ Higher order call graphs
           {
             "target": "attach_features.source",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }

@@ -4,49 +4,41 @@ Higher order call graphs
   "callable": "callables.$toplevel",
   "returned_callables": [],
   "calls": {
-    "13:0-13:11|identifier|$local_callables$EPInputType": {
+    "13:14-13:36": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } },
+    "14:15-14:38": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } },
+    "17:29-17:63|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "29:29-29:51|identifier|AbstractEventProcessor": {
       "identifier": {
-        "globals": [ { "target": "Obj{callables.EPInputType}", "index": 0 } ]
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "callables.AbstractEventProcessor.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "callables.AbstractEventProcessor"
+            }
+          ]
+        }
       }
     },
-    "13:14-13:36": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-      }
+    "29:29-29:78|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttr" ] }
     },
-    "14:0-14:12|identifier|$local_callables$EPOutputType": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{callables.EPOutputType}", "index": 0 }
-        ]
-      }
-    },
-    "14:15-14:38": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-      }
-    },
-    "37:0-37:11|identifier|$local_callables$PIInputType": {
-      "identifier": {
-        "globals": [ { "target": "Obj{callables.PIInputType}", "index": 0 } ]
-      }
-    },
-    "37:14-37:36": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-      }
-    },
-    "38:0-38:12|identifier|$local_callables$PIOutputType": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{callables.PIOutputType}", "index": 0 }
-        ]
-      }
-    },
-    "38:15-38:38": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-      }
+    "37:14-37:36": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } },
+    "38:15-38:38": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } },
+    "41:20-41:54|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
     }
   }
 }
@@ -69,11 +61,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "list.__iter__",
+            "target": "builtins.list.__iter__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "list"
+            "receiver_class": "builtins.list"
           }
         ]
       }
@@ -95,7 +87,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -106,7 +98,8 @@ Higher order call graphs
             "target": "callables.AbstractEventProcessor.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "callables.AbstractEventProcessor"
           }
         ]
       }
@@ -168,6 +161,59 @@ Higher order call graphs
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
+      }
+    }
+  }
+}
+{
+  "callable": "callables.ProcessorInfo.__init__",
+  "returned_callables": [],
+  "calls": {
+    "46:8-46:27": {
+      "attribute_access": {
+        "is_attribute": true,
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "callables.AbstractEventProcessor.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "callables.AbstractEventProcessor"
+            }
+          ]
+        }
+      }
+    },
+    "47:12-47:26|identifier|processor_type": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "callables.AbstractEventProcessor.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "callables.AbstractEventProcessor"
+            }
+          ]
+        }
       }
     }
   }

@@ -16,7 +16,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{django.http.request.HttpRequest.GET}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -33,7 +34,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{django.http.request.HttpRequest.GET}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -68,7 +70,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{django.http.request.HttpRequest.GET}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -93,7 +96,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{django.http.request.HttpRequest.GET}",
-            "index": 1
+            "index": 1,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -110,7 +114,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{django.http.request.HttpRequest.GET}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -128,7 +133,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{django.http.request.HttpRequest.GET}",
-            "index": 1
+            "index": 1,
+            "return_type": []
           }
         ],
         "is_attribute": true

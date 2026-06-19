@@ -13,8 +13,10 @@
             "kinds": [
               {
                 "features": [
+                  { "always-type": "integer" },
                   { "always-via": "string_concat_rhs" },
-                  { "always-via": "string_concat_lhs" }
+                  { "always-via": "string_concat_lhs" },
+                  { "always-type": "scalar" }
                 ],
                 "return_paths": { "": 0 },
                 "kind": "LocalReturn"
@@ -45,12 +47,7 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "special_source" },
-                  { "always-type": "integer" },
-                  { "always-type": "bool" },
-                  { "always-type": "scalar" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [
                   { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
@@ -126,11 +123,6 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "bool" },
-              { "always-type": "scalar" }
-            ],
             "origin": { "line": 91, "start": 11, "end": 25 }
           }
         ]
@@ -147,11 +139,6 @@
                 ],
                 "kind": "Test"
               }
-            ],
-            "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "bool" },
-              { "always-type": "scalar" }
             ],
             "origin": { "line": 91, "start": 27, "end": 41 }
           }
@@ -203,12 +190,7 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "special_source" },
-                  { "always-type": "integer" },
-                  { "always-type": "bool" },
-                  { "always-type": "scalar" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [
                   { "name": "pysa._test_source", "port": "leaf:return" }
                 ],
@@ -587,7 +569,15 @@
         "port": "formal(y, position=1)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
             "tito": {}
           }
         ]
@@ -690,11 +680,6 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "bool" },
-              { "always-type": "scalar" }
-            ],
             "origin": { "line": 75, "start": 11, "end": 25 }
           }
         ]
@@ -711,11 +696,6 @@
                 ],
                 "kind": "Test"
               }
-            ],
-            "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "bool" },
-              { "always-type": "scalar" }
             ],
             "origin": { "line": 75, "start": 27, "end": 41 }
           }
@@ -886,7 +866,11 @@
                 "kind": "LocalReturn"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
+            ],
             "tito_positions": [ { "line": 32, "start": 18, "end": 19 } ],
             "tito": {}
           }
@@ -1005,6 +989,164 @@
       }
     ],
     "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[col_offset,end_col_offset,end_lineno,lineno])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decimal.DecimalTuple.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(exponent, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[exponent]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(digits, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[digits]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(sign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[sign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
   }
 }
 {

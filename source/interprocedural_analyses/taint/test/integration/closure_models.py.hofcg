@@ -46,7 +46,7 @@ Higher order call graphs
         ]
       }
     },
-    "167:19-167:35|identifier|$local_closure_models?captured_variable_model_both_generation_parameter_source$complicated_name": {
+    "167:19-167:35|identifier|complicated_name": {
       "identifier": {
         "captured_variables": [
           {
@@ -97,7 +97,7 @@ Higher order call graphs
   "callable": "closure_models.captured_variable_model_generation_source.model_all_captured_as_generation_sources",
   "returned_callables": [],
   "calls": {
-    "155:8-155:24|identifier|$local_closure_models?captured_variable_model_generation_source$complicated_name": {
+    "155:8-155:24|identifier|complicated_name": {
       "identifier": {
         "captured_variables": [
           {
@@ -114,7 +114,7 @@ Higher order call graphs
         ]
       }
     },
-    "156:19-156:35|identifier|$local_closure_models?captured_variable_model_generation_source$complicated_name": {
+    "156:19-156:35|identifier|complicated_name": {
       "identifier": {
         "captured_variables": [
           {
@@ -179,7 +179,7 @@ Higher order call graphs
         ]
       }
     },
-    "144:19-144:35|identifier|$local_closure_models?captured_variable_model_parameter_source$complicated_name": {
+    "144:19-144:35|identifier|complicated_name": {
       "identifier": {
         "captured_variables": [
           {
@@ -230,14 +230,15 @@ Higher order call graphs
   "callable": "closure_models.captured_variable_model_sink.model_all_captured_as_sinks",
   "returned_callables": [],
   "calls": {
-    "178:8-178:24|identifier|$local_closure_models?captured_variable_model_sink$complicated_name": {
+    "178:8-178:24|identifier|complicated_name": {
       "identifier": {
         "captured_variables": [
           {
             "name": "complicated_name",
             "defining_function": "closure_models.captured_variable_model_sink"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -288,14 +289,15 @@ Higher order call graphs
   "callable": "closure_models.captured_variable_model_tito.model_all_captured_as_tito",
   "returned_callables": [],
   "calls": {
-    "132:8-132:24|identifier|$local_closure_models?captured_variable_model_tito$complicated_name": {
+    "132:8-132:24|identifier|complicated_name": {
       "identifier": {
         "captured_variables": [
           {
             "name": "complicated_name",
             "defining_function": "closure_models.captured_variable_model_tito"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -355,6 +357,19 @@ Higher order call graphs
           }
         ]
       }
+    },
+    "113:11-113:23|identifier|wrapper_func": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.some_decorator.wrapper_func",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
     }
   }
 }
@@ -362,12 +377,19 @@ Higher order call graphs
   "callable": "closure_models.some_decorator.wrapper_func",
   "returned_callables": [],
   "calls": {
-    "111:8-111:14": {
-      "call": {
-        "unresolved": [
-          "BypassingDecorators", [ "UnknownIdentifierCallee" ]
-        ]
+    "111:8-111:12|identifier|func": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "func",
+            "defining_function": "closure_models.some_decorator"
+          }
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
+    },
+    "111:8-111:14": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -449,6 +471,19 @@ Higher order call graphs
         ]
       }
     },
+    "56:14-56:26|identifier|return_taint": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.test.return_taint",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
     "60:4-60:43": {
       "call": {
         "calls": [
@@ -483,6 +518,19 @@ Higher order call graphs
             ]
           }
         ]
+      }
+    },
+    "63:14-63:32|identifier|return_model_taint": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.test.return_model_taint",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "66:4-66:43": {
@@ -521,9 +569,8 @@ Higher order call graphs
         ]
       }
     },
-    "69:14-69:19|artificial-attribute-access|qualification:closure_models.outer": {
-      "attribute_access": {
-        "is_attribute": true,
+    "69:14-69:19|identifier|outer": {
+      "identifier": {
         "if_called": {
           "calls": [
             {
@@ -571,6 +618,19 @@ Higher order call graphs
         ]
       }
     },
+    "75:14-75:37|identifier|return_model_taint_tito": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.test.return_model_taint_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
     "78:4-78:43": {
       "call": {
         "calls": [
@@ -607,6 +667,19 @@ Higher order call graphs
         ]
       }
     },
+    "81:14-81:37|identifier|return_model_query_tito": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.test.return_model_query_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
     "84:4-84:43": {
       "call": {
         "calls": [
@@ -637,11 +710,12 @@ Higher order call graphs
         ]
       }
     },
-    "53:19-53:25|identifier|$local_closure_models?test$source": {
+    "53:19-53:25|identifier|source": {
       "identifier": {
         "captured_variables": [
           { "name": "source", "defining_function": "closure_models.test" }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -650,7 +724,7 @@ Higher order call graphs
   "callable": "closure_models.test.return_model_taint",
   "returned_callables": [],
   "calls": {
-    "45:15-45:20|identifier|$local_closure_models?test$value": {
+    "45:15-45:20|identifier|value": {
       "identifier": {
         "captured_variables": [
           { "name": "value", "defining_function": "closure_models.test" }
@@ -674,11 +748,12 @@ Higher order call graphs
         ]
       }
     },
-    "50:19-50:25|identifier|$local_closure_models?test$source": {
+    "50:19-50:25|identifier|source": {
       "identifier": {
         "captured_variables": [
           { "name": "source", "defining_function": "closure_models.test" }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -704,7 +779,7 @@ Higher order call graphs
       "define": {
         "define_targets": [
           {
-            "target": "closure_models.some_decorator.wrapper_func[captured_variable(func, parameter)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable]",
+            "target": "closure_models.some_decorator.wrapper_func[captured_variable(func, closure_models.some_decorator)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable]",
             "index": 0,
             "return_type": []
           }
@@ -723,6 +798,16 @@ Higher order call graphs
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
+    },
+    "124:19-124:28|identifier|some_data": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "some_data",
+            "defining_function": "closure_models.test_dsl_decorator_source"
+          }
+        ]
+      }
     }
   }
 }
@@ -730,7 +815,7 @@ Higher order call graphs
   "callable": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable@decorated",
   "returned_callables": [
     {
-      "target": "closure_models.some_decorator.wrapper_func[captured_variable(func, parameter)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable]",
+      "target": "closure_models.some_decorator.wrapper_func[captured_variable(func, closure_models.some_decorator)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable]",
       "index": 0,
       "return_type": []
     }
@@ -787,6 +872,16 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "118:19-118:28|identifier|some_data": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "some_data",
+            "defining_function": "closure_models.test_dsl_source"
+          }
         ]
       }
     }
@@ -848,6 +943,19 @@ Higher order call graphs
         ]
       }
     },
+    "97:14-97:37|identifier|return_model_taint_tito": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.test_tito_transform.return_model_taint_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
     "100:4-100:43": {
       "call": {
         "calls": [
@@ -884,6 +992,19 @@ Higher order call graphs
         ]
       }
     },
+    "103:14-103:37|identifier|return_model_query_tito": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.test_tito_transform.return_model_query_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
     "106:4-106:43": {
       "call": {
         "calls": [
@@ -914,14 +1035,15 @@ Higher order call graphs
         ]
       }
     },
-    "94:19-94:25|identifier|$local_closure_models?test_tito_transform$source": {
+    "94:19-94:25|identifier|source": {
       "identifier": {
         "captured_variables": [
           {
             "name": "source",
             "defining_function": "closure_models.test_tito_transform"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -941,14 +1063,15 @@ Higher order call graphs
         ]
       }
     },
-    "91:19-91:25|identifier|$local_closure_models?test_tito_transform$source": {
+    "91:19-91:25|identifier|source": {
       "identifier": {
         "captured_variables": [
           {
             "name": "source",
             "defining_function": "closure_models.test_tito_transform"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -958,9 +1081,7 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "25:15-25:27": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotFindParentClass" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -968,7 +1089,7 @@ Higher order call graphs
   "callable": "closure_models.some_decorator[formal(func, position=0)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable]",
   "returned_callables": [
     {
-      "target": "closure_models.some_decorator.wrapper_func[captured_variable(func, parameter)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable]",
+      "target": "closure_models.some_decorator.wrapper_func[captured_variable(func, closure_models.some_decorator)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable]",
       "index": 0,
       "return_type": []
     }
@@ -983,6 +1104,19 @@ Higher order call graphs
             "return_type": []
           }
         ]
+      }
+    },
+    "113:11-113:23|identifier|wrapper_func": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "closure_models.some_decorator.wrapper_func",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }

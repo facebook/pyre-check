@@ -93,9 +93,32 @@ Higher order call graphs
           {
             "target": "multiple_sources.permissive_context",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
+      }
+    },
+    "32:4-32:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
       }
     },
     "32:4-32:16": {
@@ -213,9 +236,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 0,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -224,24 +249,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "250:7-250:28|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }
@@ -307,6 +319,29 @@ Higher order call graphs
         ]
       }
     },
+    "37:4-37:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
+      }
+    },
     "37:4-37:16": {
       "call": {
         "calls": [
@@ -349,6 +384,29 @@ Higher order call graphs
             "return_type": []
           }
         ]
+      }
+    },
+    "134:4-134:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
       }
     },
     "134:4-134:16": {
@@ -418,9 +476,32 @@ Higher order call graphs
           {
             "target": "multiple_sources.permissive_context",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
+      }
+    },
+    "42:4-42:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
       }
     },
     "42:4-42:16": {
@@ -495,7 +576,7 @@ Higher order call graphs
           {
             "target": "multiple_sources.permissive_context",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -534,7 +615,7 @@ Higher order call graphs
           {
             "target": "multiple_sources.permissive_context",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -567,7 +648,7 @@ Higher order call graphs
           {
             "target": "multiple_sources.permissive_context",
             "index": 1,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -668,7 +749,7 @@ Higher order call graphs
           {
             "target": "multiple_sources.permissive_context",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -696,7 +777,7 @@ Higher order call graphs
           {
             "target": "multiple_sources.permissive_context",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -813,7 +894,7 @@ Higher order call graphs
           {
             "target": "multiple_sources.permissive_context",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -841,7 +922,7 @@ Higher order call graphs
           {
             "target": "multiple_sources.permissive_context",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -870,15 +951,13 @@ Higher order call graphs
             "target": "multiple_sources.A.multi_sink",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "multiple_sources.A"
+            "return_type": []
           },
           {
             "target": "multiple_sources.B.multi_sink",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "multiple_sources.B"
+            "return_type": []
           }
         ]
       }
@@ -900,7 +979,7 @@ Higher order call graphs
           {
             "target": "multiple_sources.permissive_context",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -917,7 +996,7 @@ Higher order call graphs
           {
             "target": "multiple_sources.permissive_context",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -948,6 +1027,29 @@ Higher order call graphs
             "return_type": []
           }
         ]
+      }
+    },
+    "165:4-165:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
       }
     },
     "165:4-165:17": {
@@ -986,6 +1088,29 @@ Higher order call graphs
             "return_type": []
           }
         ]
+      }
+    },
+    "167:4-167:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
       }
     },
     "167:4-167:17": {
@@ -1060,7 +1185,7 @@ Higher order call graphs
           {
             "target": "multiple_sources.permissive_context",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -1077,7 +1202,7 @@ Higher order call graphs
           {
             "target": "multiple_sources.permissive_context",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -1138,7 +1263,7 @@ Higher order call graphs
           {
             "target": "multiple_sources.permissive_context",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -1209,9 +1334,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 0,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -1220,26 +1347,36 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }
     },
-    "203:7-203:28|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
+    "207:4-207:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
       }
     },
     "207:4-207:16": {
@@ -1275,6 +1412,29 @@ Higher order call graphs
   "callable": "multiple_sources.wrapper_mismatched_partial_sinks",
   "returned_callables": [],
   "calls": {
+    "213:4-213:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
+      }
+    },
     "213:4-213:16": {
       "call": {
         "calls": [
@@ -1300,6 +1460,29 @@ Higher order call graphs
             "receiver_class": "multiple_sources.Node"
           }
         ]
+      }
+    },
+    "214:4-214:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
       }
     },
     "214:4-214:15": {
@@ -1335,6 +1518,29 @@ Higher order call graphs
   "callable": "multiple_sources.wrapper_node_get_send",
   "returned_callables": [],
   "calls": {
+    "171:4-171:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
+      }
+    },
     "171:4-171:16": {
       "call": {
         "calls": [
@@ -1396,6 +1602,29 @@ Higher order call graphs
   "callable": "multiple_sources.wrapper_node_send",
   "returned_callables": [],
   "calls": {
+    "195:4-195:8|identifier|Node": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "multiple_sources.Node.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "multiple_sources.Node"
+            }
+          ]
+        }
+      }
+    },
     "195:4-195:16": {
       "call": {
         "calls": [
@@ -1433,7 +1662,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -1444,7 +1673,8 @@ Higher order call graphs
             "target": "multiple_sources.Node.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "multiple_sources.Node"
           }
         ]
       }

@@ -4,33 +4,14 @@ Higher order call graphs
   "callable": "entrypoint.$toplevel",
   "returned_callables": [],
   "calls": {
-    "8:0-8:4|identifier|$local_entrypoint$glob": {
-      "identifier": {
-        "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
-      }
-    },
     "81:3-81:25|artificial-call|comparison": {
       "call": {
         "calls": [
           {
-            "target": "str.__eq__",
+            "target": "builtins.str.__eq__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "str"
-          }
-        ]
-      }
-    },
-    "81:3-81:25|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "str.__ne__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer" ],
-            "receiver_class": "str"
+            "return_type": [ "float", "integer", "boolean" ]
           }
         ]
       }
@@ -76,7 +57,7 @@ Higher order call graphs
   "callable": "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator",
   "returned_callables": [],
   "calls": {
-    "63:8-63:12|identifier|$local_entrypoint$glob": {
+    "63:8-63:12|identifier|glob": {
       "identifier": {
         "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
       }
@@ -85,11 +66,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "list.append",
+            "target": "builtins.list.append",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "list"
+            "receiver_class": "builtins.list"
           }
         ]
       }
@@ -136,7 +117,7 @@ Higher order call graphs
   "callable": "entrypoint.function_entrypoint_with_decorator",
   "returned_callables": [],
   "calls": {
-    "57:4-57:8|identifier|$local_entrypoint$glob": {
+    "57:4-57:8|identifier|glob": {
       "identifier": {
         "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
       }
@@ -145,11 +126,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "list.append",
+            "target": "builtins.list.append",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "list"
+            "receiver_class": "builtins.list"
           }
         ]
       }
@@ -246,7 +227,7 @@ Higher order call graphs
   "callable": "entrypoint.immediate_examples",
   "returned_callables": [],
   "calls": {
-    "32:4-32:8|identifier|$local_entrypoint$glob": {
+    "32:4-32:8|identifier|glob": {
       "identifier": {
         "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
       }
@@ -255,11 +236,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "list.append",
+            "target": "builtins.list.append",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "list"
+            "receiver_class": "builtins.list"
           }
         ]
       }
@@ -281,7 +262,7 @@ Higher order call graphs
         ]
       }
     },
-    "48:43-48:47|identifier|$local_entrypoint$glob": {
+    "48:43-48:47|identifier|glob": {
       "identifier": {
         "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
       }
@@ -331,7 +312,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -339,10 +320,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "entrypoint.MyClass"
           }
         ]
       }
@@ -394,7 +376,7 @@ Higher order call graphs
   "callable": "entrypoint.nested_run.do_the_thing",
   "returned_callables": [],
   "calls": {
-    "26:8-26:12|identifier|$local_entrypoint$glob": {
+    "26:8-26:12|identifier|glob": {
       "identifier": {
         "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
       }
@@ -403,11 +385,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "list.append",
+            "target": "builtins.list.append",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "list"
+            "receiver_class": "builtins.list"
           }
         ]
       }
@@ -418,7 +400,7 @@ Higher order call graphs
   "callable": "entrypoint.this_one_shouldnt_be_found",
   "returned_callables": [],
   "calls": {
-    "36:4-36:8|identifier|$local_entrypoint$glob": {
+    "36:4-36:8|identifier|glob": {
       "identifier": {
         "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
       }
@@ -427,11 +409,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "list.append",
+            "target": "builtins.list.append",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "list"
+            "receiver_class": "builtins.list"
           }
         ]
       }
@@ -442,7 +424,7 @@ Higher order call graphs
   "callable": "entrypoint.transitive_call_accessing_globals",
   "returned_callables": [],
   "calls": {
-    "44:4-44:8|identifier|$local_entrypoint$glob": {
+    "44:4-44:8|identifier|glob": {
       "identifier": {
         "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
       }
@@ -451,11 +433,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "list.append",
+            "target": "builtins.list.append",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "list"
+            "receiver_class": "builtins.list"
           }
         ]
       }
@@ -470,11 +452,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "list.append",
+            "target": "builtins.list.append",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "list"
+            "receiver_class": "builtins.list"
           }
         ]
       }
@@ -485,7 +467,7 @@ Higher order call graphs
   "callable": "entrypoint.MyClass.method_entrypoint_with_decorator",
   "returned_callables": [],
   "calls": {
-    "21:8-21:12|identifier|$local_entrypoint$glob": {
+    "21:8-21:12|identifier|glob": {
       "identifier": {
         "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
       }
@@ -494,11 +476,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "list.append",
+            "target": "builtins.list.append",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "list"
+            "receiver_class": "builtins.list"
           }
         ]
       }
@@ -545,7 +527,7 @@ Higher order call graphs
   "callable": "entrypoint.MyClass.some_entrypoint_function",
   "returned_callables": [],
   "calls": {
-    "17:8-17:12|identifier|$local_entrypoint$glob": {
+    "17:8-17:12|identifier|glob": {
       "identifier": {
         "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
       }
@@ -554,11 +536,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "list.append",
+            "target": "builtins.list.append",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "list"
+            "receiver_class": "builtins.list"
           }
         ]
       }

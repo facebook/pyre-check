@@ -4,16 +4,11 @@ Higher order call graphs
   "callable": "global.$toplevel",
   "returned_callables": [],
   "calls": {
-    "18:0-18:4|identifier|$local_global$obj1": {
-      "identifier": {
-        "globals": [ { "target": "Obj{global.obj1}", "index": 0 } ]
-      }
-    },
     "18:7-18:15": {
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -24,21 +19,17 @@ Higher order call graphs
             "target": "global.Object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "global.Object"
           }
         ]
-      }
-    },
-    "40:0-40:4|identifier|$local_global$obj2": {
-      "identifier": {
-        "globals": [ { "target": "Obj{global.obj2}", "index": 0 } ]
       }
     },
     "40:7-40:15": {
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -49,21 +40,17 @@ Higher order call graphs
             "target": "global.Object.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "global.Object"
           }
         ]
-      }
-    },
-    "47:0-47:4|identifier|$local_global$obj3": {
-      "identifier": {
-        "globals": [ { "target": "Obj{global.obj3}", "index": 0 } ]
       }
     },
     "47:7-47:15": {
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 2,
             "return_type": [],
             "is_static_method": true
@@ -74,14 +61,10 @@ Higher order call graphs
             "target": "global.Object.__init__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "global.Object"
           }
         ]
-      }
-    },
-    "65:0-65:4|identifier|$local_global$obj4": {
-      "identifier": {
-        "globals": [ { "target": "Obj{global.obj4}", "index": 0 } ]
       }
     },
     "65:7-65:21": {
@@ -89,11 +72,6 @@ Higher order call graphs
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
-      }
-    },
-    "73:0-73:1|identifier|$local_global$z": {
-      "identifier": {
-        "globals": [ { "target": "Obj{global.z}", "index": 0 } ]
       }
     },
     "81:0-81:22": {
@@ -107,16 +85,11 @@ Higher order call graphs
         ]
       }
     },
-    "90:0-90:4|identifier|$local_global$obj6": {
-      "identifier": {
-        "globals": [ { "target": "Obj{global.obj6}", "index": 0 } ]
-      }
-    },
     "90:7-90:15": {
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 3,
             "return_type": [],
             "is_static_method": true
@@ -127,21 +100,17 @@ Higher order call graphs
             "target": "global.Object.__init__",
             "index": 3,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "global.Object"
           }
         ]
-      }
-    },
-    "127:0-127:4|identifier|$local_global$obj8": {
-      "identifier": {
-        "globals": [ { "target": "Obj{global.obj8}", "index": 0 } ]
       }
     },
     "127:7-127:15": {
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 4,
             "return_type": [],
             "is_static_method": true
@@ -152,7 +121,8 @@ Higher order call graphs
             "target": "global.Object.__init__",
             "index": 4,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "global.Object"
           }
         ]
       }
@@ -163,7 +133,7 @@ Higher order call graphs
   "callable": "global.create_global_source",
   "returned_callables": [],
   "calls": {
-    "78:4-78:5|identifier|$local_global$z": {
+    "78:4-78:5|identifier|z": {
       "identifier": {
         "globals": [ { "target": "Obj{global.z}", "index": 0 } ]
       }
@@ -227,11 +197,6 @@ Higher order call graphs
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
-    },
-    "26:15-26:19|identifier|$local_global$obj1": {
-      "identifier": {
-        "globals": [ { "target": "Obj{global.obj1}", "index": 0 } ]
-      }
     }
   }
 }
@@ -239,11 +204,6 @@ Higher order call graphs
   "callable": "global.obj1_source",
   "returned_callables": [],
   "calls": {
-    "22:4-22:8|identifier|$local_global$obj1": {
-      "identifier": {
-        "globals": [ { "target": "Obj{global.obj1}", "index": 0 } ]
-      }
-    },
     "22:13-22:27": {
       "call": {
         "calls": [
@@ -262,11 +222,6 @@ Higher order call graphs
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
-      }
-    },
-    "44:15-44:19|identifier|$local_global$obj2": {
-      "identifier": {
-        "globals": [ { "target": "Obj{global.obj2}", "index": 0 } ]
       }
     }
   }
@@ -306,28 +261,6 @@ Higher order call graphs
   }
 }
 {
-  "callable": "global.obj3_return",
-  "returned_callables": [],
-  "calls": {
-    "51:11-51:15|identifier|$local_global$obj3": {
-      "identifier": {
-        "globals": [ { "target": "Obj{global.obj3}", "index": 0 } ]
-      }
-    }
-  }
-}
-{
-  "callable": "global.obj3_set",
-  "returned_callables": [],
-  "calls": {
-    "55:4-55:8|identifier|$local_global$obj3": {
-      "identifier": {
-        "globals": [ { "target": "Obj{global.obj3}", "index": 0 } ]
-      }
-    }
-  }
-}
-{
   "callable": "global.obj4_flow",
   "returned_callables": [],
   "calls": {
@@ -338,9 +271,9 @@ Higher order call graphs
         ]
       }
     },
-    "70:15-70:19|identifier|$local_global$obj4": {
+    "70:15-70:19|identifier|obj4": {
       "identifier": {
-        "globals": [ { "target": "Obj{global.obj4}", "index": 0 } ]
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -375,11 +308,6 @@ Higher order call graphs
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
-    },
-    "99:15-99:19|identifier|$local_global$obj6": {
-      "identifier": {
-        "globals": [ { "target": "Obj{global.obj6}", "index": 0 } ]
-      }
     }
   }
 }
@@ -387,11 +315,6 @@ Higher order call graphs
   "callable": "global.obj6_source",
   "returned_callables": [],
   "calls": {
-    "95:4-95:8|identifier|$local_global$obj6": {
-      "identifier": {
-        "globals": [ { "target": "Obj{global.obj6}", "index": 0 } ]
-      }
-    },
     "95:11-95:25": {
       "call": {
         "calls": [
@@ -482,32 +405,10 @@ Higher order call graphs
   }
 }
 {
-  "callable": "global.obj8_return",
-  "returned_callables": [],
-  "calls": {
-    "131:11-131:15|identifier|$local_global$obj8": {
-      "identifier": {
-        "globals": [ { "target": "Obj{global.obj8}", "index": 0 } ]
-      }
-    }
-  }
-}
-{
-  "callable": "global.obj8_set",
-  "returned_callables": [],
-  "calls": {
-    "136:4-136:8|identifier|$local_global$obj8": {
-      "identifier": {
-        "globals": [ { "target": "Obj{global.obj8}", "index": 0 } ]
-      }
-    }
-  }
-}
-{
   "callable": "global.return_global_source",
   "returned_callables": [],
   "calls": {
-    "87:11-87:12|identifier|$local_global$z": {
+    "87:11-87:12|identifier|z": {
       "identifier": {
         "globals": [ { "target": "Obj{global.z}", "index": 0 } ]
       }

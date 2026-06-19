@@ -3,20 +3,24 @@ Call dependencies
 {
   "raise.backward (fun)": [ "pysa._test_sink (fun)" ],
   "raise.conditional_unreachability (fun)": [
-    "BaseException.__init__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+    "builtins.BaseException.__init__ (method)",
+    "builtins.BaseException.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
   ],
   "raise.forward (fun)": [
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "raise.no_sink (fun)": [
-    "BaseException.__init__ (method)", "object.__new__ (method)"
+    "builtins.BaseException.__init__ (method)",
+    "builtins.BaseException.__new__ (method)", "pysa._test_sink (fun)"
   ],
   "raise.no_source (fun)": [
-    "BaseException.__init__ (method)", "object.__new__ (method)"
+    "builtins.BaseException.__init__ (method)",
+    "builtins.BaseException.__new__ (method)", "pysa._test_source (fun)"
   ],
   "raise.unreachable (fun)": [
-    "BaseException.__init__ (method)", "object.__new__ (method)",
+    "builtins.BaseException.__init__ (method)",
+    "builtins.BaseException.__new__ (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)"
   ],
   "raise.unreachable_code_do_to_always_exception (fun)": [

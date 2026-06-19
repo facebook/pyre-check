@@ -1,6 +1,104 @@
 @generated
 Higher order call graphs
 {
+  "callable": "model_query_transitive_extends.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "16:15-16:22|identifier|Test1_C": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "model_query_transitive_extends.Test1_C.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_transitive_extends.Test1_C"
+            }
+          ]
+        }
+      }
+    },
+    "23:15-23:23|identifier|Test1_C1": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "model_query_transitive_extends.Test1_C1.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_transitive_extends.Test1_C1"
+            }
+          ]
+        }
+      }
+    },
+    "41:15-41:22|identifier|Test2_C": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_transitive_extends.Test2_C"
+            }
+          ]
+        }
+      }
+    },
+    "45:15-45:23|identifier|Test2_C1": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_transitive_extends.Test2_C1"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "model_query_transitive_extends.misc_noalarm1",
   "returned_callables": [],
   "calls": {
@@ -68,11 +166,13 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{model_query_transitive_extends.Test1_C.attribute}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           },
           {
             "target": "Obj{model_query_transitive_extends.Test1_C1.attribute}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -96,11 +196,13 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{model_query_transitive_extends.Test1_C.instance}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           },
           {
             "target": "Obj{model_query_transitive_extends.Test1_C1.instance}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -124,15 +226,18 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{model_query_transitive_extends.Test1_C.attribute}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           },
           {
             "target": "Obj{model_query_transitive_extends.Test1_C1.attribute}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           },
           {
             "target": "Obj{model_query_transitive_extends.Test1_C2.attribute}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -156,15 +261,18 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{model_query_transitive_extends.Test1_C.instance}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           },
           {
             "target": "Obj{model_query_transitive_extends.Test1_C1.instance}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           },
           {
             "target": "Obj{model_query_transitive_extends.Test1_C2.instance}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -188,7 +296,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{model_query_transitive_extends.Test1_C.attribute}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -212,7 +321,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{model_query_transitive_extends.Test1_C.instance}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -359,7 +469,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{model_query_transitive_extends.Test1_C.instance}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -376,11 +487,13 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{model_query_transitive_extends.Test1_C.instance}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           },
           {
             "target": "Obj{model_query_transitive_extends.Test1_C1.instance}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -397,15 +510,18 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{model_query_transitive_extends.Test1_C.instance}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           },
           {
             "target": "Obj{model_query_transitive_extends.Test1_C1.instance}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           },
           {
             "target": "Obj{model_query_transitive_extends.Test1_C2.instance}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true

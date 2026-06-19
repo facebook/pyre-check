@@ -11,20 +11,14 @@ open Ast
 open Interprocedural
 
 let test_from_source context =
-  let assert_class_hierarchy ?pyrefly_expected ~source ~expected () =
+  let assert_class_hierarchy ~source ~expected () =
     let pyre_api =
       Test.ScratchPyrePysaProject.setup
         ~context
+        ~force_pyrefly:true
         ~requires_type_of_expressions:false
         ["test.py", source]
       |> Test.ScratchPyrePysaProject.read_only_api
-    in
-    let expected =
-      (* Allow different results for pyrefly and pyre1 *)
-      match pyrefly_expected with
-      | Some pyrefly_expected when PyrePysaApi.ReadOnly.is_pyrefly pyre_api ->
-          pyrefly_expected ~pyre_api
-      | _ -> expected ~pyre_api
     in
     let class_hierarchy =
       ClassHierarchyGraph.Heap.from_qualifier ~pyre_api ~qualifier:(Reference.create "test")
@@ -35,21 +29,7 @@ let test_from_source context =
       ~printer:ClassHierarchyGraph.Heap.show
       ~cmp:ClassHierarchyGraph.Heap.equal
   in
-  let create ~pyre_api ~roots ~edges =
-    (* When using pyrefly, add the builtins prefix, e.g object -> builtins.object *)
-    let add_builtins_prefix reference =
-      Reference.show
-        (PyrePysaApi.ReadOnly.add_builtins_prefix pyre_api (Reference.create reference))
-    in
-    let roots = List.map ~f:add_builtins_prefix roots in
-    let edges =
-      List.map
-        ~f:(fun (parent, children) ->
-          add_builtins_prefix parent, List.map ~f:add_builtins_prefix children)
-        edges
-    in
-    ClassHierarchyGraph.Heap.create ~roots ~edges
-  in
+  let create = ClassHierarchyGraph.Heap.create in
   assert_class_hierarchy
     ~source:
       {|
@@ -60,10 +40,10 @@ let test_from_source context =
     |}
     ~expected:
       (create
-         ~roots:["object"]
+         ~roots:["builtins.object"]
          ~edges:
            [
-             "object", ["test.A"];
+             "builtins.object", ["test.A"];
              "test.A", ["test.B"; "test.C"];
              "test.B", ["test.D"];
              "test.C", ["test.D"];
@@ -79,22 +59,11 @@ let test_from_source context =
     |}
     ~expected:
       (create
-         ~roots:["object"; "type"]
+         ~roots:["builtins.object"; "builtins.type"]
          ~edges:
            [
-             "object", ["test.A"];
-             "type", ["test.Meta"];
-             "test.Meta", ["test.B"];
-             "test.A", [];
-             "test.B", [];
-           ])
-    ~pyrefly_expected:
-      (create
-         ~roots:["object"; "type"]
-         ~edges:
-           [
-             "object", ["test.A"; "test.B"];
-             "type", ["test.Meta"];
+             "builtins.object", ["test.A"; "test.B"];
+             "builtins.type", ["test.Meta"];
              "test.Meta", ["test.B"];
              "test.A", [];
              "test.B", [];
@@ -112,10 +81,10 @@ let test_from_source context =
     |}
     ~expected:
       (create
-         ~roots:["object"]
+         ~roots:["builtins.object"]
          ~edges:
            [
-             "object", ["test.A"; "test.B"];
+             "builtins.object", ["test.A"; "test.B"];
              "test.A", ["test.C"; "test.D"; "test.F"];
              "test.B", ["test.D"];
              "test.C", [];

@@ -1,6 +1,133 @@
 @generated
 Higher order call graphs
 {
+  "callable": "model_query_parent_decorator.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "21:1-21:3|identifier|d1": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_parent_decorator.d1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "22:14-22:19|identifier|TestC": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_parent_decorator.TestC"
+            }
+          ]
+        }
+      }
+    },
+    "29:1-29:3|identifier|d2": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_parent_decorator.d2",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "30:14-30:19|identifier|TestC": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_parent_decorator.TestC"
+            }
+          ]
+        }
+      }
+    },
+    "37:1-37:3|identifier|d1": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_parent_decorator.d1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "38:1-38:3|identifier|d2": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "model_query_parent_decorator.d2",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "39:14-39:19|identifier|TestC": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_parent_decorator.TestC"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "model_query_parent_decorator.setup",
   "returned_callables": [],
   "calls": {
@@ -8,7 +135,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -19,7 +146,8 @@ Higher order call graphs
             "target": "model_query_parent_decorator.TestC_1.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "model_query_parent_decorator.TestC_1"
           }
         ]
       }
@@ -28,7 +156,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -39,7 +167,8 @@ Higher order call graphs
             "target": "model_query_parent_decorator.TestC_1.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "model_query_parent_decorator.TestC_1"
           }
         ]
       }
@@ -48,7 +177,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 2,
             "return_type": [],
             "is_static_method": true
@@ -59,7 +188,8 @@ Higher order call graphs
             "target": "model_query_parent_decorator.TestC_1.__init__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "model_query_parent_decorator.TestC_1"
           }
         ]
       }
@@ -68,7 +198,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 3,
             "return_type": [],
             "is_static_method": true
@@ -79,7 +209,8 @@ Higher order call graphs
             "target": "model_query_parent_decorator.TestC_2.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "model_query_parent_decorator.TestC_2"
           }
         ]
       }
@@ -88,7 +219,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 4,
             "return_type": [],
             "is_static_method": true
@@ -99,7 +230,8 @@ Higher order call graphs
             "target": "model_query_parent_decorator.TestC_2.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "model_query_parent_decorator.TestC_2"
           }
         ]
       }
@@ -108,7 +240,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 5,
             "return_type": [],
             "is_static_method": true
@@ -119,7 +251,8 @@ Higher order call graphs
             "target": "model_query_parent_decorator.TestC_2.__init__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "model_query_parent_decorator.TestC_2"
           }
         ]
       }
@@ -128,7 +261,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 6,
             "return_type": [],
             "is_static_method": true
@@ -139,7 +272,8 @@ Higher order call graphs
             "target": "model_query_parent_decorator.TestC_3.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "model_query_parent_decorator.TestC_3"
           }
         ]
       }
@@ -148,7 +282,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 7,
             "return_type": [],
             "is_static_method": true
@@ -159,7 +293,8 @@ Higher order call graphs
             "target": "model_query_parent_decorator.TestC_3.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "model_query_parent_decorator.TestC_3"
           }
         ]
       }
@@ -168,7 +303,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 8,
             "return_type": [],
             "is_static_method": true
@@ -179,7 +314,8 @@ Higher order call graphs
             "target": "model_query_parent_decorator.TestC_3.__init__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "model_query_parent_decorator.TestC_3"
           }
         ]
       }

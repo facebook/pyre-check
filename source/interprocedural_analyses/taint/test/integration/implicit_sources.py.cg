@@ -1,14 +1,18 @@
 @generated
 Call dependencies
 {
-  "implicit_sources.bar_dot_format (fun)": [ "str.format (method)" ],
-  "implicit_sources.bar_format_strings (fun)": [ "object.__repr__ (method)" ],
-  "implicit_sources.bar_percent_format (fun)": [ "str.__mod__ (method)" ],
+  "implicit_sources.bar_dot_format (fun)": [ "builtins.str.format (method)" ],
+  "implicit_sources.bar_format_strings (fun)": [
+    "builtins.int.__format__ (method)"
+  ],
+  "implicit_sources.bar_percent_format (fun)": [
+    "builtins.str.__mod__ (method)"
+  ],
   "implicit_sources.string_literal_arguments_source (fun)": [
-    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)",
-    "str.__mod__ (method)", "str.format (method)"
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "builtins.str.__mod__ (method)", "builtins.str.format (method)"
   ],
   "implicit_sources.toplevel_simultaneous_assignment (fun)": [
-    "str.__add__ (method)"
+    "builtins.str.__add__ (method)"
   ]
 }

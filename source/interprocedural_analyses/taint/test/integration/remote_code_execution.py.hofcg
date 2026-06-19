@@ -17,7 +17,9 @@ Higher order call graphs
     },
     "11:4-11:11": {
       "call": {
-        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
       }
     }
   }

@@ -2,18 +2,18 @@
 Call dependencies
 {
   "named_tuple_asdict.sink_on_asdict_pop_value (fun)": [
-    "collections.OrderedDict.pop (method)", "pysa._test_sink (fun)",
-    "typing.NamedTuple._asdict (method)"
+    "_typeshed._type_checker_internals.NamedTupleFallback._asdict (method)",
+    "builtins.dict.pop (method)", "pysa._test_sink (fun)"
   ],
   "named_tuple_asdict.sink_on_charset_direct (fun)": [
     "pysa._test_sink (fun)"
   ],
   "named_tuple_asdict.sink_on_charset_via_asdict_getitem (fun)": [
-    "dict.__getitem__ (method)", "pysa._test_sink (fun)",
-    "typing.NamedTuple._asdict (method)"
+    "_typeshed._type_checker_internals.NamedTupleFallback._asdict (method)",
+    "builtins.dict.__getitem__ (method)", "pysa._test_sink (fun)"
   ],
   "named_tuple_asdict.sink_on_charset_via_asdict_pop (fun)": [
-    "collections.OrderedDict.pop (method)", "pysa._test_sink (fun)",
-    "typing.NamedTuple._asdict (method)"
+    "_typeshed._type_checker_internals.NamedTupleFallback._asdict (method)",
+    "builtins.dict.pop (method)", "pysa._test_sink (fun)"
   ]
 }

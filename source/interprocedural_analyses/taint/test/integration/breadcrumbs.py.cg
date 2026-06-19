@@ -8,15 +8,17 @@ Call dependencies
   "breadcrumbs.int_parameter (fun)": [ "pysa._test_sink (fun)" ],
   "breadcrumbs.int_source (fun)": [ "pysa._test_source (fun)" ],
   "breadcrumbs.scalar_attribute_backward (fun)": [
-    "float.__gt__ (method)", "float.__le__ (method)",
-    "list.__iter__ (method)", "object.__repr__ (method)",
-    "pysa._test_sink (fun)", "random.random (fun)", "str.join (method)",
+    "_random.Random.random (method)", "builtins.float.__gt__ (method)",
+    "builtins.list.__iter__ (method)", "builtins.object.__init__ (method)",
+    "builtins.object.__repr__ (method)", "builtins.str.__new__ (method)",
+    "builtins.str.join (method)", "pysa._test_sink (fun)",
     "typing.Iterator.__next__ (method)"
   ],
   "breadcrumbs.scalar_attribute_forward (fun)": [
-    "breadcrumbs.tpm_request (fun)", "float.__gt__ (method)",
-    "float.__le__ (method)", "list.__iter__ (method)",
-    "object.__repr__ (method)", "random.random (fun)", "str.join (method)",
+    "_random.Random.random (method)", "breadcrumbs.tpm_request (fun)",
+    "builtins.float.__gt__ (method)", "builtins.list.__iter__ (method)",
+    "builtins.object.__init__ (method)", "builtins.object.__repr__ (method)",
+    "builtins.str.__new__ (method)", "builtins.str.join (method)",
     "typing.Iterator.__next__ (method)"
   ]
 }

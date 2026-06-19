@@ -286,7 +286,7 @@
     "callable_line": 129,
     "tito": [
       {
-        "port": "captured_variable(f, parameter)",
+        "port": "captured_variable(f, decorator_location.identity)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -689,7 +689,7 @@
             "call": {
               "position": { "line": 152, "start": 43, "end": 57 },
               "resolves_to": [
-                "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging2_skip_this_decorator]"
+                "decorator_location.with_logging2.inner[captured_variable(f, decorator_location.with_logging2)=decorator_location.decorated_logging2_skip_this_decorator]"
               ],
               "port": "formal(x, position=0)",
               "call_site": "152:4-152:58"
@@ -763,7 +763,7 @@
             "call": {
               "position": { "line": 162, "start": 44, "end": 58 },
               "resolves_to": [
-                "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.decorated_logging_ignore_this_decorator]"
+                "decorator_location.with_logging.inner[captured_variable(f, decorator_location.with_logging)=decorator_location.decorated_logging_ignore_this_decorator]"
               ],
               "port": "formal(x, position=0)",
               "call_site": "162:4-162:59"
@@ -837,7 +837,7 @@
             "call": {
               "position": { "line": 148, "start": 31, "end": 45 },
               "resolves_to": [
-                "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]]"
+                "decorator_location.with_logging.inner[captured_variable(f, decorator_location.with_logging)=decorator_location.with_logging2.inner[captured_variable(f, decorator_location.with_logging2)=decorator_location.decorated_logging_logging2]]"
               ],
               "port": "formal(x, position=0)",
               "call_site": "148:4-148:46"
@@ -981,7 +981,7 @@
             "call": {
               "position": { "line": 166, "start": 19, "end": 33 },
               "resolves_to": [
-                "decorator_location.pass_local_variable_to_x.inner[captured_variable(f, parameter)=decorator_location.handle_request]"
+                "decorator_location.pass_local_variable_to_x.inner[captured_variable(f, decorator_location.pass_local_variable_to_x)=decorator_location.handle_request]"
               ],
               "port": "formal(request, position=0)",
               "call_site": "166:4-166:42"
@@ -1231,6 +1231,164 @@
 {
   "kind": "model",
   "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[col_offset,end_col_offset,end_lineno,lineno])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decimal.DecimalTuple.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(exponent, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[exponent]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(digits, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[digits]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(sign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[sign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "decorator_location.Foo.return_source",
     "filename": "decorator_location.py",
     "callable_line": 122,
@@ -1283,7 +1441,151 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.pass_local_variable_to_x.inner[captured_variable(f, parameter)=decorator_location.handle_request]",
+    "callable": "functools._CacheInfo.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(currsize, position=4)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[currsize]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(maxsize, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[maxsize]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(misses, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[misses]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(hits, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[hits]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "functools._CacheParameters.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[maxsize,typed])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(typed)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[typed]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(maxsize)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[maxsize]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decorator_location.pass_local_variable_to_x.inner[captured_variable(f, decorator_location.pass_local_variable_to_x)=decorator_location.handle_request]",
     "filename": "decorator_location.py",
     "callable_line": 108,
     "sinks": [
@@ -1311,7 +1613,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.decorated_logging_ignore_this_decorator]",
+    "callable": "decorator_location.with_logging.inner[captured_variable(f, decorator_location.with_logging)=decorator_location.decorated_logging_ignore_this_decorator]",
     "filename": "decorator_location.py",
     "callable_line": 19,
     "sinks": [
@@ -1390,7 +1692,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.with_logging.inner[captured_variable(some_helper, decorator_location.with_logging)=decorator_location.with_logging.some_helper, captured_variable(f, parameter)=decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]]",
+    "callable": "decorator_location.with_logging.inner[captured_variable(f, decorator_location.with_logging)=decorator_location.with_logging2.inner[captured_variable(f, decorator_location.with_logging2)=decorator_location.decorated_logging_logging2]]",
     "filename": "decorator_location.py",
     "callable_line": 19,
     "sinks": [
@@ -1431,7 +1733,7 @@
             "call": {
               "position": { "line": 21, "start": 10, "end": 11 },
               "resolves_to": [
-                "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]"
+                "decorator_location.with_logging2.inner[captured_variable(f, decorator_location.with_logging2)=decorator_location.decorated_logging_logging2]"
               ],
               "port": "formal(x, position=0)",
               "call_site": "21:8-21:12"
@@ -1469,7 +1771,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging2_skip_this_decorator]",
+    "callable": "decorator_location.with_logging2.inner[captured_variable(f, decorator_location.with_logging2)=decorator_location.decorated_logging2_skip_this_decorator]",
     "filename": "decorator_location.py",
     "callable_line": 28,
     "sinks": [
@@ -1524,7 +1826,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator_location.with_logging2.inner[captured_variable(f, parameter)=decorator_location.decorated_logging_logging2]",
+    "callable": "decorator_location.with_logging2.inner[captured_variable(f, decorator_location.with_logging2)=decorator_location.decorated_logging_logging2]",
     "filename": "decorator_location.py",
     "callable_line": 28,
     "sinks": [

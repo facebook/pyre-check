@@ -1,4 +1,0 @@
-@generated
-Overrides
-add_breadcrumb_to_state.BreadcrumbOnEnter.__init__ (override) -> [add_breadcrumb_to_state.BreadcrumbOnEnter.__init__ (method)]
-builtins.object.__init__ (override) -> [add_breadcrumb_to_state.BreadcrumbOnEnter.__init__ (override) builtins.object.__init__ (method)]

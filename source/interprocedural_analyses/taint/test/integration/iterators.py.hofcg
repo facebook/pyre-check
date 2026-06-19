@@ -11,21 +11,41 @@ Higher order call graphs
         ]
       }
     },
+    "61:15-61:42": {
+      "call": {
+        "calls": [
+          { "target": "builtins.next", "index": 0, "return_type": [] }
+        ]
+      }
+    },
     "61:15-61:42|artificial-call|next-call": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "61:20-61:41": {
+      "call": {
+        "calls": [
+          { "target": "builtins.iter", "index": 0, "return_type": [] }
+        ]
       }
     },
     "61:20-61:41|artificial-call|iter-call": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotFindParentClass" ] ]
-      }
+      "call": { "unresolved": [ "UnknownClassField" ] }
     },
     "61:25-61:40": {
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -33,10 +53,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "iterators.CustomGetItem"
           }
         ]
       }
@@ -54,6 +75,13 @@ Higher order call graphs
         ]
       }
     },
+    "48:15-48:39": {
+      "call": {
+        "calls": [
+          { "target": "builtins.next", "index": 0, "return_type": [] }
+        ]
+      }
+    },
     "48:15-48:39|artificial-call|next-call": {
       "call": {
         "calls": [
@@ -64,6 +92,13 @@ Higher order call graphs
             "return_type": [],
             "receiver_class": "typing.Iterator"
           }
+        ]
+      }
+    },
+    "48:20-48:38": {
+      "call": {
+        "calls": [
+          { "target": "builtins.iter", "index": 0, "return_type": [] }
         ]
       }
     },
@@ -84,7 +119,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -92,10 +127,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "iterators.CustomIter"
           }
         ]
       }
@@ -120,6 +156,13 @@ Higher order call graphs
         ]
       }
     },
+    "13:15-13:35": {
+      "call": {
+        "calls": [
+          { "target": "builtins.next", "index": 0, "return_type": [] }
+        ]
+      }
+    },
     "13:15-13:35|artificial-call|next-call": {
       "call": {
         "calls": [
@@ -133,15 +176,22 @@ Higher order call graphs
         ]
       }
     },
+    "13:20-13:34": {
+      "call": {
+        "calls": [
+          { "target": "builtins.iter", "index": 0, "return_type": [] }
+        ]
+      }
+    },
     "13:20-13:34|artificial-call|iter-call": {
       "call": {
         "calls": [
           {
-            "target": "list.__iter__",
+            "target": "builtins.list.__iter__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "list"
+            "receiver_class": "builtins.list"
           }
         ]
       }
@@ -153,15 +203,22 @@ Higher order call graphs
         ]
       }
     },
+    "16:8-16:22": {
+      "call": {
+        "calls": [
+          { "target": "builtins.iter", "index": 1, "return_type": [] }
+        ]
+      }
+    },
     "16:8-16:22|artificial-call|iter-call": {
       "call": {
         "calls": [
           {
-            "target": "list.__iter__",
+            "target": "builtins.list.__iter__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "list"
+            "receiver_class": "builtins.list"
           }
         ]
       }
@@ -170,6 +227,13 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "17:15-17:22": {
+      "call": {
+        "calls": [
+          { "target": "builtins.next", "index": 1, "return_type": [] }
         ]
       }
     },
@@ -193,6 +257,13 @@ Higher order call graphs
         ]
       }
     },
+    "18:15-18:22": {
+      "call": {
+        "calls": [
+          { "target": "builtins.next", "index": 2, "return_type": [] }
+        ]
+      }
+    },
     "18:15-18:22|artificial-call|next-call": {
       "call": {
         "calls": [
@@ -210,6 +281,13 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "pysa._test_sink", "index": 3, "return_type": [] }
+        ]
+      }
+    },
+    "19:15-19:22": {
+      "call": {
+        "calls": [
+          { "target": "builtins.next", "index": 3, "return_type": [] }
         ]
       }
     },
@@ -233,6 +311,13 @@ Higher order call graphs
         ]
       }
     },
+    "22:8-22:28": {
+      "call": {
+        "calls": [
+          { "target": "builtins.next", "index": 4, "return_type": [] }
+        ]
+      }
+    },
     "22:8-22:28|artificial-call|next-call": {
       "call": {
         "calls": [
@@ -246,15 +331,22 @@ Higher order call graphs
         ]
       }
     },
+    "22:13-22:27": {
+      "call": {
+        "calls": [
+          { "target": "builtins.iter", "index": 2, "return_type": [] }
+        ]
+      }
+    },
     "22:13-22:27|artificial-call|iter-call": {
       "call": {
         "calls": [
           {
-            "target": "list.__iter__",
+            "target": "builtins.list.__iter__",
             "index": 2,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "list"
+            "receiver_class": "builtins.list"
           }
         ]
       }
@@ -270,11 +362,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "builtins.dict.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -290,11 +382,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "builtins.dict.__getitem__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -313,6 +405,13 @@ Higher order call graphs
         ]
       }
     },
+    "27:15-27:28": {
+      "call": {
+        "calls": [
+          { "target": "builtins.next", "index": 5, "return_type": [] }
+        ]
+      }
+    },
     "27:15-27:28|artificial-call|next-call": {
       "call": {
         "calls": [
@@ -326,15 +425,22 @@ Higher order call graphs
         ]
       }
     },
+    "27:20-27:27": {
+      "call": {
+        "calls": [
+          { "target": "builtins.iter", "index": 3, "return_type": [] }
+        ]
+      }
+    },
     "27:20-27:27|artificial-call|iter-call": {
       "call": {
         "calls": [
           {
-            "target": "typing.Iterable.__iter__",
+            "target": "builtins.dict.__iter__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -353,6 +459,13 @@ Higher order call graphs
         ]
       }
     },
+    "30:15-30:28": {
+      "call": {
+        "calls": [
+          { "target": "builtins.next", "index": 6, "return_type": [] }
+        ]
+      }
+    },
     "30:15-30:28|artificial-call|next-call": {
       "call": {
         "calls": [
@@ -366,33 +479,49 @@ Higher order call graphs
         ]
       }
     },
+    "30:20-30:27": {
+      "call": {
+        "calls": [
+          { "target": "builtins.iter", "index": 4, "return_type": [] }
+        ]
+      }
+    },
     "30:20-30:27|artificial-call|iter-call": {
       "call": {
         "calls": [
           {
-            "target": "typing.Iterable.__iter__",
+            "target": "builtins.dict.__iter__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
     },
     "32:8-32:38": {
       "call": {
-        "calls": [ { "target": "next", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.next", "index": 7, "return_type": [] }
+        ]
+      }
+    },
+    "32:13-32:21": {
+      "call": {
+        "calls": [
+          { "target": "builtins.iter", "index": 5, "return_type": [] }
+        ]
       }
     },
     "32:13-32:21|artificial-call|iter-call": {
       "call": {
         "calls": [
           {
-            "target": "list.__iter__",
+            "target": "builtins.list.__iter__",
             "index": 3,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "list"
+            "receiver_class": "builtins.list"
           }
         ]
       }
@@ -413,18 +542,27 @@ Higher order call graphs
     },
     "35:8-35:63": {
       "call": {
-        "calls": [ { "target": "next", "index": 1, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.next", "index": 8, "return_type": [] }
+        ]
+      }
+    },
+    "35:13-35:21": {
+      "call": {
+        "calls": [
+          { "target": "builtins.iter", "index": 6, "return_type": [] }
+        ]
       }
     },
     "35:13-35:21|artificial-call|iter-call": {
       "call": {
         "calls": [
           {
-            "target": "list.__iter__",
+            "target": "builtins.list.__iter__",
             "index": 4,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "list"
+            "receiver_class": "builtins.list"
           }
         ]
       }
@@ -454,13 +592,14 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "builtins.dict.__getitem__",
             "index": 2,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
-        ]
+        ],
+        "unresolved": [ "UnexpectedPyreflyTarget" ]
       }
     },
     "38:4-38:25": {
@@ -474,13 +613,14 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "builtins.dict.__getitem__",
             "index": 3,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
-        ]
+        ],
+        "unresolved": [ "UnexpectedPyreflyTarget" ]
       }
     }
   }
@@ -502,15 +642,22 @@ Higher order call graphs
   "callable": "iterators.CustomIter.__iter__",
   "returned_callables": [],
   "calls": {
+    "43:15-43:37": {
+      "call": {
+        "calls": [
+          { "target": "builtins.iter", "index": 0, "return_type": [] }
+        ]
+      }
+    },
     "43:15-43:37|artificial-call|iter-call": {
       "call": {
         "calls": [
           {
-            "target": "list.__iter__",
+            "target": "builtins.list.__iter__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "list"
+            "receiver_class": "builtins.list"
           }
         ]
       }

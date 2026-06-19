@@ -1,6 +1,8 @@
 @generated
 Overrides
+_typeshed._type_checker_internals.NamedTupleFallback.__init__ (override) -> [_typeshed._type_checker_internals.NamedTupleFallback.__init__ (method) named_tuple_asdict.ConnectionParams.__init__ (override)]
+builtins.tuple.__iter__ (override) -> [builtins.tuple.__iter__ (method) named_tuple_asdict.ConnectionParams.__iter__ (override)]
+builtins.tuple.__new__ (override) -> [builtins.tuple.__new__ (method) named_tuple_asdict.ConnectionParams.__new__ (override)]
 named_tuple_asdict.ConnectionParams.__init__ (override) -> [named_tuple_asdict.ConnectionParams.__init__ (method)]
+named_tuple_asdict.ConnectionParams.__iter__ (override) -> [named_tuple_asdict.ConnectionParams.__iter__ (method)]
 named_tuple_asdict.ConnectionParams.__new__ (override) -> [named_tuple_asdict.ConnectionParams.__new__ (method)]
-type.__new__ (override) -> [named_tuple_asdict.ConnectionParams.__new__ (override) type.__new__ (method)]
-typing.NamedTuple.__init__ (override) -> [named_tuple_asdict.ConnectionParams.__init__ (override) typing.NamedTuple.__init__ (method)]

@@ -25,9 +25,10 @@ Call dependencies
     "add_feature_to_argument.add_feature_to_first (fun)"
   ],
   "add_feature_to_argument.propagate_multiple_add_feature (fun)": [
+    "_random.Random.random (method)",
     "add_feature_to_argument.add_feature_to_first (fun)",
     "add_feature_to_argument.add_feature_to_second (fun)",
-    "float.__gt__ (method)", "float.__le__ (method)", "random.random (fun)"
+    "builtins.float.__gt__ (method)"
   ],
   "add_feature_to_argument.source_add_feature_to_argument_does_not_propagate_inferred_tito_feature (fun)": [
     "add_feature_to_argument.add_feature_to_argument_does_not_propagate_inferred_tito_feature (fun)",
@@ -43,7 +44,7 @@ Call dependencies
   ],
   "add_feature_to_argument.test_add_feature_in_comprehension (fun)": [
     "add_feature_to_argument.add_feature_to_first (fun)",
-    "list.__getitem__ (method)", "list.__iter__ (method)",
+    "builtins.list.__getitem__ (method)", "builtins.list.__iter__ (method)",
     "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "typing.Iterator.__next__ (method)"
   ],
@@ -53,7 +54,7 @@ Call dependencies
   ],
   "add_feature_to_argument.test_add_feature_to_sink_in_comprehension (fun)": [
     "add_feature_to_argument.add_feature_to_first (fun)",
-    "list.__iter__ (method)", "pysa._test_sink (fun)",
+    "builtins.list.__iter__ (method)", "pysa._test_sink (fun)",
     "typing.Iterator.__next__ (method)"
   ],
   "add_feature_to_argument.test_add_multiple_feature (fun)": [

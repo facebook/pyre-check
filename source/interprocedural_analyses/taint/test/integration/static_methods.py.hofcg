@@ -24,6 +24,29 @@ Higher order call graphs
   "callable": "static_methods.test",
   "returned_callables": [],
   "calls": {
+    "16:11-16:22|identifier|StaticClass": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "static_methods.StaticClass"
+            }
+          ]
+        }
+      }
+    },
     "16:11-16:35": {
       "call": {
         "calls": [

@@ -1,10 +1,14 @@
 @generated
 Call dependencies
 {
-  "long_access_path_taint.C.__init__ (method)": [ "dict.get (method)" ],
+  "long_access_path_taint.C.__init__ (method)": [
+    "builtins.dict.get (method)"
+  ],
   "long_access_path_taint.C.async_create (method)": [
-    "long_access_path_taint.C.__init__ (method)", "object.__new__ (method)",
-    "object.__repr__ (method)", "str.__eq__ (method)", "str.__ne__ (method)"
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "builtins.object.__repr__ (method)", "builtins.str.__eq__ (method)",
+    "builtins.str.__new__ (method)",
+    "long_access_path_taint.C.__init__ (method)"
   ],
   "long_access_path_taint.test (fun)": [
     "long_access_path_taint.C.async_create (method)",

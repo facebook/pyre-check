@@ -1,6 +1,35 @@
 @generated
 Higher order call graphs
 {
+  "callable": "extra_trace.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "109:24-109:37|identifier|TransformBase": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "extra_trace.TransformBase"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "extra_trace.branch_tito_backward",
   "returned_callables": [],
   "calls": {
@@ -208,14 +237,15 @@ Higher order call graphs
   "callable": "extra_trace.issue_via_transfom_captured_variable.nested_function",
   "returned_callables": [],
   "calls": {
-    "174:15-174:16|identifier|$local_extra_trace?issue_via_transfom_captured_variable$x": {
+    "174:15-174:16|identifier|x": {
       "identifier": {
         "captured_variables": [
           {
             "name": "x",
             "defining_function": "extra_trace.issue_via_transfom_captured_variable"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -239,24 +269,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "builtins.int.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
-          }
-        ]
-      }
-    },
-    "85:10-85:38|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "int.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "builtins.int"
           }
         ]
       }
@@ -307,24 +324,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "builtins.int.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
-          }
-        ]
-      }
-    },
-    "79:10-79:38|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "int.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "builtins.int"
           }
         ]
       }
@@ -361,24 +365,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "builtins.int.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
-          }
-        ]
-      }
-    },
-    "140:7-140:35|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "int.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "builtins.int"
           }
         ]
       }
@@ -409,32 +400,17 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "builtins.int.__gt__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
-          }
-        ]
-      }
-    },
-    "142:9-142:37|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "int.__le__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "builtins.int"
           }
         ]
       }
     },
     "143:16-143:25|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "144:9-144:32": {
       "call": {
@@ -451,32 +427,17 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "builtins.int.__gt__",
             "index": 2,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
-          }
-        ]
-      }
-    },
-    "144:9-144:37|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "int.__le__",
-            "index": 2,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "builtins.int"
           }
         ]
       }
     },
     "145:16-145:25|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "146:9-146:32": {
       "call": {
@@ -493,32 +454,17 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "builtins.int.__gt__",
             "index": 3,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
-          }
-        ]
-      }
-    },
-    "146:9-146:37|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "int.__le__",
-            "index": 3,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "builtins.int"
           }
         ]
       }
     },
     "147:16-147:25|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "148:9-148:32": {
       "call": {
@@ -535,32 +481,17 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "builtins.int.__gt__",
             "index": 4,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
-          }
-        ]
-      }
-    },
-    "148:9-148:37|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "int.__le__",
-            "index": 4,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "builtins.int"
           }
         ]
       }
     },
     "149:16-149:25|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "150:9-150:32": {
       "call": {
@@ -577,37 +508,20 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "builtins.int.__gt__",
             "index": 5,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
-          }
-        ]
-      }
-    },
-    "150:9-150:37|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "int.__le__",
-            "index": 5,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "builtins.int"
           }
         ]
       }
     },
     "151:16-151:25|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "153:16-153:25|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -786,24 +700,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "int.__gt__",
+            "target": "builtins.int.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
-          }
-        ]
-      }
-    },
-    "131:7-131:35|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "int.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "int"
+            "receiver_class": "builtins.int"
           }
         ]
       }
@@ -820,9 +721,7 @@ Higher order call graphs
       }
     },
     "132:27-132:50|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "134:15-134:53": {
       "call": {
@@ -836,9 +735,7 @@ Higher order call graphs
       }
     },
     "134:29-134:52|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -875,9 +772,7 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "159:4-159:32|artificial-call|subscript-set-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "160:11-160:44": {
       "call": {

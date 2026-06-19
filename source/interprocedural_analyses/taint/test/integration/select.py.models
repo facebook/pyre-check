@@ -2,9 +2,9 @@
 {
   "kind": "model",
   "data": {
-    "callable": "eval",
+    "callable": "builtins.eval",
     "filename": "builtins.pyi",
-    "callable_line": 476,
+    "callable_line": 4540,
     "sinks": [
       {
         "port": "formal(source, position=0, positional_only)",
@@ -310,7 +310,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -371,7 +373,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -384,11 +388,11 @@
     "features": [ { "has": "first-field" }, { "first-field": "payload" } ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "eval",
+      "callee": "builtins.eval",
       "index": 0,
       "parameter": "formal(source)"
     },
-    "master_handle": "select.view_entry_field:5001:0:Call|eval|0|formal(source):af1e2eff12d449a22da067964d0f1c97"
+    "master_handle": "select.view_entry_field:5001:0:Call|builtins.eval|0|formal(source):8a3d678a5ab41e7c307e83731de50ccf"
   }
 }
 {
@@ -404,7 +408,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -461,7 +467,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -474,11 +482,11 @@
     "features": [ { "has": "first-index" }, { "first-index": "payload" } ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "eval",
+      "callee": "builtins.eval",
       "index": 0,
       "parameter": "formal(source)"
     },
-    "master_handle": "select.view_entry_get:5001:0:Call|eval|0|formal(source):bb06e576f9803d10fd7134d0e483d6ff"
+    "master_handle": "select.view_entry_get:5001:0:Call|builtins.eval|0|formal(source):f74ec044a873775640a341a06e22aef8"
   }
 }
 {
@@ -494,7 +502,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -561,7 +571,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -579,19 +591,126 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "eval",
+      "callee": "builtins.eval",
       "index": 0,
       "parameter": "formal(source)"
     },
-    "master_handle": "select.view_entry_index:5001:0:Call|eval|0|formal(source):fa4de806c0cfe734f084ead2c0fe1ac1"
+    "master_handle": "select.view_entry_index:5001:0:Call|builtins.eval|0|formal(source):3481d83246062f3bb10487bb628c4633"
   }
 }
 {
   "kind": "model",
   "data": {
-    "callable": "dict.get",
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[col_offset,end_col_offset,end_lineno,lineno])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.dict.get",
     "filename": "builtins.pyi",
-    "callable_line": 403,
+    "callable_line": 3703,
     "tito": [
       {
         "port": "formal(self, position=0, positional_only)",
@@ -604,6 +723,57 @@
       }
     ],
     "modes": [ "SkipObscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decimal.DecimalTuple.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(exponent, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[exponent]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(digits, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[digits]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(sign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[sign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
   }
 }
 {

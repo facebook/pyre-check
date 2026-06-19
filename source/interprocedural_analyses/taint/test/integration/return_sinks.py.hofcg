@@ -44,7 +44,7 @@ Higher order call graphs
           {
             "target": "return_sinks.sink_on_return",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -61,7 +61,7 @@ Higher order call graphs
           {
             "target": "return_sinks.sink_on_return",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }

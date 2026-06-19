@@ -1,6 +1,9 @@
 @generated
 Call dependencies
 {
+  "version_specific_code.$toplevel (fun)": [
+    "builtins.int.__ge__ (method)", "sys._version_info.minor (method)"
+  ],
   "version_specific_code.normal_function (fun)": [
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ]

@@ -1,6 +1,219 @@
 @generated
 Higher order call graphs
 {
+  "callable": "model_query_return_annotation_extends.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "16:15-16:23|identifier|Test1_C1": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_return_annotation_extends.Test1_C1"
+            }
+          ]
+        }
+      }
+    },
+    "20:15-20:23|identifier|Test1_C1": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_return_annotation_extends.Test1_C1"
+            }
+          ]
+        }
+      }
+    },
+    "24:15-24:23|identifier|Test1_C2": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_return_annotation_extends.Test1_C2"
+            }
+          ]
+        }
+      }
+    },
+    "56:15-56:23|identifier|Test2_C1": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_return_annotation_extends.Test2_C1"
+            }
+          ]
+        }
+      }
+    },
+    "60:15-60:23|identifier|Test2_C2": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_return_annotation_extends.Test2_C2"
+            }
+          ]
+        }
+      }
+    },
+    "64:15-64:23|identifier|Test2_C1": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_return_annotation_extends.Test2_C1"
+            }
+          ]
+        }
+      }
+    },
+    "86:15-86:23|identifier|Test3_C1": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_return_annotation_extends.Test3_C1"
+            }
+          ]
+        }
+      }
+    },
+    "90:15-90:23|identifier|Test3_C1": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_return_annotation_extends.Test3_C1"
+            }
+          ]
+        }
+      }
+    },
+    "94:15-94:23|identifier|Test3_C2": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_return_annotation_extends.Test3_C2"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "model_query_return_annotation_extends.test1_alarm1",
   "returned_callables": [],
   "calls": {

@@ -8,11 +8,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__setitem__",
+            "target": "builtins.dict.__setitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -23,7 +23,7 @@ Higher order call graphs
           {
             "target": "multi_subkind.source_a",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -32,11 +32,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__setitem__",
+            "target": "builtins.dict.__setitem__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -47,7 +47,7 @@ Higher order call graphs
           {
             "target": "multi_subkind.source_b",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -77,9 +77,7 @@ Higher order call graphs
       }
     },
     "24:11-24:17|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "25:4-25:18": {
       "call": {
@@ -89,9 +87,7 @@ Higher order call graphs
       }
     },
     "25:11-25:17|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }

@@ -21,8 +21,7 @@ Call dependencies
     "pysa._test_sink (fun)"
   ],
   "class_methods.D.__init__ (method)": [
-    "object.__init__ (method)", "object.__new__ (method)",
-    "super.__init__ (method)"
+    "builtins.object.__new__ (method)", "builtins.super.__init__ (method)"
   ],
   "class_methods.D.abstract_class_method (method)": [
     "pysa._test_sink (fun)"
@@ -44,16 +43,15 @@ Call dependencies
     "pysa._test_source (fun)"
   ],
   "class_methods.issue_with_abstract_property (fun)": [
-    "class_methods.D.__init__ (method)",
+    "builtins.object.__new__ (method)", "class_methods.D.__init__ (method)",
     "class_methods.D.my_abstract_property (method)",
     "class_methods.D.my_abstract_property@setter (method)",
-    "object.__new__ (method)", "pysa._test_sink (fun)",
-    "pysa._test_source (fun)"
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "class_methods.test_obscure_class_method_tito (fun)": [
+    "builtins.object.__new__ (method)",
     "class_methods.ObscureClassMethodTito.__init__ (method)",
     "class_methods.ObscureClassMethodTito.method (method)",
-    "object.__new__ (method)", "pysa._test_sink (fun)",
-    "pysa._test_source (fun)"
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ]
 }

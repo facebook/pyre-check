@@ -3843,9 +3843,116 @@
 {
   "kind": "model",
   "data": {
-    "callable": "dict.__getitem__",
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[col_offset,end_col_offset,end_lineno,lineno])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.dict.__getitem__",
     "filename": "builtins.pyi",
-    "callable_line": 400,
+    "callable_line": 3738,
     "tito": [
       {
         "port": "formal(self, position=0, positional_only)[*]",
@@ -3871,9 +3978,9 @@
 {
   "kind": "model",
   "data": {
-    "callable": "dict.get",
+    "callable": "builtins.dict.get",
     "filename": "builtins.pyi",
-    "callable_line": 403,
+    "callable_line": 3703,
     "tito": [
       {
         "port": "formal(__default, position=2, positional_only)",
@@ -3905,6 +4012,57 @@
       }
     ],
     "modes": [ "SkipObscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decimal.DecimalTuple.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(exponent, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[exponent]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(digits, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[digits]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(sign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[sign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -4081,7 +4239,7 @@
   "data": {
     "callable": "typing.Mapping.__getitem__",
     "filename": "typing.pyi",
-    "callable_line": 131,
+    "callable_line": 867,
     "tito": [
       {
         "port": "formal(self, position=0, positional_only)[*]",
@@ -4109,10 +4267,10 @@
   "data": {
     "callable": "typing.Mapping.get",
     "filename": "typing.pyi",
-    "callable_line": 135,
+    "callable_line": 875,
     "tito": [
       {
-        "port": "formal(default, position=2)",
+        "port": "formal(default, position=2, positional_only)",
         "taint": [
           {
             "kinds": [
@@ -4148,7 +4306,7 @@
   "data": {
     "callable": "typing.MutableMapping.update",
     "filename": "typing.pyi",
-    "callable_line": 155,
+    "callable_line": 942,
     "tito": [
       {
         "port": "formal(**kwargs, excluded=[self])",

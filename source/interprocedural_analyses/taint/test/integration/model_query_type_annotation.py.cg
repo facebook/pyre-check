@@ -2,12 +2,12 @@
 Call dependencies
 {
   "model_query_type_annotation.test5_no_taint_1 (fun)": [
-    "object.__init__ (method)", "object.__new__ (method)"
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)"
   ],
   "model_query_type_annotation.test5_taint_1 (fun)": [
-    "object.__init__ (method)", "object.__new__ (method)"
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)"
   ],
   "model_query_type_annotation.test5_taint_2 (fun)": [
-    "object.__init__ (method)", "object.__new__ (method)"
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)"
   ]
 }

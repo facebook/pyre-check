@@ -1,6 +1,311 @@
 @generated
 Higher order call graphs
 {
+  "callable": "overrides.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "29:8-29:12|identifier|Base": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.Base.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.Base"
+            }
+          ]
+        }
+      }
+    },
+    "39:8-39:12|identifier|Base": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.Base.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.Base"
+            }
+          ]
+        }
+      }
+    },
+    "53:8-53:9|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.B.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.B"
+            }
+          ]
+        }
+      }
+    },
+    "67:8-67:9|identifier|C": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.C.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.C"
+            }
+          ]
+        }
+      }
+    },
+    "162:25-162:26|identifier|D": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.D.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.D"
+            }
+          ]
+        }
+      }
+    },
+    "179:21-179:37|identifier|SkippedOverrides": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.SkippedOverrides"
+            }
+          ]
+        }
+      }
+    },
+    "191:32-191:51|identifier|AnalyzeAllOverrides": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.AnalyzeAllOverrides"
+            }
+          ]
+        }
+      }
+    },
+    "196:32-196:51|identifier|AnalyzeAllOverrides": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.AnalyzeAllOverrides"
+            }
+          ]
+        }
+      }
+    },
+    "201:32-201:51|identifier|AnalyzeAllOverrides": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.AnalyzeAllOverrides"
+            }
+          ]
+        }
+      }
+    },
+    "217:29-217:45|identifier|TooManyOverrides": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.TooManyOverrides"
+            }
+          ]
+        }
+      }
+    },
+    "222:29-222:45|identifier|TooManyOverrides": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.TooManyOverrides"
+            }
+          ]
+        }
+      }
+    },
+    "227:29-227:45|identifier|TooManyOverrides": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.TooManyOverrides"
+            }
+          ]
+        }
+      }
+    },
+    "241:29-241:48|identifier|BaseWithDeclaration": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.BaseWithDeclaration"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "overrides.call_analyze_call_overrides",
   "returned_callables": [],
   "calls": {
@@ -46,7 +351,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -57,7 +362,8 @@ Higher order call graphs
             "target": "overrides.D.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "overrides.D"
           }
         ]
       }
@@ -99,6 +405,29 @@ Higher order call graphs
             "receiver_class": "overrides.A"
           }
         ]
+      }
+    },
+    "97:4-97:7|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.A"
+            }
+          ]
+        }
       }
     },
     "97:4-97:22": {
@@ -154,6 +483,29 @@ Higher order call graphs
         ]
       }
     },
+    "113:4-113:7|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.B.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.B"
+            }
+          ]
+        }
+      }
+    },
     "113:4-113:22": {
       "call": {
         "calls": [
@@ -198,6 +550,29 @@ Higher order call graphs
             "receiver_class": "overrides.Base"
           }
         ]
+      }
+    },
+    "81:4-81:7|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.Base.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.Base"
+            }
+          ]
+        }
       }
     },
     "81:4-81:22": {
@@ -253,6 +628,29 @@ Higher order call graphs
         ]
       }
     },
+    "129:4-129:7|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.C.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.C"
+            }
+          ]
+        }
+      }
+    },
     "129:4-129:22": {
       "call": {
         "calls": [
@@ -299,6 +697,29 @@ Higher order call graphs
         ]
       }
     },
+    "145:4-145:7|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.D.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.D"
+            }
+          ]
+        }
+      }
+    },
     "145:4-145:22": {
       "call": {
         "calls": [
@@ -323,7 +744,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -334,7 +755,8 @@ Higher order call graphs
             "target": "overrides.A.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "overrides.A"
           }
         ]
       }
@@ -362,7 +784,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -373,7 +795,8 @@ Higher order call graphs
             "target": "overrides.B.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "overrides.B"
           }
         ]
       }
@@ -401,7 +824,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -412,7 +835,8 @@ Higher order call graphs
             "target": "overrides.Base.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "overrides.Base"
           }
         ]
       }
@@ -440,7 +864,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -451,7 +875,8 @@ Higher order call graphs
             "target": "overrides.C.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "overrides.C"
           }
         ]
       }
@@ -486,7 +911,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -497,7 +922,8 @@ Higher order call graphs
             "target": "overrides.D.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "overrides.D"
           }
         ]
       }
@@ -534,6 +960,29 @@ Higher order call graphs
         ]
       }
     },
+    "102:4-102:5|identifier|A": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.A"
+            }
+          ]
+        }
+      }
+    },
     "102:4-102:20": {
       "call": {
         "calls": [
@@ -567,6 +1016,29 @@ Higher order call graphs
         ]
       }
     },
+    "118:4-118:5|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.B.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.B"
+            }
+          ]
+        }
+      }
+    },
     "118:4-118:20": {
       "call": {
         "calls": [
@@ -598,6 +1070,29 @@ Higher order call graphs
             "receiver_class": "overrides.Base"
           }
         ]
+      }
+    },
+    "86:4-86:8|identifier|Base": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.Base.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.Base"
+            }
+          ]
+        }
       }
     },
     "86:4-86:23": {
@@ -640,6 +1135,29 @@ Higher order call graphs
         ]
       }
     },
+    "134:4-134:5|identifier|C": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.C.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.C"
+            }
+          ]
+        }
+      }
+    },
     "134:4-134:20": {
       "call": {
         "calls": [
@@ -671,6 +1189,29 @@ Higher order call graphs
             "receiver_class": "overrides.D"
           }
         ]
+      }
+    },
+    "150:4-150:5|identifier|D": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.D.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.D"
+            }
+          ]
+        }
       }
     },
     "150:4-150:20": {
@@ -723,7 +1264,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -731,10 +1272,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
@@ -747,7 +1289,7 @@ Higher order call graphs
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "overrides.Base"
+            "receiver_class": "overrides.A"
           }
         ]
       }
@@ -788,7 +1330,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -796,10 +1338,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
@@ -812,9 +1355,32 @@ Higher order call graphs
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "overrides.Base"
+            "receiver_class": "overrides.B"
           }
         ]
+      }
+    },
+    "43:14-43:15|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.B.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.B"
+            }
+          ]
+        }
       }
     }
   }
@@ -853,7 +1419,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -861,10 +1427,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
@@ -873,13 +1440,36 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "overrides.B.__init__",
+            "target": "overrides.Base.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "overrides.B"
+            "receiver_class": "overrides.C"
           }
         ]
+      }
+    },
+    "57:14-57:15|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.B.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.B"
+            }
+          ]
+        }
       }
     }
   }
@@ -892,7 +1482,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -900,10 +1490,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
@@ -912,13 +1503,36 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "overrides.C.__init__",
+            "target": "overrides.B.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "overrides.C"
+            "receiver_class": "overrides.D"
           }
         ]
+      }
+    },
+    "69:14-69:15|identifier|C": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "overrides.C.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overrides.C"
+            }
+          ]
+        }
       }
     }
   }

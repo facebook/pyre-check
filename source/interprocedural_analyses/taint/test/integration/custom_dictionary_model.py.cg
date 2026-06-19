@@ -2,22 +2,22 @@
 Call dependencies
 {
   "custom_dictionary_model.sink_dictionary_key (fun)": [
-    "custom_dictionary_model._test_source_2 (fun)",
-    "dict.__setitem__ (method)"
+    "builtins.dict.__setitem__ (method)",
+    "custom_dictionary_model._test_source_2 (fun)"
   ],
   "custom_dictionary_model.sink_dictionary_value (fun)": [
-    "custom_dictionary_model._test_source_2 (fun)",
-    "dict.__setitem__ (method)"
+    "builtins.dict.__setitem__ (method)",
+    "custom_dictionary_model._test_source_2 (fun)"
   ],
   "custom_dictionary_model.tainted_dictionary_key_sink (fun)": [
-    "dict.__setitem__ (method)", "pysa._test_sink (fun)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)"
   ],
   "custom_dictionary_model.tainted_dictionary_value_sink (fun)": [
-    "dict.__setitem__ (method)", "pysa._test_sink (fun)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)"
   ],
   "custom_dictionary_model.untainted_dictionary (fun)": [
-    "dict.__setitem__ (method)", "pysa._test_sink (fun)"
+    "builtins.dict.__setitem__ (method)", "pysa._test_sink (fun)"
   ]
 }

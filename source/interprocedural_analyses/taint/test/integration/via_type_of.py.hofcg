@@ -1,6 +1,78 @@
 @generated
 Higher order call graphs
 {
+  "callable": "via_type_of.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "50:1-50:10|identifier|dataclass": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "dataclasses.dataclass",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "94:1-94:10|identifier|dataclass": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "dataclasses.dataclass",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "128:1-128:10|identifier|dataclass": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "dataclasses.dataclass",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_type_of.Test3_C.$class_toplevel",
+  "returned_callables": [],
+  "calls": {
+    "97:19-97:30": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "via_type_of.Test3_Foo"
+          }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "via_type_of.meta",
   "returned_callables": [],
   "calls": {
@@ -10,7 +82,7 @@ Higher order call graphs
           {
             "target": "via_type_of.return_via_parameter_type",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -25,7 +97,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -36,7 +108,8 @@ Higher order call graphs
             "target": "via_type_of.Test1_C.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "via_type_of.Test1_C"
           }
         ]
       }
@@ -57,7 +130,13 @@ Higher order call graphs
     },
     "24:15-24:18": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test1_C.x}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test1_C.x}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     }
@@ -71,7 +150,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -82,7 +161,8 @@ Higher order call graphs
             "target": "via_type_of.Test1_C.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "via_type_of.Test1_C"
           }
         ]
       }
@@ -103,7 +183,13 @@ Higher order call graphs
     },
     "30:15-30:18": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test1_C.y}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test1_C.y}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     }
@@ -117,7 +203,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -128,7 +214,8 @@ Higher order call graphs
             "target": "via_type_of.Test1_C.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "via_type_of.Test1_C"
           }
         ]
       }
@@ -149,7 +236,13 @@ Higher order call graphs
     },
     "36:15-36:18": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test1_C.z}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test1_C.z}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     }
@@ -163,7 +256,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -174,7 +267,8 @@ Higher order call graphs
             "target": "via_type_of.Test1_C.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "via_type_of.Test1_C"
           }
         ]
       }
@@ -188,7 +282,13 @@ Higher order call graphs
     },
     "42:10-42:13": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test1_C.x}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test1_C.x}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     },
@@ -196,9 +296,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 0,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -207,31 +309,24 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "43:7-43:28|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }
     },
     "44:14-44:17": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test1_C.y}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test1_C.y}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     },
@@ -239,9 +334,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 1,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -250,31 +347,24 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "45:9-45:30|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }
     },
     "46:14-46:17": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test1_C.z}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test1_C.z}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     },
@@ -295,7 +385,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -306,7 +396,8 @@ Higher order call graphs
             "target": "via_type_of.Test2_C.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "via_type_of.Test2_C"
           }
         ]
       }
@@ -327,7 +418,13 @@ Higher order call graphs
     },
     "60:15-60:18": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test2_C.x}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test2_C.x}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     }
@@ -341,7 +438,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -352,7 +449,8 @@ Higher order call graphs
             "target": "via_type_of.Test2_C.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "via_type_of.Test2_C"
           }
         ]
       }
@@ -373,7 +471,13 @@ Higher order call graphs
     },
     "66:15-66:18": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test2_C.y}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test2_C.y}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     }
@@ -387,7 +491,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -398,7 +502,8 @@ Higher order call graphs
             "target": "via_type_of.Test2_C.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "via_type_of.Test2_C"
           }
         ]
       }
@@ -419,7 +524,13 @@ Higher order call graphs
     },
     "72:15-72:18": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test2_C.z}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test2_C.z}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     }
@@ -433,7 +544,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -444,7 +555,8 @@ Higher order call graphs
             "target": "via_type_of.Test2_C.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "via_type_of.Test2_C"
           }
         ]
       }
@@ -458,7 +570,13 @@ Higher order call graphs
     },
     "78:10-78:13": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test2_C.x}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test2_C.x}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     },
@@ -466,9 +584,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 0,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -477,31 +597,24 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "79:7-79:28|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }
     },
     "80:14-80:17": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test2_C.y}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test2_C.y}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     },
@@ -509,9 +622,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 1,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -520,31 +635,24 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "81:9-81:30|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }
     },
     "82:14-82:17": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test2_C.z}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test2_C.z}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     },
@@ -579,7 +687,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -590,7 +698,8 @@ Higher order call graphs
             "target": "via_type_of.Test2_C.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "via_type_of.Test2_C"
           }
         ]
       }
@@ -610,7 +719,13 @@ Higher order call graphs
     },
     "103:15-103:18": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test3_C.x}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test3_C.x}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     }
@@ -629,7 +744,13 @@ Higher order call graphs
     },
     "108:15-108:18": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test3_C.y}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test3_C.y}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     }
@@ -648,7 +769,13 @@ Higher order call graphs
     },
     "113:15-113:18": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test3_C.z}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test3_C.z}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     }
@@ -660,7 +787,13 @@ Higher order call graphs
   "calls": {
     "120:10-120:13": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test3_C.x}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test3_C.x}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     },
@@ -668,9 +801,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 0,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -679,31 +814,24 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "121:7-121:28|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }
     },
     "122:14-122:17": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test3_C.y}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test3_C.y}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     },
@@ -711,9 +839,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 1,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -722,31 +852,24 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "123:9-123:30|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }
     },
     "124:14-124:17": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test3_C.z}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test3_C.z}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     },
@@ -765,7 +888,13 @@ Higher order call graphs
   "calls": {
     "137:4-137:7": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test4_C.x}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test4_C.x}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     },
@@ -784,7 +913,13 @@ Higher order call graphs
   "calls": {
     "142:4-142:7": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test4_C.y}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test4_C.y}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     },
@@ -803,7 +938,13 @@ Higher order call graphs
   "calls": {
     "147:4-147:7": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test4_C.z}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test4_C.z}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     },
@@ -839,7 +980,7 @@ Higher order call graphs
           {
             "target": "via_type_of.return_via_parameter_type",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -856,7 +997,7 @@ Higher order call graphs
           {
             "target": "via_type_of.return_via_parameter_type",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -890,7 +1031,7 @@ Higher order call graphs
           {
             "target": "via_type_of.return_via_parameter_type",
             "index": 0,
-            "return_type": []
+            "return_type": [ "float", "integer" ]
           }
         ]
       }
@@ -924,7 +1065,11 @@ Higher order call graphs
     "171:11-171:23": {
       "call": {
         "calls": [
-          { "target": "via_type_of.meta", "index": 0, "return_type": [] }
+          {
+            "target": "via_type_of.meta",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
         ]
       }
     }
@@ -936,46 +1081,38 @@ Higher order call graphs
   "calls": {
     "16:8-16:14": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test1_C.x}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test1_C.x}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     },
     "17:8-17:14": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test1_C.y}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{via_type_of.Test1_C.y}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     },
     "18:8-18:14": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{via_type_of.Test1_C.z}", "index": 0 } ],
-        "is_attribute": true
-      }
-    }
-  }
-}
-{
-  "callable": "via_type_of.Test3_C.$class_toplevel",
-  "returned_callables": [],
-  "calls": {
-    "97:19-97:30": {
-      "call": {
-        "new_calls": [
+        "globals": [
           {
-            "target": "object.__new__",
+            "target": "Obj{via_type_of.Test1_C.z}",
             "index": 0,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "object.__init__",
-            "index": 0,
-            "implicit_receiver": true,
             "return_type": []
           }
-        ]
+        ],
+        "is_attribute": true
       }
     }
   }

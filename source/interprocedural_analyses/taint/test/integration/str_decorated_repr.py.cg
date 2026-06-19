@@ -4,16 +4,23 @@ Call dependencies
   "str_decorated_repr.MyClass.__repr__@decorated (method)": [
     "str_decorated_repr.cachedmethod (fun)[formal(f, position=0)=str_decorated_repr.MyClass.__repr__ (method)]"
   ],
-  "str_decorated_repr.cachedmethod (fun)": [ "str.__str__ (method)" ],
-  "str_decorated_repr.cachedmethod (fun)[formal(f, position=0)=str_decorated_repr.MyClass.__repr__ (method)]": [
-    "str.__str__ (method)"
+  "str_decorated_repr.cachedmethod (fun)": [
+    "builtins.str.__format__ (method)"
   ],
-  "str_decorated_repr.cachedmethod.g (fun)": [ "getattr (fun)" ],
-  "str_decorated_repr.cachedmethod.g (fun)[captured_variable(f, parameter)=str_decorated_repr.MyClass.__repr__ (method)]": [
-    "getattr (fun)", "str_decorated_repr.MyClass.__repr__ (method)"
+  "str_decorated_repr.cachedmethod (fun)[formal(f, position=0)=str_decorated_repr.MyClass.__repr__ (method)]": [
+    "builtins.str.__format__ (method)"
+  ],
+  "str_decorated_repr.cachedmethod.g (fun)": [
+    "builtins.getattr (fun)", "builtins.hasattr (fun)",
+    "builtins.setattr (fun)"
+  ],
+  "str_decorated_repr.cachedmethod.g (fun)[captured_variable(f, str_decorated_repr.cachedmethod)=str_decorated_repr.MyClass.__repr__ (method)]": [
+    "builtins.getattr (fun)", "builtins.hasattr (fun)",
+    "builtins.setattr (fun)", "str_decorated_repr.MyClass.__repr__ (method)"
   ],
   "str_decorated_repr.test_str_of_decorated_repr (fun)": [
+    "builtins.object.__init__ (method)", "builtins.str.__new__ (method)",
     "str_decorated_repr._test_sink (fun)",
-    "str_decorated_repr.cachedmethod.g (fun)[captured_variable(f, parameter)=str_decorated_repr.MyClass.__repr__ (method)]"
+    "str_decorated_repr.cachedmethod.g (fun)[captured_variable(f, str_decorated_repr.cachedmethod)=str_decorated_repr.MyClass.__repr__ (method)]"
   ]
 }

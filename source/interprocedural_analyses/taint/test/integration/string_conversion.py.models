@@ -2,9 +2,9 @@
 {
   "kind": "model",
   "data": {
-    "callable": "eval",
+    "callable": "builtins.eval",
     "filename": "builtins.pyi",
-    "callable_line": 476,
+    "callable_line": 4540,
     "sinks": [
       {
         "port": "formal(source, position=0, positional_only)",
@@ -99,6 +99,7 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "tainted" },
+              { "always-via": "obscure:model" },
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
@@ -116,7 +117,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -129,16 +132,17 @@
     "features": [
       { "has": "first-index" },
       { "first-index": "tainted" },
+      { "always-via": "obscure:model" },
       { "always-via": "format-string" },
       { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "eval",
+      "callee": "builtins.eval",
       "index": 0,
       "parameter": "formal(source)"
     },
-    "master_handle": "string_conversion.analyze_implicit_call:5001:0:Call|eval|0|formal(source):d838494703a929313b4a03420830ae7d"
+    "master_handle": "string_conversion.analyze_implicit_call:5001:0:Call|builtins.eval|0|formal(source):91b5f91837d5052775e52ccd874ee1fa"
   }
 }
 {
@@ -185,7 +189,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -203,11 +209,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "eval",
+      "callee": "builtins.eval",
       "index": 1,
       "parameter": "formal(source)"
     },
-    "master_handle": "string_conversion.analyze_implicit_call:5001:0:Call|eval|1|formal(source):86b6036fefd9120400e7188e0e89f163"
+    "master_handle": "string_conversion.analyze_implicit_call:5001:0:Call|builtins.eval|1|formal(source):b4e51c032bfe39b13ed4b8ecbdf80c06"
   }
 }
 {
@@ -318,9 +324,10 @@
               }
             ],
             "local_features": [
-              { "always-via": "obscure:model" },
+              { "via": "obscure:model" },
               { "always-via": "format-string" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "via": "obscure:unknown-callee" }
             ],
             "tito_positions": [
               { "line": 173, "start": 14, "end": 18 },
@@ -439,7 +446,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -457,11 +466,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "eval",
+      "callee": "builtins.eval",
       "index": 0,
       "parameter": "formal(source)"
     },
-    "master_handle": "string_conversion.explicit_str:5001:0:Call|eval|0|formal(source):fd8e97cffad8ebca7dad4de31156aa23"
+    "master_handle": "string_conversion.explicit_str:5001:0:Call|builtins.eval|0|formal(source):ac26119b9e3482dcc0edac178f44f5b9"
   }
 }
 {
@@ -491,37 +500,6 @@
             ],
             "tito_positions": [ { "line": 142, "start": 14, "end": 15 } ],
             "origin": { "line": 141, "start": 23, "end": 37 }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "string_conversion.forward_unioned_callees_2",
-    "filename": "string_conversion.py",
-    "callable_line": 145,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "format-string" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 147, "start": 14, "end": 15 } ],
-            "origin": { "line": 146, "start": 23, "end": 37 }
           }
         ]
       }
@@ -576,7 +554,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -593,11 +573,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "eval",
+      "callee": "builtins.eval",
       "index": 0,
       "parameter": "formal(source)"
     },
-    "master_handle": "string_conversion.implicit_repr:5001:0:Call|eval|0|formal(source):01bfdedcc8a64a49097a36dff47d5461"
+    "master_handle": "string_conversion.implicit_repr:5001:0:Call|builtins.eval|0|formal(source):c0d63c5818e2d502fd96502c1c4c4065"
   }
 }
 {
@@ -648,7 +628,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -665,11 +647,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "eval",
+      "callee": "builtins.eval",
       "index": 0,
       "parameter": "formal(source)"
     },
-    "master_handle": "string_conversion.implicit_str:5001:0:Call|eval|0|formal(source):30be4cf5b925788f8c6c83c31b9c36df"
+    "master_handle": "string_conversion.implicit_str:5001:0:Call|builtins.eval|0|formal(source):e93fb34e634a59e3d9d02ba8260ea0e6"
   }
 }
 {
@@ -739,7 +721,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -758,11 +742,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "eval",
+      "callee": "builtins.eval",
       "index": 0,
       "parameter": "formal(source)"
     },
-    "master_handle": "string_conversion.join_source_and_attribute_source:5001:0:Call|eval|0|formal(source):71de832d0814add1d93546b86692907a"
+    "master_handle": "string_conversion.join_source_and_attribute_source:5001:0:Call|builtins.eval|0|formal(source):ad64ad81bb98d60a636db2c6c89dc497"
   }
 }
 {
@@ -809,7 +793,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -827,11 +813,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "eval",
+      "callee": "builtins.eval",
       "index": 0,
       "parameter": "formal(source)"
     },
-    "master_handle": "string_conversion.joined_base:5001:0:Call|eval|0|formal(source):95b09c2f753668fcd6b5f5f872f0c551"
+    "master_handle": "string_conversion.joined_base:5001:0:Call|builtins.eval|0|formal(source):3b05328c01346fc147958aaf16b2f376"
   }
 }
 {
@@ -884,7 +870,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -948,7 +936,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -965,11 +955,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "eval",
+      "callee": "builtins.eval",
       "index": 0,
       "parameter": "formal(source)"
     },
-    "master_handle": "string_conversion.multiple_targets_for_single_expression:5001:0:Call|eval|0|formal(source):cd740372dd5689dfd0f62dc156abbcd7"
+    "master_handle": "string_conversion.multiple_targets_for_single_expression:5001:0:Call|builtins.eval|0|formal(source):c49467c22bcc875173d4590729bf4128"
   }
 }
 {
@@ -985,7 +975,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -1048,7 +1040,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -1061,11 +1055,11 @@
     "features": [ { "always-via": "format-string" } ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "eval",
+      "callee": "builtins.eval",
       "index": 0,
       "parameter": "formal(source)"
     },
-    "master_handle": "string_conversion.multiple_targets_for_single_expression_2:5001:0:Call|eval|0|formal(source):915284468475cc7a47c59899eda8b8be"
+    "master_handle": "string_conversion.multiple_targets_for_single_expression_2:5001:0:Call|builtins.eval|0|formal(source):fc7267abb9babf7d2bf57b49a7f6f124"
   }
 }
 {
@@ -1144,32 +1138,6 @@
     "callable": "string_conversion.object_type",
     "filename": "string_conversion.py",
     "callable_line": 162,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "has": "first-index" }, { "first-index": "tainted" }
-                ],
-                "length": 1,
-                "kind": "UserControlled"
-              }
-            ],
-            "local_features": [ { "always-via": "format-string" } ],
-            "call": {
-              "position": { "line": 163, "start": 14, "end": 15 },
-              "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
-              "port": "result"
-            },
-            "receiver_interval": [ { "lower": 5, "upper": 18 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ],
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1177,13 +1145,15 @@
           {
             "kinds": [
               {
-                "return_paths": { "": 4 },
+                "return_paths": { "": 0 },
                 "length": 1,
                 "kind": "LocalReturn"
               }
             ],
             "local_features": [
-              { "always-via": "format-string" }, { "always-via": "tito" }
+              { "via": "obscure:model" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 163, "start": 14, "end": 15 } ],
             "tito": {}
@@ -1226,6 +1196,30 @@
             ],
             "call": {
               "position": { "line": 194, "start": 9, "end": 15 },
+              "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
+              "port": "result"
+            },
+            "receiver_interval": [ { "lower": 5, "upper": 18 } ],
+            "is_self_call": false
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" }, { "first-index": "tainted" }
+                ],
+                "leaves": [
+                  {
+                    "name": "Obj{django.http.Request.GET}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
+            "call": {
+              "position": { "line": 194, "start": 9, "end": 15 },
               "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
               "port": "result"
             },
@@ -1240,7 +1234,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -1253,11 +1249,11 @@
     "features": [ { "has": "first-index" }, { "first-index": "tainted" } ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "eval",
+      "callee": "builtins.eval",
       "index": 0,
       "parameter": "formal(source)"
     },
-    "master_handle": "string_conversion.optional_str:5001:0:Call|eval|0|formal(source):89685965bb1dc0dc8a968423f0bf3c87"
+    "master_handle": "string_conversion.optional_str:5001:0:Call|builtins.eval|0|formal(source):f2deef9a09534a528869970cd7c6fbda"
   }
 }
 {
@@ -1307,7 +1303,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -1325,11 +1323,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "eval",
+      "callee": "builtins.eval",
       "index": 0,
       "parameter": "formal(source)"
     },
-    "master_handle": "string_conversion.propagate_taint:5001:0:Call|eval|0|formal(source):2a81d2337b234ad5ead1cbeeb5eeb57d"
+    "master_handle": "string_conversion.propagate_taint:5001:0:Call|builtins.eval|0|formal(source):f047cbc7731d0999ead3009c0ca6f6d2"
   }
 }
 {
@@ -1379,7 +1377,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -1392,11 +1392,11 @@
     "features": [ { "has": "first-index" }, { "first-index": "tainted" } ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "eval",
+      "callee": "builtins.eval",
       "index": 0,
       "parameter": "formal(source)"
     },
-    "master_handle": "string_conversion.repr_is_tainted:5001:0:Call|eval|0|formal(source):7de1ff2ec46867983ec2cbbc846dcade"
+    "master_handle": "string_conversion.repr_is_tainted:5001:0:Call|builtins.eval|0|formal(source):ee981cd5f09ffb648f174de88f9c9997"
   }
 }
 {
@@ -1446,7 +1446,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -1459,11 +1461,11 @@
     "features": [ { "has": "first-index" }, { "first-index": "tainted" } ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "eval",
+      "callee": "builtins.eval",
       "index": 0,
       "parameter": "formal(source)"
     },
-    "master_handle": "string_conversion.str_falls_back_to_repr:5001:0:Call|eval|0|formal(source):c11bdc334156cdb9b27b96f072c37f1d"
+    "master_handle": "string_conversion.str_falls_back_to_repr:5001:0:Call|builtins.eval|0|formal(source):12bbefbbf96461f52ba960fac75a3e5d"
   }
 }
 {
@@ -1513,7 +1515,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -1526,11 +1530,11 @@
     "features": [ { "has": "first-index" }, { "first-index": "tainted" } ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "eval",
+      "callee": "builtins.eval",
       "index": 0,
       "parameter": "formal(source)"
     },
-    "master_handle": "string_conversion.str_is_tainted:5001:0:Call|eval|0|formal(source):a1c4bc261cac54e9ef5638c7c8be4a5b"
+    "master_handle": "string_conversion.str_is_tainted:5001:0:Call|builtins.eval|0|formal(source):aeaf0d45b95e56b5d5bed483ae315420"
   }
 }
 {
@@ -1622,6 +1626,164 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[col_offset,end_col_offset,end_lineno,lineno])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decimal.DecimalTuple.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(exponent, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[exponent]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(digits, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[digits]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(sign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[sign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
             "tito": {}
           }
         ]
@@ -1837,7 +1999,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Overrides{object.__repr__}",
+    "callable": "Overrides{builtins.object.__repr__}",
     "sources": [
       {
         "port": "result",

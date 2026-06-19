@@ -5,7 +5,7 @@ Call dependencies
   "overloads.call_me (fun)": [ "pysa._test_sink (fun)" ],
   "overloads.f (fun)": [ "overloads.call_me (fun)" ],
   "overloads.g (fun)": [
-    "isinstance (fun)", "overloads.A.call_me (method)",
+    "builtins.isinstance (fun)", "overloads.A.call_me (method)",
     "pysa._test_source (fun)"
   ]
 }

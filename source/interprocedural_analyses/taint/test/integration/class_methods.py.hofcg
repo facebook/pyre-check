@@ -4,14 +4,56 @@ Higher order call graphs
   "callable": "class_methods.$toplevel",
   "returned_callables": [],
   "calls": {
-    "25:0-25:6|identifier|$local_class_methods$TInput": {
+    "25:9-25:26": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } },
+    "28:8-28:23|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "83:8-83:9|identifier|C": {
       "identifier": {
-        "globals": [ { "target": "Obj{class_methods.TInput}", "index": 0 } ]
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.C"
+            }
+          ]
+        }
       }
     },
-    "25:9-25:26": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+    "83:8-83:14|artificial-call|subscript-get-item": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttr" ] }
+    },
+    "83:10-83:13|identifier|str": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.str.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -20,6 +62,29 @@ Higher order call graphs
   "callable": "class_methods.bar",
   "returned_callables": [],
   "calls": {
+    "22:4-22:8|identifier|Test": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.Test"
+            }
+          ]
+        }
+      }
+    },
     "22:4-22:28": {
       "call": {
         "calls": [
@@ -47,6 +112,29 @@ Higher order call graphs
   "callable": "class_methods.issue_with_abstract_class_method",
   "returned_callables": [],
   "calls": {
+    "109:4-109:5|identifier|D": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "class_methods.D.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.D"
+            }
+          ]
+        }
+      }
+    },
     "109:4-109:51": {
       "call": {
         "calls": [
@@ -66,6 +154,29 @@ Higher order call graphs
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
+      }
+    },
+    "110:4-110:5|identifier|D": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "class_methods.D.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.D"
+            }
+          ]
+        }
       }
     },
     "110:4-110:42": {
@@ -89,6 +200,29 @@ Higher order call graphs
         ]
       }
     },
+    "111:4-111:5|identifier|D": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "class_methods.D.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.D"
+            }
+          ]
+        }
+      }
+    },
     "111:4-113:5": {
       "call": {
         "calls": [
@@ -110,6 +244,29 @@ Higher order call graphs
         ]
       }
     },
+    "114:4-114:5|identifier|D": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "class_methods.D.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.D"
+            }
+          ]
+        }
+      }
+    },
     "114:4-114:50": {
       "call": {
         "calls": [
@@ -129,6 +286,29 @@ Higher order call graphs
         "calls": [
           { "target": "pysa._test_source", "index": 3, "return_type": [] }
         ]
+      }
+    },
+    "115:4-115:5|identifier|D": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "class_methods.D.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.D"
+            }
+          ]
+        }
       }
     },
     "115:4-115:51": {
@@ -162,7 +342,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -173,7 +353,8 @@ Higher order call graphs
             "target": "class_methods.D.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "class_methods.D"
           }
         ]
       }
@@ -185,7 +366,8 @@ Higher order call graphs
             "target": "class_methods.D.my_abstract_property@setter",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "class_methods.D"
           }
         ]
       }
@@ -211,7 +393,8 @@ Higher order call graphs
             "target": "class_methods.D.my_abstract_property",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "class_methods.D"
           }
         ]
       }
@@ -226,7 +409,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -237,7 +420,8 @@ Higher order call graphs
             "target": "class_methods.ObscureClassMethodTito.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "class_methods.ObscureClassMethodTito"
           }
         ]
       }
@@ -289,6 +473,29 @@ Higher order call graphs
   "callable": "class_methods.C.one_hop_abstract_class_method",
   "returned_callables": [],
   "calls": {
+    "35:8-35:11|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.C"
+            }
+          ]
+        }
+      }
+    },
     "35:8-35:38": {
       "call": {
         "calls": [
@@ -297,6 +504,7 @@ Higher order call graphs
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
+            "receiver_class": "class_methods.C",
             "is_class_method": true
           }
         ]
@@ -308,12 +516,36 @@ Higher order call graphs
   "callable": "class_methods.C.one_hop_abstract_method",
   "returned_callables": [],
   "calls": {
+    "52:8-52:11|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.C"
+            }
+          ]
+        }
+      }
+    },
     "52:8-52:32": {
       "call": {
         "calls": [
           {
             "target": "class_methods.C.abstract_method",
             "index": 0,
+            "implicit_receiver": true,
             "return_type": []
           }
         ]
@@ -325,6 +557,29 @@ Higher order call graphs
   "callable": "class_methods.C.one_hop_class_abstractmethod",
   "returned_callables": [],
   "calls": {
+    "61:8-61:11|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.C"
+            }
+          ]
+        }
+      }
+    },
     "61:8-61:37": {
       "call": {
         "calls": [
@@ -345,6 +600,29 @@ Higher order call graphs
   "callable": "class_methods.C.one_hop_class_method",
   "returned_callables": [],
   "calls": {
+    "43:8-43:11|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.C"
+            }
+          ]
+        }
+      }
+    },
     "43:8-43:29": {
       "call": {
         "calls": [
@@ -365,6 +643,29 @@ Higher order call graphs
   "callable": "class_methods.C.one_hop_static_abstractmethod",
   "returned_callables": [],
   "calls": {
+    "71:8-71:11|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "class_methods.C"
+            }
+          ]
+        }
+      }
+    },
     "71:8-71:38": {
       "call": {
         "calls": [
@@ -400,7 +701,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -408,27 +709,16 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
     },
-    "85:8-85:26": {
-      "call": {
-        "calls": [
-          {
-            "target": "object.__init__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "class_methods.C"
-          }
-        ]
-      }
-    }
+    "85:8-85:26": { "call": { "unresolved": [ "UnexpectedDefiningClass" ] } }
   }
 }
 {

@@ -617,22 +617,17 @@
               {
                 "leaves": [
                   {
-                    "name": "Obj{named_tuples.NamedTupleWithTaintedAttribute.bad}",
-                    "port": "leaf:return"
+                    "name": "named_tuples.NamedTupleWithTaintedAttribute.__init__",
+                    "port": "leaf:bad"
                   }
                 ],
-                "length": 1,
                 "kind": "Test"
               }
             ],
-            "call": {
-              "position": { "line": 93, "start": 39, "end": 53 },
-              "resolves_to": [
-                "named_tuples.NamedTupleWithTaintedAttribute.__init__"
-              ],
-              "port": "formal(bad, position=2)",
-              "call_site": "93:4-93:64"
-            }
+            "origin": { "line": 93, "start": 39, "end": 53 },
+            "receiver_interval": [ { "lower": 14, "upper": 15 } ],
+            "is_self_call": false,
+            "call_site": "93:4-93:64"
           }
         ]
       }
@@ -833,9 +828,166 @@
 {
   "kind": "model",
   "data": {
-    "callable": "named_tuples.MyNamedTuple.__init__",
-    "filename": "named_tuples.py",
-    "callable_line": 12,
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[col_offset,end_col_offset,end_lineno,lineno])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decimal.DecimalTuple.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(exponent, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[exponent]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(digits, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[digits]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(sign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[sign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "named_tuples.InheritedNamedTuple.__init__",
+    "filename": "*",
     "tito": [
       {
         "port": "formal(bad, position=2)",
@@ -843,7 +995,7 @@
           {
             "kinds": [
               {
-                "return_paths": { "[bad]": 3 },
+                "return_paths": { "[bad]": 999999 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
@@ -857,12 +1009,120 @@
           {
             "kinds": [
               {
-                "return_paths": { "[benign]": 3 },
+                "return_paths": { "[benign]": 999999 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
-            "local_features": [
-              { "always-type": "integer" }, { "always-type": "scalar" }
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "named_tuples.InheritedNamedTupleWithAllDefaults.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(bad, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[bad]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(benign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[benign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "named_tuples.InheritedNamedTupleWithDefault.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(bad, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[bad]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(benign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[benign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "named_tuples.MyNamedTuple.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(bad, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[bad]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(benign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[benign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": {}
           }
@@ -875,8 +1135,7 @@
   "kind": "model",
   "data": {
     "callable": "named_tuples.NamedTupleWithAllDefaults.__init__",
-    "filename": "named_tuples.py",
-    "callable_line": 114,
+    "filename": "*",
     "tito": [
       {
         "port": "formal(bad, position=2)",
@@ -884,7 +1143,7 @@
           {
             "kinds": [
               {
-                "return_paths": { "[bad]": 3 },
+                "return_paths": { "[bad]": 999999 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
@@ -898,12 +1157,9 @@
           {
             "kinds": [
               {
-                "return_paths": { "[benign]": 3 },
+                "return_paths": { "[benign]": 999999 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
-            ],
-            "local_features": [
-              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "tito": {}
           }
@@ -916,8 +1172,7 @@
   "kind": "model",
   "data": {
     "callable": "named_tuples.NamedTupleWithDefault.__init__",
-    "filename": "named_tuples.py",
-    "callable_line": 96,
+    "filename": "*",
     "tito": [
       {
         "port": "formal(bad, position=2)",
@@ -925,7 +1180,7 @@
           {
             "kinds": [
               {
-                "return_paths": { "[bad]": 3 },
+                "return_paths": { "[bad]": 999999 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
@@ -939,12 +1194,9 @@
           {
             "kinds": [
               {
-                "return_paths": { "[benign]": 3 },
+                "return_paths": { "[benign]": 999999 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
-            ],
-            "local_features": [
-              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "tito": {}
           }
@@ -957,29 +1209,11 @@
   "kind": "model",
   "data": {
     "callable": "named_tuples.NamedTupleWithTaintedAttribute.__init__",
-    "filename": "named_tuples.py",
-    "callable_line": 87,
+    "filename": "*",
     "sinks": [
       {
         "port": "formal(bad, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{named_tuples.NamedTupleWithTaintedAttribute.bad}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 87, "start": 0, "end": 0 },
-            "caller_interval": [ { "lower": 14, "upper": 15 } ],
-            "is_self_call": false
-          }
-        ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "tito": [
@@ -989,7 +1223,7 @@
           {
             "kinds": [
               {
-                "return_paths": { "[bad]": 3 },
+                "return_paths": { "[bad]": 999999 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
@@ -1003,12 +1237,9 @@
           {
             "kinds": [
               {
-                "return_paths": { "[benign]": 3 },
+                "return_paths": { "[benign]": 999999 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
-            ],
-            "local_features": [
-              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "tito": {}
           }
@@ -1021,16 +1252,15 @@
   "kind": "model",
   "data": {
     "callable": "named_tuples.OldSchoolNamedTuple.__init__",
-    "filename": "named_tuples.py",
-    "callable_line": 31,
+    "filename": "*",
     "tito": [
       {
-        "port": "formal(bad, position=2)",
+        "port": "formal(benign, position=2)",
         "taint": [
           {
             "kinds": [
               {
-                "return_paths": { "[bad]": 3 },
+                "return_paths": { "[benign]": 999999 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
@@ -1039,12 +1269,12 @@
         ]
       },
       {
-        "port": "formal(benign, position=1)",
+        "port": "formal(bad, position=1)",
         "taint": [
           {
             "kinds": [
               {
-                "return_paths": { "[benign]": 3 },
+                "return_paths": { "[bad]": 999999 },
                 "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],

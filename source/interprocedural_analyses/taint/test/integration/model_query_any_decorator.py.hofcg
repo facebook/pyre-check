@@ -4,25 +4,11 @@ Higher order call graphs
   "callable": "model_query_any_decorator.$toplevel",
   "returned_callables": [],
   "calls": {
-    "57:0-57:4|identifier|$local_model_query_any_decorator$arg1": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{model_query_any_decorator.arg1}", "index": 0 }
-        ]
-      }
-    },
-    "130:0-130:3|identifier|$local_model_query_any_decorator$app": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{model_query_any_decorator.app}", "index": 0 }
-        ]
-      }
-    },
     "130:6-130:19": {
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -30,10 +16,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "model_query_any_decorator.Application"
           }
         ]
       }
@@ -182,9 +169,7 @@ Higher order call graphs
       }
     },
     "60:1-60:42|artificial-call|for-decorated-target": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedCalleeExpression" ] }
     },
     "61:0-62:15|identifier|test3_alarm1": {
       "identifier": {
@@ -223,9 +208,7 @@ Higher order call graphs
       }
     },
     "65:1-65:37|artificial-call|for-decorated-target": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedCalleeExpression" ] }
     },
     "66:0-67:15|identifier|test3_alarm2": {
       "identifier": {
@@ -264,9 +247,7 @@ Higher order call graphs
       }
     },
     "70:1-70:30|artificial-call|for-decorated-target": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedCalleeExpression" ] }
     },
     "71:0-72:15|identifier|test3_alarm3": {
       "identifier": {
@@ -305,9 +286,7 @@ Higher order call graphs
       }
     },
     "75:1-75:15|artificial-call|for-decorated-target": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedCalleeExpression" ] }
     },
     "76:0-77:15|identifier|test3_noalarm1": {
       "identifier": {
@@ -346,9 +325,7 @@ Higher order call graphs
       }
     },
     "80:1-80:27|artificial-call|for-decorated-target": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedCalleeExpression" ] }
     },
     "81:0-82:15|identifier|test3_noalarm2": {
       "identifier": {
@@ -387,9 +364,7 @@ Higher order call graphs
       }
     },
     "85:1-85:30|artificial-call|for-decorated-target": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedCalleeExpression" ] }
     },
     "86:0-87:15|identifier|test4_alarm1": {
       "identifier": {
@@ -428,9 +403,7 @@ Higher order call graphs
       }
     },
     "90:1-90:42|artificial-call|for-decorated-target": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedCalleeExpression" ] }
     },
     "91:0-92:15|identifier|test4_noalarm1": {
       "identifier": {
@@ -469,9 +442,7 @@ Higher order call graphs
       }
     },
     "95:1-95:15|artificial-call|for-decorated-target": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedCalleeExpression" ] }
     },
     "96:0-97:15|identifier|test4_noalarm2": {
       "identifier": {
@@ -510,9 +481,7 @@ Higher order call graphs
       }
     },
     "100:1-100:27|artificial-call|for-decorated-target": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedCalleeExpression" ] }
     },
     "101:0-102:15|identifier|test4_noalarm3": {
       "identifier": {
@@ -551,9 +520,7 @@ Higher order call graphs
       }
     },
     "105:1-105:30|artificial-call|for-decorated-target": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedCalleeExpression" ] }
     },
     "106:0-107:15|identifier|test5_alarm1": {
       "identifier": {
@@ -592,9 +559,7 @@ Higher order call graphs
       }
     },
     "110:1-110:48|artificial-call|for-decorated-target": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedCalleeExpression" ] }
     },
     "111:0-112:15|identifier|test5_alarm2": {
       "identifier": {
@@ -633,9 +598,7 @@ Higher order call graphs
       }
     },
     "115:1-115:30|artificial-call|for-decorated-target": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedCalleeExpression" ] }
     },
     "116:0-117:15|identifier|test5_noalarm1": {
       "identifier": {
@@ -674,9 +637,7 @@ Higher order call graphs
       }
     },
     "120:1-120:36|artificial-call|for-decorated-target": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedCalleeExpression" ] }
     },
     "121:0-122:15|identifier|test5_noalarm2": {
       "identifier": {

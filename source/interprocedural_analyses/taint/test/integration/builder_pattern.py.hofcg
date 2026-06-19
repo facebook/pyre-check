@@ -4,14 +4,28 @@ Higher order call graphs
   "callable": "builder_pattern.$toplevel",
   "returned_callables": [],
   "calls": {
-    "10:0-10:1|identifier|$local_builder_pattern$T": {
+    "10:4-10:16": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } },
+    "96:17-96:24|identifier|Builder": {
       "identifier": {
-        "globals": [ { "target": "Obj{builder_pattern.T}", "index": 0 } ]
-      }
-    },
-    "10:4-10:16": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builder_pattern.Builder.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "builder_pattern.Builder"
+            }
+          ]
+        }
       }
     }
   }
@@ -24,7 +38,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -35,7 +49,8 @@ Higher order call graphs
             "target": "builder_pattern.Builder.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
           }
         ]
       }
@@ -97,7 +112,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -108,7 +123,8 @@ Higher order call graphs
             "target": "builder_pattern.Builder.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
           }
         ]
       }
@@ -157,7 +173,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -168,7 +184,8 @@ Higher order call graphs
             "target": "builder_pattern.Builder.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
           }
         ]
       }
@@ -229,7 +246,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -240,7 +257,8 @@ Higher order call graphs
             "target": "builder_pattern.Builder.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builder_pattern.SubBuilder"
           }
         ]
       }
@@ -301,7 +319,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -312,7 +330,8 @@ Higher order call graphs
             "target": "builder_pattern.Builder.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
           }
         ]
       }
@@ -373,7 +392,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -384,7 +403,8 @@ Higher order call graphs
             "target": "builder_pattern.Builder.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
           }
         ]
       }
@@ -445,7 +465,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -456,7 +476,8 @@ Higher order call graphs
             "target": "builder_pattern.Builder.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builder_pattern.SubBuilder"
           }
         ]
       }
@@ -517,7 +538,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -528,7 +549,8 @@ Higher order call graphs
             "target": "builder_pattern.Builder.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
           }
         ]
       }
@@ -589,7 +611,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -600,7 +622,8 @@ Higher order call graphs
             "target": "builder_pattern.Builder.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
           }
         ]
       }

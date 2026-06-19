@@ -4,16 +4,7 @@ Higher order call graphs
   "callable": "typevar.$toplevel",
   "returned_callables": [],
   "calls": {
-    "10:0-10:1|identifier|$local_typevar$T": {
-      "identifier": {
-        "globals": [ { "target": "Obj{typevar.T}", "index": 0 } ]
-      }
-    },
-    "10:4-10:29": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-      }
-    }
+    "10:4-10:29": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } }
   }
 }
 {
@@ -29,7 +20,13 @@ Higher order call graphs
     },
     "19:15-19:26": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{typevar.Foo.tainted}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{typevar.Foo.tainted}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     }
@@ -41,7 +38,13 @@ Higher order call graphs
   "calls": {
     "15:8-15:20": {
       "attribute_access": {
-        "globals": [ { "target": "Obj{typevar.Foo.tainted}", "index": 0 } ],
+        "globals": [
+          {
+            "target": "Obj{typevar.Foo.tainted}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
         "is_attribute": true
       }
     }

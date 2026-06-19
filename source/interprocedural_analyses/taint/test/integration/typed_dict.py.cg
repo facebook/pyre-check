@@ -2,18 +2,18 @@
 Call dependencies
 {
   "typed_dict.test_sanitize_field (fun)": [
-    "TypedDictionary.__getitem__ (method)", "pysa._test_sink (fun)",
-    "pysa._test_source (fun)"
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "typing.Mapping.__getitem__ (method)"
   ],
   "typed_dict.test_typed_dict_constructor (fun)": [
-    "TypedDictionary.__getitem__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "_typeshed._type_checker_internals.TypedDictFallback.keys (method)",
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)",
     "typed_dict.SimpleTypedDict.__init__ (method)",
-    "typing.Mapping.keys (method)"
+    "typing.Mapping.__getitem__ (method)"
   ],
   "typed_dict.test_typed_dict_setitem (fun)": [
-    "TypedDictionary.__getitem__ (method)",
-    "TypedDictionary.__setitem__ (method)", "pysa._test_sink (fun)",
-    "pysa._test_source (fun)"
+    "pysa._test_sink (fun)", "pysa._test_source (fun)",
+    "typing.Mapping.__getitem__ (method)"
   ]
 }

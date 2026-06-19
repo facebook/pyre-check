@@ -4,26 +4,7 @@ Higher order call graphs
   "callable": "self.$toplevel",
   "returned_callables": [],
   "calls": {
-    "-1:-1--1:-1|artificial-call|self-implicit-typevar:_Self_self_Foo__": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-      }
-    },
-    "-1:-1--1:-1|identifier|$local_self$_Self_self_Foo__": {
-      "identifier": {
-        "globals": [ { "target": "Obj{self._Self_self_Foo__}", "index": 0 } ]
-      }
-    },
-    "11:0-11:4|identifier|$local_self$TFoo": {
-      "identifier": {
-        "globals": [ { "target": "Obj{self.TFoo}", "index": 0 } ]
-      }
-    },
-    "11:7-11:35": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-      }
-    }
+    "11:7-11:35": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } }
   }
 }
 {
@@ -37,10 +18,37 @@ Higher order call graphs
         ]
       }
     },
+    "133:15-133:18|identifier|Foo": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "self.Foo.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "self.Foo"
+            }
+          ]
+        }
+      }
+    },
     "133:15-133:32": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{self.Foo.__class__.tainted_class}", "index": 0 }
+          {
+            "target": "Obj{self.Foo.__class__.tainted_class}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -50,6 +58,29 @@ Higher order call graphs
         "calls": [
           { "target": "pysa._test_sink", "index": 1, "return_type": [] }
         ]
+      }
+    },
+    "134:15-134:18|identifier|Foo": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "self.Foo.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "self.Foo"
+            }
+          ]
+        }
       }
     }
   }
@@ -62,7 +93,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -73,7 +104,8 @@ Higher order call graphs
             "target": "self.Foo.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "self.Foo"
           }
         ]
       }
@@ -82,7 +114,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -93,7 +125,8 @@ Higher order call graphs
             "target": "self.Foo.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "self.Foo"
           }
         ]
       }
@@ -116,6 +149,41 @@ Higher order call graphs
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
+      }
+    },
+    "199:15-199:26": {
+      "attribute_access": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "self.Foo.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "self.Foo"
+            }
+          ]
+        }
+      }
+    },
+    "199:15-199:40": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{self.Foo.__class__.tainted_class}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     },
     "201:4-201:31": {
@@ -144,6 +212,29 @@ Higher order call graphs
         "calls": [
           { "target": "pysa._test_sink", "index": 4, "return_type": [] }
         ]
+      }
+    },
+    "205:15-205:26": {
+      "attribute_access": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "self.Foo.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "self.Foo"
+            }
+          ]
+        }
       }
     },
     "206:4-206:35": {
@@ -177,7 +268,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -188,7 +279,8 @@ Higher order call graphs
             "target": "self.Foo.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "self.Foo"
           }
         ]
       }
@@ -197,7 +289,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -208,7 +300,8 @@ Higher order call graphs
             "target": "self.Foo.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "self.Foo"
           }
         ]
       }
@@ -231,6 +324,41 @@ Higher order call graphs
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
+      }
+    },
+    "184:15-184:26": {
+      "attribute_access": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "self.Foo.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "self.Foo"
+            }
+          ]
+        }
+      }
+    },
+    "184:15-184:40": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{self.Foo.__class__.tainted_class}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     },
     "186:4-186:31": {
@@ -259,6 +387,29 @@ Higher order call graphs
         "calls": [
           { "target": "pysa._test_sink", "index": 4, "return_type": [] }
         ]
+      }
+    },
+    "190:15-190:26": {
+      "attribute_access": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "self.Foo.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "self.Foo"
+            }
+          ]
+        }
       }
     },
     "191:4-191:35": {
@@ -292,7 +443,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -303,7 +454,8 @@ Higher order call graphs
             "target": "self.Foo.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "self.Foo"
           }
         ]
       }
@@ -312,7 +464,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -323,7 +475,8 @@ Higher order call graphs
             "target": "self.Foo.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "self.Foo"
           }
         ]
       }
@@ -350,20 +503,35 @@ Higher order call graphs
     },
     "214:15-214:26": {
       "attribute_access": {
-        "properties": [
-          {
-            "target": "object.__class__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "self.Foo.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "self.Foo"
+            }
+          ]
+        }
       }
     },
     "214:15-214:40": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{self.Foo.__class__.tainted_class}", "index": 0 }
+          {
+            "target": "Obj{self.Foo.__class__.tainted_class}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -398,14 +566,25 @@ Higher order call graphs
     },
     "220:15-220:26": {
       "attribute_access": {
-        "properties": [
-          {
-            "target": "object.__class__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "self.Foo.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "self.Foo"
+            }
+          ]
+        }
       }
     },
     "221:4-221:35": {
@@ -439,7 +618,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -450,7 +629,8 @@ Higher order call graphs
             "target": "self.Foo.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "self.Foo"
           }
         ]
       }
@@ -459,7 +639,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -470,7 +650,8 @@ Higher order call graphs
             "target": "self.Foo.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "self.Foo"
           }
         ]
       }
@@ -497,20 +678,35 @@ Higher order call graphs
     },
     "169:15-169:26": {
       "attribute_access": {
-        "properties": [
-          {
-            "target": "object.__class__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "self.Foo.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "self.Foo"
+            }
+          ]
+        }
       }
     },
     "169:15-169:40": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{self.Foo.__class__.tainted_class}", "index": 0 }
+          {
+            "target": "Obj{self.Foo.__class__.tainted_class}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -545,14 +741,25 @@ Higher order call graphs
     },
     "175:15-175:26": {
       "attribute_access": {
-        "properties": [
-          {
-            "target": "object.__class__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "self.Foo.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "self.Foo"
+            }
+          ]
+        }
       }
     },
     "176:4-176:35": {
@@ -586,7 +793,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -597,7 +804,8 @@ Higher order call graphs
             "target": "self.Foo.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "self.Foo"
           }
         ]
       }
@@ -606,7 +814,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -617,7 +825,8 @@ Higher order call graphs
             "target": "self.Foo.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "self.Foo"
           }
         ]
       }
@@ -644,20 +853,35 @@ Higher order call graphs
     },
     "154:15-154:26": {
       "attribute_access": {
-        "properties": [
-          {
-            "target": "object.__class__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "self.Foo.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "self.Foo"
+            }
+          ]
+        }
       }
     },
     "154:15-154:40": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{self.Foo.__class__.tainted_class}", "index": 0 }
+          {
+            "target": "Obj{self.Foo.__class__.tainted_class}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -692,14 +916,25 @@ Higher order call graphs
     },
     "160:15-160:26": {
       "attribute_access": {
-        "properties": [
-          {
-            "target": "object.__class__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "self.Foo.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "self.Foo"
+            }
+          ]
+        }
       }
     },
     "161:4-161:35": {
@@ -733,7 +968,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -744,7 +979,8 @@ Higher order call graphs
             "target": "self.Foo.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "self.Foo"
           }
         ]
       }
@@ -758,20 +994,35 @@ Higher order call graphs
     },
     "139:15-139:26": {
       "attribute_access": {
-        "properties": [
-          {
-            "target": "object.__class__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "self.Foo.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "self.Foo"
+            }
+          ]
+        }
       }
     },
     "139:15-139:40": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{self.Foo.__class__.tainted_class}", "index": 0 }
+          {
+            "target": "Obj{self.Foo.__class__.tainted_class}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -806,14 +1057,25 @@ Higher order call graphs
     },
     "145:15-145:26": {
       "attribute_access": {
-        "properties": [
-          {
-            "target": "object.__class__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "self.Foo.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "self.Foo"
+            }
+          ]
+        }
       }
     },
     "146:4-146:35": {
@@ -835,20 +1097,6 @@ Higher order call graphs
         "calls": [
           { "target": "pysa._test_sink", "index": 7, "return_type": [] }
         ]
-      }
-    }
-  }
-}
-{
-  "callable": "self.Foo.$class_toplevel",
-  "returned_callables": [],
-  "calls": {
-    "15:4-15:17|artificial-attribute-access|qualification:self.Foo.tainted_class": {
-      "attribute_access": {
-        "globals": [
-          { "target": "Obj{self.Foo.__class__.tainted_class}", "index": 0 }
-        ],
-        "is_attribute": true
       }
     }
   }
@@ -888,6 +1136,41 @@ Higher order call graphs
         "calls": [
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
+      }
+    },
+    "82:12-82:26": {
+      "attribute_access": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "self.Foo.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "self.Foo"
+            }
+          ]
+        }
+      }
+    },
+    "82:12-82:40": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{self.Foo.__class__.tainted_class}",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -971,22 +1254,25 @@ Higher order call graphs
     },
     "48:19-48:33": {
       "attribute_access": {
-        "properties": [
-          {
-            "target": "object.__class__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "48:19-48:47": {
-      "attribute_access": {
-        "globals": [
-          { "target": "Obj{self.Foo.__class__.tainted_class}", "index": 0 }
-        ],
-        "is_attribute": true
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "self.Foo.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "self.Foo"
+            }
+          ]
+        }
       }
     }
   }
@@ -1070,20 +1356,35 @@ Higher order call graphs
     },
     "25:19-25:33": {
       "attribute_access": {
-        "properties": [
-          {
-            "target": "object.__class__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "self.Foo.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "self.Foo"
+            }
+          ]
+        }
       }
     },
     "25:19-25:47": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{self.Foo.__class__.tainted_class}", "index": 0 }
+          {
+            "target": "Obj{self.Foo.__class__.tainted_class}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }

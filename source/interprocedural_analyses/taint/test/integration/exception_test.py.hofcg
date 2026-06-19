@@ -4,11 +4,16 @@ Higher order call graphs
   "callable": "exception_test.none_throws",
   "returned_callables": [],
   "calls": {
+    "26:7-26:16|artificial-call|comparison": {
+      "call": {
+        "unresolved": [ "UnresolvedMagicDunderAttrDueToNoAttribute" ]
+      }
+    },
     "27:14-27:31": {
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.BaseException.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -16,10 +21,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "BaseException.__init__",
+            "target": "builtins.BaseException.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.Exception"
           }
         ]
       }
@@ -64,10 +70,49 @@ Higher order call graphs
     "21:11-21:20|artificial-call|try-handler-isinstance": {
       "call": {
         "calls": [
+          { "target": "builtins.isinstance", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "21:11-21:20|identifier|Exception": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.BaseException.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.BaseException.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "builtins.Exception"
+            }
+          ]
+        }
+      }
+    },
+    "22:15-22:22": {
+      "call": {
+        "new_calls": [
           {
-            "target": "isinstance",
+            "target": "builtins.str.__new__",
             "index": 0,
-            "return_type": [ "float", "integer", "boolean" ]
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
           }
         ]
       }
@@ -76,11 +121,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "BaseException.__str__",
+            "target": "builtins.BaseException.__str__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "Exception"
+            "receiver_class": "builtins.Exception"
           }
         ]
       }
@@ -95,7 +140,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.BaseException.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -103,7 +148,28 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "BaseException.__init__",
+            "target": "builtins.BaseException.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.Exception"
+          }
+        ]
+      }
+    },
+    "15:11-15:18": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.str.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
@@ -115,11 +181,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "BaseException.__str__",
+            "target": "builtins.BaseException.__str__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "Exception"
+            "receiver_class": "builtins.Exception"
           }
         ]
       }
@@ -161,15 +227,35 @@ Higher order call graphs
   "callable": "exception_test.test_parameter_flow",
   "returned_callables": [],
   "calls": {
+    "10:11-10:18": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.str.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "10:11-10:18|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
-            "target": "BaseException.__str__",
+            "target": "builtins.BaseException.__str__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "Exception"
+            "receiver_class": "builtins.Exception"
           }
         ]
       }
@@ -182,7 +268,9 @@ Higher order call graphs
   "calls": {
     "68:8-68:21": {
       "call": {
-        "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.print", "index": 0, "return_type": [] }
+        ]
       }
     },
     "70:15-70:29": {

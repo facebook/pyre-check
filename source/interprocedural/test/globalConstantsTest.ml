@@ -13,7 +13,11 @@ open Interprocedural
 let test_from_source context =
   let assert_global_constants ~all_sources ~test_source_qualifier ~expected =
     let project =
-      Test.ScratchPyrePysaProject.setup ~context ~requires_type_of_expressions:false all_sources
+      Test.ScratchPyrePysaProject.setup
+        ~context
+        ~force_pyrefly:true
+        ~requires_type_of_expressions:false
+        all_sources
     in
     let pyre_api = Test.ScratchPyrePysaProject.read_only_api project in
     let configuration = Test.ScratchPyrePysaProject.configuration_of project in
@@ -109,7 +113,11 @@ let test_from_source context =
 let test_from_qualifiers context =
   let from_sources sources =
     let project =
-      Test.ScratchPyrePysaProject.setup ~context ~requires_type_of_expressions:false sources
+      Test.ScratchPyrePysaProject.setup
+        ~context
+        ~force_pyrefly:true
+        ~requires_type_of_expressions:false
+        sources
     in
     let pyre_api = Test.ScratchPyrePysaProject.read_only_api project in
     let configuration = Test.ScratchPyrePysaProject.configuration_of project in

@@ -1,6 +1,130 @@
 @generated
 Higher order call graphs
 {
+  "callable": "dataclass_taint.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "12:1-12:10|identifier|dataclass": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "dataclasses.dataclass",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "30:1-30:10|identifier|dataclass": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "dataclasses.dataclass",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "43:1-43:10|identifier|dataclass": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "dataclasses.dataclass",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "66:1-66:6|identifier|final": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            { "target": "typing.final", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "67:1-67:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "dataclasses.dataclass",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "78:1-78:6|identifier|final": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            { "target": "typing.final", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "79:1-79:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "dataclasses.dataclass",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "90:1-90:10|identifier|dataclass": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "dataclasses.dataclass",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "109:1-109:10|identifier|dataclass": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "dataclasses.dataclass",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "136:1-136:10|identifier|dataclass": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "dataclasses.dataclass",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "dataclass_taint.bad_is_tainted",
   "returned_callables": [],
   "calls": {
@@ -8,7 +132,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -19,7 +143,8 @@ Higher order call graphs
             "target": "dataclass_taint.DataClass.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "dataclass_taint.DataClass"
           }
         ]
       }
@@ -48,7 +173,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -59,7 +184,8 @@ Higher order call graphs
             "target": "dataclass_taint.DataClass.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "dataclass_taint.DataClass"
           }
         ]
       }
@@ -88,7 +214,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -99,7 +225,8 @@ Higher order call graphs
             "target": "dataclass_taint.DataClassWIthInit.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "dataclass_taint.DataClassWIthInit"
           }
         ]
       }
@@ -121,7 +248,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -132,7 +259,8 @@ Higher order call graphs
             "target": "dataclass_taint.WeirdDataClass.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "dataclass_taint.WeirdDataClass"
           }
         ]
       }
@@ -154,7 +282,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -165,7 +293,8 @@ Higher order call graphs
             "target": "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "dataclass_taint.DataClassWithClassAttributeTaintedDirectly"
           }
         ]
       }
@@ -181,7 +310,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -192,7 +321,8 @@ Higher order call graphs
             "target": "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "dataclass_taint.DataClassWithClassAttributeTaintedDirectly"
           }
         ]
       }
@@ -208,7 +338,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 2,
             "return_type": [],
             "is_static_method": true
@@ -219,7 +349,8 @@ Higher order call graphs
             "target": "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "dataclass_taint.DataClassWithClassAttributeTaintedDirectly"
           }
         ]
       }
@@ -235,7 +366,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 3,
             "return_type": [],
             "is_static_method": true
@@ -246,7 +377,8 @@ Higher order call graphs
             "target": "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__",
             "index": 3,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "dataclass_taint.DataClassWithClassAttributeTaintedDirectly"
           }
         ]
       }
@@ -256,7 +388,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -279,7 +412,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -290,7 +423,8 @@ Higher order call graphs
             "target": "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor"
           }
         ]
       }
@@ -306,7 +440,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -317,7 +451,8 @@ Higher order call graphs
             "target": "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor"
           }
         ]
       }
@@ -333,7 +468,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 2,
             "return_type": [],
             "is_static_method": true
@@ -344,7 +479,8 @@ Higher order call graphs
             "target": "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor"
           }
         ]
       }
@@ -360,7 +496,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 3,
             "return_type": [],
             "is_static_method": true
@@ -371,7 +507,8 @@ Higher order call graphs
             "target": "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__",
             "index": 3,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor"
           }
         ]
       }
@@ -393,7 +530,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -404,7 +541,8 @@ Higher order call graphs
             "target": "dataclass_taint.DataClass.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "dataclass_taint.DataClass"
           }
         ]
       }
@@ -439,7 +577,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -450,7 +588,8 @@ Higher order call graphs
             "target": "dataclass_taint.DataClass.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "dataclass_taint.DataClass"
           }
         ]
       }
@@ -473,7 +612,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{dataclass_taint.DataClassWithOtherSource.tainted}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -504,7 +644,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{dataclass_taint.DataClassWithSource.tainted}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -527,7 +668,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -538,7 +679,8 @@ Higher order call graphs
             "target": "dataclass_taint.WeirdDataClass.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "dataclass_taint.WeirdDataClass"
           }
         ]
       }
@@ -562,17 +704,71 @@ Higher order call graphs
   "callable": "dataclass_taint.WeirdDataClass.__init__",
   "returned_callables": [],
   "calls": {
+    "53:8-53:14|identifier|object": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "builtins.object"
+            }
+          ]
+        }
+      }
+    },
     "53:8-53:44": {
       "call": {
         "calls": [
-          { "target": "object.__setattr__", "index": 0, "return_type": [] }
+          {
+            "target": "builtins.object.__setattr__",
+            "index": 0,
+            "return_type": []
+          }
         ]
+      }
+    },
+    "54:8-54:14|identifier|object": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "builtins.object"
+            }
+          ]
+        }
       }
     },
     "54:8-54:53": {
       "call": {
         "calls": [
-          { "target": "object.__setattr__", "index": 1, "return_type": [] }
+          {
+            "target": "builtins.object.__setattr__",
+            "index": 1,
+            "return_type": []
+          }
         ]
       }
     },
@@ -581,7 +777,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{dataclass_taint.WeirdDataClass.bad_sink}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true

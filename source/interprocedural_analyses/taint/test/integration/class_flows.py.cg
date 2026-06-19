@@ -1,9 +1,6 @@
 @generated
 Call dependencies
 {
-  "class_flows.C.$class_toplevel (method)": [
-    "class_flows.C.__class__.tainted_class_attribute (object)"
-  ],
   "class_flows.HasClassmethods._async_results_for_non_empty_query_from_db (method)": [
     "class_flows.HasClassmethods._get_multi_word_results (method)",
     "class_flows.HasClassmethods._get_single_word_results (method)"
@@ -33,7 +30,7 @@ Call dependencies
   ],
   "class_flows.tainted_class_attribute_through_double_underscore_class_issue (fun)": [
     "class_flows.C.__class__.tainted_class_attribute (object)",
-    "object.__class__ (method)", "pysa._test_source (fun)"
+    "pysa._test_source (fun)"
   ],
   "class_flows.tainted_class_attribute_through_instance_not_issue (fun)": [
     "pysa._test_source (fun)"

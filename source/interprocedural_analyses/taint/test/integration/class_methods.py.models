@@ -46,7 +46,7 @@
               "port": "formal(x, position=1)",
               "call_site": "22:4-22:28"
             },
-            "receiver_interval": [ { "lower": 4, "upper": 5 } ],
+            "receiver_interval": [ { "lower": 8, "upper": 9 } ],
             "is_self_call": false
           }
         ]
@@ -111,7 +111,7 @@
               "port": "formal(arg, position=1)",
               "call_site": "109:4-109:51"
             },
-            "receiver_interval": [ { "lower": 9, "upper": 10 } ],
+            "receiver_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
           }
         ]
@@ -176,7 +176,7 @@
               "port": "formal(arg, position=1)",
               "call_site": "114:4-114:50"
             },
-            "receiver_interval": [ { "lower": 9, "upper": 10 } ],
+            "receiver_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
           }
         ]
@@ -239,7 +239,7 @@
               "port": "formal(arg, position=1)",
               "call_site": "110:4-110:42"
             },
-            "receiver_interval": [ { "lower": 9, "upper": 10 } ],
+            "receiver_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
           }
         ]
@@ -304,7 +304,7 @@
               "port": "formal(arg, position=1)",
               "call_site": "115:4-115:51"
             },
-            "receiver_interval": [ { "lower": 9, "upper": 10 } ],
+            "receiver_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
           }
         ]
@@ -485,6 +485,113 @@
 {
   "kind": "model",
   "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[col_offset,end_col_offset,end_lineno,lineno])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "class_methods.C.class_method",
     "filename": "class_methods.py",
     "callable_line": 38,
@@ -502,7 +609,7 @@
               }
             ],
             "origin": { "line": 39, "start": 19, "end": 22 },
-            "caller_interval": [ { "lower": 8, "upper": 11 } ],
+            "caller_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": false,
             "call_site": "39:8-39:23"
           }
@@ -529,7 +636,8 @@
               "port": "formal(arg, position=1)",
               "call_site": "35:8-35:38"
             },
-            "caller_interval": [ { "lower": 9, "upper": 10 } ],
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": true
           }
         ]
@@ -555,8 +663,8 @@
               "port": "formal(arg, position=1)",
               "call_site": "61:8-61:37"
             },
-            "caller_interval": [ { "lower": 9, "upper": 10 } ],
-            "receiver_interval": [ { "lower": 8, "upper": 11 } ],
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": true
           }
         ]
@@ -582,8 +690,8 @@
               "port": "formal(arg, position=1)",
               "call_site": "43:8-43:29"
             },
-            "caller_interval": [ { "lower": 8, "upper": 11 } ],
-            "receiver_interval": [ { "lower": 8, "upper": 11 } ],
+            "caller_interval": [ { "lower": 2, "upper": 5 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": true
           }
         ]
@@ -609,7 +717,7 @@
               "port": "formal(arg, position=0)",
               "call_site": "71:8-71:38"
             },
-            "caller_interval": [ { "lower": 8, "upper": 11 } ],
+            "caller_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": true
           }
         ]
@@ -647,47 +755,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "class_methods.D.__init__",
-    "filename": "class_methods.py",
-    "callable_line": 84,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          },
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 85, "start": 8, "end": 15 } ],
-            "tito": {
-              "caller_interval": [ { "lower": 9, "upper": 10 } ],
-              "is_self_call": false
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "class_methods.D.abstract_class_method",
     "filename": "class_methods.py",
     "callable_line": 89,
@@ -705,7 +772,7 @@
               }
             ],
             "origin": { "line": 90, "start": 19, "end": 22 },
-            "caller_interval": [ { "lower": 9, "upper": 10 } ],
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false,
             "call_site": "90:8-90:23"
           }
@@ -734,7 +801,7 @@
               }
             ],
             "origin": { "line": 93, "start": 19, "end": 22 },
-            "caller_interval": [ { "lower": 9, "upper": 10 } ],
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false,
             "call_site": "93:8-93:23"
           }
@@ -763,7 +830,7 @@
               }
             ],
             "origin": { "line": 97, "start": 19, "end": 22 },
-            "caller_interval": [ { "lower": 9, "upper": 10 } ],
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false,
             "call_site": "97:8-97:23"
           }
@@ -859,7 +926,7 @@
               }
             ],
             "origin": { "line": 18, "start": 26, "end": 27 },
-            "caller_interval": [ { "lower": 4, "upper": 5 } ],
+            "caller_interval": [ { "lower": 8, "upper": 9 } ],
             "is_self_call": false,
             "call_site": "18:15-18:28"
           }
@@ -883,9 +950,60 @@
             ],
             "tito_positions": [ { "line": 18, "start": 26, "end": 27 } ],
             "tito": {
-              "caller_interval": [ { "lower": 4, "upper": 5 } ],
+              "caller_interval": [ { "lower": 8, "upper": 9 } ],
               "is_self_call": false
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decimal.DecimalTuple.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(exponent, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[exponent]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(digits, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[digits]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(sign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[sign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
           }
         ]
       }
@@ -910,12 +1028,13 @@
               }
             ],
             "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 9, "upper": 10 } ],
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
           }
         ]
       }
-    ]
+    ],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -936,12 +1055,13 @@
               }
             ],
             "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 9, "upper": 10 } ],
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
           }
         ]
       }
-    ]
+    ],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -962,7 +1082,7 @@
               }
             ],
             "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 9, "upper": 10 } ],
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
           }
         ]
@@ -988,7 +1108,7 @@
               }
             ],
             "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 9, "upper": 10 } ],
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
           }
         ]

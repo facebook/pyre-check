@@ -4,25 +4,26 @@ Higher order call graphs
   "callable": "constant_fields.$toplevel",
   "returned_callables": [],
   "calls": {
-    "35:0-35:10|identifier|$local_constant_fields$CONSTANT_A": {
+    "11:17-11:21|identifier|Enum": {
       "identifier": {
-        "globals": [
-          { "target": "Obj{constant_fields.CONSTANT_A}", "index": 0 }
-        ]
-      }
-    },
-    "36:0-36:10|identifier|$local_constant_fields$CONSTANT_B": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{constant_fields.CONSTANT_B}", "index": 0 }
-        ]
-      }
-    },
-    "37:0-37:18|identifier|$local_constant_fields$untracked_constant": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{constant_fields.untracked_constant}", "index": 0 }
-        ]
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "enum.Enum.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -35,16 +36,16 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__setitem__",
+            "target": "builtins.dict.__setitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
     },
-    "54:6-54:24|identifier|$local_constant_fields$untracked_constant": {
+    "54:6-54:24|identifier|untracked_constant": {
       "identifier": {
         "globals": [
           { "target": "Obj{constant_fields.untracked_constant}", "index": 0 }
@@ -62,16 +63,16 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "builtins.dict.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
     },
-    "55:13-55:31|identifier|$local_constant_fields$untracked_constant": {
+    "55:13-55:31|identifier|untracked_constant": {
       "identifier": {
         "globals": [
           { "target": "Obj{constant_fields.untracked_constant}", "index": 1 }
@@ -88,16 +89,16 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__setitem__",
+            "target": "builtins.dict.__setitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
     },
-    "42:6-42:16|identifier|$local_constant_fields$CONSTANT_A": {
+    "42:6-42:16|identifier|CONSTANT_A": {
       "identifier": {
         "globals": [
           { "target": "Obj{constant_fields.CONSTANT_A}", "index": 0 }
@@ -115,16 +116,16 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "builtins.dict.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
     },
-    "43:13-43:23|identifier|$local_constant_fields$CONSTANT_A": {
+    "43:13-43:23|identifier|CONSTANT_A": {
       "identifier": {
         "globals": [
           { "target": "Obj{constant_fields.CONSTANT_A}", "index": 1 }
@@ -141,19 +142,12 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__setitem__",
+            "target": "builtins.dict.__setitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
-        ]
-      }
-    },
-    "48:6-48:16|identifier|$local_constant_fields$CONSTANT_B": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{constant_fields.CONSTANT_B}", "index": 0 }
         ]
       }
     },
@@ -168,19 +162,12 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "builtins.dict.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
-        ]
-      }
-    },
-    "49:13-49:23|identifier|$local_constant_fields$CONSTANT_B": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{constant_fields.CONSTANT_B}", "index": 1 }
         ]
       }
     }
@@ -194,13 +181,35 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__setitem__",
+            "target": "builtins.dict.__setitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
+      }
+    },
+    "19:6-19:16|identifier|CustomEnum": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "enum.Enum.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "19:34-19:48": {
@@ -214,13 +223,35 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "builtins.dict.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
+      }
+    },
+    "20:13-20:23|identifier|CustomEnum": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "enum.Enum.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -233,13 +264,35 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__setitem__",
+            "target": "builtins.dict.__setitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
+      }
+    },
+    "25:6-25:16|identifier|CustomEnum": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "enum.Enum.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "25:36-25:50": {
@@ -253,13 +306,35 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "builtins.dict.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
+      }
+    },
+    "26:13-26:23|identifier|CustomEnum": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "enum.Enum.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }
@@ -272,13 +347,35 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__setitem__",
+            "target": "builtins.dict.__setitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
+      }
+    },
+    "31:6-31:16|identifier|CustomEnum": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "enum.Enum.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
       }
     },
     "31:36-31:50": {
@@ -292,13 +389,35 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "builtins.dict.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
+      }
+    },
+    "32:13-32:23|identifier|CustomEnum": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "enum.Enum.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
       }
     }
   }

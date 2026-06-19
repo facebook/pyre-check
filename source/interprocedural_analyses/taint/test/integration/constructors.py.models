@@ -1,5 +1,25 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "builtins.eval",
+    "filename": "builtins.pyi",
+    "callable_line": 4540,
+    "sinks": [
+      {
+        "port": "formal(source, position=0, positional_only)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "constructors.test_both_new_and_init_callgraph",
@@ -52,7 +72,9 @@
               "resolves_to": [ "constructors.BothNewAndInit.__init__" ],
               "port": "formal(self, position=0)[foo]",
               "call_site": "77:4-77:20"
-            }
+            },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -216,6 +238,8 @@
               }
             ],
             "origin": { "line": 123, "start": 15, "end": 41 },
+            "receiver_interval": [ { "lower": 18, "upper": 19 } ],
+            "is_self_call": false,
             "call_site": "123:15-123:43"
           }
         ]
@@ -277,6 +301,8 @@
               }
             ],
             "origin": { "line": 124, "start": 8, "end": 34 },
+            "receiver_interval": [ { "lower": 18, "upper": 19 } ],
+            "is_self_call": false,
             "call_site": "124:8-124:36"
           }
         ]
@@ -640,140 +666,6 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "constructors.test_parent_with_no_constructor",
-    "callable_line": 183,
-    "code": 5002,
-    "line": 184,
-    "start": 15,
-    "end": 58,
-    "filename": "constructors.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 184, "start": 39, "end": 53 } ],
-            "origin": { "line": 184, "start": 39, "end": 53 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 184, "start": 15, "end": 58 },
-            "call_site": "184:4-184:59"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "pysa._test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "constructors.test_parent_with_no_constructor:5002:0:Call|pysa._test_sink|0|formal(arg):0b3afe0f51aae6fdb772bf89b2a73607"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "constructors.test_parent_with_no_constructor",
-    "callable_line": 183,
-    "code": 5002,
-    "line": 185,
-    "start": 15,
-    "end": 58,
-    "filename": "constructors.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "pysa._test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 185, "start": 43, "end": 57 } ],
-            "origin": { "line": 185, "start": 43, "end": 57 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [
-                  { "name": "pysa._test_sink", "port": "leaf:arg" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 185, "start": 15, "end": 58 },
-            "call_site": "185:4-185:59"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "pysa._test_sink",
-      "index": 1,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "constructors.test_parent_with_no_constructor:5002:0:Call|pysa._test_sink|1|formal(arg):a6b48333596aca145f41cd35b4959fc9"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
     "callable": "constructors.test_parent_with_obscure_constructor",
     "callable_line": 170,
     "code": 5002,
@@ -939,7 +831,9 @@
               "resolves_to": [ "constructors.SourceInConstructor.__init__" ],
               "port": "formal(self, position=0)[x]",
               "call_site": "45:8-45:29"
-            }
+            },
+            "receiver_interval": [ { "lower": 50, "upper": 51 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -975,26 +869,6 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "constructors.test_source_in_constructor:5002:0:Call|pysa._test_sink|0|formal(arg):e1bec82b6da5ae824a5a07052424595f"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "eval",
-    "filename": "builtins.pyi",
-    "callable_line": 476,
-    "sinks": [
-      {
-        "port": "formal(source, position=0, positional_only)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "RemoteCodeExecution" } ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
   }
 }
 {
@@ -1045,6 +919,113 @@
       }
     ],
     "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[col_offset,end_col_offset,end_lineno,lineno])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -1127,6 +1108,18 @@
               }
             ],
             "origin": { "line": 68, "start": 18, "end": 32 }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(cls, position=0)[__new__]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": {}
           }
         ]
       }
@@ -1285,7 +1278,7 @@
               "call_site": "87:8-87:26"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
-            "receiver_interval": [ { "lower": 2, "upper": 5 } ],
+            "receiver_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
           }
         ]
@@ -1435,91 +1428,6 @@
       }
     ],
     "modes": [ "SkipObscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "constructors.ParentWithNoConstructor.__init__",
-    "filename": "constructors.py",
-    "callable_line": 179,
-    "tito": [
-      {
-        "port": "formal(b, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 180, "start": 28, "end": 29 } ],
-            "tito": {
-              "caller_interval": [ { "lower": 31, "upper": 32 } ],
-              "is_self_call": false
-            }
-          }
-        ]
-      },
-      {
-        "port": "formal(a, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 180, "start": 25, "end": 26 } ],
-            "tito": {
-              "caller_interval": [ { "lower": 31, "upper": 32 } ],
-              "is_self_call": false
-            }
-          }
-        ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          },
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 180, "start": 8, "end": 15 } ],
-            "tito": {
-              "caller_interval": [ { "lower": 31, "upper": 32 } ],
-              "is_self_call": false
-            }
-          }
-        ]
-      }
-    ]
   }
 }
 {
@@ -1795,7 +1703,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "eval", "port": "leaf:source" } ],
+                "leaves": [
+                  { "name": "builtins.eval", "port": "leaf:source" }
+                ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -1882,6 +1792,57 @@
             "origin": { "line": 40, "start": 17, "end": 31 },
             "caller_interval": [ { "lower": 50, "upper": 51 } ],
             "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decimal.DecimalTuple.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(exponent, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[exponent]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(digits, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[digits]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(sign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[sign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
           }
         ]
       }

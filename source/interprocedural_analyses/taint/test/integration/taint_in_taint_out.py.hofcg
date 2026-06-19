@@ -1,6 +1,58 @@
 @generated
 Higher order call graphs
 {
+  "callable": "taint_in_taint_out.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "96:23-96:34|identifier|FieldIsTITO": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "taint_in_taint_out.FieldIsTITO"
+            }
+          ]
+        }
+      }
+    },
+    "169:14-169:22|identifier|GetQuery": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "taint_in_taint_out.GetQuery.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "taint_in_taint_out.GetQuery"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate",
   "returned_callables": [],
   "calls": {
@@ -8,9 +60,42 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "isinstance",
+            "target": "builtins.isinstance",
             "index": 0,
             "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "196:33-196:37|identifier|dict": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.dict.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.dict.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "builtins.dict"
+            }
+          ]
+        }
+      }
+    },
+    "197:23-197:27|identifier|self": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "self",
+            "defining_function": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload"
           }
         ]
       }
@@ -24,6 +109,16 @@ Higher order call graphs
             "implicit_receiver": true,
             "return_type": [],
             "receiver_class": "taint_in_taint_out.ComplexEvaluator"
+          }
+        ]
+      }
+    },
+    "198:19-198:23|identifier|self": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "self",
+            "defining_function": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload"
           }
         ]
       }
@@ -52,7 +147,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{taint_in_taint_out.FieldIsTITO.add_tito}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -69,7 +165,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{taint_in_taint_out.FieldIsTITO.add_tito}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -276,11 +373,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.items",
+            "target": "builtins.dict.items",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -289,11 +386,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "typing.Iterable.__iter__",
+            "target": "typing.ItemsView.__iter__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "typing.Iterable"
+            "receiver_class": "_collections_abc.dict_items"
           }
         ]
       }
@@ -328,7 +425,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -339,7 +436,8 @@ Higher order call graphs
             "target": "taint_in_taint_out.ClassManyFields.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.ClassManyFields"
           }
         ]
       }
@@ -368,7 +466,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -379,7 +477,8 @@ Higher order call graphs
             "target": "taint_in_taint_out.Recursive.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Recursive"
           }
         ]
       }
@@ -402,7 +501,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{taint_in_taint_out.FieldIsTITO.add_tito}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -469,7 +569,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -480,7 +580,8 @@ Higher order call graphs
             "target": "taint_in_taint_out.Object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Object"
           }
         ]
       }
@@ -512,7 +613,15 @@ Higher order call graphs
     },
     "265:15-265:21|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
       }
     }
   }
@@ -525,7 +634,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -536,7 +645,8 @@ Higher order call graphs
             "target": "taint_in_taint_out.Object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Object"
           }
         ]
       }
@@ -568,7 +678,15 @@ Higher order call graphs
     },
     "272:15-272:21|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
       }
     }
   }
@@ -604,13 +722,20 @@ Higher order call graphs
     },
     "438:15-438:23|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ],
+        "unresolved": [ "UnexpectedPyreflyTarget" ]
       }
     },
     "438:15-438:28|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -644,14 +769,10 @@ Higher order call graphs
       }
     },
     "464:15-464:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "464:15-464:26|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -709,9 +830,7 @@ Higher order call graphs
       }
     },
     "226:15-226:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -723,7 +842,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -734,7 +853,8 @@ Higher order call graphs
             "target": "taint_in_taint_out.Object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Object"
           }
         ]
       }
@@ -743,9 +863,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 0,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -754,24 +876,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "398:7-398:28|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }
@@ -808,7 +917,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -819,7 +928,8 @@ Higher order call graphs
             "target": "taint_in_taint_out.Object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Object"
           }
         ]
       }
@@ -828,9 +938,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 0,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -839,24 +951,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "407:7-407:28|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }
@@ -893,9 +992,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 0,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -904,24 +1005,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "429:7-429:28|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }
@@ -958,7 +1046,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.range.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -966,7 +1054,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "range.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
@@ -978,11 +1066,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "range.__iter__",
+            "target": "builtins.range.__iter__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "range"
+            "receiver_class": "builtins.range"
           }
         ]
       }
@@ -1021,7 +1109,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.range.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -1029,7 +1117,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "range.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
@@ -1041,11 +1129,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "range.__iter__",
+            "target": "builtins.range.__iter__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "range"
+            "receiver_class": "builtins.range"
           }
         ]
       }
@@ -1084,7 +1172,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.range.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -1092,7 +1180,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "range.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
@@ -1104,11 +1192,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "range.__iter__",
+            "target": "builtins.range.__iter__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "range"
+            "receiver_class": "builtins.range"
           }
         ]
       }
@@ -1169,9 +1257,7 @@ Higher order call graphs
       }
     },
     "425:15-425:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -1205,9 +1291,7 @@ Higher order call graphs
       }
     },
     "458:15-458:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -1241,9 +1325,7 @@ Higher order call graphs
       }
     },
     "448:15-448:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -1277,9 +1359,7 @@ Higher order call graphs
       }
     },
     "252:15-252:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -1314,7 +1394,15 @@ Higher order call graphs
     },
     "258:15-258:21|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
       }
     }
   }
@@ -1350,7 +1438,15 @@ Higher order call graphs
     },
     "232:15-232:21|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
       }
     }
   }
@@ -1363,11 +1459,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__setitem__",
+            "target": "builtins.dict.__setitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -1379,14 +1475,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "477:4-477:14|artificial-call|subscript-set-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "478:11-478:17|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -1398,7 +1490,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -1409,7 +1501,8 @@ Higher order call graphs
             "target": "taint_in_taint_out.Object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Object"
           }
         ]
       }
@@ -1441,7 +1534,15 @@ Higher order call graphs
     },
     "280:15-280:21|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
       }
     }
   }
@@ -1488,11 +1589,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "builtins.dict.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -1538,14 +1639,22 @@ Higher order call graphs
     },
     "50:30-50:40|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
       }
     },
     "51:19-55:5": {
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -1553,22 +1662,39 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.DataRecord"
           }
         ]
       }
     },
     "52:11-52:21|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
       }
     },
     "53:17-53:29|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
       }
     },
     "57:18-57:39": {
@@ -1584,12 +1710,28 @@ Higher order call graphs
     },
     "58:14-58:24|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
       }
     },
     "60:16-60:28|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 4,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
       }
     }
   }
@@ -1650,7 +1792,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -1661,7 +1803,8 @@ Higher order call graphs
             "target": "taint_in_taint_out.Object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Object"
           }
         ]
       }
@@ -1670,7 +1813,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -1681,7 +1824,8 @@ Higher order call graphs
             "target": "taint_in_taint_out.Object.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Object"
           }
         ]
       }
@@ -1782,7 +1926,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 2,
             "return_type": [],
             "is_static_method": true
@@ -1793,7 +1937,8 @@ Higher order call graphs
             "target": "taint_in_taint_out.Object.__init__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Object"
           }
         ]
       }
@@ -1802,7 +1947,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 3,
             "return_type": [],
             "is_static_method": true
@@ -1813,7 +1958,8 @@ Higher order call graphs
             "target": "taint_in_taint_out.Object.__init__",
             "index": 3,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.Object"
           }
         ]
       }
@@ -1900,7 +2046,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -1911,7 +2057,8 @@ Higher order call graphs
             "target": "taint_in_taint_out.GetUser.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.GetUser"
           }
         ]
       }
@@ -1974,6 +2121,52 @@ Higher order call graphs
         ]
       }
     },
+    "558:15-558:30|identifier|TitoClassMethod": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "taint_in_taint_out.TitoClassMethod"
+            }
+          ]
+        }
+      }
+    },
+    "559:4-559:19|identifier|TitoClassMethod": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "taint_in_taint_out.TitoClassMethod"
+            }
+          ]
+        }
+      }
+    },
     "559:4-559:41": {
       "call": {
         "calls": [
@@ -2000,6 +2193,29 @@ Higher order call graphs
         "calls": [
           { "target": "pysa._test_sink", "index": 1, "return_type": [] }
         ]
+      }
+    },
+    "560:15-560:30|identifier|TitoClassMethod": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "taint_in_taint_out.TitoClassMethod"
+            }
+          ]
+        }
       }
     }
   }
@@ -2050,7 +2266,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -2061,7 +2277,8 @@ Higher order call graphs
             "target": "taint_in_taint_out.TitoSelf.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
           }
         ]
       }
@@ -2091,7 +2308,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -2102,7 +2319,8 @@ Higher order call graphs
             "target": "taint_in_taint_out.TitoSelf.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
           }
         ]
       }
@@ -2145,7 +2363,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 2,
             "return_type": [],
             "is_static_method": true
@@ -2156,7 +2374,8 @@ Higher order call graphs
             "target": "taint_in_taint_out.TitoSelf.__init__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
           }
         ]
       }
@@ -2189,9 +2408,7 @@ Higher order call graphs
       }
     },
     "526:15-526:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "527:4-527:22": {
       "call": {
@@ -2201,9 +2418,7 @@ Higher order call graphs
       }
     },
     "527:15-527:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "528:4-528:19": {
       "call": {
@@ -2216,7 +2431,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 3,
             "return_type": [],
             "is_static_method": true
@@ -2227,7 +2442,8 @@ Higher order call graphs
             "target": "taint_in_taint_out.TitoSelf.__init__",
             "index": 3,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
           }
         ]
       }
@@ -2304,7 +2520,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 4,
             "return_type": [],
             "is_static_method": true
@@ -2315,7 +2531,8 @@ Higher order call graphs
             "target": "taint_in_taint_out.TitoSelf.__init__",
             "index": 4,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
           }
         ]
       }
@@ -2435,17 +2652,41 @@ Higher order call graphs
     },
     "294:11-294:17|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
       }
     },
     "294:11-294:22|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
       }
     },
     "294:11-294:27|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
       }
     }
   }
@@ -2466,14 +2707,10 @@ Higher order call graphs
       }
     },
     "415:29-415:35|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "415:29-415:40|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -2528,7 +2765,15 @@ Higher order call graphs
     },
     "312:11-312:17|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
       }
     }
   }
@@ -2550,12 +2795,28 @@ Higher order call graphs
     },
     "303:11-303:17|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
       }
     },
     "303:11-303:22|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.dict"
+          }
+        ]
       }
     }
   }
@@ -2568,11 +2829,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__setitem__",
+            "target": "builtins.dict.__setitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -2598,7 +2859,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -2609,7 +2870,8 @@ Higher order call graphs
             "target": "taint_in_taint_out.ClassManyFields.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.ClassManyFields"
           }
         ]
       }
@@ -2638,9 +2900,7 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "482:8-482:14|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "483:4-483:22": {
       "call": {
@@ -2650,9 +2910,7 @@ Higher order call graphs
       }
     },
     "483:15-483:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -2662,7 +2920,15 @@ Higher order call graphs
   "calls": {
     "73:11-73:31": {
       "call": {
-        "calls": [ { "target": "getattr", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.getattr", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "73:11-73:31|artificial-attribute-access|get-attr-constant-literal": {
+      "attribute_access": {
+        "is_attribute": true,
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -2675,7 +2941,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "callable",
+            "target": "builtins.callable",
             "index": 0,
             "return_type": [ "float", "integer", "boolean" ]
           }
@@ -2683,11 +2949,7 @@ Higher order call graphs
       }
     },
     "190:19-190:26": {
-      "call": {
-        "unresolved": [
-          "BypassingDecorators", [ "UnknownIdentifierCallee" ]
-        ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -2718,19 +2980,13 @@ Higher order call graphs
       }
     },
     "200:56-200:71": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "200:56-200:71|artificial-call|generator-iter": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "200:56-200:71|artificial-call|generator-next": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
     }
   }
 }
@@ -2738,6 +2994,29 @@ Higher order call graphs
   "callable": "taint_in_taint_out.GetUser.__init__",
   "returned_callables": [],
   "calls": {
+    "171:8-171:16|identifier|GetQuery": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "taint_in_taint_out.GetQuery.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "taint_in_taint_out.GetQuery"
+            }
+          ]
+        }
+      }
+    },
     "171:8-171:36": {
       "call": {
         "calls": [
@@ -2756,30 +3035,22 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "79:12-79:16|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "79:41-79:80|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "79:41-79:80|artificial-call|generator-iter": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "79:41-79:80|artificial-call|generator-next": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
     },
     "79:48-79:79|artificial-call|slice": {
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.slice.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -2787,7 +3058,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "slice.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
@@ -2804,6 +3075,35 @@ Higher order call graphs
             "return_type": []
           }
         ]
+      }
+    }
+  }
+}
+{
+  "callable": "taint_in_taint_out.TitoClassMethod.set_a",
+  "returned_callables": [],
+  "calls": {
+    "554:8-554:11|identifier|cls": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "taint_in_taint_out.TitoClassMethod"
+            }
+          ]
+        }
       }
     }
   }
@@ -2833,9 +3133,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 0,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -2844,24 +3146,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "499:11-499:32|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }

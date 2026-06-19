@@ -1,6 +1,127 @@
 @generated
 Higher order call graphs
 {
+  "callable": "supers.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "31:8-31:9|identifier|A": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.A"
+            }
+          ]
+        }
+      }
+    },
+    "58:8-58:9|identifier|A": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.A"
+            }
+          ]
+        }
+      }
+    },
+    "66:8-66:9|identifier|C": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.C"
+            }
+          ]
+        }
+      }
+    },
+    "71:8-71:9|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.B"
+            }
+          ]
+        }
+      }
+    },
+    "71:11-71:12|identifier|A": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.A"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "supers.B_overwrite_both",
   "returned_callables": [],
   "calls": {
@@ -8,7 +129,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -19,7 +140,8 @@ Higher order call graphs
             "target": "supers.A.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "supers.B"
           }
         ]
       }
@@ -47,7 +169,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -58,7 +180,8 @@ Higher order call graphs
             "target": "supers.A.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "supers.B"
           }
         ]
       }
@@ -86,7 +209,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -97,7 +220,8 @@ Higher order call graphs
             "target": "supers.A.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "supers.B"
           }
         ]
       }
@@ -125,7 +249,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -136,7 +260,8 @@ Higher order call graphs
             "target": "supers.A.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "supers.B"
           }
         ]
       }
@@ -164,7 +289,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -175,7 +300,8 @@ Higher order call graphs
             "target": "supers.A.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "supers.B"
           }
         ]
       }
@@ -203,7 +329,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -214,7 +340,8 @@ Higher order call graphs
             "target": "supers.A.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "supers.C"
           }
         ]
       }
@@ -242,7 +369,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -253,7 +380,8 @@ Higher order call graphs
             "target": "supers.A.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "supers.C"
           }
         ]
       }
@@ -281,7 +409,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -292,7 +420,8 @@ Higher order call graphs
             "target": "supers.A.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "supers.D"
           }
         ]
       }
@@ -320,7 +449,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -331,7 +460,8 @@ Higher order call graphs
             "target": "supers.A.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "supers.D"
           }
         ]
       }
@@ -359,7 +489,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -370,7 +500,8 @@ Higher order call graphs
             "target": "supers.A.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "supers.E"
           }
         ]
       }
@@ -411,7 +542,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -422,7 +553,8 @@ Higher order call graphs
             "target": "supers.A.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "supers.E"
           }
         ]
       }
@@ -450,7 +582,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -461,7 +593,8 @@ Higher order call graphs
             "target": "supers.A.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "supers.E"
           }
         ]
       }
@@ -593,7 +726,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -601,10 +734,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
@@ -617,16 +751,39 @@ Higher order call graphs
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "supers.A"
+            "receiver_class": "supers.B"
           }
         ]
+      }
+    },
+    "42:14-42:15|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.B"
+            }
+          ]
+        }
       }
     },
     "43:8-43:15": {
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -634,10 +791,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
@@ -650,7 +808,7 @@ Higher order call graphs
             "index": 1,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "supers.A"
+            "receiver_class": "supers.B"
           }
         ]
       }
@@ -659,7 +817,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 2,
             "return_type": [],
             "is_static_method": true
@@ -667,10 +825,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
@@ -683,7 +842,7 @@ Higher order call graphs
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "supers.A"
+            "receiver_class": "supers.B"
           }
         ]
       }
@@ -692,7 +851,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 3,
             "return_type": [],
             "is_static_method": true
@@ -700,10 +859,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 3,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
@@ -716,7 +876,7 @@ Higher order call graphs
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "supers.A"
+            "receiver_class": "supers.B"
           }
         ]
       }
@@ -731,7 +891,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -739,10 +899,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
@@ -755,16 +916,39 @@ Higher order call graphs
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "supers.A"
+            "receiver_class": "supers.B"
           }
         ]
+      }
+    },
+    "47:14-47:15|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.B"
+            }
+          ]
+        }
       }
     },
     "47:26-47:40": {
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -772,10 +956,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
@@ -788,16 +973,39 @@ Higher order call graphs
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "supers.A"
+            "receiver_class": "supers.B"
           }
         ]
+      }
+    },
+    "47:32-47:33|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.B"
+            }
+          ]
+        }
       }
     },
     "48:8-48:15": {
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 2,
             "return_type": [],
             "is_static_method": true
@@ -805,10 +1013,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
@@ -821,7 +1030,7 @@ Higher order call graphs
             "index": 1,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "supers.A"
+            "receiver_class": "supers.B"
           }
         ]
       }
@@ -830,7 +1039,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 3,
             "return_type": [],
             "is_static_method": true
@@ -838,10 +1047,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 3,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
@@ -854,7 +1064,7 @@ Higher order call graphs
             "index": 1,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "supers.A"
+            "receiver_class": "supers.B"
           }
         ]
       }
@@ -882,7 +1092,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -890,10 +1100,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
@@ -906,7 +1117,7 @@ Higher order call graphs
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "supers.A"
+            "receiver_class": "supers.B"
           }
         ]
       }
@@ -915,7 +1126,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -923,10 +1134,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
@@ -939,7 +1151,7 @@ Higher order call graphs
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "supers.A"
+            "receiver_class": "supers.B"
           }
         ]
       }
@@ -999,7 +1211,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -1007,54 +1219,16 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
     },
     "63:15-63:27": {
-      "call": {
-        "calls": [
-          {
-            "target": "supers.A.f1",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "supers.A"
-          }
-        ]
-      }
-    }
-  }
-}
-{
-  "callable": "supers.D.g1",
-  "returned_callables": [],
-  "calls": {
-    "68:8-68:15": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "object.__new__",
-            "index": 0,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "super.__init__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
-      }
-    },
-    "68:8-68:20": {
       "call": {
         "calls": [
           {
@@ -1070,14 +1244,14 @@ Higher order call graphs
   }
 }
 {
-  "callable": "supers.E.g1",
+  "callable": "supers.D.g1",
   "returned_callables": [],
   "calls": {
-    "73:8-73:15": {
+    "68:8-68:15": {
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -1085,10 +1259,51 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
+          }
+        ]
+      }
+    },
+    "68:8-68:20": {
+      "call": {
+        "calls": [
+          {
+            "target": "supers.A.f1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "supers.D"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "supers.E.g1",
+  "returned_callables": [],
+  "calls": {
+    "73:8-73:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.super.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
@@ -1101,7 +1316,7 @@ Higher order call graphs
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "supers.B"
+            "receiver_class": "supers.E"
           }
         ]
       }
@@ -1116,7 +1331,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -1124,10 +1339,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
@@ -1140,9 +1356,32 @@ Higher order call graphs
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "supers.B"
+            "receiver_class": "supers.E"
           }
         ]
+      }
+    },
+    "76:14-76:15|identifier|E": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.E"
+            }
+          ]
+        }
       }
     }
   }
@@ -1155,7 +1394,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -1163,10 +1402,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "super.__init__",
+            "target": "builtins.super.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.super"
           }
         ]
       }
@@ -1175,13 +1415,36 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "supers.B.f1",
+            "target": "supers.A.f1",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "supers.B"
+            "receiver_class": "supers.E"
           }
         ]
+      }
+    },
+    "79:14-79:15|identifier|B": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "supers.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "supers.B"
+            }
+          ]
+        }
       }
     }
   }

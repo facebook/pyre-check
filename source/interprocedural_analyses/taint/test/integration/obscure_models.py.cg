@@ -5,7 +5,7 @@ Call dependencies
     "obscure_models.C.obscure (method)"
   ],
   "obscure_models.test_collapse_depth (fun)": [
-    "object.__init__ (method)", "object.__new__ (method)",
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
     "obscure_models.should_collapse_depth_zero (fun)",
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],

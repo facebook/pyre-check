@@ -1,19 +1,6 @@
 @generated
 Higher order call graphs
 {
-  "callable": "implicit_sinks.$toplevel",
-  "returned_callables": [],
-  "calls": {
-    "50:0-50:11|identifier|$local_implicit_sinks$https_start": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{implicit_sinks.https_start}", "index": 0 }
-        ]
-      }
-    }
-  }
-}
-{
   "callable": "implicit_sinks.conditional_literal_sink",
   "returned_callables": [],
   "calls": {
@@ -41,11 +28,7 @@ Higher order call graphs
   "callable": "implicit_sinks.format_wrapper",
   "returned_callables": [],
   "calls": {
-    "85:4-85:15": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    }
+    "85:4-85:15": { "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] } }
   }
 }
 {
@@ -56,11 +39,10 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.format",
+            "target": "builtins.str.format",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "str"
+            "return_type": []
           }
         ]
       }
@@ -75,11 +57,10 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.format",
+            "target": "builtins.str.format",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "str"
+            "return_type": []
           }
         ]
       }
@@ -108,11 +89,10 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.format",
+            "target": "builtins.str.format",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "str"
+            "return_type": []
           }
         ]
       }
@@ -132,12 +112,12 @@ Higher order call graphs
     },
     "19:4-19:12|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "20:4-20:10|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 1 }
+        { "target": "Obj{<format-string>}", "index": 1, "return_type": [] }
       ]
     }
   }
@@ -162,17 +142,16 @@ Higher order call graphs
     },
     "68:4-68:18|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "68:11-68:12|format-string-stringify": {
       "format_string_stringify": [
         {
-          "target": "str.__str__",
+          "target": "builtins.str.__format__",
           "index": 0,
           "implicit_receiver": true,
-          "return_type": [],
-          "receiver_class": "str"
+          "return_type": []
         }
       ]
     }
@@ -190,9 +169,7 @@ Higher order call graphs
       }
     },
     "63:14-63:25|artificial-call|binary": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -211,11 +188,10 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.__mod__",
+            "target": "builtins.str.__mod__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "str"
+            "return_type": []
           }
         ]
       }
@@ -237,11 +213,10 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.__add__",
+            "target": "builtins.str.__add__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "str"
+            "return_type": []
           }
         ]
       }
@@ -252,7 +227,7 @@ Higher order call graphs
   "callable": "implicit_sinks.propagate_sink_add_global",
   "returned_callables": [],
   "calls": {
-    "54:4-54:15|identifier|$local_implicit_sinks$https_start": {
+    "54:4-54:15|identifier|https_start": {
       "identifier": {
         "globals": [
           { "target": "Obj{implicit_sinks.https_start}", "index": 0 }
@@ -263,11 +238,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.__add__",
+            "target": "builtins.str.__add__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "str"
+            "receiver_class": "builtins.str"
           }
         ]
       }
@@ -282,11 +257,10 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.format",
+            "target": "builtins.str.format",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "str"
+            "return_type": []
           }
         ]
       }
@@ -299,7 +273,7 @@ Higher order call graphs
   "calls": {
     "14:4-14:12|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     }
   }
@@ -309,9 +283,7 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "58:14-58:25|artificial-call|binary": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -323,11 +295,10 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.__mod__",
+            "target": "builtins.str.__mod__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "str"
+            "return_type": []
           }
         ]
       }
@@ -342,11 +313,10 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.__add__",
+            "target": "builtins.str.__add__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "str"
+            "return_type": []
           }
         ]
       }
@@ -392,9 +362,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 0,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -403,24 +375,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "96:7-96:28|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }
@@ -429,11 +388,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.format",
+            "target": "builtins.str.format",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "str"
+            "receiver_class": "builtins.str"
           }
         ]
       }
@@ -442,9 +401,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 1,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -453,24 +414,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "98:9-98:30|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }
@@ -479,19 +427,17 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.__mod__",
+            "target": "builtins.str.__mod__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "str"
+            "receiver_class": "builtins.str"
           }
         ]
       }
     },
     "101:8-101:23|artificial-call|binary": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }

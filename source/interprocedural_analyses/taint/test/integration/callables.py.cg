@@ -8,11 +8,11 @@ Call dependencies
     "pysa._test_sink (fun)"
   ],
   "callables.async_execute_event_processor (fun)": [
+    "builtins.list.__iter__ (method)", "builtins.object.__new__ (method)",
     "callables.AbstractEventProcessor.__init__ (method)",
     "callables.AbstractEventProcessor.async_call_tainted (override)",
     "callables.AbstractEventProcessor.async_run (override)",
-    "callables.get_event_processors (fun)", "list.__iter__ (method)",
-    "object.__new__ (method)", "pysa._test_source (fun)",
+    "callables.get_event_processors (fun)", "pysa._test_source (fun)",
     "typing.Iterator.__next__ (method)"
   ]
 }

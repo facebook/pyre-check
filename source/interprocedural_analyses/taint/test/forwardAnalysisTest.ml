@@ -24,6 +24,7 @@ let assert_taint ?models ?models_source ?(skip_for_pyrefly = false) ~context sou
   let project =
     Test.ScratchPyrePysaProject.setup
       ~context
+      ~force_pyrefly:true
       ~force_pyre1:skip_for_pyrefly
       ~requires_type_of_expressions:true
       sources
@@ -109,7 +110,6 @@ let assert_taint ?models ?models_source ?(skip_for_pyrefly = false) ~context sou
           (GlobalConstants.SharedMemory.create () |> GlobalConstants.SharedMemory.read_only)
         ~type_of_expression_shared_memory
         ~check_invariants:true
-        ~normalize_to_pyre1:false
         ~module_name:qualifier
         ~callable
     in

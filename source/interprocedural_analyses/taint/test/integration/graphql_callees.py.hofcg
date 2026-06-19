@@ -8,7 +8,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -19,7 +19,8 @@ Higher order call graphs
             "target": "graphql_callees.GraphQLEntrypoint.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "graphql_callees.GraphQLEntrypoint"
           }
         ]
       }
@@ -101,7 +102,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -112,7 +113,8 @@ Higher order call graphs
             "target": "graphql_callees.GraphQLEntrypoint.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "graphql_callees.GraphQLEntrypoint"
           }
         ]
       }
@@ -224,7 +226,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -235,7 +237,8 @@ Higher order call graphs
             "target": "graphql_callees.GraphQLEntrypoint.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "graphql_callees.GraphQLEntrypoint"
           }
         ]
       }

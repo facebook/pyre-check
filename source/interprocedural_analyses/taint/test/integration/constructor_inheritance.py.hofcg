@@ -1,6 +1,35 @@
 @generated
 Higher order call graphs
 {
+  "callable": "constructor_inheritance.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "15:21-15:32|identifier|MyBaseClass": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructor_inheritance.MyBaseClass.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "constructor_inheritance.MyBaseClass"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "constructor_inheritance.test",
   "returned_callables": [],
   "calls": {
@@ -8,7 +37,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -19,7 +48,8 @@ Higher order call graphs
             "target": "constructor_inheritance.MyBaseClass.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "constructor_inheritance.MyDerivedClass"
           }
         ]
       }

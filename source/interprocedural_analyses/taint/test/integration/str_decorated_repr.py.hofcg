@@ -4,28 +4,8 @@ Higher order call graphs
   "callable": "str_decorated_repr.$toplevel",
   "returned_callables": [],
   "calls": {
-    "9:0-9:1|identifier|$local_str_decorated_repr$T": {
-      "identifier": {
-        "globals": [ { "target": "Obj{str_decorated_repr.T}", "index": 0 } ]
-      }
-    },
-    "9:4-9:16": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-      }
-    },
-    "10:0-10:5|identifier|$local_str_decorated_repr$TSelf": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{str_decorated_repr.TSelf}", "index": 0 }
-        ]
-      }
-    },
-    "10:8-10:24": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-      }
-    }
+    "9:4-9:16": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } },
+    "10:8-10:24": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } }
   }
 }
 {
@@ -40,17 +20,17 @@ Higher order call graphs
   "calls": {
     "22:17-22:39|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "22:27-22:37|format-string-stringify": {
       "format_string_stringify": [
         {
-          "target": "str.__str__",
+          "target": "builtins.str.__format__",
           "index": 0,
           "implicit_receiver": true,
           "return_type": [],
-          "receiver_class": "str"
+          "receiver_class": "builtins.str"
         }
       ]
     },
@@ -64,6 +44,19 @@ Higher order call graphs
           }
         ]
       }
+    },
+    "31:11-31:12|identifier|g": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "str_decorated_repr.cachedmethod.g",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
     }
   }
 }
@@ -73,10 +66,16 @@ Higher order call graphs
   "calls": {
     "26:11-26:31": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+        "calls": [
+          {
+            "target": "builtins.hasattr",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
       }
     },
-    "26:25-26:30|identifier|$local_str_decorated_repr?cachedmethod$cache": {
+    "26:25-26:30|identifier|cache": {
       "identifier": {
         "captured_variables": [
           {
@@ -88,10 +87,12 @@ Higher order call graphs
     },
     "27:19-27:39": {
       "call": {
-        "calls": [ { "target": "getattr", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.getattr", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "27:33-27:38|identifier|$local_str_decorated_repr?cachedmethod$cache": {
+    "27:33-27:38|identifier|cache": {
       "identifier": {
         "captured_variables": [
           {
@@ -103,10 +104,12 @@ Higher order call graphs
     },
     "28:8-28:37": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+        "calls": [
+          { "target": "builtins.setattr", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "28:22-28:27|identifier|$local_str_decorated_repr?cachedmethod$cache": {
+    "28:22-28:27|identifier|cache": {
       "identifier": {
         "captured_variables": [
           {
@@ -116,19 +119,28 @@ Higher order call graphs
         ]
       }
     },
-    "28:29-28:36": {
-      "call": {
-        "unresolved": [
-          "BypassingDecorators", [ "UnknownIdentifierCallee" ]
-        ]
+    "28:29-28:30|identifier|f": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "f",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
+    },
+    "28:29-28:36": {
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "29:15-29:35": {
       "call": {
-        "calls": [ { "target": "getattr", "index": 1, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.getattr", "index": 1, "return_type": [] }
+        ]
       }
     },
-    "29:29-29:34|identifier|$local_str_decorated_repr?cachedmethod$cache": {
+    "29:29-29:34|identifier|cache": {
       "identifier": {
         "captured_variables": [
           {
@@ -155,11 +167,31 @@ Higher order call graphs
         ]
       }
     },
+    "44:15-44:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.str.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "44:15-44:21|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
-            "target": "str_decorated_repr.cachedmethod.g[captured_variable(f, parameter)=str_decorated_repr.MyClass.__repr__]",
+            "target": "str_decorated_repr.cachedmethod.g[captured_variable(f, str_decorated_repr.cachedmethod)=str_decorated_repr.MyClass.__repr__]",
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
@@ -173,7 +205,7 @@ Higher order call graphs
   "callable": "str_decorated_repr.MyClass.__repr__@decorated",
   "returned_callables": [
     {
-      "target": "str_decorated_repr.cachedmethod.g[captured_variable(f, parameter)=str_decorated_repr.MyClass.__repr__]",
+      "target": "str_decorated_repr.cachedmethod.g[captured_variable(f, str_decorated_repr.cachedmethod)=str_decorated_repr.MyClass.__repr__]",
       "index": 0,
       "return_type": []
     }
@@ -209,7 +241,7 @@ Higher order call graphs
   "callable": "str_decorated_repr.cachedmethod[formal(f, position=0)=str_decorated_repr.MyClass.__repr__]",
   "returned_callables": [
     {
-      "target": "str_decorated_repr.cachedmethod.g[captured_variable(f, parameter)=str_decorated_repr.MyClass.__repr__]",
+      "target": "str_decorated_repr.cachedmethod.g[captured_variable(f, str_decorated_repr.cachedmethod)=str_decorated_repr.MyClass.__repr__]",
       "index": 0,
       "return_type": []
     }
@@ -217,17 +249,17 @@ Higher order call graphs
   "calls": {
     "22:17-22:39|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "22:27-22:37|format-string-stringify": {
       "format_string_stringify": [
         {
-          "target": "str.__str__",
+          "target": "builtins.str.__format__",
           "index": 0,
           "implicit_receiver": true,
           "return_type": [],
-          "receiver_class": "str"
+          "receiver_class": "builtins.str"
         }
       ]
     },
@@ -241,19 +273,38 @@ Higher order call graphs
           }
         ]
       }
+    },
+    "31:11-31:12|identifier|g": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "str_decorated_repr.cachedmethod.g",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
     }
   }
 }
 {
-  "callable": "str_decorated_repr.cachedmethod.g[captured_variable(f, parameter)=str_decorated_repr.MyClass.__repr__]",
+  "callable": "str_decorated_repr.cachedmethod.g[captured_variable(f, str_decorated_repr.cachedmethod)=str_decorated_repr.MyClass.__repr__]",
   "returned_callables": [],
   "calls": {
     "26:11-26:31": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+        "calls": [
+          {
+            "target": "builtins.hasattr",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
       }
     },
-    "26:25-26:30|identifier|$local_str_decorated_repr?cachedmethod$cache": {
+    "26:25-26:30|identifier|cache": {
       "identifier": {
         "captured_variables": [
           {
@@ -265,10 +316,12 @@ Higher order call graphs
     },
     "27:19-27:39": {
       "call": {
-        "calls": [ { "target": "getattr", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.getattr", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "27:33-27:38|identifier|$local_str_decorated_repr?cachedmethod$cache": {
+    "27:33-27:38|identifier|cache": {
       "identifier": {
         "captured_variables": [
           {
@@ -280,10 +333,12 @@ Higher order call graphs
     },
     "28:8-28:37": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+        "calls": [
+          { "target": "builtins.setattr", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "28:22-28:27|identifier|$local_str_decorated_repr?cachedmethod$cache": {
+    "28:22-28:27|identifier|cache": {
       "identifier": {
         "captured_variables": [
           {
@@ -291,6 +346,17 @@ Higher order call graphs
             "defining_function": "str_decorated_repr.cachedmethod"
           }
         ]
+      }
+    },
+    "28:29-28:30|identifier|f": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "f",
+            "defining_function": "str_decorated_repr.cachedmethod"
+          }
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     },
     "28:29-28:36": {
@@ -306,10 +372,12 @@ Higher order call graphs
     },
     "29:15-29:35": {
       "call": {
-        "calls": [ { "target": "getattr", "index": 1, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.getattr", "index": 1, "return_type": [] }
+        ]
       }
     },
-    "29:29-29:34|identifier|$local_str_decorated_repr?cachedmethod$cache": {
+    "29:29-29:34|identifier|cache": {
       "identifier": {
         "captured_variables": [
           {

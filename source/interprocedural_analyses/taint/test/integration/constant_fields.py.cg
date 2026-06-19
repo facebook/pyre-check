@@ -2,27 +2,27 @@
 Call dependencies
 {
   "constant_fields.test_untracked_constant (fun)": [
-    "dict.__getitem__ (method)", "dict.__setitem__ (method)",
-    "pysa._test_source (fun)"
+    "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
   ],
   "constant_fields.tracked_constant_A (fun)": [
-    "dict.__getitem__ (method)", "dict.__setitem__ (method)",
-    "pysa._test_source (fun)"
+    "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
   ],
   "constant_fields.tracked_constant_B (fun)": [
-    "dict.__getitem__ (method)", "dict.__setitem__ (method)",
-    "pysa._test_source (fun)"
+    "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
   ],
   "constant_fields.tracked_index (fun)": [
-    "dict.__getitem__ (method)", "dict.__setitem__ (method)",
-    "pysa._test_source (fun)"
+    "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
   ],
   "constant_fields.untracked_index_a (fun)": [
-    "dict.__getitem__ (method)", "dict.__setitem__ (method)",
-    "pysa._test_source (fun)"
+    "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
   ],
   "constant_fields.untracked_index_b (fun)": [
-    "dict.__getitem__ (method)", "dict.__setitem__ (method)",
-    "pysa._test_source (fun)"
+    "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
   ]
 }

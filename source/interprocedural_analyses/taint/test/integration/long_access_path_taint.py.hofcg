@@ -4,6 +4,29 @@ Higher order call graphs
   "callable": "long_access_path_taint.test",
   "returned_callables": [],
   "calls": {
+    "36:16-36:17|identifier|C": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "long_access_path_taint.C.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "long_access_path_taint.C"
+            }
+          ]
+        }
+      }
+    },
     "36:16-36:71": {
       "call": {
         "calls": [
@@ -49,11 +72,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.get",
+            "target": "builtins.dict.get",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -62,11 +85,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.get",
+            "target": "builtins.dict.get",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -77,15 +100,35 @@ Higher order call graphs
   "callable": "long_access_path_taint.C.async_create",
   "returned_callables": [],
   "calls": {
+    "25:15-25:26": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "builtins.str.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "25:15-25:26|artificial-call|str-call-to-dunder-method": {
       "call": {
         "calls": [
           {
-            "target": "object.__repr__",
+            "target": "builtins.object.__repr__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.object"
           }
         ]
       }
@@ -94,24 +137,30 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.__eq__",
+            "target": "builtins.str.__eq__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "str"
+            "return_type": [ "float", "integer", "boolean" ]
           }
         ]
       }
     },
-    "26:11-26:33|artificial-call|normalize-not-comparison>comparison": {
+    "30:26-30:37": {
       "call": {
-        "calls": [
+        "new_calls": [
           {
-            "target": "str.__ne__",
-            "index": 0,
+            "target": "builtins.str.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.object.__init__",
+            "index": 1,
             "implicit_receiver": true,
-            "return_type": [ "float", "integer" ],
-            "receiver_class": "str"
+            "return_type": []
           }
         ]
       }
@@ -120,11 +169,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "object.__repr__",
+            "target": "builtins.object.__repr__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.object"
           }
         ]
       }
@@ -133,7 +182,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -144,7 +193,8 @@ Higher order call graphs
             "target": "long_access_path_taint.C.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "long_access_path_taint.C"
           }
         ]
       }

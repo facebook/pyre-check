@@ -2,7 +2,8 @@
 Call dependencies
 {
   "dictionary.Service.async_get_dict (method)": [
-    "dict.get (method)", "dictionary.Service.async_get_many_dict (method)"
+    "builtins.dict.get (method)",
+    "dictionary.Service.async_get_many_dict (method)"
   ],
   "dictionary.Service.async_get_many_dict (method)": [
     "typing.Iterable.__iter__ (method)", "typing.Iterator.__next__ (method)",
@@ -16,55 +17,59 @@ Call dependencies
     "pysa._test_sink (fun)"
   ],
   "dictionary.analyze_getitem_index_backward (fun)": [
-    "dict.__getitem__ (method)", "pysa._test_sink (fun)"
+    "builtins.dict.__getitem__ (method)", "pysa._test_sink (fun)"
   ],
   "dictionary.analyze_getitem_index_issue (fun)": [
-    "dict.__getitem__ (method)", "pysa._test_sink (fun)",
+    "builtins.dict.__getitem__ (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)"
   ],
   "dictionary.backward_weak_update (fun)": [
-    "dict.__setitem__ (method)", "pysa._test_sink (fun)",
-    "typing.Mapping.keys (method)"
+    "builtins.dict.__setitem__ (method)", "builtins.dict.keys (method)",
+    "pysa._test_sink (fun)"
   ],
   "dictionary.backwards_field_assignment (fun)": [
-    "dict.__setitem__ (method)"
+    "builtins.dict.__setitem__ (method)"
   ],
   "dictionary.backwards_model_for_dictionary_comprehension (fun)": [
     "dictionary.sink_dictionary_through_keys (fun)"
   ],
   "dictionary.big_dict_update_arg (fun)": [
-    "dict.__setitem__ (method)", "object.__new__ (method)",
-    "pysa._test_source (fun)", "range.__init__ (method)",
-    "range.__iter__ (method)", "typing.Iterator.__next__ (method)",
+    "builtins.dict.__setitem__ (method)",
+    "builtins.object.__init__ (method)", "builtins.range.__iter__ (method)",
+    "builtins.range.__new__ (method)", "pysa._test_source (fun)",
+    "typing.Iterator.__next__ (method)",
     "typing.MutableMapping.update (method)"
   ],
   "dictionary.copy_untainted_values_with_tainted_keys (fun)": [
-    "dict.__getitem__ (method)", "dict.__setitem__ (method)",
-    "pysa._test_source (fun)", "typing.Iterable.__iter__ (method)",
+    "builtins.dict.__getitem__ (method)", "builtins.dict.__iter__ (method)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)",
     "typing.Iterator.__next__ (method)"
   ],
-  "dictionary.dict_get_foo (fun)": [ "dict.get (method)" ],
-  "dictionary.dict_get_foo_with_default (fun)": [ "dict.get (method)" ],
+  "dictionary.dict_get_foo (fun)": [ "builtins.dict.get (method)" ],
+  "dictionary.dict_get_foo_with_default (fun)": [
+    "builtins.dict.get (method)"
+  ],
   "dictionary.dict_getitem_mutate (fun)": [
-    "dict.__getitem__ (method)", "dict.__setitem__ (method)",
-    "object.__new__ (method)", "range.__init__ (method)",
-    "range.__iter__ (method)", "str.__add__ (method)",
+    "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)",
+    "builtins.object.__init__ (method)", "builtins.range.__iter__ (method)",
+    "builtins.range.__new__ (method)", "builtins.str.__add__ (method)",
     "typing.Iterator.__next__ (method)"
   ],
   "dictionary.dict_only_key_of_parameter_sink (fun)": [
-    "dict.__getitem__ (method)", "pysa._test_sink (fun)",
+    "builtins.dict.__getitem__ (method)", "pysa._test_sink (fun)",
     "typing.MutableMapping.update (method)"
   ],
   "dictionary.dict_update_keys (fun)": [
-    "dict.items (method)", "typing.Iterable.__iter__ (method)",
+    "builtins.dict.items (method)", "typing.ItemsView.__iter__ (method)",
     "typing.Iterator.__next__ (method)"
   ],
   "dictionary.dict_update_sinks_cycle (fun)": [
-    "dict.__getitem__ (method)", "pysa._test_sink (fun)",
+    "builtins.dict.__getitem__ (method)", "pysa._test_sink (fun)",
     "typing.MutableMapping.update (method)"
   ],
   "dictionary.dict_update_source_cycle (fun)": [
-    "dict.__getitem__ (method)", "pysa._test_source (fun)",
+    "builtins.dict.__getitem__ (method)", "pysa._test_source (fun)",
     "typing.MutableMapping.update (method)"
   ],
   "dictionary.dict_update_with_expression_add_source (fun)": [
@@ -77,7 +82,7 @@ Call dependencies
     "typing.MutableMapping.update (method)"
   ],
   "dictionary.dict_update_with_literal_flows_to_sink (fun)": [
-    "dict.__getitem__ (method)", "pysa._test_sink (fun)",
+    "builtins.dict.__getitem__ (method)", "pysa._test_sink (fun)",
     "typing.MutableMapping.update (method)"
   ],
   "dictionary.dict_update_with_literal_multiple (fun)": [
@@ -93,92 +98,92 @@ Call dependencies
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "dictionary.dict_with_tainted_key_flows_to_sink_via_setitem (fun)": [
-    "dict.__setitem__ (method)", "pysa._test_sink (fun)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)"
   ],
   "dictionary.dictionary_assign_to_index (fun)": [
-    "dict.__setitem__ (method)", "pysa._test_source (fun)"
+    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
   ],
   "dictionary.dictionary_assignment_source (fun)": [
-    "dict.__getitem__ (method)", "dict.__setitem__ (method)",
-    "pysa._test_source (fun)"
+    "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
   ],
   "dictionary.dictionary_bool_key (fun)": [
-    "dict.__getitem__ (method)", "pysa._test_sink (fun)",
+    "builtins.dict.__getitem__ (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)"
   ],
   "dictionary.dictionary_entry_sink (fun)": [ "pysa._test_sink (fun)" ],
   "dictionary.dictionary_int_key (fun)": [
-    "dict.__getitem__ (method)", "pysa._test_sink (fun)",
+    "builtins.dict.__getitem__ (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)"
   ],
   "dictionary.dictionary_keys_and_any_index_bug (fun)": [
-    "dictionary.dict_update_keys (fun)", "pysa._test_sink (fun)",
-    "typing.Mapping.keys (method)"
+    "builtins.dict.keys (method)", "dictionary.dict_update_keys (fun)",
+    "pysa._test_sink (fun)"
   ],
   "dictionary.dictionary_nested_assignment_1 (fun)": [
-    "dict.__getitem__ (method)", "pysa._test_source (fun)"
+    "builtins.dict.__getitem__ (method)", "pysa._test_source (fun)"
   ],
   "dictionary.dictionary_nested_assignment_2 (fun)": [
-    "dict.__getitem__ (method)", "pysa._test_source (fun)"
+    "builtins.dict.__getitem__ (method)", "pysa._test_source (fun)"
   ],
   "dictionary.dictionary_nested_non_source_assignment (fun)": [
-    "dict.__getitem__ (method)", "pysa._test_source (fun)"
+    "builtins.dict.__getitem__ (method)", "pysa._test_source (fun)"
   ],
   "dictionary.dictionary_non_source (fun)": [
-    "dict.__getitem__ (method)", "dict.__setitem__ (method)",
-    "pysa._test_source (fun)"
+    "builtins.dict.__getitem__ (method)",
+    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
   ],
   "dictionary.dictionary_source (fun)": [ "pysa._test_source (fun)" ],
   "dictionary.dictionary_tito_any_index (fun)": [
-    "object.__new__ (method)", "range.__init__ (method)",
-    "range.__iter__ (method)", "typing.Iterator.__next__ (method)"
+    "builtins.object.__init__ (method)", "builtins.range.__iter__ (method)",
+    "builtins.range.__new__ (method)", "typing.Iterator.__next__ (method)"
   ],
   "dictionary.dictionary_update_iterable (fun)": [
-    "dict.__getitem__ (method)", "pysa._test_sink (fun)",
+    "builtins.dict.__getitem__ (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)", "typing.MutableMapping.update (method)"
   ],
   "dictionary.dictionary_update_keyword (fun)": [
-    "dict.__getitem__ (method)", "pysa._test_sink (fun)",
+    "builtins.dict.__getitem__ (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)", "typing.MutableMapping.update (method)"
   ],
   "dictionary.flow_through_keywords (fun)": [
-    "dict.__getitem__ (method)", "pysa._test_sink (fun)",
+    "builtins.dict.__getitem__ (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)"
   ],
   "dictionary.forward_comprehension_key_sink (fun)": [
-    "list.__iter__ (method)", "pysa._test_sink (fun)",
+    "builtins.list.__iter__ (method)", "pysa._test_sink (fun)",
     "typing.Iterator.__next__ (method)"
   ],
   "dictionary.forward_comprehension_key_source (fun)": [
-    "list.__iter__ (method)", "pysa._test_source (fun)",
+    "builtins.list.__iter__ (method)", "pysa._test_source (fun)",
     "typing.Iterator.__next__ (method)"
   ],
   "dictionary.forward_comprehension_value_sink (fun)": [
-    "list.__iter__ (method)", "pysa._test_sink (fun)",
+    "builtins.list.__iter__ (method)", "pysa._test_sink (fun)",
     "typing.Iterator.__next__ (method)"
   ],
   "dictionary.forward_comprehension_value_source (fun)": [
-    "list.__iter__ (method)", "pysa._test_source (fun)",
+    "builtins.list.__iter__ (method)", "pysa._test_source (fun)",
     "typing.Iterator.__next__ (method)"
   ],
   "dictionary.forward_weak_update (fun)": [
-    "dict.__setitem__ (method)", "pysa._test_source (fun)"
+    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
   ],
   "dictionary.get_keys (fun)": [
-    "typing.Iterable.__iter__ (method)", "typing.Iterator.__next__ (method)"
+    "builtins.dict.__iter__ (method)", "typing.Iterator.__next__ (method)"
   ],
   "dictionary.indirect_flow_from_source_to_global_dictionary (fun)": [
     "dictionary.update_dictionary_indirectly (fun)",
     "pysa._test_source (fun)"
   ],
   "dictionary.issue_in_keys (fun)": [
-    "dict.__setitem__ (method)", "dictionary.backward_weak_update (fun)",
-    "pysa._test_sink (fun)", "pysa._test_source (fun)",
-    "typing.Mapping.keys (method)"
+    "builtins.dict.__setitem__ (method)", "builtins.dict.keys (method)",
+    "dictionary.backward_weak_update (fun)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
   ],
   "dictionary.lists_of_dictionary_iteration_is_precise (fun)": [
-    "dict.__getitem__ (method)", "list.__iter__ (method)",
+    "builtins.dict.__getitem__ (method)", "builtins.list.__iter__ (method)",
     "pysa._test_sink (fun)", "pysa._test_source (fun)",
     "typing.Iterator.__next__ (method)"
   ],
@@ -186,23 +191,24 @@ Call dependencies
     "pysa._test_sink (fun)"
   ],
   "dictionary.return_comprehension_with_tained_keys (fun)": [
-    "pysa._test_source (fun)", "typing.Iterable.__iter__ (method)",
+    "builtins.dict.__iter__ (method)", "pysa._test_source (fun)",
     "typing.Iterator.__next__ (method)"
   ],
   "dictionary.return_comprehension_with_untainted_keys (fun)": [
-    "pysa._test_source (fun)", "typing.Iterable.__iter__ (method)",
+    "builtins.dict.__iter__ (method)", "pysa._test_source (fun)",
     "typing.Iterator.__next__ (method)"
   ],
   "dictionary.setitem_models (fun)": [
-    "dict.__init__ (method)", "dict.__setitem__ (method)",
-    "dictionary.MyDict.__setitem__ (method)", "object.__new__ (method)"
+    "builtins.dict.__init__ (method)", "builtins.dict.__new__ (method)",
+    "builtins.dict.__setitem__ (method)",
+    "dictionary.MyDict.__setitem__ (method)"
   ],
   "dictionary.sink_dictionary_through_keys (fun)": [
-    "pysa._test_sink (fun)", "typing.Iterable.__iter__ (method)",
+    "builtins.dict.__iter__ (method)", "pysa._test_sink (fun)",
     "typing.Iterator.__next__ (method)"
   ],
   "dictionary.taint_dict_keys (fun)": [
-    "pysa._test_sink (fun)", "typing.Mapping.keys (method)"
+    "builtins.dict.keys (method)", "pysa._test_sink (fun)"
   ],
   "dictionary.taint_dict_keys_no_issue (fun)": [
     "dictionary.taint_dict_keys (fun)", "pysa._test_source (fun)"
@@ -216,21 +222,23 @@ Call dependencies
     "pysa._test_source (fun)"
   ],
   "dictionary.test_dict_get_source (fun)": [
-    "dict.get (method)", "pysa._test_sink (fun)", "pysa._test_source (fun)"
+    "builtins.dict.get (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
   ],
   "dictionary.test_dict_getitem_mutate (fun)": [
     "dictionary.dict_getitem_mutate (fun)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)"
   ],
   "dictionary.test_dict_multiple_targets (fun)": [
-    "dict.__getitem__ (method)", "pysa._test_sink (fun)",
+    "builtins.dict.__getitem__ (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)"
   ],
   "dictionary.test_dict_sanitize_get (fun)": [
-    "dict.get (method)", "pysa._test_sink (fun)", "pysa._test_source (fun)"
+    "builtins.dict.get (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
   ],
   "dictionary.test_dict_sanitize_getitem (fun)": [
-    "dict.__getitem__ (method)", "pysa._test_sink (fun)",
+    "builtins.dict.__getitem__ (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)"
   ],
   "dictionary.test_index_from_tito (fun)": [
@@ -238,23 +246,24 @@ Call dependencies
     "pysa._test_source (fun)"
   ],
   "dictionary.test_items (fun)": [
-    "dict.items (method)", "pysa._test_sink (fun)",
-    "pysa._test_source (fun)", "typing.Iterable.__iter__ (method)",
+    "builtins.dict.items (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "typing.ItemsView.__iter__ (method)",
     "typing.Iterator.__next__ (method)"
   ],
   "dictionary.test_items_backward_keys (fun)": [
-    "dict.items (method)", "pysa._test_sink (fun)",
-    "typing.Iterable.__iter__ (method)", "typing.Iterator.__next__ (method)"
+    "builtins.dict.items (method)", "pysa._test_sink (fun)",
+    "typing.ItemsView.__iter__ (method)", "typing.Iterator.__next__ (method)"
   ],
   "dictionary.test_items_backward_values (fun)": [
-    "dict.items (method)", "pysa._test_sink (fun)",
-    "typing.Iterable.__iter__ (method)", "typing.Iterator.__next__ (method)"
+    "builtins.dict.items (method)", "pysa._test_sink (fun)",
+    "typing.ItemsView.__iter__ (method)", "typing.Iterator.__next__ (method)"
   ],
   "dictionary.test_keys_and_values (fun)": [
-    "pysa._test_sink (fun)", "pysa._test_source (fun)",
-    "tuple.__getitem__ (method)", "typing.Iterable.__iter__ (method)",
-    "typing.Iterator.__next__ (method)", "typing.Mapping.keys (method)",
-    "typing.Mapping.values (method)", "typing.ValuesView.__iter__ (method)"
+    "builtins.dict.keys (method)", "builtins.dict.values (method)",
+    "builtins.tuple.__getitem__ (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "typing.Iterator.__next__ (method)",
+    "typing.KeysView.__iter__ (method)",
+    "typing.ValuesView.__iter__ (method)"
   ],
   "dictionary.test_mapping_sanitize_get (fun)": [
     "pysa._test_sink (fun)", "pysa._test_source (fun)",
@@ -265,28 +274,32 @@ Call dependencies
     "typing.Mapping.__getitem__ (method)"
   ],
   "dictionary.test_service_with_dict (fun)": [
-    "dictionary.Service.async_get_dict (method)", "object.__init__ (method)",
-    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "dictionary.Service.async_get_dict (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)"
   ],
   "dictionary.test_service_with_mapping (fun)": [
-    "dictionary.Service.async_get_mapping (method)",
-    "object.__init__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)", "pysa._test_source (fun)"
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "dictionary.Service.async_get_mapping (method)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)"
   ],
   "dictionary.test_setitem_with_parenthesized_target (fun)": [
-    "dict.__setitem__ (method)"
+    "builtins.dict.__setitem__ (method)"
   ],
-  "dictionary.test_type_comments (fun)": [ "dict.__setitem__ (method)" ],
+  "dictionary.test_type_comments (fun)": [
+    "builtins.dict.__setitem__ (method)"
+  ],
   "dictionary.test_with_issue_in_dict_comprehension (fun)": [
-    "list.__iter__ (method)", "pysa._test_sink (fun)",
+    "builtins.list.__iter__ (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)", "typing.Iterator.__next__ (method)"
   ],
   "dictionary.test_with_issue_in_dict_items_comprehension (fun)": [
-    "dict.items (method)", "pysa._test_source (fun)",
-    "typing.Iterable.__iter__ (method)", "typing.Iterator.__next__ (method)"
+    "builtins.dict.items (method)", "pysa._test_source (fun)",
+    "typing.ItemsView.__iter__ (method)", "typing.Iterator.__next__ (method)"
   ],
-  "dictionary.tito_with_index (fun)": [ "dict.__getitem__ (method)" ],
+  "dictionary.tito_with_index (fun)": [
+    "builtins.dict.__getitem__ (method)"
+  ],
   "dictionary.update_dictionary_indirectly (fun)": [
     "typing.MutableMapping.update (method)"
   ],
@@ -298,6 +311,6 @@ Call dependencies
     "pysa._test_sink (fun)", "typing.MutableMapping.update (method)"
   ],
   "dictionary.walrus_operator (fun)": [
-    "dict.__setitem__ (method)", "pysa._test_source (fun)"
+    "builtins.dict.__setitem__ (method)", "pysa._test_source (fun)"
   ]
 }

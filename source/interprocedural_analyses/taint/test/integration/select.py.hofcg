@@ -12,9 +12,7 @@ Higher order call graphs
       }
     },
     "22:11-22:28|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -30,9 +28,7 @@ Higher order call graphs
       }
     },
     "27:11-27:15|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -48,9 +44,7 @@ Higher order call graphs
       }
     },
     "33:11-33:21|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -61,7 +55,11 @@ Higher order call graphs
     "41:11-41:22": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{django.http.Request.GET}", "index": 0 }
+          {
+            "target": "Obj{django.http.Request.GET}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -70,11 +68,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.get",
+            "target": "builtins.dict.get",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -87,7 +85,9 @@ Higher order call graphs
   "calls": {
     "13:4-13:25": {
       "call": {
-        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -98,13 +98,19 @@ Higher order call graphs
   "calls": {
     "37:4-37:47": {
       "call": {
-        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
       }
     },
     "37:9-37:20": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{django.http.Request.GET}", "index": 0 }
+          {
+            "target": "Obj{django.http.Request.GET}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -113,11 +119,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.get",
+            "target": "builtins.dict.get",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "dict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -130,13 +136,13 @@ Higher order call graphs
   "calls": {
     "17:4-17:32": {
       "call": {
-        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.eval", "index": 0, "return_type": [] }
+        ]
       }
     },
     "17:9-17:31|artificial-call|subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }

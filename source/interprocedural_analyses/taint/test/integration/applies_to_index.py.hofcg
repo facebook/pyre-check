@@ -24,7 +24,15 @@ Higher order call graphs
     },
     "52:15-52:21|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "builtins.dict"
+          }
+        ]
       }
     },
     "53:4-53:22": {
@@ -36,7 +44,15 @@ Higher order call graphs
     },
     "53:15-53:21|artificial-call|subscript-get-item": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.dict.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "builtins.dict"
+          }
+        ]
       }
     }
   }

@@ -14,30 +14,14 @@ open Interprocedural
 module AccessPath = Analysis.TaintAccessPath
 
 let test_get_module_and_definition context =
-  let assert_get_module_and_definition
-      ?pyrefly_target
-      ?pyrefly_expected
-      ~source
-      ~target
-      ~expected
-      ()
-    =
+  let assert_get_module_and_definition ~source ~target ~expected () =
     let pyre_api =
       Test.ScratchPyrePysaProject.setup
         ~context
+        ~force_pyrefly:true
         ~requires_type_of_expressions:false
         ["test.py", source]
       |> Test.ScratchPyrePysaProject.read_only_api
-    in
-    let target =
-      match pyrefly_target with
-      | Some pyrefly_target when PyrePysaApi.ReadOnly.is_pyrefly pyre_api -> pyrefly_target
-      | _ -> target
-    in
-    let expected =
-      match pyrefly_expected with
-      | Some pyrefly_expected when PyrePysaApi.ReadOnly.is_pyrefly pyre_api -> pyrefly_expected
-      | _ -> expected
     in
     let actual =
       target
@@ -75,24 +59,8 @@ let test_get_module_and_definition context =
   |}
     ~target:
       (Target.Regular.Method
-         { class_name = "test.C"; method_name = "foo"; kind = Pyre1PropertySetter })
-    ~pyrefly_target:
-      (Target.Regular.Method
          { class_name = "test.C"; method_name = "foo@setter"; kind = PyreflyPropertySetter })
     ~expected:
-      (Some
-         ( Reference.create "test",
-           [
-             +Statement.Statement.Assign
-                {
-                  Statement.Assign.target = !"$parameter$self._foo";
-                  annotation = None;
-                  value = Some !"$parameter$value";
-                  origin = None;
-                };
-             +Statement.Statement.Return { Statement.Return.is_implicit = true; expression = None };
-           ] ))
-    ~pyrefly_expected:
       (Some
          ( Reference.create "test",
            [

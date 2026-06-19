@@ -8,7 +8,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "typing.NamedTuple._asdict",
+            "target": "_typeshed._type_checker_internals.NamedTupleFallback._asdict",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -28,11 +28,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "collections.OrderedDict.pop",
+            "target": "builtins.dict.pop",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "collections.OrderedDict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -60,7 +60,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "typing.NamedTuple._asdict",
+            "target": "_typeshed._type_checker_internals.NamedTupleFallback._asdict",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -80,11 +80,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "builtins.dict.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "collections.OrderedDict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }
@@ -99,7 +99,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "typing.NamedTuple._asdict",
+            "target": "_typeshed._type_checker_internals.NamedTupleFallback._asdict",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -112,11 +112,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "collections.OrderedDict.pop",
+            "target": "builtins.dict.pop",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "collections.OrderedDict"
+            "receiver_class": "builtins.dict"
           }
         ]
       }

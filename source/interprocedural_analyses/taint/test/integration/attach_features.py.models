@@ -230,11 +230,19 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "string_concat_lhs" } ],
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-via": "string_concat_lhs" },
+                  { "always-type": "scalar" }
+                ],
                 "kind": "Attach"
               },
               {
-                "features": [ { "always-via": "string_concat_lhs" } ],
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-via": "string_concat_lhs" },
+                  { "always-type": "scalar" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -258,7 +266,11 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "string_concat_lhs" } ],
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-via": "string_concat_lhs" },
+                  { "always-type": "scalar" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -300,7 +312,11 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "string_concat_lhs" } ],
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-via": "string_concat_lhs" },
+                  { "always-type": "scalar" }
+                ],
                 "kind": "Attach"
               }
             ],
@@ -324,7 +340,11 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "string_concat_lhs" } ],
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-via": "string_concat_lhs" },
+                  { "always-type": "scalar" }
+                ],
                 "kind": "Attach"
               }
             ],
@@ -348,10 +368,17 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "string_concat_lhs" } ],
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-via": "string_concat_lhs" },
+                  { "always-type": "scalar" }
+                ],
                 "length": 1,
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
               "position": { "line": 19, "start": 11, "end": 33 },
@@ -536,7 +563,19 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
       }
     ]
   }
@@ -554,7 +593,11 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "string_concat_lhs" } ],
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-via": "string_concat_lhs" },
+                  { "always-type": "scalar" }
+                ],
                 "kind": "Attach"
               }
             ],
@@ -563,13 +606,20 @@
           {
             "kinds": [
               {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
                 "leaves": [
                   { "name": "attach_features.source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "string_concat_lhs" } ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-via": "string_concat_lhs" },
+              { "always-type": "scalar" }
+            ],
             "origin": { "line": 14, "start": 8, "end": 16 }
           }
         ]
@@ -747,6 +797,113 @@
 {
   "kind": "model",
   "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[col_offset,end_col_offset,end_lineno,lineno])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "attach_features.HasMethods.method_with_optionals",
     "filename": "attach_features.py",
     "callable_line": 58,
@@ -786,6 +943,57 @@
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "59:8-59:21"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decimal.DecimalTuple.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(exponent, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[exponent]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(digits, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[digits]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(sign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[sign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
           }
         ]
       }

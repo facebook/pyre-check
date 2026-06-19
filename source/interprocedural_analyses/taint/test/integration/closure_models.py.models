@@ -27,6 +27,28 @@
               }
             ],
             "origin": { "line": 169, "start": 4, "end": 60 }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.captured_variable_model_both_generation_parameter_source.model_all_captured_as_generation_and_parameter_sources",
+                    "port": "leaf:complicated_name"
+                  }
+                ],
+                "captured_variable_trace_length": 1,
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 169, "start": 4, "end": 60 },
+              "resolves_to": [
+                "closure_models.captured_variable_model_both_generation_parameter_source.model_all_captured_as_generation_and_parameter_sources"
+              ],
+              "port": "captured_variable(complicated_name, closure_models.captured_variable_model_both_generation_parameter_source)"
+            }
           }
         ]
       },
@@ -68,7 +90,23 @@
     "sources": [
       {
         "port": "captured_variable(complicated_name, closure_models.captured_variable_model_both_generation_parameter_source)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+        "taint": [
+          { "kinds": [ { "kind": "Test" } ], "declaration": null },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.captured_variable_model_both_generation_parameter_source.model_all_captured_as_generation_and_parameter_sources",
+                    "port": "leaf:complicated_name"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 166, "start": 4, "end": 4 }
+          }
+        ]
       }
     ],
     "sinks": [
@@ -256,11 +294,100 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.captured_variable_model_parameter_source",
+    "callable_line": 137,
+    "code": 5002,
+    "line": 147,
+    "start": 15,
+    "end": 31,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.captured_variable_model_parameter_source.model_all_captured_as_parameter_sources",
+                    "port": "leaf:complicated_name"
+                  }
+                ],
+                "captured_variable_trace_length": 1,
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 146, "start": 4, "end": 45 },
+              "resolves_to": [
+                "closure_models.captured_variable_model_parameter_source.model_all_captured_as_parameter_sources"
+              ],
+              "port": "captured_variable(complicated_name, closure_models.captured_variable_model_parameter_source)"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [
+                  { "name": "pysa._test_sink", "port": "leaf:arg" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 147, "start": 15, "end": 31 },
+            "call_site": "147:4-147:32"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "pysa._test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "closure_models.captured_variable_model_parameter_source:5002:0:Call|pysa._test_sink|1|formal(arg):8163f79558d87fc2da37711097e934ed"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "closure_models.captured_variable_model_parameter_source.model_all_captured_as_parameter_sources",
     "filename": "closure_models.py",
     "callable_line": 143,
+    "sources": [
+      {
+        "port": "captured_variable(complicated_name, closure_models.captured_variable_model_parameter_source)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.captured_variable_model_parameter_source.model_all_captured_as_parameter_sources",
+                    "port": "leaf:complicated_name"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 143, "start": 4, "end": 4 }
+          }
+        ]
+      }
+    ],
     "sinks": [
       {
         "port": "captured_variable(complicated_name, closure_models.captured_variable_model_parameter_source)",
@@ -1165,9 +1292,30 @@
     "callable": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable",
     "filename": "closure_models.py",
     "callable_line": 123,
+    "sources": [
+      {
+        "port": "captured_variable(some_data, closure_models.test_dsl_decorator_source)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable",
+                    "port": "leaf:some_data"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 123, "start": 4, "end": 4 }
+          }
+        ]
+      }
+    ],
     "sinks": [
       {
-        "port": "captured_variable(some_data, parameter)",
+        "port": "captured_variable(some_data, closure_models.test_dsl_decorator_source)",
         "taint": [
           {
             "kinds": [
@@ -1188,7 +1336,7 @@
     ],
     "parameter_sources": [
       {
-        "port": "captured_variable(some_data, parameter)",
+        "port": "captured_variable(some_data, closure_models.test_dsl_decorator_source)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -1261,9 +1409,30 @@
     "callable": "closure_models.test_dsl_source.local_function_capturing_local_variable",
     "filename": "closure_models.py",
     "callable_line": 117,
+    "sources": [
+      {
+        "port": "captured_variable(some_data, closure_models.test_dsl_source)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.test_dsl_source.local_function_capturing_local_variable",
+                    "port": "leaf:some_data"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 117, "start": 4, "end": 4 }
+          }
+        ]
+      }
+    ],
     "sinks": [
       {
-        "port": "captured_variable(some_data, parameter)",
+        "port": "captured_variable(some_data, closure_models.test_dsl_source)",
         "taint": [
           {
             "kinds": [
@@ -1284,7 +1453,7 @@
     ],
     "parameter_sources": [
       {
-        "port": "captured_variable(some_data, parameter)",
+        "port": "captured_variable(some_data, closure_models.test_dsl_source)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -1661,6 +1830,113 @@
 {
   "kind": "model",
   "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[col_offset,end_col_offset,end_lineno,lineno])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "closure_models.Reclassification.__init__",
     "filename": "closure_models.py",
     "callable_line": 19,
@@ -1745,6 +2021,57 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decimal.DecimalTuple.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(exponent, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[exponent]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(digits, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[digits]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(sign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[sign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
             "tito": {}
           }
         ]

@@ -1,17 +1,6 @@
 @generated
 Higher order call graphs
 {
-  "callable": "nested_callables.$toplevel",
-  "returned_callables": [],
-  "calls": {
-    "62:0-62:1|identifier|$local_nested_callables$g": {
-      "identifier": {
-        "globals": [ { "target": "Obj{nested_callables.g}", "index": 0 } ]
-      }
-    }
-  }
-}
-{
   "callable": "nested_callables.access_parameter_in_inner_scope_sink",
   "returned_callables": [],
   "calls": {
@@ -49,6 +38,17 @@ Higher order call graphs
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
+    },
+    "98:19-98:20|identifier|x": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "x",
+            "defining_function": "nested_callables.access_parameter_in_inner_scope_sink"
+          }
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
+      }
     }
   }
 }
@@ -76,6 +76,23 @@ Higher order call graphs
             "return_type": []
           }
         ]
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.access_parameter_in_inner_scope_tito.inner",
+  "returned_callables": [],
+  "calls": {
+    "109:15-109:16|identifier|x": {
+      "identifier": {
+        "captured_variables": [
+          {
+            "name": "x",
+            "defining_function": "nested_callables.access_parameter_in_inner_scope_tito"
+          }
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -126,14 +143,15 @@ Higher order call graphs
         ]
       }
     },
-    "78:19-78:20|identifier|$local_nested_callables?access_variables_in_outer_scope_issue$x": {
+    "78:19-78:20|identifier|x": {
       "identifier": {
         "captured_variables": [
           {
             "name": "x",
             "defining_function": "nested_callables.access_variables_in_outer_scope_issue"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -177,14 +195,15 @@ Higher order call graphs
   "callable": "nested_callables.access_variables_in_outer_scope_source.inner",
   "returned_callables": [],
   "calls": {
-    "87:15-87:16|identifier|$local_nested_callables?access_variables_in_outer_scope_source$x": {
+    "87:15-87:16|identifier|x": {
       "identifier": {
         "captured_variables": [
           {
             "name": "x",
             "defining_function": "nested_callables.access_variables_in_outer_scope_source"
           }
-        ]
+        ],
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }
@@ -215,6 +234,19 @@ Higher order call graphs
 }
 {
   "callable": "nested_callables.duplicate_function",
+  "returned_callables": [],
+  "calls": {
+    "55:4-55:9": {
+      "call": {
+        "calls": [
+          { "target": "nested_callables.foo", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.duplicate_function$2",
   "returned_callables": [],
   "calls": {
     "59:4-59:9": {
@@ -323,11 +355,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.__add__",
+            "target": "builtins.str.__add__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "str"
+            "receiver_class": "builtins.str"
           }
         ]
       }
@@ -424,6 +456,11 @@ Higher order call graphs
   "callable": "nested_callables.parameter_function",
   "returned_callables": [],
   "calls": {
+    "46:7-46:18|artificial-call|comparison": {
+      "call": {
+        "unresolved": [ "UnresolvedMagicDunderAttrDueToNoAttribute" ]
+      }
+    },
     "48:8-49:24": {
       "define": {
         "define_targets": [
@@ -456,11 +493,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.__add__",
+            "target": "builtins.str.__add__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "str"
+            "receiver_class": "builtins.str"
           }
         ]
       }
@@ -567,7 +604,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -575,10 +612,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "nested_callables.A"
           }
         ]
       }

@@ -41,11 +41,34 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "isinstance",
+            "target": "builtins.isinstance",
             "index": 0,
             "return_type": [ "float", "integer", "boolean" ]
           }
         ]
+      }
+    },
+    "48:21-48:22|identifier|A": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "overloads.A"
+            }
+          ]
+        }
       }
     },
     "49:8-49:20": {

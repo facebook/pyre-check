@@ -21,6 +21,7 @@ Call dependencies
     "parameter_path.source_on_first (fun)", "pysa._test_sink (fun)"
   ],
   "parameter_path.issue_only_with_source_key_a (fun)": [
+    "builtins.dict.__getitem__ (method)",
     "parameter_path.source_on_key_a (fun)", "pysa._test_sink (fun)"
   ],
   "parameter_path.issue_only_with_source_nested_first (fun)": [
@@ -38,7 +39,7 @@ Call dependencies
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "parameter_path.issue_tito_from_a_to_self_b (fun)": [
-    "dict.__getitem__ (method)",
+    "builtins.dict.__getitem__ (method)",
     "parameter_path.tito_from_a_to_self_b (fun)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)"
   ],
@@ -51,7 +52,7 @@ Call dependencies
     "pysa._test_source (fun)"
   ],
   "parameter_path.issue_with_sink_member (fun)": [
-    "object.__init__ (method)", "object.__new__ (method)",
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
     "parameter_path.sink_on_member_a (fun)", "pysa._test_source (fun)"
   ],
   "parameter_path.issue_with_source_member (fun)": [

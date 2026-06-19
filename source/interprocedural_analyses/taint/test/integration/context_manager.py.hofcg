@@ -37,7 +37,15 @@ Higher order call graphs
     },
     "93:9-93:57|artificial-call|with-enter": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "contextlib.AbstractContextManager.__enter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "contextlib._GeneratorContextManager"
+          }
+        ]
       }
     },
     "93:42-93:56": {
@@ -73,7 +81,15 @@ Higher order call graphs
     },
     "88:9-88:45|artificial-call|with-enter": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "contextlib.AbstractContextManager.__enter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "contextlib._GeneratorContextManager"
+          }
+        ]
       }
     },
     "89:8-89:21": {
@@ -93,7 +109,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -104,7 +120,8 @@ Higher order call graphs
             "target": "context_manager.SinkOnEnter.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "context_manager.SinkOnEnter"
           }
         ]
       }
@@ -132,7 +149,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -143,7 +160,8 @@ Higher order call graphs
             "target": "context_manager.SourceOnEnter.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "context_manager.SourceOnEnter"
           }
         ]
       }
@@ -178,7 +196,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -189,7 +207,8 @@ Higher order call graphs
             "target": "context_manager.SourceOnEnter.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "context_manager.SourceOnEnter"
           }
         ]
       }
@@ -224,7 +243,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -235,7 +254,8 @@ Higher order call graphs
             "target": "context_manager.SourceOnEnter.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "context_manager.SourceOnEnter"
           }
         ]
       }
@@ -270,7 +290,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -281,7 +301,8 @@ Higher order call graphs
             "target": "context_manager.SourceOnExit.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "context_manager.SourceOnExit"
           }
         ]
       }

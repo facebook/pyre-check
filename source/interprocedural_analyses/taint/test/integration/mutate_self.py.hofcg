@@ -4,16 +4,7 @@ Higher order call graphs
   "callable": "mutate_self.$toplevel",
   "returned_callables": [],
   "calls": {
-    "11:0-11:6|identifier|$local_mutate_self$MySelf": {
-      "identifier": {
-        "globals": [ { "target": "Obj{mutate_self.MySelf}", "index": 0 } ]
-      }
-    },
-    "11:9-11:26": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-      }
-    }
+    "11:9-11:26": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } }
   }
 }
 {
@@ -37,7 +28,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -48,7 +39,8 @@ Higher order call graphs
             "target": "mutate_self.Base.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
           }
         ]
       }
@@ -100,7 +92,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -111,7 +103,8 @@ Higher order call graphs
             "target": "mutate_self.Base.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
           }
         ]
       }
@@ -152,7 +145,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -163,7 +156,8 @@ Higher order call graphs
             "target": "mutate_self.Base.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
           }
         ]
       }

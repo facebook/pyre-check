@@ -2,26 +2,26 @@
 Call dependencies
 {
   "overrides.A.__init__ (method)": [
-    "object.__new__ (method)", "overrides.Base.__init__ (method)",
-    "super.__init__ (method)"
+    "builtins.object.__new__ (method)", "builtins.super.__init__ (method)",
+    "overrides.Base.__init__ (method)"
   ],
   "overrides.A.methodA (method)": [ "pysa._test_sink (fun)" ],
   "overrides.AnalyzeAllOverridesChild3.return_source (method)": [
     "pysa._test_source (fun)"
   ],
   "overrides.B.__init__ (method)": [
-    "object.__new__ (method)", "overrides.Base.__init__ (method)",
-    "super.__init__ (method)"
+    "builtins.object.__new__ (method)", "builtins.super.__init__ (method)",
+    "overrides.Base.__init__ (method)"
   ],
   "overrides.B.classMethod (method)": [ "pysa._test_sink (fun)" ],
   "overrides.B.methodB (method)": [ "pysa._test_source (fun)" ],
   "overrides.C.__init__ (method)": [
-    "object.__new__ (method)", "overrides.B.__init__ (method)",
-    "super.__init__ (method)"
+    "builtins.object.__new__ (method)", "builtins.super.__init__ (method)",
+    "overrides.Base.__init__ (method)"
   ],
   "overrides.D.__init__ (method)": [
-    "object.__new__ (method)", "overrides.C.__init__ (method)",
-    "super.__init__ (method)"
+    "builtins.object.__new__ (method)", "builtins.super.__init__ (method)",
+    "overrides.B.__init__ (method)"
   ],
   "overrides.D.methodA (method)": [ "pysa._test_sink (fun)" ],
   "overrides.D.methodB (method)": [ "pysa._test_source (fun)" ],
@@ -36,7 +36,7 @@ Call dependencies
     "overrides.TooManyOverrides.return_source (method)"
   ],
   "overrides.constructorTest (fun)": [
-    "object.__new__ (method)", "overrides.D.__init__ (method)",
+    "builtins.object.__new__ (method)", "overrides.D.__init__ (method)",
     "pysa._test_source (fun)"
   ],
   "overrides.testA (fun)": [
@@ -60,23 +60,23 @@ Call dependencies
     "overrides.D.methodB (method)"
   ],
   "overrides.testMakeA (fun)": [
-    "object.__new__ (method)", "overrides.A.__init__ (method)",
+    "builtins.object.__new__ (method)", "overrides.A.__init__ (method)",
     "overrides.Base.methodB (method)"
   ],
   "overrides.testMakeB (fun)": [
-    "object.__new__ (method)", "overrides.B.__init__ (method)",
+    "builtins.object.__new__ (method)", "overrides.B.__init__ (method)",
     "overrides.B.methodB (override)"
   ],
   "overrides.testMakeBase (fun)": [
-    "object.__new__ (method)", "overrides.Base.__init__ (method)",
+    "builtins.object.__new__ (method)", "overrides.Base.__init__ (method)",
     "overrides.Base.methodB (override)"
   ],
   "overrides.testMakeC (fun)": [
-    "object.__new__ (method)", "overrides.B.methodB (method)",
+    "builtins.object.__new__ (method)", "overrides.B.methodB (method)",
     "overrides.C.__init__ (method)", "overrides.D.methodB (method)"
   ],
   "overrides.testMakeD (fun)": [
-    "object.__new__ (method)", "overrides.D.__init__ (method)",
+    "builtins.object.__new__ (method)", "overrides.D.__init__ (method)",
     "overrides.D.methodB (method)"
   ],
   "overrides.testStaticA (fun)": [

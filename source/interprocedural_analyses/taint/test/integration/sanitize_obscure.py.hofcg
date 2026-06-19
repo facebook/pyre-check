@@ -4,16 +4,7 @@ Higher order call graphs
   "callable": "sanitize_obscure.$toplevel",
   "returned_callables": [],
   "calls": {
-    "11:0-11:1|identifier|$local_sanitize_obscure$T": {
-      "identifier": {
-        "globals": [ { "target": "Obj{sanitize_obscure.T}", "index": 0 } ]
-      }
-    },
-    "11:4-11:16": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-      }
-    }
+    "11:4-11:16": { "call": { "unresolved": [ "EmptyPyreflyCallTarget" ] } }
   }
 }
 {

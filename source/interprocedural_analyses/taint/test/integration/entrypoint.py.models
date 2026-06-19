@@ -33,7 +33,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
+                "leaves": [
+                  { "name": "builtins.list.append", "port": "leaf:self" }
+                ],
                 "kind": "MutationSink"
               }
             ],
@@ -46,11 +48,11 @@
     "features": [],
     "sink_handle": {
       "kind": "Call",
-      "callee": "list.append",
+      "callee": "builtins.list.append",
       "index": 0,
       "parameter": "formal(self)"
     },
-    "master_handle": "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator:1006:0:Call|list.append|0|formal(self):637b92eedd0fb9335a84d9aa16386318"
+    "master_handle": "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator:1006:0:Call|builtins.list.append|0|formal(self):5b955dc27f10677023a5b578c15df43c"
   }
 }
 {
@@ -87,7 +89,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
+                "leaves": [
+                  { "name": "builtins.list.append", "port": "leaf:self" }
+                ],
                 "kind": "MutationSink"
               }
             ],
@@ -100,11 +104,11 @@
     "features": [],
     "sink_handle": {
       "kind": "Call",
-      "callee": "list.append",
+      "callee": "builtins.list.append",
       "index": 0,
       "parameter": "formal(self)"
     },
-    "master_handle": "entrypoint.function_entrypoint_with_decorator:1006:0:Call|list.append|0|formal(self):353e68bf34f919da08cf5375909ae8b4"
+    "master_handle": "entrypoint.function_entrypoint_with_decorator:1006:0:Call|builtins.list.append|0|formal(self):1308157acb0c3bd6e219618492c91040"
   }
 }
 {
@@ -141,7 +145,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
+                "leaves": [
+                  { "name": "builtins.list.append", "port": "leaf:self" }
+                ],
                 "kind": "MutationSink"
               }
             ],
@@ -154,11 +160,11 @@
     "features": [],
     "sink_handle": {
       "kind": "Call",
-      "callee": "list.append",
+      "callee": "builtins.list.append",
       "index": 0,
       "parameter": "formal(self)"
     },
-    "master_handle": "entrypoint.immediate_examples:1006:0:Call|list.append|0|formal(self):1a80820aad20ce993316909733768819"
+    "master_handle": "entrypoint.immediate_examples:1006:0:Call|builtins.list.append|0|formal(self):14ac20509e8740f8a07763d45760c425"
   }
 }
 {
@@ -195,7 +201,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
+                "leaves": [
+                  { "name": "builtins.list.append", "port": "leaf:self" }
+                ],
                 "length": 1,
                 "kind": "MutationSink"
               }
@@ -256,7 +264,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
+                "leaves": [
+                  { "name": "builtins.list.append", "port": "leaf:self" }
+                ],
                 "kind": "MutationSink"
               }
             ],
@@ -269,11 +279,11 @@
     "features": [],
     "sink_handle": {
       "kind": "Call",
-      "callee": "list.append",
+      "callee": "builtins.list.append",
       "index": 0,
       "parameter": "formal(self)"
     },
-    "master_handle": "entrypoint.nested_run.do_the_thing:1006:0:Call|list.append|0|formal(self):3b81bd145990013cfa375115cf2fb488"
+    "master_handle": "entrypoint.nested_run.do_the_thing:1006:0:Call|builtins.list.append|0|formal(self):1fb6771e38f7acc4a13bb8d36f040abb"
   }
 }
 {
@@ -310,7 +320,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
+                "leaves": [
+                  { "name": "builtins.list.append", "port": "leaf:self" }
+                ],
                 "kind": "MutationSink"
               }
             ],
@@ -323,11 +335,11 @@
     "features": [],
     "sink_handle": {
       "kind": "Call",
-      "callee": "list.append",
+      "callee": "builtins.list.append",
       "index": 0,
       "parameter": "formal(self)"
     },
-    "master_handle": "entrypoint.transitive_call_accessing_globals:1006:0:Call|list.append|0|formal(self):d97e4430cb98460056488e8d0590fecb"
+    "master_handle": "entrypoint.transitive_call_accessing_globals:1006:0:Call|builtins.list.append|0|formal(self):4a4f7c9b44ad61b3a7f45844b36c0625"
   }
 }
 {
@@ -343,12 +355,189 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
+                "leaves": [
+                  { "name": "builtins.list.append", "port": "leaf:self" }
+                ],
                 "kind": "MutationSink"
               }
             ],
             "origin": { "line": 40, "start": 4, "end": 14 },
             "call_site": "40:4-40:24"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[col_offset,end_col_offset,end_lineno,lineno])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.list.append",
+    "filename": "builtins.pyi",
+    "callable_line": 3473,
+    "sinks": [
+      {
+        "port": "formal(self, position=0, positional_only)",
+        "taint": [
+          { "kinds": [ { "kind": "MutationSink" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decimal.DecimalTuple.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(exponent, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[exponent]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(digits, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[digits]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(sign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[sign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
           }
         ]
       }
@@ -391,7 +580,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
+                "leaves": [
+                  { "name": "builtins.list.append", "port": "leaf:self" }
+                ],
                 "kind": "MutationSink"
               }
             ],
@@ -406,11 +597,11 @@
     "features": [],
     "sink_handle": {
       "kind": "Call",
-      "callee": "list.append",
+      "callee": "builtins.list.append",
       "index": 0,
       "parameter": "formal(self)"
     },
-    "master_handle": "entrypoint.MyClass.method_entrypoint_with_decorator:1006:0:Call|list.append|0|formal(self):8e793619461ac67177f94029ef1bb0ed"
+    "master_handle": "entrypoint.MyClass.method_entrypoint_with_decorator:1006:0:Call|builtins.list.append|0|formal(self):4ecb1b9ca66dd91c2a02e45cb7991de8"
   }
 }
 {
@@ -449,7 +640,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
+                "leaves": [
+                  { "name": "builtins.list.append", "port": "leaf:self" }
+                ],
                 "kind": "MutationSink"
               }
             ],
@@ -464,28 +657,11 @@
     "features": [],
     "sink_handle": {
       "kind": "Call",
-      "callee": "list.append",
+      "callee": "builtins.list.append",
       "index": 0,
       "parameter": "formal(self)"
     },
-    "master_handle": "entrypoint.MyClass.some_entrypoint_function:1006:0:Call|list.append|0|formal(self):6988a7f7d2b75856f079eb2f027c9e6e"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "list.append",
-    "filename": "builtins.pyi",
-    "callable_line": 424,
-    "sinks": [
-      {
-        "port": "formal(self, position=0, positional_only)",
-        "taint": [
-          { "kinds": [ { "kind": "MutationSink" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
+    "master_handle": "entrypoint.MyClass.some_entrypoint_function:1006:0:Call|builtins.list.append|0|formal(self):6cd04666d82cb9f6cbed15efc29f58ca"
   }
 }
 {

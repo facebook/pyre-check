@@ -117,7 +117,11 @@ let convert_to_pyrefly_global global =
 let test_resolve_user_qualified_name context =
   let assert_resolve ~context ?pyrefly_expect sources name ~expect =
     let pyre_api =
-      Test.ScratchPyrePysaProject.setup ~context ~requires_type_of_expressions:false sources
+      Test.ScratchPyrePysaProject.setup
+        ~context
+        ~force_pyrefly:true
+        ~requires_type_of_expressions:false
+        sources
       |> Test.ScratchPyrePysaProject.read_only_api
     in
     let module ResolutionResult = PyrePysaApi.ModelQueries.ResolutionResult in

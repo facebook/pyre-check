@@ -24,8 +24,8 @@ Call dependencies
     "maximum_tito_depth.tito_zero (fun)"
   ],
   "maximum_tito_depth.tito_obscure (fun)": [
-    "maximum_tito_depth.C.tito (method)", "object.__init__ (method)",
-    "object.__new__ (method)"
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "maximum_tito_depth.C.tito (method)"
   ],
   "maximum_tito_depth.tito_one (fun)": [
     "maximum_tito_depth.tito_zero (fun)"

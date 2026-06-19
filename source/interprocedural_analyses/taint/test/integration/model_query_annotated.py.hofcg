@@ -1,13 +1,45 @@
 @generated
 Higher order call graphs
 {
+  "callable": "model_query_annotated.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "13:12-13:16|identifier|Enum": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "enum.Enum.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "model_query_annotated.test1_alarm1",
   "returned_callables": [],
   "calls": {
     "27:4-27:7": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{model_query_annotated.Test1_C.a}", "index": 0 }
+          {
+            "target": "Obj{model_query_annotated.Test1_C.a}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -15,7 +47,11 @@ Higher order call graphs
     "28:4-28:7": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{model_query_annotated.Test1_C.b}", "index": 0 }
+          {
+            "target": "Obj{model_query_annotated.Test1_C.b}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -30,7 +66,11 @@ Higher order call graphs
     "29:15-29:18": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{model_query_annotated.Test1_C.a}", "index": 1 }
+          {
+            "target": "Obj{model_query_annotated.Test1_C.a}",
+            "index": 1,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -44,7 +84,11 @@ Higher order call graphs
     "33:4-33:7": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{model_query_annotated.Test1_C.a}", "index": 0 }
+          {
+            "target": "Obj{model_query_annotated.Test1_C.a}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -52,7 +96,11 @@ Higher order call graphs
     "34:4-34:7": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{model_query_annotated.Test1_C.b}", "index": 0 }
+          {
+            "target": "Obj{model_query_annotated.Test1_C.b}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -67,7 +115,11 @@ Higher order call graphs
     "35:15-35:18": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{model_query_annotated.Test1_C.b}", "index": 1 }
+          {
+            "target": "Obj{model_query_annotated.Test1_C.b}",
+            "index": 1,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -81,7 +133,11 @@ Higher order call graphs
     "39:4-39:7": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{model_query_annotated.Test1_C.x}", "index": 0 }
+          {
+            "target": "Obj{model_query_annotated.Test1_C.x}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -96,7 +152,11 @@ Higher order call graphs
     "40:15-40:18": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{model_query_annotated.Test1_C.x}", "index": 1 }
+          {
+            "target": "Obj{model_query_annotated.Test1_C.x}",
+            "index": 1,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -110,7 +170,11 @@ Higher order call graphs
     "44:4-44:7": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{model_query_annotated.Test1_C.y}", "index": 0 }
+          {
+            "target": "Obj{model_query_annotated.Test1_C.y}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -125,7 +189,11 @@ Higher order call graphs
     "45:15-45:18": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{model_query_annotated.Test1_C.y}", "index": 1 }
+          {
+            "target": "Obj{model_query_annotated.Test1_C.y}",
+            "index": 1,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -139,7 +207,11 @@ Higher order call graphs
     "55:4-55:7": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{model_query_annotated.Test2_C.a}", "index": 0 }
+          {
+            "target": "Obj{model_query_annotated.Test2_C.a}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -154,7 +226,11 @@ Higher order call graphs
     "56:15-56:18": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{model_query_annotated.Test2_C.a}", "index": 1 }
+          {
+            "target": "Obj{model_query_annotated.Test2_C.a}",
+            "index": 1,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -168,7 +244,11 @@ Higher order call graphs
     "60:4-60:7": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{model_query_annotated.Test2_C.x}", "index": 0 }
+          {
+            "target": "Obj{model_query_annotated.Test2_C.x}",
+            "index": 0,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }
@@ -183,7 +263,11 @@ Higher order call graphs
     "61:15-61:18": {
       "attribute_access": {
         "globals": [
-          { "target": "Obj{model_query_annotated.Test2_C.x}", "index": 1 }
+          {
+            "target": "Obj{model_query_annotated.Test2_C.x}",
+            "index": 1,
+            "return_type": []
+          }
         ],
         "is_attribute": true
       }

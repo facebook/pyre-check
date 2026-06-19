@@ -4,6 +4,29 @@ Higher order call graphs
   "callable": "private_variables.test_access_from_other_class",
   "returned_callables": [],
   "calls": {
+    "90:4-90:9|identifier|Other": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.Other"
+            }
+          ]
+        }
+      }
+    },
     "90:4-90:59": {
       "call": {
         "calls": [
@@ -20,7 +43,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -31,7 +54,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -73,7 +97,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -84,7 +108,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -107,7 +132,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -118,7 +143,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -141,7 +167,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 2,
             "return_type": [],
             "is_static_method": true
@@ -152,7 +178,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -175,7 +202,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 3,
             "return_type": [],
             "is_static_method": true
@@ -186,7 +213,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 3,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -204,6 +232,29 @@ Higher order call graphs
   "callable": "private_variables.test_expand_subexpression",
   "returned_callables": [],
   "calls": {
+    "51:4-51:10|identifier|Simple": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.Simple"
+            }
+          ]
+        }
+      }
+    },
     "51:4-51:65": {
       "call": {
         "calls": [
@@ -220,7 +271,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -231,7 +282,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -241,6 +293,29 @@ Higher order call graphs
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
+      }
+    },
+    "52:4-52:10|identifier|Simple": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.Simple"
+            }
+          ]
+        }
       }
     },
     "52:4-52:75": {
@@ -259,7 +334,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -270,7 +345,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -279,7 +355,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 2,
             "return_type": [],
             "is_static_method": true
@@ -290,7 +366,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -319,7 +396,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -330,7 +407,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -366,7 +444,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -377,7 +455,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -413,7 +492,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 2,
             "return_type": [],
             "is_static_method": true
@@ -424,7 +503,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -460,7 +540,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 3,
             "return_type": [],
             "is_static_method": true
@@ -471,7 +551,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 3,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -507,7 +588,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 4,
             "return_type": [],
             "is_static_method": true
@@ -518,7 +599,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 4,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -554,7 +636,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 5,
             "return_type": [],
             "is_static_method": true
@@ -565,7 +647,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 5,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -600,7 +683,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -611,7 +694,8 @@ Higher order call graphs
             "target": "private_variables.PrivateAttributeSinkModels.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.PrivateAttributeSinkModels"
           }
         ]
       }
@@ -640,7 +724,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -651,7 +735,8 @@ Higher order call graphs
             "target": "private_variables.PrivateAttributeSinkModels.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.PrivateAttributeSinkModels"
           }
         ]
       }
@@ -680,7 +765,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 2,
             "return_type": [],
             "is_static_method": true
@@ -691,7 +776,8 @@ Higher order call graphs
             "target": "private_variables.PrivateAttributeSinkModels.__init__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.PrivateAttributeSinkModels"
           }
         ]
       }
@@ -733,7 +819,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -744,7 +830,8 @@ Higher order call graphs
             "target": "private_variables.PrivateAttributeSourceModels.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.PrivateAttributeSourceModels"
           }
         ]
       }
@@ -773,7 +860,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -784,7 +871,8 @@ Higher order call graphs
             "target": "private_variables.PrivateAttributeSourceModels.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.PrivateAttributeSourceModels"
           }
         ]
       }
@@ -813,7 +901,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 2,
             "return_type": [],
             "is_static_method": true
@@ -824,7 +912,8 @@ Higher order call graphs
             "target": "private_variables.PrivateAttributeSourceModels.__init__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.PrivateAttributeSourceModels"
           }
         ]
       }
@@ -852,7 +941,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -863,7 +952,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -892,7 +982,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 1,
             "return_type": [],
             "is_static_method": true
@@ -903,7 +993,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -932,7 +1023,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 2,
             "return_type": [],
             "is_static_method": true
@@ -943,7 +1034,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 2,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -972,7 +1064,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 3,
             "return_type": [],
             "is_static_method": true
@@ -983,7 +1075,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 3,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -1018,7 +1111,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -1029,7 +1122,8 @@ Higher order call graphs
             "target": "private_variables.Simple.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "private_variables.Simple"
           }
         ]
       }
@@ -1078,7 +1172,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_mangled}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -1089,7 +1184,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_unmangled}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -1100,7 +1196,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_query}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -1117,7 +1214,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_mangled}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -1134,7 +1232,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_query}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -1151,7 +1250,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_unmangled}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -1168,7 +1268,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_mangled}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -1179,7 +1280,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_unmangled}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -1190,7 +1292,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_query}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -1207,7 +1310,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_mangled}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -1224,7 +1328,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_query}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -1241,7 +1346,8 @@ Higher order call graphs
         "globals": [
           {
             "target": "Obj{private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_unmangled}",
-            "index": 0
+            "index": 0,
+            "return_type": []
           }
         ],
         "is_attribute": true
@@ -1264,11 +1370,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "list.__getitem__",
+            "target": "builtins.list.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "list"
+            "receiver_class": "builtins.list"
           }
         ]
       }
@@ -1281,7 +1387,9 @@ Higher order call graphs
   "calls": {
     "36:15-36:39": {
       "call": {
-        "calls": [ { "target": "getattr", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.getattr", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -1292,7 +1400,9 @@ Higher order call graphs
   "calls": {
     "31:15-31:46": {
       "call": {
-        "calls": [ { "target": "getattr", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.getattr", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -1303,7 +1413,9 @@ Higher order call graphs
   "calls": {
     "28:15-28:37": {
       "call": {
-        "calls": [ { "target": "getattr", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.getattr", "index": 0, "return_type": [] }
+        ]
       }
     }
   }

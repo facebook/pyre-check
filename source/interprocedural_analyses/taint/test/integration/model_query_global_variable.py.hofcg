@@ -4,27 +4,6 @@ Higher order call graphs
   "callable": "model_query_global_variable.$toplevel",
   "returned_callables": [],
   "calls": {
-    "11:0-11:3|identifier|$local_model_query_global_variable$foo": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{model_query_global_variable.foo}", "index": 0 }
-        ]
-      }
-    },
-    "22:0-22:5|identifier|$local_model_query_global_variable$hello": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{model_query_global_variable.hello}", "index": 0 }
-        ]
-      }
-    },
-    "23:0-23:5|identifier|$local_model_query_global_variable$world": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{model_query_global_variable.world}", "index": 0 }
-        ]
-      }
-    },
     "34:0-34:26": {
       "call": {
         "calls": [
@@ -39,16 +18,6 @@ Higher order call graphs
         ]
       }
     },
-    "41:0-41:17|identifier|$local_model_query_global_variable$typed_global_dict": {
-      "identifier": {
-        "globals": [
-          {
-            "target": "Obj{model_query_global_variable.typed_global_dict}",
-            "index": 0
-          }
-        ]
-      }
-    },
     "41:43-41:56": {
       "call": {
         "calls": [
@@ -56,16 +25,6 @@ Higher order call graphs
             "target": "model_query_global_variable.returns_any",
             "index": 0,
             "return_type": []
-          }
-        ]
-      }
-    },
-    "43:0-43:19|identifier|$local_model_query_global_variable$untyped_global_dict": {
-      "identifier": {
-        "globals": [
-          {
-            "target": "Obj{model_query_global_variable.untyped_global_dict}",
-            "index": 0
           }
         ]
       }
@@ -81,26 +40,24 @@ Higher order call graphs
         ]
       }
     },
-    "45:0-45:19|identifier|$local_model_query_global_variable$typed_global_lambda": {
-      "identifier": {
-        "globals": [
-          {
-            "target": "Obj{model_query_global_variable.typed_global_lambda}",
-            "index": 0
-          }
-        ]
-      }
-    },
     "45:69-45:79|artificial-call|binary": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        "calls": [
+          {
+            "target": "builtins.int.__add__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "builtins.int"
+          }
+        ]
       }
     },
     "45:73-45:79": {
       "call": {
         "new_calls": [
           {
-            "target": "int.__new__",
+            "target": "builtins.int.__new__",
             "index": 0,
             "return_type": [ "float", "integer" ],
             "is_static_method": true
@@ -108,7 +65,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer" ]
@@ -116,19 +73,8 @@ Higher order call graphs
         ]
       }
     },
-    "52:0-52:21|identifier|$local_model_query_global_variable$typed_global_callable": {
+    "52:58-52:61|identifier|fun": {
       "identifier": {
-        "globals": [
-          {
-            "target": "Obj{model_query_global_variable.typed_global_callable}",
-            "index": 0
-          }
-        ]
-      }
-    },
-    "52:58-52:61|artificial-attribute-access|qualification:model_query_global_variable.fun": {
-      "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "calls": [
             {
@@ -140,16 +86,6 @@ Higher order call graphs
         }
       }
     },
-    "54:0-54:23|identifier|$local_model_query_global_variable$untyped_global_callable": {
-      "identifier": {
-        "globals": [
-          {
-            "target": "Obj{model_query_global_variable.untyped_global_callable}",
-            "index": 0
-          }
-        ]
-      }
-    },
     "54:26-54:37": {
       "call": {
         "calls": [
@@ -157,16 +93,6 @@ Higher order call graphs
             "target": "model_query_global_variable.fun",
             "index": 0,
             "return_type": [ "float", "integer" ]
-          }
-        ]
-      }
-    },
-    "55:0-55:25|identifier|$local_model_query_global_variable$typed_callable_assignment": {
-      "identifier": {
-        "globals": [
-          {
-            "target": "Obj{model_query_global_variable.typed_callable_assignment}",
-            "index": 0
           }
         ]
       }
@@ -182,19 +108,8 @@ Higher order call graphs
         ]
       }
     },
-    "57:0-57:27|identifier|$local_model_query_global_variable$untyped_callable_assignment": {
+    "57:30-57:33|identifier|fun": {
       "identifier": {
-        "globals": [
-          {
-            "target": "Obj{model_query_global_variable.untyped_callable_assignment}",
-            "index": 0
-          }
-        ]
-      }
-    },
-    "57:30-57:33|artificial-attribute-access|qualification:model_query_global_variable.fun": {
-      "attribute_access": {
-        "is_attribute": true,
         "if_called": {
           "calls": [
             {
@@ -219,10 +134,9 @@ Higher order call graphs
         ]
       }
     },
-    "15:15-15:22|artificial-attribute-access|qualification:os.environ": {
-      "attribute_access": {
-        "globals": [ { "target": "Obj{os.environ}", "index": 0 } ],
-        "is_attribute": true
+    "15:15-15:22|identifier|environ": {
+      "identifier": {
+        "globals": [ { "target": "Obj{os.environ}", "index": 0 } ]
       }
     }
   }
@@ -235,11 +149,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "int.__add__",
+            "target": "builtins.int.__add__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer" ],
-            "receiver_class": "int"
+            "receiver_class": "builtins.int"
           }
         ]
       }
@@ -248,7 +162,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "int.__new__",
+            "target": "builtins.int.__new__",
             "index": 0,
             "return_type": [ "float", "integer" ],
             "is_static_method": true
@@ -256,7 +170,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer" ]
@@ -270,7 +184,7 @@ Higher order call graphs
   "callable": "model_query_global_variable.g",
   "returned_callables": [],
   "calls": {
-    "27:4-27:7|identifier|$local_model_query_global_variable$foo": {
+    "27:4-27:7|identifier|foo": {
       "identifier": {
         "globals": [
           { "target": "Obj{model_query_global_variable.foo}", "index": 0 }
@@ -281,11 +195,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "list.append",
+            "target": "builtins.list.append",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "list"
+            "receiver_class": "builtins.list"
           }
         ]
       }
@@ -302,6 +216,29 @@ Higher order call graphs
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
+    },
+    "31:15-31:18|identifier|Baz": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_global_variable.Baz"
+            }
+          ]
+        }
+      }
     }
   }
 }
@@ -313,7 +250,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -321,10 +258,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "object.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "model_query_global_variable.Baz"
           }
         ]
       }

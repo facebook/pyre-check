@@ -1,5 +1,7 @@
 @generated
 Call dependencies
 {
-  "except_star.test_except_star (fun)": [ "isinstance (fun)", "print (fun)" ]
+  "except_star.test_except_star (fun)": [
+    "builtins.isinstance (fun)", "builtins.print (fun)"
+  ]
 }

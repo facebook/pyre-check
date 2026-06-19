@@ -23,7 +23,7 @@ Call dependencies
     "pysa._test_sink (fun)", "readonly.Foo.tainted (object)"
   ],
   "readonly.readonly_tito (fun)": [
-    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "builtins.object.__new__ (method)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)", "readonly.A.__init__ (method)",
     "readonly.A.readonly_tito (method)"
   ],

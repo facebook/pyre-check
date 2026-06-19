@@ -2,7 +2,7 @@
 Call dependencies
 {
   "model_query_any_decorator.$toplevel (fun)": [
-    "object.__init__ (method)", "object.__new__ (method)"
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)"
   ],
   "model_query_any_decorator.test1_alarm1@decorated (fun)": [
     "model_query_any_decorator.test1_d1 (fun)[formal(f, position=0)=model_query_any_decorator.test1_alarm1 (fun)]"

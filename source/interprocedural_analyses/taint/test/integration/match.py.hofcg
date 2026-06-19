@@ -1,6 +1,25 @@
 @generated
 Higher order call graphs
 {
+  "callable": "match.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "79:1-79:10|identifier|dataclass": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "dataclasses.dataclass",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "match.test_match_class_pattern",
   "returned_callables": [],
   "calls": {
@@ -11,36 +30,40 @@ Higher order call graphs
         ]
       }
     },
-    "89:13-89:23|artificial-call|match-class-get-attr:0": {
-      "call": {
-        "calls": [ { "target": "getattr", "index": 0, "return_type": [] } ]
+    "89:13-89:20|identifier|MyClass": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "match.MyClass.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "match.MyClass"
+            }
+          ]
+        }
       }
+    },
+    "89:13-89:23|artificial-call|match-class-get-attr:0": {
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "89:13-89:23|artificial-call|match-class-isinstance": {
-      "call": {
-        "calls": [
-          {
-            "target": "isinstance",
-            "index": 0,
-            "return_type": [ "float", "integer", "boolean" ]
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "89:13-89:23|artificial-call|match-class-args-subscript:0>subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "89:21-89:22|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "89:21-89:22|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "90:12-90:25": {
       "call": {
@@ -49,46 +72,43 @@ Higher order call graphs
         ]
       }
     },
-    "91:13-91:29|artificial-call|match-class-get-attr:0": {
-      "call": {
-        "calls": [ { "target": "getattr", "index": 1, "return_type": [] } ]
+    "91:13-91:20|identifier|MyClass": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "match.MyClass.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "match.MyClass"
+            }
+          ]
+        }
       }
+    },
+    "91:13-91:29|artificial-call|match-class-get-attr:0": {
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "91:13-91:29|artificial-call|match-class-isinstance": {
-      "call": {
-        "calls": [
-          {
-            "target": "isinstance",
-            "index": 1,
-            "return_type": [ "float", "integer", "boolean" ]
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "91:13-91:29|artificial-call|match-class-args-subscript:0>subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "91:21-91:22|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "91:21-91:22|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "91:26-91:28|artificial-call|match-value-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "91:26-91:28|artificial-call|match-value-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "93:12-93:25": {
       "call": {
@@ -104,76 +124,58 @@ Higher order call graphs
         ]
       }
     },
-    "95:13-95:29|artificial-call|match-class-get-attr:0": {
-      "call": {
-        "calls": [ { "target": "getattr", "index": 2, "return_type": [] } ]
+    "95:13-95:20|identifier|MyClass": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "match.MyClass.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "match.MyClass"
+            }
+          ]
+        }
       }
+    },
+    "95:13-95:29|artificial-call|match-class-get-attr:0": {
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "95:13-95:29|artificial-call|match-class-get-attr:1": {
-      "call": {
-        "calls": [ { "target": "getattr", "index": 3, "return_type": [] } ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "95:13-95:29|artificial-call|match-class-get-attr:2": {
-      "call": {
-        "calls": [ { "target": "getattr", "index": 4, "return_type": [] } ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "95:13-95:29|artificial-call|match-class-isinstance": {
-      "call": {
-        "calls": [
-          {
-            "target": "isinstance",
-            "index": 2,
-            "return_type": [ "float", "integer", "boolean" ]
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "95:13-95:29|artificial-call|match-class-args-subscript:0>subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "95:13-95:29|artificial-call|match-class-args-subscript:1>subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "95:13-95:29|artificial-call|match-class-args-subscript:2>subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "95:21-95:22|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "95:21-95:22|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "95:24-95:25|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "95:24-95:25|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "95:27-95:28|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "95:27-95:28|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "96:12-96:25": {
       "call": {
@@ -200,7 +202,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -211,7 +213,8 @@ Higher order call graphs
             "target": "match.MyClass.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "match.MyClass"
           }
         ]
       }
@@ -223,148 +226,58 @@ Higher order call graphs
         ]
       }
     },
-    "102:13-102:29|artificial-call|match-class-get-attr:0": {
-      "call": {
-        "calls": [ { "target": "getattr", "index": 5, "return_type": [] } ]
+    "102:13-102:20|identifier|MyClass": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "match.MyClass.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "match.MyClass"
+            }
+          ]
+        }
       }
+    },
+    "102:13-102:29|artificial-call|match-class-get-attr:0": {
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "102:13-102:29|artificial-call|match-class-get-attr:1": {
-      "call": {
-        "calls": [ { "target": "getattr", "index": 6, "return_type": [] } ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "102:13-102:29|artificial-call|match-class-get-attr:2": {
-      "call": {
-        "calls": [ { "target": "getattr", "index": 7, "return_type": [] } ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "102:13-102:29|artificial-call|match-class-isinstance": {
-      "call": {
-        "calls": [
-          {
-            "target": "isinstance",
-            "index": 3,
-            "return_type": [ "float", "integer", "boolean" ]
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "102:13-102:29|artificial-call|match-class-args-subscript:0>subscript-get-item": {
-      "call": {
-        "calls": [
-          {
-            "target": "tuple.__getitem__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "tuple"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "102:13-102:29|artificial-call|match-class-args-subscript:1>subscript-get-item": {
-      "call": {
-        "calls": [
-          {
-            "target": "tuple.__getitem__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "tuple"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "102:13-102:29|artificial-call|match-class-args-subscript:2>subscript-get-item": {
-      "call": {
-        "calls": [
-          {
-            "target": "tuple.__getitem__",
-            "index": 2,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "tuple"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "102:21-102:22|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "str.__eq__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "str"
-          }
-        ]
-      }
-    },
-    "102:21-102:22|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "str.__ne__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer" ],
-            "receiver_class": "str"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "102:24-102:25|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "str.__eq__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "str"
-          }
-        ]
-      }
-    },
-    "102:24-102:25|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "str.__ne__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer" ],
-            "receiver_class": "str"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "102:27-102:28|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "str.__eq__",
-            "index": 2,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "str"
-          }
-        ]
-      }
-    },
-    "102:27-102:28|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "str.__ne__",
-            "index": 2,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer" ],
-            "receiver_class": "str"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "103:12-103:25": {
       "call": {
@@ -401,14 +314,7 @@ Higher order call graphs
       }
     },
     "14:13-14:19|artificial-call|match-value-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "14:13-14:19|artificial-call|match-value-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "15:12-15:25": {
       "call": {
@@ -438,30 +344,13 @@ Higher order call graphs
       }
     },
     "23:13-23:16|artificial-call|match-sequence-isinstance": {
-      "call": {
-        "calls": [
-          {
-            "target": "isinstance",
-            "index": 0,
-            "return_type": [ "float", "integer", "boolean" ]
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "23:13-23:16|artificial-call|match-sequence-prefix:0>subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "23:14-23:15|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "23:14-23:15|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "24:12-24:25": {
       "call": {
@@ -471,45 +360,19 @@ Higher order call graphs
       }
     },
     "25:13-25:19|artificial-call|match-sequence-isinstance": {
-      "call": {
-        "calls": [
-          {
-            "target": "isinstance",
-            "index": 1,
-            "return_type": [ "float", "integer", "boolean" ]
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "25:13-25:19|artificial-call|match-sequence-prefix:0>subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "25:13-25:19|artificial-call|match-sequence-prefix:1>subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "25:14-25:15|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "25:14-25:15|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "25:17-25:18|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "25:17-25:18|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "26:12-26:25": {
       "call": {
@@ -526,101 +389,25 @@ Higher order call graphs
       }
     },
     "28:13-28:20|artificial-call|match-sequence-rest-list:l": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "object.__new__",
-            "index": 0,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "list.__init__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "28:13-28:20|artificial-call|match-sequence-isinstance": {
-      "call": {
-        "calls": [
-          {
-            "target": "isinstance",
-            "index": 2,
-            "return_type": [ "float", "integer", "boolean" ]
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "28:13-28:20|artificial-call|match-sequence-rest-comparison-equals:l>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "object.__eq__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "list"
-          }
-        ]
-      }
-    },
-    "28:13-28:20|artificial-call|match-sequence-rest-comparison-equals:l>normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "object.__ne__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "list"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "28:13-28:20|artificial-call|match-sequence-rest-subscript:l>subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "28:13-28:20|artificial-call|match-sequence-prefix:0>subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "28:13-28:20|artificial-call|match-sequence-rest-slice:l>slice": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "object.__new__",
-            "index": 1,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "slice.__init__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "28:14-28:15|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "28:14-28:15|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "29:12-29:25": {
       "call": {
@@ -644,38 +431,13 @@ Higher order call graphs
       }
     },
     "34:13-34:16|artificial-call|match-sequence-isinstance": {
-      "call": {
-        "calls": [
-          {
-            "target": "isinstance",
-            "index": 3,
-            "return_type": [ "float", "integer", "boolean" ]
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "34:13-34:16|artificial-call|match-sequence-prefix:0>subscript-get-item": {
-      "call": {
-        "calls": [
-          {
-            "target": "list.__getitem__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "list"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "34:14-34:15|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "34:14-34:15|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "35:12-35:25": {
       "call": {
@@ -685,61 +447,19 @@ Higher order call graphs
       }
     },
     "36:13-36:19|artificial-call|match-sequence-isinstance": {
-      "call": {
-        "calls": [
-          {
-            "target": "isinstance",
-            "index": 4,
-            "return_type": [ "float", "integer", "boolean" ]
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "36:13-36:19|artificial-call|match-sequence-prefix:0>subscript-get-item": {
-      "call": {
-        "calls": [
-          {
-            "target": "list.__getitem__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "list"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "36:13-36:19|artificial-call|match-sequence-prefix:1>subscript-get-item": {
-      "call": {
-        "calls": [
-          {
-            "target": "list.__getitem__",
-            "index": 2,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "list"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "36:14-36:15|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "36:14-36:15|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "36:17-36:18|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "36:17-36:18|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "37:12-37:25": {
       "call": {
@@ -756,117 +476,25 @@ Higher order call graphs
       }
     },
     "39:13-39:20|artificial-call|match-sequence-rest-list:l": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "object.__new__",
-            "index": 2,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "list.__init__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "39:13-39:20|artificial-call|match-sequence-isinstance": {
-      "call": {
-        "calls": [
-          {
-            "target": "isinstance",
-            "index": 5,
-            "return_type": [ "float", "integer", "boolean" ]
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "39:13-39:20|artificial-call|match-sequence-rest-comparison-equals:l>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "object.__eq__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "list"
-          }
-        ]
-      }
-    },
-    "39:13-39:20|artificial-call|match-sequence-rest-comparison-equals:l>normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "object.__ne__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "list"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "39:13-39:20|artificial-call|match-sequence-rest-subscript:l>subscript-get-item": {
-      "call": {
-        "calls": [
-          {
-            "target": "list.__getitem__",
-            "index": 3,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "list"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "39:13-39:20|artificial-call|match-sequence-prefix:0>subscript-get-item": {
-      "call": {
-        "calls": [
-          {
-            "target": "list.__getitem__",
-            "index": 4,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "list"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "39:13-39:20|artificial-call|match-sequence-rest-slice:l>slice": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "object.__new__",
-            "index": 3,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "slice.__init__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "39:14-39:15|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "39:14-39:15|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "40:12-40:25": {
       "call": {
@@ -896,30 +524,13 @@ Higher order call graphs
       }
     },
     "50:13-50:16|artificial-call|match-sequence-isinstance": {
-      "call": {
-        "calls": [
-          {
-            "target": "isinstance",
-            "index": 0,
-            "return_type": [ "float", "integer", "boolean" ]
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "50:13-50:16|artificial-call|match-sequence-prefix:0>subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "50:14-50:15|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "50:14-50:15|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "50:20-50:32": {
       "call": {
@@ -953,30 +564,13 @@ Higher order call graphs
       }
     },
     "57:13-57:21|artificial-call|match-mapping-isinstance": {
-      "call": {
-        "calls": [
-          {
-            "target": "isinstance",
-            "index": 0,
-            "return_type": [ "float", "integer", "boolean" ]
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "57:14-57:17|artificial-call|match-mapping-key-subscript>subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "57:19-57:20|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "57:19-57:20|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "58:12-58:25": {
       "call": {
@@ -986,45 +580,19 @@ Higher order call graphs
       }
     },
     "59:13-59:29|artificial-call|match-mapping-isinstance": {
-      "call": {
-        "calls": [
-          {
-            "target": "isinstance",
-            "index": 1,
-            "return_type": [ "float", "integer", "boolean" ]
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "59:14-59:17|artificial-call|match-mapping-key-subscript>subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "59:19-59:20|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "59:19-59:20|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "59:22-59:25|artificial-call|match-mapping-key-subscript>subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "59:27-59:28|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "59:27-59:28|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "60:12-60:25": {
       "call": {
@@ -1041,76 +609,19 @@ Higher order call graphs
       }
     },
     "62:13-62:29|artificial-call|match-mapping-rest-dict:rest": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "object.__new__",
-            "index": 0,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "dict.__init__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "62:13-62:29|artificial-call|match-mapping-isinstance": {
-      "call": {
-        "calls": [
-          {
-            "target": "isinstance",
-            "index": 2,
-            "return_type": [ "float", "integer", "boolean" ]
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "62:13-62:29|artificial-call|match-mapping-rest-comparison-equals:rest>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "object.__eq__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "dict"
-          }
-        ]
-      }
-    },
-    "62:13-62:29|artificial-call|match-mapping-rest-comparison-equals:rest>normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "object.__ne__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "dict"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "62:14-62:17|artificial-call|match-mapping-key-subscript>subscript-get-item": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "62:19-62:20|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "62:19-62:20|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "63:12-63:25": {
       "call": {
@@ -1134,38 +645,13 @@ Higher order call graphs
       }
     },
     "68:13-68:21|artificial-call|match-mapping-isinstance": {
-      "call": {
-        "calls": [
-          {
-            "target": "isinstance",
-            "index": 3,
-            "return_type": [ "float", "integer", "boolean" ]
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "68:14-68:17|artificial-call|match-mapping-key-subscript>subscript-get-item": {
-      "call": {
-        "calls": [
-          {
-            "target": "dict.__getitem__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "dict"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "68:19-68:20|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "68:19-68:20|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "69:12-69:25": {
       "call": {
@@ -1175,61 +661,19 @@ Higher order call graphs
       }
     },
     "70:13-70:29|artificial-call|match-mapping-isinstance": {
-      "call": {
-        "calls": [
-          {
-            "target": "isinstance",
-            "index": 4,
-            "return_type": [ "float", "integer", "boolean" ]
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "70:14-70:17|artificial-call|match-mapping-key-subscript>subscript-get-item": {
-      "call": {
-        "calls": [
-          {
-            "target": "dict.__getitem__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "dict"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "70:19-70:20|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "70:19-70:20|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "70:22-70:25|artificial-call|match-mapping-key-subscript>subscript-get-item": {
-      "call": {
-        "calls": [
-          {
-            "target": "dict.__getitem__",
-            "index": 2,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "dict"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "70:27-70:28|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "70:27-70:28|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "71:12-71:25": {
       "call": {
@@ -1246,84 +690,19 @@ Higher order call graphs
       }
     },
     "73:13-73:29|artificial-call|match-mapping-rest-dict:rest": {
-      "call": {
-        "new_calls": [
-          {
-            "target": "object.__new__",
-            "index": 1,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "dict.__init__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": []
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "73:13-73:29|artificial-call|match-mapping-isinstance": {
-      "call": {
-        "calls": [
-          {
-            "target": "isinstance",
-            "index": 5,
-            "return_type": [ "float", "integer", "boolean" ]
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "73:13-73:29|artificial-call|match-mapping-rest-comparison-equals:rest>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "object.__eq__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "dict"
-          }
-        ]
-      }
-    },
-    "73:13-73:29|artificial-call|match-mapping-rest-comparison-equals:rest>normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "object.__ne__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "dict"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "73:14-73:17|artificial-call|match-mapping-key-subscript>subscript-get-item": {
-      "call": {
-        "calls": [
-          {
-            "target": "dict.__getitem__",
-            "index": 3,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "dict"
-          }
-        ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "73:19-73:20|artificial-call|match-as-comparison-equals>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
-    },
-    "73:19-73:20|artificial-call|match-as-comparison-equals>normalize-not-comparison>comparison": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "SkippedMatchCondition" ] }
     },
     "74:12-74:25": {
       "call": {

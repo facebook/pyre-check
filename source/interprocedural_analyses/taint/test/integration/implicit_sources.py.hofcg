@@ -1,36 +1,6 @@
 @generated
 Higher order call graphs
 {
-  "callable": "implicit_sources.$toplevel",
-  "returned_callables": [],
-  "calls": {
-    "38:0-38:14|identifier|$local_implicit_sources$GOOGLE_API_KEY": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{implicit_sources.GOOGLE_API_KEY}", "index": 0 }
-        ]
-      }
-    },
-    "66:0-66:5|identifier|$local_implicit_sources$START": {
-      "identifier": {
-        "globals": [
-          { "target": "Obj{implicit_sources.START}", "index": 0 }
-        ]
-      }
-    },
-    "66:7-66:11|identifier|$local_implicit_sources$BODY": {
-      "identifier": {
-        "globals": [ { "target": "Obj{implicit_sources.BODY}", "index": 0 } ]
-      }
-    },
-    "66:13-66:16|identifier|$local_implicit_sources$END": {
-      "identifier": {
-        "globals": [ { "target": "Obj{implicit_sources.END}", "index": 0 } ]
-      }
-    }
-  }
-}
-{
   "callable": "implicit_sources.bar_dot_format",
   "returned_callables": [],
   "calls": {
@@ -38,11 +8,10 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.format",
+            "target": "builtins.str.format",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "str"
+            "return_type": []
           }
         ]
       }
@@ -55,17 +24,17 @@ Higher order call graphs
   "calls": {
     "17:11-17:47|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "17:14-17:29|format-string-stringify": {
       "format_string_stringify": [
         {
-          "target": "object.__repr__",
+          "target": "builtins.int.__format__",
           "index": 0,
           "implicit_receiver": true,
           "return_type": [],
-          "receiver_class": "int"
+          "receiver_class": "builtins.int"
         }
       ]
     }
@@ -79,11 +48,10 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.__mod__",
+            "target": "builtins.str.__mod__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "str"
+            "return_type": []
           }
         ]
       }
@@ -98,9 +66,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 0,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -109,24 +79,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "58:7-58:28|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }
@@ -135,11 +92,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.format",
+            "target": "builtins.str.format",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "str"
+            "receiver_class": "builtins.str"
           }
         ]
       }
@@ -148,9 +105,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "random.random",
+            "target": "_random.Random.random",
             "index": 1,
-            "return_type": [ "float" ]
+            "implicit_receiver": true,
+            "return_type": [ "float" ],
+            "receiver_class": "random.Random"
           }
         ]
       }
@@ -159,24 +118,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "float.__gt__",
+            "target": "builtins.float.__gt__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
-          }
-        ]
-      }
-    },
-    "60:9-60:30|artificial-call|normalize-not-comparison>comparison": {
-      "call": {
-        "calls": [
-          {
-            "target": "float.__le__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [ "float", "integer", "boolean" ],
-            "receiver_class": "float"
+            "receiver_class": "builtins.float"
           }
         ]
       }
@@ -185,19 +131,17 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.__mod__",
+            "target": "builtins.str.__mod__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "str"
+            "receiver_class": "builtins.str"
           }
         ]
       }
     },
     "63:15-63:28|artificial-call|binary": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     }
   }
 }
@@ -205,7 +149,7 @@ Higher order call graphs
   "callable": "implicit_sources.string_source_top_level",
   "returned_callables": [],
   "calls": {
-    "42:21-42:35|identifier|$local_implicit_sources$GOOGLE_API_KEY": {
+    "42:21-42:35|identifier|GOOGLE_API_KEY": {
       "identifier": {
         "globals": [
           { "target": "Obj{implicit_sources.GOOGLE_API_KEY}", "index": 0 }
@@ -218,7 +162,7 @@ Higher order call graphs
   "callable": "implicit_sources.toplevel_simultaneous_assignment",
   "returned_callables": [],
   "calls": {
-    "70:11-70:16|identifier|$local_implicit_sources$START": {
+    "70:11-70:16|identifier|START": {
       "identifier": {
         "globals": [
           { "target": "Obj{implicit_sources.START}", "index": 0 }
@@ -229,11 +173,10 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.__add__",
+            "target": "builtins.str.__add__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "str"
+            "return_type": []
           }
         ]
       }
@@ -242,21 +185,20 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "str.__add__",
+            "target": "builtins.str.__add__",
             "index": 1,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "str"
+            "return_type": []
           }
         ]
       }
     },
-    "70:19-70:23|identifier|$local_implicit_sources$BODY": {
+    "70:19-70:23|identifier|BODY": {
       "identifier": {
         "globals": [ { "target": "Obj{implicit_sources.BODY}", "index": 0 } ]
       }
     },
-    "70:26-70:29|identifier|$local_implicit_sources$END": {
+    "70:26-70:29|identifier|END": {
       "identifier": {
         "globals": [ { "target": "Obj{implicit_sources.END}", "index": 0 } ]
       }

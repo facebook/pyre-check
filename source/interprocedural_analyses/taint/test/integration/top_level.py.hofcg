@@ -4,11 +4,6 @@ Higher order call graphs
   "callable": "top_level.$toplevel",
   "returned_callables": [],
   "calls": {
-    "8:0-8:1|identifier|$local_top_level$x": {
-      "identifier": {
-        "globals": [ { "target": "Obj{top_level.x}", "index": 0 } ]
-      }
-    },
     "8:4-8:18": {
       "call": {
         "calls": [
@@ -23,14 +18,9 @@ Higher order call graphs
         ]
       }
     },
-    "9:11-9:12|identifier|$local_top_level$x": {
+    "9:11-9:12|identifier|x": {
       "identifier": {
-        "globals": [ { "target": "Obj{top_level.x}", "index": 1 } ]
-      }
-    },
-    "16:0-16:1|identifier|$local_top_level$y": {
-      "identifier": {
-        "globals": [ { "target": "Obj{top_level.y}", "index": 0 } ]
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     },
     "16:4-16:18": {
@@ -47,9 +37,9 @@ Higher order call graphs
         ]
       }
     },
-    "17:4-17:5|identifier|$local_top_level$y": {
+    "17:4-17:5|identifier|y": {
       "identifier": {
-        "globals": [ { "target": "Obj{top_level.y}", "index": 1 } ]
+        "if_called": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
       }
     }
   }

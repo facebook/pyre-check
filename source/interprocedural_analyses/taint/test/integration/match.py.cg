@@ -2,29 +2,20 @@
 Call dependencies
 {
   "match.test_match_class_pattern (fun)": [
-    "getattr (fun)", "isinstance (fun)", "match.MyClass.__init__ (method)",
-    "object.__new__ (method)", "pysa._test_sink (fun)",
-    "pysa._test_source (fun)", "str.__eq__ (method)", "str.__ne__ (method)",
-    "tuple.__getitem__ (method)"
+    "builtins.object.__new__ (method)", "match.MyClass.__init__ (method)",
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "match.test_match_equality (fun)": [
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "match.test_match_list_pattern (fun)": [
-    "isinstance (fun)", "list.__getitem__ (method)",
-    "list.__init__ (method)", "object.__eq__ (method)",
-    "object.__ne__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)", "pysa._test_source (fun)",
-    "slice.__init__ (method)"
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "match.test_match_list_pattern_with_condition (fun)": [
-    "isinstance (fun)", "match.condition (fun)", "pysa._test_sink (fun)",
+    "match.condition (fun)", "pysa._test_sink (fun)",
     "pysa._test_source (fun)"
   ],
   "match.test_match_mapping_pattern (fun)": [
-    "dict.__getitem__ (method)", "dict.__init__ (method)",
-    "isinstance (fun)", "object.__eq__ (method)", "object.__ne__ (method)",
-    "object.__new__ (method)", "pysa._test_sink (fun)",
-    "pysa._test_source (fun)"
+    "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ]
 }

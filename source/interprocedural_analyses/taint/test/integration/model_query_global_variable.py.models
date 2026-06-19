@@ -205,7 +205,9 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
+                "leaves": [
+                  { "name": "builtins.list.append", "port": "leaf:self" }
+                ],
                 "kind": "Test1"
               }
             ],
@@ -218,11 +220,11 @@
     "features": [],
     "sink_handle": {
       "kind": "Call",
-      "callee": "list.append",
+      "callee": "builtins.list.append",
       "index": 0,
       "parameter": "formal(self)"
     },
-    "master_handle": "model_query_global_variable.g:1001:0:Call|list.append|0|formal(self):11419e849345f9de673d477dcedef3a2"
+    "master_handle": "model_query_global_variable.g:1001:0:Call|builtins.list.append|0|formal(self):b299d88f6bee08fdeac47c2ce4ffa9ac"
   }
 }
 {
@@ -275,9 +277,116 @@
 {
   "kind": "model",
   "data": {
-    "callable": "list.append",
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[col_offset,end_col_offset,end_lineno,lineno])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "builtins.list.append",
     "filename": "builtins.pyi",
-    "callable_line": 424,
+    "callable_line": 3473,
     "sinks": [
       {
         "port": "formal(self, position=0, positional_only)",
@@ -292,19 +401,67 @@
 {
   "kind": "model",
   "data": {
+    "callable": "decimal.DecimalTuple.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(exponent, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[exponent]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(digits, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[digits]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(sign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[sign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Obj{model_query_global_variable.foo}",
     "sources": [
       {
         "port": "result",
         "taint": [
-          {
-            "kinds": [ { "kind": "SelectAny" }, { "kind": "Test1" } ],
-            "declaration": null
-          }
+          { "kinds": [ { "kind": "Test1" } ], "declaration": null }
         ]
       }
     ],
-    "model_generators": [ "get_any_globals", "get_foo" ]
+    "model_generators": [ "get_foo" ]
   }
 }
 {
@@ -315,11 +472,11 @@
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "SelectAny" } ], "declaration": null }
+          { "kinds": [ { "kind": "SelectIntAndStr" } ], "declaration": null }
         ]
       }
     ],
-    "model_generators": [ "get_any_globals" ]
+    "model_generators": [ "get_hello_world" ]
   }
 }
 {
@@ -385,31 +542,16 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Obj{model_query_global_variable.untyped_callable_assignment}",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "SelectAny" } ], "declaration": null }
-        ]
-      }
-    ],
-    "model_generators": [ "get_any_globals" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "Obj{model_query_global_variable.untyped_global_callable}",
     "sources": [
       {
         "port": "result",
         "taint": [
-          { "kinds": [ { "kind": "SelectAny" } ], "declaration": null }
+          { "kinds": [ { "kind": "SelectIntAndStr" } ], "declaration": null }
         ]
       }
     ],
-    "model_generators": [ "get_any_globals" ]
+    "model_generators": [ "get_hello_world" ]
   }
 }
 {
@@ -446,6 +588,32 @@
   "kind": "model",
   "data": {
     "callable": "Obj{os.environ}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "get_environ" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{os.environb}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "get_environ" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{os.supports_bytes_environ}",
     "sources": [
       {
         "port": "result",

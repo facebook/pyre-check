@@ -42,6 +42,9 @@
           {
             "kinds": [
               {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
                 "leaves": [
                   {
                     "name": "via_type_of.return_via_parameter_type",
@@ -51,7 +54,11 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via-type": "typing.Any" } ],
+            "local_features": [
+              { "always-via-type": "Unknown" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
             "origin": { "line": 167, "start": 11, "end": 47 }
           }
         ]
@@ -72,6 +79,9 @@
           {
             "kinds": [
               {
+                "features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
                 "via_features": [
                   { "kind": "ViaTypeOf", "parameter": "formal(parameter)" }
                 ],
@@ -355,8 +365,8 @@
               { "via-type": "str" },
               { "via-type": "int" },
               { "via-TheZ-type": "str" },
-              { "always-type": "integer" },
-              { "always-type": "scalar" },
+              { "type": "integer" },
+              { "type": "scalar" },
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 41, "start": 16, "end": 32 } ],
@@ -390,8 +400,8 @@
       { "via-type": "str" },
       { "via-type": "int" },
       { "via-TheZ-type": "str" },
-      { "always-type": "integer" },
-      { "always-type": "scalar" },
+      { "type": "integer" },
+      { "type": "scalar" },
       { "always-via": "tito" }
     ],
     "sink_handle": {
@@ -431,7 +441,7 @@
               { "has": "first-field" },
               { "first-field": "x" },
               { "always-via-type": "unknown" },
-              { "always-via-type": "typing.Dict[str, int]" },
+              { "always-via-type": "dict[str, int]" },
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 59, "start": 16, "end": 32 } ],
@@ -461,7 +471,7 @@
       { "has": "first-field" },
       { "first-field": "x" },
       { "always-via-type": "unknown" },
-      { "always-via-type": "typing.Dict[str, int]" },
+      { "always-via-type": "dict[str, int]" },
       { "always-via": "tito" }
     ],
     "sink_handle": {
@@ -501,7 +511,7 @@
               { "has": "first-field" },
               { "first-field": "y" },
               { "always-via-type": "unknown" },
-              { "always-via-type": "typing.List[str]" },
+              { "always-via-type": "list[str]" },
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 65, "start": 16, "end": 32 } ],
@@ -531,7 +541,7 @@
       { "has": "first-field" },
       { "first-field": "y" },
       { "always-via-type": "unknown" },
-      { "always-via-type": "typing.List[str]" },
+      { "always-via-type": "list[str]" },
       { "always-via": "tito" }
     ],
     "sink_handle": {
@@ -644,8 +654,8 @@
               { "first-field": "y" },
               { "via-type": "unknown" },
               { "via-TheZ-type": "float" },
-              { "via-type": "typing.List[str]" },
-              { "via-type": "typing.Dict[str, int]" },
+              { "via-type": "dict[str, int]" },
+              { "via-type": "list[str]" },
               { "via-TheZ-type": "unknown" },
               { "always-via": "tito" }
             ],
@@ -679,8 +689,8 @@
       { "first-field": "y" },
       { "via-type": "unknown" },
       { "via-TheZ-type": "float" },
-      { "via-type": "typing.List[str]" },
-      { "via-type": "typing.Dict[str, int]" },
+      { "via-type": "dict[str, int]" },
+      { "via-type": "list[str]" },
       { "via-TheZ-type": "unknown" },
       { "always-via": "tito" }
     ],
@@ -816,7 +826,7 @@
               }
             ],
             "local_features": [
-              { "always-via-type": "typing.Dict[str, typing.List[int]]" }
+              { "always-via-type": "dict[str, list[int]]" }
             ],
             "origin": { "line": 103, "start": 15, "end": 18 }
           }
@@ -840,9 +850,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via-type": "typing.Dict[str, typing.List[int]]" }
-    ],
+    "features": [ { "always-via-type": "dict[str, list[int]]" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "pysa._test_sink",
@@ -996,7 +1004,7 @@
               }
             ],
             "local_features": [
-              { "always-via-TheZ-type": "typing.List[typing.List[str]]" }
+              { "always-via-TheZ-type": "list[list[str]]" }
             ],
             "origin": { "line": 113, "start": 15, "end": 18 }
           }
@@ -1020,9 +1028,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via-TheZ-type": "typing.List[typing.List[str]]" }
-    ],
+    "features": [ { "always-via-TheZ-type": "list[list[str]]" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "pysa._test_sink",
@@ -1121,7 +1127,7 @@
               }
             ],
             "local_features": [
-              { "always-via-type": "typing.Dict[str, typing.List[int]]" }
+              { "always-via-type": "dict[str, list[int]]" }
             ],
             "origin": { "line": 120, "start": 10, "end": 13 }
           },
@@ -1155,7 +1161,7 @@
               }
             ],
             "local_features": [
-              { "always-via-TheZ-type": "typing.List[typing.List[str]]" }
+              { "always-via-TheZ-type": "list[list[str]]" }
             ],
             "origin": { "line": 124, "start": 14, "end": 17 }
           }
@@ -1180,9 +1186,9 @@
       }
     ],
     "features": [
-      { "via-TheZ-type": "typing.List[typing.List[str]]" },
-      { "via-type": "typing.Dict[str, typing.List[int]]" },
-      { "via-type": "via_type_of.Test3_Foo" }
+      { "via-TheZ-type": "list[list[str]]" },
+      { "via-type": "via_type_of.Test3_Foo" },
+      { "via-type": "dict[str, list[int]]" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1236,13 +1242,13 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via-type": "unknown" } ],
+            "local_features": [ { "always-via-type": "Ellipsis" } ],
             "origin": { "line": 137, "start": 4, "end": 7 }
           }
         ]
       }
     ],
-    "features": [ { "always-via-type": "unknown" } ],
+    "features": [ { "always-via-type": "Ellipsis" } ],
     "sink_handle": {
       "kind": "Global",
       "callee": "Obj{via_type_of.Test4_C.x}",
@@ -1409,6 +1415,9 @@
           {
             "kinds": [
               {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
                 "leaves": [
                   {
                     "name": "via_type_of.return_via_parameter_type",
@@ -1418,7 +1427,11 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via-type": "typing.List[str]" } ],
+            "local_features": [
+              { "always-via-type": "list[str]" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
             "origin": { "line": 163, "start": 11, "end": 48 }
           }
         ]
@@ -1439,6 +1452,9 @@
           {
             "kinds": [
               {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
                 "leaves": [
                   {
                     "name": "via_type_of.return_via_parameter_type",
@@ -1448,7 +1464,11 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via-type": "int" } ],
+            "local_features": [
+              { "always-via-type": "int" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
             "origin": { "line": 159, "start": 11, "end": 39 }
           }
         ]
@@ -1500,6 +1520,9 @@
           {
             "kinds": [
               {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
                 "leaves": [
                   {
                     "name": "via_type_of.return_via_parameter_type",
@@ -1509,7 +1532,11 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via-type": "str" } ],
+            "local_features": [
+              { "always-via-type": "str" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
             "origin": { "line": 155, "start": 11, "end": 41 }
           }
         ]
@@ -1537,8 +1564,7 @@
               }
             ],
             "local_features": [
-              { "always-via-type": "typing.List[int]" },
-              { "always-via": "tito" }
+              { "always-via-type": "list[int]" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 179, "start": 13, "end": 27 } ],
             "origin": { "line": 179, "start": 13, "end": 27 }
@@ -1561,10 +1587,17 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via-type": "typing.Any" } ],
+                "features": [
+                  { "always-via-type": "Unknown" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
                 "length": 1,
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
               "position": { "line": 171, "start": 11, "end": 23 },
@@ -1595,6 +1628,164 @@
                 ],
                 "return_paths": { "": 0 },
                 "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[col_offset,end_col_offset,end_lineno,lineno])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decimal.DecimalTuple.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(exponent, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[exponent]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(digits, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[digits]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(sign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[sign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
               }
             ],
             "tito": {}

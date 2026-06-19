@@ -1,14 +1,38 @@
 @generated
 Higher order call graphs
 {
+  "callable": "deadcode.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "95:1-95:10|identifier|dataclass": {
+      "identifier": {
+        "if_called": {
+          "calls": [
+            {
+              "target": "dataclasses.dataclass",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "deadcode.dead_code_by_type_refinement",
   "returned_callables": [],
   "calls": {
+    "101:7-101:20|artificial-call|comparison": {
+      "call": {
+        "unresolved": [ "UnresolvedMagicDunderAttrDueToNoAttribute" ]
+      }
+    },
     "102:11-102:38": {
       "call": {
         "calls": [
           {
-            "target": "isinstance",
+            "target": "builtins.isinstance",
             "index": 0,
             "return_type": [ "float", "integer", "boolean" ]
           }
@@ -30,9 +54,51 @@ Higher order call graphs
         ]
       }
     },
+    "102:22-102:25": {
+      "attribute_access": {
+        "is_attribute": true,
+        "if_called": {
+          "calls": [
+            {
+              "target": "deadcode.MyCallable.__call__",
+              "index": 0,
+              "implicit_receiver": true,
+              "implicit_dunder_call": true,
+              "return_type": [],
+              "receiver_class": "deadcode.MyCallable"
+            }
+          ]
+        }
+      }
+    },
+    "102:27-102:37|identifier|MyCallable": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "builtins.object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "builtins.object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "deadcode.MyCallable"
+            }
+          ]
+        }
+      }
+    },
     "103:12-103:23": {
       "call": {
-        "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        "calls": [
+          { "target": "builtins.print", "index": 0, "return_type": [] }
+        ]
       }
     },
     "105:12-105:25": {
@@ -52,7 +118,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.range.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -60,7 +126,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "range.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
@@ -72,11 +138,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "range.__iter__",
+            "target": "builtins.range.__iter__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "range"
+            "receiver_class": "builtins.range"
           }
         ]
       }
@@ -93,6 +159,40 @@ Higher order call graphs
           }
         ]
       }
+    },
+    "58:8-58:34": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "58:19-58:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "deadcode.early_break_no_issue_while",
+  "returned_callables": [],
+  "calls": {
+    "64:8-64:34": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "64:19-64:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
     }
   }
 }
@@ -104,7 +204,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.range.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -112,7 +212,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "range.__init__",
+            "target": "builtins.object.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
@@ -124,11 +224,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "range.__iter__",
+            "target": "builtins.range.__iter__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "range"
+            "receiver_class": "builtins.range"
           }
         ]
       }
@@ -145,6 +245,20 @@ Higher order call graphs
           }
         ]
       }
+    },
+    "70:8-70:34": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "70:19-70:33": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
     }
   }
 }
@@ -154,7 +268,57 @@ Higher order call graphs
   "calls": {
     "74:10-74:31": {
       "call": {
-        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+        "new_calls": [
+          {
+            "target": "builtins.BaseException.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builtins.BaseException.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builtins.RuntimeError"
+          }
+        ]
+      }
+    },
+    "75:4-75:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "75:15-75:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "deadcode.early_return_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "28:4-28:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "28:15-28:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -167,7 +331,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.object.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -178,7 +342,8 @@ Higher order call graphs
             "target": "deadcode.EarlyReturns.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "deadcode.EarlyReturns"
           }
         ]
       }
@@ -204,14 +369,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "40:13-40:14|artificial-call|for-iter": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnexpectedPyreflyTarget" ] }
     },
     "40:13-40:14|artificial-call|for-next": {
-      "call": {
-        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-      }
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
     },
     "46:4-46:30": {
       "call": {
@@ -230,6 +391,59 @@ Higher order call graphs
   }
 }
 {
+  "callable": "deadcode.early_return_no_issue_if",
+  "returned_callables": [],
+  "calls": {
+    "36:4-36:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "36:15-36:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "deadcode.early_return_no_issue_while",
+  "returned_callables": [],
+  "calls": {
+    "52:4-52:30": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "52:15-52:29": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "deadcode.early_return_no_sink",
+  "returned_callables": [],
+  "calls": {
+    "16:4-16:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "deadcode.early_return_no_source",
   "returned_callables": [],
   "calls": {
@@ -237,6 +451,26 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "deadcode.EarlyReturns.__init__",
+  "returned_callables": [],
+  "calls": {
+    "81:17-81:31": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "82:8-82:21": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     }

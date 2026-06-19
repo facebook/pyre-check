@@ -1,13 +1,21 @@
 @generated
 Call dependencies
 {
+  "format_stringify_redefinition.$toplevel (fun)": [
+    "builtins.str.__eq__ (method)"
+  ],
   "format_stringify_redefinition.source_via_str (fun)": [
+    "builtins.object.__init__ (method)", "builtins.str.__new__ (method)",
     "pysa._test_source (fun)"
   ],
   "format_stringify_redefinition.str_of_base (fun)": [
-    "BaseException.__str__ (method)"
+    "builtins.object.__init__ (method)", "builtins.str.__new__ (method)",
+    "format_stringify_redefinition.Base.__str__$2 (method)",
+    "format_stringify_redefinition.Base.__unicode__ (method)"
   ],
   "format_stringify_redefinition.str_of_sub (fun)": [
-    "BaseException.__str__ (method)"
+    "builtins.object.__init__ (method)", "builtins.str.__new__ (method)",
+    "format_stringify_redefinition.Base.__str__$2 (method)",
+    "format_stringify_redefinition.Base.__unicode__ (method)"
   ]
 }

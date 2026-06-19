@@ -1,6 +1,6 @@
 @generated
 Overrides
-object.__init__ (override) -> [object.__init__ (method) supers.A.__init__ (override)]
+builtins.object.__init__ (override) -> [builtins.object.__init__ (method) supers.A.__init__ (override)]
 supers.A.__init__ (override) -> [supers.A.__init__ (method)]
 supers.A.f1 (override) -> [supers.A.f1 (method) supers.B.f1 (override)]
 supers.A.f2 (override) -> [supers.A.f2 (method) supers.C.f2 (override)]

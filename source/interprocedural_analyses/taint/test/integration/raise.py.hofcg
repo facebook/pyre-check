@@ -28,7 +28,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.BaseException.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -36,10 +36,11 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "BaseException.__init__",
+            "target": "builtins.BaseException.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.Exception"
           }
         ]
       }
@@ -81,7 +82,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.BaseException.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -89,11 +90,19 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "BaseException.__init__",
+            "target": "builtins.BaseException.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.Exception"
           }
+        ]
+      }
+    },
+    "32:4-32:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -107,7 +116,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.BaseException.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -115,11 +124,19 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "BaseException.__init__",
+            "target": "builtins.BaseException.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.Exception"
           }
+        ]
+      }
+    },
+    "38:11-38:25": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
       }
     }
@@ -140,7 +157,7 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "object.__new__",
+            "target": "builtins.BaseException.__new__",
             "index": 0,
             "return_type": [],
             "is_static_method": true
@@ -148,11 +165,19 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "BaseException.__init__",
+            "target": "builtins.BaseException.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "builtins.Exception"
           }
+        ]
+      }
+    },
+    "22:4-22:17": {
+      "call": {
+        "calls": [
+          { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
     }

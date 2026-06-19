@@ -29,20 +29,11 @@ let sink name =
   ModelParseResult.TaintAnnotation.from_sink sink
 
 
-let assert_generated_annotations
-    context
-    ?(skip_for_pyrefly = false)
-    ?pyrefly_expected
-    ~source
-    ~query
-    ~callable
-    ~expected
-    ()
-  =
+let assert_generated_annotations context ~source ~query ~callable ~expected () =
   let project =
     Test.ScratchPyrePysaProject.setup
       ~context
-      ~force_pyre1:skip_for_pyrefly
+      ~force_pyrefly:true
       ~requires_type_of_expressions:false
       ["test.py", source]
   in
@@ -71,11 +62,6 @@ let assert_generated_annotations
       ~qualifiers:[Ast.Reference.create "test"]
     |> ClassHierarchyGraph.SharedMemory.from_heap ~store_transitive_children_for:[]
   in
-  let expected =
-    match pyrefly_expected with
-    | Some pyrefly_expected when PyrePysaApi.ReadOnly.is_pyrefly pyre_api -> pyrefly_expected
-    | _ -> expected
-  in
   let actual =
     ModelQueryExecution.CallableQueryExecutor.generate_annotations_from_query_on_target
       ~verbose:false
@@ -99,19 +85,11 @@ let assert_generated_annotations
     actual
 
 
-let assert_generated_annotations_for_attributes
-    context
-    ?(skip_for_pyrefly = false)
-    ~source
-    ~query
-    ~name
-    ~expected
-    ()
-  =
+let assert_generated_annotations_for_attributes context ~source ~query ~name ~expected () =
   let project =
     Test.ScratchPyrePysaProject.setup
       ~context
-      ~force_pyre1:skip_for_pyrefly
+      ~force_pyrefly:true
       ~requires_type_of_expressions:false
       ["test.py", source]
   in
@@ -164,19 +142,11 @@ let assert_generated_annotations_for_attributes
     actual
 
 
-let assert_generated_annotations_for_globals
-    context
-    ?(skip_for_pyrefly = false)
-    ~source
-    ~query
-    ~name
-    ~expected
-    ()
-  =
+let assert_generated_annotations_for_globals context ~source ~query ~name ~expected () =
   let project =
     Test.ScratchPyrePysaProject.setup
       ~context
-      ~force_pyre1:skip_for_pyrefly
+      ~force_pyrefly:true
       ~requires_type_of_expressions:false
       ["test.py", source]
   in
@@ -382,8 +352,7 @@ let test_generated_annotations_function_name context =
         unexpected_models = [];
       }
     ~callable:(Target.Regular.Function { name = "test.foo$2"; kind = Normal })
-    ~expected:[]
-    ~pyrefly_expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
     ();
   assert_generated_annotations
     ~source:
@@ -438,8 +407,7 @@ let test_generated_annotations_function_name context =
     ~callable:
       (Target.Regular.Method
          { class_name = "test.Foo"; method_name = "bar@setter"; kind = PyreflyPropertySetter })
-    ~expected:[]
-    ~pyrefly_expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
     ();
   ()
 
@@ -2158,7 +2126,7 @@ let test_generated_annotations_any_decorator context =
     ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
     ();
-  (* Test `FullyQualifiedCallee` when the decorator is overriden. *)
+  (* Test `FullyQualifiedCallee` when the decorator is overridden. *)
   assert_generated_annotations
     ~source:
       {|
@@ -2261,7 +2229,6 @@ let test_generated_annotations_any_decorator context =
       }
     ~callable:(Target.Regular.Function { name = "test.my_view"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")]
-    ~skip_for_pyrefly:true (* TODO(T225700656): Improve call graph building. *)
     ();
   assert_generated_annotations
     ~source:
@@ -5365,6 +5332,7 @@ let test_generated_cache context =
     let project =
       Test.ScratchPyrePysaProject.setup
         ~context
+        ~force_pyrefly:true
         ~requires_type_of_expressions:false
         ["test.py", source]
     in
@@ -5739,6 +5707,7 @@ let test_model_query_error context =
       try
         let _ =
           initialize
+            ~force_pyrefly:true
             ~models_source:queries
             ~context
             ~taint_configuration:TaintConfiguration.Heap.default

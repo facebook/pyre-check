@@ -1,6 +1,0 @@
-@generated
-Call dependencies
-{
-  "conditional.issue1 (fun)": [ "conditional.some_source (fun)" ],
-  "conditional.issue2 (fun)": [ "conditional.some_source (fun)" ]
-}

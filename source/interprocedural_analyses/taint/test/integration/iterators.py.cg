@@ -5,20 +5,24 @@ Call dependencies
     "pysa._test_source (fun)"
   ],
   "iterators.CustomIter.__iter__ (method)": [
-    "list.__iter__ (method)", "pysa._test_source (fun)"
+    "builtins.iter (fun)", "builtins.list.__iter__ (method)",
+    "pysa._test_source (fun)"
   ],
   "iterators.test_custom_getitem (fun)": [
-    "object.__init__ (method)", "object.__new__ (method)",
-    "pysa._test_sink (fun)"
+    "builtins.iter (fun)", "builtins.next (fun)",
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "pysa._test_sink (fun)", "typing.Iterator.__next__ (method)"
   ],
   "iterators.test_custom_iter (fun)": [
-    "iterators.CustomIter.__iter__ (method)", "object.__init__ (method)",
-    "object.__new__ (method)", "pysa._test_sink (fun)",
+    "builtins.iter (fun)", "builtins.next (fun)",
+    "builtins.object.__init__ (method)", "builtins.object.__new__ (method)",
+    "iterators.CustomIter.__iter__ (method)", "pysa._test_sink (fun)",
     "typing.Iterator.__next__ (method)"
   ],
   "iterators.test_next_iter (fun)": [
-    "dict.__getitem__ (method)", "list.__iter__ (method)", "next (fun)",
-    "pysa._test_sink (fun)", "pysa._test_source (fun)",
-    "typing.Iterable.__iter__ (method)", "typing.Iterator.__next__ (method)"
+    "builtins.dict.__getitem__ (method)", "builtins.dict.__iter__ (method)",
+    "builtins.iter (fun)", "builtins.list.__iter__ (method)",
+    "builtins.next (fun)", "pysa._test_sink (fun)",
+    "pysa._test_source (fun)", "typing.Iterator.__next__ (method)"
   ]
 }

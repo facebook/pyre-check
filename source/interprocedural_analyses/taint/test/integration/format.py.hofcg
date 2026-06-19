@@ -13,7 +13,7 @@ Higher order call graphs
     },
     "32:11-32:40|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "32:14-32:31": {
@@ -26,10 +26,11 @@ Higher order call graphs
     "32:14-32:31|format-string-stringify": {
       "format_string_stringify": [
         {
-          "target": "object.__repr__",
+          "target": "builtins.object.__repr__",
           "index": 0,
           "implicit_receiver": true,
-          "return_type": []
+          "return_type": [],
+          "receiver_class": "builtins.object"
         }
       ]
     }
@@ -41,33 +42,16 @@ Higher order call graphs
   "calls": {
     "46:4-46:43|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "46:7-46:12|format-string-stringify": {
       "format_string_stringify": [
         {
-          "target": "str.__str__",
+          "target": "builtins.str.__format__",
           "index": 0,
           "implicit_receiver": true,
-          "return_type": [],
-          "receiver_class": "str"
-        }
-      ]
-    },
-    "46:12-46:41|format-string-artificial": {
-      "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 1 }
-      ]
-    },
-    "46:12-46:41|format-string-stringify": {
-      "format_string_stringify": [
-        {
-          "target": "str.__str__",
-          "index": 1,
-          "implicit_receiver": true,
-          "return_type": [],
-          "receiver_class": "str"
+          "return_type": []
         }
       ]
     },
@@ -77,16 +61,6 @@ Higher order call graphs
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
-    },
-    "46:14-46:40|format-string-stringify": {
-      "format_string_stringify": [
-        {
-          "target": "object.__repr__",
-          "index": 0,
-          "implicit_receiver": true,
-          "return_type": []
-        }
-      ]
     },
     "46:25-46:39": {
       "call": {
@@ -103,7 +77,7 @@ Higher order call graphs
   "calls": {
     "27:4-27:31|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "27:7-27:22": {
@@ -116,10 +90,11 @@ Higher order call graphs
     "27:7-27:22|format-string-stringify": {
       "format_string_stringify": [
         {
-          "target": "object.__repr__",
+          "target": "builtins.object.__repr__",
           "index": 0,
           "implicit_receiver": true,
-          "return_type": []
+          "return_type": [],
+          "receiver_class": "builtins.object"
         }
       ]
     }
@@ -131,23 +106,7 @@ Higher order call graphs
   "calls": {
     "41:4-41:37|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
-      ]
-    },
-    "41:12-41:35|format-string-artificial": {
-      "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 1 }
-      ]
-    },
-    "41:12-41:35|format-string-stringify": {
-      "format_string_stringify": [
-        {
-          "target": "str.__str__",
-          "index": 0,
-          "implicit_receiver": true,
-          "return_type": [],
-          "receiver_class": "str"
-        }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "41:14-41:34": {
@@ -156,16 +115,6 @@ Higher order call graphs
           { "target": "pysa._test_sink", "index": 0, "return_type": [] }
         ]
       }
-    },
-    "41:14-41:34|format-string-stringify": {
-      "format_string_stringify": [
-        {
-          "target": "object.__repr__",
-          "index": 0,
-          "implicit_receiver": true,
-          "return_type": []
-        }
-      ]
     }
   }
 }
@@ -182,7 +131,7 @@ Higher order call graphs
     },
     "23:15-23:23|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     }
   }
@@ -193,7 +142,7 @@ Higher order call graphs
   "calls": {
     "15:11-15:37|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "15:14-15:28": {
@@ -211,33 +160,16 @@ Higher order call graphs
   "calls": {
     "37:11-37:38|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     },
     "37:14-37:19|format-string-stringify": {
       "format_string_stringify": [
         {
-          "target": "str.__str__",
+          "target": "builtins.str.__format__",
           "index": 0,
           "implicit_receiver": true,
-          "return_type": [],
-          "receiver_class": "str"
-        }
-      ]
-    },
-    "37:19-37:36|format-string-artificial": {
-      "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 1 }
-      ]
-    },
-    "37:19-37:36|format-string-stringify": {
-      "format_string_stringify": [
-        {
-          "target": "str.__str__",
-          "index": 1,
-          "implicit_receiver": true,
-          "return_type": [],
-          "receiver_class": "str"
+          "return_type": []
         }
       ]
     },
@@ -263,7 +195,7 @@ Higher order call graphs
     },
     "11:11-11:28|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     }
   }
@@ -274,7 +206,7 @@ Higher order call graphs
   "calls": {
     "19:11-19:44|format-string-artificial": {
       "format_string_artificial": [
-        { "target": "Obj{<format-string>}", "index": 0 }
+        { "target": "Obj{<format-string>}", "index": 0, "return_type": [] }
       ]
     }
   }

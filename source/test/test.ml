@@ -3568,16 +3568,17 @@ module ScratchPyreflyProject = struct
 
   let find_pyrefly_binary () =
     match Stdlib.Sys.getenv_opt "PYREFLY_BINARY" with
-    | Some path when not (String.equal path "") -> Some path
+    | Some path when not (String.equal path "") -> path
     | _ ->
         let pyre_root = find_pyre_source_code_root () in
         let binary = PyrePath.create_relative ~root:pyre_root ~relative:"source/pyrefly.exe" in
         if Stdlib.Sys.file_exists (PyrePath.absolute binary) then
-          Some (PyrePath.absolute binary)
+          PyrePath.absolute binary
         else
           failwith
             "Could not find source/pyrefly.exe; run ./facebook/scripts/setup.sh --local (Meta) or \
-             ./scripts/setup.sh --local (OSS) before 'make'."
+             ./scripts/setup.sh --local (OSS) before 'make'. Alternatively, set the PYREFLY_BINARY \
+             environment variable."
 
 
   let setup
@@ -3706,6 +3707,7 @@ module ScratchPyrePysaProject : sig
     requires_type_of_expressions:bool ->
     ?use_cache:bool ->
     ?force_pyre1:bool ->
+    ?force_pyrefly:bool ->
     ?external_sources:(string * string) list ->
     ?search_paths:string list ->
     ?decorator_preprocessing_configuration:PyrePysaLogic.DecoratorPreprocessing.Configuration.t ->
@@ -3733,6 +3735,7 @@ end = struct
     module T = struct
       type t = {
         force_pyre1: bool;
+        force_pyrefly: bool;
         requires_type_of_expressions: bool;
         decorator_preprocessing_configuration:
           PyrePysaLogic.DecoratorPreprocessing.Configuration.t option;
@@ -3813,6 +3816,7 @@ end = struct
       ~context
       {
         ProjectInputs.force_pyre1;
+        force_pyrefly;
         requires_type_of_expressions;
         decorator_preprocessing_configuration;
         external_sources;
@@ -3830,32 +3834,42 @@ end = struct
       | None -> ()
     in
     let result =
-      match Lazy.force pyrefly_binary with
-      | Some pyrefly_binary when not force_pyre1 ->
-          let project =
-            ScratchPyreflyProject.setup
-              ~context
-              ~pyrefly_binary
-              ~requires_type_of_expressions
-              ~python_version:default_python_version
-              ~external_sources
-              ~search_paths
-              sources
-          in
-          let pyrefly_api = ScratchPyreflyProject.pyre_pysa_read_only_api project in
-          Pyrefly { project; pyrefly_api }
-      | _ ->
-          (* Note: search_paths is ignored for pyre1. *)
-          let project =
-            ScratchProject.setup
-              ~context
-              ~python_version:default_python_version
-              ~external_sources
-              sources
-          in
-          let _, errors = ScratchProject.build_type_environment_and_postprocess project in
-          let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
-          Pyre1 { project; pyre_api; errors }
+      if force_pyre1 && force_pyrefly then
+        failwith "force_pyre1 and force_pyrefly cannot be true at the same time"
+      else if (not force_pyre1) && not force_pyrefly then
+        failwith "select at least one backing using force_pyre1 or force_pyrefly"
+      else if force_pyrefly then
+        let pyrefly_binary = Lazy.force pyrefly_binary in
+        let project =
+          ScratchPyreflyProject.setup
+            ~context
+            ~pyrefly_binary
+            ~requires_type_of_expressions
+            ~python_version:default_python_version
+            ~external_sources
+            ~search_paths
+            sources
+        in
+        let pyrefly_api = ScratchPyreflyProject.pyre_pysa_read_only_api project in
+        Pyrefly { project; pyrefly_api }
+      else if force_pyre1 then
+        let () =
+          match search_paths with
+          | _ :: _ -> failwith "search_paths is not supported with pyre1"
+          | _ -> ()
+        in
+        let project =
+          ScratchProject.setup
+            ~context
+            ~python_version:default_python_version
+            ~external_sources
+            sources
+        in
+        let _, errors = ScratchProject.build_type_environment_and_postprocess project in
+        let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
+        Pyre1 { project; pyre_api; errors }
+      else
+        failwith "unreachable"
     in
     Log.debug
       "Type checked project using %s in %.3fs"
@@ -3871,6 +3885,7 @@ end = struct
       ~requires_type_of_expressions
       ?(use_cache = true)
       ?(force_pyre1 = false)
+      ?(force_pyrefly = false)
       ?(external_sources = [])
       ?(search_paths = [])
       ?decorator_preprocessing_configuration
@@ -3879,6 +3894,7 @@ end = struct
     let inputs =
       {
         ProjectInputs.force_pyre1;
+        force_pyrefly;
         requires_type_of_expressions;
         decorator_preprocessing_configuration;
         external_sources =

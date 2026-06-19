@@ -1,16 +1,12 @@
 @generated
 Call dependencies
 {
-  "closure.$toplevel (fun)": [
-    "object.__new__ (method)", "typing.GenericMeta.__getitem__ (method)",
-    "typing.ParamSpec.__init__ (method)"
-  ],
   "closure.async_nonlocal_closure_tito_ignore_decorator (fun)": [
     "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)]",
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "closure.async_nonlocal_closure_tito_with_decorator (fun)": [
-    "closure.async_tito (fun)[formal(function, position=0)=closure.decorator.wrapper (fun)[captured_variable(function, parameter)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]]",
+    "closure.async_tito (fun)[formal(function, position=0)=closure.decorator.wrapper (fun)[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]]",
     "pysa._test_sink (fun)", "pysa._test_source (fun)"
   ],
   "closure.async_nonlocal_closure_tito_with_decorator.inner@decorated (fun)": [
@@ -19,15 +15,18 @@ Call dependencies
   "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)]": [
     "closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)"
   ],
-  "closure.async_tito (fun)[formal(function, position=0)=closure.decorator.wrapper (fun)[captured_variable(function, parameter)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]]": [
-    "closure.decorator.wrapper (fun)[captured_variable(function, parameter)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]"
+  "closure.async_tito (fun)[formal(function, position=0)=closure.decorator.wrapper (fun)[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]]": [
+    "closure.decorator.wrapper (fun)[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]"
   ],
   "closure.closure (fun)": [
-    "closure.Object.__init__ (method)", "object.__new__ (method)"
+    "builtins.object.__new__ (method)", "closure.Object.__init__ (method)"
   ],
   "closure.closure.sink (fun)": [ "pysa._test_sink (fun)" ],
   "closure.closure.source (fun)": [ "pysa._test_source (fun)" ],
-  "closure.closure_flow (fun)": [ "closure.closure (fun)" ],
+  "closure.closure_flow (fun)": [
+    "closure.closure (fun)", "closure.closure.sink (fun)",
+    "closure.closure.source (fun)"
+  ],
   "closure.closure_nested_sink_flow (fun)": [
     "closure.closure_nested_sink_flow.sink1 (fun)", "pysa._test_source (fun)"
   ],
@@ -42,20 +41,20 @@ Call dependencies
   "closure.closure_nested_sink_flow.sink1.sink2.sink3 (fun)": [
     "pysa._test_sink (fun)"
   ],
-  "closure.closure_no_flow (fun)": [ "closure.closure (fun)" ],
+  "closure.closure_no_flow (fun)": [
+    "closure.closure (fun)", "closure.closure.sink (fun)",
+    "closure.closure.source (fun)"
+  ],
   "closure.closure_wrapper_sink_flow (fun)": [
+    "builtins.list.append (method)",
     "closure.closure_wrapper_sink_flow.wrapper (fun)",
-    "closure.closure_wrapper_sink_flow.wrapper (fun)[captured_variable(sink, closure.closure_wrapper_sink_flow)=closure.closure_wrapper_sink_flow.sink (fun)]",
-    "list.append (method)", "pysa._test_source (fun)"
+    "pysa._test_source (fun)"
   ],
   "closure.closure_wrapper_sink_flow.sink (fun)": [ "pysa._test_sink (fun)" ],
   "closure.closure_wrapper_sink_flow.wrapper (fun)": [
     "closure.closure_wrapper_sink_flow.sink (fun)"
   ],
-  "closure.closure_wrapper_sink_flow.wrapper (fun)[captured_variable(sink, closure.closure_wrapper_sink_flow)=closure.closure_wrapper_sink_flow.sink (fun)]": [
-    "closure.closure_wrapper_sink_flow.sink (fun)"
-  ],
-  "closure.decorator.wrapper (fun)[captured_variable(function, parameter)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]": [
+  "closure.decorator.wrapper (fun)[captured_variable(function, closure.decorator)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]": [
     "closure.async_nonlocal_closure_tito_with_decorator.inner (fun)"
   ],
   "closure.higher_order_function (fun)[formal(f, position=0)=closure.wrapper_for_taint_propagation_hof.inner (fun)]": [
@@ -161,7 +160,6 @@ Call dependencies
   ],
   "closure.nonlocal_closure_wrapper_source_flow (fun)": [
     "closure.nonlocal_closure_wrapper_source_flow.wrapper (fun)",
-    "closure.nonlocal_closure_wrapper_source_flow.wrapper (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_source_flow)=closure.nonlocal_closure_wrapper_source_flow.source (fun)]",
     "pysa._test_sink (fun)"
   ],
   "closure.nonlocal_closure_wrapper_source_flow.source (fun)": [
@@ -170,33 +168,18 @@ Call dependencies
   "closure.nonlocal_closure_wrapper_source_flow.wrapper (fun)": [
     "closure.nonlocal_closure_wrapper_source_flow.source (fun)"
   ],
-  "closure.nonlocal_closure_wrapper_source_flow.wrapper (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_source_flow)=closure.nonlocal_closure_wrapper_source_flow.source (fun)]": [
-    "closure.nonlocal_closure_wrapper_source_flow.source (fun)"
-  ],
   "closure.nonlocal_closure_wrapper_source_max_trace_length (fun)": [
     "closure.nonlocal_closure_wrapper_source_max_trace_length.f3 (fun)",
-    "closure.nonlocal_closure_wrapper_source_max_trace_length.f3 (fun)[captured_variable(f2, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.f2 (fun)[captured_variable(f1, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)]]]",
     "pysa._test_sink (fun)"
   ],
   "closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)": [
     "closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)"
   ],
-  "closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)]": [
-    "closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)"
-  ],
   "closure.nonlocal_closure_wrapper_source_max_trace_length.f2 (fun)": [
     "closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)"
   ],
-  "closure.nonlocal_closure_wrapper_source_max_trace_length.f2 (fun)[captured_variable(f1, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)]]": [
-    "closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)",
-    "closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)]"
-  ],
   "closure.nonlocal_closure_wrapper_source_max_trace_length.f3 (fun)": [
     "closure.nonlocal_closure_wrapper_source_max_trace_length.f2 (fun)"
-  ],
-  "closure.nonlocal_closure_wrapper_source_max_trace_length.f3 (fun)[captured_variable(f2, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.f2 (fun)[captured_variable(f1, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)]]]": [
-    "closure.nonlocal_closure_wrapper_source_max_trace_length.f2 (fun)",
-    "closure.nonlocal_closure_wrapper_source_max_trace_length.f2 (fun)[captured_variable(f1, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.f1 (fun)[captured_variable(source, closure.nonlocal_closure_wrapper_source_max_trace_length)=closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)]]"
   ],
   "closure.nonlocal_closure_wrapper_source_max_trace_length.source (fun)": [
     "pysa._test_source (fun)"
@@ -209,10 +192,14 @@ Call dependencies
     "pysa._test_source (fun)"
   ],
   "closure.nonlocal_obscure_flow (fun)": [
-    "closure.nonlocal_closure_obscure (fun)"
+    "closure.nonlocal_closure_obscure (fun)",
+    "closure.nonlocal_closure_obscure.sink (fun)",
+    "closure.nonlocal_closure_obscure.source (fun)"
   ],
   "closure.nonlocal_obscure_no_flow (fun)": [
-    "closure.nonlocal_closure_obscure (fun)"
+    "closure.nonlocal_closure_obscure (fun)",
+    "closure.nonlocal_closure_obscure.sink (fun)",
+    "closure.nonlocal_closure_obscure.source (fun)"
   ],
   "closure.parameter_order_swap (fun)": [
     "closure.parameter_order_swap.inner (fun)"
@@ -225,6 +212,7 @@ Call dependencies
     "pysa._test_sink (fun)"
   ],
   "closure.parameter_order_swap_tito (fun)": [
+    "builtins.tuple.__getitem__ (method)",
     "closure.parameter_order_swap_tito.inner (fun)", "pysa._test_sink (fun)"
   ],
   "closure.taint_propagation (fun)": [

@@ -5,11 +5,12 @@ Call dependencies
   "select.first_index_numeric (fun)": [ "pysa._test_source (fun)" ],
   "select.first_index_unknown (fun)": [ "pysa._test_source (fun)" ],
   "select.return_is_RCE (fun)": [
-    "dict.get (method)", "django.http.Request.GET (object)"
+    "builtins.dict.get (method)", "django.http.Request.GET (object)"
   ],
-  "select.view_entry_field (fun)": [ "eval (fun)" ],
+  "select.view_entry_field (fun)": [ "builtins.eval (fun)" ],
   "select.view_entry_get (fun)": [
-    "dict.get (method)", "django.http.Request.GET (object)", "eval (fun)"
+    "builtins.dict.get (method)", "builtins.eval (fun)",
+    "django.http.Request.GET (object)"
   ],
-  "select.view_entry_index (fun)": [ "eval (fun)" ]
+  "select.view_entry_index (fun)": [ "builtins.eval (fun)" ]
 }

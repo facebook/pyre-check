@@ -91,7 +91,9 @@
                     "trace_kind": "source"
                   }
                 ],
-                "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
+                "leaves": [
+                  { "name": "builtins.str.__add__", "port": "leaf:**" }
+                ],
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
@@ -166,7 +168,9 @@
                     "trace_kind": "source"
                   }
                 ],
-                "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
+                "leaves": [
+                  { "name": "builtins.str.__add__", "port": "leaf:**" }
+                ],
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
@@ -178,11 +182,11 @@
     "features": [ { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "StringFormat",
-      "callee": "str.__add__",
+      "callee": "builtins.str.__add__",
       "index": 0,
       "parameter_index": 2
     },
-    "master_handle": "multiple_sources_string_operations_with_filters.test_first_source_one_second_source_one:4324:0:StringFormat|str.__add__|0|2:ae62d11bd5a2f4ff0e96189bcce70531"
+    "master_handle": "multiple_sources_string_operations_with_filters.test_first_source_one_second_source_one:4324:0:StringFormat|builtins.str.__add__|0|2:fcb9e2b224194b77dfa4393cb5773a44"
   }
 }
 {
@@ -239,7 +243,9 @@
                     "trace_kind": "source"
                   }
                 ],
-                "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
+                "leaves": [
+                  { "name": "builtins.str.__add__", "port": "leaf:**" }
+                ],
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
@@ -251,11 +257,11 @@
     "features": [ { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "StringFormat",
-      "callee": "str.__add__",
+      "callee": "builtins.str.__add__",
       "index": 0,
       "parameter_index": 1
     },
-    "master_handle": "multiple_sources_string_operations_with_filters.test_first_source_one_second_source_zero:4324:0:StringFormat|str.__add__|0|1:d30b7bc273be68c8e73f1f6a1af7bee9"
+    "master_handle": "multiple_sources_string_operations_with_filters.test_first_source_one_second_source_zero:4324:0:StringFormat|builtins.str.__add__|0|1:7a4d27a56f27df94aee6d930733f57fb"
   }
 }
 {
@@ -311,7 +317,9 @@
                     "trace_kind": "source"
                   }
                 ],
-                "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
+                "leaves": [
+                  { "name": "builtins.str.__add__", "port": "leaf:**" }
+                ],
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
@@ -323,11 +331,11 @@
     "features": [ { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "StringFormat",
-      "callee": "str.__add__",
+      "callee": "builtins.str.__add__",
       "index": 0,
       "parameter_index": 2
     },
-    "master_handle": "multiple_sources_string_operations_with_filters.test_first_source_zero_second_source_one:4324:0:StringFormat|str.__add__|0|2:e9646ebeaf0b8616e5fc9033bb046258"
+    "master_handle": "multiple_sources_string_operations_with_filters.test_first_source_zero_second_source_one:4324:0:StringFormat|builtins.str.__add__|0|2:84da8821df3e6de5ba226fd95f05d214"
   }
 }
 {
@@ -377,7 +385,9 @@
                     "trace_kind": "source"
                   }
                 ],
-                "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
+                "leaves": [
+                  { "name": "builtins.str.__add__", "port": "leaf:**" }
+                ],
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
@@ -389,11 +399,11 @@
     "features": [ { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "StringFormat",
-      "callee": "str.__add__",
+      "callee": "builtins.str.__add__",
       "index": 0,
       "parameter_index": 1
     },
-    "master_handle": "multiple_sources_string_operations_with_filters.test_first_source_zero_second_source_zero:4324:0:StringFormat|str.__add__|0|1:bf15624e94b52b7e1f593419964f0773"
+    "master_handle": "multiple_sources_string_operations_with_filters.test_first_source_zero_second_source_zero:4324:0:StringFormat|builtins.str.__add__|0|1:e7a0ad8613fa921134f959a1cabbf26a"
   }
 }
 {
@@ -437,7 +447,9 @@
                   { "always-via": "string_concat_rhs" },
                   { "always-via": "tito" }
                 ],
-                "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
+                "leaves": [
+                  { "name": "builtins.str.__add__", "port": "leaf:**" }
+                ],
                 "length": 1,
                 "kind": "Triggered[StringMayBeSQL]:PartialSink[UserControlledSink]"
               }
@@ -464,5 +476,163 @@
       "parameter": "formal(x)"
     },
     "master_handle": "multiple_sources_string_operations_with_filters.test_sink_zero_first_source_zero:4324:0:Call|multiple_sources_string_operations_with_filters.sink_distance_zero|0|formal(x):1cd47a4fa7bbf5ca5f6e4e80be4fc9b1"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "ast._Attributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(**kwargs, excluded=[col_offset,end_col_offset,end_lineno,lineno])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_lineno)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_lineno]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(end_col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[end_col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(col_offset)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[col_offset]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__iterable, position=1, positional_only).**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { ".**keys": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decimal.DecimalTuple.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(exponent, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[exponent]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(digits, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[digits]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(sign, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[sign]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
   }
 }

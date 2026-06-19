@@ -1,6 +1,87 @@
 @generated
 Higher order call graphs
 {
+  "callable": "named_tuples.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "31:22-31:81": {
+      "call": { "unresolved": [ "UnresolvedMagicDunderAttrDueToNoBase" ] }
+    },
+    "48:26-48:38|identifier|MyNamedTuple": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "named_tuples.MyNamedTuple.__new__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "named_tuples.MyNamedTuple.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "named_tuples.MyNamedTuple"
+            }
+          ]
+        }
+      }
+    },
+    "101:37-101:58|identifier|NamedTupleWithDefault": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "named_tuples.NamedTupleWithDefault.__new__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "named_tuples.NamedTupleWithDefault.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "named_tuples.NamedTupleWithDefault"
+            }
+          ]
+        }
+      }
+    },
+    "119:41-119:66|identifier|NamedTupleWithAllDefaults": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "named_tuples.NamedTupleWithAllDefaults.__new__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "named_tuples.NamedTupleWithAllDefaults.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "named_tuples.NamedTupleWithAllDefaults"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "named_tuples.aliased_indicies_backward",
   "returned_callables": [],
   "calls": {
@@ -22,7 +103,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "tuple.__getitem__",
+            "target": "builtins.tuple.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -48,7 +129,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "tuple.__getitem__",
+            "target": "builtins.tuple.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -85,10 +166,10 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "tuple.__getitem__",
+            "target": "builtins.tuple.__getitem__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [ "float", "integer" ],
+            "return_type": [],
             "receiver_class": "named_tuples.MyNamedTuple"
           }
         ]
@@ -105,7 +186,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "tuple.__getitem__",
+            "target": "builtins.tuple.__getitem__",
             "index": 1,
             "implicit_receiver": true,
             "return_type": [],
@@ -125,7 +206,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "tuple.__getitem__",
+            "target": "builtins.tuple.__getitem__",
             "index": 2,
             "implicit_receiver": true,
             "return_type": [],
@@ -155,7 +236,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "tuple.__getitem__",
+            "target": "builtins.tuple.__getitem__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
@@ -174,18 +255,20 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "named_tuples.MyNamedTuple.__new__",
+            "target": "named_tuples.InheritedNamedTuple.__new__",
             "index": 0,
+            "implicit_receiver": true,
             "return_type": [],
             "is_static_method": true
           }
         ],
         "init_calls": [
           {
-            "target": "named_tuples.MyNamedTuple.__init__",
+            "target": "named_tuples.InheritedNamedTuple.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "named_tuples.InheritedNamedTuple"
           }
         ]
       }
@@ -207,18 +290,20 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "named_tuples.NamedTupleWithAllDefaults.__new__",
+            "target": "named_tuples.InheritedNamedTupleWithAllDefaults.__new__",
             "index": 0,
+            "implicit_receiver": true,
             "return_type": [],
             "is_static_method": true
           }
         ],
         "init_calls": [
           {
-            "target": "named_tuples.NamedTupleWithAllDefaults.__init__",
+            "target": "named_tuples.InheritedNamedTupleWithAllDefaults.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "named_tuples.InheritedNamedTupleWithAllDefaults"
           }
         ]
       }
@@ -240,18 +325,20 @@ Higher order call graphs
       "call": {
         "new_calls": [
           {
-            "target": "named_tuples.NamedTupleWithDefault.__new__",
+            "target": "named_tuples.InheritedNamedTupleWithDefault.__new__",
             "index": 0,
+            "implicit_receiver": true,
             "return_type": [],
             "is_static_method": true
           }
         ],
         "init_calls": [
           {
-            "target": "named_tuples.NamedTupleWithDefault.__init__",
+            "target": "named_tuples.InheritedNamedTupleWithDefault.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "named_tuples.InheritedNamedTupleWithDefault"
           }
         ]
       }
@@ -371,6 +458,7 @@ Higher order call graphs
           {
             "target": "named_tuples.NamedTupleWithTaintedAttribute.__new__",
             "index": 0,
+            "implicit_receiver": true,
             "return_type": [],
             "is_static_method": true
           }
@@ -380,7 +468,8 @@ Higher order call graphs
             "target": "named_tuples.NamedTupleWithTaintedAttribute.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "named_tuples.NamedTupleWithTaintedAttribute"
           }
         ]
       }
@@ -494,12 +583,37 @@ Higher order call graphs
   "callable": "named_tuples.tainted_old_tuple",
   "returned_callables": [],
   "calls": {
+    "35:11-35:30|identifier|OldSchoolNamedTuple": {
+      "identifier": {
+        "if_called": {
+          "new_calls": [
+            {
+              "target": "named_tuples.OldSchoolNamedTuple.__new__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "named_tuples.OldSchoolNamedTuple.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "named_tuples.OldSchoolNamedTuple"
+            }
+          ]
+        }
+      }
+    },
     "35:11-35:60": {
       "call": {
         "new_calls": [
           {
             "target": "named_tuples.OldSchoolNamedTuple.__new__",
             "index": 0,
+            "implicit_receiver": true,
             "return_type": [],
             "is_static_method": true
           }
@@ -509,7 +623,8 @@ Higher order call graphs
             "target": "named_tuples.OldSchoolNamedTuple.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "named_tuples.OldSchoolNamedTuple"
           }
         ]
       }
@@ -533,6 +648,7 @@ Higher order call graphs
           {
             "target": "named_tuples.MyNamedTuple.__new__",
             "index": 0,
+            "implicit_receiver": true,
             "return_type": [],
             "is_static_method": true
           }
@@ -542,7 +658,8 @@ Higher order call graphs
             "target": "named_tuples.MyNamedTuple.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "named_tuples.MyNamedTuple"
           }
         ]
       }
@@ -552,23 +669,6 @@ Higher order call graphs
         "calls": [
           { "target": "pysa._test_source", "index": 0, "return_type": [] }
         ]
-      }
-    }
-  }
-}
-{
-  "callable": "named_tuples.NamedTupleWithTaintedAttribute.__init__",
-  "returned_callables": [],
-  "calls": {
-    "87:0-89:12|artificial-attribute-access|named-tuple-constructor-assignment:bad": {
-      "attribute_access": {
-        "globals": [
-          {
-            "target": "Obj{named_tuples.NamedTupleWithTaintedAttribute.bad}",
-            "index": 0
-          }
-        ],
-        "is_attribute": true
       }
     }
   }

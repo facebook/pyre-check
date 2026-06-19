@@ -23,11 +23,11 @@ Call dependencies
   "port.sink_field (fun)": [ "pysa._test_sink (fun)" ],
   "port.source_field (fun)": [ "pysa._test_source (fun)" ],
   "port.star_arg (fun)": [
-    "port.sink_field (fun)", "tuple.__getitem__ (method)"
+    "builtins.tuple.__getitem__ (method)", "port.sink_field (fun)"
   ],
   "port.star_arg_wrapper (fun)": [ "port.star_arg (fun)" ],
   "port.star_star_arg (fun)": [
-    "dict.__getitem__ (method)", "port.sink_field (fun)"
+    "builtins.dict.__getitem__ (method)", "port.sink_field (fun)"
   ],
   "port.star_star_arg_wrapper (fun)": [ "port.star_star_arg (fun)" ]
 }
