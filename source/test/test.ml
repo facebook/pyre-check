@@ -3545,6 +3545,21 @@ module ScratchProject = struct
       artifact_paths
 end
 
+let find_pyre_source_code_root () =
+  match Stdlib.Sys.getenv_opt "PYRE_CODE_ROOT" with
+  | Some pyre_root_string -> PyrePath.create_absolute pyre_root_string
+  | None -> (
+      let current_directory = PyrePath.current_working_directory () in
+      match
+        PyrePath.search_upwards
+          ~target:"source"
+          ~target_type:PyrePath.FileType.Directory
+          ~root:current_directory
+      with
+      | Some pyre_root -> pyre_root
+      | None -> failwith "Could not find pyre source code root")
+
+
 module ScratchPyreflyProject = struct
   type t = {
     api: Interprocedural.PyreflyApi.ReadWrite.t;
@@ -3553,10 +3568,16 @@ module ScratchPyreflyProject = struct
 
   let find_pyrefly_binary () =
     match Stdlib.Sys.getenv_opt "PYREFLY_BINARY" with
-    | Some ""
-    | None ->
-        None
-    | Some _ as result -> result
+    | Some path when not (String.equal path "") -> Some path
+    | _ ->
+        let pyre_root = find_pyre_source_code_root () in
+        let binary = PyrePath.create_relative ~root:pyre_root ~relative:"source/pyrefly.exe" in
+        if Stdlib.Sys.file_exists (PyrePath.absolute binary) then
+          Some (PyrePath.absolute binary)
+        else
+          failwith
+            "Could not find source/pyrefly.exe; run ./facebook/scripts/setup.sh --local (Meta) or \
+             ./scripts/setup.sh --local (OSS) before 'make'."
 
 
   let setup
@@ -3786,14 +3807,7 @@ end = struct
 
   let global_cache = ProjectCache.create ()
 
-  let pyrefly_binary =
-    lazy
-      (match ScratchPyreflyProject.find_pyrefly_binary () with
-      | Some path ->
-          let () = Log.dump "Found PYREFLY_BINARY=`%s`, running tests using pyrefly" path in
-          Some path
-      | None -> None)
-
+  let pyrefly_binary = lazy (ScratchPyreflyProject.find_pyrefly_binary ())
 
   let setup_without_cache
       ~context

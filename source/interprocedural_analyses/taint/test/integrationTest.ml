@@ -13,7 +13,7 @@ let test_directory = "source/interprocedural_analyses/taint/test/integration/"
 let () =
   match Sys.getenv "PYSA_INTEGRATION_TEST" with
   | Some test_file ->
-      let root = TestHelper.find_pyre_source_code_root () in
+      let root = Test.find_pyre_source_code_root () in
       PyrePath.create_relative ~root ~relative:(test_directory ^ test_file)
       |> TestHelper.end_to_end_integration_test
       |> (fun test -> "taint" >:: test)

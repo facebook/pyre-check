@@ -61,7 +61,8 @@
   kindCoverageTest
   ruleCoverageTest)
  (deps
-  (env_var PYREFLY_BINARY))
+  (env_var PYREFLY_BINARY)
+  %{workspace_root}/pyrefly.exe)
  (preprocess
   (pps ppx_sexp_message ppx_compare ppx_deriving.show))
  (libraries pyrelib.taintTestHelper pyrelib.taintAnalysis)

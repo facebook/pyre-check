@@ -6,4 +6,4 @@
 .PHONY: all
 all:
 	# Pysa integration test.
-	PYRE_BINARY="$(shell pwd)/../../source/_build/default/main.exe" ./run.py
+	PYRE_BINARY="$(CURDIR)/../../source/_build/default/main.exe" PYREFLY_BINARY="$${PYREFLY_BINARY:-$(CURDIR)/../../source/pyrefly.exe}" ./run.py

@@ -11,6 +11,8 @@ _build
 /pyrelib.install
 /hack_parallel.install
 source/dune
+source/pyrefly.exe
+source/.build_type
 source/interprocedural_analyses/taint/test/dune
 /_tags
 /scripts/dist

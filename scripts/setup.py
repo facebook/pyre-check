@@ -16,6 +16,7 @@ of builds.
 import argparse
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import textwrap
@@ -50,6 +51,10 @@ DEPENDENCIES = [
 
 
 class OldOpam(Exception):
+    pass
+
+
+class PyreflyBinaryNotFound(Exception):
     pass
 
 
@@ -212,6 +217,7 @@ def produce_taint_test_dune_file(pyre_directory: Path) -> None:
                 dependencies = [
                     path for path in dependencies if (directory / path).exists()
                 ]
+                dependencies.append("%{workspace_root}/pyrefly.exe")
                 dependencies = textwrap.indent("\n".join(dependencies), prefix="  ")
                 dune.write(f" (deps\n{dependencies})\n")
 
@@ -221,6 +227,34 @@ def produce_taint_test_dune_file(pyre_directory: Path) -> None:
                     # Enable invariant checking, except for the test above.
                     action = f"(setenv\n PYSA_CHECK_INVARIANTS\n 1\n{textwrap.indent(action, prefix=' ')})"
                 dune.write(f" (action\n{textwrap.indent(action, prefix='  ')}))\n")
+
+
+def expose_pyrefly_binary(pyre_directory: Path, build_type: BuildType) -> None:
+    """
+    Ensure `source/pyrefly.exe` points at the Pyrefly binary and record the build
+    type for the Makefile.
+
+    - FACEBOOK: the binary is built and linked by the Makefile `pyrefly` target
+      (buck2), so we only record the marker here.
+    - EXTERNAL: resolve `pyrefly` from PATH and link it, unless the caller (e.g.
+      build_pypi) already created the symlink.
+    """
+    source_directory = pyre_directory / "source"
+    (source_directory / ".build_type").write_text(build_type.value + "\n")
+
+    symlink = source_directory / "pyrefly.exe"
+    if symlink.is_symlink() or symlink.exists():
+        # A caller already provided the binary; do not clobber it.
+        return
+    if build_type == BuildType.EXTERNAL:
+        pyrefly = os.environ.get("PYREFLY_BINARY") or shutil.which("pyrefly")
+        if not pyrefly:
+            raise PyreflyBinaryNotFound(
+                "Pyrefly is required but `pyrefly` was not found on PATH. "
+                "Install pyrefly or set PYREFLY_BINARY."
+            )
+        symlink.symlink_to(pyrefly)
+    # FACEBOOK: handled by the Makefile `pyrefly` target.
 
 
 def _get_opam_environment_variables(
@@ -396,6 +430,7 @@ def full_setup(
 
     produce_root_dune_file(pyre_directory, build_type)
     produce_taint_test_dune_file(pyre_directory)
+    expose_pyrefly_binary(pyre_directory, build_type)
     if run_clean:
         # Note: we do not run `make clean` because we want the result of the
         # explicit `produce_root_dune_file` to remain.
@@ -463,6 +498,7 @@ def setup(
     if parsed.configure:
         produce_root_dune_file(pyre_directory, build_type)
         produce_taint_test_dune_file(pyre_directory)
+        expose_pyrefly_binary(pyre_directory, build_type)
     else:
         initialize_opam_switch(
             opam_root,
