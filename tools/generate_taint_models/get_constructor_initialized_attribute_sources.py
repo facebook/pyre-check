@@ -41,6 +41,7 @@ class ConstructorInitializedAttributeSourceGenerator(ModelGenerator[AssignmentMo
     ) -> None:
         self.classes_to_taint: List[str] = classes_to_taint
         self.pyre_connection = pyre_connection
+        # pyrefly: ignore [invalid-type-var]
         self.filter_classes_by = filter_classes_by
         self.taint_annotation: str = taint_annotation
 

@@ -128,6 +128,7 @@ class ReplaceAction:
         return ReplaceAction(name=name, content=content)
 
 
+# pyrefly: ignore [not-a-type]
 Action: TypeAlias = Union[AddAction, DeleteAction, DeleteImportAction, ReplaceAction]
 
 

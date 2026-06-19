@@ -90,6 +90,7 @@ def switch_environment(environment: Mapping[str, str]) -> Generator[None, None, 
         os.environ.update(old_environment)
 
 
+# pyrefly: ignore [bad-specialization, not-a-type]
 def async_test(func: Callable[TParams, Coroutine[Any, Any, T]]) -> Callable[TParams, T]:
     """
     Simple Decorator to allow for asyncio test methods in a standard
@@ -97,6 +98,7 @@ def async_test(func: Callable[TParams, Coroutine[Any, Any, T]]) -> Callable[TPar
     """
 
     @functools.wraps(func)
+    # pyrefly: ignore [not-a-type]
     def wrapper(*args: TParams.args, **kwargs: TParams.kwargs) -> T:
         return asyncio.run(func(*args, **kwargs))
 

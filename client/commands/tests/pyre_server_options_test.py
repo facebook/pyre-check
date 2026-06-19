@@ -27,6 +27,7 @@ class FakeFrontendConfiguration(frontend_configuration.OpenSource):
             relative_local_root="local",
         )
 
+    # pyrefly: ignore [bad-override]
     def get_server_start_command(
         self, download_if_needed: bool
     ) -> frontend_configuration.ServerStartCommand:

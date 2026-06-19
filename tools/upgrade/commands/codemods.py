@@ -85,6 +85,7 @@ class MissingOverrideReturnAnnotations(Command):
                         line = line + 1
 
             LOG.warning("Writing patched %s", str(path))
+            # pyrefly: ignore [missing-attribute]
             path.write_text("\n".join(lines))
 
 

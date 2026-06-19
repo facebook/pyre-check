@@ -123,11 +123,13 @@ def json_to_parsed_model(taint_data: List[Dict[str, Any]]) -> TargetModel:
                     port = entry["port"]
                     taints = parse_kinds(entry["taint"])
                     if port == "result":
+                        # pyrefly: ignore [bad-typed-dict-key]
                         result["return_model"][model_type].update(taints)
                     else:
                         # TODO(sym): This currently does not support 'AppliesTo'
                         # models.
                         port = entry["port"].replace("formal(", "").replace(")", "")
+                        # pyrefly: ignore [bad-typed-dict-key]
                         result["parameters"][port][model_type].update(taints)
     return result
 

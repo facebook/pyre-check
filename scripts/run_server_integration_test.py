@@ -121,6 +121,7 @@ class Repository:
         assert_readable_directory(repository_path)
         self._base_repository_path: str = os.path.realpath(repository_path)
         commits_list = os.listdir(self._base_repository_path)
+        # pyrefly: ignore [no-matching-overload]
         list.sort(commits_list)
         for commit in commits_list:
             assert_readable_directory(os.path.join(self._base_repository_path, commit))

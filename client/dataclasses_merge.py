@@ -186,6 +186,7 @@ def _merge_fields(
         elif merge_policy is not None:
             return merge_policy(base_value, override_value)
         else:
+            # pyrefly: ignore [bad-argument-type]
             return default_policy(field.type, base_value, override_value)
 
     return (merge(field) for field in fields)
@@ -197,6 +198,7 @@ def dataclass_merge(cls: Type[T]) -> Type[T]:
         _assert_is_dataclass_instance(override)
         return cls(
             *_merge_fields(
+                # pyrefly: ignore [bad-argument-type]
                 dataclasses.fields(cls),
                 base,
                 override,

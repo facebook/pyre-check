@@ -425,6 +425,7 @@ def _run_in_foreground(
 @contextlib.contextmanager
 def background_logging(log_file: Path) -> Iterator[None]:
     with log.file_tailer(log_file) as log_stream:
+        # pyrefly: ignore [bad-context-manager]
         with log.StreamLogger(log_stream) as logger:
             yield
     logger.join()

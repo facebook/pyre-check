@@ -51,6 +51,7 @@ class DefaultServerStartCommand(ServerStartCommand):
     def __init__(self, binary_location: str) -> None:
         self._binary_location = binary_location
 
+    # pyrefly: ignore [bad-override]
     def __eq__(self, other: DefaultServerStartCommand) -> bool:
         return self._binary_location == other._binary_location
 

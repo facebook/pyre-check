@@ -1500,9 +1500,11 @@ def report(
         command_argument, Path(".")
     )
     paths: Optional[Sequence[Path]] = [Path(d) for d in files_and_directories]
+    # pyrefly: ignore [bad-argument-type]
     paths = None if len(paths) == 0 else paths
     return commands.report.run(
         frontend_configuration.OpenSource(configuration),
+        # pyrefly: ignore [bad-argument-type]
         paths=paths,
     )
 
@@ -1522,9 +1524,11 @@ def report_any_expressions(
         command_argument, Path(".")
     )
     paths: Optional[Sequence[Path]] = [Path(d) for d in files_and_directories]
+    # pyrefly: ignore [bad-argument-type]
     paths = None if len(paths) == 0 else paths
     return commands.report_any_expressions.run(
         frontend_configuration.OpenSource(configuration),
+        # pyrefly: ignore [bad-argument-type]
         paths=paths,
     )
 
@@ -1568,10 +1572,12 @@ def statistics(
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration(command_argument, Path("."))
     paths: Optional[Sequence[Path]] = [Path(d) for d in files_and_directories]
+    # pyrefly: ignore [bad-argument-type]
     paths = None if len(paths) == 0 else paths
     return commands.statistics.run(
         configuration,
         command_arguments.StatisticsArguments(
+            # pyrefly: ignore [bad-argument-type]
             paths=paths,
             log_identifier=command_argument.log_identifier,
             log_results=log_results,

@@ -57,6 +57,7 @@ class InitializationExit:
     pass
 
 
+# pyrefly: ignore [not-a-type]
 ComputeInitializeResultCallable: TypeAlias = Callable[
     [InitializeParameters], InitializeResult
 ]

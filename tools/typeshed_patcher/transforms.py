@@ -182,6 +182,7 @@ def statement_matches_name(
         return is_matching_if_block(
             statement,
             predicate=lambda s: statement_matches_name(name, s),
+            # pyrefly: ignore [bad-argument-type]
             match_type=_MatchType.ANY,
         )
     if isinstance(statement, libcst.Import):
@@ -214,6 +215,7 @@ def is_import_statement(
         return is_matching_if_block(
             statement,
             predicate=is_import_statement,
+            # pyrefly: ignore [bad-argument-type]
             match_type=_MatchType.ALL,
         )
     return False

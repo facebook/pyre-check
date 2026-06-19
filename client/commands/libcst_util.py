@@ -62,9 +62,12 @@ class QualifiedNameWithPositionVisitor(libcst.CSTVisitor):
     ) -> None:
         if self.get_metadata(metadata.PositionProvider, node):
             cst_position = self.get_metadata(metadata.PositionProvider, node)
+            # pyrefly: ignore [missing-attribute]
             line = cst_position.start.line - 1
             lsp_range = lsp.LspRange(
+                # pyrefly: ignore [missing-attribute]
                 start=lsp.LspPosition(line=line, character=cst_position.start.column),
+                # pyrefly: ignore [missing-attribute]
                 end=lsp.LspPosition(line=line, character=cst_position.end.column),
             )
 
@@ -75,11 +78,13 @@ class QualifiedNameWithPositionVisitor(libcst.CSTVisitor):
             ):
                 self.qualified_names = [
                     qualified_name.name
+                    # pyrefly: ignore [not-iterable]
                     for qualified_name in self.get_metadata(
                         metadata.FullyQualifiedNameProvider, node
                     )
                 ]
                 self.symbol_range = lsp_range
+            # pyrefly: ignore [not-iterable]
             for qualified_name in self.get_metadata(
                 metadata.FullyQualifiedNameProvider, node
             ):

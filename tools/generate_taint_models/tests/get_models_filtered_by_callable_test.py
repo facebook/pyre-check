@@ -17,6 +17,7 @@ class TestModel(Model):
     def __init__(self, index: int) -> None:
         self.index = index
 
+    # pyrefly: ignore [bad-override]
     def __eq__(self, other: "TestModel") -> int:
         return self.index == other.index
 

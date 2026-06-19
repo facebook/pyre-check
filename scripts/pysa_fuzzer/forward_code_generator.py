@@ -30,6 +30,7 @@ class CodeGenerator:
         names = single_letter_names + two_letter_names
         reserved_keywords = {"as", "in", "if", "is", "or"}
         names = [name for name in names if name not in reserved_keywords]
+        # pyrefly: ignore [bad-return]
         return names
 
     def generate_new_variable(self) -> str:

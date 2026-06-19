@@ -97,7 +97,9 @@ class DecoratorParser:
 
         return Decorator(
             decorator_name,
+            # pyrefly: ignore [bad-argument-type]
             decorator_arguments,
+            # pyrefly: ignore [bad-argument-type]
             decorator_keywords,
         )
 

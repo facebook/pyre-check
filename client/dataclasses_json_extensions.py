@@ -26,6 +26,7 @@ class DataclassJsonMixinWithCachedSchema(dataclasses_json.DataClassJsonMixin):
 
 
 class CamlCaseAndExcludeJsonMixin(DataclassJsonMixinWithCachedSchema):
+    # pyrefly: ignore [bad-override-mutable-attribute]
     dataclass_json_config: Mapping[str, object] = dataclasses_json.config(
         letter_case=dataclasses_json.LetterCase.CAMEL,
         undefined=dataclasses_json.Undefined.EXCLUDE,
@@ -33,6 +34,7 @@ class CamlCaseAndExcludeJsonMixin(DataclassJsonMixinWithCachedSchema):
 
 
 class SnakeCaseAndExcludeJsonMixin(DataclassJsonMixinWithCachedSchema):
+    # pyrefly: ignore [bad-override-mutable-attribute]
     dataclass_json_config: Mapping[str, object] = dataclasses_json.config(
         letter_case=dataclasses_json.LetterCase.SNAKE,
         undefined=dataclasses_json.Undefined.EXCLUDE,

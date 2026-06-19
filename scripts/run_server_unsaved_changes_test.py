@@ -244,6 +244,7 @@ class Repository:
             if error.returncode not in [0, 1]:
                 raise error
             output = error.output
+        # pyrefly: ignore [bad-return]
         return output.stdout
 
 

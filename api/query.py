@@ -88,6 +88,7 @@ class CallGraphTarget:
             _parse_location(location) for location in call["locations"]
         ]
 
+    # pyrefly: ignore [bad-override]
     def __eq__(self, other: "CallGraphTarget") -> bool:
         return (
             self.target == other.target

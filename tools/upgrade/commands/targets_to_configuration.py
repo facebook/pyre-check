@@ -323,6 +323,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                     ):
                         missing_directories.append(subdirectory)
                 current_depth += 1
+            # pyrefly: ignore [bad-argument-type]
             configuration_directories.extend(missing_directories)
         return [Path(directory) for directory in configuration_directories]
 

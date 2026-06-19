@@ -280,6 +280,7 @@ def main(filenames: Iterable[str]) -> None:
         sys.exit(1)
 
     try:
+        # pyrefly: ignore [bad-context-manager]
         with _create_pyre_connection(roots) as pyre_connection:
             LOG.info(
                 f"Server is up: {pyre_connection.server_initialized} "

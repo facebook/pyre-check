@@ -81,6 +81,7 @@ def _parse_metadata(input_json: Dict[str, Any]) -> EventMetadata:
     pid = input_json["pid"]
     return EventMetadata(
         name=input_json["name"],
+        # pyrefly: ignore [bad-argument-type]
         worker_id=input_json.get("worker_id", pid),
         pid=pid,
         timestamp=input_json["timestamp"],
@@ -136,10 +137,13 @@ class StatisticsOverTime:
             gnuplot = subprocess.Popen(["gnuplot"], stdin=subprocess.PIPE)
             # pyre-fixme[16]: `Optional` has no attribute `write`.
             gnuplot.stdin.write(b"set term dumb 140 25\n")
+            # pyrefly: ignore [missing-attribute]
             gnuplot.stdin.write(b"plot '-' using 1:2 title '' with linespoints \n")
             for i, (_time, size) in enumerate(self._data):
                 # This is graphing size against # of updates, not time
+                # pyrefly: ignore [missing-attribute]
                 gnuplot.stdin.write(b"%f %f\n" % (i, size))
+            # pyrefly: ignore [missing-attribute]
             gnuplot.stdin.write(b"e\n")
             # pyre-fixme[16]: `Optional` has no attribute `flush`.
             gnuplot.stdin.flush()

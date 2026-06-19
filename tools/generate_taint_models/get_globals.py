@@ -56,6 +56,7 @@ class GlobalModelGenerator(ModelGenerator[Model]):
                 self.blacklist: Optional[Set[str]] = None
                 self.parent: Optional[str] = None
 
+            # pyrefly: ignore [bad-override-param-name]
             def visit_Name(self, name: ast.Name) -> None:
                 blacklist = self.blacklist
                 if blacklist is not None and name.id in blacklist:
@@ -69,9 +70,11 @@ class GlobalModelGenerator(ModelGenerator[Model]):
 
             # Ensure that we stop recursing when we're in a complex assign, such as
             # a.b = ... or a[b] = ... .
+            # pyrefly: ignore [bad-override-param-name]
             def visit_Attribute(self, attribute: ast.Attribute) -> None:
                 return
 
+            # pyrefly: ignore [bad-override-param-name]
             def visit_Subscript(self, subscript: ast.Subscript) -> None:
                 return
 
@@ -222,6 +225,7 @@ class GlobalModelGenerator(ModelGenerator[Model]):
                     definition=function_definition,
                     returns=returns,
                 )
+                # pyrefly: ignore [bad-argument-type]
                 models.add(function_definition_model)
             except ValueError:
                 pass

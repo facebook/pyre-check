@@ -112,6 +112,7 @@ class ModelTest(unittest.TestCase):
         expected: str,
         **kwargs: Union[str, ParameterAnnotation, WhitelistSpecification],
     ) -> None:
+        # pyrefly: ignore [bad-assignment]
         parsed_function = ast.parse(textwrap.dedent(source)).body[0]
 
         # pyre-fixme[35]: Target cannot be annotated.

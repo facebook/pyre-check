@@ -683,6 +683,7 @@ class PyreLanguageServerDispatcherTest(testslide.TestCase):
         """This is not the ideal behavior. We should be raising these exceptions."""
 
         class RaisingLanguageServer(BlockingPyreLanguageServer):
+            # pyrefly: ignore [bad-override]
             async def process_open_request(
                 self,
                 parameters: lsp.DidOpenTextDocumentParameters,

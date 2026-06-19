@@ -34,7 +34,9 @@ from . import dataclasses_json_extensions as json_mixins
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
+# pyrefly: ignore [not-a-type]
 ErrorCode: TypeAlias = Union[int, str]
+# pyrefly: ignore [not-a-type]
 LineNumber: TypeAlias = int
 
 
@@ -167,6 +169,7 @@ class VisitorWithPositionData(libcst.CSTVisitor):
     METADATA_DEPENDENCIES = (PositionProvider,)
 
     def location(self, node: libcst.CSTNode) -> Location:
+        # pyrefly: ignore [bad-argument-type]
         return Location.from_code_range(self.get_metadata(PositionProvider, node))
 
 
@@ -389,10 +392,12 @@ class AnnotationCollector(VisitorWithPositionData):
     def leave_Module(self, original_node: libcst.Module) -> None:
         file_range = self.get_metadata(PositionProvider, original_node)
         if original_node.has_trailing_newline:
+            # pyrefly: ignore [missing-attribute]
             self.line_count = file_range.end.line
         else:
             # Seems to be a quirk in LibCST, the module CodeRange still goes 1 over
             # even when there is no trailing new line in the file.
+            # pyrefly: ignore [missing-attribute]
             self.line_count = file_range.end.line - 1
 
 
@@ -542,6 +547,7 @@ class EmptyContainerCollector(matchers.MatcherDecoratableVisitor):
         self.empty_containers: List[EmptyContainerInfo] = []
 
     def location(self, node: libcst.CSTNode) -> Location:
+        # pyrefly: ignore [bad-argument-type]
         return Location.from_code_range(self.get_metadata(PositionProvider, node))
 
     def record_empty_container(self, kind: EmptyContainerKind, loc: Location) -> None:

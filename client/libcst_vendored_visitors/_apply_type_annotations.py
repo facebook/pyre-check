@@ -44,6 +44,7 @@ def _get_import_alias_names(
             import_names.add(get_full_name_for_node(asname.name))
         else:
             import_names.add(get_full_name_for_node(imported_name.name))
+    # pyrefly: ignore [bad-return]
     return import_names
 
 
@@ -236,6 +237,7 @@ class TypeCollector(m.MatcherDecoratableVisitor):
             elif isinstance(value, cst.Subscript):
                 new_value = self._handle_Subscript(value)
             else:
+                # pyrefly: ignore [missing-attribute]
                 start = self.get_metadata(PositionProvider, node).start
                 raise ValueError(
                     "Invalid type used as base class in stub file at "
@@ -333,6 +335,7 @@ class TypeCollector(m.MatcherDecoratableVisitor):
         node: cst.CSTNode,
     ) -> str:
         name = None
+        # pyrefly: ignore [not-iterable]
         names = [q.name for q in self.get_metadata(QualifiedNameProvider, node)]
         if len(names) == 0:
             # we hit this branch if the stub is directly using a fully
@@ -342,6 +345,7 @@ class TypeCollector(m.MatcherDecoratableVisitor):
         elif len(names) == 1 and isinstance(names[0], str):
             name = names[0]
         if name is None:
+            # pyrefly: ignore [missing-attribute]
             start = self.get_metadata(PositionProvider, node).start
             raise ValueError(
                 "Could not resolve a unique qualified name for type "
@@ -452,8 +456,10 @@ class TypeCollector(m.MatcherDecoratableVisitor):
         if isinstance(slice, tuple):
             new_slice = []
             for item in slice:
+                # pyrefly: ignore [missing-attribute]
                 value = item.slice.value
                 if isinstance(value, NAME_OR_ATTRIBUTE):
+                    # pyrefly: ignore [missing-attribute]
                     name = self._handle_NameOrAttribute(item.slice.value)
                     new_index = item.slice.with_changes(value=name)
                     new_slice.append(item.with_changes(slice=new_index))
@@ -688,6 +694,7 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
                 )
             tree_with_imports = AddImportsVisitor(self.context).transform_module(tree)
 
+        # pyrefly: ignore [unbound-name]
         tree_with_changes = tree_with_imports.visit(self)
 
         # don't modify the imports if we didn't actually add any type information
@@ -1140,12 +1147,16 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
         }
         if typevars:
             for var, stmt in typevars.items():
+                # pyrefly: ignore [bad-argument-type]
                 toplevel_statements.append(cst.Newline())
+                # pyrefly: ignore [bad-argument-type]
                 toplevel_statements.append(stmt)
                 self.annotation_counts.typevars_and_generics_added += 1
+            # pyrefly: ignore [bad-argument-type]
             toplevel_statements.append(cst.Newline())
 
         self.annotation_counts.classes_added = len(fresh_class_definitions)
+        # pyrefly: ignore [bad-argument-type]
         toplevel_statements.extend(fresh_class_definitions)
 
         return updated_node.with_changes(

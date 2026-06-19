@@ -134,6 +134,7 @@ class ConnectionApiTest(unittest.TestCase):
         )
         run.reset_mock()
 
+        # pyrefly: ignore [bad-context-manager]
         with PyreConnection(Path("/tmp")) as pyre_connection:
             pyre_connection.query_server("hi")
         self.assertEqual(
@@ -179,6 +180,7 @@ class ConnectionApiTest(unittest.TestCase):
             patch.object(PyreConnection, "start_server") as start_server,
             patch.object(PyreConnection, "stop_server") as stop_server,
         ):
+            # pyrefly: ignore [bad-context-manager]
             with PyreConnection():
                 pass
             start_server.assert_called_once_with()

@@ -1238,8 +1238,10 @@ def print_reachable_leaves(
             frame.location.print(prefix="Location: ", indent="")
             continue
 
+        # pyrefly: ignore [bad-argument-type]
         model = get_raw_model(frame.callee, cache=cache)
         for next_frame in get_frames_from_taint_conditions(
+            # pyrefly: ignore [bad-argument-type]
             caller=frame.callee,
             filename=model["filename"],
             path=model.get("path"),

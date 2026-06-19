@@ -25,6 +25,7 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
+# pyrefly: ignore [not-a-type]
 Trace: TypeAlias = List[str]
 JSON = Union[Dict[str, "JSON"], List["JSON"], str, int, float, bool, None]
 

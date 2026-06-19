@@ -62,7 +62,9 @@ def test_function(
 
 
 def test_annotated_parameter_function(
+    # pyrefly: ignore [unknown-name]
     arg1: "Annotated[TestClass, ExampleAnnotation(accesses=(Access.REVIEWED,))]",  # noqa
+    # pyrefly: ignore [unknown-name]
     arg2: "Annotated[TestClass, ExampleAnnotation(accesses=(Access.REVIEWED,)), ExampleOtherAnnotation(whatever=(Other.REVIEWED,))]",  # noqa
 ) -> None: ...
 

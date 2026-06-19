@@ -328,6 +328,7 @@ class StreamBytesWriter(AsyncBytesWriter):
         while not self.stream_writer.transport.is_closing():
             await asyncio.sleep(0)
 
+        # pyrefly: ignore [missing-attribute]
         transport_socket: sys.IO = self.stream_writer.transport.get_extra_info("socket")
         if transport_socket is not None:
             while transport_socket.fileno() != -1:

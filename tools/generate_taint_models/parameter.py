@@ -21,6 +21,7 @@ class Parameter(NamedTuple):
     # pyre-fixme[11]: Annotation `Kind` is not defined as a type.
     kind: Kind
 
+    # pyrefly: ignore [bad-override]
     def __eq__(self, other: "Parameter") -> bool:
         if not isinstance(other, self.__class__):
             return False

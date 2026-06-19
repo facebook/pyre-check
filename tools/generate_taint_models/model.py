@@ -43,6 +43,7 @@ class Model(abc.ABC):
         return str(self) < str(other)
 
     @abc.abstractmethod
+    # pyrefly: ignore [bad-override]
     def __eq__(self) -> int:
         ...
 
@@ -144,6 +145,7 @@ class RawCallableModel(Model):
             f"{return_annotation}: ..."
         )
 
+    # pyrefly: ignore [bad-override]
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, RawCallableModel):
             return False
@@ -353,6 +355,7 @@ class AssignmentModel(Model):
     def __str__(self) -> str:
         return f"{self.target}: {self.annotation} = ..."
 
+    # pyrefly: ignore [bad-override]
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, AssignmentModel):
             return False
@@ -373,6 +376,7 @@ class ClassModel(Model):
     def __str__(self) -> str:
         return f"class {self.class_name}({self.annotation}): ..."
 
+    # pyrefly: ignore [bad-override]
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ClassModel):
             return False
@@ -391,6 +395,7 @@ class PropertyModel(Model):
     def __str__(self) -> str:
         return f"@property\ndef {self.class_name}.{self.attribute_name}(self) -> {self.annotation}: ..."  # noqa B950
 
+    # pyrefly: ignore [bad-override]
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, PropertyModel):
             return False
