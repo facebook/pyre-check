@@ -1,7 +1,9 @@
 ---
 name: pysa-json-models
 description: Use when reading, writing, or debugging Pysa JSON model output (.models files). Use when working with taint models that describe sources, sinks, TITO, sanitizers, or issues in JSON format.
-oncalls: [pysa]
+metadata:
+  oncalls: [pysa]
+  strict: true
 ---
 
 # Pysa JSON Model Syntax

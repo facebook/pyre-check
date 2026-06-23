@@ -1,7 +1,9 @@
 ---
 name: pysa-false-negative-debugger
 description: Use when debugging a Pysa false negative (missing taint issue), comparing two Pysa output directories, or finding where taint flow is lost.
-oncalls: [pysa]
+metadata:
+  oncalls: [pysa]
+  strict: true
 ---
 
 # Pysa Model Debugger

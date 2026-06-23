@@ -1,7 +1,9 @@
 ---
 name: commit-conventions
 description: Use when creating commits or diffs to apply the correct title prefix, reviewer, and test plan based on the area of the codebase being changed.
-oncalls: [pyre, pysa]
+metadata:
+  oncalls: [pyre, pysa]
+  strict: true
 ---
 
 # Commit Conventions

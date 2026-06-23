@@ -1,7 +1,9 @@
 ---
 name: pysa-integration-tests
 description: Use when running, debugging, updating, or creating Pysa end-to-end integration tests. Use when taint analysis tests fail, when expected output files need updating, or when working with .models, .cg, .hofcg, .overrides files under `source/interprocedural_analyses/taint/test/integration`.
-oncalls: [pysa]
+metadata:
+  oncalls: [pysa]
+  strict: true
 ---
 
 # Pysa Integration Tests
