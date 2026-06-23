@@ -26,11 +26,9 @@ OUNIT_SHARDS=16 dune exec interprocedural_analyses/taint/test/integrationTest.ex
 PYSA_INTEGRATION_TEST=format.py dune exec interprocedural_analyses/taint/test/integrationTest.exe
 ```
 
-### With Pyrefly Frontend (Meta Internal Only)
+### With Pyrefly Frontend
 
-See the "Pyrefly Integration" section in `AGENTS.md` for how to build the Pyrefly binary.
-
-To run integration tests with Pyrefly:
+After running `./facebook/scripts/setup.sh --local`, Pyrefly is the default backend — tests use `source/pyrefly.exe` automatically. To override with a custom binary:
 
 ```bash
 PYREFLY_BINARY=<path-to-binary> PYSA_INTEGRATION_TEST=format.py dune exec interprocedural_analyses/taint/test/integrationTest.exe

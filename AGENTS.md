@@ -81,19 +81,18 @@ pyre -n check  # Use one-off check mode, not the server, when recompiling freque
 
 ### Pyrefly Integration
 
-By default, Pysa uses Pyre as its type provider. It can also use [Pyrefly](https://github.com/facebook/pyrefly) instead.
+Pyrefly is the default type provider for Pysa tests. The setup script (`./facebook/scripts/setup.sh --local`) automatically builds the Pyrefly binary and symlinks it to `source/pyrefly.exe`. After setup, `make test` uses Pyrefly automatically — no manual steps needed.
 
-Building the Pyrefly binary requires `buck2` (Meta internal only):
+To manually rebuild the Pyrefly binary (Meta internal only):
 
 ```bash
-buck2 build --show-full-simple-output @fbcode//mode/opt fbcode//pyrefly/pyrefly:fbpyrefly
-# This prints a path like: /data/users/<user>/.../__pyrefly__/fbpyrefly on stdout.
+cd source && make pyrefly
 ```
 
-To run OCaml tests with Pyrefly, set the `PYREFLY_BINARY` environment variable:
+To override the Pyrefly binary path (e.g., for a custom build):
 
 ```bash
-cd source && PYREFLY_BINARY=<path-to-pyrefly-binary> make test
+cd source && PYREFLY_BINARY=<path-to-binary> make test
 ```
 
 ## Coding Style
