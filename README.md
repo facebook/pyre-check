@@ -2,11 +2,14 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Gitter](https://badges.gitter.im/pyre-check/community.svg)](https://gitter.im/pyre-check/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-> [!IMPORTANT]
+> [!WARNING]
 >
-> ## New Version is Available
+> ## This Repository Is Archived
 >
-> Check out <a href="https://github.com/facebook/pyrefly">Pyrefly</a>, our next-generation Python typechecker and language server.
+> This repository is no longer maintained and has been archived.
+>
+> - **Type checking:** Pyre has been replaced by <a href="https://github.com/facebook/pyrefly">Pyrefly</a>, our next-generation Python typechecker and language server.
+> - **Security analysis (Pysa):** Pysa has moved to its own repository at <a href="https://github.com/facebook/Pysa">github.com/facebook/Pysa</a>. If you are looking for Pysa, please head there.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/facebook/pyre-check/main/logo.png">
@@ -14,7 +17,7 @@
 
 Pyre is a performant type checker for Python compliant with [PEP 484](https://www.python.org/dev/peps/pep-0484/). Pyre can analyze codebases with millions of lines of code incrementally – providing instantaneous feedback to developers as they write code. Refer to our [documentation](https://pyre-check.org/docs/getting-started) to get started.
 
-Pyre ships with **Pysa**, a security focused static analysis tool we've built on top of Pyre that reasons about data flows in Python applications. Please refer to our [documentation](https://pyre-check.org/docs/pysa-quickstart) to get started with our security analysis.
+Pyre ships with **Pysa**, a security focused static analysis tool we've built on top of Pyre that reasons about data flows in Python applications. **Pysa now lives in its own repository at [github.com/facebook/Pysa](https://github.com/facebook/Pysa)** — please head there for the latest version and to get started with our security analysis.
 
 Pysa is also available on the [GitHub Marketplace as a Github Action](https://github.com/marketplace/actions/pysa-action)
 
